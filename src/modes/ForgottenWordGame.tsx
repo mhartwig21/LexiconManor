@@ -12,6 +12,7 @@ import {
   type ClueId,
 } from '../engine/forgotten-word';
 import { GlyphTray } from '../components/GlyphTray';
+import { sfx } from '../app/sound';
 import type { MapNode } from '../engine/map';
 import type { RunState } from '../engine/types';
 import { RunHeader } from '../components/RunHeader';
@@ -95,6 +96,7 @@ export function ForgottenWordGame({ node, run }: { node: MapNode; run: RunState 
       return;
     }
     if (result.kind === 'wrong') {
+      sfx.wrong();
       setShaking(true);
       setTimeout(() => setShaking(false), 500);
       if (result.lost) {
@@ -215,6 +217,7 @@ export function ForgottenWordGame({ node, run }: { node: MapNode; run: RunState 
                   const clue = activeTrial;
                   setActiveTrial(null);
                   if (won && clue) {
+                    sfx.flourish();
                     setState((s) => unlockClue(s, clue));
                     setFlash('The clue reveals itself.');
                   } else {

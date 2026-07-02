@@ -5,6 +5,7 @@ import { nodeSeed, selectTwistle } from '../app/content';
 import { scoreTwistle } from '../engine/scoring';
 import { CENTER_INDEX, GRID_SIZE, solveTwistle, startTwistle, submitTwistleWord } from '../engine/twistle';
 import { GlyphTray } from '../components/GlyphTray';
+import { sfx } from '../app/sound';
 import type { MapNode } from '../engine/map';
 import type { RunState } from '../engine/types';
 import { RunHeader } from '../components/RunHeader';
@@ -74,6 +75,7 @@ export function TwistleGame({ node, run }: { node: MapNode; run: RunState }) {
   };
 
   const tap = (index: number) => {
+    sfx.tap();
     setFlash(null);
     setPath((p) => {
       if (p.length === 0) return [index];
@@ -90,6 +92,7 @@ export function TwistleGame({ node, run }: { node: MapNode; run: RunState }) {
     setPath([]);
 
     if (result.kind === 'valid') {
+      sfx.correct();
       setFlash({ kind: 'good', text: `${result.word} ✓ (${next.foundWords.length}/${puzzle.targetCount})` });
       if (result.won) {
         finishWith(
@@ -110,6 +113,7 @@ export function TwistleGame({ node, run }: { node: MapNode; run: RunState }) {
     };
     setFlash({ kind: 'bad', text: messages[result.reason] ?? 'No' });
     if (result.reason === 'not-a-word' || result.reason === 'not-on-grid') {
+      sfx.wrong();
       setShaking(true);
       setTimeout(() => setShaking(false), 500);
       applyWrongAttempt(); // may end the run; PlayPage shows defeat

@@ -4,6 +4,7 @@ import { useGameStore } from '../app/store';
 import { nodeSeed, selectWordWeb } from '../app/content';
 import { solveWordWeb, startWordWeb, submitGroup } from '../engine/word-web';
 import { GlyphTray } from '../components/GlyphTray';
+import { sfx } from '../app/sound';
 import { scoreWordWeb } from '../engine/scoring';
 import { createRng, shuffle } from '../engine/rng';
 import type { MapNode } from '../engine/map';
@@ -74,6 +75,7 @@ export function WordWebGame({ node, run }: { node: MapNode; run: RunState }) {
   );
 
   const toggle = (word: string) => {
+    sfx.tap();
     setFeedback(null);
     setSelection((sel) =>
       sel.includes(word) ? sel.filter((w) => w !== word) : sel.length < 4 ? [...sel, word] : sel,
@@ -88,10 +90,12 @@ export function WordWebGame({ node, run }: { node: MapNode; run: RunState }) {
 
     if (result.kind === 'solved') {
       setFeedback(null);
+      sfx.correct();
       if (result.won) finishWith(scoreWordWeb({ wrongAttempts: next.wrongAttempts }), next.wrongAttempts);
       return;
     }
     if (result.kind === 'one-away' || result.kind === 'wrong') {
+      sfx.wrong();
       setFeedback(result.kind === 'one-away' ? 'one-away' : 'wrong');
       setShaking(true);
       setTimeout(() => setShaking(false), 500);

@@ -520,69 +520,153 @@ h3 {
 }
 
 /* --------------------------------------------------------------------------
-   Map
+   Map — an old parchment chart held up against the void.
+   Ink on aged paper: sepia trails, wax-seal waypoints, compass rose.
    -------------------------------------------------------------------------- */
+
+:root {
+  --ink: #43301c;
+  --ink-faint: rgba(67, 48, 28, 0.4);
+  --wax: #8c2f28;
+}
 
 .map-canvas {
   position: relative;
   width: 100%;
+  /* Aged paper: warm gradient + procedural grain via SVG turbulence. */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.30 0 0 0 0 0.22 0 0 0 0 0.12 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23p)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 90% 80% at 50% 40%, hsl(43, 45%, 84%), hsl(42, 42%, 78%) 60%, hsl(40, 38%, 68%) 88%, hsl(38, 35%, 58%));
+  border: none;
+  border-radius: 8px 14px 10px 16px / 14px 8px 16px 10px; /* slightly uneven, hand-cut */
+  box-shadow:
+    inset 0 0 60px rgba(96, 66, 30, 0.45),
+    inset 0 0 8px rgba(96, 66, 30, 0.35),
+    0 10px 40px rgba(0, 0, 0, 0.6);
+  padding: 12px;
 }
 
+/* Scorched vignette corners */
+.map-canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 30% 22% at 0% 0%, rgba(60, 38, 15, 0.5), transparent 70%),
+    radial-gradient(ellipse 26% 20% at 100% 8%, rgba(60, 38, 15, 0.4), transparent 70%),
+    radial-gradient(ellipse 30% 24% at 4% 100%, rgba(60, 38, 15, 0.45), transparent 70%),
+    radial-gradient(ellipse 28% 20% at 98% 96%, rgba(60, 38, 15, 0.5), transparent 70%);
+}
+
+.map-title {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  letter-spacing: 0.2em;
+  color: var(--ink);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.map-compass {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  width: 54px;
+  height: 54px;
+  color: var(--ink);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Ink trails between waypoints */
+.map-edge {
+  stroke: var(--ink-faint);
+  stroke-width: 2;
+  stroke-dasharray: 1 7;
+  stroke-linecap: round;
+  fill: none;
+}
+.map-edge--open {
+  stroke: var(--ink);
+  stroke-dasharray: 1 6;
+}
+
+/* Waypoints: ink-drawn circles on the paper */
 .map-node {
   position: absolute;
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
-  width: 64px;
-  height: 64px;
+  justify-content: center;
+  gap: 0.1rem;
+  width: 62px;
+  height: 62px;
   border-radius: 50%;
-  border: 2px solid var(--golden-dim);
-  background: radial-gradient(circle at 35% 30%, rgba(48, 90, 80, 0.95), rgba(17, 41, 41, 0.95));
-  color: var(--golden);
+  border: 2.5px solid var(--ink);
+  background: radial-gradient(circle at 38% 32%, hsl(43, 50%, 88%), hsl(42, 42%, 79%));
+  color: var(--ink);
   font-size: 1.3rem;
   cursor: pointer;
-  justify-content: center;
-  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: inset 0 0 6px rgba(96, 66, 30, 0.4), 0 1px 3px rgba(60, 40, 15, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 .map-node:hover:not(:disabled) {
   transform: translate(-50%, -50%) scale(1.08);
 }
+
+/* Unreached territory: faint pencil sketch */
 .map-node--locked {
-  opacity: 0.35;
+  opacity: 0.45;
   cursor: not-allowed;
-  filter: grayscale(0.7);
+  border-style: dashed;
+  border-width: 2px;
+  box-shadow: none;
 }
+
+/* Conquered: stamped in red wax */
 .map-node--completed {
-  border-color: var(--success);
-  box-shadow: 0 0 10px rgba(80, 200, 140, 0.35);
+  border-color: var(--wax);
+  color: var(--wax);
+  background: radial-gradient(circle at 38% 32%, hsl(43, 45%, 85%), hsl(41, 40%, 76%));
   cursor: default;
 }
+.map-node--completed > span:first-child {
+  transform: rotate(-12deg);
+  font-weight: 700;
+}
+
+/* The path ahead: warm candlelight glow */
 .map-node--playable {
-  border-color: var(--golden-bright);
-  animation: halo 2s ease-in-out infinite;
+  border-color: var(--ink);
+  animation: candle 2.2s ease-in-out infinite;
 }
+@keyframes candle {
+  0%, 100% { box-shadow: inset 0 0 6px rgba(96, 66, 30, 0.4), 0 0 10px rgba(214, 158, 50, 0.55); }
+  50% { box-shadow: inset 0 0 6px rgba(96, 66, 30, 0.4), 0 0 26px rgba(214, 158, 50, 0.95); }
+}
+
 .map-node--boss {
-  width: 80px;
-  height: 80px;
-  font-size: 1.7rem;
-  border-width: 3px;
+  width: 82px;
+  height: 82px;
+  font-size: 1.8rem;
+  border-width: 3.5px;
+  border-style: double;
+  border-width: 6px;
 }
 
-@keyframes halo {
-  0%, 100% { box-shadow: 0 0 6px rgba(217, 179, 66, 0.35); }
-  50% { box-shadow: 0 0 22px rgba(217, 179, 66, 0.75); }
-}
-
-.map-edge {
-  stroke: var(--golden-dim);
-  stroke-width: 2;
-  stroke-dasharray: 6 5;
-  fill: none;
-}
-.map-edge--open {
-  stroke: var(--golden);
+.map-node__label {
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  font-family: var(--font-heading);
+  font-weight: 700;
 }
 
 /* --------------------------------------------------------------------------
@@ -674,4 +758,16 @@ h3 {
 .modal {
   width: min(440px, 100%);
   text-align: center;
+}
+
+.sparkle {
+  position: absolute;
+  color: var(--golden-bright);
+  font-size: 1.1rem;
+  pointer-events: none;
+  animation: sparkle-pop 1.6s ease-in-out infinite;
+}
+@keyframes sparkle-pop {
+  0%, 100% { transform: scale(0.4) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(40deg); opacity: 1; }
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { HivePuzzle } from '../engine/types';
 import { MAX_ENTROPY, foundWordScores, restoreLetter, startHive, submitHiveWord, type HiveState } from '../engine/hive';
 import { createRng, pick } from '../engine/rng';
+import { sfx } from '../app/sound';
 
 /**
  * Shared Hive Builder board: used full-size for hive nodes and compact
@@ -130,9 +131,12 @@ export function HiveCore({
     setTyped('');
 
     if (result.kind === 'valid') {
+      if (result.isPangram) sfx.flourish();
+      else sfx.correct();
       setFlash({ kind: 'good', text: `${result.word} +${result.points}${result.isPangram ? ' ✦ PANGRAM!' : ''}` });
       if (result.won) finish(true, 'threshold', next);
     } else {
+      if (result.entropyRose) sfx.wrong();
       const messages: Record<string, string> = {
         'too-short': 'Too short (4+ letters)',
         'missing-center': `Must use ${puzzle.center}`,
@@ -150,7 +154,10 @@ export function HiveCore({
   };
 
   const tapLetter = (letter: string) => {
-    if (!state.fadedLetters.includes(letter)) setTyped((t) => t + letter);
+    if (!state.fadedLetters.includes(letter)) {
+      sfx.tap();
+      setTyped((t) => t + letter);
+    }
   };
 
   const tryRestore = (letter: string) => {

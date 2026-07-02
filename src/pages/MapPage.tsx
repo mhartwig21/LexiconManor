@@ -16,8 +16,8 @@ const MODE_ICON: Record<string, string> = {
 const MAP_HEIGHT = 460;
 
 function nodePos(node: MapNode, maxLayer: number): { x: number; y: number } {
-  const x = 8 + (node.layer / maxLayer) * 84; // percent
-  const y = ((node.slot + 1) / (node.slotCount + 1)) * MAP_HEIGHT;
+  const x = 13 + (node.layer / maxLayer) * 74; // percent, keeps seals on the paper
+  const y = 30 + ((node.slot + 1) / (node.slotCount + 1)) * (MAP_HEIGHT - 40); // clear the title banner
   return { x, y };
 }
 
@@ -40,18 +40,23 @@ export default function MapPage() {
   return (
     <div className={`bg-level bg-level--${Math.min(run.level, 3)}`}>
       <div className="page">
-        <RunHeader title={levelName(run.level)} />
+        <RunHeader title="Your Journey" />
         <MapCanvas
           map={map}
           maxLayer={maxLayer}
           run={run}
+          levelTitle={levelName(run.level)}
           onEnter={(node) => {
             enterNode(node.id);
             navigate('/play');
           }}
         />
 
-        <div className="card" style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', fontStyle: 'italic', opacity: 0.7, margin: '0.8rem 0 0' }}>
+          You have entered the Loop. Follow the trail, and break the seal that binds this realm.
+        </p>
+
+        <div className="card" style={{ marginTop: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 'var(--text-sm)' }}>
             <strong style={{ color: 'var(--golden)' }}>Glyphs:</strong>{' '}
             {glyphInventory.length === 0
@@ -73,11 +78,13 @@ function MapCanvas({
   map,
   maxLayer,
   run,
+  levelTitle,
   onEnter,
 }: {
   map: LevelMap;
   maxLayer: number;
   run: { completedNodeIds: string[] };
+  levelTitle: string;
   onEnter: (node: MapNode) => void;
 }) {
   const posOf = (id: string) => {
@@ -86,7 +93,9 @@ function MapCanvas({
   };
 
   return (
-    <div className="map-canvas card" style={{ height: MAP_HEIGHT + 24, padding: 12 }}>
+    <div className="map-canvas" style={{ height: MAP_HEIGHT + 24 }}>
+      <div className="map-title">— {levelTitle} —</div>
+      <CompassRose />
       <svg
         width="100%"
         height={MAP_HEIGHT}
@@ -138,11 +147,25 @@ function MapCanvas({
             aria-label={`${node.kind} node${playable ? ', playable' : completed ? ', completed' : ', locked'}`}
           >
             <span>{icon}</span>
-            {node.kind === 'boss' && <span style={{ fontSize: '0.5rem', letterSpacing: '0.1em' }}>BOSS</span>}
+            {node.kind === 'boss' && <span className="map-node__label">BOSS</span>}
           </button>
         );
       })}
     </div>
+  );
+}
+
+function CompassRose() {
+  return (
+    <svg className="map-compass" viewBox="0 0 100 100" fill="none" stroke="currentColor" aria-hidden>
+      <circle cx="50" cy="50" r="34" strokeWidth="2" />
+      <circle cx="50" cy="50" r="4" fill="currentColor" />
+      <path d="M50 8 L56 44 L50 50 L44 44 Z" fill="currentColor" stroke="none" />
+      <path d="M50 92 L56 56 L50 50 L44 56 Z" strokeWidth="1.5" />
+      <path d="M8 50 L44 44 L50 50 L44 56 Z" strokeWidth="1.5" />
+      <path d="M92 50 L56 44 L50 50 L56 56 Z" strokeWidth="1.5" />
+      <text x="50" y="6" textAnchor="middle" fontSize="10" fill="currentColor" stroke="none" fontFamily="serif">N</text>
+    </svg>
   );
 }
 

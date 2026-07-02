@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useGameStore } from '../app/store';
+import { sfx } from '../app/sound';
 import { WordWebGame } from '../modes/WordWebGame';
 import { HiveGame } from '../modes/HiveGame';
 import { TwistleGame } from '../modes/TwistleGame';
@@ -39,6 +40,7 @@ export default function PlayPage() {
 function DefeatScreen() {
   const [, navigate] = useLocation();
   const clearOutcome = useGameStore((s) => s.clearOutcome);
+  useEffect(() => sfx.defeat(), []);
   return (
     <div className="bg-level bg-level--3">
       <div className="page" style={{ textAlign: 'center', paddingTop: '18vh' }}>

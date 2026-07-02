@@ -5,6 +5,7 @@ export default function HomePage() {
   const [, navigate] = useLocation();
   const save = useGameStore((s) => s.save);
   const startNewRun = useGameStore((s) => s.startNewRun);
+  const toggleSound = useGameStore((s) => s.toggleSound);
   const run = save.activeRun;
 
   return (
@@ -43,6 +44,14 @@ export default function HomePage() {
             {save.runHistory.filter((r) => r.outcome === 'victory').length} victorious
           </p>
         )}
+
+        <button
+          className="btn"
+          style={{ marginTop: '1.5rem', minHeight: 36, padding: '0.25rem 0.9rem', fontSize: 'var(--text-sm)', opacity: 0.8 }}
+          onClick={toggleSound}
+        >
+          {save.settings.soundEnabled ? '♪ Sound on' : '♪ Sound off'}
+        </button>
       </div>
     </div>
   );

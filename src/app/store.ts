@@ -47,6 +47,7 @@ interface GameStore {
   useGlyphInGame: (glyphId: string, mode: GameMode) => { action: string; value: number } | { error: string };
   /** Equip up to PERK_SLOTS unlocked perks; takes effect on the next run. */
   setPerkLoadout: (perkIds: string[]) => void;
+  toggleSound: () => void;
   /** The active node was won; fold results into the run and roll rewards. */
   finishNode: (input: { mode: GameMode; puzzleId: string; baseScore: number; wrongAttempts: number; durationMs: number }) => void;
   /** The active node was lost outright (out of guesses etc.) — costs 1 MP. */
@@ -256,6 +257,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       .filter((id) => save.unlockedPerkIds.includes(id) && PERKS.some((p) => p.id === id))
       .slice(0, PERK_SLOTS);
     save.activePerkLoadout = valid;
+    mutate(set, save);
+  },
+
+  toggleSound: () => {
+    const save = { ...get().save };
+    save.settings = { ...save.settings, soundEnabled: !save.settings.soundEnabled };
     mutate(set, save);
   },
 
