@@ -186,6 +186,7 @@ export interface NodeResult {
   nodeId: string;
   mode: GameMode;
   puzzleId: string;
+  isBoss: boolean;
   won: boolean;
   score: number;
   wrongAttempts: number;
@@ -198,6 +199,10 @@ export interface SaveFile {
   version: 1;
   profileName: string;
   activeRun: RunState | null;
+  /** Node results for the active run (folded into a RunRecord when it ends). */
+  activeRunResults: NodeResult[];
+  /** Glyph ids earned during the active run, for the chronicle record. */
+  activeRunGlyphs: string[];
   runHistory: RunRecord[];
   unlockedPerkIds: string[];
   activePerkLoadout: string[]; // max PERK_SLOTS

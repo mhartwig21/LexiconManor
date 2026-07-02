@@ -3,6 +3,7 @@ export * from './rng';
 export * from './scoring';
 export * from './effects';
 export * from './run';
+export * from './map';
 export * from './word-web';
 export * from './hive';
 export * from './twistle';

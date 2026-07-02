@@ -401,7 +401,7 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 describe('achievements and stats', () => {
   it('unlocks achievements from lifetime totals and maps them to perks', () => {
     const results = Array.from({ length: 5 }, (_, i) => ({
-      nodeId: `n${i}`, mode: 'word-web' as const, puzzleId: `p${i}`,
+      nodeId: `n${i}`, mode: 'word-web' as const, puzzleId: `p${i}`, isBoss: false,
       won: true, score: 300, wrongAttempts: 0, durationMs: 1000, level: 1,
     }));
     const totals = computeLifetimeTotals([], results);
@@ -416,7 +416,7 @@ describe('achievements and stats', () => {
   it('computes chronicle stats with streaks and per-mode aggregates', () => {
     const history: RunRecord[] = [
       record({ runId: 'a', outcome: 'defeat', endedAt: 1000, nodeResults: [
-        { nodeId: 'n', mode: 'hive', puzzleId: 'p', won: true, score: 500, wrongAttempts: 1, durationMs: 5000, level: 1 },
+        { nodeId: 'n', mode: 'hive', puzzleId: 'p', isBoss: false, won: true, score: 500, wrongAttempts: 1, durationMs: 5000, level: 1 },
       ]}),
       record({ runId: 'b', outcome: 'victory', endedAt: 2000, totalScore: 3000 }),
       record({ runId: 'c', outcome: 'victory', endedAt: 3000 }),

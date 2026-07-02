@@ -28,7 +28,7 @@ export function computeLifetimeTotals(history: RunRecord[], currentRunResults: N
     nodesCompleted: allResults.filter((r) => r.won).length,
     bossesDefeated:
       history.reduce((s, r) => s + r.bossesDefeated, 0) +
-      currentRunResults.filter((r) => r.won && r.mode === 'forgotten-word').length,
+      currentRunResults.filter((r) => r.won && r.isBoss).length,
     perfectClears,
     runsCompleted: history.filter((r) => r.outcome === 'victory').length,
     winsByMode,
