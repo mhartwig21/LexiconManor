@@ -294,8 +294,8 @@ describe('run lifecycle', () => {
 
   it('applies perks at run start', () => {
     const run = startRun({ runId: 'r1', seed: 1, now: 0, activePerkIds: ['mind-guardian', 'expanding-mind'] });
-    expect(run.maxMindPoints).toBe(4);
-    expect(run.mindPoints).toBe(4); // 3 + 1 guardian + 1 boost, capped at max 4
+    expect(run.maxMindPoints).toBe(5); // 3 + 1 guardian + 1 expanding
+    expect(run.mindPoints).toBe(4); // 3 + 1 guardian (expanding lifts only the ceiling)
   });
 
   it('shields absorb losses before mind points', () => {

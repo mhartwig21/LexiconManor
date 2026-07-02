@@ -586,6 +586,77 @@ h3 {
 }
 
 /* --------------------------------------------------------------------------
+   Glyph tray & Sanctum
+   -------------------------------------------------------------------------- */
+
+.glyph-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0 0 0.8rem;
+}
+
+.glyph-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 36px;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--golden-dim);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--parchment);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+.glyph-chip:active { transform: scale(0.95); }
+.glyph-chip--dim { opacity: 0.35; cursor: not-allowed; }
+.glyph-chip__icon { font-size: 0.9rem; }
+.glyph-chip--common { border-color: var(--golden-dim); }
+.glyph-chip--uncommon { border-color: var(--success); }
+.glyph-chip--rare { border-color: var(--info); }
+.glyph-chip--epic { border-color: var(--tier-purple); box-shadow: 0 0 8px rgba(180, 120, 220, 0.35); }
+.glyph-chip--legendary { border-color: var(--golden-bright); box-shadow: 0 0 10px rgba(240, 200, 90, 0.5); }
+
+.glyph-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--golden-dim);
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.perk-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(217, 179, 66, 0.12);
+}
+.perk-row:last-child { border-bottom: none; }
+.perk-row--locked { opacity: 0.55; }
+
+.rarity-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  vertical-align: middle;
+}
+.rarity-tag--common { color: var(--parchment-dark); }
+.rarity-tag--uncommon { color: var(--success); }
+.rarity-tag--rare { color: var(--info); }
+.rarity-tag--epic { color: var(--tier-purple); }
+.rarity-tag--legendary { color: var(--golden-bright); }
+
+/* --------------------------------------------------------------------------
    Modal
    -------------------------------------------------------------------------- */
 

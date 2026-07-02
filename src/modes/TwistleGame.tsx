@@ -3,7 +3,8 @@ import { useLocation } from 'wouter';
 import { useGameStore } from '../app/store';
 import { nodeSeed, selectTwistle } from '../app/content';
 import { scoreTwistle } from '../engine/scoring';
-import { CENTER_INDEX, GRID_SIZE, startTwistle, submitTwistleWord } from '../engine/twistle';
+import { CENTER_INDEX, GRID_SIZE, solveTwistle, startTwistle, submitTwistleWord } from '../engine/twistle';
+import { GlyphTray } from '../components/GlyphTray';
 import type { MapNode } from '../engine/map';
 import type { RunState } from '../engine/types';
 import { RunHeader } from '../components/RunHeader';
@@ -42,6 +43,36 @@ export function TwistleGame({ node, run }: { node: MapNode; run: RunState }) {
 
   const word = path.map((i) => puzzle.grid[i]).join('');
 
+  const finishWith = (baseScore: number, wrongAttempts: number) => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    markPuzzleSeen('twistle', puzzle.id);
+    finishNode({
+      mode: 'twistle',
+      puzzleId: puzzle.id,
+      baseScore,
+      wrongAttempts,
+      durationMs: Date.now() - startedAt.current,
+    });
+    navigate('/map');
+  };
+
+  const onGlyphAction = (action: string) => {
+    if (action === 'reveal_hint') {
+      const unfound = puzzle.targetWords.find((w) => !state.foundWords.includes(w));
+      if (unfound) setFlash({ kind: 'good', text: `Seek: ${unfound}` });
+    } else if (action === 'instant_solve') {
+      const solved = solveTwistle(puzzle, state);
+      setState(solved);
+      finishWith(
+        scoreTwistle({ wordsFound: solved.foundWords.length, wrongAttempts: state.wrongAttempts, durationMs: Date.now() - startedAt.current }),
+        state.wrongAttempts,
+      );
+    } else if (action === 'skip') {
+      finishWith(50, state.wrongAttempts);
+    }
+  };
+
   const tap = (index: number) => {
     setFlash(null);
     setPath((p) => {
@@ -60,21 +91,11 @@ export function TwistleGame({ node, run }: { node: MapNode; run: RunState }) {
 
     if (result.kind === 'valid') {
       setFlash({ kind: 'good', text: `${result.word} ✓ (${next.foundWords.length}/${puzzle.targetCount})` });
-      if (result.won && !finishedRef.current) {
-        finishedRef.current = true;
-        markPuzzleSeen('twistle', puzzle.id);
-        finishNode({
-          mode: 'twistle',
-          puzzleId: puzzle.id,
-          baseScore: scoreTwistle({
-            wordsFound: next.foundWords.length,
-            wrongAttempts: next.wrongAttempts,
-            durationMs: Date.now() - startedAt.current,
-          }),
-          wrongAttempts: next.wrongAttempts,
-          durationMs: Date.now() - startedAt.current,
-        });
-        navigate('/map');
+      if (result.won) {
+        finishWith(
+          scoreTwistle({ wordsFound: next.foundWords.length, wrongAttempts: next.wrongAttempts, durationMs: Date.now() - startedAt.current }),
+          next.wrongAttempts,
+        );
       }
       return;
     }
@@ -108,6 +129,7 @@ export function TwistleGame({ node, run }: { node: MapNode; run: RunState }) {
             </>
           )}
         </p>
+        <GlyphTray mode="twistle" onPuzzleAction={onGlyphAction} />
 
         <div className={`twistle-grid${shaking ? ' shake' : ''}`}>
           {puzzle.grid.map((letter, i) => {

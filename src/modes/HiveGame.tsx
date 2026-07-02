@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useGameStore } from '../app/store';
 import { nodeSeed, selectHive } from '../app/content';
@@ -6,6 +6,7 @@ import { scoreHive } from '../engine/scoring';
 import type { MapNode } from '../engine/map';
 import type { RunState } from '../engine/types';
 import { RunHeader } from '../components/RunHeader';
+import { GlyphTray } from '../components/GlyphTray';
 import { HiveCore } from './HiveCore';
 
 export function HiveGame({ node, run }: { node: MapNode; run: RunState }) {
@@ -17,6 +18,18 @@ export function HiveGame({ node, run }: { node: MapNode; run: RunState }) {
   const spendMindPoint = useGameStore((s) => s.spendMindPoint);
   const leaveNode = useGameStore((s) => s.leaveNode);
   const startedAt = useRef(Date.now());
+  const [hintSignal, setHintSignal] = useState(0);
+  const [solveSignal, setSolveSignal] = useState(0);
+  const skippedRef = useRef(false);
+
+  const onGlyphAction = (action: string) => {
+    if (action === 'reveal_hint') setHintSignal((n) => n + 1);
+    else if (action === 'instant_solve') setSolveSignal((n) => n + 1);
+    else if (action === 'skip') {
+      skippedRef.current = true;
+      setSolveSignal((n) => n + 1);
+    }
+  };
 
   const puzzle = useMemo(() => {
     const p = selectHive({
@@ -42,10 +55,13 @@ export function HiveGame({ node, run }: { node: MapNode; run: RunState }) {
           False words feed the entropy; faded letters can be restored for a mind point.
         </p>
 
+        <GlyphTray mode="hive" onPuzzleAction={onGlyphAction} />
         <HiveCore
           puzzle={puzzle}
           seed={nodeSeed(run.seed, node.id + '-fade')}
           entropyImmune={entropyImmune}
+          hintSignal={hintSignal}
+          solveSignal={solveSignal}
           onRestoreLetter={spendMindPoint}
           onFinish={({ won, state, wordScores }) => {
             markPuzzleSeen('hive', puzzle.id);
@@ -53,7 +69,7 @@ export function HiveGame({ node, run }: { node: MapNode; run: RunState }) {
               finishNode({
                 mode: 'hive',
                 puzzleId: puzzle.id,
-                baseScore: scoreHive({ wordScores, entropy: state.entropy }),
+                baseScore: skippedRef.current ? 50 : scoreHive({ wordScores, entropy: state.entropy }),
                 wrongAttempts: state.entropy,
                 durationMs: Date.now() - startedAt.current,
               });

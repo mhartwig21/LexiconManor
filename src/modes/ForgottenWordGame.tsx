@@ -5,11 +5,13 @@ import { nodeSeed, selectForgottenWord, selectHive } from '../app/content';
 import { scoreForgottenWord } from '../engine/scoring';
 import {
   definitionForLevel,
+  revealClueByGlyph,
   startForgottenWord,
   submitGuess,
   unlockClue,
   type ClueId,
 } from '../engine/forgotten-word';
+import { GlyphTray } from '../components/GlyphTray';
 import type { MapNode } from '../engine/map';
 import type { RunState } from '../engine/types';
 import { RunHeader } from '../components/RunHeader';
@@ -44,6 +46,40 @@ export function ForgottenWordGame({ node, run }: { node: MapNode; run: RunState 
   const [flash, setFlash] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
   const [activeTrial, setActiveTrial] = useState<ClueId | null>(null);
+  const [trialBonusTime, setTrialBonusTime] = useState(0);
+
+  const openTrial = (clue: ClueId) => {
+    setTrialBonusTime(0); // bonus time never carries between trials
+    setActiveTrial(clue);
+  };
+
+  const finishWith = (baseScore: number, wrongAttempts: number) => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    markPuzzleSeen('forgotten-word', puzzle.id);
+    finishNode({
+      mode: 'forgotten-word',
+      puzzleId: puzzle.id,
+      baseScore,
+      wrongAttempts,
+      durationMs: Date.now() - startedAt.current,
+    });
+    navigate('/map');
+  };
+
+  const onGlyphAction = (action: string, value: number) => {
+    if (action === 'reveal_hint') {
+      setState((s) => revealClueByGlyph(s));
+      setFlash('A clue unseals itself.');
+    } else if (action === 'extend_time') {
+      setTrialBonusTime((t) => t + value);
+    } else if (action === 'instant_solve') {
+      setFlash(`The word returns: ${puzzle.word}.`);
+      finishWith(scoreForgottenWord({ hintsUsed: state.hintsUsed, wrongGuesses: state.guesses.length }), state.guesses.length);
+    } else if (action === 'skip') {
+      finishWith(50, state.guesses.length);
+    }
+  };
 
   const submit = () => {
     if (finishedRef.current || !guess.trim()) return;
@@ -52,16 +88,10 @@ export function ForgottenWordGame({ node, run }: { node: MapNode; run: RunState 
     setGuess('');
 
     if (result.kind === 'correct') {
-      finishedRef.current = true;
-      markPuzzleSeen('forgotten-word', puzzle.id);
-      finishNode({
-        mode: 'forgotten-word',
-        puzzleId: puzzle.id,
-        baseScore: scoreForgottenWord({ hintsUsed: next.hintsUsed, wrongGuesses: next.guesses.length - 1 }),
-        wrongAttempts: next.guesses.length - 1,
-        durationMs: Date.now() - startedAt.current,
-      });
-      navigate('/map');
+      finishWith(
+        scoreForgottenWord({ hintsUsed: next.hintsUsed, wrongGuesses: next.guesses.length - 1 }),
+        next.guesses.length - 1,
+      );
       return;
     }
     if (result.kind === 'wrong') {
@@ -100,6 +130,7 @@ export function ForgottenWordGame({ node, run }: { node: MapNode; run: RunState 
     <div className={`bg-level bg-level--${Math.min(run.level, 3)}`}>
       <div className="page">
         <RunHeader title="The Forgotten Word" />
+        <GlyphTray mode="forgotten-word" canExtendTime={activeTrial !== null} onPuzzleAction={onGlyphAction} />
         <div className="card pop-in" style={{ textAlign: 'center', marginBottom: '1rem' }}>
           <div style={{ fontSize: 'var(--text-xs)', letterSpacing: '0.15em', opacity: 0.7, textTransform: 'uppercase' }}>
             A word has been forgotten
@@ -118,13 +149,13 @@ export function ForgottenWordGame({ node, run }: { node: MapNode; run: RunState 
             label="Etymology"
             unlocked={state.unlockedClues.includes('etymology')}
             text={puzzle.etymology}
-            onTrial={() => setActiveTrial('etymology')}
+            onTrial={() => openTrial('etymology')}
           />
           <ClueRow
             label="Usage"
             unlocked={state.unlockedClues.includes('usage')}
             text={puzzle.usage}
-            onTrial={() => setActiveTrial('usage')}
+            onTrial={() => openTrial('usage')}
           />
         </div>
 
@@ -177,6 +208,7 @@ export function ForgottenWordGame({ node, run }: { node: MapNode; run: RunState 
                 seed={nodeSeed(run.seed, `${node.id}-trialfade`)}
                 thresholdOverride={TRIAL_TARGET[activeTrial]}
                 timerSeconds={TRIAL_SECONDS}
+                bonusTime={trialBonusTime}
                 entropyEnabled={false}
                 compact
                 onFinish={({ won }) => {

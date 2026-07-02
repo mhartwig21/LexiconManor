@@ -19,11 +19,15 @@ export function startRun(opts: {
   let maxMind = STARTING_MIND_POINTS;
   for (const id of opts.activePerkIds) {
     const perk = perkById(id);
-    if (perk.effect.type === 'bonus_starting_mind') mind += perk.effect.value;
-    if (perk.effect.type === 'max_mind_boost') {
-      maxMind += perk.effect.value;
+    // bonus_starting_mind lifts the run's ceiling too — otherwise the
+    // bonus would be clamped away and the perk would do nothing.
+    if (perk.effect.type === 'bonus_starting_mind') {
       mind += perk.effect.value;
+      maxMind += perk.effect.value;
     }
+    // max_mind_boost raises only the ceiling: more room for boss
+    // rewards and healing glyphs, but you still start at base.
+    if (perk.effect.type === 'max_mind_boost') maxMind += perk.effect.value;
   }
   return {
     runId: opts.runId,

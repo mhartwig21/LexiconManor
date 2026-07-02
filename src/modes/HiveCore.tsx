@@ -23,6 +23,9 @@ export function HiveCore({
   entropyEnabled = true,
   entropyImmune = false,
   compact = false,
+  hintSignal = 0,
+  solveSignal = 0,
+  bonusTime = 0,
   onRestoreLetter,
   onFinish,
 }: {
@@ -33,6 +36,12 @@ export function HiveCore({
   entropyEnabled?: boolean;
   entropyImmune?: boolean;
   compact?: boolean;
+  /** Increment to reveal one unfound word (glyph reveal_hint). */
+  hintSignal?: number;
+  /** Increment to solve instantly (glyph instant_solve). */
+  solveSignal?: number;
+  /** Cumulative extra seconds granted (glyph time_extension). */
+  bonusTime?: number;
   /** Return true if a mind point was successfully spent. */
   onRestoreLetter?: () => boolean;
   onFinish: (result: HiveFinish) => void;
@@ -74,6 +83,39 @@ export function HiveCore({
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timerSeconds]);
+
+  // External glyph signals.
+  useEffect(() => {
+    if (hintSignal === 0) return;
+    setState((cur) => {
+      const unfound = puzzle.validWords.filter((w) => !cur.foundWords.includes(w));
+      if (unfound.length > 0) {
+        const w = pick(rngRef.current, unfound);
+        setFlash({ kind: 'good', text: `A whisper: ${w[0]}${'·'.repeat(w.length - 2)}${w[w.length - 1]} (${w.length})` });
+      }
+      return cur;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hintSignal]);
+
+  useEffect(() => {
+    if (solveSignal === 0) return;
+    setState((cur) => {
+      const solved = { ...cur, score: Math.max(cur.score, cur.pointThreshold), status: 'won' as const };
+      finish(true, 'threshold', solved);
+      return solved;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solveSignal]);
+
+  const grantedRef = useRef(0);
+  useEffect(() => {
+    if (bonusTime > grantedRef.current && timerSeconds) {
+      setTimeLeft((s) => s + (bonusTime - grantedRef.current));
+      grantedRef.current = bonusTime;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bonusTime]);
 
   const letters = useMemo(() => [puzzle.center, ...puzzle.outer], [puzzle]);
 

@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage';
 import MapPage from './pages/MapPage';
 import PlayPage from './pages/PlayPage';
 import ChroniclesPage from './pages/ChroniclesPage';
+import SanctumPage from './pages/SanctumPage';
 import { useGameStore } from './app/store';
 
 /**
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/map" component={MapPage} />
         <Route path="/play" component={PlayPage} />
         <Route path="/chronicles" component={ChroniclesPage} />
+        <Route path="/sanctum" component={SanctumPage} />
         <Route>
           <NotFound />
         </Route>

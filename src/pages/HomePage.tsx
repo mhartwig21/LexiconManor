@@ -32,6 +32,9 @@ export default function HomePage() {
           <button className="btn" onClick={() => navigate('/chronicles')}>
             Chronicles
           </button>
+          <button className="btn" onClick={() => navigate('/sanctum')}>
+            Sanctum
+          </button>
         </div>
 
         {save.runHistory.length > 0 && (

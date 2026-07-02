@@ -110,6 +110,41 @@ describe('game store', () => {
     expect(store().save.runHistory.at(-1)!.outcome).toBe('abandoned');
   });
 
+  it('glyph use: heal persists, puzzle actions return to the caller, mode rules enforced', () => {
+    const store = useGameStore.getState;
+    store().startNewRun();
+    let save = { ...store().save };
+    save.activeRun = { ...save.activeRun!, mindPoints: 1, glyphInventory: ['renewal', 'momentum', 'phase'] };
+    useGameStore.setState({ save });
+
+    // heal_mind applies at the run level and consumes the glyph
+    const heal = store().useGlyphInGame('renewal', 'word-web');
+    expect(heal).toEqual({ action: 'none', value: 2 });
+    expect(store().save.activeRun!.mindPoints).toBe(3);
+    expect(store().save.activeRun!.glyphInventory).not.toContain('renewal');
+
+    // mode restriction: momentum is hive/twistle only
+    expect(store().useGlyphInGame('momentum', 'word-web')).toEqual({ error: 'wrong-mode' });
+    expect(store().save.activeRun!.glyphInventory).toContain('momentum');
+    const imm = store().useGlyphInGame('momentum', 'hive');
+    expect(imm).toEqual({ action: 'none', value: 2 });
+    expect(store().save.activeRun!.entropyImmunityCharges).toBe(2);
+
+    // skip comes back as a puzzle action for the mode component
+    expect(store().useGlyphInGame('phase', 'twistle')).toEqual({ action: 'skip', value: 1 });
+  });
+
+  it('perk loadout: only unlocked perks, capped at slots', () => {
+    const store = useGameStore.getState;
+    useGameStore.setState({
+      save: { ...store().save, unlockedPerkIds: ['mind-guardian', 'iron-focus', 'lexical-proximity', 'expanding-mind'] },
+    });
+    store().setPerkLoadout(['mind-guardian', 'iron-focus', 'lexical-proximity', 'expanding-mind']);
+    expect(store().save.activePerkLoadout).toHaveLength(3);
+    store().setPerkLoadout(['mind-guardian', 'not-a-perk']);
+    expect(store().save.activePerkLoadout).toEqual(['mind-guardian']);
+  });
+
   it('persists across store reloads via localStorage', async () => {
     const store = useGameStore.getState;
     store().startNewRun();

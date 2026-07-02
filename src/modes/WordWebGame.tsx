@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useGameStore } from '../app/store';
 import { nodeSeed, selectWordWeb } from '../app/content';
-import { startWordWeb, submitGroup } from '../engine/word-web';
+import { solveWordWeb, startWordWeb, submitGroup } from '../engine/word-web';
+import { GlyphTray } from '../components/GlyphTray';
 import { scoreWordWeb } from '../engine/scoring';
 import { createRng, shuffle } from '../engine/rng';
 import type { MapNode } from '../engine/map';
@@ -32,9 +33,35 @@ export function WordWebGame({ node, run }: { node: MapNode; run: RunState }) {
   const [state, setState] = useState(() => startWordWeb(puzzle));
   const [selection, setSelection] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<'one-away' | 'wrong' | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
   const startedAt = useRef(Date.now());
   const finishedRef = useRef(false);
+
+  const finishWith = (baseScore: number, wrongAttempts: number) => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    finishNode({
+      mode: 'word-web',
+      puzzleId: puzzle.id,
+      baseScore,
+      wrongAttempts,
+      durationMs: Date.now() - startedAt.current,
+    });
+    navigate('/map');
+  };
+
+  const onGlyphAction = (action: string) => {
+    if (action === 'reveal_hint') {
+      const unsolved = puzzle.groups.filter((g) => !state.solvedTiers.includes(g.tier));
+      if (unsolved.length > 0) setHint(`One thread binds: “${unsolved[0]!.theme}”`);
+    } else if (action === 'instant_solve') {
+      setState(solveWordWeb(puzzle, state));
+      finishWith(scoreWordWeb({ wrongAttempts: state.wrongAttempts }), state.wrongAttempts);
+    } else if (action === 'skip') {
+      finishWith(50, state.wrongAttempts);
+    }
+  };
 
   useEffect(() => {
     markPuzzleSeen('word-web', puzzle.id);
@@ -61,17 +88,7 @@ export function WordWebGame({ node, run }: { node: MapNode; run: RunState }) {
 
     if (result.kind === 'solved') {
       setFeedback(null);
-      if (result.won && !finishedRef.current) {
-        finishedRef.current = true;
-        finishNode({
-          mode: 'word-web',
-          puzzleId: puzzle.id,
-          baseScore: scoreWordWeb({ wrongAttempts: next.wrongAttempts }),
-          wrongAttempts: next.wrongAttempts,
-          durationMs: Date.now() - startedAt.current,
-        });
-        navigate('/map');
-      }
+      if (result.won) finishWith(scoreWordWeb({ wrongAttempts: next.wrongAttempts }), next.wrongAttempts);
       return;
     }
     if (result.kind === 'one-away' || result.kind === 'wrong') {
@@ -91,6 +108,12 @@ export function WordWebGame({ node, run }: { node: MapNode; run: RunState }) {
         <p style={{ fontSize: 'var(--text-sm)', opacity: 0.8, marginTop: 0 }}>
           Weave the sixteen words into four threads of four.
         </p>
+        <GlyphTray mode="word-web" onPuzzleAction={onGlyphAction} />
+        {hint && (
+          <p className="rise-fade" style={{ textAlign: 'center', color: 'var(--info)', fontSize: 'var(--text-sm)' }}>
+            {hint}
+          </p>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.5rem' }}>
           {solvedGroups.map((g) => (

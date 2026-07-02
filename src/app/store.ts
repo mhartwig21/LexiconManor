@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import type { GameMode, NodeResult, SaveFile } from '../engine/types';
 import { generateLevelMap, type LevelMap, type MapNode } from '../engine/map';
 import { completeNode, loseMindPoints, startRun, toRunRecord } from '../engine/run';
-import { addGlyph, rollGlyphDrop } from '../engine/effects';
+import { addGlyph, rollGlyphDrop, useGlyph, PERKS } from '../engine/effects';
+import { PERK_SLOTS } from '../engine/types';
 import { checkAchievements, computeLifetimeTotals, perksUnlockedBy } from '../engine/achievements';
 import { createRng } from '../engine/rng';
 import { IMPLEMENTED_MODES } from './content';
@@ -38,6 +39,14 @@ interface GameStore {
   applyWrongAttempt: () => void;
   /** Voluntary mind-point spend (e.g. restoring a faded Hive letter). Returns false if unaffordable. */
   spendMindPoint: () => boolean;
+  /**
+   * Consume a glyph mid-puzzle. Run-level effects (heal/shield/multiplier/
+   * immunity) apply here; puzzle-level effects come back as an action the
+   * active mode component must perform.
+   */
+  useGlyphInGame: (glyphId: string, mode: GameMode) => { action: string; value: number } | { error: string };
+  /** Equip up to PERK_SLOTS unlocked perks; takes effect on the next run. */
+  setPerkLoadout: (perkIds: string[]) => void;
   /** The active node was won; fold results into the run and roll rewards. */
   finishNode: (input: { mode: GameMode; puzzleId: string; baseScore: number; wrongAttempts: number; durationMs: number }) => void;
   /** The active node was lost outright (out of guesses etc.) — costs 1 MP. */
@@ -229,6 +238,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
         achievementsEarned: [], perksUnlocked: [], leveledUp: false, runWon: false,
       },
     });
+  },
+
+  useGlyphInGame: (glyphId, mode) => {
+    const save = { ...get().save };
+    if (!save.activeRun || save.activeRun.status !== 'active') return { error: 'no-run' };
+    const result = useGlyph(save.activeRun, glyphId, mode);
+    if (result.error) return { error: result.error };
+    save.activeRun = result.run;
+    mutate(set, save);
+    return { action: result.puzzleAction, value: result.actionValue };
+  },
+
+  setPerkLoadout: (perkIds) => {
+    const save = { ...get().save };
+    const valid = perkIds
+      .filter((id) => save.unlockedPerkIds.includes(id) && PERKS.some((p) => p.id === id))
+      .slice(0, PERK_SLOTS);
+    save.activePerkLoadout = valid;
+    mutate(set, save);
   },
 
   markPuzzleSeen: (mode, puzzleId) => {
