@@ -728,84 +728,6 @@
       ]
     },
     {
-      "id": "bramble.recap.dry-vestibule",
-      "trigger": "morning",
-      "priority": 712,
-      "once": true,
-      "conditions": [
-        {
-          "kind": "event",
-          "event": "day-ended",
-          "where": {
-            "cause": "steps-exhausted"
-          }
-        },
-        {
-          "kind": "event",
-          "event": "room-abandoned",
-          "where": {
-            "kind": "anagram"
-          }
-        }
-      ],
-      "lines": [
-        {
-          "speaker": "bramble",
-          "portrait": "amused",
-          "text": "The Vestibule scrambled you out of the light, did it? Cheeky little room. It once turned 'welcome mat' into something unrepeatable and wouldn't turn it back for a week."
-        },
-        {
-          "speaker": "bramble",
-          "portrait": "warm",
-          "text": "Letters unscramble kinder after breakfast, pet. It's practically science."
-        },
-        {
-          "speaker": "bramble",
-          "portrait": "neutral",
-          "text": "Try saying the jumble aloud on your way past. Half those scrambles are just words standing on their heads for attention."
-        }
-      ]
-    },
-    {
-      "id": "bramble.recap.dry-staircase",
-      "trigger": "morning",
-      "priority": 712,
-      "once": true,
-      "conditions": [
-        {
-          "kind": "event",
-          "event": "day-ended",
-          "where": {
-            "cause": "steps-exhausted"
-          }
-        },
-        {
-          "kind": "event",
-          "event": "room-abandoned",
-          "where": {
-            "kind": "ladder"
-          }
-        }
-      ],
-      "lines": [
-        {
-          "speaker": "bramble",
-          "portrait": "warm",
-          "text": "Stuck on the Staircase till dusk, one rung shy? Word ladders are like real ones, dear — never look at the top, only the next step."
-        },
-        {
-          "speaker": "bramble",
-          "portrait": "amused",
-          "text": "The master fell off that staircase for three days once. CORD to WARM, I think it was. He came down for meals and dignity, in that order."
-        },
-        {
-          "speaker": "bramble",
-          "portrait": "warm",
-          "text": "Leave your pride on the landing and take the rungs one letter at a time. The Staircase respects a steady climber more than a clever one."
-        }
-      ]
-    },
-    {
       "id": "bramble.recap.dry-darkroom",
       "trigger": "morning",
       "priority": 712,
@@ -880,84 +802,6 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "And if a clue seems to be about towels, it is never about towels. That closet thinks itself very deep."
-        }
-      ]
-    },
-    {
-      "id": "bramble.recap.dry-music",
-      "trigger": "morning",
-      "priority": 712,
-      "once": true,
-      "conditions": [
-        {
-          "kind": "event",
-          "event": "day-ended",
-          "where": {
-            "cause": "steps-exhausted"
-          }
-        },
-        {
-          "kind": "event",
-          "event": "room-abandoned",
-          "where": {
-            "kind": "rhyme"
-          }
-        }
-      ],
-      "lines": [
-        {
-          "speaker": "bramble",
-          "portrait": "warm",
-          "text": "The Music Room sang you out of steps, I hear. Rhymes dry up when you chase them, dear — they're cats that way. Look busy with your tea and one will land in your lap."
-        },
-        {
-          "speaker": "bramble",
-          "portrait": "amused",
-          "text": "The piano in there still won't rhyme anything with 'orange.' It's been sulking about it since before my time."
-        },
-        {
-          "speaker": "bramble",
-          "portrait": "warm",
-          "text": "Hum on your way up, pet. A primed ear rhymes twice as fast — choir trick. Housekeepers know a few."
-        }
-      ]
-    },
-    {
-      "id": "bramble.recap.dry-pantry",
-      "trigger": "morning",
-      "priority": 712,
-      "once": true,
-      "conditions": [
-        {
-          "kind": "event",
-          "event": "day-ended",
-          "where": {
-            "cause": "steps-exhausted"
-          }
-        },
-        {
-          "kind": "event",
-          "event": "room-abandoned",
-          "where": {
-            "kind": "category"
-          }
-        }
-      ],
-      "lines": [
-        {
-          "speaker": "bramble",
-          "portrait": "amused",
-          "text": "My Pantry outran you last night, did it? Don't be embarrassed — that room counts faster than a greengrocer at closing. It's the only impatient room I keep."
-        },
-        {
-          "speaker": "bramble",
-          "portrait": "warm",
-          "text": "Between us: it softens for anyone who's eaten. Racing a larder on an empty stomach is asking the joke to write itself, pet."
-        },
-        {
-          "speaker": "bramble",
-          "portrait": "neutral",
-          "text": "Go in with a category in your teeth — fruits, say, or things that rhyme with 'jam.' A running start beats a clever one in there."
         }
       ]
     },
@@ -1110,7 +954,7 @@
         {
           "speaker": "bramble",
           "portrait": "neutral",
-          "text": "And if the Pantry challenges you to one of its counting games while you're in there — that's its way of saying hello. Rude little room. My favorite."
+          "text": "And help yourself to whatever keeps you climbing. Warm bread solves more puzzles than pride does — his words, for once, not mine."
         }
       ],
       "summary": "Earned the pantry key. Bramble's highest honor."
@@ -1355,60 +1199,6 @@
       ]
     },
     {
-      "id": "bramble.gen.pantry",
-      "trigger": "morning",
-      "priority": 100,
-      "once": true,
-      "lines": [
-        {
-          "speaker": "bramble",
-          "portrait": "amused",
-          "text": "Hear the Pantry rattling its shelves? It wants someone to play its naming game. Greedy thing — it'd have you list cheeses till Michaelmas if the steps held out."
-        },
-        {
-          "speaker": "bramble",
-          "portrait": "warm",
-          "text": "Humor it now and then, pet. A pantry that feels appreciated keeps the biscuits from going wherever biscuits go in this house."
-        }
-      ]
-    },
-    {
-      "id": "bramble.gen.music",
-      "trigger": "morning",
-      "priority": 100,
-      "once": true,
-      "lines": [
-        {
-          "speaker": "bramble",
-          "portrait": "curious",
-          "text": "The Music Room was humming to itself before dawn. Rhyming weather. If it asks you for a word to finish a verse, give it a good one — it remembers a lazy rhyme for years."
-        },
-        {
-          "speaker": "bramble",
-          "portrait": "amused",
-          "text": "It once held a grudge over 'moon' and 'June' for an entire winter. Standards, that room."
-        }
-      ]
-    },
-    {
-      "id": "bramble.gen.stairwell",
-      "trigger": "morning",
-      "priority": 100,
-      "once": true,
-      "lines": [
-        {
-          "speaker": "bramble",
-          "portrait": "neutral",
-          "text": "The Staircase is in one of its ladder moods — changing one letter of itself per landing. Went up as STAIRS yesterday, came down as STORES. The luggage was confused."
-        },
-        {
-          "speaker": "bramble",
-          "portrait": "warm",
-          "text": "Take it slow if you climb it today. One rung, one letter, no vaulting. Same advice I gave the master; same advice he ignored."
-        }
-      ]
-    },
-    {
       "id": "bramble.gen.darkroom",
       "trigger": "morning",
       "priority": 100,
@@ -1427,25 +1217,135 @@
       ]
     },
     {
-      "id": "bramble.gen.vestibule",
+      "id": "bramble.gen.darkroom-print",
       "trigger": "morning",
       "priority": 100,
       "once": true,
       "lines": [
         {
           "speaker": "bramble",
-          "portrait": "amused",
-          "text": "The Vestibule's rearranged its welcome sign again. This morning it says 'CLEMEOW.' Either it means WELCOME or the cat has learned to spell. Both alarm me."
+          "portrait": "curious",
+          "text": "The Darkroom left a fresh print drying on the line this morning. All in code, naturally. Even its thank-you notes need deciphering."
         },
         {
           "speaker": "bramble",
-          "portrait": "neutral",
-          "text": "If it jumbles a word at you on your way through, jumble one back. It respects the effort and unhands your coat quicker."
+          "portrait": "amused",
+          "text": "I hung it back up unread. Some rooms want their secrets admired, not solved before breakfast."
         },
         {
           "speaker": "bramble",
           "portrait": "warm",
-          "text": "Small room, big heart, terrible spelling. We keep it for the company."
+          "text": "If you visit it today, take your patience and a pencil. It rewards both, in its red-lit way."
+        }
+      ]
+    },
+    {
+      "id": "bramble.gen.linen-fold",
+      "trigger": "morning",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "The Linen Closet re-folded itself overnight. Every sheet squared, every clue tucked where it crosses another. Show-off."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "It left one drawer open, which for that closet is practically shouting. Something in there wants solving today."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Mind you close the drawer after. A closet with its clues hanging out catches a chill, pet."
+        }
+      ]
+    },
+    {
+      "id": "bramble.gen.library-dust",
+      "trigger": "morning",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "I dusted the Library shelves this morning and the books had re-sorted themselves again. Four neat groups, very pleased about it."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "One shelf is always lying, of course. The master called that one his favorite. He would."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "If a spine winks at you, wink back and move along. Sixteen books, four families, one fibber — same as any dinner party."
+        }
+      ]
+    },
+    {
+      "id": "bramble.gen.conservatory-bloom",
+      "trigger": "morning",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "The Conservatory is in full hum today — seven letters on the vine and the bees very opinionated about the middle one."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Spell them something long and they behave for a week. Spell them something rude and I hear about it, so kindly don’t."
+        }
+      ]
+    },
+    {
+      "id": "bramble.gen.gallery-frames",
+      "trigger": "morning",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "The Gallery straightened its own frames in the night. Words winding through the grid like guests who know the house better than I do."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Trace them gently if you go in. That room remembers a careless finger longer than it remembers a masterpiece."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "And no, I don’t know why it hangs its longest word behind the ferns. Artists."
+        }
+      ]
+    },
+    {
+      "id": "bramble.gen.smaller-house",
+      "trigger": "morning",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "The house feels tidier lately, have you noticed? Fewer rooms clamoring for attention, and the ones that stayed standing straighter for it."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "The master used to say a good sentence loses words and gains meaning. I suspect the manor was listening."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Less to sweep, besides. I take my victories where the dust allows."
         }
       ]
     },

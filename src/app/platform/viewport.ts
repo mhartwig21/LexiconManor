@@ -15,7 +15,7 @@
  * typing. The shift is computed here (not per-room CSS) because the shell is
  * position:fixed with page scrolling disabled — Safari's involuntary
  * visual-viewport pan is unreliable inside it, so every room with a real
- * <input> (Sanctum, Study whisper, Pantry, Music Room) gets keyboard
+ * <input> (Sanctum, Study whisper) gets keyboard
  * avoidance from the platform for free. On dismiss `kb-open` drops and the
  * transform rule disappears — layout snaps clean, no dead space.
  *

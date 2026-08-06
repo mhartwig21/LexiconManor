@@ -122,7 +122,7 @@ h3 {
   min-height: 0;
 }
 
-/* Sparse rooms (Pantry, Music Room): the room column's own gap stays capped,
+/* Sparse rooms: the room column's own gap stays capped,
    and auto margins on its first/last blocks center the play surface in the
    thumb zone instead of stranding the CTA a screen away (AAA 6.20 fix).
    Every room view root is a flex column; auto margins collapse to 0 when a

@@ -120,9 +120,7 @@ const CAT_CLASS: Record<PlacedRoom['kind'] | 'puzzle', string> = {
   'parlor': 'bp-cat--parlor', 'utility': 'bp-cat--utility', 'mystery': 'bp-cat--mystery',
   'puzzle': 'bp-cat--puzzle',
   'word-web': 'bp-cat--puzzle', 'hive': 'bp-cat--puzzle', 'twistle': 'bp-cat--puzzle',
-  'forgotten-word': 'bp-cat--puzzle', 'anagram': 'bp-cat--puzzle', 'ladder': 'bp-cat--puzzle',
-  'cipher': 'bp-cat--puzzle', 'crossword': 'bp-cat--puzzle', 'rhyme': 'bp-cat--puzzle',
-  'category': 'bp-cat--puzzle',
+  'forgotten-word': 'bp-cat--puzzle', 'cipher': 'bp-cat--puzzle', 'crossword': 'bp-cat--puzzle',
 };
 
 function categoryOf(room: PlacedRoom): 'puzzle' | 'parlor' | 'utility' | 'mystery' {

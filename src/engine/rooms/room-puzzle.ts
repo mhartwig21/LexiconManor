@@ -11,14 +11,16 @@
  */
 
 export type RoomPuzzleKind =
-  | 'word-web' | 'hive' | 'twistle' | 'forgotten-word'                    // anchors
-  | 'anagram' | 'ladder' | 'cipher' | 'crossword' | 'rhyme' | 'category'; // micro
+  | 'word-web' | 'hive' | 'twistle' | 'forgotten-word'  // anchors
+  | 'cipher' | 'crossword'                              // micro ("fewer but better")
+  | 'sudoku';                                           // playtest round: the Counting House
 
 /** All kinds, in registry order (anchors then micro, alphabetical per batch). */
 export const ROOM_PUZZLE_KINDS: readonly RoomPuzzleKind[] = [
   'forgotten-word', 'hive', 'twistle', 'word-web',
-  'anagram', 'cipher', 'ladder',
-  'category', 'crossword', 'rhyme',
+  'cipher',
+  'crossword',
+  'sudoku',
 ];
 
 export interface RoomContext { tier: 1 | 2 | 3; seed: number; volumeId: string; }

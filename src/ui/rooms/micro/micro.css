@@ -26,8 +26,6 @@
 }
 
 /* One accent per room, spent only on state — never decoration (AAA 1.14). */
-.mic--vestibule { --room-accent: var(--cat-puzzle); }
-.mic--staircase { --room-accent: var(--cat-utility); }
 .mic--darkroom  { --room-accent: var(--cat-mystery); }
 
 .mic__head { text-align: center; }
@@ -134,7 +132,7 @@
   to   { transform: rotateX(0); opacity: 1; }
 }
 
-/* On-screen letter keys (shared by Staircase & Darkroom) — every key ≥44pt
+/* On-screen letter keys (the Darkroom) — every key ≥44pt
    (AAA 6.19; deliberately larger than the NYT keyboards that fail that bar). */
 .mic-keys {
   display: grid;
@@ -160,127 +158,6 @@
 .mic-key:disabled { opacity: 0.4; cursor: default; }
 .mic-key--dim { color: var(--ink-faint); }
 .mic-key--wide { grid-column: span 2; font-size: var(--text-sm); font-weight: 400; }
-
-/* --------------------------------------------------------------------------
-   The Vestibule (Anagram) — AAA §3
-   -------------------------------------------------------------------------- */
-
-/* Answer slots: fixed row, zero layout shift as letters land. */
-.va-slots { display: flex; justify-content: center; gap: 6px; }
-.va-slot {
-  width: clamp(38px, 11vw, 46px);
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid var(--paper-edge);
-  border-radius: var(--radius-card);
-  background: var(--paper-shade);
-  font-weight: 700;
-  font-size: 1.35rem;
-  text-transform: uppercase;
-  color: var(--ink);
-  padding: 0;
-  font-family: var(--font-body);
-  cursor: pointer;
-  transition: transform 90ms ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-.va-slot:active { transform: scale(0.94); }
-.va-slot--empty { background: transparent; }
-.va-slot--locked {
-  background: var(--paper-raised);
-  border-color: var(--room-accent);
-  color: var(--room-accent);
-  cursor: default;
-}
-.va-slot--filled { background: var(--paper-raised); animation: mic-pop 140ms var(--ease-settle); }
-
-/* Letter tray: the mat the scramble sits on. */
-.va-tray { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; min-height: 60px; }
-.va-tile {
-  width: clamp(44px, 12vw, 52px);
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--paper-edge);
-  border-radius: var(--radius-card);
-  background: var(--paper-raised);
-  box-shadow: 0 1.5px 0 var(--paper-edge);
-  font-weight: 700;
-  font-size: 1.45rem;
-  text-transform: uppercase;
-  color: var(--ink);
-  font-family: var(--font-body);
-  cursor: pointer;
-  transition: transform 110ms var(--ease-settle), opacity 110ms ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-.va-tile:active { transform: scale(0.88); }
-.va-tile--used { opacity: 0.25; transform: scale(0.92); pointer-events: none; }
-.va-tray--shuffling .va-tile { opacity: 0; }
-
-.va-reveal { display: flex; justify-content: center; gap: 0.18rem; }
-.va-reveal__ch {
-  display: inline-block;
-  font-family: var(--font-display);
-  font-size: var(--text-display);
-  color: var(--room-accent);
-  animation: mic-dance 520ms ease-in-out both;
-}
-
-/* --------------------------------------------------------------------------
-   The Staircase (Word Ladder) — AAA §3
-   -------------------------------------------------------------------------- */
-
-.st-flight { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.st-step {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-}
-.st-step--dance { animation: mic-dance 520ms ease-in-out both; }
-.st-cell {
-  width: clamp(40px, 11vw, 48px);
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid var(--paper-edge);
-  border-radius: var(--radius-card);
-  background: var(--paper-raised);
-  font-weight: 700;
-  font-size: 1.3rem;
-  text-transform: uppercase;
-  font-family: var(--font-body);
-  color: var(--ink);
-  padding: 0;
-}
-.st-step--target .st-cell { background: transparent; border-style: dashed; color: var(--room-accent); border-color: var(--room-accent); }
-.st-step--past .st-cell { background: var(--paper-shade); color: var(--ink-soft); border-color: var(--paper-shade); }
-.st-step--bought .st-cell { border-color: var(--gilt); color: var(--gilt); }
-.st-step--in { animation: mic-hop 260ms ease both; }
-.st-gap {
-  display: flex;
-  gap: 0.4rem;
-  color: var(--ink-faint);
-  font-size: 0.8rem;
-  letter-spacing: 0.35em;
-  line-height: 1;
-  padding: 0.05rem 0;
-}
-
-/* The editable next rung: selected cell owns the accent. */
-.st-edit .st-cell { cursor: pointer; transition: transform 90ms ease, border-color 90ms ease; }
-.st-edit .st-cell:active { transform: scale(0.94); }
-.st-edit .st-cell--sel {
-  border-color: var(--room-accent);
-  box-shadow: inset 0 -3px 0 var(--room-accent);
-}
-.st-more { color: var(--ink-faint); font-size: var(--text-sm); }
 
 /* --------------------------------------------------------------------------
    The Darkroom (Cipher) — AAA §3
@@ -373,13 +250,8 @@
    -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   .mic-shake, .mic-pop, .mic-toast, .mic-done,
-  .va-slot--filled, .va-reveal__ch,
-  .st-step--in, .st-step--dance,
   .dk-reveal__ch {
     animation: none;
   }
-  .va-tile:active, .va-slot:active, .mic-key:active, .mic-btn:active,
-  .st-edit .st-cell:active { transform: none; }
-  .va-tile--used { transform: none; }
-  .va-tray--shuffling .va-tile { opacity: 1; }
+  .mic-key:active, .mic-btn:active { transform: none; }
 }

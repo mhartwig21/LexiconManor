@@ -41,19 +41,15 @@ const PUZZLE_CARDS: RoomCard[] = [
   { id: 'study', name: 'The Study', category: 'puzzle', puzzleKind: 'forgotten-word',
     doorLayouts: [DEAD_END], tierRange: [2, 3], gemCost: 2, rarity: 'rare' },
 
-  // Micro-rooms (30-90s; A4/A5 land the adapters — cards ship now)
-  { id: 'vestibule', name: 'The Vestibule', category: 'puzzle', puzzleKind: 'anagram',
-    doorLayouts: [CORRIDOR, CROSS], tierRange: [1, 2], gemCost: 0, rarity: 'common' },
-  { id: 'staircase', name: 'The Staircase', category: 'puzzle', puzzleKind: 'ladder',
-    doorLayouts: [CORRIDOR], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
+  // Micro-rooms (30-90s). OWNER CULL round ("fewer but better"): the
+  // Vestibule/Staircase/Music Room/Pantry archetypes are retired; the two
+  // survivors carry the whole micro slot, so both span all three tiers,
+  // stay common/free, and between them cover pass-through layouts (the
+  // Darkroom picks up a corridor so blue micro rooms aren't all dead ends).
   { id: 'darkroom', name: 'The Darkroom', category: 'puzzle', puzzleKind: 'cipher',
-    doorLayouts: [DEAD_END, CORNER], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
+    doorLayouts: [DEAD_END, CORNER, CORRIDOR], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
   { id: 'linen-closet', name: 'The Linen Closet', category: 'puzzle', puzzleKind: 'crossword',
-    doorLayouts: [DEAD_END], tierRange: [1, 2], gemCost: 0, rarity: 'common' },
-  { id: 'music-room', name: 'The Music Room', category: 'puzzle', puzzleKind: 'rhyme',
-    doorLayouts: [CORNER, TEE], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
-  { id: 'pantry', name: 'The Pantry', category: 'puzzle', puzzleKind: 'category',
-    doorLayouts: [CORNER], tierRange: [1, 2], gemCost: 0, rarity: 'common' },
+    doorLayouts: [DEAD_END, CORNER], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -155,12 +151,8 @@ export const CARD_PREVIEWS: Record<string, string> = {
   'gallery': 'Trace words hung in a grid',
   'long-gallery': 'A grand hall of hidden words',
   'study': 'A definition missing its word',
-  'vestibule': 'Letters out of order',
-  'staircase': 'One word becomes another',
   'darkroom': 'A phrase in cipher',
   'linen-closet': 'A crossword folded small',
-  'music-room': 'Rhymes on a stand',
-  'pantry': 'Name the shelf, fill the shelf',
   'kitchen': '+6 steps · +2 per green room drafted after',
   'larder': '+5 steps',
   'boot-room': '+3 steps',
@@ -216,4 +208,4 @@ export const UTILITY_EFFECTS: Record<string, UtilityEffect> = {
 };
 
 /** Day 1, draft #1 — tutorial disguised as RNG (AAA 4.5, slot 1 playable now). */
-export const SCRIPTED_FIRST_DRAFT: readonly string[] = ['library', 'kitchen', 'vestibule'];
+export const SCRIPTED_FIRST_DRAFT: readonly string[] = ['library', 'kitchen', 'darkroom'];

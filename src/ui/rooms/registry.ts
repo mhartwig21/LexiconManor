@@ -29,16 +29,15 @@ import HiveView from './anchor/HiveView';
 import TwistleView from './anchor/TwistleView';
 import WordWebView from './anchor/WordWebView';
 // <<end A3:imports>>
-// <<A4:imports>> micro batch 1 — alphabetical: anagram, cipher, ladder
-import AnagramView from './micro/AnagramView';
+// <<A4:imports>> micro batch 1 — alphabetical: cipher
 import CipherView from './micro/CipherView';
-import LadderView from './micro/LadderView';
 // <<end A4:imports>>
-// <<A5:imports>> micro batch 2 — alphabetical: category, crossword, rhyme
-import CategoryView from './micro/CategoryView';
+// <<A5:imports>> micro batch 2 — alphabetical: crossword
 import CrosswordView from './micro/CrosswordView';
-import RhymeView from './micro/RhymeView';
 // <<end A5:imports>>
+// <<SUDOKU:imports>> playtest round — alphabetical: sudoku
+import SudokuView from './micro/SudokuView';
+// <<end SUDOKU:imports>>
 
 const VIEWS: Partial<Record<RoomPuzzleKind, ComponentType<RoomViewProps>>> = {
   // <<A3:entries>> anchors — alphabetical: forgotten-word, hive, twistle, word-web
@@ -47,16 +46,15 @@ const VIEWS: Partial<Record<RoomPuzzleKind, ComponentType<RoomViewProps>>> = {
   'twistle': TwistleView as unknown as ComponentType<RoomViewProps>,
   'word-web': WordWebView as unknown as ComponentType<RoomViewProps>,
   // <<end A3:entries>>
-  // <<A4:entries>> micro batch 1 — alphabetical: anagram, cipher, ladder
-  'anagram': AnagramView as unknown as ComponentType<RoomViewProps>,
+  // <<A4:entries>> micro batch 1 — alphabetical: cipher
   'cipher': CipherView as unknown as ComponentType<RoomViewProps>,
-  'ladder': LadderView as unknown as ComponentType<RoomViewProps>,
   // <<end A4:entries>>
-  // <<A5:entries>> micro batch 2 — alphabetical: category, crossword, rhyme
-  'category': CategoryView as unknown as ComponentType<RoomViewProps>,
+  // <<A5:entries>> micro batch 2 — alphabetical: crossword
   'crossword': CrosswordView as unknown as ComponentType<RoomViewProps>,
-  'rhyme': RhymeView as unknown as ComponentType<RoomViewProps>,
   // <<end A5:entries>>
+  // <<SUDOKU:entries>> playtest round — alphabetical: sudoku
+  'sudoku': SudokuView as unknown as ComponentType<RoomViewProps>,
+  // <<end SUDOKU:entries>>
 };
 
 /** Undefined until the owning agent lands the view — RoomHost shows a fallback. */

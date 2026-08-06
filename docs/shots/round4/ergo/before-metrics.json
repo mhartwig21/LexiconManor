@@ -1,0 +1,2119 @@
+{
+  "phase": "before",
+  "safeAreaEmulated": true,
+  "viewports": {
+    "390x844": {
+      "surfaces": {
+        "dialogue": {
+          "surface": "dialogue",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Cabinet",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 763,
+              "bottom": 807
+            },
+            {
+              "label": "Journal",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 763,
+              "bottom": 807
+            },
+            {
+              "label": "Skip",
+              "cls": "dlg__skip",
+              "top": 620,
+              "bottom": 652
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": []
+        },
+        "blueprint": {
+          "surface": "blueprint",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Call on Mrs. Bramble",
+              "cls": "bp-btn",
+              "top": 763,
+              "bottom": 807
+            },
+            {
+              "label": "Cabinet",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 763,
+              "bottom": 807
+            },
+            {
+              "label": "Journal",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 763,
+              "bottom": 807
+            },
+            {
+              "label": "Draft a room here",
+              "cls": "[object SVGAnimatedString]",
+              "top": 580,
+              "bottom": 647
+            },
+            {
+              "label": "Draft a room here",
+              "cls": "[object SVGAnimatedString]",
+              "top": 580,
+              "bottom": 647
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": []
+        },
+        "room-hive": {
+          "surface": "room-hive",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 828,
+              "bottom": 872
+            },
+            {
+              "label": "Shuffle",
+              "cls": "anch-btn",
+              "top": 728,
+              "bottom": 772
+            },
+            {
+              "label": "L",
+              "cls": "hv-cell hv-cell--p3",
+              "top": 612,
+              "bottom": 695
+            },
+            {
+              "label": "B",
+              "cls": "hv-cell hv-cell--p2",
+              "top": 568,
+              "bottom": 651
+            },
+            {
+              "label": "E",
+              "cls": "hv-cell hv-cell--p4",
+              "top": 568,
+              "bottom": 651
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 828,
+              "bottom": 872
+            }
+          ],
+          "inHomeIndicatorBand": [],
+          "clipped": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 828,
+              "bottom": 872,
+              "by": "root",
+              "ancestorBottom": 844
+            }
+          ]
+        },
+        "room-twistle": {
+          "surface": "room-twistle",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 822,
+              "bottom": 866
+            },
+            {
+              "label": "S",
+              "cls": "tw-cell    ",
+              "top": 520,
+              "bottom": 587
+            },
+            {
+              "label": "R",
+              "cls": "tw-cell    ",
+              "top": 520,
+              "bottom": 587
+            },
+            {
+              "label": "E",
+              "cls": "tw-cell    ",
+              "top": 520,
+              "bottom": 587
+            },
+            {
+              "label": "S",
+              "cls": "tw-cell    ",
+              "top": 520,
+              "bottom": 587
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 822,
+              "bottom": 866
+            }
+          ],
+          "inHomeIndicatorBand": [],
+          "clipped": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 822,
+              "bottom": 866,
+              "by": "root",
+              "ancestorBottom": 844
+            }
+          ]
+        },
+        "room-word-web": {
+          "surface": "room-word-web",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 803,
+              "bottom": 847
+            },
+            {
+              "label": "Shuffle",
+              "cls": "anch-btn",
+              "top": 623,
+              "bottom": 667
+            },
+            {
+              "label": "CHERRY",
+              "cls": "ww-tile   ",
+              "top": 515,
+              "bottom": 573
+            },
+            {
+              "label": "APPLE",
+              "cls": "ww-tile   ",
+              "top": 515,
+              "bottom": 573
+            },
+            {
+              "label": "HIGH",
+              "cls": "ww-tile   ",
+              "top": 515,
+              "bottom": 573
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 803,
+              "bottom": 847
+            }
+          ],
+          "inHomeIndicatorBand": [],
+          "clipped": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 803,
+              "bottom": 847,
+              "by": "root",
+              "ancestorBottom": 844
+            }
+          ]
+        },
+        "room-forgotten-word": {
+          "surface": "room-forgotten-word",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 803,
+              "bottom": 847
+            },
+            {
+              "label": "Your guess",
+              "cls": "fw-input",
+              "top": 633,
+              "bottom": 677
+            },
+            {
+              "label": "Unseal · −2 steps",
+              "cls": "anch-btn",
+              "top": 564,
+              "bottom": 608
+            },
+            {
+              "label": "Unseal · −2 steps",
+              "cls": "anch-btn",
+              "top": 480,
+              "bottom": 524
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 803,
+              "bottom": 847
+            }
+          ],
+          "inHomeIndicatorBand": [],
+          "clipped": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 803,
+              "bottom": 847,
+              "by": "root",
+              "ancestorBottom": 844
+            }
+          ]
+        },
+        "study-keyboard": {
+          "kbTopY": 508,
+          "inputBottom": 496,
+          "clearsKeyboard": true,
+          "kbOpenClass": true,
+          "vars": {
+            "vv": "508px",
+            "inset": "336px",
+            "shift": "181px"
+          }
+        },
+        "room-cipher": {
+          "surface": "room-cipher",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 922,
+              "bottom": 966
+            },
+            {
+              "label": "Develop the print",
+              "cls": "mic-btn mic-btn--primary",
+              "top": 821,
+              "bottom": 865
+            },
+            {
+              "label": "Develop one letter · −2",
+              "cls": "mic-btn",
+              "top": 821,
+              "bottom": 865
+            },
+            {
+              "label": "V",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810
+            },
+            {
+              "label": "W",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "Develop the print",
+              "cls": "mic-btn mic-btn--primary",
+              "top": 821,
+              "bottom": 865
+            },
+            {
+              "label": "Develop one letter · −2",
+              "cls": "mic-btn",
+              "top": 821,
+              "bottom": 865
+            },
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 922,
+              "bottom": 966
+            }
+          ],
+          "inHomeIndicatorBand": [],
+          "clipped": [
+            {
+              "label": "Develop the print",
+              "cls": "mic-btn mic-btn--primary",
+              "top": 821,
+              "bottom": 865,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "Develop one letter · −2",
+              "cls": "mic-btn",
+              "top": 821,
+              "bottom": 865,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 922,
+              "bottom": 966,
+              "by": "root",
+              "ancestorBottom": 844
+            }
+          ]
+        },
+        "room-crossword": {
+          "surface": "room-crossword",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 1047,
+              "bottom": 1091
+            },
+            {
+              "label": "Smooth a crease · −2 steps",
+              "cls": "m2-btn",
+              "top": 946,
+              "bottom": 990
+            },
+            {
+              "label": "Z",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "X",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "C",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "A",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "S",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "D",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "F",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "G",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "H",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "J",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "K",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "L",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "Z",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "X",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "C",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "V",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "B",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "N",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "M",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "⌫",
+              "cls": "lc-key lc-key--wide",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "Smooth a crease · −2 steps",
+              "cls": "m2-btn",
+              "top": 946,
+              "bottom": 990
+            },
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 1047,
+              "bottom": 1091
+            }
+          ],
+          "inHomeIndicatorBand": [
+            {
+              "label": "Q",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "W",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "E",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "R",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "T",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "Y",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "U",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "I",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "O",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "P",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            }
+          ],
+          "clipped": [
+            {
+              "label": "A",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "S",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "D",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "F",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "G",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "H",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "J",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "K",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "L",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "Z",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "X",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "C",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "V",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "B",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "N",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "M",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "⌫",
+              "cls": "lc-key lc-key--wide",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "Smooth a crease · −2 steps",
+              "cls": "m2-btn",
+              "top": 946,
+              "bottom": 990,
+              "by": "root",
+              "ancestorBottom": 844
+            },
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 1047,
+              "bottom": 1091,
+              "by": "root",
+              "ancestorBottom": 844
+            }
+          ]
+        },
+        "sanctum": {
+          "surface": "sanctum",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Consult the journal (0 of 17 fragments f",
+              "cls": "snc-journal-link",
+              "top": 712,
+              "bottom": 756
+            },
+            {
+              "label": "Your one word for today",
+              "cls": "snc-input",
+              "top": 643,
+              "bottom": 687
+            },
+            {
+              "label": "Back down the stairs",
+              "cls": "snc__back",
+              "top": 47,
+              "bottom": 91
+            },
+            {
+              "label": "☾",
+              "cls": "chr-retire",
+              "top": 52,
+              "bottom": 88
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": []
+        },
+        "sanctum-minors": {
+          "placeholder": {
+            "text": "THE FORGOTTEN WORD",
+            "textW": 308,
+            "availW": 216,
+            "clips": true
+          },
+          "nameplate": {
+            "plateW": 71.8,
+            "textW": 124.3,
+            "overrun": 52.5,
+            "overflows": true,
+            "userUnitsTextW": 166.3
+          }
+        },
+        "sanctum-keyboard": {
+          "kbTopY": 508,
+          "rowBottom": 496,
+          "clearsKeyboard": true,
+          "kbOpenClass": true,
+          "vars": {
+            "vv": "508px",
+            "inset": "336px",
+            "shift": "191px"
+          }
+        }
+      },
+      "errors": []
+    },
+    "375x667": {
+      "surfaces": {
+        "dialogue": {
+          "surface": "dialogue",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Cabinet",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 586,
+              "bottom": 630
+            },
+            {
+              "label": "Journal",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 586,
+              "bottom": 630
+            },
+            {
+              "label": "Skip",
+              "cls": "dlg__skip",
+              "top": 443,
+              "bottom": 475
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": []
+        },
+        "blueprint": {
+          "surface": "blueprint",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Journal",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 586,
+              "bottom": 630
+            },
+            {
+              "label": "Call on Mrs. Bramble",
+              "cls": "bp-btn",
+              "top": 533,
+              "bottom": 577
+            },
+            {
+              "label": "Cabinet",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 533,
+              "bottom": 577
+            },
+            {
+              "label": "Draft a room here",
+              "cls": "[object SVGAnimatedString]",
+              "top": 418,
+              "bottom": 466
+            },
+            {
+              "label": "Draft a room here",
+              "cls": "[object SVGAnimatedString]",
+              "top": 418,
+              "bottom": 466
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": []
+        },
+        "room-hive": {
+          "surface": "room-hive",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 820,
+              "bottom": 864
+            },
+            {
+              "label": "Shuffle",
+              "cls": "anch-btn",
+              "top": 720,
+              "bottom": 764
+            },
+            {
+              "label": "I",
+              "cls": "hv-cell hv-cell--p3",
+              "top": 607,
+              "bottom": 688
+            },
+            {
+              "label": "E",
+              "cls": "hv-cell hv-cell--p2",
+              "top": 564,
+              "bottom": 646
+            },
+            {
+              "label": "O",
+              "cls": "hv-cell hv-cell--p4",
+              "top": 564,
+              "bottom": 646
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "I",
+              "cls": "hv-cell hv-cell--p3",
+              "top": 607,
+              "bottom": 688
+            },
+            {
+              "label": "Shuffle",
+              "cls": "anch-btn",
+              "top": 720,
+              "bottom": 764
+            },
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 820,
+              "bottom": 864
+            }
+          ],
+          "inHomeIndicatorBand": [
+            {
+              "label": "E",
+              "cls": "hv-cell hv-cell--p2",
+              "top": 564,
+              "bottom": 646
+            },
+            {
+              "label": "O",
+              "cls": "hv-cell hv-cell--p4",
+              "top": 564,
+              "bottom": 646
+            }
+          ],
+          "clipped": [
+            {
+              "label": "I",
+              "cls": "hv-cell hv-cell--p3",
+              "top": 607,
+              "bottom": 688,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Shuffle",
+              "cls": "anch-btn",
+              "top": 720,
+              "bottom": 764,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 820,
+              "bottom": 864,
+              "by": "root",
+              "ancestorBottom": 667
+            }
+          ]
+        },
+        "room-twistle": {
+          "surface": "room-twistle",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 807,
+              "bottom": 851
+            },
+            {
+              "label": "H",
+              "cls": "tw-cell    ",
+              "top": 508,
+              "bottom": 572
+            },
+            {
+              "label": "O",
+              "cls": "tw-cell    ",
+              "top": 508,
+              "bottom": 572
+            },
+            {
+              "label": "S",
+              "cls": "tw-cell    ",
+              "top": 508,
+              "bottom": 572
+            },
+            {
+              "label": "E",
+              "cls": "tw-cell    ",
+              "top": 508,
+              "bottom": 572
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 807,
+              "bottom": 851
+            }
+          ],
+          "inHomeIndicatorBand": [],
+          "clipped": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 807,
+              "bottom": 851,
+              "by": "root",
+              "ancestorBottom": 667
+            }
+          ]
+        },
+        "room-word-web": {
+          "surface": "room-word-web",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 643,
+              "bottom": 687
+            },
+            {
+              "label": "Shuffle",
+              "cls": "anch-btn",
+              "top": 543,
+              "bottom": 587
+            },
+            {
+              "label": "HEELS",
+              "cls": "ww-tile   ",
+              "top": 435,
+              "bottom": 493
+            },
+            {
+              "label": "TEMPEST",
+              "cls": "ww-tile   ",
+              "top": 435,
+              "bottom": 493
+            },
+            {
+              "label": "BLEND",
+              "cls": "ww-tile   ",
+              "top": 435,
+              "bottom": 493
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 643,
+              "bottom": 687
+            }
+          ],
+          "inHomeIndicatorBand": [],
+          "clipped": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 643,
+              "bottom": 687,
+              "by": "root",
+              "ancestorBottom": 667
+            }
+          ]
+        },
+        "room-forgotten-word": {
+          "surface": "room-forgotten-word",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 710,
+              "bottom": 754
+            },
+            {
+              "label": "Your guess",
+              "cls": "fw-input",
+              "top": 571,
+              "bottom": 615
+            },
+            {
+              "label": "Unseal · −2 steps",
+              "cls": "anch-btn",
+              "top": 502,
+              "bottom": 546
+            },
+            {
+              "label": "Unseal · −2 steps",
+              "cls": "anch-btn",
+              "top": 418,
+              "bottom": 462
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 710,
+              "bottom": 754
+            }
+          ],
+          "inHomeIndicatorBand": [],
+          "clipped": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 710,
+              "bottom": 754,
+              "by": "root",
+              "ancestorBottom": 667
+            }
+          ]
+        },
+        "study-keyboard": {
+          "kbTopY": 407,
+          "inputBottom": 395,
+          "clearsKeyboard": true,
+          "kbOpenClass": true,
+          "vars": {
+            "vv": "407px",
+            "inset": "260px",
+            "shift": "220px"
+          }
+        },
+        "room-cipher": {
+          "surface": "room-cipher",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 922,
+              "bottom": 966
+            },
+            {
+              "label": "Develop the print",
+              "cls": "mic-btn mic-btn--primary",
+              "top": 821,
+              "bottom": 865
+            },
+            {
+              "label": "Develop one letter · −2",
+              "cls": "mic-btn",
+              "top": 821,
+              "bottom": 865
+            },
+            {
+              "label": "V",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810
+            },
+            {
+              "label": "W",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "H",
+              "cls": "mic-key mic-key--dim",
+              "top": 666,
+              "bottom": 710
+            },
+            {
+              "label": "I",
+              "cls": "mic-key",
+              "top": 666,
+              "bottom": 710
+            },
+            {
+              "label": "J",
+              "cls": "mic-key",
+              "top": 666,
+              "bottom": 710
+            },
+            {
+              "label": "K",
+              "cls": "mic-key",
+              "top": 666,
+              "bottom": 710
+            },
+            {
+              "label": "L",
+              "cls": "mic-key",
+              "top": 666,
+              "bottom": 710
+            },
+            {
+              "label": "M",
+              "cls": "mic-key",
+              "top": 666,
+              "bottom": 710
+            },
+            {
+              "label": "N",
+              "cls": "mic-key",
+              "top": 666,
+              "bottom": 710
+            },
+            {
+              "label": "O",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760
+            },
+            {
+              "label": "P",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760
+            },
+            {
+              "label": "Q",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760
+            },
+            {
+              "label": "R",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760
+            },
+            {
+              "label": "S",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760
+            },
+            {
+              "label": "T",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760
+            },
+            {
+              "label": "U",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760
+            },
+            {
+              "label": "V",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810
+            },
+            {
+              "label": "W",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810
+            },
+            {
+              "label": "X",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810
+            },
+            {
+              "label": "Y",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810
+            },
+            {
+              "label": "Z",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810
+            },
+            {
+              "label": "Develop the print",
+              "cls": "mic-btn mic-btn--primary",
+              "top": 821,
+              "bottom": 865
+            },
+            {
+              "label": "Develop one letter · −2",
+              "cls": "mic-btn",
+              "top": 821,
+              "bottom": 865
+            },
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 922,
+              "bottom": 966
+            }
+          ],
+          "inHomeIndicatorBand": [
+            {
+              "label": "A",
+              "cls": "mic-key",
+              "top": 616,
+              "bottom": 660
+            },
+            {
+              "label": "B",
+              "cls": "mic-key",
+              "top": 616,
+              "bottom": 660
+            },
+            {
+              "label": "C",
+              "cls": "mic-key",
+              "top": 616,
+              "bottom": 660
+            },
+            {
+              "label": "D",
+              "cls": "mic-key",
+              "top": 616,
+              "bottom": 660
+            },
+            {
+              "label": "E",
+              "cls": "mic-key mic-key--dim",
+              "top": 616,
+              "bottom": 660
+            },
+            {
+              "label": "F",
+              "cls": "mic-key",
+              "top": 616,
+              "bottom": 660
+            },
+            {
+              "label": "G",
+              "cls": "mic-key",
+              "top": 616,
+              "bottom": 660
+            }
+          ],
+          "clipped": [
+            {
+              "label": "H",
+              "cls": "mic-key mic-key--dim",
+              "top": 666,
+              "bottom": 710,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "I",
+              "cls": "mic-key",
+              "top": 666,
+              "bottom": 710,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "J",
+              "cls": "mic-key",
+              "top": 666,
+              "bottom": 710,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "K",
+              "cls": "mic-key",
+              "top": 666,
+              "bottom": 710,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "L",
+              "cls": "mic-key",
+              "top": 666,
+              "bottom": 710,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "M",
+              "cls": "mic-key",
+              "top": 666,
+              "bottom": 710,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "N",
+              "cls": "mic-key",
+              "top": 666,
+              "bottom": 710,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "O",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "P",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Q",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "R",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "S",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "T",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "U",
+              "cls": "mic-key",
+              "top": 716,
+              "bottom": 760,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "V",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "W",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "X",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Y",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Z",
+              "cls": "mic-key",
+              "top": 766,
+              "bottom": 810,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Develop the print",
+              "cls": "mic-btn mic-btn--primary",
+              "top": 821,
+              "bottom": 865,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Develop one letter · −2",
+              "cls": "mic-btn",
+              "top": 821,
+              "bottom": 865,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 922,
+              "bottom": 966,
+              "by": "root",
+              "ancestorBottom": 667
+            }
+          ]
+        },
+        "room-crossword": {
+          "surface": "room-crossword",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 1047,
+              "bottom": 1091
+            },
+            {
+              "label": "Smooth a crease · −2 steps",
+              "cls": "m2-btn",
+              "top": 946,
+              "bottom": 990
+            },
+            {
+              "label": "Z",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "X",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "C",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "2AA door's side post",
+              "cls": "lc-clue",
+              "top": 644,
+              "bottom": 673
+            },
+            {
+              "label": "2DToast's sweet topping",
+              "cls": "lc-clue",
+              "top": 675,
+              "bottom": 704
+            },
+            {
+              "label": "3ANight's lantern",
+              "cls": "lc-clue",
+              "top": 707,
+              "bottom": 736
+            },
+            {
+              "label": "Q",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "W",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "E",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "R",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "T",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "Y",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "U",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "I",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "O",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "P",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814
+            },
+            {
+              "label": "A",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "S",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "D",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "F",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "G",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "H",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "J",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "K",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "L",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875
+            },
+            {
+              "label": "Z",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "X",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "C",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "V",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "B",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "N",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "M",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "⌫",
+              "cls": "lc-key lc-key--wide",
+              "top": 880,
+              "bottom": 936
+            },
+            {
+              "label": "Smooth a crease · −2 steps",
+              "cls": "m2-btn",
+              "top": 946,
+              "bottom": 990
+            },
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 1047,
+              "bottom": 1091
+            }
+          ],
+          "inHomeIndicatorBand": [
+            {
+              "label": "1DMrs. Bramble's morning ritual",
+              "cls": "lc-clue lc-clue--active",
+              "top": 613,
+              "bottom": 642
+            }
+          ],
+          "clipped": [
+            {
+              "label": "2AA door's side post",
+              "cls": "lc-clue",
+              "top": 644,
+              "bottom": 673,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "2DToast's sweet topping",
+              "cls": "lc-clue",
+              "top": 675,
+              "bottom": 704,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "3ANight's lantern",
+              "cls": "lc-clue",
+              "top": 707,
+              "bottom": 736,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Q",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "W",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "E",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "R",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "T",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Y",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "U",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "I",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "O",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "P",
+              "cls": "lc-key",
+              "top": 758,
+              "bottom": 814,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "A",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "S",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "D",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "F",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "G",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "H",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "J",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "K",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "L",
+              "cls": "lc-key",
+              "top": 819,
+              "bottom": 875,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Z",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "X",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "C",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "V",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "B",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "N",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "M",
+              "cls": "lc-key",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "⌫",
+              "cls": "lc-key lc-key--wide",
+              "top": 880,
+              "bottom": 936,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Smooth a crease · −2 steps",
+              "cls": "m2-btn",
+              "top": 946,
+              "bottom": 990,
+              "by": "root",
+              "ancestorBottom": 667
+            },
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 1047,
+              "bottom": 1091,
+              "by": "root",
+              "ancestorBottom": 667
+            }
+          ]
+        },
+        "sanctum": {
+          "surface": "sanctum",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Consult the journal (0 of 17 fragments f",
+              "cls": "snc-journal-link",
+              "top": 670,
+              "bottom": 714
+            },
+            {
+              "label": "Your one word for today",
+              "cls": "snc-input",
+              "top": 600,
+              "bottom": 644
+            },
+            {
+              "label": "Back down the stairs",
+              "cls": "snc__back",
+              "top": 47,
+              "bottom": 91
+            },
+            {
+              "label": "☾",
+              "cls": "chr-retire",
+              "top": 52,
+              "bottom": 88
+            }
+          ],
+          "belowViewport": [
+            {
+              "label": "Consult the journal (0 of 17 fragments f",
+              "cls": "snc-journal-link",
+              "top": 670,
+              "bottom": 714
+            }
+          ],
+          "inHomeIndicatorBand": [
+            {
+              "label": "Your one word for today",
+              "cls": "snc-input",
+              "top": 600,
+              "bottom": 644
+            }
+          ],
+          "clipped": [
+            {
+              "label": "Consult the journal (0 of 17 fragments f",
+              "cls": "snc-journal-link",
+              "top": 670,
+              "bottom": 714,
+              "by": "root",
+              "ancestorBottom": 667
+            }
+          ]
+        },
+        "sanctum-minors": {
+          "placeholder": {
+            "text": "THE FORGOTTEN WORD",
+            "textW": 308,
+            "availW": 201,
+            "clips": true
+          },
+          "nameplate": {
+            "plateW": 69,
+            "textW": 124.3,
+            "overrun": 55.3,
+            "overflows": true,
+            "userUnitsTextW": 172.9
+          }
+        },
+        "sanctum-keyboard": {
+          "kbTopY": 407,
+          "rowBottom": 395,
+          "clearsKeyboard": true,
+          "kbOpenClass": true,
+          "vars": {
+            "vv": "407px",
+            "inset": "260px",
+            "shift": "249px"
+          }
+        }
+      },
+      "errors": []
+    }
+  }
+}

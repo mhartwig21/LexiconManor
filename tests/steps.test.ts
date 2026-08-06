@@ -65,7 +65,7 @@ describe('STEP_TABLE (the one tunable const)', () => {
 
 describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () => {
   it('states micro payouts in numbers, from STEP_TABLE not hand-copy', () => {
-    const stake = draftCardStake({ category: 'puzzle', puzzleKind: 'anagram' }, 1);
+    const stake = draftCardStake({ category: 'puzzle', puzzleKind: 'cipher' }, 1);
     expect(stake).toEqual({ size: 'micro', label: 'micro · +3 steps on solve' });
     expect(stake!.label).toContain(String(STEP_TABLE.solve('micro', 1)));
   });

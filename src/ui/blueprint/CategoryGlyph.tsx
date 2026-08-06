@@ -9,20 +9,16 @@
  *      utility = leaf        (pointed)
  *      mystery = crescent    (curved)
  *
- * 2. PUZZLE KIND — every one of the ten word-game kinds carries its OWN
+ * 2. PUZZLE KIND — every one of the six word-game kinds carries its OWN
  *    silhouette (BENCHMARKS §6: room identity legible from the sheet alone;
  *    AAA 4.7 'draft the inconvenient room early' needs at-a-glance
  *    composition). The category hue stays; the shape says WHICH room:
  *      hive           = hexagon cell
- *      ladder         = rails + rungs
  *      word-web       = node web (center + spokes)
  *      forgotten-word = quill over a gapped baseline
  *      cipher         = key
  *      crossword      = 3×3 grid, one square inked
- *      category       = shelf of spines
- *      rhyme          = beamed staff notes
  *      twistle        = traced winding path
- *      anagram        = tumbled letter tiles
  *
  * `ROOM_KIND_GLYPH_PATHS` are raw SVG nodes (24×24 authoring box, stroke =
  * currentColor) for embedding straight into the blueprint sheet; the
@@ -45,12 +41,8 @@ export const PUZZLE_KIND_LABELS: Record<RoomPuzzleKind, string> = {
   'hive': 'Hive room',
   'twistle': 'Twistle room',
   'forgotten-word': 'Forgotten-word room',
-  'anagram': 'Anagram room',
-  'ladder': 'Word-ladder room',
   'cipher': 'Cipher room',
   'crossword': 'Crossword room',
-  'rhyme': 'Rhyme room',
-  'category': 'Category room',
 };
 
 export const CATEGORY_GLYPH_PATHS: Record<RoomCategory, ReactNode> = {
@@ -98,13 +90,6 @@ export const PUZZLE_KIND_GLYPH_PATHS: Record<RoomPuzzleKind, ReactNode> = {
       <path d="M12 8.6l3.1 1.8v3.4L12 15.6l-3.1-1.8v-3.4Z" strokeWidth="1.3" />
     </g>
   ),
-  // rails + rungs (the word ladder)
-  'ladder': (
-    <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-      <path d="M8.5 3.5v17M15.5 3.5v17" />
-      <path d="M8.5 7.6h7M8.5 12h7M8.5 16.4h7" strokeWidth="1.4" />
-    </g>
-  ),
   // node web: center + spokes to four corners-of-diamond nodes
   'word-web': (
     <g stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
@@ -141,23 +126,6 @@ export const PUZZLE_KIND_GLYPH_PATHS: Record<RoomPuzzleKind, ReactNode> = {
       <path d="M14.4 4.8h4.6a.4.4 0 0 1 .2.3v4.5h-4.8Z" fill="currentColor" stroke="none" />
     </g>
   ),
-  // shelf of spines (name the shelf, fill the shelf)
-  'category': (
-    <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3.8 17.2h16.4" />
-      <rect x="5.8" y="9.4" width="3.1" height="7.8" rx="0.6" />
-      <rect x="10.4" y="6.6" width="3.1" height="10.6" rx="0.6" />
-      <rect x="15" y="11.4" width="3.1" height="5.8" rx="0.6" />
-    </g>
-  ),
-  // beamed staff notes (the rhymes)
-  'rhyme': (
-    <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9.2 16.9V6.6l8.4-1.9V15" fill="none" />
-      <ellipse cx="7" cy="17.2" rx="2.4" ry="1.9" fill="currentColor" stroke="none" />
-      <ellipse cx="15.4" cy="15.3" rx="2.4" ry="1.9" fill="currentColor" stroke="none" />
-    </g>
-  ),
   // traced winding path, start dot to arrowhead (trace the word)
   'twistle': (
     <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -166,20 +134,10 @@ export const PUZZLE_KIND_GLYPH_PATHS: Record<RoomPuzzleKind, ReactNode> = {
       <path d="M15.2 16.4l2.6 1.5-1.4 2.6" />
     </g>
   ),
-  // tumbled letter tiles (letters out of order)
-  'anagram': (
-    <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4.4" y="8.8" width="9.2" height="9.2" rx="1.2" />
-      <path d="M7.2 15.4l1.8-3.8 1.8 3.8" strokeWidth="1.3" />
-      <g transform="rotate(14 16.6 9.6)">
-        <rect x="12" y="5" width="9.2" height="9.2" rx="1.2" />
-      </g>
-    </g>
-  ),
 };
 
 /**
- * Every PlacedRoom.kind → its glyph: the ten puzzle kinds plus the three
+ * Every PlacedRoom.kind → its glyph: the six puzzle kinds plus the three
  * specialist categories ('puzzle' itself keeps the open book as a fallback
  * for kind-less contexts).
  */

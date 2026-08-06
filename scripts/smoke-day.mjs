@@ -1,8 +1,8 @@
 /**
  * Integration smoke test: drive one full in-game day through the REAL UI.
- * front step → morning (Bramble) → blueprint → draft Vestibule → mistake
- * (steps drop) → solve (steps refund) → parlor visit / Dewey → burn steps →
- * dusk veil → night digest. Screenshots to docs/shots/round2/.
+ * front step → morning (Bramble) → blueprint → draft Darkroom → free probe
+ * (blank develop, steps hold) → solve (steps refund) → parlor visit / Dewey →
+ * burn steps → dusk veil → night digest. Screenshots to docs/shots/round2/.
  *
  * Uses system Edge (channel 'msedge') — NEVER downloads playwright browsers.
  * Exactly ONE browser instance.
@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = resolve(root, 'docs/shots/round2');
 const BASE = 'http://localhost:4173/LexiconManor/';
-const anagramPool = JSON.parse(readFileSync(resolve(root, 'content/generated/anagram.json'), 'utf8'));
+const cipherPool = JSON.parse(readFileSync(resolve(root, 'content/generated/cipher.json'), 'utf8'));
 
 const log = (...a) => console.log('[smoke]', ...a);
 const fail = (msg) => { console.error('[smoke] FAIL:', msg); process.exitCode = 1; };
@@ -59,38 +59,31 @@ async function playScene(shotName) {
   if (await page.$('.dlg')) fail('dialogue scene never closed');
 }
 
-/** Place a word in the Vestibule tray then submit. */
-async function placeAndSubmit(word) {
-  for (const ch of word) {
-    const tile = await page.$(`.va-tile:not(.va-tile--used):text-is("${ch}")`);
-    if (!tile) { fail(`no free tile for letter ${ch}`); return; }
-    await tile.dispatchEvent('pointerdown');
-    await page.waitForTimeout(60);
+/** cipher letter → plain letter truth table for a shipped Darkroom puzzle. */
+function truthOf(puzzle) {
+  const map = {};
+  for (let i = 0; i < puzzle.ciphertext.length; i++) {
+    const c = puzzle.ciphertext[i];
+    if (/[A-Z]/.test(c)) map[c] = puzzle.plaintext[i];
   }
-  await page.click('.mic-btn--primary');
-  await page.waitForTimeout(500);
+  return map;
 }
 
-async function clearSlots() {
-  for (let i = 0; i < 12; i++) {
-    const slot = await page.$('.va-slot--filled');
-    if (!slot) break;
-    await slot.dispatchEvent('pointerdown');
-    await page.waitForTimeout(50);
-  }
+/** Distinct cipher letters in first-appearance order. */
+function cipherLetters(puzzle) {
+  return [...new Set([...puzzle.ciphertext].filter((c) => /[A-Z]/.test(c)))];
 }
 
-/** A permutation of `answer`'s letters that is NOT in accepted. */
-function wrongArrangement(round) {
-  const acc = new Set(round.accepted.map((w) => w.toUpperCase()));
-  const chars = round.answer.toUpperCase().split('');
-  const tries = [
-    [...chars].reverse().join(''),
-    chars.slice(1).concat(chars[0]).join(''),
-    chars.slice(-1).concat(chars.slice(0, -1)).join(''),
-  ];
-  for (const t of tries) if (!acc.has(t)) return t;
-  return null; // pathological: every rotation is a word — skip the mistake
+/** Select the cell for a cipher letter, then pencil the given plain letter. */
+async function pencilLetter(cipherCh, plainCh) {
+  const cell = await page.$(`.dk-cell:not(.dk-cell--locked):has(.dk-cell__cipher:text-is("${cipherCh}"))`);
+  if (!cell) { fail(`no selectable cell for cipher letter ${cipherCh}`); return; }
+  await cell.dispatchEvent('pointerdown');
+  await page.waitForTimeout(50);
+  const key = await page.$(`.mic-key:text-is("${plainCh}")`);
+  if (!key) { fail(`no key for plain letter ${plainCh}`); return; }
+  await key.dispatchEvent('pointerdown');
+  await page.waitForTimeout(50);
 }
 
 // ---------------------------------------------------------------------------
@@ -123,50 +116,45 @@ try {
   log('draft offer:', JSON.stringify(s.offer), 'steps', s.steps);
   await shot('05-draft-modal');
 
-  // Scripted day-1 hand should include the Vestibule.
-  const vest = await page.$('.bp-card:has-text("Vestibule")');
-  if (!vest) { fail('no Vestibule in the scripted first draft'); throw new Error('stop'); }
-  await vest.click();
+  // Scripted day-1 hand should include the Darkroom.
+  const dark = await page.$('.bp-card:has-text("Darkroom")');
+  if (!dark) { fail('no Darkroom in the scripted first draft'); throw new Error('stop'); }
+  await dark.click();
 
-  // 4. The Vestibule (anagram). RoomPage → AnagramView.
-  await page.waitForSelector('.mic--vestibule');
+  // 4. The Darkroom (cipher). RoomPage → CipherView.
+  await page.waitForSelector('.mic--darkroom');
   s = await store();
   const puzzleId = s.activeRoom?.puzzleId;
   log('entered room:', JSON.stringify(s.activeRoom), 'steps', s.steps);
-  const puzzle = anagramPool.find((p) => p.id === puzzleId);
+  const puzzle = cipherPool.find((p) => p.id === puzzleId);
   if (!puzzle) { fail(`puzzle ${puzzleId} not found in pool`); throw new Error('stop'); }
-  await shot('06-vestibule');
+  await shot('06-darkroom');
 
-  // 4a. Refusal: a wrong full arrangement. Post-fix economy (micro finding 8):
-  // the Vestibule is the front door, not a toll booth — every refusal is FREE
-  // (weight 0), with Staircase-register copy.
+  // 4a. Free probe: developing with blanks is thinking, not a claim — the
+  // nudge toast appears and the step meter must not move (weight 0, AAA 3.2).
   const before = (await store()).steps;
-  const wrong = wrongArrangement(puzzle.rounds[0]);
-  if (wrong) {
-    await placeAndSubmit(wrong);
-    const after = (await store()).steps;
-    log(`refusal: steps ${before} -> ${after}`);
-    if (after !== before) fail(`expected FREE refusal (weight 0), saw ${before} -> ${after}`);
-    await shot('07-mistake');
-    await clearSlots();
-  } else {
-    log('every arrangement is a word; skipping the deliberate mistake');
-  }
+  await page.click('.mic-btn--primary');
+  await page.waitForTimeout(400);
+  const after = (await store()).steps;
+  log(`blank develop: steps ${before} -> ${after}`);
+  if (after !== before) fail(`expected FREE blank develop (weight 0), saw ${before} -> ${after}`);
+  await shot('07-mistake');
 
-  // 4b. Solve every round.
-  for (let r = 0; r < puzzle.rounds.length; r++) {
-    const preSteps = (await store()).steps;
-    await placeAndSubmit(puzzle.rounds[r].answer.toUpperCase());
-    await page.waitForTimeout(700);
-    const done = await page.$('.mic-done');
-    if (r === puzzle.rounds.length - 1) {
-      if (!done) fail('vestibule did not resolve after final round');
-      const post = (await store()).steps;
-      log(`solved: steps ${preSteps} -> ${post} (refund visible)`);
-      if (post <= preSteps) fail('no step refund on solve');
-      await shot('08-solved');
-    }
+  // 4b. Pencil the full truth table (reveals arrive pre-locked), then develop.
+  const truth = truthOf(puzzle);
+  const preSteps = (await store()).steps;
+  for (const c of cipherLetters(puzzle)) {
+    if (puzzle.reveals.includes(c)) continue; // pre-developed and locked
+    await pencilLetter(c, truth[c]);
   }
+  await page.click('.mic-btn--primary');
+  await page.waitForTimeout(900);
+  const done = await page.$('.mic-done');
+  if (!done) fail('darkroom did not resolve after a true develop');
+  const post = (await store()).steps;
+  log(`solved: steps ${preSteps} -> ${post} (refund visible)`);
+  if (post <= preSteps) fail('no step refund on solve');
+  await shot('08-solved');
 
   // Step back out.
   await page.click('text=Step back out');

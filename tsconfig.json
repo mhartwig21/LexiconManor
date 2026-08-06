@@ -14,6 +14,5 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["src", "tests", "content"],
-  "exclude": ["content/import-legacy.ts"]
+  "include": ["src", "tests", "content"]
 }

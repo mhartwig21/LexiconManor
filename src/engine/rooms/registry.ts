@@ -19,16 +19,15 @@ import { hiveAdapter } from './adapters/hive';
 import { twistleAdapter } from './adapters/twistle';
 import { wordWebAdapter } from './adapters/word-web';
 // <<end A3:imports>>
-// <<A4:imports>> micro batch 1 — alphabetical: anagram, cipher, ladder
-import { anagramAdapter } from '../puzzles/anagram-adapter';
+// <<A4:imports>> micro batch 1 — alphabetical: cipher
 import { cipherAdapter } from '../puzzles/cipher-adapter';
-import { ladderAdapter } from '../puzzles/ladder-adapter';
 // <<end A4:imports>>
-// <<A5:imports>> micro batch 2 — alphabetical: category, crossword, rhyme
-import { categoryAdapter } from '../puzzles/category-adapter';
+// <<A5:imports>> micro batch 2 — alphabetical: crossword
 import { crosswordAdapter } from '../puzzles/crossword-adapter';
-import { rhymeAdapter } from '../puzzles/rhyme-adapter';
 // <<end A5:imports>>
+// <<SUDOKU:imports>> playtest round — alphabetical: sudoku
+import { sudokuAdapter } from '../puzzles/sudoku-adapter';
+// <<end SUDOKU:imports>>
 
 const ADAPTERS: Partial<Record<RoomPuzzleKind, RoomPuzzleAdapter>> = {
   // <<A3:entries>> anchors — alphabetical: forgotten-word, hive, twistle, word-web
@@ -37,16 +36,15 @@ const ADAPTERS: Partial<Record<RoomPuzzleKind, RoomPuzzleAdapter>> = {
   'twistle': twistleAdapter as RoomPuzzleAdapter,
   'word-web': wordWebAdapter as RoomPuzzleAdapter,
   // <<end A3:entries>>
-  // <<A4:entries>> micro batch 1 — alphabetical: anagram, cipher, ladder
-  'anagram': anagramAdapter as RoomPuzzleAdapter,
+  // <<A4:entries>> micro batch 1 — alphabetical: cipher
   'cipher': cipherAdapter as RoomPuzzleAdapter,
-  'ladder': ladderAdapter as RoomPuzzleAdapter,
   // <<end A4:entries>>
-  // <<A5:entries>> micro batch 2 — alphabetical: category, crossword, rhyme
-  'category': categoryAdapter as RoomPuzzleAdapter,
+  // <<A5:entries>> micro batch 2 — alphabetical: crossword
   'crossword': crosswordAdapter as RoomPuzzleAdapter,
-  'rhyme': rhymeAdapter as RoomPuzzleAdapter,
   // <<end A5:entries>>
+  // <<SUDOKU:entries>> playtest round — alphabetical: sudoku
+  'sudoku': sudokuAdapter as RoomPuzzleAdapter,
+  // <<end SUDOKU:entries>>
 };
 
 /** Undefined until the owning agent lands the adapter — callers must handle it. */

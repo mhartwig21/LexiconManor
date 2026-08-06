@@ -142,14 +142,14 @@ describe('v1 → v2 migration', () => {
 
     expect(v2.earnedAchievementIds).toEqual(['five-nodes', 'first-web']);
 
-    // Seen puzzles carried; the six new kinds initialized empty.
+    // Seen puzzles carried; the new kinds initialized empty.
     expect(v2.seenPuzzleIds['word-web']).toEqual(['ww-007', 'ww-012']);
     expect(v2.seenPuzzleIds.hive).toEqual(['hive-042']);
     expect(v2.seenPuzzleIds['forgotten-word']).toEqual(['fw-003']);
     for (const kind of ROOM_PUZZLE_KINDS) {
       expect(v2.seenPuzzleIds[kind]).toBeDefined();
     }
-    expect(v2.seenPuzzleIds.anagram).toEqual([]);
+    expect(v2.seenPuzzleIds.cipher).toEqual([]);
     expect(v2.seenPuzzleIds.crossword).toEqual([]);
 
     // Settings carried; new audio settings default on/off correctly.
@@ -190,12 +190,12 @@ describe('v2 → v2 normalization (forward-compat backfill)', () => {
     const stale = createEmptySaveV2('Meredith') as Partial<SaveV2> & Record<string, unknown>;
     delete stale.events; // pretend the save predates the event spine
     delete (stale.settings as unknown as Record<string, unknown>).muteSwitchBypass;
-    delete (stale.seenPuzzleIds as Record<string, unknown>).rhyme;
+    delete (stale.seenPuzzleIds as Record<string, unknown>).crossword;
 
     const v2 = migrate(stale);
     expect(v2.events).toEqual({ recent: [], counters: {} });
     expect(v2.settings.muteSwitchBypass).toBe(false);
-    expect(v2.seenPuzzleIds.rhyme).toEqual([]);
+    expect(v2.seenPuzzleIds.crossword).toEqual([]);
     expect(v2.profileName).toBe('Meredith');
   });
 

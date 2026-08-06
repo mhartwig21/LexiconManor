@@ -26,16 +26,11 @@ describe('app/pools registry (AAA 9.6 lazy content contract)', () => {
     expect(pools.hive.length).toBeGreaterThan(0);
     expect(pools.twistle.length).toBeGreaterThan(0);
     expect(pools.forgottenWord.length).toBeGreaterThan(0);
-    // Adapter pool shapes are owned by their adapters (arrays or keyed
-    // objects, e.g. ladder ships {words, puzzles}) — the registry only
+    // Adapter pool shapes are owned by their adapters — the registry only
     // guarantees presence.
     for (const pool of [
-      pools.anagram,
-      pools.category,
       pools.cipher,
       pools.crossword,
-      pools.ladder,
-      pools.rhyme,
     ]) {
       expect(pool).toBeTruthy();
       expect(typeof pool).toBe('object');

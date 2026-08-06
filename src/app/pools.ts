@@ -46,12 +46,9 @@ export interface ContentPools {
   hive: HivePuzzle[];
   twistle: TwistlePuzzle[];
   forgottenWord: ForgottenWordPuzzle[];
-  anagram: unknown;
-  category: unknown;
   cipher: unknown;
   crossword: unknown;
-  ladder: unknown;
-  rhyme: unknown;
+  sudoku: unknown;
   /** content/authored/dialogue/<character>.json, keyed by character id. */
   dialogue: Record<string, unknown>;
   /** content/authored/volumes/*.json, in play order. */
@@ -71,12 +68,8 @@ export function loadPools(): Promise<ContentPools> {
     import('../../content/generated/hive.json'),
     import('../../content/generated/twistle.json'),
     import('../../content/generated/forgotten-word.json'),
-    import('../../content/generated/anagram.json'),
-    import('../../content/generated/category.json'),
     import('../../content/generated/cipher.json'),
     import('../../content/generated/crossword.json'),
-    import('../../content/generated/ladder.json'),
-    import('../../content/generated/rhyme.json'),
     import('../../content/authored/dialogue/bramble.json'),
     import('../../content/authored/dialogue/ellery.json'),
     import('../../content/authored/dialogue/posy.json'),
@@ -90,12 +83,8 @@ export function loadPools(): Promise<ContentPools> {
       hive,
       twistle,
       forgottenWord,
-      anagram,
-      category,
       cipher,
       crossword,
-      ladder,
-      rhyme,
       bramble,
       ellery,
       posy,
@@ -109,12 +98,8 @@ export function loadPools(): Promise<ContentPools> {
         hive: hive.default as HivePuzzle[],
         twistle: twistle.default as TwistlePuzzle[],
         forgottenWord: forgottenWord.default as ForgottenWordPuzzle[],
-        anagram: anagram.default,
-        category: category.default,
         cipher: cipher.default,
         crossword: crossword.default,
-        ladder: ladder.default,
-        rhyme: rhyme.default,
         dialogue: {
           bramble: bramble.default,
           ellery: ellery.default,
