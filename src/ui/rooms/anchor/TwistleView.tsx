@@ -11,6 +11,7 @@ import type { TwistlePuzzle } from '../../../engine/types';
 import type { TwistleAction, TwistleRoomState } from '../../../engine/rooms/adapters/twistle';
 import { CENTER_INDEX, GRID_SIZE } from '../../../engine/twistle';
 import { sfx } from '../../../app/sound';
+import { pressProps } from './usePressed';
 import './anchor.css';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
@@ -81,10 +82,23 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
     return Number((el as HTMLElement).dataset.idx);
   };
 
+  // U.1: pressed squash on the touched cell within one frame of pointerdown
+  // (the grid owns the gesture, so the class is driven from here, not per-cell).
+  const pressedCell = useRef<HTMLElement | null>(null);
+  const releaseCell = () => {
+    pressedCell.current?.classList.remove('is-pressed');
+    pressedCell.current = null;
+  };
+
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (won) return;
     const idx = idxFromPoint(e.clientX, e.clientY);
     if (idx === null) return;
+    const cell = document.elementFromPoint(e.clientX, e.clientY)?.closest('.tw-cell');
+    if (cell) {
+      pressedCell.current = cell as HTMLElement;
+      cell.classList.add('is-pressed');
+    }
     e.currentTarget.setPointerCapture(e.pointerId);
     gesture.current = { active: true, startIdx: idx, didDrag: false, prevPath: path };
     setToast(null);
@@ -113,6 +127,7 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
   };
 
   const onUp = () => {
+    releaseCell();
     const g = gesture.current;
     if (!g.active) return;
     g.active = false;
@@ -203,10 +218,10 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
           </div>
 
           <div className="anch-row">
-            <button className="anch-btn" onClick={() => setPath([])} disabled={path.length === 0}>
+            <button className="anch-btn" {...pressProps<HTMLButtonElement>()} onClick={() => setPath([])} disabled={path.length === 0}>
               Clear
             </button>
-            <button className="anch-btn anch-btn--primary" onClick={() => submit(word)} disabled={word.length < puzzle.rules.minLength}>
+            <button className="anch-btn anch-btn--primary" {...pressProps<HTMLButtonElement>()} onClick={() => submit(word)} disabled={word.length < puzzle.rules.minLength}>
               Claim
             </button>
           </div>

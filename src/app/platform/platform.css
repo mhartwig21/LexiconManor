@@ -5,6 +5,13 @@
    index.css (conflict rule 3) — these rules are additive shell plumbing.
    ========================================================================== */
 
+/* --- Viewport vars (AAA 7.9) — published by viewport.ts, safe fallbacks --- */
+:root {
+  --vv-height: 100dvh; /* visual viewport height */
+  --kb-inset: 0px;     /* layout viewport hidden by the keyboard */
+  --kb-shift: 0px;     /* lift needed so the focused entry row clears it */
+}
+
 /* --- Fixed shell: zero page-level scrolling, ever (AAA 7.7 + house rule) --- */
 html,
 body {
@@ -27,6 +34,23 @@ body {
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
   box-sizing: border-box;
+}
+
+/* --- Keyboard avoidance (AAA 7.9) ----------------------------------------- */
+/* The shell is fixed and never scrolls, so when the iOS keyboard opens the
+   platform lifts the whole app by exactly the amount the focused entry row
+   needs (viewport.ts computes --kb-shift ≤ --kb-inset from VisualViewport).
+   Scoped to html.kb-open so #root is NOT a transform containing block the
+   rest of the time, and so dismissal drops the rule entirely — the layout
+   snaps back clean with no dead space. */
+html.kb-open #root {
+  transform: translateY(calc(-1 * var(--kb-shift)));
+  transition: transform 220ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.kb-open #root {
+    transition: none;
+  }
 }
 
 /* --- Touch hygiene (AAA 7.11, 7.13, U.1) ---------------------------------- */
@@ -65,8 +89,12 @@ select {
   display: none;
 }
 
-/* Pressed state driven from pointerdown (U.1) — JS adds .is-pressed; CSS
-   :active is the desktop fallback. Ink-darken + 1px translate (AAA 6.17). */
+/* Pressed state driven from pointerdown (U.1) — the document-level delegate
+   in boot.ts adds .is-pressed to every tappable (button, [role="button"],
+   .hex, .tile) on pointerdown and removes it on up/cancel; CSS :active is
+   the desktop fallback. Ink-darken + 1px translate (AAA 6.17). Components
+   with richer press specs (hex scale-spring, 1.2) layer their own rules on
+   the same class. */
 .is-pressed,
 button:active {
   transform: translateY(1px);

@@ -100,7 +100,7 @@
       "label": "Birds of hedge and sky",
       "flavor": "The Conservatory windows keep a running list.",
       "difficulty": "medium",
-      "members": ["WREN", "ROBIN", "SPARROW", "FINCH", "THRUSH", "BLACKBIRD", "STARLING", "SWALLOW", "SWIFT", "LARK", "OWL", "HAWK", "FALCON", "EAGLE", "KESTREL", "ROOK", "CROW", "RAVEN", "MAGPIE", "JAY", "DOVE", "PIGEON", "GULL", "HERON", "CRANE", "SWAN", "GOOSE", "DUCK", "PLOVER", "CURLEW", "NIGHTINGALE", "WARBLER", "NUTHATCH", "KINGFISHER", "WOODPECKER", "CUCKOO", "PHEASANT", "PARTRIDGE", "QUAIL", "OSPREY", "BUZZARD", "TIT", "SISKIN", "LINNET", "DUNNOCK"],
+      "members": ["WREN", "ROBIN", "SPARROW", "FINCH", "THRUSH", "BLACKBIRD", "STARLING", "SWALLOW", "SWIFT", "LARK", "OWL", "HAWK", "FALCON", "EAGLE", "KESTREL", "ROOK", "CROW", "RAVEN", "MAGPIE", "JAY", "DOVE", "PIGEON", "GULL", "HERON", "CRANE", "SWAN", "GOOSE", "DUCK", "PLOVER", "CURLEW", "NIGHTINGALE", "WARBLER", "NUTHATCH", "KINGFISHER", "WOODPECKER", "CUCKOO", "PHEASANT", "PARTRIDGE", "QUAIL", "OSPREY", "BUZZARD", "SISKIN", "LINNET", "DUNNOCK"],
       "traps": [
         { "word": "BAT", "note": "Leather wings — the belfry's tenant, not a bird." }
       ]

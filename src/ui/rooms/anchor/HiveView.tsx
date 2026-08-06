@@ -15,7 +15,62 @@ import {
 } from '../../../engine/rooms/adapters/hive';
 import { createRng, shuffle } from '../../../engine/rng';
 import { sfx } from '../../../app/sound';
+import { pressProps } from './usePressed';
 import './anchor.css';
+
+/**
+ * 1.16 milestone art: hand-drawn conservatory-in-bloom vignette, played once
+ * on the Full Bloom crossing (≤2s, tap-skippable), then the view settles into
+ * the silhouette panel. Stroke ladder per §6.9: 3.0 contour / 2.0 features /
+ * 1.2 hatch, all `currentColor`/accent, animated with transform+opacity only.
+ */
+function BloomVignette({ onDone }: { onDone: () => void }) {
+  return (
+    <div className="hv-bloom" onPointerDown={onDone} role="img" aria-label="The conservatory stands in full bloom">
+      <svg className="hv-bloom__svg" viewBox="0 0 220 150" fill="none">
+        {/* glasshouse contour */}
+        <g stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M30 138 V64 Q30 24 110 22 Q190 24 190 64 V138" />
+          <path d="M14 138 H206" />
+          <circle cx="110" cy="16" r="3.5" />
+        </g>
+        {/* mullions */}
+        <g stroke="currentColor" strokeWidth="2" opacity="0.55" strokeLinecap="round">
+          <path d="M70 138 V34" />
+          <path d="M110 138 V22" />
+          <path d="M150 138 V34" />
+          <path d="M30 66 H190" />
+          <path d="M30 100 H190" />
+        </g>
+        {/* ground hatch */}
+        <g stroke="currentColor" strokeWidth="1.2" opacity="0.45" strokeLinecap="round">
+          <path d="M22 144 l8 -4" /><path d="M40 145 l8 -4" /><path d="M172 145 l8 -4" /><path d="M190 144 l8 -4" />
+        </g>
+        {/* the bloom — accent, unfurling */}
+        <g className="hv-bloom__stem" stroke="var(--room-accent)" strokeWidth="2" strokeLinecap="round">
+          <path d="M110 138 Q108 116 110 96" />
+          <path d="M110 122 Q98 118 92 108" />
+          <path d="M110 112 Q122 108 128 98" />
+        </g>
+        <g stroke="var(--room-accent)" strokeWidth="2" strokeLinecap="round">
+          {/* rotation lives on the wrapper <g>; the CSS unfurl animates the
+              ellipse itself, so the two transforms never fight */}
+          {[0, 60, 120, 180, 240, 300].map((deg, i) => (
+            <g key={deg} transform={`rotate(${deg} 110 88)`}>
+              <ellipse
+                className="hv-bloom__petal"
+                style={{ animationDelay: `${350 + i * 110}ms` }}
+                cx="110" cy="76" rx="7" ry="14"
+              />
+            </g>
+          ))}
+          <circle className="hv-bloom__heart" cx="110" cy="88" r="5.5" fill="var(--room-accent)" />
+        </g>
+      </svg>
+      <div className="hv-bloom__title">Full Bloom!</div>
+    </div>
+  );
+}
 
 type Toast = { kind: 'good' | 'bad' | 'info' | 'big'; text: string } | null;
 
@@ -27,7 +82,7 @@ function praiseFor(points: number): string {
   return 'A petal unfurls.';
 }
 
-export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProps<HivePuzzle, HiveRoomState, HiveAction>) {
+export default function HiveView({ puzzle, state, dispatch }: RoomViewProps<HivePuzzle, HiveRoomState, HiveAction>) {
   const [typed, setTyped] = useState('');
   const [petals, setPetals] = useState<string[]>(puzzle.outer);
   const [shuffling, setShuffling] = useState(false);
@@ -35,6 +90,7 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
   const [toast, setToast] = useState<Toast>(null);
   const [burst, setBurst] = useState(false);
   const [showFound, setShowFound] = useState(false);
+  const [bloom, setBloom] = useState(false);
 
   const handledAttempt = useRef(0);
   const shuffleCount = useRef(0);
@@ -47,7 +103,6 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
   const allowed = useMemo(() => new Set([puzzle.center, ...puzzle.outer]), [puzzle]);
   const solveAt = ladderThreshold(state.maxScore, 70);
   const solved = state.hive.score >= solveAt;
-  const stepCost = tier === 3 ? 3 : 2;
 
   const submit = () => {
     const word = typed.trim();
@@ -87,7 +142,8 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
         'not-in-word-list': 'Not in the lexicon',
         'already-found': 'Already found',
       };
-      const cost = fb.costed ? ` · −${stepCost} steps` : '';
+      // Structural slips are flat −1 at every tier (AAA R.1) — never −2/−3.
+      const cost = fb.costed ? ' · −1 step' : '';
       setToast({ kind: fb.costed ? 'bad' : 'info', text: messages[fb.reason] + cost });
       setShaking(true);
       later(() => setShaking(false), 340);
@@ -97,8 +153,14 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.attempts]);
 
+  // Full Bloom crossing: victory sting + the 1.16 hand-drawn vignette
+  // (≤2s, tap-skippable), settling into the silhouette panel.
   useEffect(() => {
-    if (solved) sfx.victory();
+    if (!solved) return;
+    sfx.victory();
+    setBloom(true);
+    later(() => setBloom(false), 2000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [solved]);
 
   // Physical keyboard support (desktop / iPad keyboards).
@@ -211,6 +273,8 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
           ))}
           {found.length === 0 && <span className="anch__sub">Nothing gathered yet — tap to close.</span>}
         </div>
+      ) : solved && bloom ? (
+        <BloomVignette onDone={() => setBloom(false)} />
       ) : solved ? (
         <div className="anch-done">
           <div className="anch-done__title">Full Bloom!</div>
@@ -231,6 +295,10 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
         </div>
       ) : (
         <>
+          {/* Flexible slack sits ABOVE the play cluster so entry/hive/controls
+              pin to the bottom safe-area — SB's hive-low, thumb-zone
+              composition (AAA 1.1), not a mid-screen float. */}
+          <div className="hv-spacer" aria-hidden="true" />
           <div className={`hv-entry${typed.length > 11 ? ' hv-entry--long' : ''}${shaking ? ' anch-shake' : ''}`}>
             {typed ? (
               <>
@@ -254,11 +322,18 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
           </div>
 
           <div className={`hv-board${shuffling ? ' hv-board--shuffling' : ''}`}>
-            <button className="hv-cell hv-cell--center hv-cell--c" onPointerDown={() => tapLetter(puzzle.center)}>
+            <button
+              className="hv-cell hv-cell--center hv-cell--c"
+              {...pressProps<HTMLButtonElement>({ down: () => tapLetter(puzzle.center) })}
+            >
               <span className="hv-cell__g">{puzzle.center}</span>
             </button>
             {petals.map((letter, i) => (
-              <button key={letter} className={`hv-cell hv-cell--p${i}`} onPointerDown={() => tapLetter(letter)}>
+              <button
+                key={letter}
+                className={`hv-cell hv-cell--p${i}`}
+                {...pressProps<HTMLButtonElement>({ down: () => tapLetter(letter) })}
+              >
                 <span className="hv-cell__g">{letter}</span>
               </button>
             ))}
@@ -270,13 +345,17 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
           </div>
 
           <div className="anch-row">
-            <button className="anch-btn" onPointerDown={deleteDown} onPointerUp={deleteUp} onPointerLeave={deleteUp} onPointerCancel={deleteUp} disabled={!typed}>
+            <button
+              className="anch-btn"
+              {...pressProps<HTMLButtonElement>({ down: deleteDown, up: deleteUp })}
+              disabled={!typed}
+            >
               Delete
             </button>
-            <button className="anch-btn" onClick={doShuffle} aria-label="Shuffle petals">
+            <button className="anch-btn" {...pressProps<HTMLButtonElement>()} onClick={doShuffle} aria-label="Shuffle petals">
               Shuffle
             </button>
-            <button className="anch-btn anch-btn--primary" onClick={submit} disabled={typed.length < 4}>
+            <button className="anch-btn anch-btn--primary" {...pressProps<HTMLButtonElement>()} onClick={submit} disabled={typed.length < 4}>
               Enter
             </button>
           </div>

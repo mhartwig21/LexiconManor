@@ -9,13 +9,30 @@
  *     view; the priced intruder nudge (AAA 2.10) emits a `hint` event.
  */
 
-import type { Difficulty, Tier, WordWebPuzzle } from '../../types';
-import { createRng, pick } from '../../rng';
+import type { Difficulty, Tier, WordWebGroup, WordWebPuzzle } from '../../types';
+import { createRng, pick, shuffle } from '../../rng';
 import { startWordWeb, submitGroup, type WordWebState } from '../../word-web';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../room-puzzle';
 import wordWebData from '../../../../content/generated/word-web.json';
 
-export const WORD_WEB_POOL = wordWebData as WordWebPuzzle[];
+/**
+ * Generator enrichments carried in the content JSON (content/generate-wordweb.ts)
+ * beyond the frozen WordWebPuzzle shape — extra optional fields ride along in
+ * the JSON and are typed here, adapter-locally, without touching engine/types.ts.
+ */
+export interface WordWebGroupEx extends WordWebGroup {
+  /** 2.9 tiering audit tag: how the category is solvable. */
+  type?: 'semantic' | 'trivia' | 'wordplay';
+  /** 2.11 naming act: two plausible decoy labels for this group, from the pool. */
+  decoys?: string[];
+}
+export interface WordWebPuzzleEx extends WordWebPuzzle {
+  groups: WordWebGroupEx[];
+  /** 2.6 adversarial opening layout: herrings clustered, no gift rows. */
+  layout?: string[];
+}
+
+export const WORD_WEB_POOL = wordWebData as WordWebPuzzleEx[];
 
 const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
   1: ['medium', 'easy'],
@@ -25,7 +42,9 @@ const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
 
 /** What the view renders after the last action. Never consumed by slices. */
 export type WordWebFeedback =
-  | { kind: 'group-solved'; theme: string; tier: string; words: string[]; won: boolean }
+  | { kind: 'group-solved'; theme: string; tier: string; words: string[]; won: boolean; named?: boolean }
+  /** 2.11 act of naming: the last four are woven, but the thread must be named. */
+  | { kind: 'name-final'; words: string[]; options: string[] }
   | { kind: 'one-away' }
   /** herring: selected words flagged ambiguous by the generator — the knowing line. */
   | { kind: 'wrong'; herring: string[] }
@@ -40,20 +59,53 @@ export interface WordWebRoomState {
   attempts: number;
   /** The last wrong selection, kept so a bought hint can name an intruder. */
   lastWrongSelection: string[] | null;
+  /**
+   * AAA 2.11: the final group is never pure leftovers. When the last four fall,
+   * the player names the thread from three labels before the room solves; the
+   * perfect grade and its +2 payout are gated on choosing correctly.
+   */
+  pendingNaming: { theme: string; tier: string; words: string[]; options: string[] } | null;
+  /** null until the naming act happens; false forfeits perfect, never steps. */
+  namedCorrectly: boolean | null;
   lastFeedback: WordWebFeedback | null;
 }
 
 export type WordWebAction =
   | { type: 'submit'; selection: string[] }
   /** Priced intruder nudge (AAA 2.10): names one word that didn't belong. */
-  | { type: 'buy-hint' };
+  | { type: 'buy-hint' }
+  /** AAA 2.11: pick the final thread's label from three options. */
+  | { type: 'name-theme'; theme: string };
 
 function isPerfect(s: WordWebRoomState): boolean {
-  return s.costedMistakes === 0 && s.hintsBought === 0;
+  return s.costedMistakes === 0 && s.hintsBought === 0 && s.namedCorrectly !== false;
 }
 
 function outcomeOf(s: WordWebRoomState): RoomOutcome {
-  return { status: s.web.status === 'won' ? 'solved' : 'active', perfect: isPerfect(s) };
+  const solved = s.web.status === 'won' && s.pendingNaming === null;
+  return { status: solved ? 'solved' : 'active', perfect: isPerfect(s) };
+}
+
+/**
+ * Decoy labels for the naming act: prefer the generator's authored pair,
+ * fall back to plausible same-tier themes drawn deterministically from the pool.
+ */
+function namingOptions(puzzle: WordWebPuzzleEx, theme: string, tier: string): string[] {
+  const group = puzzle.groups.find((g) => g.theme === theme);
+  let decoys = (group?.decoys ?? []).filter((d) => d !== theme).slice(0, 2);
+  if (decoys.length < 2) {
+    const rng = createRng([...puzzle.id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 7));
+    const pool = WORD_WEB_POOL
+      .filter((p) => p.id !== puzzle.id)
+      .flatMap((p) => p.groups.filter((g) => g.tier === tier).map((g) => g.theme))
+      .filter((t) => t !== theme && !decoys.includes(t));
+    while (decoys.length < 2 && pool.length > 0) {
+      const t = pick(rng, pool);
+      if (!decoys.includes(t)) decoys = [...decoys, t];
+    }
+  }
+  const rng = createRng([...puzzle.id].reduce((h, ch) => (h * 33 + ch.charCodeAt(0)) | 0, 13));
+  return shuffle(rng, [theme, ...decoys]);
 }
 
 /** The intruder: a word in the wrong selection outside its best-overlap group. */
@@ -67,7 +119,7 @@ function findIntruder(puzzle: WordWebPuzzle, selection: string[]): string | null
   return selection.find((w) => !best!.group.words.includes(w)) ?? null;
 }
 
-export const wordWebAdapter: RoomPuzzleAdapter<WordWebPuzzle, WordWebRoomState, WordWebAction> = {
+export const wordWebAdapter: RoomPuzzleAdapter<WordWebPuzzleEx, WordWebRoomState, WordWebAction> = {
   kind: 'word-web',
   size: 'anchor',
 
@@ -82,19 +134,40 @@ export const wordWebAdapter: RoomPuzzleAdapter<WordWebPuzzle, WordWebRoomState, 
     return anyFresh.length > 0 ? pick(rng, anyFresh) : pick(rng, WORD_WEB_POOL);
   },
 
-  start(puzzle: WordWebPuzzle, _ctx: RoomContext): WordWebRoomState {
+  start(puzzle: WordWebPuzzleEx, _ctx: RoomContext): WordWebRoomState {
     return {
       web: startWordWeb(puzzle),
       costedMistakes: 0,
       hintsBought: 0,
       attempts: 0,
       lastWrongSelection: null,
+      pendingNaming: null,
+      namedCorrectly: null,
       lastFeedback: null,
     };
   },
 
   reduce(puzzle, state, action) {
     const events: RoomEvent[] = [];
+
+    if (action.type === 'name-theme') {
+      const pending = state.pendingNaming;
+      if (!pending) return { state, events, outcome: outcomeOf(state) };
+      const named = action.theme === pending.theme;
+      const next: WordWebRoomState = {
+        ...state,
+        attempts: state.attempts + 1,
+        pendingNaming: null,
+        namedCorrectly: named,
+        lastFeedback: {
+          kind: 'group-solved', theme: pending.theme, tier: pending.tier,
+          words: pending.words, won: true, named,
+        },
+      };
+      events.push({ type: 'progress', detail: named ? 'named-true' : 'named-miss' });
+      events.push({ type: 'solved', perfect: isPerfect(next) });
+      return { state: next, events, outcome: outcomeOf(next) };
+    }
 
     if (action.type === 'buy-hint') {
       const intruder = state.lastWrongSelection ? findIntruder(puzzle, state.lastWrongSelection) : null;
@@ -113,13 +186,26 @@ export const wordWebAdapter: RoomPuzzleAdapter<WordWebPuzzle, WordWebRoomState, 
 
     switch (result.kind) {
       case 'solved': {
+        if (result.won) {
+          // AAA 2.11: intercept the final submit — the last thread must be
+          // named before the room solves. No `solved` event yet; the naming
+          // reply emits it (and gates the perfect grade on a correct name).
+          const options = namingOptions(puzzle, result.theme, result.tier);
+          next = {
+            ...next,
+            lastWrongSelection: null,
+            pendingNaming: { theme: result.theme, tier: result.tier, words: result.words, options },
+            lastFeedback: { kind: 'name-final', words: result.words, options },
+          };
+          events.push({ type: 'progress', detail: `group-solved:${result.tier}` });
+          break;
+        }
         next = {
           ...next,
           lastWrongSelection: null,
-          lastFeedback: { kind: 'group-solved', theme: result.theme, tier: result.tier, words: result.words, won: result.won },
+          lastFeedback: { kind: 'group-solved', theme: result.theme, tier: result.tier, words: result.words, won: false },
         };
         events.push({ type: 'progress', detail: `group-solved:${result.tier}` });
-        if (result.won) events.push({ type: 'solved', perfect: isPerfect(next) });
         break;
       }
       case 'one-away': {

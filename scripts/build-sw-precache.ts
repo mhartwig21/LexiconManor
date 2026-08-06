@@ -10,12 +10,17 @@
  *  3. Hard-checks base-path integrity (AAA 7.5): built index.html asset URLs,
  *     manifest start_url/scope, and every SW precache URL must carry the
  *     deploy prefix. Non-zero exit fails CI.
+ *  4. Hard-checks the eager-JS budget (AAA 9.6): every JS chunk index.html
+ *     references (script src + modulepreload) must gzip to ≤300KB combined.
+ *     The lazy 'content' chunk must NOT appear there — it loads via
+ *     app/pools.ts loadPools() after first paint.
  *
  * Base comes from MANOR_BASE, matching vite.config.ts ('/LexiconManor/').
  * Run: npx tsx scripts/build-sw-precache.ts
  */
 
 import { createHash } from 'node:crypto';
+import { gzipSync } from 'node:zlib';
 import { readdirSync, readFileSync, statSync, writeFileSync, existsSync } from 'node:fs';
 import { join, relative, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -116,3 +121,43 @@ if (problems.length > 0) {
   process.exit(1);
 }
 console.log('✓ base-path integrity check passed (AAA 7.5)');
+
+// 5. Eager-JS budget gate (AAA 9.6) ------------------------------------------
+// "Eager" = every JS file index.html pulls before interaction: <script src>
+// plus <link rel="modulepreload">. Statically-imported chunks show up here as
+// modulepreloads, so a regression that drags the content chunk back into the
+// static graph is caught immediately.
+const EAGER_BUDGET = 300 * 1024; // gzip bytes
+
+const eagerJs = [...new Set(
+  [...indexHtml.matchAll(/(?:src|href)="([^"]+\.js)"/g)]
+    .map((m) => m[1]!)
+    .filter((u) => !u.startsWith('http') && !u.startsWith('data:')),
+)];
+
+let eagerTotal = 0;
+for (const url of eagerJs) {
+  const rel = url.startsWith(BASE) ? url.slice(BASE.length) : url.replace(/^\//, '');
+  const file = join(dist, rel);
+  if (!existsSync(file)) fail(`eager JS ref not found in dist/: ${url}`);
+  const gz = gzipSync(readFileSync(file), { level: 9 }).length;
+  eagerTotal += gz;
+  console.log(`  eager ${rel}: ${(gz / 1024).toFixed(1)}KB gzip`);
+}
+console.log(`  eager total: ${(eagerTotal / 1024).toFixed(1)}KB gzip (budget ${EAGER_BUDGET / 1024}KB)`);
+
+if (eagerJs.some((u) => /\bcontent-[\w-]*\.js$/.test(u))) {
+  console.error(
+    '✗ the content chunk is eager (statically imported / modulepreloaded). ' +
+      'It must load only via app/pools.ts loadPools() — a static import of ' +
+      'content/generated/* or content/authored/* has crept back in.',
+  );
+  process.exit(1);
+}
+if (eagerTotal > EAGER_BUDGET) {
+  fail(
+    `eager JS ${(eagerTotal / 1024).toFixed(1)}KB gzip exceeds the ${EAGER_BUDGET / 1024}KB budget (AAA 9.6) — ` +
+      'lazy-load content through app/pools.ts (see its MIGRATION note) or split further.',
+  );
+}
+console.log('✓ eager-JS budget check passed (AAA 9.6)');

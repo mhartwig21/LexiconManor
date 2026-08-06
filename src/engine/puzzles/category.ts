@@ -25,14 +25,22 @@ import type { Difficulty } from '../types';
 
 export interface CategoryTrap { word: string; note: string; }
 
+/**
+ * One accepted surface form and the answer it counts as. BLACKBIRDS carries
+ * lemma BLACKBIRD: the shelf counts LEMMAS, so a plural of a shelved word is
+ * 'already-shelved', never a second point (3.5 integrity; BENCHMARKS §1
+ * "editor bans S").
+ */
+export interface CategoryEntry { word: string; lemma: string; }
+
 export interface CategoryPuzzle {
   id: string;
   difficulty: Difficulty;
   label: string;             // "Herbs on the rack"
   flavor?: string;           // authored subtitle
-  accepted: string[];        // uppercase, generous, variant-expanded
+  accepted: CategoryEntry[]; // uppercase, generous, variant-expanded
   traps: CategoryTrap[];
-  target: number;            // words to shelve
+  target: number;            // distinct answers (lemmas) to shelve
   parTicks: number;          // at/under = swift (gem); ticks past par cost
   maxCostedTicks: number;    // cap on charged late ticks (then free)
 }
@@ -63,6 +71,11 @@ export function normalizeCategoryWord(raw: string): string {
   return raw.toUpperCase().trim().replace(/[^A-Z]/g, '');
 }
 
+/** Lemma a found word counted as (found words are always accepted words). */
+function lemmaOf(puzzle: CategoryPuzzle, word: string): string {
+  return puzzle.accepted.find((e) => e.word === word)?.lemma ?? word;
+}
+
 export function submitCategory(
   puzzle: CategoryPuzzle,
   state: CategoryEngineState,
@@ -88,7 +101,14 @@ export function submitCategory(
       result: { kind: 'trap', word, note: trap.note },
     };
   }
-  if (puzzle.accepted.includes(word)) {
+  const entry = puzzle.accepted.find((e) => e.word === word);
+  if (entry) {
+    // The shelf counts ANSWERS, not spellings: BLACKBIRDS after BLACKBIRD
+    // is the same bird — 'already-shelved', never a second point.
+    const foundLemmas = new Set(state.found.map((w) => lemmaOf(puzzle, w)));
+    if (foundLemmas.has(entry.lemma)) {
+      return { state, result: { kind: 'already-found', word } };
+    }
     const found = [...state.found, word];
     const won = found.length >= puzzle.target;
     return {

@@ -76,9 +76,11 @@
 .mic-chip--solved { border-color: var(--moss); color: var(--moss); font-weight: 600; }
 .mic-chip--missed { color: var(--ink-faint); text-decoration: line-through; }
 
-/* Reserved toast slot — zero layout shift (AAA 1.5's principle). */
+/* Reserved toast slot — zero layout shift (AAA 1.5's principle).
+   Sized for TWO lines at 390px: a wrapping refusal toast must never push
+   the key grid under the player's thumbs mid-flow (6.19-adjacent). */
 .mic-toastslot {
-  min-height: 1.7rem;
+  min-height: 3.4rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -294,16 +296,21 @@
   justify-content: center;
   gap: 0.55rem 0.9rem;
 }
-.dk-word { display: flex; gap: 2px; }
+/* Letter gap 6px so each cell's extended hit area (::after, below) never
+   overlaps its neighbor. */
+.dk-word { display: flex; gap: 6px; }
 .dk-cell {
-  width: clamp(24px, 7vw, 30px);
+  position: relative;
+  width: clamp(32px, 9vw, 38px);
   height: 52px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
   border: none;
-  border-bottom: 1.5px solid var(--paper-edge);
+  /* Penciled/blank cells: DOTTED underline — locked cells get a solid chip
+     (shape encoding, not hue alone — grayscale-legible, AAA 6.3/3.3). */
+  border-bottom: 1.5px dotted var(--paper-edge);
   border-radius: 2px 2px 0 0;
   background: transparent;
   padding: 0 0 2px;
@@ -313,6 +320,13 @@
   transition: background-color 90ms ease;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+/* Extended hit area: visual cell stays letter-sized, the tap target is
+   ≥44×44pt (AAA 6.19 [PARITY]) — the pseudo-element is part of the button. */
+.dk-cell::after {
+  content: '';
+  position: absolute;
+  inset: -4px -7px;
 }
 .dk-cell__cipher {
   font-size: 0.68rem;

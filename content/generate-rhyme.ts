@@ -2,8 +2,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRng, pick, shuffle } from '../src/engine/rng';
-import { isVowelPhone, loadPhonetics, type Phonetics } from './lib/phonetics';
+import { isVowelPhone, loadPhonetics, rhymeKeyOfPron, type Phonetics } from './lib/phonetics';
 import { BLOCKLIST } from './lib/dictionary';
+import { gateOk } from './generate-gate';
 import type { RhymePuzzle, RhymeRound } from '../src/engine/puzzles/rhyme';
 import type { Difficulty } from '../src/engine/types';
 
@@ -17,10 +18,21 @@ import type { Difficulty } from '../src/engine/types';
  * GREY rhymes with WEIGH, COUGH does not rhyme with DOUGH, FOUR does not
  * "rhyme" with FORE (an echo is not a rhyme).
  *
+ * Tone + proper-noun gate (COZY / 4.12 / 3.7 / wife-test 0.1.6): the whole
+ * Music Room lexicon passes generate-gate.ts — no vulgarity, violence,
+ * illness, death, or predominantly-name words anywhere in a shipped set,
+ * so "rhymes with DICK" and prompt CORY can never recur. The content-lint
+ * test replays the gate against the shipped JSON.
+ *
  * Per round the pipeline resolves:
- *   accepted   — every enable1∩CMU word (rank ≤ ADVANCED, len 3–9) that
- *                perfect-rhymes with the prompt, most-common first (the
- *                hint silhouettes walk this order);
+ *   accepted   — every enable1∩CMU word (rank ≤ ADVANCED, len 3–9) whose
+ *                PRIMARY pronunciation shares the prompt's primary rhyme
+ *                key ("the ear decides" — one family per round, no
+ *                BEEN/THAN vowel mush), most-common first (the hint
+ *                silhouettes walk this order). Words that rhyme only via
+ *                an alternate pronunciation or different stress (RECORD
+ *                the verb for BOARD) move to `near` instead — free,
+ *                teaching toast, never a costed refusal;
  *   decoys     — EYE-RHYMES: everyday/familiar words sharing the prompt's
  *                written tail that do NOT rhyme (DOUGH → COUGH, TOUGH) and
  *                whose FINAL SYLLABLE also sounds different (so the −2 trap
@@ -108,9 +120,11 @@ function main() {
   const enable1 = readFileSync(join(dir, 'data', 'enable1.txt'), 'utf8')
     .split('\n').map((w) => w.trim().toLowerCase()).filter(Boolean);
 
-  // The Music Room lexicon: real words the CMU dict can pronounce.
+  // The Music Room lexicon: real words the CMU dict can pronounce, minus
+  // slurs (BLOCKLIST) and the cozy/proper-noun gate (generate-gate.ts).
   const lexicon = enable1.filter(
-    (w) => w.length >= 3 && w.length <= 9 && !BLOCKLIST.has(w) && /^[a-z]+$/.test(w) && ph.has(w),
+    (w) => w.length >= 3 && w.length <= 9 && !BLOCKLIST.has(w) && gateOk(w)
+      && /^[a-z]+$/.test(w) && ph.has(w),
   );
   const rankOf = (w: string) => ranks.get(w) ?? -1;
   const inBand = (w: string, max: number) => {
@@ -146,11 +160,26 @@ function main() {
     return a.localeCompare(b);
   };
 
+  /** Rhyme key of a word's PRIMARY (first-listed CMU) pronunciation. */
+  function primaryKeyOf(word: string): string | null {
+    const pron = ph.pronsOf(word)[0];
+    return pron ? rhymeKeyOfPron(pron) : null;
+  }
+
   function buildRound(prompt: string, target: number): RhymeRound | null {
+    // ONE rhyme family per round: the prompt's primary pronunciation defines
+    // it. Accepted words must belong to that family via their OWN primary
+    // pronunciation; anything that rhymes only through an alternate
+    // pronunciation or different stress is a near-rhyme (free, teaching).
+    const familyKey = primaryKeyOf(prompt);
+    if (!familyKey) return null;
     const acceptedSet = new Set<string>();
+    const stressNear = new Set<string>();
     for (const key of ph.rhymeKeysOf(prompt)) {
       for (const w of families.get(key) ?? []) {
-        if (w !== prompt && inBand(w, ADVANCED) && ph.rhymesWith(prompt, w)) acceptedSet.add(w);
+        if (w === prompt || !inBand(w, ADVANCED) || !ph.rhymesWith(prompt, w)) continue;
+        if (key === familyKey && primaryKeyOf(w) === familyKey) acceptedSet.add(w);
+        else stressNear.add(w);
       }
     }
     const accepted = [...acceptedSet].sort(byRank);
@@ -171,8 +200,11 @@ function main() {
       .filter((w) => !sharesLooseKey(ph, prompt, w))
       .sort(byRank)
       .slice(0, 6);
-    const near = tailKin
-      .filter((w) => sharesLooseKey(ph, prompt, w))
+    const near = [...new Set([
+      ...stressNear,
+      ...tailKin.filter((w) => sharesLooseKey(ph, prompt, w)),
+    ])]
+      .filter((w) => !acceptedSet.has(w))
       .sort(byRank)
       .slice(0, 15);
 
@@ -189,6 +221,9 @@ function main() {
   // Prompt candidates per difficulty, shuffled deterministically.
   const puzzles: RhymePuzzle[] = [];
   const usedPrompts = new Set<string>();
+  // One puzzle per rhyme family across the WHOLE pool — KILL/ILL twice is
+  // the same puzzle sold as two (3.5 integrity).
+  const usedFamilies = new Set<string>();
   for (const difficulty of DIFFS) {
     const spec = SPECS[difficulty];
     const candidates = shuffle(rng, lexicon.filter(
@@ -204,20 +239,21 @@ function main() {
         cursor = 0;
       }
       const rounds: RhymeRound[] = [];
-      const roundKeys = new Set<string>();
+      const pendingFamilies: string[] = [];
       while (rounds.length < spec.rounds && cursor < candidates.length) {
         const prompt = candidates[cursor++]!;
         if (!allowReuse && usedPrompts.has(prompt)) continue;
-        const keys = ph.rhymeKeysOf(prompt);
-        if (keys.some((k) => roundKeys.has(k))) continue;  // no same-family rounds
+        const fam = primaryKeyOf(prompt);
+        if (!fam || usedFamilies.has(fam) || pendingFamilies.includes(fam)) continue;
         const round = buildRound(prompt, spec.target);
         if (!round) continue;
         const everyday = round.accepted.filter((w) => inBand(w.toLowerCase(), EVERYDAY));
         if (everyday.length < spec.minEveryday) continue;
         rounds.push(round);
-        keys.forEach((k) => roundKeys.add(k));
+        pendingFamilies.push(fam);
         usedPrompts.add(prompt);
       }
+      if (rounds.length === spec.rounds) pendingFamilies.forEach((f) => usedFamilies.add(f));
       if (rounds.length === spec.rounds) {
         puzzles.push({ id: `rhyme-${difficulty}-${made + 1}`, difficulty, rounds });
         made++;
@@ -252,17 +288,32 @@ function main() {
 function validate(puzzles: RhymePuzzle[], ph: Phonetics) {
   const problems: string[] = [];
   const ids = new Set<string>();
+  const seenFamilies = new Set<string>();
+  const primaryKey = (w: string): string | null => {
+    const pron = ph.pronsOf(w.toLowerCase())[0];
+    return pron ? rhymeKeyOfPron(pron) : null;
+  };
   for (const p of puzzles) {
     if (ids.has(p.id)) problems.push(`${p.id}: duplicate id`);
     ids.add(p.id);
     if (p.rounds.length < 1 || p.rounds.length > 3) problems.push(`${p.id}: ${p.rounds.length} rounds`);
     for (const [i, r] of p.rounds.entries()) {
       const tag = `${p.id} r${i}`;
+      const fam = primaryKey(r.prompt);
+      if (!fam) problems.push(`${tag}: prompt has no rhyme key`);
+      else if (seenFamilies.has(fam)) problems.push(`${tag}: rhyme family "${fam}" already shipped — duplicate puzzle`);
+      else seenFamilies.add(fam);
+      for (const w of [r.prompt, ...r.accepted, ...r.decoys, ...r.near]) {
+        if (!gateOk(w)) problems.push(`${tag}: "${w}" fails the tone/proper-noun gate`);
+      }
       if (r.accepted.length < r.target + 1) problems.push(`${tag}: accepted smaller than target+1`);
       if (r.accepted.includes(r.prompt)) problems.push(`${tag}: prompt inside accepted`);
-      for (const w of r.accepted.slice(0, 40)) {
+      for (const w of r.accepted) {
         if (!ph.rhymesWith(r.prompt.toLowerCase(), w.toLowerCase())) {
           problems.push(`${tag}: accepted "${w}" does not rhyme with ${r.prompt}`);
+        }
+        if (primaryKey(w) !== fam) {
+          problems.push(`${tag}: accepted "${w}" rhymes only via alternate pronunciation/stress — must be near`);
         }
       }
       for (const d of r.decoys) {

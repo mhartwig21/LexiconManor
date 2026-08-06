@@ -3,6 +3,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRng, shuffle, type Rng } from '../src/engine/rng';
 import { cipherLettersOf, decodeMap, type CipherPuzzle } from '../src/engine/puzzles/cipher';
+import { toneOk } from './generate-gate';
 import type { Difficulty } from '../src/engine/types';
 
 /**
@@ -20,6 +21,12 @@ import type { Difficulty } from '../src/engine/types';
 
 const SEED = 20260807;
 const REVEALS: Record<Difficulty, number> = { easy: 3, medium: 2, hard: 1, expert: 0 };
+/**
+ * Longest word a phrase may carry: the Darkroom renders each word unbroken
+ * as 44pt-tappable cells (micro.css .dk-cell, AAA 6.19), and 8 cells is the
+ * most a 360px viewport fits at that size. Guarded here and in validate().
+ */
+const MAX_WORD_LEN = 8;
 
 /** Public-domain proverbs & in-voice aphorisms. A–Z + single spaces only. */
 const PHRASES: string[] = [
@@ -35,9 +42,9 @@ const PHRASES: string[] = [
   'FORTUNE FAVORS THE BOLD',
   'HASTE MAKES WASTE',
   'HONESTY IS THE BEST POLICY',
-  'KNOWLEDGE IS POWER',
+  'LITTLE BY LITTLE THE BIRD BUILDS ITS NEST',
   'LOOK BEFORE YOU LEAP',
-  'NECESSITY IS THE MOTHER OF INVENTION',
+  'A BIRD IN THE HAND IS WORTH TWO IN THE BUSH',
   'NO NEWS IS GOOD NEWS',
   'PRACTICE MAKES PERFECT',
   'SLOW AND STEADY WINS THE RACE',
@@ -71,29 +78,29 @@ const PHRASES: string[] = [
   'A PENNY SAVED IS A PENNY EARNED',
   'A ROLLING STONE GATHERS NO MOSS',
   'BEAUTY IS IN THE EYE OF THE BEHOLDER',
-  'CURIOSITY KILLED THE CAT',
+  'A CAT MAY LOOK AT A KING',
   'EASY COME EASY GO',
   'EVERY ROSE HAS ITS THORN',
   'FIRST THINGS FIRST',
   'IT TAKES TWO TO TANGO',
-  'LIGHTNING NEVER STRIKES TWICE',
+  'ALL GOOD THINGS MUST COME TO AN END',
   'MAKE HAY WHILE THE SUN SHINES',
   'NO TIME LIKE THE PRESENT',
   'ONE GOOD TURN DESERVES ANOTHER',
-  'SEEING IS BELIEVING',
+  'EVERY PATH HAS ITS PUDDLE',
   'STRIKE WHILE THE IRON IS HOT',
   'THE APPLE NEVER FALLS FAR FROM THE TREE',
   'THE BEST THINGS IN LIFE ARE FREE',
   'THE PROOF IS IN THE PUDDING',
-  'TIME HEALS ALL WOUNDS',
+  'TIME AND TIDE WAIT FOR NO MAN',
   'VARIETY IS THE SPICE OF LIFE',
   'WELL BEGUN IS HALF DONE',
   'WASTE NOT WANT NOT',
   // Manor-voice aphorisms (original, in the lexicographer's register).
   'EVERY WORD KEEPS A SECRET',
-  'INK REMEMBERS WHAT PAPER FORGETS',
+  'INK RECALLS WHAT PAPER FORGETS',
   'A QUIET ROOM TEACHES LOUD LESSONS',
-  'THE DICTIONARY NEVER SLEEPS',
+  'THE LEXICON NEVER SLEEPS',
   'OLD BOOKS MAKE WARM COMPANY',
   'A LETTER SENT IS A PROMISE KEPT',
   'SMALL KEYS OPEN GREAT DOORS',
@@ -133,7 +140,13 @@ function main() {
   const rng = createRng(SEED);
 
   // Authoring guard (mirrors validate()): a phrase with a thin alphabet is a
-  // degenerate cipher — filter at intake so authors can add freely above.
+  // degenerate cipher; an over-long word breaks the 44pt cell layout; a
+  // tone-gated word breaks the cozy bar. Fail loudly so the list gets fixed.
+  const bad = PHRASES.filter((p) =>
+    p.split(' ').some((w) => w.length > MAX_WORD_LEN || !toneOk(w)));
+  if (bad.length > 0) {
+    throw new Error(`cipher: phrases with >${MAX_WORD_LEN}-letter or tone-gated words:\n${bad.join('\n')}`);
+  }
   const usable = PHRASES.filter((p) => distinctLetters(p).length >= 9 && p.split(' ').length >= 3);
   const dropped = PHRASES.length - usable.length;
   if (dropped > 0) console.log(`dropped ${dropped} phrase(s) with a thin alphabet or too few words`);
@@ -201,6 +214,10 @@ function validate(puzzles: CipherPuzzle[]) {
     const distinct = cipherLettersOf(p);
     if (distinct.length < 9) problems.push(`${p.id}: only ${distinct.length} distinct letters`);
     if (p.plaintext.split(' ').length < 3) problems.push(`${p.id}: fewer than 3 words`);
+    for (const w of p.plaintext.split(' ')) {
+      if (w.length > MAX_WORD_LEN) problems.push(`${p.id}: "${w}" exceeds ${MAX_WORD_LEN} letters (cell layout)`);
+      if (!toneOk(w)) problems.push(`${p.id}: "${w}" fails the tone gate`);
+    }
     for (const r of p.reveals) {
       if (!distinct.includes(r)) problems.push(`${p.id}: reveal ${r} not in ciphertext`);
     }

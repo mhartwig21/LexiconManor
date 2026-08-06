@@ -19,7 +19,10 @@
  *   - deterministic fragment drip: rooms pull the lowest unfound revealOrder,
  *     preferring fragments sourced from that room category (AAA 4.14)
  *   - pity rule: if no new fragment has appeared in PITY_DROUGHT_DAYS days of
- *     play, a pity letter arrives overnight carrying the next fragment
+ *     play, a pity letter arrives overnight carrying the next fragment. The
+ *     channel is renewable (AAA 4.14): when every authored pity letter is
+ *     spent, the house synthesizes another from a small authored pool of
+ *     Posy bodies — a 17-fragment volume can never outlast the mercy
  *   - letter-constraint engravings are machine-readable (EngravingConstraint)
  *     so the journal can render them against the alphabet and the solvability
  *     test can prove the constraint set admits exactly one dictionary answer
@@ -133,6 +136,9 @@ export interface VolumeContent extends VolumeDef {
   epigraph?: string;
   fragments: FragmentContent[];
   letters: LetterContent[];
+  /** Optional per-volume envelope copy for synthesized pity letters — falls
+   *  back to DEFAULT_PITY_TEMPLATES (see synthesizedPityLetter). */
+  pityTemplates?: PityTemplate[];
 }
 
 // ---------------------------------------------------------------------------
@@ -227,15 +233,65 @@ export function unfoundFragments(def: VolumeDef, state: VolumeState): FragmentDe
  * among fragments sourced from that category, falling back to the lowest
  * unfound overall — so no fragment is ever stranded behind a room type the
  * dice refuse to offer (the Blue Prince fix).
+ *
+ * `reservedIds` (AAA 4.14, testimony channel): fragments a still-live
+ * character scene has promised to deliver in person step aside from the room
+ * drip, so the journal never files a quote for a conversation that hasn't
+ * happened — unless honoring every reservation would strand the drip
+ * entirely, in which case the room wins (fragments must never be stranded).
  */
 export function nextFragmentForRoom(
   def: VolumeDef,
   state: VolumeState,
   category: RoomCategory,
+  opts?: { reservedIds?: ReadonlySet<string> },
 ): FragmentDef | null {
   const unfound = unfoundFragments(def, state);
   if (unfound.length === 0) return null;
-  return unfound.find((f) => f.sourceRoomCategory === category) ?? unfound[0]!;
+  const reserved = opts?.reservedIds;
+  const pool =
+    reserved && unfound.some((f) => !reserved.has(f.id))
+      ? unfound.filter((f) => !reserved.has(f.id))
+      : unfound;
+  return pool.find((f) => f.sourceRoomCategory === category) ?? pool[0]!;
+}
+
+/**
+ * Fragment ids promised by not-yet-seen dialogue nodes (the additive
+ * DialogueEffects.grantsFragmentIds field — empty until such nodes are
+ * authored, so this is forward-compatible with A6's testimony scenes).
+ * The shape is structural with `unknown` effects (narrowed defensively at
+ * read time) so callers can pass real DialogueFiles without this module
+ * importing dialogue code — and without breaking when A6's DialogueEffects
+ * doesn't declare the field yet.
+ */
+export interface FragmentGrantingNode {
+  id: string;
+  effects?: unknown;
+  choices?: readonly { effects?: unknown }[];
+}
+
+function grantsOf(effects: unknown): readonly string[] {
+  if (!effects || typeof effects !== 'object') return [];
+  const g = (effects as { grantsFragmentIds?: unknown }).grantsFragmentIds;
+  return Array.isArray(g) ? g.filter((x): x is string => typeof x === 'string') : [];
+}
+
+export function reservedTestimonyIds(
+  files: Iterable<{ nodes: readonly FragmentGrantingNode[] }>,
+  seenNodeIds: ReadonlySet<string>,
+): Set<string> {
+  const out = new Set<string>();
+  for (const file of files) {
+    for (const node of file.nodes) {
+      if (seenNodeIds.has(node.id)) continue; // already played — grant applied
+      const blocks = [node.effects, ...(node.choices ?? []).map((c) => c.effects)];
+      for (const e of blocks) {
+        for (const id of grantsOf(e)) out.add(id);
+      }
+    }
+  }
+  return out;
 }
 
 /** Days of completed play since a fragment last appeared (from the banked
@@ -291,14 +347,89 @@ export function letterArrived(
   return true;
 }
 
-/** Letters in the tray today, authored order preserved. */
+// --- Synthesized pity letters — the mercy channel never exhausts (AAA 4.14).
+// Two authored one-shots cannot honor an "any 3 consecutive days" guarantee
+// over a 17-fragment volume; once every authored pity letter is opened and a
+// drought holds again, the house writes another one itself.
+
+export interface PityTemplate {
+  subject: string;
+  body: string;
+}
+
+/** Posy's rotating bodies for house-written pity letters. A volume may
+ *  override via VolumeContent.pityTemplates. */
+export const DEFAULT_PITY_TEMPLATES: readonly PityTemplate[] = [
+  {
+    subject: 'Under the tray again, dear',
+    body: 'The house has taken to hiding things under my mail tray the moment a search goes quiet — no stamp, no sender, just your name in pencil. I have stopped pretending to be surprised.\n\nThe enclosure is filed in your journal already. Come by for tea; searches go better fed.\n\n— Posy',
+  },
+  {
+    subject: 'Slipped beneath the Post Room door',
+    body: 'This was on the mat this morning, half under the door, as if the house lost patience with the tray altogether. Same pencil. Same nothing else.\n\nI have filed the enclosure where it belongs. Whatever you are circling, keep circling — the house is plainly rooting for you.\n\n— Posy',
+  },
+  {
+    subject: 'Tucked into the empty pigeonhole',
+    body: 'There is one pigeonhole I keep empty on principle. This morning it was not. No postage, no sender — the house, showing off again because the hunt has gone quiet.\n\nThe enclosure is in your journal. Quiet spells end, dear; they always have.\n\n— Posy',
+  },
+];
+
+/** Synthesized pity letters are namespaced so they can never collide with an
+ *  authored letter id (skeletons use 'pity-1'; we use 'pity-extra-N'). */
+export const SYNTH_PITY_PREFIX = 'pity-extra-';
+const SYNTH_PITY_RE = /^pity-extra-([1-9]\d*)$/;
+
+/** The Nth (1-based) house-written pity letter for this volume. */
+export function synthesizedPityLetter(content: VolumeContent, n: number): LetterContent {
+  const pool =
+    content.pityTemplates && content.pityTemplates.length > 0
+      ? content.pityTemplates
+      : DEFAULT_PITY_TEMPLATES;
+  const t = pool[(n - 1) % pool.length]!;
+  return { id: `${SYNTH_PITY_PREFIX}${n}`, from: 'posy', pity: true, subject: t.subject, body: t.body };
+}
+
+/** How many synthesized pity letters have been opened (from the flag-derived
+ *  opened-id set) — the next one issued is number highest+1. */
+export function synthesizedPityCount(openedIds: ReadonlySet<string>): number {
+  let highest = 0;
+  for (const id of openedIds) {
+    const m = SYNTH_PITY_RE.exec(id);
+    if (m) highest = Math.max(highest, parseInt(m[1]!, 10));
+  }
+  return highest;
+}
+
+/** Resolve any letter id — authored or synthesized — to its content. */
+export function findLetter(content: VolumeContent, letterId: string): LetterContent | undefined {
+  const authored = content.letters.find((l) => l.id === letterId);
+  if (authored) return authored;
+  const m = SYNTH_PITY_RE.exec(letterId);
+  return m ? synthesizedPityLetter(content, parseInt(m[1]!, 10)) : undefined;
+}
+
+/** Letters in the tray today, authored order preserved; synthesized pity
+ *  letters (opened ones stay readable, plus at most one fresh one when the
+ *  drought holds and no other unopened pity letter is already waiting). */
 export function arrivedLetters(
   content: VolumeContent,
   state: VolumeState,
   day: number,
   opts: { droughtDays: number; openedIds: ReadonlySet<string> },
 ): LetterContent[] {
-  return content.letters.filter((l) => letterArrived(l, state, day, opts));
+  const tray = content.letters.filter((l) => letterArrived(l, state, day, opts));
+  const openedSynth = synthesizedPityCount(opts.openedIds);
+  for (let n = 1; n <= openedSynth; n++) tray.push(synthesizedPityLetter(content, n));
+  const hasFreshPity = tray.some((l) => l.pity && !opts.openedIds.has(l.id));
+  if (
+    !hasFreshPity &&
+    state.status === 'active' &&
+    opts.droughtDays >= PITY_DROUGHT_DAYS &&
+    unfoundFragments(content, state).length > 0
+  ) {
+    tray.push(synthesizedPityLetter(content, openedSynth + 1));
+  }
+  return tray;
 }
 
 /**

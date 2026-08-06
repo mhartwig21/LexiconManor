@@ -8,7 +8,8 @@
  *   - invalid dictionary word / too short / already found → mistake weight 0
  *     (free feedback moment — spam-guessing is the fun, AAA R.1 / 1.10).
  *   - structural violations the live entry-coloring already warned about
- *     (missing center, bad letters) → mistake weight 1.
+ *     (missing center, bad letters) → mistake weight 'structural' (flat −1 at
+ *     every tier via STEP_TABLE — AAA R.1, never the −2/−3 deduction row).
  *   - the in-room rank ladder (AAA 1.11) lives in this adapter's state:
  *     SB curve ≈2/5/8/15/25/40/50/70% of the room max, garden-themed.
  *     `solved` fires at Full Bloom (70%); the hidden Every Petal tier (100%)
@@ -165,7 +166,7 @@ export const hiveAdapter: RoomPuzzleAdapter<HivePuzzle, HiveRoomState, HiveActio
         costedMistakes: costed ? next.costedMistakes + 1 : next.costedMistakes,
         lastFeedback: { kind: 'invalid', reason, costed },
       };
-      events.push({ type: 'mistake', weight: costed ? 1 : 0 });
+      events.push({ type: 'mistake', weight: costed ? 'structural' : 0 });
     }
 
     return { state: next, events, outcome: { status: 'active', perfect: isPerfect(next) } };

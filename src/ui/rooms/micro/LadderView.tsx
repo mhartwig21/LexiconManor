@@ -78,7 +78,7 @@ export default function LadderView({ puzzle, state, tier, dispatch }: RoomViewPr
         setShaking(true);
         later(() => setShaking(false), 340);
         const text =
-          fb.reason === 'not-a-word' ? `“${fb.word}” isn't a word the Staircase knows — no cost, it's noted below.`
+          fb.reason === 'not-a-word' ? `“${fb.word}” isn't a word here — no cost, noted below.`
           : fb.reason === 'already-used' ? `You've already stood on “${fb.word}”.`
           : fb.reason === 'not-one-step' ? 'One letter per landing — change exactly one.'
           : 'Same length as the stone you stand on.';
@@ -168,10 +168,10 @@ export default function LadderView({ puzzle, state, tier, dispatch }: RoomViewPr
       {won ? (
         <div className="mic-done">
           <div className="mic-done__title">
-            {steps === puzzle.par && state.hintsBought === 0 ? 'A perfect climb.' : 'You reach the landing.'}
+            {steps <= puzzle.par && state.hintsBought === 0 ? 'A perfect climb.' : 'You reach the landing.'}
           </div>
           <p className="mic-done__line">
-            {steps === puzzle.par
+            {steps <= puzzle.par
               ? `Every stone true — ${steps} steps, right at par.`
               : `${steps} steps against a par of ${puzzle.par}. The Staircase doesn't judge.`}
           </p>

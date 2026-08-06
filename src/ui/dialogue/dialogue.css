@@ -198,6 +198,15 @@
   content: '❦ ';
 }
 
+/* Zero bookmarks: a warm pointer, never a greyed button (AAA 5.9). */
+.dlg-gift-empty {
+  padding: 0.2rem 0.2rem 0;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--text-small, 0.85rem);
+  font-style: italic;
+}
+
 /* --- Reduced motion: information stays, the juice goes ------------------- */
 @media (prefers-reduced-motion: reduce) {
   .dlg-portrait,

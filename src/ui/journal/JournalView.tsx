@@ -18,6 +18,9 @@ import {
   arrivedLetters, fragmentDroughtDays, openedLetterFlag, type FragmentContent,
 } from '../../engine/volume';
 import type { CharacterId } from '../../engine/types';
+import { getDialogueFile } from '../../engine/dialogue/content';
+import { selectDialogue } from '../../engine/dialogue/select';
+import DialogueScene from '../dialogue/DialogueScene';
 import { sfx } from '../../app/sound';
 import './journal.css';
 
@@ -36,6 +39,10 @@ export default function JournalView() {
   const [, navigate] = useLocation();
   const [tab, setTab] = useState<Tab>('word');
   const [openLetterId, setOpenLetterId] = useState<string | null>(null);
+  // Posy's seal-break aside (the 'letter' slot) — forced-context, never spends
+  // the daily valve; mounted only when selection actually has a letter node
+  // (cooldown throttles it to one aside per day; re-reads stay quiet).
+  const [letterAside, setLetterAside] = useState(false);
 
   const volume = useManorStore((s) => s.volume);
   const day = useManorStore((s) => s.day?.day ?? s.volume.day);
@@ -43,6 +50,7 @@ export default function JournalView() {
   const recentEvents = useManorStore((s) => s.recentEvents);
   const dayRecords = useManorStore((s) => s.chronicles.dayRecords);
   const openLetter = useManorStore((s) => s.openLetter);
+  const buildDialogueQuery = useManorStore((s) => s.buildDialogueQuery);
 
   const content = getVolumeContent(volume.volumeId);
   if (!content) {
@@ -127,6 +135,15 @@ export default function JournalView() {
                       sfx.glyph();
                       openLetter(l.id);
                       setOpenLetterId(l.id);
+                      // The 'letter-opened' event is on the stream now — if
+                      // the letter slot has an eligible aside (posy.react.
+                      // letter-*, withinDays 0, cooldownDays 1), play it over
+                      // the sheet. Null / idle-fallback → no aside.
+                      const node = selectDialogue(
+                        getDialogueFile('posy'),
+                        buildDialogueQuery('posy', 'letter'),
+                      );
+                      if (node && node.trigger === 'letter') setLetterAside(true);
                     } else {
                       setOpenLetterId(openLetterId === l.id ? null : l.id);
                     }
@@ -137,6 +154,16 @@ export default function JournalView() {
           )}
         </div>
       </div>
+
+      {/* Posy's aside as the wax gives way — an overlay above the journal
+          sheet (DialogueScene is a fixed overlay; the sheet stays put). */}
+      {letterAside && (
+        <DialogueScene
+          character="posy"
+          slot="letter"
+          onClose={() => setLetterAside(false)}
+        />
+      )}
     </div>
   );
 

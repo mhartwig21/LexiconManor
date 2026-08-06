@@ -22,19 +22,20 @@ import {
   cellKey, deadDoors, deweyCell, doorsConnect, draftTargets, ENTRANCE_CARD_ID,
   roomAt, sameCell, walkableNeighbors,
 } from '../../engine/manor/grid';
-import { CATEGORY_GLYPH_PATHS } from './CategoryGlyph';
+import { ROOM_KIND_GLYPH_PATHS } from './CategoryGlyph';
 
 const CELL = 64;
 const MX = 26;          // left margin: rank-pressure pips live here
-const MY = 12;
+const MT = 34;          // top margin: plot border + Fell-caps title block
+const MB = 22;          // bottom margin: plot border + scale mark
 const VIEW_W = MX + MANOR_COLS * CELL + 12;
-const VIEW_H = MY + MANOR_ROWS * CELL + MY;
+const VIEW_H = MT + MANOR_ROWS * CELL + MB;
 const INSET = 3;        // room wall inset inside its cell
 const GAP = 20;         // door gap width
 const JAMB = 3;         // door jamb tick length
 
 const px = (col: number) => MX + col * CELL;
-const py = (row: number) => MY + (MANOR_ROWS - 1 - row) * CELL;
+const py = (row: number) => MT + (MANOR_ROWS - 1 - row) * CELL;
 
 /** Pressed-state from pointerdown, one frame, no :active reliance (AAA U.1). */
 function press(e: PointerEvent<Element>) {
@@ -108,7 +109,7 @@ function graphCrosses(): string {
   const p: string[] = [];
   for (let c = 0; c <= MANOR_COLS; c++) {
     for (let r = 0; r <= MANOR_ROWS; r++) {
-      const x = MX + c * CELL, y = MY + r * CELL;
+      const x = MX + c * CELL, y = MT + r * CELL;
       p.push(`M${x - 2.5} ${y}h5M${x} ${y - 2.5}v5`);
     }
   }
@@ -176,7 +177,8 @@ export default function BlueprintSheet({
           className={`bp-room__glyph${room.solved ? ' bp-room__glyph--solved' : ''}`}
           transform={`translate(${x + CELL / 2 - 11} ${y + CELL / 2 - 11}) scale(0.92)`}
         >
-          {CATEGORY_GLYPH_PATHS[cat]}
+          {/* per-kind silhouette: WHICH room, not just its category (AAA 6.3) */}
+          {ROOM_KIND_GLYPH_PATHS[room.kind]}
         </g>
         {room.solved && !isSanctum && room.cardId !== ENTRANCE_CARD_ID && (
           <g className="bp-room__tick" transform={`translate(${x + CELL - 15} ${y + 8})`}>

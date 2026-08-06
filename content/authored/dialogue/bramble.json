@@ -16,6 +16,11 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "The manor rearranges itself overnight, you know. Rooms wander. Doors sulk. You'll want a good breakfast and a better sense of humor."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Your room is the one that stays put — I insisted, and the house respects a woman with a mop. Everything else is negotiable by morning."
         }
       ],
       "choices": [
@@ -51,6 +56,16 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "Oh, I like you already. Most guests lead with the wandering rooms."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Manners before mysteries — that's a house rule now. I've just invented it, and I shall enforce it with scones."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Now. Coat off, worries down, and let the house get a look at you. It's been between guests a long while, and so, if I'm honest, have I."
         }
       ]
     },
@@ -65,6 +80,16 @@
           "speaker": "bramble",
           "portrait": "wistful",
           "text": "Mm. The late master studied words, and words never sit still either. You'll get used to it, dear. Or you won't, and that's its own kind of fun."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Last Tuesday the morning room spent the whole day being an upstairs. No note, no apology. We carry on."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "You'll learn the trick of it: hold your plans loosely and your teacup tight. Everything else is furniture."
         }
       ]
     },
@@ -84,6 +109,16 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "Tea. Sit. That's the whole of the house rules — the manor invents the rest daily. Milk or lemon? Don't answer; I already know. Housekeepers always know."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "There. Told you I knew. Thirty years of pouring for this house — I could serve the drafts their preference, if drafts took cups."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Come by every morning, mind. A day in this place goes better on a full pot, and I hear everything worth hearing before the toast is done."
         }
       ],
       "effects": {
@@ -115,6 +150,16 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "You came in last night with dusk on your shoulders and not a step left in you. I've seen the master do the very same. The manor keeps what you found — nothing is wasted here, pet."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "I left the lamp lit on the stairs for you. Old habit. It's nice, having a reason for the habit again."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Eggs this morning, no arguments. Walking a house empty takes more out of a body than the body admits."
         }
       ]
     },
@@ -137,6 +182,16 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "All the way to empty again? Tsk. Drink this first today. A house this size respects a walker who paces herself. Mostly."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Mostly, I say, because the east wing is a flirt and will always coax one more corridor out of you. Don't let it. Or do — but eat first."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "There's a flask by the door for today. Tea holds its warmth longer than resolve does, and I've known both to save an afternoon."
         }
       ]
     },
@@ -159,6 +214,16 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "Wise, stopping while the light was still gold. The rooms gossip about guests who know when to fold their napkin."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Good gossip, mind. The Gallery called you 'sensible' — from the Gallery that's practically a proposal."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Rest banked is rest spent well here. The house saves your unspent evenings somewhere; I've never found the drawer, but I trust it."
         }
       ]
     },
@@ -188,6 +253,16 @@
           "speaker": "bramble",
           "portrait": "concerned",
           "text": "A whole day and the house gave you nothing but locked doors and long looks? It does that. It tested him too, before it trusted him. Eat something."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "And don't you go carrying yesterday up the stairs with you. This house forgets its own floor plan nightly — the least you can do is forget one bad afternoon."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Second scone. Medicinal. I'll hear no argument from someone the Gallery outstared."
         }
       ]
     },
@@ -207,6 +282,16 @@
           "speaker": "bramble",
           "portrait": "curious",
           "text": "I heard you speak at the Sanctum door yesterday. The whole house held its breath — the kettle went quiet, and kettles never do. It wasn't the word. But it listened. That's new."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "Thirty years I've dusted past that door, and it never once held its breath for me. Whatever you're doing, pet — it's the right kind of wrong."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Tea's stronger this morning. Doors that listen deserve guessers with their wits about them."
         }
       ]
     },
@@ -226,6 +311,16 @@
           "speaker": "bramble",
           "portrait": "wistful",
           "text": "You found one of his scraps yesterday, didn't you. Careful with those — not dangerous, mind. Just heavy, the way old handwriting gets."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "I used to find them tucked in the oddest places. Under the butter dish, once. I put it back. Some things want finding by the right person."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Seems the house agrees you're the right person. Don't let that go to your head — let it go to your journal."
         }
       ]
     },
@@ -248,6 +343,16 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "Not one wrong step in that room yesterday — the floorboards told me before you were down for breakfast. Show-off. Have a scone."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "The master had days like that. He'd come down trying not to smile and fail at it magnificently. You're doing the very same face, dear."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "I shan't make a fuss. But the good jam is out, and the good jam does not come out for nothing."
         }
       ]
     },
@@ -270,6 +375,16 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "Fern came in beaming about some flower of a word you built. She doesn't beam. Whatever you did in that Conservatory, do it again."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "curious",
+          "text": "She stood in my kitchen a full minute deciding how to say it, then said 'good hands' and left. From Fern that's a sonnet."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "I pressed an extra flower into the day's post for luck. Don't ask which letter. Luck spoils if you look straight at it."
         }
       ]
     },
@@ -289,6 +404,16 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "You left a room unfinished. Good. A room will keep till tomorrow; a person won't always. He never learned that one."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "He'd sit up all hours rather than leave a puzzle half-done. I'd find the candle drowned and him asleep on the blotter. Don't be him. Be you, with breakfast."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "The room will brag about being difficult, mind. Let it. Rooms need their little victories same as the rest of us."
         }
       ]
     },
@@ -308,6 +433,16 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "There's cat hair on your sleeve and I have never seen you happier. Dewey has that effect. One step's a bargain."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "He'll pretend it never happened, of course. Cats keep their books in a currency of dignity. But he slept outside your door an hour. I saw."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "There's a lint brush on the hall table now. Permanent fixture. Consider it his gift to you, by way of me."
         }
       ]
     },
@@ -327,6 +462,16 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "Someone in this house is pressing flowers in a book today because of you. I'll say no more. Housekeepers see everything."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Kindness travels oddly in a place like this — down the dumbwaiter, up the chimneys. It always arrives, though. Always."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "You keep on like this and I'll have to start a second ledger just for the household's moods improving. Paperwork I'd welcome, for once."
         }
       ]
     },
@@ -349,6 +494,16 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "Spent to the last step again. You and the master both — hand you a lovely evening and you'll walk it to the bone. Sit. Toast. Then go be incorrigible."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "I've buttered both sides. Don't tell the pantry ledger."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "And take the short corridor today if it offers. It only offers to people it likes — that's not superstition, that's architecture."
         }
       ]
     },
@@ -371,6 +526,16 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "In at dusk with empty pockets and full eyes. That's not a scolding, pet — that's exactly how a good day looks from the doorway."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "He used to say the house measures its guests by what they're willing to spend on it. You'd have gotten on, the two of you. Terribly."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Go on, then. The house is already rearranging itself to show you something. I can hear it showing off from here."
         }
       ]
     },
@@ -393,6 +558,16 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "Turned in early with steps still in the tin? Extravagant. The manor doesn't know what to do with restraint — it sulked in the corridors all night."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "I told it: some guests have sense. It rattled a shutter at me. We've agreed to differ, the house and I, on the subject of you."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Either way, you're the best-rested soul under this roof, and I include the furniture. Use it on something lovely."
         }
       ]
     },
@@ -422,6 +597,16 @@
           "speaker": "bramble",
           "portrait": "concerned",
           "text": "The Library got the better of you before the light went, I hear. Shelves hold grudges, dear, but they never keep them — it'll sort kinder today."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "And if it doesn't, tell Ellery I said she may glare at it. Her glare alphabetizes things."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Take the long way past the kitchen first. Fortified sorters make fewer misfiles — that's not folklore, that's breakfast."
         }
       ]
     },
@@ -451,6 +636,16 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "The Conservatory wouldn't bloom for you yesterday? Fern says some flowers only open for a rested gardener. Eat first. Then go make it flower."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "She sent up honey for your toast, by the way. Said the room owes you. Rooms pay their debts here, one way or another."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "And talk to the flowers while you work. They don't understand a word, which is precisely what makes them such good company for a word-tired head."
         }
       ]
     },
@@ -480,6 +675,16 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "That Gallery ran you out of daylight, didn't it. Those paths tangle when you're tired, dear — they comb out easy on a full stomach."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "I dust in there with my eyes half-shut, else the frames start suggesting routes. Ignore their advice. Take mine: porridge."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Start from a corner today. Corners are honest. It's the middles of things that lie to tired eyes."
         }
       ]
     },
@@ -509,6 +714,250 @@
           "speaker": "bramble",
           "portrait": "wistful",
           "text": "The Study kept its word from you yesterday. It kept his words from everyone for thirty years, so don't take it personally. Take toast."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "That room loved him best, I think. It'll come round to you the way he would have — slowly, then all at once, then forever."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Read his definitions out loud in there, if you're stuck. The room wrote them to be spoken. Most true things were."
+        }
+      ]
+    },
+    {
+      "id": "bramble.recap.dry-vestibule",
+      "trigger": "morning",
+      "priority": 712,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        },
+        {
+          "kind": "event",
+          "event": "room-abandoned",
+          "where": {
+            "kind": "anagram"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "The Vestibule scrambled you out of the light, did it? Cheeky little room. It once turned 'welcome mat' into something unrepeatable and wouldn't turn it back for a week."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Letters unscramble kinder after breakfast, pet. It's practically science."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Try saying the jumble aloud on your way past. Half those scrambles are just words standing on their heads for attention."
+        }
+      ]
+    },
+    {
+      "id": "bramble.recap.dry-staircase",
+      "trigger": "morning",
+      "priority": 712,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        },
+        {
+          "kind": "event",
+          "event": "room-abandoned",
+          "where": {
+            "kind": "ladder"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Stuck on the Staircase till dusk, one rung shy? Word ladders are like real ones, dear — never look at the top, only the next step."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "The master fell off that staircase for three days once. CORD to WARM, I think it was. He came down for meals and dignity, in that order."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Leave your pride on the landing and take the rungs one letter at a time. The Staircase respects a steady climber more than a clever one."
+        }
+      ]
+    },
+    {
+      "id": "bramble.recap.dry-darkroom",
+      "trigger": "morning",
+      "priority": 712,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        },
+        {
+          "kind": "event",
+          "event": "room-abandoned",
+          "where": {
+            "kind": "cipher"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "concerned",
+          "text": "The Darkroom kept its secrets past sunset, then. Ciphers are just words being shy, pet — and shy things come out for the patient and the fed."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Start with the little words today. Even in code, an 'A' alone is usually an 'A' being dramatic about it."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "And leave the door cracked for the light. Secrets keep better in the dark, but they're solved better out of it."
+        }
+      ]
+    },
+    {
+      "id": "bramble.recap.dry-linen",
+      "trigger": "morning",
+      "priority": 712,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        },
+        {
+          "kind": "event",
+          "event": "room-abandoned",
+          "where": {
+            "kind": "crossword"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "The Linen Closet crossed you up before the light went? It folds its clues like fitted sheets — nobody gets those right the first evening."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Try the downs first today. The acrosses in that closet are terrible show-offs; the downs just want to be useful."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "And if a clue seems to be about towels, it is never about towels. That closet thinks itself very deep."
+        }
+      ]
+    },
+    {
+      "id": "bramble.recap.dry-music",
+      "trigger": "morning",
+      "priority": 712,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        },
+        {
+          "kind": "event",
+          "event": "room-abandoned",
+          "where": {
+            "kind": "rhyme"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "The Music Room sang you out of steps, I hear. Rhymes dry up when you chase them, dear — they're cats that way. Look busy with your tea and one will land in your lap."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "The piano in there still won't rhyme anything with 'orange.' It's been sulking about it since before my time."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Hum on your way up, pet. A primed ear rhymes twice as fast — choir trick. Housekeepers know a few."
+        }
+      ]
+    },
+    {
+      "id": "bramble.recap.dry-pantry",
+      "trigger": "morning",
+      "priority": 712,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        },
+        {
+          "kind": "event",
+          "event": "room-abandoned",
+          "where": {
+            "kind": "category"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "My Pantry outran you last night, did it? Don't be embarrassed — that room counts faster than a greengrocer at closing. It's the only impatient room I keep."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Between us: it softens for anyone who's eaten. Racing a larder on an empty stomach is asking the joke to write itself, pet."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Go in with a category in your teeth — fruits, say, or things that rhyme with 'jam.' A running start beats a clever one in there."
         }
       ]
     },
@@ -531,6 +980,16 @@
           "speaker": "bramble",
           "portrait": "wistful",
           "text": "You said it. You actually said it out loud. I dusted that landing for years and never once — oh, sit down, dear, I'm going to cry into the marmalade."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "The whole house came down two inches overnight. Settled, like a held breath let go. I heard every beam do it."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "There's cake for breakfast. Don't argue. Some mornings outrank the meal plan."
         }
       ],
       "summary": "Mrs. Bramble cried into the marmalade. Happily."
@@ -577,6 +1036,11 @@
           "speaker": "bramble",
           "portrait": "wistful",
           "text": "Kind. Impossible. He'd stand in the Library till midnight arguing with a dictionary like it owed him money. Then one day the arguing stopped, and I still can't tell you which silence was worse."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "There. That's your one thing. The kettle's boiling and I've dusted my eyes quite enough for a Tuesday."
         }
       ],
       "effects": {
@@ -606,6 +1070,16 @@
           "speaker": "bramble",
           "portrait": "wistful",
           "text": "He struck that word from every book in the house, you know. Ink over ink over ink. I thought it was scholarship. It wasn't. It was grief with a good vocabulary."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "concerned",
+          "text": "I brought his supper up the night he finished the last book. He said 'there — now it can't hurt anyone.' As if a word were a wasp. As if the hurt weren't already in the house."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "That's why I'm glad of you, pet. Somebody has to un-strike it. The house has been waiting for hands that would."
         }
       ],
       "summary": "The erasure wasn't scholarship. It was grief."
@@ -627,6 +1101,16 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "Here. The pantry key. It was his rule that guests earn it, and his rule that I decide when. Warm hands, warm bread, warm house — that's the whole economy of the place."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Mind the third shelf. The preserves up there predate me, and I've chosen to respect their seniority."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "And if the Pantry challenges you to one of its counting games while you're in there — that's its way of saying hello. Rude little room. My favorite."
         }
       ],
       "summary": "Earned the pantry key. Bramble's highest honor."
@@ -652,9 +1136,48 @@
           "speaker": "bramble",
           "portrait": "wistful",
           "text": "Take this: his old tea tin. It rattles. He never let me look inside; I never let me look inside either. Yours now."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "And if you do look — don't tell me what's in it. After thirty years, the rattle and I have an understanding."
         }
       ],
       "summary": "Gave Mrs. Bramble a bookmark; received the master's rattling tea tin."
+    },
+    {
+      "id": "bramble.react.gift-thanks",
+      "trigger": "idle",
+      "priority": 800,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "gift-given",
+          "withinDays": 0,
+          "where": {
+            "character": "bramble"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Another bookmark? You'll have me reading above my station. It goes in the recipe book — page with the lemon cake, so I find it often."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Go on with you now, before I start saving you the good crusts on purpose. ...I already do. Well. Now it's official."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "And no, before you ask — lemon cake is not a bribe if it is scheduled. Thursday. Be hungry."
+        }
+      ]
     },
     {
       "id": "bramble.gen.weather",
@@ -666,6 +1189,16 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "Rain again on the east windows — which is odd, dear, because the east windows face indoors now. I've stopped filing complaints."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "The house does its own weather the way some men do their own taxes: confidently, and wrong."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Still — indoor rain keeps the ferns glad and the dust humble. A house could do worse for hobbies."
         }
       ]
     },
@@ -679,6 +1212,16 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "If a door won't open, it's not locked, it's shy. Knock twice and mean it."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "The cellar door wants three knocks and a compliment, but the cellar has always been needy."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "And never rattle a handle. You wouldn't like being rattled, and doors have longer memories than either of us."
         }
       ]
     },
@@ -692,6 +1235,16 @@
           "speaker": "bramble",
           "portrait": "neutral",
           "text": "Thirty-one rooms yesterday, thirty-three today. I don't dust the new ones till they've decided to stay."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Learned that the hard way. Polished a parlor top to bottom in '09 and it was a linen cupboard by supper. Beautiful cupboard, mind."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "You can tell a room's decided to stay when it starts collecting dust with a bit of pride. Like a dog settling into its basket."
         }
       ]
     },
@@ -705,6 +1258,11 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "If Dewey sits on a paper, that paper matters. If he sits on you, you matter. The cat is never wrong; it's infuriating."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "He sat on the master's last good pen for a week once. We only understood why after. I don't ask the cat questions anymore; I just thank him on a delay."
         }
       ]
     },
@@ -718,6 +1276,16 @@
           "speaker": "bramble",
           "portrait": "curious",
           "text": "The kettle knows the day's weather before the sky does. Rolling boil this morning. Take that as you will."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "A rolling boil means a finding sort of day, historically. I keep records. Well — I keep feelings, in the shape of records."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "So: a finding day. Wear the coat with the deep pockets."
         }
       ]
     },
@@ -737,6 +1305,16 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "You're gathering his scraps, I see. When they start to rhyme in your head — that's when you take the stairs to the top. Not before, and not alone: I'll have tea waiting either way."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "And don't fear the door. It's not a test you can fail, whatever the Portrait implies. It's a door that misses being knocked on."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Whatever happens up there, there's tea after. That's not comfort, dear, that's policy."
         }
       ]
     },
@@ -750,6 +1328,124 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "The Portrait on the landing — don't mind his scowl. He scowled at everyone, alive. It was practically affection."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "I dust his frame Thursdays and tell him the news. He pretends the paint can't hear. We're both terrible liars, and it's the nicest hour of my week."
+        }
+      ]
+    },
+    {
+      "id": "bramble.gen.linen",
+      "trigger": "morning",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "If you find the Linen Closet today, mind it doesn't rope you into its little crossword. Or do let it — but count your steps. That closet flirts in clues."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "It asked me for a seven-letter word for 'housekeeper' once. I said 'BRAMBLE' and it's been sweet on me since."
+        }
+      ]
+    },
+    {
+      "id": "bramble.gen.pantry",
+      "trigger": "morning",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Hear the Pantry rattling its shelves? It wants someone to play its naming game. Greedy thing — it'd have you list cheeses till Michaelmas if the steps held out."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Humor it now and then, pet. A pantry that feels appreciated keeps the biscuits from going wherever biscuits go in this house."
+        }
+      ]
+    },
+    {
+      "id": "bramble.gen.music",
+      "trigger": "morning",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "curious",
+          "text": "The Music Room was humming to itself before dawn. Rhyming weather. If it asks you for a word to finish a verse, give it a good one — it remembers a lazy rhyme for years."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "It once held a grudge over 'moon' and 'June' for an entire winter. Standards, that room."
+        }
+      ]
+    },
+    {
+      "id": "bramble.gen.stairwell",
+      "trigger": "morning",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "The Staircase is in one of its ladder moods — changing one letter of itself per landing. Went up as STAIRS yesterday, came down as STORES. The luggage was confused."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Take it slow if you climb it today. One rung, one letter, no vaulting. Same advice I gave the master; same advice he ignored."
+        }
+      ]
+    },
+    {
+      "id": "bramble.gen.darkroom",
+      "trigger": "morning",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "curious",
+          "text": "If a room goes red-lit and whispery on you, that's the Darkroom. Everything it says is in code, even the pleasantries. Nod politely and bring a pencil."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "It ciphered my shopping list once. Took me two days to learn I'd bought twelve XQFFS. They were eggs. Lovely eggs, in fairness."
+        }
+      ]
+    },
+    {
+      "id": "bramble.gen.vestibule",
+      "trigger": "morning",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "The Vestibule's rearranged its welcome sign again. This morning it says 'CLEMEOW.' Either it means WELCOME or the cat has learned to spell. Both alarm me."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "If it jumbles a word at you on your way through, jumble one back. It respects the effort and unhands your coat quicker."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Small room, big heart, terrible spelling. We keep it for the company."
         }
       ]
     },
@@ -763,6 +1459,11 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "We'll talk properly tomorrow, dear — these floors won't scold themselves."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Unless the ceiling comes down. Then knock twice and bring a bucket, there's a dear."
         }
       ]
     },
@@ -789,6 +1490,11 @@
           "speaker": "bramble",
           "portrait": "neutral",
           "text": "Mind the runner in the hall — it moved overnight and I refuse to chase it."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Third time this month. I suspect the hall of encouraging it."
         }
       ]
     },
@@ -802,6 +1508,11 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "Kettle's always on. That's not a metaphor, it's a fire hazard I've made peace with."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Cup's poured if you want it walking past. No obligation. There's always no obligation, and there's always a cup."
         }
       ]
     },
@@ -815,6 +1526,11 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "You've crumbs — no, other cheek. There. Presentable."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Can't have the rooms thinking I feed you carelessly. I have a reputation with the wallpaper."
         }
       ]
     },
@@ -828,6 +1544,29 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "If you see the good silver in an odd room, leave it. It's sulking."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "It gets like this every spring. By June it will be back in the sideboard, acting as though nothing happened."
+        }
+      ]
+    },
+    {
+      "id": "bramble.idle.busy-5",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Sheets on the line in the courtyard that isn't there on Wednesdays. Timing, dear, is everything in this house."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "If you meet the courtyard before I do, tell it the sheets are winning."
         }
       ]
     },
@@ -849,6 +1588,11 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "It's a better house with you in it, pet. Even the drafts think so."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Now shoo, before I say something soppier and the wallpaper starts talking."
         }
       ]
     },
@@ -862,6 +1606,11 @@
           "speaker": "bramble",
           "narration": true,
           "text": "Mrs. Bramble hums something old and out of tune, polishing a doorknob that was already bright."
+        },
+        {
+          "speaker": "bramble",
+          "narration": true,
+          "text": "She catches you looking, winks, and goes on humming. The doorknob has never been brighter."
         }
       ]
     }

@@ -11,17 +11,66 @@ import { initViewport } from './viewport';
 import { initPersistence } from './persistence';
 import { registerServiceWorker } from '../pwa';
 import { startMusicDirector } from '../music/director';
+import { loadPools } from '../pools';
 
 let booted = false;
+
+/**
+ * U.1: pressed state from pointerdown on EVERY tappable, not iOS Safari's
+ * conditional :active heuristics. One capture-phase delegate covers hexes,
+ * tiles, letter keys, seals, choices and buttons alike; components style
+ * `.is-pressed` (platform.css ships the base ink-darken + translate, rooms
+ * layer richer specs like the hex scale-spring on the same class).
+ */
+function initPressedState(): void {
+  const PRESSABLE = 'button, [role="button"], .hex, .tile';
+  const pressed = new Map<number, Element>();
+
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      const target = e.target instanceof Element ? e.target.closest(PRESSABLE) : null;
+      if (!target || target.closest('[disabled], [aria-disabled="true"]')) return;
+      target.classList.add('is-pressed');
+      pressed.set(e.pointerId, target);
+    },
+    { capture: true, passive: true },
+  );
+
+  const release = (e: PointerEvent) => {
+    const el = pressed.get(e.pointerId);
+    if (!el) return;
+    el.classList.remove('is-pressed');
+    pressed.delete(e.pointerId);
+  };
+  // Capture phase: touch implicitly pointer-captures the pressed element, so
+  // pointerup/cancel always retarget it even when the finger slid off.
+  document.addEventListener('pointerup', release, true);
+  document.addEventListener('pointercancel', release, true);
+  window.addEventListener('blur', () => {
+    for (const el of pressed.values()) el.classList.remove('is-pressed');
+    pressed.clear();
+  });
+}
 
 export function bootPlatform(): void {
   if (booted || typeof window === 'undefined') return;
   booted = true;
 
   initViewport();
+  initPressedState();
   initPersistence();
   registerServiceWorker();
   startMusicDirector();
+
+  // AAA 9.6/7.3: content pools are code-split out of the eager bundle
+  // (app/pools.ts). Warm them right after first paint — double-rAF lands
+  // after the first committed frame — so the day-start gate that awaits
+  // loadPools() almost never actually waits. Fire-and-forget: failures
+  // surface at the awaited gate, not here.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => void loadPools().catch(() => {}));
+  });
 
   // Pinch-zoom never reaches the page (AAA 7.11); boards additionally set
   // touch-action:none locally. `gesturestart` is the Safari-only pinch event.

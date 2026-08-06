@@ -77,7 +77,10 @@
   cursor: pointer;
   transition: transform var(--dur-press), filter var(--dur-press);
 }
-.anch-btn:active { transform: translateY(1px); filter: brightness(0.94); }
+/* U.1: `.is-pressed` is set from pointerdown (usePressed.ts) — the guaranteed
+   same-frame signal; `:active` remains as a desktop/mouse fallback only. */
+.anch-btn:active,
+.anch-btn.is-pressed { transform: translateY(1px); filter: brightness(0.94); }
 .anch-btn:disabled { opacity: 0.45; cursor: default; }
 .anch-btn--primary {
   background: var(--room-accent);
@@ -249,7 +252,8 @@
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-.hv-cell:active { transform: scale(0.85); }
+.hv-cell:active,
+.hv-cell.is-pressed { transform: scale(0.85); }
 .hv-cell--center { background: var(--room-accent); color: var(--paper); }
 .hv-cell--c  { left: 34%;   top: 36.15%; }
 .hv-cell--p0 { left: 34%;   top: 7.15%;  }
@@ -287,6 +291,49 @@
 }
 
 .hv-sil { display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: center; }
+
+/* AAA 1.1: slack accumulates ABOVE the entry/hive/controls cluster so the
+   hive sits in the bottom-half thumb zone, matching SB's hive-low frame. */
+.hv-spacer { flex: 1 1 0; min-height: 0; }
+
+/* 1.16 Full Bloom vignette: bespoke hand-drawn milestone art, ≤2s,
+   tap-skippable, transform/opacity only. */
+.hv-bloom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0;
+  color: var(--ink);
+  cursor: pointer;
+  animation: anch-pop 260ms var(--ease-settle);
+}
+.hv-bloom__svg { width: min(64vw, 250px); height: auto; }
+.hv-bloom__title {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  color: var(--room-accent);
+  animation: anch-pop 300ms var(--ease-settle) 250ms both;
+}
+.hv-bloom__petal {
+  transform-box: fill-box;
+  transform-origin: center 100%;
+  animation: hv-bloom-petal 340ms var(--ease-settle) both;
+}
+.hv-bloom__heart { animation: hv-bloom-heart 300ms var(--ease-settle) 1050ms both; }
+.hv-bloom__stem path { animation: hv-bloom-fade 280ms ease 120ms both; }
+@keyframes hv-bloom-petal {
+  from { transform: scale(0.2); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes hv-bloom-heart {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes hv-bloom-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 
 /* --------------------------------------------------------------------------
    The Library (Word Web) — AAA §2
@@ -345,7 +392,8 @@
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-.ww-tile:active { transform: scale(0.94); }
+.ww-tile:active,
+.ww-tile.is-pressed { transform: scale(0.94); }
 .ww-tile--selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .ww-tile--small { font-size: 0.74rem; }
 .ww-tile--hop { animation: ww-hop 300ms ease both; }
@@ -353,6 +401,29 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 }
+
+/* AAA 2.11 — the act of naming: the final thread's label card. */
+.ww-name { text-align: center; }
+.ww-name__eyebrow {
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.ww-name__words {
+  margin: 0.45rem 0 0.1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.95rem;
+}
+.ww-name__ask {
+  margin: 0.15rem 0 0.55rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--ink-soft);
+}
+.ww-name__options { display: flex; flex-direction: column; gap: 0.45rem; align-items: stretch; }
+.ww-name__options .anch-btn { width: 100%; }
 
 /* --------------------------------------------------------------------------
    The Gallery (Twistle) — AAA §3
@@ -378,6 +449,7 @@
   transition: transform 90ms ease, background-color 90ms ease, color 90ms ease;
   -webkit-tap-highlight-color: transparent;
 }
+.tw-cell.is-pressed { transform: scale(0.92); }
 .tw-cell--traced { background: var(--room-accent); color: var(--paper); border-color: var(--room-accent); }
 .tw-cell--head { transform: scale(1.06); box-shadow: var(--shadow-lift); }
 .tw-cell--far { opacity: 0.5; }
@@ -474,10 +546,14 @@
 @media (prefers-reduced-motion: reduce) {
   .anch-shake, .anch-pop, .anch-toast, .anch-done,
   .ww-tile--hop, .ww-banner--in, .ww-banner--dance, .ww-banner--in .ww-banner__theme,
-  .hv-burst, .hv-burst__text, .fw-reveal__ch {
+  .hv-burst, .hv-burst__text, .fw-reveal__ch,
+  .hv-bloom, .hv-bloom__title, .hv-bloom__petal, .hv-bloom__heart, .hv-bloom__stem path {
     animation: none;
   }
   .hv-caret { animation: none; opacity: 1; }
-  .hv-cell:active, .ww-tile:active, .anch-btn:active, .tw-cell--head { transform: none; }
+  .hv-cell:active, .hv-cell.is-pressed,
+  .ww-tile:active, .ww-tile.is-pressed,
+  .anch-btn:active, .anch-btn.is-pressed,
+  .tw-cell.is-pressed, .tw-cell--head { transform: none; }
   .hv-bar__fill { transition: none; }
 }

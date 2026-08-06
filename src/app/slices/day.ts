@@ -19,7 +19,7 @@ import type { SaveV2 } from '../save';
 import {
   beginDay, buildDayRecord, canAdvancePhase, canEndDay, pruneEventsAtDusk, shouldTriggerDusk,
 } from '../../engine/day';
-import { appendEntry, stepsRemaining as remaining } from '../../engine/economy/steps';
+import { appendEntry, stepsRemaining as remaining, STEP_TABLE } from '../../engine/economy/steps';
 
 export interface DaySlice {
   day: DayState | null;
@@ -43,7 +43,40 @@ export interface DaySlice {
 
 export const createDaySlice =
   (initial: SaveV2): StateCreator<ManorStore, [], [], DaySlice> =>
-  (set, get) => ({
+  (set, get, api) => {
+    /**
+     * Dusk is checked one microtask AFTER the state settles, never inside the
+     * mutation that emptied the ledger. Why: manor.openDraft appends the −1
+     * move entry BEFORE setting draftOffer — a synchronous dusk here would
+     * flip the phase mid-call and the already-rolled offer would be discarded,
+     * i.e. the player pays her last step and receives nothing (AAA 4.6 +
+     * 4.12/R.3 blocker). Deferring lets the offer land; shouldTriggerDusk then
+     * treats an open draft like an active room and dusk waits for resolution.
+     */
+    let duskCheckQueued = false;
+    const scheduleDuskCheck = () => {
+      if (duskCheckQueued) return;
+      duskCheckQueued = true;
+      queueMicrotask(() => {
+        duskCheckQueued = false;
+        const s = get();
+        if (shouldTriggerDusk(s.day, s.ledger, s.draftOffer)) s.endDay('steps-exhausted');
+      });
+    };
+
+    // Draft resolution and room exit live in other slices (manor/room); this
+    // subscription is the economy's hook on those edges: an offer resolving
+    // (cancel or choose) and an active room closing both re-arm the dusk
+    // check, so "dusk fires on exit" (AAA 4.12) holds without cross-slice
+    // calls. The scheduled microtask re-reads state, so a choose that enters
+    // a puzzle room (activeRoom set in the same tick) correctly suspends it.
+    api.subscribe((s, prev) => {
+      const draftResolved = prev.draftOffer != null && s.draftOffer == null;
+      const roomExited = prev.day?.activeRoom != null && s.day != null && s.day.activeRoom == null;
+      if (draftResolved || roomExited) scheduleDuskCheck();
+    });
+
+    return {
     day: initial.day,
     ledger: initial.ledger,
     recentEvents: initial.events.recent,
@@ -92,9 +125,10 @@ export const createDaySlice =
     applyStepEntry: (entry) => {
       set((s) => ({ ledger: appendEntry(s.ledger, entry) }));
       // Steps just hit 0 out on the blueprint → gentle dusk, never mid-puzzle
-      // (mid-puzzle entries carry an activeRoom, so the predicate is false).
-      const s = get();
-      if (shouldTriggerDusk(s.day, s.ledger)) s.endDay('steps-exhausted');
+      // (mid-puzzle entries carry an activeRoom) and never under an open draft
+      // offer — the check runs a microtask later so a door opened with the
+      // last step still shows its cards (see scheduleDuskCheck above).
+      scheduleDuskCheck();
     },
 
     recordEvent: (event) => {
@@ -103,6 +137,13 @@ export const createDaySlice =
         recentEvents: [...s.recentEvents, { day, at: Date.now(), event }],
         counters: { ...s.counters, [event.type]: (s.counters[event.type] ?? 0) + 1 },
       }));
+      // Priced actions recorded by other slices route their cost HERE so every
+      // delta flows through the single audited ledger (AAA 4.9): the dialogue
+      // slice records 'gift-given'; the −1 "small walk to find them" ledgers
+      // as a 'gift' entry and renders as a floating −1 on the counter.
+      if (event.type === 'gift-given') {
+        get().applyStepEntry({ reason: 'gift', delta: STEP_TABLE.gift, at: Date.now() });
+      }
     },
 
     stepsRemaining: () => remaining(get().ledger),
@@ -115,4 +156,5 @@ export const createDaySlice =
       if (!to || !canAdvancePhase(day.phase, to)) return;
       set({ day: { ...day, phase: to } });
     },
-  });
+    };
+  };

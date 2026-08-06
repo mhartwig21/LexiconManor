@@ -37,7 +37,8 @@ export type ForgottenWordFeedback =
   /** Out of guesses: warm auto-abandon, word revealed for closure. */
   | { kind: 'slipped'; word: string }
   | { kind: 'clue-unsealed'; clue: ClueId }
-  | { kind: 'invalid'; reason: 'empty' | 'repeat' | 'finished' };
+  /** 'wrong-length' is malformed input — free, no whisper consumed (AAA 3.2). */
+  | { kind: 'invalid'; reason: 'empty' | 'repeat' | 'wrong-length' | 'finished' };
 
 export interface ForgottenWordRoomState {
   fw: ForgottenWordState;
@@ -127,7 +128,10 @@ export const forgottenWordAdapter: RoomPuzzleAdapter<ForgottenWordPuzzle, Forgot
       }
       case 'invalid': {
         next = { ...next, lastFeedback: { kind: 'invalid', reason: result.reason } };
-        if (result.reason === 'repeat') events.push({ type: 'mistake', weight: 0 });
+        // Malformed input is a free feedback moment (AAA 3.2) — never costed.
+        if (result.reason === 'repeat' || result.reason === 'wrong-length') {
+          events.push({ type: 'mistake', weight: 0 });
+        }
         break;
       }
     }

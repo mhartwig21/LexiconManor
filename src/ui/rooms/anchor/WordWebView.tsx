@@ -8,10 +8,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { RoomViewProps } from '../registry';
-import type { WordWebPuzzle } from '../../../engine/types';
-import type { WordWebAction, WordWebRoomState } from '../../../engine/rooms/adapters/word-web';
+import type { WordWebAction, WordWebPuzzleEx, WordWebRoomState } from '../../../engine/rooms/adapters/word-web';
 import { createRng, shuffle } from '../../../engine/rng';
 import { sfx } from '../../../app/sound';
+import { pressProps } from './usePressed';
 import './anchor.css';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
@@ -32,11 +32,17 @@ function endCopy(mistakes: number): string {
   return 'Got there — the web holds.';
 }
 
-export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewProps<WordWebPuzzle, WordWebRoomState, WordWebAction>) {
+export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewProps<WordWebPuzzleEx, WordWebRoomState, WordWebAction>) {
   const [selection, setSelection] = useState<string[]>([]);
-  const [order, setOrder] = useState<string[]>(() =>
-    shuffle(createRng(hashStr(puzzle.id)), puzzle.groups.flatMap((g) => g.words)),
-  );
+  // 2.6: the opening order is the generator's adversarial layout (planted
+  // herrings clustered so shuffle is a real tool); shuffle-seeded fallback
+  // only for boards predating the layout field.
+  const [order, setOrder] = useState<string[]>(() => {
+    const all = puzzle.groups.flatMap((g) => g.words);
+    const layout = puzzle.layout;
+    if (layout && layout.length === all.length && all.every((w) => layout.includes(w))) return layout;
+    return shuffle(createRng(hashStr(puzzle.id)), all);
+  });
   const [busy, setBusy] = useState(false);
   const [hopping, setHopping] = useState<string[]>([]);
   const [shaking, setShaking] = useState(false);
@@ -50,13 +56,17 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
   };
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  const won = state.web.status === 'won';
+  const naming = state.pendingNaming;
+  const won = state.web.status === 'won' && !naming;
   const stepCost = tier === 3 ? 3 : 2;
 
   const solvedGroups = useMemo(
     () => state.web.solvedTiers.map((t) => puzzle.groups.find((g) => g.tier === t)!),
     [state.web.solvedTiers, puzzle],
   );
+  // While the naming act is up, the final banner stays unstamped — its label
+  // is the question (AAA 2.11), so it must not land early as a spoiler.
+  const shownGroups = naming ? solvedGroups.slice(0, -1) : solvedGroups;
   const remaining = order.filter((w) => state.web.remainingWords.includes(w));
 
   const toggle = (word: string) => {
@@ -92,6 +102,12 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
         if (fb.won) later(() => sfx.victory(), 650);
         later(() => setBusy(false), 700);          // input locked while tiles land (AAA 2.3)
         break;
+      case 'name-final':
+        // Last four fall together — hold the win until the thread is named.
+        sfx.correct();
+        setSelection([]);
+        later(() => setBusy(false), 700);
+        break;
       case 'one-away':
         sfx.wrong();
         setToast({ kind: 'bad', text: `One away… · −${stepCost} steps` });
@@ -121,14 +137,16 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.attempts, state.hintsBought]);
 
-  // Adversarial layouts make shuffle a real tool — free, unlimited (AAA 2.6).
+  // The generator's opening layout is adversarial (2.6), so the free,
+  // unlimited shuffle is a real tool from the very first glance.
   const doShuffle = () => {
     if (busy) return;
     shuffleCount.current += 1;
     setOrder((o) => shuffle(createRng(hashStr(puzzle.id) + shuffleCount.current), o));
   };
 
-  const perfect = won && state.costedMistakes === 0 && state.hintsBought === 0;
+  const perfect =
+    won && state.costedMistakes === 0 && state.hintsBought === 0 && state.namedCorrectly !== false;
 
   return (
     <div className="anch anch--library">
@@ -138,10 +156,10 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
       </header>
 
       <div className="ww-banners">
-        {solvedGroups.map((g, i) => (
+        {shownGroups.map((g, i) => (
           <div
             key={g.tier}
-            className={`ww-banner ww-banner--${g.tier} ${perfect ? 'ww-banner--dance' : i === solvedGroups.length - 1 ? 'ww-banner--in' : ''}`}
+            className={`ww-banner ww-banner--${g.tier} ${perfect ? 'ww-banner--dance' : i === shownGroups.length - 1 ? 'ww-banner--in' : ''}`}
             style={perfect ? { animationDelay: `${i * 100}ms` } : undefined}
           >
             <div className="ww-banner__theme">{g.theme}</div>
@@ -151,10 +169,34 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
         ))}
       </div>
 
-      {won ? (
+      {naming ? (
+        // AAA 2.11 — the act of naming: the last four fell together, but the
+        // room only solves (and 'Perfect!' only lands) once the thread is named.
+        <div className="anch-card ww-name anch-pop">
+          <div className="ww-name__eyebrow">The last four fall together</div>
+          <div className="ww-name__words">{naming.words.join(' · ')}</div>
+          <p className="ww-name__ask">What thread binds them?</p>
+          <div className="ww-name__options">
+            {naming.options.map((theme) => (
+              <button
+                key={theme}
+                className="anch-btn"
+                {...pressProps<HTMLButtonElement>()}
+                onClick={() => dispatch({ type: 'name-theme', theme })}
+              >
+                {theme}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : won ? (
         <div className="anch-done">
           <div className="anch-done__title">{perfect ? 'Perfect!' : 'Woven.'}</div>
           <p className="anch-done__line">{endCopy(state.costedMistakes + state.hintsBought)}</p>
+          {state.namedCorrectly === false && state.lastFeedback?.kind === 'group-solved' && (
+            // Warm, never shame-adjacent (2.14): a missed name is just told true.
+            <p className="anch-done__line">It called itself “{state.lastFeedback.theme}”.</p>
+          )}
         </div>
       ) : (
         <>
@@ -171,7 +213,9 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
                     hopIdx >= 0 ? 'ww-tile--hop' : '',
                   ].join(' ')}
                   style={hopIdx >= 0 ? { animationDelay: `${hopIdx * 100}ms` } : undefined}
-                  onClick={() => toggle(word)}
+                  // U.1/2.1: selection toggles on pointerdown, not click — the
+                  // fill change lands at touch, not at finger-lift.
+                  {...pressProps<HTMLButtonElement>({ down: () => toggle(word) })}
                 >
                   {word}
                 </button>
@@ -184,20 +228,20 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
           </div>
 
           <div className="anch-row">
-            <button className="anch-btn" onClick={() => setSelection([])} disabled={selection.length === 0 || busy}>
+            <button className="anch-btn" {...pressProps<HTMLButtonElement>()} onClick={() => setSelection([])} disabled={selection.length === 0 || busy}>
               Clear
             </button>
-            <button className="anch-btn" onClick={doShuffle} disabled={busy}>
+            <button className="anch-btn" {...pressProps<HTMLButtonElement>()} onClick={doShuffle} disabled={busy}>
               Shuffle
             </button>
-            <button className="anch-btn anch-btn--primary" onClick={submit} disabled={selection.length !== 4 || busy}>
+            <button className="anch-btn anch-btn--primary" {...pressProps<HTMLButtonElement>()} onClick={submit} disabled={selection.length !== 4 || busy}>
               Weave
             </button>
           </div>
 
           {state.lastWrongSelection && !busy && (
             <div className="anch-row">
-              <button className="anch-btn" onClick={() => dispatch({ type: 'buy-hint' })}>
+              <button className="anch-btn" {...pressProps<HTMLButtonElement>()} onClick={() => dispatch({ type: 'buy-hint' })}>
                 A nudge from the shelves · −{stepCost} steps
               </button>
             </div>

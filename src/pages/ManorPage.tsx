@@ -17,6 +17,7 @@ import { cardById } from '../engine/manor/deck';
 import { cellKey, deweyCell, roomAt, rowTier, sameCell } from '../engine/manor/grid';
 import type { CharacterId } from '../engine/types';
 import BlueprintSheet from '../ui/blueprint/BlueprintSheet';
+import CabinetSheet from '../ui/blueprint/CabinetSheet';
 import DraftModal from '../ui/blueprint/DraftModal';
 import DialogueScene from '../ui/dialogue/DialogueScene';
 import '../ui/blueprint/blueprint.css';
@@ -70,6 +71,8 @@ export default function ManorPage() {
 
   /** A character scene on this page: parlor visit or a moment with Dewey. */
   const [visiting, setVisiting] = useState<CharacterId | null>(null);
+  /** The Floorplan Cabinet sheet (AAA 4.7): the whole live deck, browsable. */
+  const [cabinetOpen, setCabinetOpen] = useState(false);
   const fragmentNote = useFragmentNote();
 
   // A1 builds the grid when a live day has no manor (day-slice integration note).
@@ -127,7 +130,7 @@ export default function ManorPage() {
           <BlueprintSheet
             manor={manor}
             canEnterCurrent={exploring && isPuzzleHere}
-            interactive={exploring && !draftOffer && !visiting}
+            interactive={exploring && !draftOffer && !visiting && !cabinetOpen}
             onMove={moveTo}
             onOpenDraft={openDraft}
             onEnterRoom={() => manor && enterRoom(cellKey(manor.playerCell))}
@@ -161,6 +164,9 @@ export default function ManorPage() {
           {atDewey && exploring && !petted && (
             <button className="bp-btn" onClick={onPetDewey}>Pet Dewey · 1 step</button>
           )}
+          <button className="bp-btn bp-btn--quiet" onClick={() => setCabinetOpen(true)}>
+            Cabinet
+          </button>
           <button className="bp-btn bp-btn--quiet" onClick={() => navigate('/journal')}>
             Journal
           </button>
@@ -174,6 +180,14 @@ export default function ManorPage() {
           </p>
         )}
       </footer>
+
+      {/* The Floorplan Cabinet — the live deck and its locked plates (AAA 4.7) */}
+      {cabinetOpen && (
+        <CabinetSheet
+          unlockedCardIds={cabinet.unlockedCardIds}
+          onClose={() => setCabinetOpen(false)}
+        />
+      )}
 
       {draftOffer && exploring && (
         <DraftModal

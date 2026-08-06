@@ -3,6 +3,7 @@ import {
   appendEntry, createLedger, dayStartTotal, ledgerTotal, stepsRefunded, stepsRemaining,
   stepsSpent, teaBonus, BASE_DAY_BUDGET, STEP_TABLE,
 } from '../src/engine/economy/steps';
+import { draftCardStake } from '../src/engine/economy/preview';
 import type { StepEntry, StepLedger } from '../src/engine/types';
 
 /**
@@ -55,6 +56,38 @@ describe('STEP_TABLE (the one tunable const)', () => {
     expect(STEP_TABLE.perfect).toBe(2);
     expect(STEP_TABLE.snack.min).toBe(5);
     expect(STEP_TABLE.snack.max).toBe(10);
+  });
+
+  it('prices the bookmark gift at −1 (a small walk to find them)', () => {
+    expect(STEP_TABLE.gift).toBe(-1);
+  });
+});
+
+describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () => {
+  it('states micro payouts in numbers, from STEP_TABLE not hand-copy', () => {
+    const stake = draftCardStake({ category: 'puzzle', puzzleKind: 'anagram' }, 1);
+    expect(stake).toEqual({ size: 'micro', label: 'micro · +3 steps on solve' });
+    expect(stake!.label).toContain(String(STEP_TABLE.solve('micro', 1)));
+  });
+
+  it('states anchor payouts at the target row tier (+6/+7/+8)', () => {
+    expect(draftCardStake({ category: 'puzzle', puzzleKind: 'hive' }, 1)!.label)
+      .toBe('anchor · +6 steps on solve');
+    expect(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 2)!.label)
+      .toBe('anchor · +7 steps on solve');
+    expect(draftCardStake({ category: 'puzzle', puzzleKind: 'word-web' }, 3)!.label)
+      .toBe('anchor · +8 steps on solve');
+  });
+
+  it('tells the player mystery rooms yield a fragment on entry', () => {
+    expect(draftCardStake({ category: 'mystery' }, 2)).toEqual({
+      size: null, label: '+1 fragment',
+    });
+  });
+
+  it('stays quiet where the numbers are not the story (parlor/utility)', () => {
+    expect(draftCardStake({ category: 'parlor' }, 1)).toBeNull();
+    expect(draftCardStake({ category: 'utility' }, 1)).toBeNull();
   });
 });
 

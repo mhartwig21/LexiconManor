@@ -2,11 +2,14 @@
  * The Vestibule — Anagram behind the RoomPuzzle contract. OWNER: A4.
  *
  * Wraps the pure engine (`startAnagram`/`submitAnagram`/`revealAnagramLetter`).
- * Mistake semantics (AAA §0.3 + 3.2): submitting a full arrangement as "the
- * word" is a deliberate claim → weight 1. Wrong letters (unreachable from the
- * tile tray) and re-submitting a known miss are malformed/free → weight 0.
- * Letter reveals are step-priced hints (`hint` weight 1) and forfeit perfect.
- * Wrong tries stay listed (memory prosthetic, AAA 3.3).
+ * Mistake semantics (AAA §0.3 + 3.2 + R.1's principle — free probes for
+ * dictionary misses): in a single-answer anagram nearly every wrong
+ * arrangement is a non-word, so an arrangement that isn't in the dictionary
+ * is a PROBE, not a claim — weight 0, Wordle's gentle refusal, matching the
+ * Staircase/Music Room/Pantry register. Wrong letters and re-submitting a
+ * known miss are likewise free. Letter reveals are the room's only priced
+ * action (`hint` weight 1) and forfeit perfect. Wrong tries stay listed
+ * (memory prosthetic, AAA 3.3).
  */
 
 import type { Difficulty, Tier } from '../types';
@@ -117,14 +120,13 @@ export const anagramAdapter: RoomPuzzleAdapter<AnagramPuzzle, AnagramRoomState, 
     }
 
     if (result.reason !== 'finished') {
-      // A full arrangement offered as the word is a claim; the rest is malformed.
-      const costed = result.reason === 'not-a-word';
+      // Every refusal is free: a non-word arrangement is a probe (R.1),
+      // not a claim — the Vestibule is the front door, not a toll booth.
       next = {
         ...next,
-        costedMistakes: costed ? next.costedMistakes + 1 : next.costedMistakes,
-        lastFeedback: { kind: 'invalid', reason: result.reason, word: result.word, costed },
+        lastFeedback: { kind: 'invalid', reason: result.reason, word: result.word, costed: false },
       };
-      events.push({ type: 'mistake', weight: costed ? 1 : 0 });
+      events.push({ type: 'mistake', weight: 0 });
     }
 
     return { state: next, events, outcome: outcomeOf(next) };

@@ -80,7 +80,7 @@ export default function AnagramView({ puzzle, state, tier, dispatch }: RoomViewP
           sfx.wrong();
           setShaking(true);
           later(() => setShaking(false), 340);
-          setToast({ kind: 'bad', text: `“${fb.word}” isn't in the dictionary · −${hintCost} steps` });
+          setToast({ kind: 'info', text: `“${fb.word}” isn't in the dictionary — no cost, it stays on the list.` });
           later(() => setToast(null), 1600);
         } else if (fb.reason === 'already-tried') {
           setToast({ kind: 'info', text: 'Already tried — it stays on the list below.' });

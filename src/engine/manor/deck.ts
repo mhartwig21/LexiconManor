@@ -182,6 +182,15 @@ export const CARD_PREVIEWS: Record<string, string> = {
   'map-room': 'Fragments pinned to the walls',
 };
 
+/**
+ * Player-facing names for cabinet unlock quests (AAA 4.7: a locked plate names
+ * the deed that fills it). Ids are awarded by other agents via meta.unlockCard.
+ */
+export const UNLOCK_QUEST_NAMES: Record<string, string> = {
+  'posy-quest-1': "Posy's first favor",
+  'posy-quest-2': "Posy's second favor",
+};
+
 export interface UtilityEffect {
   steps?: number;
   gems?: number;

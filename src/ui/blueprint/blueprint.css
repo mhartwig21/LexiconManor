@@ -470,6 +470,69 @@
   gap: 0.6rem;
   margin-top: 0.8rem;
 }
+.bp-modal__foot--center { justify-content: center; }
+
+/* --------------------------------------------------------------------------
+   Floorplan Cabinet — the whole deck as bookplates (AAA 4.7)
+   -------------------------------------------------------------------------- */
+
+.bp-cabinet__section { margin-top: 0.9rem; }
+
+.bp-cabinet__title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0 0 0.45rem;
+  font-family: var(--font-display);
+  font-size: var(--text-body);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.bp-cabinet__swatch {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 2px;
+  align-self: center;
+}
+.bp-cabinet--puzzle  .bp-cabinet__swatch { background: var(--cat-puzzle); }
+.bp-cabinet--parlor  .bp-cabinet__swatch { background: var(--cat-parlor); }
+.bp-cabinet--utility .bp-cabinet__swatch { background: var(--cat-utility); }
+.bp-cabinet--mystery .bp-cabinet__swatch { background: var(--cat-mystery); }
+.bp-cabinet__count {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.bp-cabinet__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+/* a plate is a bp-card that is not a button: no press affordance */
+.bp-card--plate {
+  cursor: default;
+  min-height: 64px;
+  padding: 0.5rem 0.7rem;
+}
+
+/* locked plates: a silhouette waiting for its quest (AAA 4.7 unlock badges) */
+.bp-card--locked { border-left-color: var(--paper-edge); }
+.bp-card--locked .bp-card__glyph {
+  color: var(--ink-faint);
+  opacity: 0.7;
+}
+.bp-card--locked .bp-card__name--locked {
+  color: var(--ink-faint);
+  letter-spacing: 0.2em;
+}
+.bp-card--locked .bp-card__preview { color: var(--ink-faint); }
 
 @keyframes bp-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes bp-sheet-up {

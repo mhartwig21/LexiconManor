@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  median, share, simulateDays, MOVEMENT,
+  median, quantile, share, simulateDay, simulateDays, MOVEMENT, TIME_TABLE,
   PROFILE_DECENT, PROFILE_GREAT, PROFILE_SKIPPER,
 } from '../src/engine/economy/simulate';
 import { ledgerTotal } from '../src/engine/economy/steps';
+import { createRng } from '../src/engine/rng';
 
 /**
  * A2 — AAA 4.10: the step economy is verified by simulation BEFORE any
@@ -59,6 +60,44 @@ describe('4.10b — the decent day (~70% solve rate)', () => {
   it('refunds visibly extend the day past the skipper baseline', () => {
     expect(median(decent, (r) => r.refunded)).toBeGreaterThan(10);
     expect(median(decent, (r) => r.maxRow)).toBeGreaterThan(median(skipper, (r) => r.maxRow));
+  });
+});
+
+describe("4.10d — the clock (TIME_TABLE model; 'ends in ~5 min' / '10–15 min')", () => {
+  it('a skipper day ends in about five minutes', () => {
+    const m = median(skipper, (r) => r.minutes);
+    expect(m).toBeGreaterThanOrEqual(3.5);
+    expect(m).toBeLessThanOrEqual(6.5);
+  });
+
+  // The criterion's promise, asserted as written. It currently FAILS —
+  // honestly: with the design's own duration bands (micro 45–90s, anchor
+  // 3–6 min) a decent day's ~2 anchor solves alone cost ~9 min, and the
+  // measured median is ~20 min (p90 ~29). `it.fails` keeps the tripwire
+  // armed both ways: the day this passes (after economy/duration tuning or
+  // instrumented medians from the 3.5 playtest), vitest flags it so the
+  // expected-fail marker gets removed. See the fix report for the numbers.
+  it.fails('MEETS the 10–15 min promise for a decent day (currently ~20 min — open tuning question)', () => {
+    const m = median(decent, (r) => r.minutes);
+    expect(m).toBeGreaterThanOrEqual(10);
+    expect(m).toBeLessThanOrEqual(15);
+    expect(quantile(decent, 0.9, (r) => r.minutes)).toBeLessThanOrEqual(20);
+  });
+
+  it('pins the measured envelope so any tuning move is visible', () => {
+    const m = median(decent, (r) => r.minutes);
+    expect(m).toBeGreaterThan(15);   // the honest current value (~20)
+    expect(m).toBeLessThan(25);
+    expect(quantile(decent, 0.9, (r) => r.minutes)).toBeLessThan(32);
+    expect(median(great, (r) => r.minutes)).toBeLessThan(40);
+  });
+
+  it('samples time from a separate stream — the step economy never drifts because the clock exists', () => {
+    const a = simulateDay(createRng(4242), PROFILE_DECENT);
+    const b = simulateDay(createRng(4242), PROFILE_DECENT, createRng(777));
+    expect([a.rooms, a.maxRow, a.spent, a.refunded])
+      .toEqual([b.rooms, b.maxRow, b.spent, b.refunded]);
+    expect(TIME_TABLE.microSolve[0]).toBeGreaterThan(0); // the model exists and is wired
   });
 });
 

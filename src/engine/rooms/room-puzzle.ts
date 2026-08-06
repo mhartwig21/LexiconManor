@@ -32,7 +32,8 @@ export interface RoomOutcome {
 export type RoomEvent =                    // consumed by slices, never by adapters
   // weight 0 = free feedback moment (shake/toast, no step cost) — e.g. Conservatory
   // invalid dictionary words per AAA R.1. weight 1|2 = costed, mapped via STEP_TABLE.
-  | { type: 'mistake'; weight: 0 | 1 | 2 }
+  // weight 'structural' = pre-warned structural slip (AAA R.1): flat −1, all tiers.
+  | { type: 'mistake'; weight: 0 | 1 | 2 | 'structural' }
   // A3 REVISION (special authority, documented in A3's report): a step-priced
   // hint/clue purchase — the Study's clue unseals and the Library's intruder
   // nudges (AAA 2.10) are bought with steps, the single currency. Maps through

@@ -116,6 +116,18 @@ export const createDialogueSlice =
     giveGift: (character) => {
       if (character === 'dewey') return; // gifts are for people (and paintings)
       if (get().giftedToday.includes(character)) return; // valve (AAA 5.9)
+      // Bookmarks are a scarce, sourced currency (AAA 5.7): when the shared
+      // Currencies shape carries `bookmarks` (architect request pending in
+      // the A6 report), a gift consumes one and cannot be given at zero.
+      // Until the field lands, gifting stays ungated rather than falsely
+      // locked — the UI gate in DialogueScene mirrors this exactly.
+      const bookmarks = (get().currencies as { bookmarks?: number }).bookmarks;
+      if (bookmarks !== undefined) {
+        if (bookmarks <= 0) return;
+        set((s) => ({
+          currencies: { ...s.currencies, bookmarks: bookmarks - 1 } as typeof s.currencies,
+        }));
+      }
       set((s) => ({ giftedToday: [...s.giftedToday, character] }));
       // First gift → sys flag the bespoke keepsake scene keys off (AAA 5.7).
       get().setFlag(`sys.first-gift.${character}`);

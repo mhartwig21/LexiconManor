@@ -13,7 +13,7 @@
  * (app/slices/day.ts) is the only caller that mutates the store.
  */
 
-import type { DayPhase, DayRecord, DayState, StepLedger } from './types';
+import type { DayPhase, DayRecord, DayState, DraftOffer, StepLedger } from './types';
 import type { DayEndCause, RecordedEvent } from './events';
 import { createRng } from './rng';
 import { createLedger, ledgerTotal, stepsSpent, teaBonus, STEP_TABLE } from './economy/steps';
@@ -82,12 +82,24 @@ export function canEndDay(day: DayState | null): day is DayState {
  * Dusk trigger predicate: steps exhausted, out on the blueprint, mid-day.
  * `ledgerTotal` (not the floored remaining) so a mid-puzzle overdraft that
  * resolved back above 0 does not end the day.
+ *
+ * An OPEN DRAFT OFFER suspends dusk exactly like an active room (AAA 4.6 +
+ * 4.12/R.3): the step spent opening a door buys the look at the three cards —
+ * drafting must never charge for a look it refuses to give. Spending the last
+ * step on a door therefore shows the offer; the day ends only after the draft
+ * resolves (cancel → dusk; choose a puzzle room → the mid-room-overdraft rule
+ * applies and dusk fires on exit).
  */
-export function shouldTriggerDusk(day: DayState | null, ledger: StepLedger): boolean {
+export function shouldTriggerDusk(
+  day: DayState | null,
+  ledger: StepLedger,
+  draftOffer?: DraftOffer | null,
+): boolean {
   return (
     day !== null &&
     day.phase === 'exploring' &&
     day.activeRoom === null &&
+    draftOffer == null &&
     ledgerTotal(ledger) <= 0
   );
 }

@@ -42,6 +42,14 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
   const canGift = useManorStore(
     (s) => character !== 'dewey' && !s.giftedToday.includes(character),
   );
+  // Bookmarks are a scarce currency (AAA 5.7): once the shared Currencies
+  // shape carries `bookmarks` (architect request pending, see A6 report),
+  // the gift offer is gated on having one. Until the field lands the read is
+  // undefined and gifting stays ungated rather than falsely locked.
+  const bookmarks = useManorStore(
+    (s) => (s.currencies as { bookmarks?: number }).bookmarks,
+  );
+  const giftLocked = bookmarks !== undefined && bookmarks <= 0;
   const settingsReduced = useManorStore((s) => s.settings.reducedMotion);
   const reducedMotion = useMemo(
     () =>
@@ -192,10 +200,15 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
 
           {phase === 'end' && (
             <div className="dlg-choices" onPointerDown={(e) => e.stopPropagation()}>
-              {canGift && (
+              {canGift && !giftLocked && (
                 <button type="button" className="dlg-choice dlg-choice--gift" onClick={handleGift}>
-                  Offer a bookmark
+                  Offer a bookmark{bookmarks !== undefined ? ` (${bookmarks} in pocket)` : ''}
                 </button>
+              )}
+              {canGift && giftLocked && (
+                <p className="dlg-gift-empty">
+                  Your pocket wants for bookmarks — the manor tucks them into rooms and letters.
+                </p>
               )}
               <button type="button" className="dlg-choice dlg-choice--primary" onClick={onClose}>
                 {character === 'dewey' ? 'Leave him to it' : 'Farewell'}

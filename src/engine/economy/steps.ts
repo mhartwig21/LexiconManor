@@ -20,8 +20,14 @@ import type { StepEntry, StepLedger, Tier } from '../types';
 /** Start-of-day step budget (MANOR_DESIGN §4; open question AAA §10.2). */
 export const BASE_DAY_BUDGET = 40;
 
-/** Mistake / hint pricing row: a deliberate wrong claim in a deduction room. */
-function mistakeDelta(weight: 1 | 2, tier: Tier): number {
+/**
+ * Mistake / hint pricing row: a deliberate wrong claim in a deduction room.
+ * Weight 'structural' is the AAA R.1 ruling: a structural slip the live
+ * entry-coloring already warned about (hive dead letter / missing center)
+ * costs a flat −1 at every tier — spending, never a sting.
+ */
+function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
+  if (weight === 'structural') return -1;
   return (tier === 3 ? -3 : -2) * weight;
 }
 

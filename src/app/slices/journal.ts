@@ -18,10 +18,11 @@ import type { RoomCategory, VolumeState } from '../../engine/types';
 import type { ManorStore } from '../store';
 import type { SaveV2 } from '../save';
 import {
-  advanceVolume, applyGuess, letterGrants, nextFragmentForRoom, normalizeGuess,
-  openedLetterFlag, solvedFlag,
+  advanceVolume, applyGuess, findLetter, letterGrants, nextFragmentForRoom, normalizeGuess,
+  openedLetterFlag, reservedTestimonyIds, solvedFlag,
 } from '../../engine/volume';
 import { nextUninterpreted } from '../../engine/journal';
+import { DIALOGUE_FILES } from '../../engine/dialogue/content';
 import { getVolumeContent, nextVolumeContent } from '../content/volumes';
 
 export interface JournalSlice {
@@ -116,7 +117,9 @@ export const createJournalSlice =
       const v = get().volume;
       const content = getVolumeContent(v.volumeId);
       if (!content) return;
-      const letter = content.letters.find((l) => l.id === letterId);
+      // findLetter also resolves house-written pity letters ('pity-extra-N'),
+      // which exist only as derivation, never in the authored letters array.
+      const letter = findLetter(content, letterId);
       if (!letter) return;
       const flag = openedLetterFlag(v.volumeId, letterId);
       if (get().flags.includes(flag)) return; // already opened (write-once)
@@ -131,7 +134,15 @@ export const createJournalSlice =
       const v = get().volume;
       const content = getVolumeContent(v.volumeId);
       if (!content) return null;
-      const frag = nextFragmentForRoom(content, v, category);
+      // Testimony promised by a still-unseen character scene steps aside from
+      // the room drip so the character actually gets to say it (AAA 4.14) —
+      // nextFragmentForRoom ignores the reservation rather than strand a
+      // fragment, and the pity/letter channel never skips.
+      const reservedIds = reservedTestimonyIds(
+        Object.values(DIALOGUE_FILES),
+        new Set(get().seenNodeIds),
+      );
+      const frag = nextFragmentForRoom(content, v, category, { reservedIds });
       if (!frag) return null;
       get().fileFragment(frag.id);
       return frag.id;

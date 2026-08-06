@@ -22,7 +22,12 @@ export interface ForgottenWordState {
 export type ForgottenWordGuess =
   | { kind: 'correct'; word: string }
   | { kind: 'wrong'; guessesLeft: number; lost: boolean }
-  | { kind: 'invalid'; reason: 'empty' | 'repeat' | 'finished' };
+  /**
+   * 'wrong-length': the card already announced the letter count, so a guess of
+   * a different length is malformed input, not a claim — refused for free, no
+   * whisper consumed (AAA 3.2, Wordle's row-refusal precedent).
+   */
+  | { kind: 'invalid'; reason: 'empty' | 'repeat' | 'wrong-length' | 'finished' };
 
 /** Guess allowance shrinks as levels rise. */
 export function maxGuessesForLevel(level: number): number {
@@ -64,6 +69,11 @@ export function submitGuess(
   if (state.guesses.includes(guess)) return { state, result: { kind: 'invalid', reason: 'repeat' } };
 
   const accepted = [normalize(puzzle.word), ...(puzzle.acceptedAnswers ?? []).map(normalize)];
+  // Free refusal for a length the game already ruled out (any accepted answer's
+  // length is fair game — alternate spellings may differ from the headword).
+  if (!accepted.some((a) => a.length === guess.length)) {
+    return { state, result: { kind: 'invalid', reason: 'wrong-length' } };
+  }
   const guesses = [...state.guesses, guess];
 
   if (accepted.includes(guess)) {

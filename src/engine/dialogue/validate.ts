@@ -17,12 +17,17 @@
  *  - `seen` conditions reference real node ids (cross-file allowed)
  *  - repeatable (once:false) nodes never grant affinity (farm guard)
  *  - Dewey: zero spoken lines forever — narration only, no choices, no flags
- *  - authoring floors per character (round-1 volumes; raised later)
+ *  - authoring floors per character at the AAA 5.6 shipping numbers
+ *    (nodes / event-reactions / idle / total lines)
+ *  - trigger mounts: every trigger used by authored nodes must be registered
+ *    in TRIGGER_MOUNTS with a real mount site — unmounted trigger = dead
+ *    content = build failure (AAA 5.5)
  */
 
 import type { CharacterId } from '../types';
 import { CHARACTER_IDS } from '../types';
 import type { GameEventType } from '../events';
+import { ROOM_PUZZLE_KINDS } from '../rooms/room-puzzle';
 import type {
   DialogueCondition, DialogueEffects, DialogueFile, DialogueNode,
 } from './schema';
@@ -36,6 +41,26 @@ export const FLAG_REGEX = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,2}$/;
 const NODE_ID_REGEX = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)+$/;
 
 const TRIGGERS = ['morning', 'parlor', 'idle', 'sanctum-after-guess', 'letter', 'night'] as const;
+
+/**
+ * Trigger mount manifest (AAA 4.17 / 5.5): a trigger is only real content if
+ * some screen actually mounts <DialogueScene slot={trigger}>. Every trigger
+ * used by an authored node MUST have an entry here, and every entry must name
+ * its mount site — otherwise the content is dead-on-arrival (the Portrait's
+ * entire Sanctum reaction set shipped unreachable this way once; never again).
+ * Adding a trigger without a mount is a build failure, not a code review note.
+ */
+export const TRIGGER_MOUNTS: Readonly<Partial<Record<(typeof TRIGGERS)[number], string>>> = {
+  morning: 'src/ui/chrome/DayTransitions.tsx (MorningCard → slot="morning")',
+  parlor: 'src/pages/ManorPage.tsx (parlor visits → slot="parlor")',
+  idle: 'engine/dialogue/select.ts (pacing-valve retarget + never-silence fallback)',
+  'sanctum-after-guess':
+    'src/ui/sanctum/SanctumView.tsx (wrong/won-portrait phases → slot="sanctum-after-guess"; A6 shared-file request to A7)',
+  letter:
+    'src/ui/journal/JournalView.tsx (after letter-opened → slot="letter"; A6 shared-file request to A7)',
+  // 'night' has no mount yet — authoring a night node fails the build until
+  // a screen mounts it and registers here.
+};
 
 const EVENT_TYPES: readonly GameEventType[] = [
   'day-started', 'day-ended', 'room-drafted', 'room-solved', 'room-abandoned',
@@ -57,19 +82,24 @@ export const CODE_SET_FLAGS: readonly string[] = [
   ...CHARACTER_IDS.map((c) => `sys.first-gift.${c}`),
 ];
 
-/** Round-1 authoring floors (BENCHMARKS §5 scaled to this content round). */
+/**
+ * Shipping authoring floors — the AAA 5.6 numbers, not a scaled-down round:
+ * every major character ≥40 conversations / ≥150 lines, event-reaction bucket
+ * ≥12. The Portrait runs leaner (Charon precedent); Dewey is narration-only.
+ */
 export interface AuthoringFloor {
   minNodes: number;
   minEventReact: number;   // priority in [600, 999]
   minIdle: number;
+  minLines: number;        // total authored lines in the file (AAA 5.6 line lint)
 }
 export const FLOORS: Readonly<Record<CharacterId, AuthoringFloor>> = {
-  bramble: { minNodes: 28, minEventReact: 8, minIdle: 4 },
-  ellery: { minNodes: 28, minEventReact: 8, minIdle: 4 },
-  posy: { minNodes: 28, minEventReact: 8, minIdle: 4 },
-  fern: { minNodes: 28, minEventReact: 8, minIdle: 4 },
-  portrait: { minNodes: 15, minEventReact: 5, minIdle: 2 },  // Charon precedent
-  dewey: { minNodes: 8, minEventReact: 2, minIdle: 3 },
+  bramble: { minNodes: 40, minEventReact: 12, minIdle: 4, minLines: 150 },
+  ellery: { minNodes: 40, minEventReact: 12, minIdle: 4, minLines: 150 },
+  posy: { minNodes: 40, minEventReact: 12, minIdle: 4, minLines: 150 },
+  fern: { minNodes: 40, minEventReact: 12, minIdle: 4, minLines: 150 },
+  portrait: { minNodes: 15, minEventReact: 5, minIdle: 2, minLines: 25 },  // Charon precedent
+  dewey: { minNodes: 8, minEventReact: 2, minIdle: 3, minLines: 10 },
 };
 
 export interface ValidationIssue {
@@ -125,6 +155,8 @@ export function validateDialogueFile(file: DialogueFile): ValidationIssue[] {
 
     if (!(TRIGGERS as readonly string[]).includes(node.trigger)) {
       err(`unknown trigger "${node.trigger}"`, id);
+    } else if (!(node.trigger in TRIGGER_MOUNTS)) {
+      err(`trigger "${node.trigger}" has no registered mount — dead content (AAA 5.5); register the mount site in TRIGGER_MOUNTS`, id);
     }
     if (typeof node.priority !== 'number' || node.priority < 0) {
       err(`priority must be a number >= 0`, id);
@@ -294,16 +326,33 @@ export function validateDialogueSet(files: DialogueFile[]): ValidationIssue[] {
     if (idle.length < floor.minIdle) {
       issues.push({ file: f.character, message: `authoring floor: ${idle.length} idle nodes < ${floor.minIdle}` });
     }
+    const lineCount = f.nodes.reduce((n, x) => n + (x.lines?.length ?? 0), 0);
+    if (lineCount < floor.minLines) {
+      issues.push({ file: f.character, message: `authoring floor: ${lineCount} lines < ${floor.minLines} (AAA 5.6)` });
+    }
   }
 
   // The Hypnos slot (AAA 5.2): Bramble ships >=12 distinct reactions
-  // conditioned on how the previous day ended.
+  // conditioned on how the previous day ended — including one bespoke
+  // dry-room morning line per room archetype in the registry, so the system
+  // keeps seeing the player in every room, not just the four anchors.
   const bramble = files.find((f) => f.character === 'bramble');
   if (bramble) {
     const dayEndReacts = bramble.nodes.filter((n) =>
       [...walkConditions(n.conditions)].some((c) => c.kind === 'event' && c.event === 'day-ended'));
     if (dayEndReacts.length < 12) {
       issues.push({ file: 'bramble', message: `Hypnos floor: ${dayEndReacts.length} day-ended reactions < 12 (AAA 5.2)` });
+    }
+    for (const kind of ROOM_PUZZLE_KINDS) {
+      const covered = dayEndReacts.some((n) =>
+        [...walkConditions(n.conditions)].some((c) =>
+          c.kind === 'event' && c.event === 'room-abandoned' && c.where?.['kind'] === kind));
+      if (!covered) {
+        issues.push({
+          file: 'bramble',
+          message: `Hypnos coverage: no dry-room day-end reaction for room kind "${kind}" (AAA 5.2)`,
+        });
+      }
     }
   }
 

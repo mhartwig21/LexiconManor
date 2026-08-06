@@ -12,6 +12,13 @@
  * The win sequence (seal cracks → letters come home → the Portrait softens
  * → the volume closes) is staged in taps, every stage skippable, legible
  * under reduced motion.
+ *
+ * The Portrait's reactions are AUTHORED dialogue, not hardcoded strings: both
+ * the sigh after a wrong guess and the victory monologue mount A6's
+ * DialogueScene on the 'sanctum-after-guess' slot (portrait.guess.* closeness
+ * variants, the once-only thaw arc, portrait.react.victory — Hades' "failure
+ * as content", AAA 4.17/5.1/5.10). The old hardcoded strings survive only as
+ * the null-selection fallback so the door is never silent.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -21,6 +28,10 @@ import { getVolumeContent } from '../../app/content/volumes';
 import { definitionSlots, sanctumReadiness } from '../../engine/journal';
 import { applyGuess, hasGuessedOnDay } from '../../engine/volume';
 import type { GuessCloseness } from '../../engine/events';
+import type { PortraitExpression } from '../../engine/dialogue/schema';
+import { getDialogueFile } from '../../engine/dialogue/content';
+import { selectDialogue } from '../../engine/dialogue/select';
+import DialogueScene from '../dialogue/DialogueScene';
 import { sfx } from '../../app/sound';
 import PortraitFrame from './PortraitFrame';
 import './sanctum.css';
@@ -33,7 +44,8 @@ type Phase =
   | 'won-portrait'  // the Portrait softens (tap-through beats)
   | 'epilogue';     // the volume closes
 
-/** The Portrait's sigh, keyed to closeness — sympathy, never a penalty. */
+/** Fallback sigh when dialogue selection has nothing for the slot (authoring
+ *  floor) — the authored portrait.guess.* variants normally play instead. */
 function sighFor(c: GuessCloseness): string {
   if (c.repeat) return 'That word again. The door remembers, dear — even when we do not.';
   if (c.rightLength && c.sharedLetters >= 4)
@@ -45,7 +57,8 @@ function sighFor(c: GuessCloseness): string {
   return 'No. But the house is warmer for hearing you try.';
 }
 
-/** The softened Portrait's closing beats — tapped through, each skippable. */
+/** Fallback closing beats when portrait.react.victory cannot be selected
+ *  (e.g. already seen on a later volume) — tapped through, each skippable. */
 const CLOSING_BEATS = [
   '…So. Spoken at last. And not by me.',
   'I struck it from every page, because a book with a hole in it cannot be finished — and a finished book can be shelved, and a shelved book can be forgotten. I see now that the hole was the living part.',
@@ -60,6 +73,7 @@ export default function SanctumView() {
   const guessAtSanctum = useManorStore((s) => s.guessAtSanctum);
   const beginNextVolume = useManorStore((s) => s.beginNextVolume);
   const endDay = useManorStore((s) => s.endDay);
+  const buildDialogueQuery = useManorStore((s) => s.buildDialogueQuery);
 
   const content = getVolumeContent(volume.volumeId);
 
@@ -68,6 +82,23 @@ export default function SanctumView() {
   const [guess, setGuess] = useState('');
   const [shaking, setShaking] = useState(false);
   const [sigh, setSigh] = useState<string | null>(null);
+  // Whether the current wrong/victory beat plays as an authored DialogueScene
+  // (decided ONCE on entering the phase — selection mutates seen-state while
+  // the scene runs, so it must not be re-derived per render).
+  const [wrongScene, setWrongScene] = useState(false);
+  const [victoryScene, setVictoryScene] = useState(false);
+  const [sceneExpression, setSceneExpression] = useState<PortraitExpression | null>(null);
+
+  /** Would the 'sanctum-after-guess' slot actually select an authored node
+   *  right now? (selectDialogue never returns silence — it falls back to the
+   *  idle pool — so we check the selected node's trigger, not just null.) */
+  const pickAfterGuess = () => {
+    const node = selectDialogue(
+      getDialogueFile('portrait'),
+      buildDialogueQuery('portrait', 'sanctum-after-guess'),
+    );
+    return node && node.trigger === 'sanctum-after-guess' ? node : null;
+  };
   const timers = useRef<number[]>([]);
   const later = (fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms));
@@ -111,12 +142,28 @@ export default function SanctumView() {
         setPhase('won-reveal');
       } else if (result.kind === 'wrong') {
         sfx.dusk();
-        setSigh(sighFor(result.closeness));
+        // The 'sanctum-guess-wrong' event (with closeness metadata) is already
+        // on the stream — guessAtSanctum recorded it — so the authored
+        // portrait.guess.* variants and the thaw arc are selectable now.
+        const node = pickAfterGuess();
+        setWrongScene(!!node);
+        setSceneExpression(node?.lines[0]?.portrait ?? null);
+        setSigh(node ? null : sighFor(result.closeness));
         setShaking(true);
         later(() => setShaking(false), 360);
         setPhase('wrong');
       }
     }, holdMs);
+  };
+
+  /** won-reveal → won-portrait: decide once whether portrait.react.victory
+   *  plays (authored 4-beat monologue) or the fallback CLOSING_BEATS. */
+  const enterWonPortrait = () => {
+    const node = pickAfterGuess();
+    setVictoryScene(!!node);
+    setSceneExpression(node?.lines[0]?.portrait ?? null);
+    setBeat(0);
+    setPhase('won-portrait');
   };
 
   const closeVolume = () => {
@@ -135,7 +182,7 @@ export default function SanctumView() {
   if (phase === 'won-reveal') {
     return (
       <div className="snc-page">
-        <div className="snc" onClick={() => setPhase('won-portrait')}>
+        <div className="snc" onClick={enterWonPortrait}>
           <PortraitFrame soft />
           <div className="snc-won">
             <div className="snc-seal-halves" aria-hidden>
@@ -148,7 +195,7 @@ export default function SanctumView() {
               ))}
             </div>
             <p className="snc-won__line">The seal parts. Somewhere below, every dictionary in the house grows one line longer.</p>
-            <button className="snc-btn snc-btn--primary" onClick={(e) => { e.stopPropagation(); setPhase('won-portrait'); }}>
+            <button className="snc-btn snc-btn--primary" onClick={(e) => { e.stopPropagation(); enterWonPortrait(); }}>
               Look up at the Portrait
             </button>
           </div>
@@ -158,6 +205,25 @@ export default function SanctumView() {
   }
 
   if (phase === 'won-portrait') {
+    // The authored victory monologue (portrait.react.victory, priority 1000,
+    // conditioned on today's 'volume-solved') — journal summary + expressions
+    // + typewriter all come from A6's scene. CLOSING_BEATS only if selection
+    // came back empty.
+    if (victoryScene) {
+      return (
+        <div className="snc-page">
+          <div className="snc">
+            <PortraitFrame soft expression={sceneExpression ?? undefined} />
+            <h2 className="snc__title">The Lexicographer</h2>
+            <DialogueScene
+              character="portrait"
+              slot="sanctum-after-guess"
+              onClose={() => setPhase('epilogue')}
+            />
+          </div>
+        </div>
+      );
+    }
     const last = beat >= CLOSING_BEATS.length - 1;
     const advance = () => {
       if (last) setPhase('epilogue');
@@ -214,7 +280,7 @@ export default function SanctumView() {
   // ------ The daily audience ------
   const portraitLine =
     phase === 'listening' ? null
-    : phase === 'wrong' ? sigh
+    : phase === 'wrong' ? (sigh ?? '…')
     : guessedToday ? 'The door has heard today’s word. It is a patient door — come back with the morning.'
     : volume.guesses.length === 0 ? 'So you have climbed far enough to ask. Very well: the door wants no key. It wants the word. One a day, spoken plainly.'
     : 'The door is listening, whenever you are sure. There is no hurry in this house but yours.';
@@ -223,7 +289,10 @@ export default function SanctumView() {
     <div className="snc-page">
       <div className="snc snc__accent">
         <button className="snc__back" onClick={() => navigate('/')}>Back down the stairs</button>
-        <PortraitFrame soft={soft} />
+        <PortraitFrame
+          soft={soft}
+          expression={phase === 'wrong' ? sceneExpression ?? undefined : undefined}
+        />
         <h2 className="snc__title">The Sanctum Door</h2>
 
         {phase === 'listening' ? (
@@ -276,6 +345,18 @@ export default function SanctumView() {
           Consult the journal ({readiness.found} of {readiness.total} fragments filed)
         </button>
       </div>
+
+      {/* The Portrait's authored sigh — mounted after the 360ms door shake so
+          the refusal lands first, then the sympathy (AAA 4.17). Marks the
+          node seen (journal summaries, 5.10) and types out like every other
+          conversation in the house. */}
+      {phase === 'wrong' && wrongScene && !shaking && (
+        <DialogueScene
+          character="portrait"
+          slot="sanctum-after-guess"
+          onClose={() => { setWrongScene(false); setPhase('idle'); }}
+        />
+      )}
     </div>
   );
 }

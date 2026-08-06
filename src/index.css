@@ -2,11 +2,16 @@
    Lexicon Manor — global base styles (integration re-skin).
 
    tokens.css (ui/theme/) is the single source of palette/type truth; this
-   file only lays the paper: body defaults, headings, the generic .page/.btn
+   file lays the paper: body defaults, headings, the generic .page/.btn
    used by fallback screens, and the RoomHost frame. The v1 cosmic theme
    (teal void, gold headings, Cinzel) is gone — everything reads from tokens,
    so both themes and the self-hosted Fell/Garamond stacks apply everywhere.
-   Per-module CSS lives in per-module files (conflict rule 3).
+   Per-module CSS lives in per-module files (conflict rule 3), with two
+   deliberate cross-module exceptions owned HERE by the visual-global pass:
+     1. the paper MATERIAL layer (grain tile + vignette + deckle, AAA 6.13)
+     2. the ONE commit idiom (ink seal pill, AAA 6.16) — see the sections at
+        the bottom; module owners may fold those declarations into their own
+        files and delete the overrides here, but never fork the treatment.
    ========================================================================== */
 
 * {
@@ -80,23 +85,21 @@ h3 {
   background: var(--paper-raised);
   color: var(--ink);
   cursor: pointer;
-  transition: transform var(--dur-press) var(--ease-settle), border-color var(--dur-press) ease;
+  transition: transform var(--dur-press) var(--ease-settle), filter var(--dur-press) ease,
+    border-color var(--dur-press) ease;
 }
 .btn:hover {
   border-color: var(--ink-faint);
 }
 .btn:active,
 .btn.is-pressed {
-  transform: scale(0.97);
+  /* the seal stamp-down: 1px translate + ink-darken (AAA 6.17) */
+  transform: translateY(1px);
+  filter: brightness(0.94);
 }
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-}
-.btn--primary {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
 }
 
 /* --------------------------------------------------------------------------
@@ -119,9 +122,99 @@ h3 {
   min-height: 0;
 }
 
+/* Sparse rooms (Pantry, Music Room): the room column's own gap stays capped,
+   and auto margins on its first/last blocks center the play surface in the
+   thumb zone instead of stranding the CTA a screen away (AAA 6.20 fix).
+   Every room view root is a flex column; auto margins collapse to 0 when a
+   dense room fills the height, so nothing ever clips. */
+.room-host > :first-child > :first-child {
+  margin-top: auto;
+}
+.room-host > :first-child > :last-child {
+  margin-bottom: auto;
+}
+
 .room-host__footer {
   flex: 0 0 auto;
   display: flex;
   justify-content: center;
   padding: 0.5rem 0.9rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* ==========================================================================
+   Paper material — visual-global exception 1 (AAA 6.13; BENCHMARKS: Strange
+   Horticulture's tactile paper). One pre-rendered tileable grain (7KB PNG,
+   ui/theme/grain.png — no live feTurbulence) + one vignette, mounted ONCE as
+   fixed overlays so every surface in both themes gets tooth without any
+   per-module work. Multiply in daylight, screen in candlelight (tokens.css
+   --grain-blend, per AAA 6.4's "lightening variant"). Sits above game chrome
+   (z <= 60) and below the platform layer (z 9999); grain doubles as dither
+   against OLED banding in dark mode.
+   ========================================================================== */
+
+body::before {
+  /* vignette: <=8% ink in light mode (tokens --vignette-ink) */
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  pointer-events: none;
+  background: radial-gradient(125% 95% at 50% 40%, transparent 58%, var(--vignette-ink) 100%);
+}
+
+body::after {
+  /* grain: mid-gray tile, blend + opacity from tokens (~4-6%) */
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 121;
+  pointer-events: none;
+  background-image: url('./ui/theme/grain.png');
+  background-repeat: repeat;
+  background-size: 96px 96px;
+  mix-blend-mode: var(--grain-blend);
+  opacity: var(--grain-opacity);
+}
+
+/* The blueprint's local vignette is superseded by the global one above —
+   neutralized here rather than edited in blueprint.css (module in another
+   agent's hands this round); together they would exceed the 8% ink budget. */
+div.bp-page::before {
+  background: none;
+}
+
+/* 1px deckle edge on flat sheet cards (lifted sheets get their lip from the
+   inset line inside --shadow-lift). Curated to cards that declare no
+   box-shadow of their own; module variants that do (e.g. .bp-card--rare's
+   gilt ring) deliberately win the cascade. */
+.bp-card,
+.jrn-sheet,
+.jrn-card,
+.snc-door,
+.m2-card,
+.chron__stat {
+  box-shadow: var(--deckle);
+}
+
+/* ==========================================================================
+   Commit idiom — visual-global exception 2 (AAA 6.16 + 1.14). ONE treatment
+   for every confirm/submit verb in the game: the ink seal pill (--commit-bg
+   fill, --commit-ink text, 999px radius) pressed with the 120ms stamp-down
+   the modules already implement (translateY 1px + darken, AAA 6.17). This
+   retires the seven costumes: wax seals on the blueprint/front step, and the
+   green/slate/gilt/purple/sage/tan accent pills inside rooms — room accents
+   are for state only (center cell, caret, progress, verdicts), never verbs.
+   :root prefix out-specifies module declarations regardless of import order.
+   ========================================================================== */
+
+:root .btn--primary,
+:root button.bp-btn--seal,
+:root button.anch-btn--primary,
+:root button.mic-btn--primary,
+:root button.m2-btn--primary {
+  background: var(--commit-bg);
+  border-color: var(--commit-bg);
+  color: var(--commit-ink);
+  font-weight: 600;
+  border-radius: 999px;
 }

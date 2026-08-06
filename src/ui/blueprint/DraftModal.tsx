@@ -13,7 +13,7 @@ import type { PointerEvent } from 'react';
 import type { Dir, DraftOffer, RoomCard } from '../../engine/types';
 import { neighbor, rowTier } from '../../engine/manor/grid';
 import { CARD_PREVIEWS } from '../../engine/manor/deck';
-import { CategoryGlyph } from './CategoryGlyph';
+import { RoomGlyph } from './CategoryGlyph';
 
 const TIER_LABELS = ['', 'the ground floors', 'the middle landings', 'the high floors'];
 const ROMAN = ['', 'I', 'II', 'III'];
@@ -24,8 +24,8 @@ const pressProps = {
   onPointerDown: press, onPointerUp: release, onPointerLeave: release, onPointerCancel: release,
 };
 
-/** Mini door diagram: the card's first layout; the joiner turns it to fit. */
-function DoorDiagram({ doors }: { doors: readonly Dir[] }) {
+/** Mini door diagram: a card layout; the joiner turns it to fit. Shared with the cabinet. */
+export function DoorDiagram({ doors }: { doors: readonly Dir[] }) {
   const tick: Record<Dir, string> = {
     N: 'M12 1v5', S: 'M12 23v-5', W: 'M1 12h5', E: 'M23 12h-5',
   };
@@ -71,7 +71,7 @@ export default function DraftModal({ offer, gems, onChoose, onReroll, onCancel }
                 onClick={() => onChoose(card.id)}
               >
                 <span className="bp-card__glyph">
-                  <CategoryGlyph category={card.category} size={30} />
+                  <RoomGlyph category={card.category} puzzleKind={card.puzzleKind} size={30} />
                 </span>
                 <span className="bp-card__body">
                   <span className="bp-card__name">{card.name}</span>

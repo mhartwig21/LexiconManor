@@ -9,9 +9,11 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { DayRecord, VolumeState } from '../src/engine/types';
 import {
-  advanceVolume, applyGuess, arrivedLetters, computeCloseness, fragmentDroughtDays,
-  freshVolumeState, hasGuessedOnDay, letterGrants, nextFragmentForRoom, normalizeGuess,
-  openedLetterFlag, pityDue, solvedFlag, unfoundFragments, PITY_DROUGHT_DAYS,
+  advanceVolume, applyGuess, arrivedLetters, computeCloseness, findLetter,
+  fragmentDroughtDays, freshVolumeState, hasGuessedOnDay, letterGrants,
+  nextFragmentForRoom, normalizeGuess, openedLetterFlag, pityDue,
+  reservedTestimonyIds, solvedFlag, synthesizedPityCount, synthesizedPityLetter,
+  unfoundFragments, DEFAULT_PITY_TEMPLATES, PITY_DROUGHT_DAYS, SYNTH_PITY_PREFIX,
   type VolumeContent,
 } from '../src/engine/volume';
 
@@ -123,6 +125,37 @@ describe('fragment drip — deterministic, category-aware, never stranded (AAA 4
     expect(fallback!.sourceRoomCategory).not.toBe('puzzle');
   });
 
+  it('testimony reserved for a still-unseen speaker scene steps aside from the room drip', () => {
+    const s = fresh();
+    // v1-d1 (revealOrder 1, mystery) reserved → the drip serves the next
+    // mystery-sourced fragment instead.
+    const next = nextFragmentForRoom(volume, s, 'mystery', { reservedIds: new Set(['v1-d1']) });
+    expect(next?.id).toBe('v1-d2');
+    // Reserving EVERYTHING must never strand the drip: reservation is ignored.
+    const all = new Set(volume.fragments.map((f) => f.id));
+    expect(nextFragmentForRoom(volume, s, 'mystery', { reservedIds: all })?.id).toBe('v1-d1');
+  });
+
+  it('reservedTestimonyIds reads grantsFragmentIds from unseen nodes (node + choice effects)', () => {
+    const files = [
+      {
+        nodes: [
+          { id: 'bramble.testimony.candles', effects: { grantsFragmentIds: ['v1-t2'] } },
+          { id: 'posy.testimony.window', choices: [{ effects: { grantsFragmentIds: ['v1-t4'] } }] },
+          { id: 'portrait.testimony.unhoused', effects: { grantsFragmentIds: ['v1-t5'] } },
+          { id: 'bramble.gen.tea', effects: {} },
+        ],
+      },
+    ];
+    expect(reservedTestimonyIds(files, new Set())).toEqual(new Set(['v1-t2', 'v1-t4', 'v1-t5']));
+    // A seen node's grant is already applied — no longer reserved.
+    expect(reservedTestimonyIds(files, new Set(['bramble.testimony.candles']))).toEqual(
+      new Set(['v1-t4', 'v1-t5']),
+    );
+    // No granting nodes authored yet → empty set, drip unchanged.
+    expect(reservedTestimonyIds([{ nodes: [{ id: 'x.y' }] }], new Set())).toEqual(new Set());
+  });
+
   it('walking the drip files every fragment exactly once, in revealOrder within a category run', () => {
     let s = fresh();
     const seen: string[] = [];
@@ -168,6 +201,85 @@ describe('pity rule — no fragment for 3 days of play brings the post (AAA 4.14
     expect(arrivedLetters(volume, fresh(), 9, noDrought).some((l) => l.pity)).toBe(false);
     const kept = { droughtDays: 0, openedIds: new Set(['under-the-tray']) };
     expect(arrivedLetters(volume, fresh(), 9, kept).some((l) => l.id === 'under-the-tray')).toBe(true);
+  });
+});
+
+describe('renewable pity — the mercy channel never exhausts (AAA 4.14)', () => {
+  const drought = { droughtDays: PITY_DROUGHT_DAYS, openedIds: new Set<string>() };
+
+  it('while an authored pity letter is fresh, nothing is synthesized', () => {
+    const tray = arrivedLetters(volume, fresh(), 5, drought);
+    expect(tray.some((l) => l.pity)).toBe(true);
+    expect(tray.some((l) => l.id.startsWith(SYNTH_PITY_PREFIX))).toBe(false);
+  });
+
+  it('both authored pity letters spent + a new drought → the house writes one', () => {
+    const opened = new Set(['under-the-tray', 'second-under-the-tray']);
+    const tray = arrivedLetters(volume, fresh(), 12, { droughtDays: PITY_DROUGHT_DAYS, openedIds: opened });
+    const synth = tray.filter((l) => l.id.startsWith(SYNTH_PITY_PREFIX));
+    expect(synth.map((l) => l.id)).toEqual(['pity-extra-1']);
+    expect(synth[0]!.pity).toBe(true);
+    expect(synth[0]!.from).toBe('posy');
+    // …and it grants the drip like any pity letter.
+    expect(letterGrants(volume, synth[0]!, fresh())).toEqual(['v1-d1']);
+  });
+
+  it('opened synthesized letters stay in the tray; the next drought mints the next number', () => {
+    const opened = new Set(['under-the-tray', 'second-under-the-tray', 'pity-extra-1']);
+    expect(synthesizedPityCount(opened)).toBe(1);
+    const tray = arrivedLetters(volume, fresh(), 16, { droughtDays: PITY_DROUGHT_DAYS, openedIds: opened });
+    const ids = tray.filter((l) => l.id.startsWith(SYNTH_PITY_PREFIX)).map((l) => l.id);
+    expect(ids).toEqual(['pity-extra-1', 'pity-extra-2']);
+    // No drought → the opened one is still readable, but nothing fresh.
+    const calm = arrivedLetters(volume, fresh(), 16, { droughtDays: 0, openedIds: opened });
+    expect(calm.filter((l) => l.id.startsWith(SYNTH_PITY_PREFIX)).map((l) => l.id)).toEqual(['pity-extra-1']);
+  });
+
+  it('body copy rotates through the authored pool; findLetter resolves both kinds', () => {
+    const one = synthesizedPityLetter(volume, 1);
+    const two = synthesizedPityLetter(volume, 2);
+    expect(one.body).not.toBe(two.body);
+    const wrap = synthesizedPityLetter(volume, 1 + DEFAULT_PITY_TEMPLATES.length);
+    expect(wrap.body).toBe(one.body); // pool wraps, ids keep counting
+    expect(wrap.id).toBe(`pity-extra-${1 + DEFAULT_PITY_TEMPLATES.length}`);
+    expect(findLetter(volume, 'under-the-tray')?.id).toBe('under-the-tray');
+    expect(findLetter(volume, 'pity-extra-2')?.subject).toBe(two.subject);
+    expect(findLetter(volume, 'pity-extra-0')).toBeUndefined();
+    expect(findLetter(volume, 'no-such-letter')).toBeUndefined();
+  });
+
+  it('SIMULATION: a letters-only player is never more than PITY_DROUGHT_DAYS from a fragment', () => {
+    // Worst case the criterion names: the dice never offer a violet room, so
+    // the post is the only channel. Every day: open everything in the tray,
+    // bank the day record. The pity channel must guarantee a fragment within
+    // any (PITY_DROUGHT_DAYS + 1)-day window until the volume is fully filed.
+    let s = fresh();
+    const records: DayRecord[] = [];
+    const openedIds = new Set<string>();
+    let zeroRun = 0;
+    let day = 0;
+    while (s.foundFragmentIds.length < volume.fragments.length && day < 200) {
+      day++;
+      const tray = arrivedLetters(volume, s, day, {
+        droughtDays: fragmentDroughtDays(records),
+        openedIds,
+      });
+      let found = 0;
+      for (const l of tray) {
+        if (openedIds.has(l.id)) continue;
+        const grants = letterGrants(volume, l, s);
+        openedIds.add(l.id);
+        for (const id of grants) {
+          s = { ...s, foundFragmentIds: [...s.foundFragmentIds, id] };
+          found++;
+        }
+      }
+      records.push(dayRecord(day, found));
+      zeroRun = found > 0 ? 0 : zeroRun + 1;
+      expect(zeroRun, `fragment drought too long at day ${day}`).toBeLessThanOrEqual(PITY_DROUGHT_DAYS);
+    }
+    expect(s.foundFragmentIds.length).toBe(volume.fragments.length);
+    expect(new Set(s.foundFragmentIds).size).toBe(volume.fragments.length); // no double-files
   });
 });
 

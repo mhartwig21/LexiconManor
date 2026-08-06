@@ -1,11 +1,21 @@
 import { describe, expect, it } from 'vitest';
+import { create } from 'zustand';
 import {
   beginDay, buildDayRecord, canAdvancePhase, canEndDay, daySeedFor, pruneEventsAtDusk,
   shouldTriggerDusk, DAY_FLOW, DUSK_FADE_MS,
 } from '../src/engine/day';
 import { appendEntry, createLedger } from '../src/engine/economy/steps';
-import type { DayState, StepLedger } from '../src/engine/types';
+import type { DayState, DraftOffer, StepLedger } from '../src/engine/types';
 import type { RecordedEvent } from '../src/engine/events';
+import { draftTargets } from '../src/engine/manor/grid';
+import { createEmptySaveV2 } from '../src/app/save';
+import type { ManorStore } from '../src/app/store';
+import { createDaySlice } from '../src/app/slices/day';
+import { createManorSlice, ensureManor } from '../src/app/slices/manor';
+import { createRoomSlice } from '../src/app/slices/room';
+import { createDialogueSlice } from '../src/app/slices/dialogue';
+import { createJournalSlice } from '../src/app/slices/journal';
+import { createMetaSlice } from '../src/app/slices/meta';
 
 /**
  * A2 — the day lifecycle FSM. The load-bearing cozy rules: a day ending is
@@ -110,6 +120,17 @@ describe('ending the day', () => {
     expect(shouldTriggerDusk(day({ phase: 'morning' }), spent)).toBe(false);
     expect(shouldTriggerDusk(day({ phase: 'night' }), spent)).toBe(false);
   });
+
+  it('suspends dusk while a draft offer is open, like an active room (AAA 4.6)', () => {
+    const spent = appendEntry(createLedger(1), { reason: 'move', delta: -1, at: 0 });
+    const offer: DraftOffer = {
+      atDoor: 'N', from: { col: 2, row: 0 }, cards: [], rerolled: false,
+    };
+    expect(shouldTriggerDusk(day(), spent, offer)).toBe(false);
+    // …and fires again once the offer resolves.
+    expect(shouldTriggerDusk(day(), spent, null)).toBe(true);
+    expect(shouldTriggerDusk(day(), spent, undefined)).toBe(true);
+  });
 });
 
 describe('buildDayRecord (the chronicles bank)', () => {
@@ -154,5 +175,127 @@ describe('pruneEventsAtDusk (the one-day-deep stream)', () => {
     expect(pruned.map((e) => e.event.type)).toEqual([
       'room-solved', 'fragment-found', 'day-ended',
     ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Store-level integration: the dusk deferral (A2's day slice composed with the
+// real sibling slices, exactly as app/store.ts composes them — but on a fresh
+// save and without the persistence subscription).
+// ---------------------------------------------------------------------------
+
+const makeStore = () => {
+  const save = createEmptySaveV2('Tester');
+  return create<ManorStore>()((...a) => ({
+    ...createDaySlice(save)(...a),
+    ...createManorSlice(save)(...a),
+    ...createRoomSlice(save)(...a),
+    ...createDialogueSlice(save)(...a),
+    ...createJournalSlice(save)(...a),
+    ...createMetaSlice(save)(...a),
+  }));
+};
+
+/** The dusk check runs a microtask after state settles; let it. */
+const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+/** Fresh store, day started and out on the blueprint with the manor built. */
+const exploringStore = () => {
+  const store = makeStore();
+  store.getState().startDay();          // morning, budget 40
+  store.getState().advanceDayPhase();   // → exploring
+  ensureManor();                        // A1 builds the grid for the live day
+  return store;
+};
+
+describe('the last-step draft never charges for a look it refuses to give (AAA 4.6 + 4.12/R.3)', () => {
+  it('1 step left + openDraft → the offer is visible; the day ends only after it resolves', async () => {
+    const store = exploringStore();
+    // Exactly one step left — the tensest moment of a steps-exhausted day.
+    store.setState({ ledger: { budget: 1, entries: [] } });
+    const target = draftTargets(store.getState().manor!)[0]!;
+
+    store.getState().openDraft(target.dir);
+    await flush();
+
+    const s = store.getState();
+    expect(s.draftOffer).not.toBeNull();          // she gets the look she paid for
+    expect(s.day!.phase).toBe('exploring');       // dusk is suspended by the offer
+    expect(s.stepsRemaining()).toBe(0);           // the step was honestly ledgered
+    expect(s.ledger.entries.at(-1)!.reason).toBe('move');
+
+    // Backing out resolves the draft → NOW the day ends, gently.
+    store.getState().cancelDraft();
+    await flush();
+    const after = store.getState();
+    expect(after.day!.phase).toBe('dusk');
+    expect(after.chronicles.dayRecords.at(-1)!.cause).toBe('steps-exhausted');
+  });
+
+  it('with steps to spare, resolving a draft does not end the day', async () => {
+    const store = exploringStore();
+    const target = draftTargets(store.getState().manor!)[0]!;
+    store.getState().openDraft(target.dir);
+    await flush();
+    expect(store.getState().draftOffer).not.toBeNull();
+    store.getState().cancelDraft();
+    await flush();
+    expect(store.getState().day!.phase).toBe('exploring'); // 39 steps remain
+  });
+});
+
+describe('dusk on room exit, never inside (AAA 4.12, store level)', () => {
+  it('a mid-room overdraft lets the puzzle finish; dusk fires on exit', async () => {
+    const store = exploringStore();
+    const day1 = store.getState().day!;
+    store.setState({
+      day: { ...day1, activeRoom: { cellKey: '2,1', kind: 'hive', puzzleId: 'p', tier: 1 } },
+    });
+    // Drain the whole budget inside the room (mistakes): no dusk yet.
+    store.getState().applyStepEntry({ reason: 'mistake', delta: -45, at: 0, roomKey: '2,1' });
+    await flush();
+    expect(store.getState().day!.phase).toBe('exploring');
+    // Leaving the room with the ledger dry → the day ends out on the floor.
+    store.getState().leaveRoom();
+    await flush();
+    expect(store.getState().day!.phase).toBe('dusk');
+  });
+
+  it('an overdraft earned back in-room does not end the day on exit', async () => {
+    const store = exploringStore();
+    const day1 = store.getState().day!;
+    store.setState({
+      day: { ...day1, activeRoom: { cellKey: '2,1', kind: 'hive', puzzleId: 'p', tier: 1 } },
+      ledger: { budget: 2, entries: [] },
+    });
+    store.getState().applyStepEntry({ reason: 'mistake', delta: -3, at: 0, roomKey: '2,1' });
+    store.getState().applyStepEntry({ reason: 'solve', delta: 6, at: 0, roomKey: '2,1' });
+    store.getState().leaveRoom();
+    await flush();
+    expect(store.getState().day!.phase).toBe('exploring');
+  });
+});
+
+describe('the gift is a priced action through the audited ledger (AAA 4.9)', () => {
+  it('giveGift ledgers a −1 gift entry (STEP_TABLE.gift) alongside the affinity', async () => {
+    const store = exploringStore();
+    store.getState().giveGift('bramble');
+    const s = store.getState();
+    const gift = s.ledger.entries.find((e) => e.reason === 'gift');
+    expect(gift).toBeDefined();
+    expect(gift!.delta).toBe(-1);
+    expect(s.stepsRemaining()).toBe(39);
+    expect(s.affinities.bramble).toBe(1);
+    expect(s.giftedToday).toContain('bramble');
+    await flush();
+    expect(store.getState().day!.phase).toBe('exploring');
+  });
+
+  it('the once-per-day valve never double-charges', () => {
+    const store = exploringStore();
+    store.getState().giveGift('bramble');
+    store.getState().giveGift('bramble');
+    const gifts = store.getState().ledger.entries.filter((e) => e.reason === 'gift');
+    expect(gifts).toHaveLength(1);
   });
 });

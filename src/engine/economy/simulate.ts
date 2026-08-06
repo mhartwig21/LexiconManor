@@ -41,6 +41,36 @@ export const MOVEMENT = {
   maxRoomsPerDay: 80,
 } as const;
 
+/**
+ * The clock model (AAA 4.10's actual promise: a skipper day ends in ~5 min, a
+ * competent day in 10–15). Seconds per player action, estimated from the
+ * 30–90s micro / 2–6 min anchor design bands (room module headers) — REPLACE
+ * with instrumented medians once 3.5's playtest lands. Ranges are sampled
+ * from a SEPARATE rng stream so adding the clock never perturbs the seeded
+ * step-economy results the 4.10 row/room targets are pinned to.
+ */
+export const TIME_TABLE = {
+  /** One −1 move tap on the blueprint. */
+  moveTap: 2,
+  /** Open a door, read three cards, choose or step back. */
+  draft: 10,
+  /** Step into a puzzle room and decide not to play it today. */
+  glance: 5,
+  /** A parlor/utility/mystery beat: a line of dialogue, a snack, a fragment. */
+  dialogueBeat: 20,
+  /** Micro solves: the 30–90s design band, weighted toward the middle. */
+  microSolve: [45, 90],
+  /** Anchor solves: Hive/Twistle/Web/Study run long; 3–6 min at the tail. */
+  anchorSolve: [180, 360],
+  /** Attempted but left unsolved for tomorrow (AAA 4.13). */
+  abandon: 120,
+} as const;
+
+const sampleSeconds = (range: readonly [number, number], timeRng?: () => number): number =>
+  timeRng
+    ? range[0] + timeRng() * (range[1] - range[0])
+    : (range[0] + range[1]) / 2;
+
 export interface SimProfile {
   name: string;
   /** Share of drafted rooms that are puzzle rooms (vs parlor/utility/mystery). */
@@ -112,6 +142,8 @@ export interface SimDayResult {
   stepsLeft: number;    // stepsRemaining at day end (0 for exhausted days)
   spent: number;
   refunded: number;
+  /** Estimated wall-clock length of the day (TIME_TABLE model), in minutes. */
+  minutes: number;
   ledger: StepLedger;
 }
 
@@ -120,8 +152,18 @@ const rowTier = (row: number): Tier => (row <= 3 ? 1 : row <= 5 ? 2 : 3);
 const randInt = (rng: () => number, min: number, max: number) =>
   min + Math.floor(rng() * (max - min + 1));
 
-/** Play one abstract day through the real ledger. Deterministic per rng. */
-export function simulateDay(rng: () => number, profile: SimProfile): SimDayResult {
+/**
+ * Play one abstract day through the real ledger. Deterministic per rng.
+ * `timeRng` (a separate stream) samples solve durations for the clock model;
+ * without it, durations fall to range midpoints — the step economy's rng
+ * stream is untouched either way, so 4.10's row/room targets never drift
+ * because the clock exists.
+ */
+export function simulateDay(
+  rng: () => number,
+  profile: SimProfile,
+  timeRng?: () => number,
+): SimDayResult {
   let ledger = createLedger(STEP_TABLE.dayStart);
   const tea = teaBonus(profile.brambleAffinity);
   if (tea > 0) ledger = appendEntry(ledger, { reason: 'tea', delta: tea, at: 0 });
@@ -130,9 +172,11 @@ export function simulateDay(rng: () => number, profile: SimProfile): SimDayResul
   let roomsSolved = 0;
   let rowProgress = 0;
   let row = 1;
+  let seconds = 0;
 
   const move = () => {
     ledger = appendEntry(ledger, { reason: 'move', delta: STEP_TABLE.move, at: 0 });
+    seconds += TIME_TABLE.moveTap;
   };
 
   outer: while (rooms < MOVEMENT.maxRoomsPerDay) {
@@ -151,6 +195,7 @@ export function simulateDay(rng: () => number, profile: SimProfile): SimDayResul
     row = Math.min(7, 1 + Math.floor(rowProgress));
     const tier = rowTier(row);
     const roomKey = `sim-${rooms}`;
+    seconds += TIME_TABLE.draft;
 
     if (rng() < profile.puzzleShare) {
       if (rng() < profile.attemptRate) {
@@ -165,6 +210,9 @@ export function simulateDay(rng: () => number, profile: SimProfile): SimDayResul
         }
         if (solved) {
           const size = rng() < profile.microShare ? 'micro' : 'anchor';
+          seconds += sampleSeconds(
+            size === 'micro' ? TIME_TABLE.microSolve : TIME_TABLE.anchorSolve, timeRng,
+          );
           ledger = appendEntry(ledger, {
             reason: 'solve', delta: STEP_TABLE.solve(size, tier), at: 0, roomKey,
           });
@@ -174,15 +222,22 @@ export function simulateDay(rng: () => number, profile: SimProfile): SimDayResul
             });
           }
           roomsSolved += 1;
+        } else {
+          seconds += TIME_TABLE.abandon;
         }
+      } else {
+        seconds += TIME_TABLE.glance;
       }
-    } else if (rng() < profile.kitchenChance) {
-      ledger = appendEntry(ledger, {
-        reason: 'snack',
-        delta: randInt(rng, STEP_TABLE.snack.min, STEP_TABLE.snack.max),
-        at: 0,
-        roomKey,
-      });
+    } else {
+      seconds += TIME_TABLE.dialogueBeat;
+      if (rng() < profile.kitchenChance) {
+        ledger = appendEntry(ledger, {
+          reason: 'snack',
+          delta: randInt(rng, STEP_TABLE.snack.min, STEP_TABLE.snack.max),
+          at: 0,
+          roomKey,
+        });
+      }
     }
 
     // Dusk never fires inside a room; it fires on exit (AAA 4.12) — a
@@ -197,15 +252,20 @@ export function simulateDay(rng: () => number, profile: SimProfile): SimDayResul
     stepsLeft: stepsRemaining(ledger),
     spent: stepsSpent(ledger),
     refunded: stepsRefunded(ledger),
+    minutes: seconds / 60,
     ledger,
   };
 }
 
-/** Simulate `days` seeded days; one continuous rng stream per run. */
+/**
+ * Simulate `days` seeded days; one continuous rng stream per run, plus an
+ * independent stream for the clock model (so timing never perturbs economy).
+ */
 export function simulateDays(profile: SimProfile, days: number, seed: number): SimDayResult[] {
   const rng = createRng(seed);
+  const timeRng = createRng((seed ^ 0x715e17) | 0);
   const out: SimDayResult[] = [];
-  for (let i = 0; i < days; i++) out.push(simulateDay(rng, profile));
+  for (let i = 0; i < days; i++) out.push(simulateDay(rng, profile, timeRng));
   return out;
 }
 
@@ -219,4 +279,15 @@ export function median(results: SimDayResult[], pick: (r: SimDayResult) => numbe
 /** Share of results satisfying a predicate. */
 export function share(results: SimDayResult[], pred: (r: SimDayResult) => boolean): number {
   return results.filter(pred).length / results.length;
+}
+
+/** q-quantile (0..1, nearest-rank) of a numeric projection over results. */
+export function quantile(
+  results: SimDayResult[],
+  q: number,
+  pick: (r: SimDayResult) => number,
+): number {
+  const xs = results.map(pick).sort((a, b) => a - b);
+  const i = Math.min(xs.length - 1, Math.max(0, Math.ceil(q * xs.length) - 1));
+  return xs[i]!;
 }

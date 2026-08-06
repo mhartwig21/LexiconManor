@@ -12,9 +12,17 @@ import type { ForgottenWordPuzzle } from '../../../engine/types';
 import type { ForgottenWordAction, ForgottenWordRoomState } from '../../../engine/rooms/adapters/forgotten-word';
 import { definitionForLevel, type ClueId } from '../../../engine/forgotten-word';
 import { sfx } from '../../../app/sound';
+import { pressProps } from './usePressed';
 import './anchor.css';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
+
+/** Warm words for the free length refusal ("It was eleven letters, dear"). */
+const NUMBER_WORDS = [
+  'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+  'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen',
+];
+const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
 
 const CLUES: { id: ClueId; label: string }[] = [
   { id: 'etymology', label: 'Etymology' },
@@ -72,6 +80,13 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
         if (fb.reason === 'repeat') {
           setToast({ kind: 'info', text: 'Already whispered.' });
           later(() => setToast(null), 1100);
+        } else if (fb.reason === 'wrong-length') {
+          // AAA 3.2: the card announced the count, so a wrong-length guess is
+          // malformed input — a warm free refusal, no whisper, no steps.
+          setShaking(true);
+          later(() => setShaking(false), 340);
+          setToast({ kind: 'info', text: `It was ${numberWord(puzzle.word.length)} letters, dear.` });
+          later(() => setToast(null), 1400);
         }
         break;
     }
@@ -136,7 +151,7 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
                   )}
                 </div>
                 {!unlocked && (
-                  <button className="anch-btn" onClick={() => dispatch({ type: 'unseal-clue', clue: id })}>
+                  <button className="anch-btn" {...pressProps<HTMLButtonElement>()} onClick={() => dispatch({ type: 'unseal-clue', clue: id })}>
                     Unseal · −{clueCost} steps
                   </button>
                 )}
@@ -157,7 +172,7 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
               spellCheck={false}
               enterKeyHint="send"
             />
-            <button className="anch-btn anch-btn--primary" onClick={submit} disabled={!guess.trim()}>
+            <button className="anch-btn anch-btn--primary" {...pressProps<HTMLButtonElement>()} onClick={submit} disabled={!guess.trim()}>
               Whisper
             </button>
           </div>

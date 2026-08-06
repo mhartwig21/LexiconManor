@@ -25,10 +25,17 @@ import {
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../rooms/room-puzzle';
 import ladderData from '../../../content/generated/ladder.json';
 
-const bundle = ladderData as { words: string[]; puzzles: LadderPuzzle[] };
+const bundle = ladderData as { words: string[]; solutionWords: string[]; puzzles: LadderPuzzle[] };
 export const LADDER_POOL = bundle.puzzles;
-/** The shipped ladder lexicon — the honest dictionary of the room. */
+/** The shipped probe lexicon — the generous dictionary of the room. */
 export const LADDER_WORDS: ReadonlySet<string> = new Set(bundle.words);
+/**
+ * The climbing lexicon: frequency-floored common words the generator built
+ * endpoints, solutions, and par from. The "next stone" hint routes through
+ * THIS list first, so a bought stone is always a word she knows — never
+ * PACS or SHEW (Koster-fairness; Wordle's curated answer list).
+ */
+export const LADDER_SOLUTION_WORDS: ReadonlySet<string> = new Set(bundle.solutionWords);
 
 const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
   1: ['medium', 'easy'],
@@ -59,8 +66,10 @@ export type LadderAction =
   | { type: 'buy-stone' };
 
 function isPerfect(puzzle: LadderPuzzle, s: LadderRoomState): boolean {
+  // At-or-under par: par is optimal within the climbing lexicon, but a probe
+  // through the wider dictionary may legitimately beat it — still perfect.
   return s.hintsBought === 0
-    && (s.engine.status !== 'won' || s.engine.rungs.length - 1 === puzzle.par);
+    && (s.engine.status !== 'won' || s.engine.rungs.length - 1 <= puzzle.par);
 }
 
 function outcomeOf(puzzle: LadderPuzzle, s: LadderRoomState): RoomOutcome {
@@ -116,7 +125,11 @@ export const ladderAdapter: RoomPuzzleAdapter<LadderPuzzle, LadderRoomState, Lad
     if (action.type === 'buy-stone') {
       if (state.engine.status !== 'playing') return { state, events, outcome: outcomeOf(puzzle, state) };
       const current = state.engine.rungs[state.engine.rungs.length - 1]!;
-      const path = shortestLadderPath(current, puzzle.target, LADDER_WORDS);
+      // Sell common stones first: BFS over the climbing lexicon (plus where
+      // she stands, which may be an off-list probe). Only if no common route
+      // exists does the room fall back to the full probe dictionary.
+      const path = shortestLadderPath(current, puzzle.target, new Set([...LADDER_SOLUTION_WORDS, current]))
+        ?? shortestLadderPath(current, puzzle.target, LADDER_WORDS);
       const stone = path?.[1];
       if (!stone) return { state, events, outcome: outcomeOf(puzzle, state) };
       const { state: engine, result } = submitLadderRung(puzzle, state.engine, stone, (w) => LADDER_WORDS.has(w));

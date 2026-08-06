@@ -1,18 +1,39 @@
 /**
  * The Lexicographer's portrait — OWNER: A7. Code-drawn SVG in the manor's
  * ink-on-parchment idiom (strokes only, currentColor for ink so both themes
- * work, gilt frame from tokens). Two states: stern (the volume in progress)
+ * work, gilt frame from tokens). Base states: stern (the volume in progress)
  * and softened (after the word is spoken) — the portrait itself is the
- * progression reward (BENCHMARKS §5).
+ * progression reward (BENCHMARKS §5). An optional dialogue-node `expression`
+ * key overrides the base features so the frame acts alongside his authored
+ * reaction lines (stern/curious/wistful/warm…, AAA 4.17).
  */
 
-export default function PortraitFrame({ soft }: { soft: boolean }) {
+import type { PortraitExpression } from '../../engine/dialogue/schema';
+
+export default function PortraitFrame({
+  soft,
+  expression,
+}: {
+  soft: boolean;
+  expression?: PortraitExpression;
+}) {
+  const mood: PortraitExpression = expression ?? (soft ? 'warm' : 'stern');
+  /** Closed, kindly crescents vs level etched dashes. */
+  const softEyes = mood === 'warm' || mood === 'wistful' || mood === 'amused';
+  /** Knitted (stern/concerned), one arched (curious), or lifted (the rest). */
+  const brows: 'knit' | 'arch' | 'lift' =
+    mood === 'stern' || mood === 'concerned' ? 'knit' : mood === 'curious' ? 'arch' : 'lift';
+  /** Full smile, the ghost of one, or the pressed line. */
+  const mouth: 'smile' | 'ghost' | 'pressed' =
+    mood === 'warm' || mood === 'amused' ? 'smile'
+    : mood === 'wistful' || mood === 'curious' ? 'ghost'
+    : 'pressed';
   return (
     <svg
       className="snc-portrait"
       viewBox="0 0 240 300"
       role="img"
-      aria-label={soft ? 'The Lexicographer, softened' : 'The Lexicographer, stern'}
+      aria-label={`The Lexicographer, ${soft ? 'softened' : 'stern'}${expression ? ` — ${expression}` : ''}`}
     >
       {/* Candle-warmth behind the canvas once the word is home. */}
       {soft && <ellipse cx="120" cy="140" rx="95" ry="120" fill="var(--gilt)" opacity="0.13" />}
@@ -40,8 +61,8 @@ export default function PortraitFrame({ soft }: { soft: boolean }) {
         <circle cx="135" cy="126" r="11" strokeWidth="2" />
         <path d="M116 126 L 124 126" strokeWidth="2" />
         <path d="M94 124 L 88 120 M146 124 L 152 120" strokeWidth="1.4" />
-        {/* Eyes behind the glass: stern = level dashes; soft = closed crescents */}
-        {soft ? (
+        {/* Eyes behind the glass: level etched dashes vs closed crescents */}
+        {softEyes ? (
           <>
             <path d="M100 128 C 103 131, 107 131, 110 128" strokeWidth="1.8" />
             <path d="M130 128 C 133 131, 137 131, 140 128" strokeWidth="1.8" />
@@ -52,24 +73,31 @@ export default function PortraitFrame({ soft }: { soft: boolean }) {
             <path d="M131 127 L 139 127" strokeWidth="2.2" />
           </>
         )}
-        {/* Brows: knitted vs lifted */}
-        {soft ? (
-          <>
-            <path d="M98 114 C 102 111, 108 110, 112 112" strokeWidth="2" />
-            <path d="M128 112 C 132 110, 138 111, 142 114" strokeWidth="2" />
-          </>
-        ) : (
+        {/* Brows: knitted, one arched (curiosity), or lifted */}
+        {brows === 'knit' ? (
           <>
             <path d="M98 112 C 103 114, 108 115, 112 117" strokeWidth="2.4" />
             <path d="M128 117 C 132 115, 137 114, 142 112" strokeWidth="2.4" />
+          </>
+        ) : brows === 'arch' ? (
+          <>
+            <path d="M98 114 C 102 112, 108 111, 112 113" strokeWidth="2" />
+            <path d="M128 110 C 132 106, 138 106, 142 110" strokeWidth="2.2" />
+          </>
+        ) : (
+          <>
+            <path d="M98 114 C 102 111, 108 110, 112 112" strokeWidth="2" />
+            <path d="M128 112 C 132 110, 138 111, 142 114" strokeWidth="2" />
           </>
         )}
 
         {/* Nose */}
         <path d="M120 130 C 118 138, 117 144, 116 148 C 118 150, 122 150, 124 148" strokeWidth="1.8" />
-        {/* Mouth: pressed line vs the beginning of a smile */}
-        {soft ? (
+        {/* Mouth: the pressed line, its ghost of a curve, or the smile */}
+        {mouth === 'smile' ? (
           <path d="M108 160 C 114 165, 126 165, 132 159" strokeWidth="2.2" />
+        ) : mouth === 'ghost' ? (
+          <path d="M108 161 C 114 163, 126 163, 132 160" strokeWidth="2.2" />
         ) : (
           <path d="M109 161 C 116 160, 124 160, 131 161" strokeWidth="2.2" />
         )}

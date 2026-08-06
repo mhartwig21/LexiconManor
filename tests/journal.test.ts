@@ -205,6 +205,19 @@ describe('journal slice through the real store', () => {
     expect(st.volume.foundFragmentIds).toContain('v1-e1');
   });
 
+  it('openLetter resolves house-written pity letters (pity-extra-N) too', () => {
+    const s = useManorStore.getState();
+    s.openLetter('pity-extra-1'); // synthesized — not in content.letters
+    const st = useManorStore.getState();
+    expect(st.flags).toContain(openedLetterFlag(volume.id, 'pity-extra-1'));
+    expect(st.volume.foundFragmentIds).toEqual(['v1-d1']); // grants the drip's next
+    expect(st.counters['letter-opened']).toBe(1);
+    s.openLetter('pity-extra-1'); // write-once, like any letter
+    expect(useManorStore.getState().counters['letter-opened']).toBe(1);
+    s.openLetter('not-a-letter-at-all'); // unknown ids stay a no-op
+    expect(useManorStore.getState().counters['letter-opened']).toBe(1);
+  });
+
   it('collectFragmentForRoom walks the drip for A1’s violet rooms', () => {
     const s = useManorStore.getState();
     const first = s.collectFragmentForRoom('mystery');

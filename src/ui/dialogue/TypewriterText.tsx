@@ -5,6 +5,14 @@
  * lives in the parent: pass `instant` to complete the current line at once.
  * Reduced motion (store setting or OS preference) renders text immediately —
  * the pacing tap flow stays identical, only the animation is stripped.
+ *
+ * Performance contract (AAA 9.6): the reveal is ONE rAF loop that computes
+ * characters-shown from elapsed time and writes `textContent` on a span ref
+ * directly — one text-node mutation per frame, zero React renders per
+ * character. React state commits exactly once, at line completion (to drop
+ * the caret and notify the parent). Because the reveal is time-derived, the
+ * delivered cps stays accurate under Low Power Mode's 30fps rAF (AAA 9.3)
+ * instead of silently halving the authored speed.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -23,40 +31,59 @@ interface TypewriterTextProps {
 export default function TypewriterText({
   text, instant, reducedMotion, onDone, className,
 }: TypewriterTextProps) {
-  const skipAll = instant || reducedMotion;
-  const [shown, setShown] = useState(skipAll ? text.length : 0);
+  const skipAll = !!(instant || reducedMotion);
+  const spanRef = useRef<HTMLSpanElement>(null);
+  const [complete, setComplete] = useState(skipAll);
   const doneRef = useRef(false);
-
-  // Restart when the line changes.
-  useEffect(() => {
-    doneRef.current = false;
-    setShown(instant || reducedMotion ? text.length : 0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset on new text only
-  }, [text]);
+  // Keep the latest onDone without retriggering the reveal effect.
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
   useEffect(() => {
+    const span = spanRef.current;
+    if (!span) return;
+
+    const finish = () => {
+      span.textContent = text;
+      setComplete(true);           // single React commit per line
+      if (!doneRef.current) {
+        doneRef.current = true;
+        onDoneRef.current?.();
+      }
+    };
+
     if (skipAll) {
-      setShown(text.length);
+      finish();
       return;
     }
-    if (shown >= text.length) return;
-    const id = window.setInterval(() => {
-      setShown((n) => Math.min(text.length, n + 1));
-    }, 1000 / TYPEWRITER_CPS);
-    return () => window.clearInterval(id);
-  }, [text, shown, skipAll]);
 
-  useEffect(() => {
-    if (shown >= text.length && !doneRef.current) {
-      doneRef.current = true;
-      onDone?.();
-    }
-  }, [shown, text, onDone]);
+    // Fresh line: reset the imperative reveal (the parent keys this component
+    // per line, but stay correct even if `text` changes in place).
+    doneRef.current = false;
+    setComplete(false);
+    span.textContent = '';
+    let raf = 0;
+    const start = performance.now();
+    let shown = -1;
+    const tick = (now: number) => {
+      const target = Math.min(text.length, Math.floor(((now - start) / 1000) * TYPEWRITER_CPS));
+      if (target !== shown) {
+        shown = target;
+        span.textContent = text.slice(0, shown);
+      }
+      if (shown >= text.length) {
+        finish();
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [text, skipAll]);
 
-  const complete = shown >= text.length;
   return (
     <p className={className} aria-label={text}>
-      <span aria-hidden="true">{text.slice(0, shown)}</span>
+      <span ref={spanRef} aria-hidden="true" />
       {!complete && <span className="dlg-caret" aria-hidden="true" />}
     </p>
   );

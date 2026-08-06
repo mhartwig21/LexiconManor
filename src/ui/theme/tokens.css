@@ -11,6 +11,18 @@
        (AAA 6.3) — the hue alone is never load-bearing
      - IM Fell English >=22px display; EB Garamond 17-18px body, Libre
        Baskerville 16px fallback; counters tabular-nums (AAA 6.6)
+     - ONE commit idiom (AAA 6.16, codified visual-global round): every
+       confirm/submit in the game — blueprint seals AND in-room submits — is
+       the ink seal pill: --commit-bg fill, --commit-ink text, 999px radius,
+       120ms stamp-down (translateY 1px + ink-darken, AAA 6.17). Room accents
+       are thereby state-only (center cell, caret, progress, verdicts —
+       AAA 1.14); wax red stays reserved for mistakes/unread/seal glyphs/
+       daily guess (AAA 6.15). The cross-module wiring lives in index.css
+       ("Commit idiom" section) until module owners fold it in.
+     - paper material (AAA 6.13): one pre-rendered grain tile (ui/theme/
+       grain.png, ~7KB) + a global vignette, both applied once in index.css;
+       --grain-blend flips multiply→screen for the candlelit theme (6.4's
+       lightening variant), --vignette-ink stays ≤8% ink in light mode
    Both themes ship: system preference via prefers-color-scheme, explicit
    override via :root[data-theme='light'|'dark'].
    Agents consume tokens; per-module CSS lives in per-module files
@@ -52,8 +64,20 @@
   --radius-sheet: 10px;
   --radius-card: 6px;
   --tap-target: 44px;        /* AAA 6.19 minimum, everywhere */
-  --shadow-lift: 0 4px 10px rgba(43, 33, 24, 0.18);   /* the "lift" of the trio */
+  /* lift shadow now carries a 1px deckle lip on the top edge (AAA 6.13) */
+  --shadow-lift: 0 4px 10px rgba(43, 33, 24, 0.18), inset 0 1px 0 rgba(252, 248, 238, 0.55);
   --rule: 1px solid var(--paper-edge);
+
+  /* --- Commit idiom: the ink seal pill (AAA 6.16) -------------------------- */
+  --commit-bg: var(--ink);   /* auto-flips with the theme */
+  --commit-ink: var(--paper);
+
+  /* --- Paper material (AAA 6.13) ------------------------------------------ */
+  /* flat sheet cards: 1px deckle edge — top light-catch + hairline shade */
+  --deckle: inset 0 1px 0 rgba(252, 248, 238, 0.55), inset 0 -1px 0 rgba(43, 33, 24, 0.05);
+  --grain-blend: multiply;   /* dark theme: screen (6.4's lightening variant) */
+  --grain-opacity: 0.055;    /* 6.13 budget: ~4-6% */
+  --vignette-ink: rgba(43, 33, 24, 0.07); /* <=8% ink in light mode */
 
   /* --- Motion (transform/opacity only; celebrations tap-skippable) -------- */
   --dur-press: 120ms;        /* wax-seal stamp-down */
@@ -79,7 +103,11 @@
     --cat-parlor: #c9ab55;
     --cat-utility: #85ab8f;
     --cat-mystery: #a68cc0;
-    --shadow-lift: 0 4px 10px rgba(0, 0, 0, 0.45);
+    --shadow-lift: 0 4px 10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(231, 220, 198, 0.06);
+    --deckle: inset 0 1px 0 rgba(231, 220, 198, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+    --grain-blend: screen;
+    --grain-opacity: 0.05;
+    --vignette-ink: rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -89,14 +117,18 @@
   --ink: #2b2118; --ink-soft: #55452f; --ink-faint: #8a795f;
   --wax: #8c2b2b; --moss: #4a6741; --gilt: #a07714;
   --cat-puzzle: #33526e; --cat-parlor: #8a6d1f; --cat-utility: #3e6b4f; --cat-mystery: #5c4470;
-  --shadow-lift: 0 4px 10px rgba(43, 33, 24, 0.18);
+  --shadow-lift: 0 4px 10px rgba(43, 33, 24, 0.18), inset 0 1px 0 rgba(252, 248, 238, 0.55);
+  --deckle: inset 0 1px 0 rgba(252, 248, 238, 0.55), inset 0 -1px 0 rgba(43, 33, 24, 0.05);
+  --grain-blend: multiply; --grain-opacity: 0.055; --vignette-ink: rgba(43, 33, 24, 0.07);
 }
 :root[data-theme='dark'] {
   --paper: #241d15; --paper-raised: #2c241a; --paper-shade: #1d1710; --paper-edge: #4a3d2c;
   --ink: #e7dcc6; --ink-soft: #c2b394; --ink-faint: #8f8168;
   --wax: #b04a41; --moss: #7d9a6e; --gilt: #c9a13f;
   --cat-puzzle: #7fa3c4; --cat-parlor: #c9ab55; --cat-utility: #85ab8f; --cat-mystery: #a68cc0;
-  --shadow-lift: 0 4px 10px rgba(0, 0, 0, 0.45);
+  --shadow-lift: 0 4px 10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(231, 220, 198, 0.06);
+  --deckle: inset 0 1px 0 rgba(231, 220, 198, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+  --grain-blend: screen; --grain-opacity: 0.05; --vignette-ink: rgba(0, 0, 0, 0.2);
 }
 
 /* All counters everywhere: no jitter while counting (AAA 6.6). */
