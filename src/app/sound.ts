@@ -1,15 +1,19 @@
-import { useGameStore } from './store';
+import { useManorStore } from './store';
 
 /**
  * Tiny Web Audio sound kit — procedural cues, no asset files.
  * Every cue checks the save's soundEnabled flag; the AudioContext is
  * created lazily on first use (autoplay policies require a user gesture).
+ *
+ * A8: route this sfx bus through app/music/duck.ts (refcounted gain ducking)
+ * when the music engine lands. Nothing may ever wait on AudioContext state
+ * (AAA R.4).
  */
 
 let ctx: AudioContext | null = null;
 
 function audio(): AudioContext | null {
-  if (!useGameStore.getState().save.settings.soundEnabled) return null;
+  if (!useManorStore.getState().settings.soundEnabled) return null;
   if (typeof AudioContext === 'undefined') return null;
   ctx ??= new AudioContext();
   if (ctx.state === 'suspended') void ctx.resume();
@@ -72,8 +76,8 @@ export const sfx = {
   levelUp() {
     [262, 330, 392, 523, 659, 784].forEach((f, i) => tone({ freq: f, duration: 0.3, type: 'triangle', delay: i * 0.09 }));
   },
-  /** Run lost. */
-  defeat() {
+  /** Dusk falls — the day is over (never a failure sting). */
+  dusk() {
     [330, 277, 220, 165].forEach((f, i) => tone({ freq: f, duration: 0.5, type: 'sine', delay: i * 0.22, volume: 0.07 }));
   },
 };

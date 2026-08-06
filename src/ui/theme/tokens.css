@@ -1,0 +1,103 @@
+/* ==========================================================================
+   Lexicon Manor — design tokens (ARCHITECT-OWNED, frozen)
+   Source: cozy style guide distilled in AAA_BAR §6 + BENCHMARKS §6.
+   Rules encoded here:
+     - zero pure #000/#FFF in either theme (AAA 6.1)
+     - ink #2B2118 on parchment #F0E7D8 family; dark = authored candlelit
+       #241D15 family, never filter:invert (AAA 6.4)
+     - wax red only ever means state: mistakes, unread, seals, daily guess
+       (AAA 6.15)
+     - category colors are double-encoded with shape glyphs at point of use
+       (AAA 6.3) — the hue alone is never load-bearing
+     - IM Fell English >=22px display; EB Garamond 17-18px body, Libre
+       Baskerville 16px fallback; counters tabular-nums (AAA 6.6)
+   Both themes ship: system preference via prefers-color-scheme, explicit
+   override via :root[data-theme='light'|'dark'].
+   Agents consume tokens; per-module CSS lives in per-module files
+   (conflict rule 3) and never redefines these.
+   ========================================================================== */
+
+:root {
+  /* --- Paper & ink (light: parchment day) --------------------------------- */
+  --paper: #f0e7d8;          /* base parchment */
+  --paper-raised: #f6efe2;   /* cards, sheets sitting on the desk */
+  --paper-shade: #e3d7c1;    /* recessed panels, dividers */
+  --paper-edge: #cdbfa4;     /* sheet edges, hairline rules */
+  --ink: #2b2118;            /* body ink */
+  --ink-soft: #55452f;       /* secondary text */
+  --ink-faint: #8a795f;      /* placeholders, disabled — still >=3:1 on paper */
+
+  /* --- State (rubrication: red = state, never decoration) ----------------- */
+  --wax: #8c2b2b;            /* mistakes, unread markers, seals, daily guess */
+  --moss: #4a6741;           /* success / solved ink */
+  --gilt: #a07714;           /* rewards, gems, rank progress */
+
+  /* --- Room-card categories (always paired with a shape glyph) ------------ */
+  --cat-puzzle: #33526e;     /* blue — the word games */
+  --cat-parlor: #8a6d1f;     /* yellow — characters & services */
+  --cat-utility: #3e6b4f;    /* green — economy rooms */
+  --cat-mystery: #5c4470;    /* violet — clue fragments, the reason to climb */
+
+  /* --- Type ramp ---------------------------------------------------------- */
+  --font-display: 'IM Fell English', 'Iowan Old Style', Georgia, serif;
+  --font-body: 'EB Garamond', 'Libre Baskerville', 'Palatino Linotype', Georgia, serif;
+  --text-body: 1.0625rem;    /* 17px EB Garamond floor (16px for the fallback) */
+  --text-sm: 0.9375rem;      /* 15px — captions only, never body */
+  --text-display-sm: 1.375rem; /* 22px — IM Fell English floor */
+  --text-display: 1.75rem;   /* 28px */
+  --text-display-lg: 2.25rem;/* 36px */
+  --leading-body: 1.45;
+
+  /* --- Chrome ------------------------------------------------------------- */
+  --radius-sheet: 10px;
+  --radius-card: 6px;
+  --tap-target: 44px;        /* AAA 6.19 minimum, everywhere */
+  --shadow-lift: 0 4px 10px rgba(43, 33, 24, 0.18);   /* the "lift" of the trio */
+  --rule: 1px solid var(--paper-edge);
+
+  /* --- Motion (transform/opacity only; celebrations tap-skippable) -------- */
+  --dur-press: 120ms;        /* wax-seal stamp-down */
+  --dur-toast: 300ms;        /* interaction ceiling (AAA U.2) */
+  --dur-shuffle: 400ms;
+  --ease-settle: cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+/* --- Candlelit dark (authored, warm charcoal — never inverted) ------------ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #241d15;
+    --paper-raised: #2c241a;
+    --paper-shade: #1d1710;
+    --paper-edge: #4a3d2c;
+    --ink: #e7dcc6;
+    --ink-soft: #c2b394;
+    --ink-faint: #8f8168;
+    --wax: #b04a41;          /* lifted for contrast on charcoal */
+    --moss: #7d9a6e;
+    --gilt: #c9a13f;
+    --cat-puzzle: #7fa3c4;
+    --cat-parlor: #c9ab55;
+    --cat-utility: #85ab8f;
+    --cat-mystery: #a68cc0;
+    --shadow-lift: 0 4px 10px rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* Explicit user override beats system preference, both directions. */
+:root[data-theme='light'] {
+  --paper: #f0e7d8; --paper-raised: #f6efe2; --paper-shade: #e3d7c1; --paper-edge: #cdbfa4;
+  --ink: #2b2118; --ink-soft: #55452f; --ink-faint: #8a795f;
+  --wax: #8c2b2b; --moss: #4a6741; --gilt: #a07714;
+  --cat-puzzle: #33526e; --cat-parlor: #8a6d1f; --cat-utility: #3e6b4f; --cat-mystery: #5c4470;
+  --shadow-lift: 0 4px 10px rgba(43, 33, 24, 0.18);
+}
+:root[data-theme='dark'] {
+  --paper: #241d15; --paper-raised: #2c241a; --paper-shade: #1d1710; --paper-edge: #4a3d2c;
+  --ink: #e7dcc6; --ink-soft: #c2b394; --ink-faint: #8f8168;
+  --wax: #b04a41; --moss: #7d9a6e; --gilt: #c9a13f;
+  --cat-puzzle: #7fa3c4; --cat-parlor: #c9ab55; --cat-utility: #85ab8f; --cat-mystery: #a68cc0;
+  --shadow-lift: 0 4px 10px rgba(0, 0, 0, 0.45);
+}
+
+/* All counters everywhere: no jitter while counting (AAA 6.6). */
+.tabular-nums { font-variant-numeric: tabular-nums; }

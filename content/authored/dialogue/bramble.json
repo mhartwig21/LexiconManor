@@ -1,0 +1,400 @@
+{
+  "character": "bramble",
+  "nodes": [
+    {
+      "id": "bramble.meet.1",
+      "trigger": "morning",
+      "priority": 1000,
+      "once": true,
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "There you are! I aired the entrance hall the moment I heard the gate. Mrs. Bramble — housekeeper, keeper of keys, and the only soul here who still needs a teapot." },
+        { "speaker": "bramble", "portrait": "amused", "text": "The manor rearranges itself overnight, you know. Rooms wander. Doors sulk. You'll want a good breakfast and a better sense of humor." }
+      ],
+      "choices": [
+        { "text": "It's lovely to meet you.", "goto": "bramble.meet.1a", "effects": { "affinity": { "bramble": 1 } } },
+        { "text": "Rooms... wander?", "goto": "bramble.meet.1b" }
+      ],
+      "effects": { "setFlags": ["met.bramble"] },
+      "summary": "Met Mrs. Bramble, the housekeeper. The rooms wander; the tea does not."
+    },
+    {
+      "id": "bramble.meet.1a",
+      "trigger": "morning",
+      "priority": 0,
+      "once": true,
+      "chainOnly": true,
+      "lines": [
+        { "speaker": "bramble", "portrait": "amused", "text": "Oh, I like you already. Most guests lead with the wandering rooms." }
+      ]
+    },
+    {
+      "id": "bramble.meet.1b",
+      "trigger": "morning",
+      "priority": 0,
+      "once": true,
+      "chainOnly": true,
+      "lines": [
+        { "speaker": "bramble", "portrait": "wistful", "text": "Mm. The late master studied words, and words never sit still either. You'll get used to it, dear. Or you won't, and that's its own kind of fun." }
+      ]
+    },
+    {
+      "id": "bramble.meet.2",
+      "trigger": "morning",
+      "priority": 1000,
+      "once": true,
+      "conditions": [{ "kind": "seen", "node": "bramble.meet.1" }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "Tea. Sit. That's the whole of the house rules — the manor invents the rest daily. Milk or lemon? Don't answer; I already know. Housekeepers always know." }
+      ],
+      "effects": { "setFlags": ["bramble.tea-ritual"], "affinity": { "bramble": 1 } },
+      "summary": "Tea with Mrs. Bramble is now a morning ritual."
+    },
+
+    {
+      "id": "bramble.recap.steps-1",
+      "trigger": "morning",
+      "priority": 700,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [{ "kind": "event", "event": "day-ended", "where": { "cause": "steps-exhausted" } }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "You came in last night with dusk on your shoulders and not a step left in you. I've seen the master do the very same. The manor keeps what you found — nothing is wasted here, pet." }
+      ]
+    },
+    {
+      "id": "bramble.recap.steps-2",
+      "trigger": "morning",
+      "priority": 700,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [{ "kind": "event", "event": "day-ended", "where": { "cause": "steps-exhausted" } }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "amused", "text": "All the way to empty again? Tsk. Drink this first today. A house this size respects a walker who paces herself. Mostly." }
+      ]
+    },
+    {
+      "id": "bramble.recap.retired",
+      "trigger": "morning",
+      "priority": 700,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [{ "kind": "event", "event": "day-ended", "where": { "cause": "retired-early" } }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "Wise, stopping while the light was still gold. The rooms gossip about guests who know when to fold their napkin." }
+      ]
+    },
+    {
+      "id": "bramble.recap.dry",
+      "trigger": "morning",
+      "priority": 710,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [
+        { "kind": "event", "event": "day-ended", "where": { "cause": "steps-exhausted" } },
+        { "kind": "not", "cond": { "kind": "event", "event": "room-solved" } }
+      ],
+      "lines": [
+        { "speaker": "bramble", "portrait": "concerned", "text": "A whole day and the house gave you nothing but locked doors and long looks? It does that. It tested him too, before it trusted him. Eat something." }
+      ]
+    },
+    {
+      "id": "bramble.recap.guess",
+      "trigger": "morning",
+      "priority": 720,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [{ "kind": "event", "event": "sanctum-guess-wrong" }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "curious", "text": "I heard you speak at the Sanctum door yesterday. The whole house held its breath — the kettle went quiet, and kettles never do. It wasn't the word. But it listened. That's new." }
+      ]
+    },
+    {
+      "id": "bramble.recap.fragment",
+      "trigger": "morning",
+      "priority": 705,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [{ "kind": "event", "event": "fragment-found" }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "wistful", "text": "You found one of his scraps yesterday, didn't you. Careful with those — not dangerous, mind. Just heavy, the way old handwriting gets." }
+      ]
+    },
+    {
+      "id": "bramble.recap.perfect",
+      "trigger": "morning",
+      "priority": 700,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [{ "kind": "event", "event": "room-solved", "where": { "perfect": true } }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "amused", "text": "Not one wrong step in that room yesterday — the floorboards told me before you were down for breakfast. Show-off. Have a scone." }
+      ]
+    },
+    {
+      "id": "bramble.recap.pangram",
+      "trigger": "morning",
+      "priority": 700,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [{ "kind": "event", "event": "room-notable", "where": { "note": "pangram" } }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "amused", "text": "Fern came in beaming about some flower of a word you built. She doesn't beam. Whatever you did in that Conservatory, do it again." }
+      ]
+    },
+    {
+      "id": "bramble.recap.abandoned",
+      "trigger": "morning",
+      "priority": 700,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [{ "kind": "event", "event": "room-abandoned" }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "You left a room unfinished. Good. A room will keep till tomorrow; a person won't always. He never learned that one." }
+      ]
+    },
+    {
+      "id": "bramble.recap.dewey",
+      "trigger": "morning",
+      "priority": 700,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [{ "kind": "event", "event": "dewey-petted" }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "amused", "text": "There's cat hair on your sleeve and I have never seen you happier. Dewey has that effect. One step's a bargain." }
+      ]
+    },
+    {
+      "id": "bramble.recap.gift",
+      "trigger": "morning",
+      "priority": 700,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [{ "kind": "event", "event": "gift-given" }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "Someone in this house is pressing flowers in a book today because of you. I'll say no more. Housekeepers see everything." }
+      ]
+    },
+    {
+      "id": "bramble.recap.victory",
+      "trigger": "morning",
+      "priority": 1000,
+      "once": true,
+      "conditions": [{ "kind": "event", "event": "volume-solved" }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "wistful", "text": "You said it. You actually said it out loud. I dusted that landing for years and never once — oh, sit down, dear, I'm going to cry into the marmalade." }
+      ],
+      "summary": "Mrs. Bramble cried into the marmalade. Happily."
+    },
+
+    {
+      "id": "bramble.arc.him-1",
+      "trigger": "morning",
+      "priority": 500,
+      "once": true,
+      "conditions": [{ "kind": "affinity", "character": "bramble", "gte": 2 }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "wistful", "text": "You've the same crease he had, right here, when a word wouldn't come. The master. I did his rooms thirty years. You may ask me one thing about him today, and I may even answer." }
+      ],
+      "choices": [
+        { "text": "What was he like?", "goto": "bramble.arc.him-1a" },
+        { "text": "Another morning, perhaps.", "effects": {} }
+      ],
+      "summary": "Mrs. Bramble kept the master's rooms for thirty years."
+    },
+    {
+      "id": "bramble.arc.him-1a",
+      "trigger": "morning",
+      "priority": 0,
+      "once": true,
+      "chainOnly": true,
+      "lines": [
+        { "speaker": "bramble", "portrait": "wistful", "text": "Kind. Impossible. He'd stand in the Library till midnight arguing with a dictionary like it owed him money. Then one day the arguing stopped, and I still can't tell you which silence was worse." }
+      ],
+      "effects": { "setFlags": ["bramble.remembers-him"] }
+    },
+    {
+      "id": "bramble.arc.him-2",
+      "trigger": "morning",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        { "kind": "flag", "flag": "bramble.remembers-him" },
+        { "kind": "affinity", "character": "bramble", "gte": 3 }
+      ],
+      "lines": [
+        { "speaker": "bramble", "portrait": "wistful", "text": "He struck that word from every book in the house, you know. Ink over ink over ink. I thought it was scholarship. It wasn't. It was grief with a good vocabulary." }
+      ],
+      "summary": "The erasure wasn't scholarship. It was grief."
+    },
+    {
+      "id": "bramble.arc.trust",
+      "trigger": "morning",
+      "priority": 500,
+      "once": true,
+      "conditions": [{ "kind": "affinity", "character": "bramble", "gte": 5 }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "Here. The pantry key. It was his rule that guests earn it, and his rule that I decide when. Warm hands, warm bread, warm house — that's the whole economy of the place." }
+      ],
+      "summary": "Earned the pantry key. Bramble's highest honor."
+    },
+    {
+      "id": "bramble.arc.keepsake",
+      "trigger": "morning",
+      "priority": 1000,
+      "once": true,
+      "conditions": [{ "kind": "flag", "flag": "sys.first-gift.bramble" }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "A bookmark? For me? Oh — it's been a long time since anyone gave me something that wasn't a chore list." },
+        { "speaker": "bramble", "portrait": "wistful", "text": "Take this: his old tea tin. It rattles. He never let me look inside; I never let me look inside either. Yours now." }
+      ],
+      "summary": "Gave Mrs. Bramble a bookmark; received the master's rattling tea tin."
+    },
+
+    {
+      "id": "bramble.gen.weather",
+      "trigger": "morning",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 1,
+      "lines": [
+        { "speaker": "bramble", "portrait": "amused", "text": "Rain again on the east windows — which is odd, dear, because the east windows face indoors now. I've stopped filing complaints." }
+      ]
+    },
+    {
+      "id": "bramble.gen.doors",
+      "trigger": "morning",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 1,
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "If a door won't open, it's not locked, it's shy. Knock twice and mean it." }
+      ]
+    },
+    {
+      "id": "bramble.gen.dust",
+      "trigger": "morning",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 1,
+      "lines": [
+        { "speaker": "bramble", "portrait": "neutral", "text": "Thirty-one rooms yesterday, thirty-three today. I don't dust the new ones till they've decided to stay." }
+      ]
+    },
+    {
+      "id": "bramble.gen.dewey-warn",
+      "trigger": "morning",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 1,
+      "lines": [
+        { "speaker": "bramble", "portrait": "amused", "text": "If Dewey sits on a paper, that paper matters. If he sits on you, you matter. The cat is never wrong; it's infuriating." }
+      ]
+    },
+    {
+      "id": "bramble.gen.kettle",
+      "trigger": "morning",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 1,
+      "lines": [
+        { "speaker": "bramble", "portrait": "curious", "text": "The kettle knows the day's weather before the sky does. Rolling boil this morning. Take that as you will." }
+      ]
+    },
+    {
+      "id": "bramble.gen.sanctum",
+      "trigger": "morning",
+      "priority": 110,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [{ "kind": "fragmentCount", "gte": 3 }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "You're gathering his scraps, I see. When they start to rhyme in your head — that's when you take the stairs to the top. Not before, and not alone: I'll have tea waiting either way." }
+      ]
+    },
+    {
+      "id": "bramble.gen.portrait",
+      "trigger": "morning",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 1,
+      "lines": [
+        { "speaker": "bramble", "portrait": "amused", "text": "The Portrait on the landing — don't mind his scowl. He scowled at everyone, alive. It was practically affection." }
+      ]
+    },
+
+    {
+      "id": "bramble.idle.valve-1",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "We'll talk properly tomorrow, dear — these floors won't scold themselves." }
+      ]
+    },
+    {
+      "id": "bramble.idle.valve-2",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        { "speaker": "bramble", "portrait": "amused", "text": "Off with you now. Daylight's a budget, and you've spent enough of it on an old housekeeper." }
+      ]
+    },
+    {
+      "id": "bramble.idle.busy-1",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        { "speaker": "bramble", "portrait": "neutral", "text": "Mind the runner in the hall — it moved overnight and I refuse to chase it." }
+      ]
+    },
+    {
+      "id": "bramble.idle.busy-2",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        { "speaker": "bramble", "portrait": "amused", "text": "Kettle's always on. That's not a metaphor, it's a fire hazard I've made peace with." }
+      ]
+    },
+    {
+      "id": "bramble.idle.busy-3",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "You've crumbs — no, other cheek. There. Presentable." }
+      ]
+    },
+    {
+      "id": "bramble.idle.busy-4",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        { "speaker": "bramble", "portrait": "amused", "text": "If you see the good silver in an odd room, leave it. It's sulking." }
+      ]
+    },
+    {
+      "id": "bramble.idle.warm-1",
+      "trigger": "idle",
+      "priority": 10,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [{ "kind": "affinity", "character": "bramble", "gte": 3 }],
+      "lines": [
+        { "speaker": "bramble", "portrait": "warm", "text": "It's a better house with you in it, pet. Even the drafts think so." }
+      ]
+    },
+    {
+      "id": "bramble.idle.hum",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        { "speaker": "bramble", "narration": true, "text": "Mrs. Bramble hums something old and out of tune, polishing a doorknob that was already bright." }
+      ]
+    }
+  ]
+}

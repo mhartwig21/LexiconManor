@@ -1,0 +1,70 @@
+/**
+ * Dialogue condition evaluation — OWNER: A6 (Dialogue).
+ *
+ * Pure functions of (condition, DialogueQuery). No store, no DOM, no time —
+ * everything the conditions may see is inside the frozen snapshot.
+ */
+
+import type { DialogueQuery } from '../events';
+import type { DialogueCondition } from './schema';
+
+/** Dot-path lookup into an event payload ("closeness.repeat" etc.). */
+function getPath(obj: unknown, path: string): unknown {
+  let cur: unknown = obj;
+  for (const seg of path.split('.')) {
+    if (cur === null || typeof cur !== 'object') return undefined;
+    cur = (cur as Record<string, unknown>)[seg];
+  }
+  return cur;
+}
+
+function inBand(value: number, gte?: number, lte?: number): boolean {
+  if (gte !== undefined && value < gte) return false;
+  if (lte !== undefined && value > lte) return false;
+  return true;
+}
+
+export function evaluateCondition(cond: DialogueCondition, q: DialogueQuery): boolean {
+  switch (cond.kind) {
+    case 'flag':
+      return q.flags.has(cond.flag);
+    case 'affinity':
+      return inBand(q.affinities[cond.character] ?? 0, cond.gte, cond.lte);
+    case 'event': {
+      const within = cond.withinDays ?? 1;
+      return q.recentEvents.some((rec) => {
+        if (rec.event.type !== cond.event) return false;
+        if (rec.day < q.day - within) return false;
+        if (cond.where) {
+          for (const [path, want] of Object.entries(cond.where)) {
+            if (getPath(rec.event, path) !== want) return false;
+          }
+        }
+        if (cond.whereGte) {
+          for (const [path, min] of Object.entries(cond.whereGte)) {
+            const got = getPath(rec.event, path);
+            if (typeof got !== 'number' || got < min) return false;
+          }
+        }
+        return true;
+      });
+    }
+    case 'counter':
+      return inBand(q.counters[cond.event] ?? 0, cond.gte, cond.lte);
+    case 'fragmentCount':
+      return inBand(q.fragmentsFound, cond.gte, cond.lte);
+    case 'day':
+      return inBand(q.day, cond.gte, cond.lte);
+    case 'seen':
+      return q.seen.has(cond.node);
+    case 'volume':
+      return q.volumeId === cond.id;
+    case 'not':
+      return !evaluateCondition(cond.cond, q);
+  }
+}
+
+export function evaluateAll(conds: DialogueCondition[] | undefined, q: DialogueQuery): boolean {
+  if (!conds || conds.length === 0) return true;
+  return conds.every((c) => evaluateCondition(c, q));
+}

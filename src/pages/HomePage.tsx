@@ -1,57 +1,22 @@
 import { useLocation } from 'wouter';
-import { useGameStore } from '../app/store';
+import { useManorStore } from '../app/store';
 
+/** Phase-0 placeholder — the Entrance Hall morning scene lands with A2/A6. */
 export default function HomePage() {
   const [, navigate] = useLocation();
-  const save = useGameStore((s) => s.save);
-  const startNewRun = useGameStore((s) => s.startNewRun);
-  const toggleSound = useGameStore((s) => s.toggleSound);
-  const run = save.activeRun;
+  const profileName = useManorStore((s) => s.profileName);
 
   return (
-    <div className="bg-level bg-level--1">
-      <div className="page" style={{ textAlign: 'center', paddingTop: '10vh' }}>
-        <h1 className="rise-fade">Lexicon Loop</h1>
-        <p style={{ opacity: 0.8, marginBottom: '2.5rem' }}>A word-puzzle journey through the astral realms</p>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', maxWidth: 340, margin: '0 auto' }}>
-          {run && run.status === 'active' && (
-            <button className="btn btn--primary" onClick={() => navigate('/map')}>
-              Continue Journey — Level {run.level}
-            </button>
-          )}
-          <button
-            className={`btn${run ? '' : ' btn--primary'}`}
-            onClick={() => {
-              if (run && run.status === 'active' && !confirm('Abandon your current journey and begin anew?')) return;
-              startNewRun();
-              navigate('/map');
-            }}
-          >
-            New Adventure
-          </button>
-          <button className="btn" onClick={() => navigate('/chronicles')}>
-            Chronicles
-          </button>
-          <button className="btn" onClick={() => navigate('/sanctum')}>
-            Sanctum
-          </button>
-        </div>
-
-        {save.runHistory.length > 0 && (
-          <p style={{ marginTop: '2.5rem', fontSize: 'var(--text-sm)', opacity: 0.65 }}>
-            {save.runHistory.length} past journey{save.runHistory.length === 1 ? '' : 's'} ·{' '}
-            {save.runHistory.filter((r) => r.outcome === 'victory').length} victorious
-          </p>
-        )}
-
-        <button
-          className="btn"
-          style={{ marginTop: '1.5rem', minHeight: 36, padding: '0.25rem 0.9rem', fontSize: 'var(--text-sm)', opacity: 0.8 }}
-          onClick={toggleSound}
-        >
-          {save.settings.soundEnabled ? '♪ Sound on' : '♪ Sound off'}
-        </button>
+    <div className="page" style={{ textAlign: 'center', paddingTop: '14vh' }}>
+      <h1>Lexicon Manor</h1>
+      <p style={{ opacity: 0.85 }}>
+        Welcome back, {profileName}. The manor is being rebuilt, room by room.
+      </p>
+      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '1.5rem' }}>
+        <button className="btn btn--primary" onClick={() => navigate('/manor')}>Enter the manor</button>
+        <button className="btn" onClick={() => navigate('/journal')}>Journal</button>
+        <button className="btn" onClick={() => navigate('/chronicles')}>Chronicles</button>
+        <button className="btn" onClick={() => navigate('/sanctum')}>The Sanctum</button>
       </div>
     </div>
   );
