@@ -34,6 +34,14 @@ Every critic review of a word-game room follows this protocol, on a real iPhone
    review and one with `prefers-reduced-motion` on. Both must remain fully playable.
 6. **The wife test outranks the critic.** Where a criterion says "playtest," her result
    is the datum, not the critic's.
+7. **Drive the app, don't photograph it.** Every review round includes the live
+   interaction pass of §0.4. **A screenshot is not evidence for §11** (reachability,
+   event feedback, unread state) and never passes one of its criteria: a control that
+   is invisible, buried under a fixed layer, or covered by an overlay photographs
+   exactly like a working one. Any §11 row marked pass without a recorded hit test and
+   a recorded route return is void.
+8. **Start suspicious.** Read §0.5 (known blind spots) before the round and re-test
+   those three shapes specifically, in whatever screens have appeared since.
 
 ### 0.2 Universal timings (apply to every system)
 
@@ -64,6 +72,70 @@ These override earlier drafts wherever they conflict:
   dying. Chronicles track only accumulative, unloseable stats. **[COZY]**
 - **R.4 Sound is a strict upgrade, never a requirement.** iOS 26.0–26.2 can kill PWA
   audio system-wide; the game must feel complete fully silent (see §7, §8).
+
+### 0.4 The live interaction pass (mandatory every round)
+
+The comparison protocol above measures *feel*. This pass measures whether the app can be
+*used*, and it is the only admissible evidence for §11. It is run by driving the real
+build in a real browser, not by reading code and not by looking at screenshots.
+
+**Harness rules** (non-negotiable, this dev box):
+- Playwright against the **system Edge** install (`channel: 'msedge'`). **Never download
+  a browser**, never install browser binaries.
+- **ONE browser instance at a time.** The box tolerates ~3 headless browsers; more has
+  crashed it. One instance, one context, sequential routes.
+- Viewport 390×844, DPR 3, `prefers-reduced-motion` off for pass 1 and on for pass 2.
+
+**The walk.** Visit every route registered in `src/App.tsx` (currently `/`, `/manor`,
+`/room`, `/journal`, `/chronicles`, `/sanctum`, plus the not-found fallback), *and* every
+full-screen overlay reachable from them (draft, cabinet, dialogue, morning card, dusk
+veil, night digest, victory ceremony), *and* every empty/error/pre-day branch a screen
+can render (no day yet, unauthored volume, unregistered room kind, pools still loading).
+For each surface, record:
+
+1. **Hit test the exit.** Take the exit control's bounding box, then
+   `document.elementFromPoint(cx, cy)` at its **centre**. The returned node must be the
+   control itself or its own descendant. Anything else — the chrome header, a scrim, a
+   sibling overlay — is a **fail**, and "the button is in the DOM" is not a rebuttal.
+   Repeat at the four inset corners of the box for controls near a fixed layer.
+2. **Confirm it goes where it says.** Click it and assert the resulting location is the
+   route the label promises. A back control that lands somewhere other than its named
+   destination fails 11.9 even though it "worked".
+3. **Confirm it is above the fold.** The control must be inside the visual viewport with
+   the page at scroll 0, and it must not be covered at any scroll position.
+4. **Confirm the notice fires where the player is.** For every state change the walk can
+   provoke (draft a mystery room, open a sealed letter, finish a puzzle, hear testimony
+   that grants a fragment, take a gift, spend to a rank-up), trigger it from the screen
+   the player would really be on and assert the notice is *rendered and visible on that
+   screen* — mounted, non-zero size, not behind a scrim, still on glass long enough to
+   read. Then leave the screen and assert the persistent trace (§11's Tier A) is there.
+5. **Record the artifact.** A per-route table: route · exit control · hit-test result ·
+   destination reached · notices observed. No table, no §11 pass.
+
+### 0.5 Known blind spots (three escapes, recorded so they cannot repeat)
+
+Three defects survived three rounds of harsh critics because the bar had no criterion for
+them *and* because the critics judged from stills. They are now §11, and every round
+re-tests their shape:
+
+1. **The un-tappable exit.** The journal's and chronicles' back buttons rendered
+   *underneath* the fixed day-bar chrome (`.chr-header`, `position:fixed`, `z-index:40`,
+   opaque). `elementFromPoint` at the button's centre returned `.chr-retire`. The owner
+   could not get back to the map at all. Every screenshot of the page looked correct.
+   → 11.1–11.8. Suspect any page that is itself `position:fixed` and any overlay that
+   does not clear `--chrome-h`.
+2. **The route with no door.** `/chronicles` had no entrance anywhere in the app. Sound,
+   music, reduced motion, the ring-switch bypass, keepsakes and the entire save
+   export/import trunk were reachable only by typing a URL — and the installed PWA has
+   no address bar and no browser back button. → 11.3, 11.22–11.24. Suspect any feature
+   whose only caller is the router.
+3. **The reward nobody saw.** Finding a clue fragment — the core reward of the whole
+   mystery — announced itself as a 3.2-second line in the blueprint footer, in the same
+   style as the cat's flavour text, and mostly fired while the player was on a *different*
+   screen (inside a room, on the journal, or behind the full-screen dialogue overlay).
+   Nothing persisted: the Journal button carried no unread badge, so a missed notice meant
+   the player never learned anything had arrived. → 11.10–11.21. Suspect every
+   `recordEvent` / currency mutation whose notice is rendered by exactly one component.
 
 ---
 
@@ -276,7 +348,15 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   reaction (variant-keyed to closeness: shared letters / right length / repeat guess),
   and journals the guess so she can see her own elimination history. **[COZY]**
 - 4.18 Volume solvable-in-principle from day 1 (answer fixed at volume start; no
-  fragment mechanically required); median playtest solve lands in 2–4 evenings.
+  fragment mechanically required). **This criterion owns solvable-in-principle
+  ONLY.** The solve horizon belongs to 4.10e (14–28 days median, <2% inside
+  week one) — the pre-overhaul "median playtest solve lands in 2–4 evenings"
+  clause was deleted in round 6: it contradicted 4.10e outright, so no critic
+  could pass or fail the mystery's pacing and the economy and mystery owners
+  were optimising against opposite targets. The shipped fragment drip is built
+  for 4.10e and is now measured against it by
+  `tests/volume-pacing.test.ts` (seeded campaigns through the real deck mix,
+  letter grants and pity channel: median day-of-fragment-16 in 10–20, p10 ≥ 6).
 
 ---
 
@@ -532,3 +612,157 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
    completionist grind?
 10. **Volume 2+ pipeline**: how much of the fragment/definition authoring can the
     content pipeline carry before quality drops below the Study bar (3.7)?
+
+---
+
+## 11. Reachability, event feedback, and unread state
+
+*Written after three defects of these shapes shipped past three rounds of harsh critics
+(the escapes are recorded in §0.5). Every criterion here is verified by the **live
+interaction pass** of §0.4 — driving the real app, hit-testing real controls. Static
+screenshots are explicitly insufficient evidence for this entire section (§0.1.7): a
+control that is buried, covered, or un-tappable photographs exactly like a working one.*
+
+*Standing assumption: **the installed PWA has no address bar, no browser back button and
+no reload.** The app's own affordances are the only navigation that exists. Anything the
+player cannot reach by tapping is not shipped, however complete the code is.*
+
+### Reachability — no dead ends, no doorless rooms
+
+- 11.1 **Everything enterable is leavable.** Every route in `src/App.tsx`, every
+  full-screen overlay, and every *branch* a screen can render (no day yet, content still
+  loading, unauthored volume, unregistered room kind, empty collection, error) offers at
+  least one control that returns the player toward the blueprint. Enumerated surface by
+  surface in the §0.4 walk; a surface with zero exits is a release blocker, and "the
+  ceremony advances on its own in a second" only counts if the auto-advance is
+  unconditional and ≤2s. **[PARITY]**
+- 11.2 **The exit passes a hit test, not a DOM check.** For every exit control:
+  `document.elementFromPoint` at its centre — and at the four inset corners of its
+  bounding box — returns that control or its own descendant, at 390×844, in both themes,
+  with the fixed chrome mounted. Anything else (the chrome header, a scrim, a sibling
+  overlay) is a fail. "It renders" and "it's in the DOM" are not rebuttals. **[PARITY]**
+- 11.3 **Exit visible without scrolling.** Every exit control is inside the visual
+  viewport with its surface at scroll 0, meets 6.19's 44×44pt floor, and stays uncovered
+  at every scroll position of the surface it belongs to. **[PARITY]**
+- 11.4 **Nothing load-bearing under a fixed layer.** Any surface that is itself
+  `position: fixed` against the viewport clears the chrome with `var(--chrome-h)` (plus
+  `env(safe-area-inset-top)`), never a hard-coded pixel copy of it — a token grep finds
+  zero literal chrome heights in page/overlay CSS, so retuning the bar cannot silently
+  bury a control. The same clearance applies to full-screen overlays that place anything
+  interactive in the top band. **[PARITY]**
+- 11.5 **Chrome does not reach through an overlay.** While any modal or full-screen
+  overlay is up, controls belonging to the persistent chrome are either raised above it
+  deliberately (documented, e.g. the day candle staying readable) or made
+  non-interactive. A destructive chrome action — retire-for-the-evening above all —
+  must never be tappable through a scene the player believes is modal. Verified by hit
+  test at the chrome control's centre with each overlay open. **[PARITY]**
+- 11.6 **The exit goes where its label says.** Clicking it lands on the named
+  destination, not merely *somewhere else*. Asserted per route in the §0.4 table. (Blue
+  Prince's retraversal complaint — BENCHMARKS §4, criticism 3 — is what an exit that
+  lands wrong feels like after the tenth time.)
+- 11.7 **Navigation leads with the recognisable word.** Every navigation affordance
+  opens with a plain noun/verb or a standard icon ("The manor", "Journal", "Chronicles",
+  a back chevron). House voice is permitted only as a *subtitle* at smaller size and
+  softer ink ("Put it down"). Flavour never carries the meaning, and a control the owner
+  cannot identify in a 1-second glance test fails. **[COZY]**
+- 11.8 **First launch is navigable.** On a fresh save — before any day is started — the
+  player can still reach settings and the save trunk (11.22) without mutating state.
+  A returning player restoring a save code must never have to start a new day first.
+  **[PARITY]**
+- 11.9 **The route audit ships with the build.** Each `<Route path>` maps to ≥1 in-app
+  entrance (a `navigate()` call site or equivalent affordance) in shipped UI. A route
+  with zero entrances is deleted or given a door — it does not ship as a secret.
+  **[PARITY]**
+
+### Event feedback — "did something just happen?"
+
+Three severity classes. Every reward, grant, unlock and state change is assigned to one,
+and the class dictates what it owes the player:
+
+| Class | Examples | Owes |
+|---|---|---|
+| **Campaign** | clue fragment filed, letter arrived, volume progress/solve, affinity rank-up, permanent unlock (room card, keepsake) | a **moment** on the screen the player is actually on **and** a persistent trace that survives the screen change, the day roll, and a force-quit |
+| **Session** | steps, gems, keys, bookmarks, room solved, tier-up | a visible delta **on the counter or surface it changes**, on the current screen; no persistence required beyond the counter itself |
+| **Flavour** | Dewey's purr, ambient lines, room dressing | transient, no persistence, and visually distinct from both classes above |
+
+- 11.10 **Emit-site → notice-site audit.** For every event on the spine
+  (`engine/events.ts`) and every currency mutation in `app/slices/*.ts`, the review
+  records: which screens the player can be on when it fires, and which component renders
+  its notice on each of those screens. An emitter whose notice is rendered by exactly one
+  component is presumed broken until the walk proves otherwise. **[PARITY]**
+- 11.11 **The notice appears where the player is.** Provoke each channel from each screen
+  it can genuinely fire from — inside a room, behind a full-screen dialogue overlay, on
+  the journal, on the chronicles, during a draft, during a lifecycle scene — and assert
+  the notice is mounted, non-zero, unobscured and on glass on *that* screen. A notice
+  rendered by a component that is unmounted or covered at fire time is a fail, not a
+  near-miss. **[PARITY]**
+- 11.12 **A Campaign moment cannot be missed by being elsewhere.** Its persistent trace
+  is present after the moment ends: an unread marker on the entrance affordance, an entry
+  in the night digest, or a row in the journal — reachable in ≤2 taps from anywhere
+  (compounds with 4.15). Blue Prince shipped without this and players kept 44 pages of
+  notes for it (BENCHMARKS §4, criticism 2); we do not get to repeat it. **[BEAT]**
+- 11.13 **Transience is capped by attention, not by a timer alone.** A transient notice
+  that can fire while the player's eyes are elsewhere either (a) waits for the player to
+  return to the surface that shows it, or (b) is Campaign-class and therefore already
+  owes a trace under 11.12. A 3-second footer line that expires behind an overlay is a
+  fail even though it "played". **[PARITY]**
+- 11.14 **Rewards never dress as flavour.** A notice announcing a reward or state change
+  does not share its class, typography, ink or position with pure flavour text. Enforced
+  by inspection: grep the shipped notice styles and show that reward copy and flavour
+  copy resolve to different rules. If the cat's purr and a clue fragment render
+  identically, the fragment reads as decoration. **[COZY]**
+- 11.15 **Every currency shown in chrome animates its own delta.** 4.9 already requires a
+  floating ±N for steps; the same applies to every other counter the chrome displays
+  (gems, keys, and any currency added later). A number that changes silently between
+  glances is indistinguishable from a bug. **[PARITY]**
+- 11.16 **Every currency the player can spend is displayed somewhere persistent.** A
+  currency that is granted and consumed but never shown outside the screen that spends it
+  fails; the player cannot plan against a quantity she cannot see.
+- 11.17 **No dead reward class.** Anything the UI advertises as earnable (keepsakes,
+  unlockable floorplan cards, quest rewards) has a live emitter reachable in normal play
+  — asserted by a test that drives the award path, not by the existence of a checker
+  function. A section that can only ever render empty is either wired or removed.
+  **[PARITY]**
+- 11.18 **No orphan notice copy.** Authored notice strings (utility-room payout lines,
+  reward toasts) are rendered by shipped UI. A string-table lint finds zero authored
+  notice copy with no render site — unused copy is a notice someone forgot to show.
+
+### Unread / state vocabulary
+
+Wax red already means *state, never decoration* (6.15). That promise extends to the whole
+unread chain.
+
+- 11.19 **The chain is unbroken end to end.** If an item is unread, the marker appears at
+  every level between the main screen and that item: the entrance affordance, the section
+  or tab, and the item itself. A dot that exists only on the innermost tab is invisible to
+  a player who has no reason to open the screen. (Wordle's keyboard-as-memory-prosthetic,
+  BENCHMARKS §3: earned state stays visible where the player will actually look.)
+  **[PARITY]**
+- 11.20 **Unread clears on viewing, and on nothing else.** The marker retires when the
+  item has actually been displayed to the player, and persists otherwise — across tab
+  switches, screen changes, the day roll, and a force-quit. Unread state derived from
+  day-scoped or session-scoped data (anything cleared at dusk) fails: it makes the marker
+  a *recency* badge wearing state's clothes. **[PARITY]**
+- 11.21 **The marker is truthful in both directions.** No marker where nothing is unread;
+  a marker wherever something is. Any count shown alongside it matches the number of
+  unviewed items exactly. **[COZY]**
+- 11.22 **Unread survives grayscale and reduced motion.** The marker is double-encoded
+  per 6.3 (shape or position, not hue alone) and legible with `prefers-reduced-motion`
+  on. **[PARITY]**
+
+### Settings & data reachability
+
+- 11.23 **Two taps, from anywhere the player can stand.** Audio (sound, music, ring-switch
+  policy), reduced motion, and save export/import are reachable in **≤2 taps from the main
+  screen** — one tap to the surface that hosts them, one to the control — and the hosting
+  surface has a permanent entrance on the blueprint (11.3). Measured by tap count in the
+  §0.4 walk, not by counting clicks in the code. **[PARITY]**
+- 11.24 **Reachable in every phase.** The same ≤2 taps hold during exploring and from a
+  fresh save (11.8). If a lifecycle scene (morning, dusk, night) blocks them, the scene
+  offers its own route to settings or is dismissible in one tap first.
+- 11.25 **Reduced motion is reachable without motion, audio settings without audio.** A
+  player who opened the app because it moved too much, or because it was too loud, can
+  turn that off without sitting through the thing she is turning off. **[COZY]**
+- 11.26 **The trunk is reachable read-only.** Reaching save export/import costs the player
+  no game state: no day started, no step spent, no scene consumed. It is the recovery
+  path (7.19) and a recovery path that charges admission is not one. **[PARITY]**
