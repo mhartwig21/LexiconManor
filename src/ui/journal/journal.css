@@ -30,12 +30,20 @@
   width: 100%;
   max-width: 470px;
   margin: 0 auto;
-  padding: max(0.7rem, env(safe-area-inset-top)) 0.9rem 0;
+  /* Round-5 nav fix: .jrn-page is position:fixed against the VIEWPORT, so the
+     whole journal head — title AND the back control — was sitting UNDER the
+     fixed chrome bar (chrome.css .chr-header, z-index 40, opaque background).
+     A hit test at the back button's centre returned .chr-retire: the way home
+     was not merely faint, it was un-tappable. Clear --chrome-h the way
+     sanctum.css already did. */
+  padding: calc(var(--chrome-h) + max(0.4rem, env(safe-area-inset-top))) 0.9rem 0;
 }
 
+/* Back control first and LEFT; the title takes the right of the row, so the
+   head costs no more vertical room than the old stacked block did. */
 .jrn__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
 }
@@ -45,23 +53,29 @@
   font-size: var(--text-display-sm);
   font-weight: 400;
 }
+/* The volume line lifts out of the head to its own full-width row — at 390px
+   it no longer has to share the row with the plate. */
 .jrn__volume {
+  margin-top: 0.2rem;
   font-size: var(--text-sm);
   color: var(--ink-soft);
   font-style: italic;
+  text-align: right;
 }
-.jrn__back {
+
+/* The Sanctum nudge is a FORWARD link (it used to borrow the back button's
+   styling, which is gone with .jrn__back). */
+.jrn-nudge__link {
   min-height: var(--tap-target);
-  min-width: var(--tap-target);
   border: none;
   background: none;
-  color: var(--ink-soft);
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--text-body);
+  text-decoration: underline;
   cursor: pointer;
   padding: 0 0.35rem;
 }
-.jrn__back:active { transform: translateY(1px); }
 
 /* --- Ribbon tabs ---------------------------------------------------------- */
 .jrn-tabs {
@@ -374,5 +388,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .jrn-card, .jrn-letter__body { animation: none; }
-  .jrn-tab, .jrn__back, .jrn-letter__head { transition: none; }
+  .jrn-tab, .jrn-nudge__link, .jrn-letter__head { transition: none; }
 }

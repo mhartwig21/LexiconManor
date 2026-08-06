@@ -32,6 +32,7 @@ import type { PortraitExpression } from '../../engine/dialogue/schema';
 import { getDialogueFile } from '../../engine/dialogue/content';
 import { selectDialogue } from '../../engine/dialogue/select';
 import DialogueScene from '../dialogue/DialogueScene';
+import BackLink from '../chrome/BackLink';
 import { sfx } from '../../app/sound';
 import { quoted } from '../journal/quote';
 import PortraitFrame from './PortraitFrame';
@@ -113,7 +114,7 @@ export default function SanctumView() {
     return (
       <div className="snc-page">
         <div className="snc">
-          <button className="snc__back" onClick={() => navigate('/')}>Back down the stairs</button>
+          <BackLink className="snc__nav" flavour="Back down the stairs" />
           <p className="snc-line">The landing is dark. The Portrait is elsewhere.</p>
         </div>
       </div>
@@ -249,7 +250,7 @@ export default function SanctumView() {
     return (
       <div className="snc-page">
         <div className="snc">
-          <button className="snc__back" onClick={() => navigate('/')}>Back down the stairs</button>
+          <BackLink className="snc__nav" flavour="Back down the stairs" />
           <PortraitFrame soft />
           <div className="snc-epilogue">
             <div className="snc-epilogue__word">{answer}</div>
@@ -289,7 +290,7 @@ export default function SanctumView() {
   return (
     <div className="snc-page">
       <div className="snc snc__accent">
-        <button className="snc__back" onClick={() => navigate('/')}>Back down the stairs</button>
+        <BackLink className="snc__nav" flavour="Back down the stairs" />
         <PortraitFrame
           soft={soft}
           expression={phase === 'wrong' ? sceneExpression ?? undefined : undefined}

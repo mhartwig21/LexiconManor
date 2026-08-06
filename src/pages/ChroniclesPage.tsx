@@ -13,7 +13,6 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'wouter';
 import { useManorStore } from '../app/store';
 import { exportSaveCode, importSaveCode, persistSave, SAVE_KEY } from '../app/save';
 import { selectSave } from '../app/store';
@@ -21,6 +20,7 @@ import { getStorageDebugInfo, type StorageDebugInfo } from '../app/platform/pers
 import { applyAudioSessionPolicy } from '../app/music/context';
 import { ACHIEVEMENTS } from '../engine/effects';
 import type { DayRecord } from '../engine/types';
+import BackLink from '../ui/chrome/BackLink';
 import './chronicles.css';
 
 const CAUSE_COPY: Record<string, string> = {
@@ -54,7 +54,6 @@ function Setting(props: { label: string; hint?: string; on: boolean; onToggle: (
 }
 
 export default function ChroniclesPage() {
-  const [, navigate] = useLocation();
   const records = useManorStore((s) => s.chronicles.dayRecords);
   // NB: never `?? []` inside a zustand selector — a fresh array every render
   // is a new snapshot and loops the subscription (React #185).
@@ -119,10 +118,8 @@ export default function ChroniclesPage() {
   return (
     <div className="chron">
       <div className="chron__head">
+        <BackLink />
         <h2 className="chron__title">Chronicles</h2>
-        <button type="button" className="chron__back" onClick={() => navigate('/')}>
-          Back
-        </button>
       </div>
 
       <div className="chron__totals">

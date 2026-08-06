@@ -21,6 +21,7 @@ import type { CharacterId } from '../../engine/types';
 import { getDialogueFile } from '../../engine/dialogue/content';
 import { selectDialogue } from '../../engine/dialogue/select';
 import DialogueScene from '../dialogue/DialogueScene';
+import BackLink from '../chrome/BackLink';
 import { sfx } from '../../app/sound';
 import { quoted } from './quote';
 import './journal.css';
@@ -57,7 +58,14 @@ export default function JournalView() {
   if (!content) {
     return (
       <div className="jrn-page">
-        <div className="jrn"><p className="jrn-empty">The journal's pages are still being sewn in.</p></div>
+        <div className="jrn">
+          {/* Round-5 nav audit: this branch used to render NO way out at all —
+              a hard strand on an unauthored/imported volume. */}
+          <header className="jrn__head">
+            <BackLink flavour="Put it down" />
+          </header>
+          <p className="jrn-empty">The journal's pages are still being sewn in.</p>
+        </div>
       </div>
     );
   }
@@ -87,15 +95,14 @@ export default function JournalView() {
   return (
     <div className="jrn-page">
       <div className="jrn">
+        {/* Back control FIRST and left, where a back control is looked for. */}
         <header className="jrn__head">
-          <div>
-            <h2 className="jrn__title">The Journal</h2>
-            <div className="jrn__volume">
-              Volume I — {content.title}{solved ? ' · closed' : ''}
-            </div>
-          </div>
-          <button className="jrn__back" onClick={() => navigate('/')}>Put it down</button>
+          <BackLink flavour="Put it down" />
+          <h2 className="jrn__title">The Journal</h2>
         </header>
+        <div className="jrn__volume">
+          Volume I — {content.title}{solved ? ' · closed' : ''}
+        </div>
 
         <nav className="jrn-tabs" aria-label="Journal tabs">
           <TabButton label="The Word" active={tab === 'word'} dot={hasNew(slots.flatMap((s) => (s.fragment ? [s.fragment] : [])))} onClick={() => switchTab('word')} />
@@ -268,7 +275,7 @@ export default function JournalView() {
         {nudge && <div className="jrn-nudge">{nudge}</div>}
         {!solved && readiness.enough && (
           <div className="jrn-nudge">
-            <button className="jrn__back" style={{ textDecoration: 'underline' }} onClick={() => navigate('/sanctum')}>
+            <button className="jrn-nudge__link" onClick={() => navigate('/sanctum')}>
               Take it to the Sanctum
             </button>
           </div>

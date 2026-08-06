@@ -1,0 +1,108 @@
+/* ==========================================================================
+   BackLink — per-module CSS (conflict rule 3). Consumes ui/theme/tokens.css
+   only; defines no tokens and no literal colours, so both the parchment day
+   and the candlelit night come free and neither is ever pure black/white.
+
+   Deliberately NOT in chrome.css (owned by A2).
+
+   The brief this satisfies: an obviously tappable, obviously READABLE control
+   — full --ink (not --ink-soft), label at --text-sm or better, the --tap-target
+   floor on BOTH axes, a soft inked plate (--rule + --radius-card) so it reads
+   as a control rather than as a whisper of body text.
+   ========================================================================== */
+
+.backlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  box-sizing: border-box;
+  flex: none;
+  min-height: var(--tap-target);
+  min-width: var(--tap-target);
+  padding: 0.3rem 0.7rem 0.3rem 0.5rem;
+  border: var(--rule);
+  border-radius: var(--radius-card);
+  background: var(--paper-raised);
+  /* Full body ink. The old controls used --ink-soft and disappeared. */
+  color: var(--ink);
+  /* Inherit the page's stack: index.css (v1) still shadows --font-body on
+     :root, and every host page already re-scopes it locally. */
+  font-family: inherit;
+  font-size: var(--text-sm);
+  line-height: 1.15;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--deckle);
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform var(--dur-press) var(--ease-settle),
+    background-color var(--dur-press) var(--ease-settle);
+}
+
+.backlink__chevron {
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
+  /* Optical: the chevron's ink sits a hair high against the two-line stack. */
+  margin-top: 0.02em;
+}
+
+.backlink__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* The word that has to be recognisable at a glance. */
+.backlink__label {
+  font-size: var(--text-sm);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* The house's voice — secondary by size and tone, never load-bearing. */
+.backlink__flavour {
+  margin-top: 0.05rem;
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* U.1 (app/platform/boot.ts): `.is-pressed` lands from pointerdown via the
+   capture-phase delegate, so the plate presses within a frame of the finger
+   touching glass on iOS. `:active` is the desktop fallback only. The base
+   translate/brightness comes from platform.css; the plate tone is ours. */
+.backlink.is-pressed,
+.backlink:active {
+  background: var(--paper-shade);
+}
+
+.backlink:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Motion is transform-only and already inside the U.2 ceiling; under reduced
+   motion the press still reads, but as tone alone. */
+@media (prefers-reduced-motion: reduce) {
+  .backlink {
+    transition: none;
+  }
+  .backlink.is-pressed,
+  .backlink:active {
+    transform: none;
+  }
+}
+
+/* The in-game "Reduce motion" setting mirrors the media query (chrome.css's
+   .chr--reduced convention) for surfaces rendered under it. */
+.chr--reduced .backlink {
+  transition: none;
+}
+.chr--reduced .backlink.is-pressed,
+.chr--reduced .backlink:active {
+  transform: none;
+}

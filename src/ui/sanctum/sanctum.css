@@ -45,16 +45,11 @@
 
 .snc__accent { --accent: var(--cat-mystery); }
 
-.snc__back {
+/* Placement only — the control itself is ui/chrome/back-link.css. The landing
+   is a centred column, so the way home has to opt out of that and sit left,
+   where a back control is looked for. */
+.snc__nav {
   align-self: flex-start;
-  min-height: var(--tap-target);
-  border: none;
-  background: none;
-  color: var(--ink-soft);
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  cursor: pointer;
-  padding: 0 0.2rem;
 }
 
 /* The Lexicographer scales on the SHORT axis too: at 375x667 a 190px-wide

@@ -9,7 +9,11 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
+  /* Round-5 nav fix: the fixed chrome bar (chrome.css .chr-header, z-index 40,
+     opaque) painted straight over this header — a hit test at the old "Back"
+     button's centre returned .chr-retire, so the way home was un-tappable, not
+     merely faint. Clear --chrome-h, as sanctum.css already did. */
+  padding: calc(var(--chrome-h) + 8px) 16px 16px;
   box-sizing: border-box;
   max-width: 560px;
   margin: 0 auto;
@@ -29,9 +33,11 @@
   line-height: var(--leading-body);
 }
 
+/* Back control first and LEFT, where a back control is looked for; the title
+   takes the right of the row. */
 .chron__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
@@ -41,19 +47,6 @@
   font-size: var(--text-display);
   color: var(--ink);
   margin: 0;
-}
-
-.chron__back {
-  min-height: var(--tap-target);
-  min-width: var(--tap-target);
-  border: 1px solid var(--paper-edge);
-  border-radius: var(--radius-card);
-  background: var(--paper-raised);
-  color: var(--ink);
-  font-family: var(--font-body);
-  font-size: 1rem;
-  padding: 6px 14px;
-  cursor: pointer;
 }
 
 /* Totals row — accumulative, unloseable stats only (R.3). */
