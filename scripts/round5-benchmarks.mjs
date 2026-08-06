@@ -18,14 +18,17 @@ const notes = [];
 
 const TARGETS = [
   { slug: '50-nyt-spelling-bee', url: 'https://www.nytimes.com/puzzles/spelling-bee', name: 'Spelling Bee' },
-  { slug: '52-nyt-connections', url: 'https://www.nytimes.com/puzzles/connections', name: 'Connections' },
+  { slug: '52-nyt-connections', url: 'https://www.nytimes.com/games/connections', name: 'Connections' },
   { slug: '54-nyt-wordle', url: 'https://www.nytimes.com/games/wordle/index.html', name: 'Wordle' },
   { slug: '56-nyt-sudoku-hard', url: 'https://www.nytimes.com/puzzles/sudoku/hard', name: 'Sudoku (hard)' },
 ];
 
 const DISMISS = [
-  'button:has-text("Accept all")', 'button:has-text("Accept")', 'button:has-text("Continue")',
-  'button:has-text("I Accept")', 'button:has-text("Agree")', 'button:has-text("Reject all")',
+  // NYT ships Ethyca "Fides": the label is a <span> inside the control, so a
+  // plain text selector is what actually lands.
+  '#fides-banner-button-primary', '.fides-accept-all-button',
+  'text="Accept all"', 'text="Accept All"',
+  'button:has-text("Accept all")', 'button:has-text("I Accept")', 'button:has-text("Agree")',
   '[data-testid="Cookie-Banner"] button', '#pz-gdpr-btn-accept-all',
 ];
 const START = [
@@ -49,16 +52,20 @@ page.setDefaultTimeout(20000);
 const shot = (n) => page.screenshot({ path: join(OUT, n + '.png') });
 const sleep = (ms) => page.waitForTimeout(ms);
 
+/** Click the first matching, visible control anywhere in the page — including
+ *  inside the Sourcepoint consent iframe, which is where NYT hides "Accept all". */
 async function clickAny(selectors, label) {
-  for (const sel of selectors) {
-    const el = await page.$(sel);
-    if (!el) continue;
-    const visible = await el.isVisible().catch(() => false);
-    if (!visible) continue;
-    await el.click({ timeout: 3000 }).catch(() => {});
-    log(`  ${label}: clicked ${sel}`);
-    await sleep(1200);
-    return true;
+  for (const frame of page.frames()) {
+    for (const sel of selectors) {
+      const el = await frame.$(sel).catch(() => null);
+      if (!el) continue;
+      const visible = await el.isVisible().catch(() => false);
+      if (!visible) continue;
+      await el.click({ timeout: 3000 }).catch(() => {});
+      log(`  ${label}: clicked ${sel}${frame === page.mainFrame() ? '' : ' (iframe)'}`);
+      await sleep(1400);
+      return true;
+    }
   }
   return false;
 }

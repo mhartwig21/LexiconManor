@@ -119,28 +119,59 @@
   border-color: var(--gilt);
 }
 
+/* ROUND 5 — the same failure class as the journal back button. `.dlg` is a
+   full-screen overlay (fixed, inset 0, z-index 40) mounted from five call
+   sites, and mid-scene this was its ONLY exit: border:none, background:none,
+   --ink-faint — the faintest token in the system, painted on --paper-raised,
+   with its 44pt target hidden in an invisible pseudo-element. It did not read
+   as a control at all.
+
+   It is a plate now, the same grammar as ui/chrome/back-link.css: --rule +
+   --radius-card on --paper, --ink-soft ink (never --ink-faint again), the real
+   --tap-target floor on both axes instead of a phantom one. It stays quieter
+   than the choice buttons — it is an aside, not the headline — but it is
+   legible as a way out. Tokens only, so both themes come free.
+
+   The plate row was measured at 390px with 17px of slack (round-4 note above),
+   so the horizontal padding stays mean and the row centres rather than sitting
+   on the nameplate's baseline. WHEN the skip appears is unchanged. */
 .dlg__skip {
   position: relative;
   margin-left: auto;
-  min-height: 2rem;
-  padding: 0 0.4rem;
-  border: none;
-  background: none;
-  color: var(--ink-faint);
+  align-self: center;
+  box-sizing: border-box;
+  flex: none;
+  min-height: var(--tap-target);
+  min-width: var(--tap-target);
+  padding: 0.25rem 0.45rem;
+  border: var(--rule);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  color: var(--ink-soft);
   font-family: var(--font-body);
   font-size: var(--text-sm);
+  line-height: 1.1;
   cursor: pointer;
+  box-shadow: var(--deckle);
+  transition:
+    transform var(--dur-press) var(--ease-settle),
+    background-color var(--dur-press) var(--ease-settle),
+    color var(--dur-press) var(--ease-settle);
 }
-/* The skip verb reads as a small aside but must still be a ≥44pt target
-   (AAA 6.19). Extending the hit area with a pseudo-element buys the pt
-   without inflating the plate row and reflowing the nameplate (round-4). */
-.dlg__skip::after {
-  content: '';
-  position: absolute;
-  inset: -0.45rem -0.35rem;
+/* U.1 (app/platform/boot.ts): `.is-pressed` lands from pointerdown via the
+   capture-phase delegate so the plate presses within a frame on iOS; `:active`
+   is the desktop fallback only. */
+.dlg__skip.is-pressed,
+.dlg__skip:active {
+  background: var(--paper-shade);
+  color: var(--ink);
+  transform: scale(0.985);
 }
-.dlg__skip:active,
-.dlg__skip.is-pressed { color: var(--ink-soft); }
+
+.dlg__skip:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
 
 /* CONTENT-FIT line area. It used to be a flat 7.2rem well sized for the
    longest authored box, so Bramble's one-line reactions ("Mind the third
@@ -280,4 +311,18 @@
   .dlg-choice,
   .dlg-choice.is-pressed { transition: none; transform: none; }
   .dlg-portrait__art { transition: none; }
+  /* The skip's press still reads, but as tone alone — the plate and its ink
+     shift are information, the scale is juice. */
+  .dlg__skip { transition: none; }
+  .dlg__skip.is-pressed,
+  .dlg__skip:active { transform: none; }
 }
+
+/* The in-game "Reduce motion" setting mirrors the media query (the .chr--reduced
+   convention from chrome.css / back-link.css). This is live, not defensive: the
+   morning beat mounts DialogueScene from DayTransitions, inside GameChrome's
+   .chr--reduced wrapper. Scoped to the skip — the rest of the scene's motion is
+   A6's to answer for. */
+.chr--reduced .dlg__skip { transition: none; }
+.chr--reduced .dlg__skip.is-pressed,
+.chr--reduced .dlg__skip:active { transform: none; }

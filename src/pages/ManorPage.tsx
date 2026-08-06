@@ -170,6 +170,13 @@ export default function ManorPage() {
           <button className="bp-btn bp-btn--quiet" onClick={() => navigate('/journal')}>
             Journal
           </button>
+          {/* Round 5: /chronicles had no entrance anywhere in the app — sound,
+              music, reduced motion, the mute-switch bypass, keepsakes and the
+              save trunk all sat behind a URL nobody could reach. It lives with
+              its siblings on the blueprint footer now. */}
+          <button className="bp-btn bp-btn--quiet" onClick={() => navigate('/chronicles')}>
+            Chronicles
+          </button>
         </div>
         {fragmentNote && <p className="bp-foot__dewey">{fragmentNote}</p>}
         {atDewey && petted && !visiting && (
