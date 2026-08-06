@@ -1,0 +1,319 @@
+/* ==========================================================================
+   The Sanctum — OWNER: A7. Per-module CSS (conflict rule 3); tokens only.
+   The game's climax screen: the Portrait, the sealed door, the typed word.
+   One accent (violet, --cat-mystery) for state; wax red only for the seal
+   and struck guesses (AAA 6.15); gilt only for the won word. All animation
+   transform/opacity, celebrations tap-skippable, reduced-motion legible
+   (AAA U.2/U.3). Fits the viewport — the page never scrolls.
+   ========================================================================== */
+
+.snc-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+/* The landing is dimmer than the rest of the house — candlelight at the top
+   of the stairs. A recessed panel tone, not a theme flip. */
+.snc {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  padding: max(0.8rem, env(safe-area-inset-top)) 1rem calc(0.9rem + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.snc::-webkit-scrollbar { display: none; }
+
+.snc__accent { --accent: var(--cat-mystery); }
+
+.snc__back {
+  align-self: flex-start;
+  min-height: var(--tap-target);
+  border: none;
+  background: none;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 0 0.2rem;
+}
+
+.snc-portrait {
+  width: min(46vw, 190px);
+  height: auto;
+  color: var(--ink);
+  flex: none;
+}
+
+.snc__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+/* The Portrait's line — reserved space, no layout shift between states. */
+.snc-line {
+  min-height: 4.4rem;
+  display: flex;
+  align-items: center;
+  text-align: center;
+  font-style: italic;
+  color: var(--ink-soft);
+  animation: snc-breathe-in 420ms var(--ease-settle);
+}
+.snc-line--nudge { color: var(--ink-faint); font-size: var(--text-sm); min-height: 2.2rem; }
+
+/* --- The door and its seal ------------------------------------------------- */
+.snc-door {
+  width: 100%;
+  border: 1.5px solid var(--paper-edge);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 4px 4px;
+  background: var(--paper-raised);
+  padding: 0.9rem 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  position: relative;
+}
+.snc-door__caption {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  letter-spacing: 0.05em;
+}
+
+.snc-row {
+  display: flex;
+  gap: 0.55rem;
+  align-items: stretch;
+}
+.snc-input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--tap-target);
+  border: 1.5px solid var(--paper-edge);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.25rem; /* ≥16px — no iOS focus zoom (AAA 7.9) */
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0 0.6rem;
+  outline: none;
+}
+.snc-input:focus { border-color: var(--cat-mystery); }
+.snc-input:disabled { opacity: 0.5; }
+
+/* The wax-seal commit button (AAA 6.16: seal = confirm). */
+.snc-speak {
+  min-height: var(--tap-target);
+  min-width: 5.2rem;
+  border: none;
+  border-radius: var(--radius-card);
+  background: var(--wax);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform var(--dur-press), filter var(--dur-press);
+}
+.snc-speak:active { transform: translateY(1px) scale(0.98); }
+.snc-speak:disabled { opacity: 0.45; cursor: default; }
+
+.snc-shake { animation: snc-shake 340ms ease-in-out; }
+
+/* Suspense: the door listening. */
+.snc-listening {
+  text-align: center;
+  color: var(--ink-faint);
+  font-style: italic;
+  animation: snc-pulse 900ms ease-in-out infinite;
+}
+
+/* Struck guesses under the door. */
+.snc-struck {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+.snc-struck__word {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  text-decoration: line-through;
+  text-decoration-color: var(--wax);
+}
+
+.snc-journal-link {
+  min-height: var(--tap-target);
+  border: none;
+  background: none;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* --- The win: the word comes home ------------------------------------------ */
+.snc-won {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  text-align: center;
+  width: 100%;
+}
+.snc-reveal {
+  display: flex;
+  gap: 0.3rem;
+  justify-content: center;
+}
+.snc-reveal__ch {
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg);
+  color: var(--gilt);
+  animation: snc-letter-home 520ms var(--ease-settle) both;
+}
+.snc-won__line {
+  font-style: italic;
+  color: var(--ink-soft);
+  animation: snc-breathe-in 500ms var(--ease-settle) 300ms both;
+}
+/* The cracked seal: two halves parting. */
+.snc-seal-halves {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+}
+.snc-seal-half {
+  width: 1.3rem;
+  height: 2.4rem;
+  background: var(--wax);
+  opacity: 0.85;
+}
+.snc-seal-half--l {
+  border-radius: 2.4rem 0 0 2.4rem;
+  animation: snc-crack-l 700ms var(--ease-settle) both;
+}
+.snc-seal-half--r {
+  border-radius: 0 2.4rem 2.4rem 0;
+  animation: snc-crack-r 700ms var(--ease-settle) both;
+}
+
+.snc-epilogue {
+  width: 100%;
+  background: var(--paper-raised);
+  border: var(--rule);
+  border-radius: var(--radius-sheet);
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  animation: snc-breathe-in 420ms var(--ease-settle);
+}
+.snc-epilogue__word {
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  letter-spacing: 0.16em;
+  color: var(--gilt);
+}
+.snc-epilogue__poem {
+  font-style: italic;
+  color: var(--ink-soft);
+  border-left: 2px solid var(--paper-edge);
+  padding-left: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: var(--text-sm);
+}
+.snc-epilogue__closed {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+
+.snc-btn {
+  min-height: var(--tap-target);
+  padding: 0.5rem 1.2rem;
+  border: 1px solid var(--paper-edge);
+  border-radius: 999px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform var(--dur-press);
+}
+.snc-btn:active { transform: translateY(1px); }
+.snc-btn--primary {
+  background: var(--cat-mystery);
+  border-color: transparent;
+  color: var(--paper);
+  font-weight: 600;
+}
+
+/* --- Keyframes -------------------------------------------------------------- */
+@keyframes snc-breathe-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes snc-letter-home {
+  0%   { transform: translateY(-14px) scale(1.25); opacity: 0; }
+  60%  { transform: translateY(2px) scale(1); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes snc-crack-l {
+  from { transform: translateX(0) rotate(0); opacity: 0.85; }
+  to   { transform: translateX(-14px) rotate(-9deg); opacity: 0.25; }
+}
+@keyframes snc-crack-r {
+  from { transform: translateX(0) rotate(0); opacity: 0.85; }
+  to   { transform: translateX(14px) rotate(9deg); opacity: 0.25; }
+}
+@keyframes snc-shake {
+  0%, 100% { transform: translateX(0); }
+  18% { transform: translateX(-6px); }
+  36% { transform: translateX(5px); }
+  54% { transform: translateX(-4px); }
+  72% { transform: translateX(3px); }
+  88% { transform: translateX(-1px); }
+}
+@keyframes snc-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snc-line, .snc-won__line, .snc-epilogue { animation: none; }
+  .snc-reveal__ch { animation: none; }
+  .snc-seal-half--l { animation: none; transform: translateX(-14px) rotate(-9deg); opacity: 0.25; }
+  .snc-seal-half--r { animation: none; transform: translateX(14px) rotate(9deg); opacity: 0.25; }
+  .snc-shake { animation: none; }
+  .snc-listening { animation: none; opacity: 0.8; }
+}

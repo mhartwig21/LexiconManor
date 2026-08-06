@@ -8,6 +8,7 @@
  */
 
 import type { StateCreator } from 'zustand';
+import type { Tier } from '../../engine/types';
 import type { RoomEvent, RoomOutcome } from '../../engine/rooms/room-puzzle';
 import { getRoomAdapter } from '../../engine/rooms/registry';
 import type { ManorStore } from '../store';
@@ -88,10 +89,10 @@ export const createRoomSlice =
           case 'hint': {
             if (ev.weight === 0) break; // free feedback moment (AAA R.1 / 3.2)
             get().applyStepEntry({
-              // A2: StepReason has no 'hint' member (frozen types.ts) —
-              // requested; priced as a mistake-row spend until then.
-              reason: 'mistake',
-              delta: PROVISIONAL_STEP_TABLE.mistake(ev.weight, tier),
+              // Hints ledger under their own reason (integration: StepReason
+              // gained 'hint') but price through the same mistake row.
+              reason: ev.type,
+              delta: STEP_TABLE.mistake(ev.weight, tier),
               at: now,
               roomKey: cellKey,
             });
@@ -107,12 +108,12 @@ export const createRoomSlice =
           case 'solved': {
             get().applyStepEntry({
               reason: 'solve',
-              delta: PROVISIONAL_STEP_TABLE.solve(size, tier),
+              delta: STEP_TABLE.solve(size, tier),
               at: now,
               roomKey: cellKey,
             });
             if (ev.perfect) {
-              get().applyStepEntry({ reason: 'perfect', delta: PROVISIONAL_STEP_TABLE.perfect, at: now, roomKey: cellKey });
+              get().applyStepEntry({ reason: 'perfect', delta: STEP_TABLE.perfect, at: now, roomKey: cellKey });
             }
             const manor = get().manor;
             const placed = manor?.rooms[cellKey];

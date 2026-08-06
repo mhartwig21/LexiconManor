@@ -13,14 +13,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { getRoomAdapter } from '../../engine/rooms/registry';
 import { getRoomView } from './registry';
 import { useManorStore } from '../../app/store';
-import { createRng } from '../../engine/rng';
-
-/** Per-room integer seed: stable for the day+cell, independent across cells. */
-function roomSeed(daySeed: number, cellKey: string): number {
-  let h = daySeed | 0;
-  for (const ch of cellKey) h = (Math.imul(h, 31) + ch.charCodeAt(0)) | 0;
-  return Math.floor(createRng(h)() * 2 ** 31);
-}
+// Per-room integer seed — the ONE source of truth, shared with the manor
+// slice's puzzleId pinning at placement (integration: replaced the private
+// bit-identical copy that lived here).
+import { roomSeed } from '../../engine/manor/grid';
 
 interface Session {
   puzzle: unknown;

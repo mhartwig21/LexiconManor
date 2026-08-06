@@ -1,0 +1,849 @@
+{
+  "character": "ellery",
+  "nodes": [
+    {
+      "id": "ellery.meet.1",
+      "trigger": "parlor",
+      "priority": 1000,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "Oh — footsteps. Real ones, with weight in them. How novel. Welcome to the Library; do come in, the dust is friendly."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "Ellery. Librarian. The 'late' is silent, but I'll spare us both the arithmetic — I've kept these shelves rather longer than a living person would."
+        }
+      ],
+      "choices": [
+        {
+          "text": "A pleasure, Ellery.",
+          "goto": "ellery.meet.1a",
+          "effects": {
+            "affinity": {
+              "ellery": 1
+            }
+          }
+        },
+        {
+          "text": "You're... a ghost?",
+          "goto": "ellery.meet.1b"
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "met.ellery"
+        ]
+      },
+      "summary": "Met Ellery, the librarian. The 'late' is silent."
+    },
+    {
+      "id": "ellery.meet.1a",
+      "trigger": "parlor",
+      "priority": 0,
+      "once": true,
+      "chainOnly": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Manners! Oh, I have missed manners. The manor mostly sends me weather, and the occasional moth."
+        }
+      ]
+    },
+    {
+      "id": "ellery.meet.1b",
+      "trigger": "parlor",
+      "priority": 0,
+      "once": true,
+      "chainOnly": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Librarian first, ghost second. Death was only ever a change of department, and frankly the hours suit me."
+        }
+      ]
+    },
+    {
+      "id": "ellery.meet.2",
+      "trigger": "parlor",
+      "priority": 1000,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "seen",
+          "node": "ellery.meet.1"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "Mind the shelves — they rearrange overnight, same as the rooms. I reshelve by candlelight, and by morning the books pretend it was always so."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "If you find loose pages in odd rooms — his handwriting, ink gone brown — bring them where I can see them. I knew his hand better than my own."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "ellery.shelf-warning"
+        ]
+      },
+      "summary": "Ellery watches for the lexicographer's loose pages."
+    },
+    {
+      "id": "ellery.react.fragment-1",
+      "trigger": "parlor",
+      "priority": 720,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "fragment-found"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "You're carrying one of his pages — I can hear it. Paper with his ink on it hums a little flat. Keep it safe in the journal; it's been alone a long while."
+        }
+      ]
+    },
+    {
+      "id": "ellery.react.fragment-2",
+      "trigger": "parlor",
+      "priority": 718,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "fragment-found"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "Another fragment? He scattered them like a man hiding pieces of his own heart from himself. Which, between us, is exactly what it was."
+        }
+      ]
+    },
+    {
+      "id": "ellery.react.interpreted",
+      "trigger": "parlor",
+      "priority": 705,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "fragment-interpreted"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "That line we read together keeps opening further, doesn't it. Good annotation is like that — a little door drawn in a margin."
+        }
+      ]
+    },
+    {
+      "id": "ellery.react.web-perfect",
+      "trigger": "parlor",
+      "priority": 710,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-solved",
+          "where": {
+            "kind": "word-web",
+            "perfect": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "A whole case sorted without one slip — the Library is preening. Shelves have feelings, you know. Mostly smug ones."
+        }
+      ]
+    },
+    {
+      "id": "ellery.react.web",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-solved",
+          "where": {
+            "kind": "word-web"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "You put words back where they belong today. That's the entire job, you know. It took me forty years and a death to learn it."
+        }
+      ]
+    },
+    {
+      "id": "ellery.react.web-left",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-abandoned",
+          "where": {
+            "kind": "word-web"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "You left a case half-sorted. Quite right — a puzzle keeps better than a person does. It will still be wrong tomorrow. That's a promise, not a threat."
+        }
+      ]
+    },
+    {
+      "id": "ellery.react.guess",
+      "trigger": "parlor",
+      "priority": 710,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "concerned",
+          "text": "The whole house rang like a struck shelf when you spoke at that door. Not the word — but the ringing lasted longer this time. I count such things."
+        }
+      ]
+    },
+    {
+      "id": "ellery.react.guess-repeat",
+      "trigger": "parlor",
+      "priority": 715,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong",
+          "where": {
+            "closeness.repeat": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "You've offered the door that word before, dear. It kept the receipt. Doors and librarians never forget a request."
+        }
+      ]
+    },
+    {
+      "id": "ellery.react.pangram",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-notable",
+          "where": {
+            "note": "pangram"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Word travels — every petal in one bloom, down in the Conservatory. Even the botany section is jealous, and it does not impress easily."
+        }
+      ]
+    },
+    {
+      "id": "ellery.react.many-rooms",
+      "trigger": "parlor",
+      "priority": 705,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "counter",
+          "event": "room-solved",
+          "gte": 10
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Ten rooms set right since you arrived. You turn this house like pages. I've opened a card for you in the catalogue — filed under 'recurring joy.'"
+        }
+      ],
+      "summary": "Ellery filed you in the catalogue under 'recurring joy.'"
+    },
+    {
+      "id": "ellery.react.letter",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "letter-opened"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "Posy's seals again? She strings and stamps like the post is a sacrament. She's right, of course. Never tell her I said so."
+        }
+      ]
+    },
+    {
+      "id": "ellery.react.victory",
+      "trigger": "parlor",
+      "priority": 1000,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "vol.volume-1.solved"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "You found it. You said it — and every book in this room sat up an inch. I felt the spines straighten. Thirty years of slouching, undone in a word."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "He can rest now. And I — well. I believe I shall finally read something for pleasure."
+        }
+      ],
+      "summary": "The books sat up an inch. Ellery is reading for pleasure now."
+    },
+    {
+      "id": "ellery.arc.chair",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "ellery",
+          "gte": 2
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "You'll want to know how I died. Everyone does, eventually. A storm, that chair, a very good book. I finished the chapter, closed my eyes, and simply — stayed."
+        }
+      ],
+      "choices": [
+        {
+          "text": "I'm glad you stayed.",
+          "goto": "ellery.arc.chair-a",
+          "effects": {
+            "affinity": {
+              "ellery": 1
+            }
+          }
+        },
+        {
+          "text": "Which book?",
+          "goto": "ellery.arc.chair-b"
+        }
+      ],
+      "summary": "Ellery finished the chapter, closed her eyes, and stayed."
+    },
+    {
+      "id": "ellery.arc.chair-a",
+      "trigger": "parlor",
+      "priority": 0,
+      "once": true,
+      "chainOnly": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "So am I, most days. The manor is drafty, but the company has improved enormously of late."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "ellery.stayed"
+        ]
+      }
+    },
+    {
+      "id": "ellery.arc.chair-b",
+      "trigger": "parlor",
+      "priority": 0,
+      "once": true,
+      "chainOnly": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "A dictionary. Volume three, F through H. I have never once regretted it, which tells you everything about me worth shelving."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "ellery.stayed"
+        ]
+      }
+    },
+    {
+      "id": "ellery.arc.ink-1",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "ellery",
+          "gte": 3
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "He worked at that desk till the candle drowned, most nights. Then one spring he stopped writing words down and started crossing one out. Everywhere. Every copy. Every margin."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "ellery.remembers-ink"
+        ]
+      },
+      "summary": "One spring, the lexicographer stopped writing and started crossing out."
+    },
+    {
+      "id": "ellery.arc.ink-2",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "ellery.remembers-ink"
+        },
+        {
+          "kind": "affinity",
+          "character": "ellery",
+          "gte": 5
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "concerned",
+          "text": "I watched him ink out that word, and I said nothing. Librarians archive; we don't intervene. It is the one entry in my whole catalogue I would amend."
+        }
+      ],
+      "summary": "Ellery watched the erasure and said nothing. She regrets the silence."
+    },
+    {
+      "id": "ellery.arc.interpret-offer",
+      "trigger": "parlor",
+      "priority": 510,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "ellery",
+          "gte": 2
+        },
+        {
+          "kind": "fragmentCount",
+          "gte": 1
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "That fragment you carry — bring it to the lamp. Reading him alone is like shelving in the dark; together we might make out what he actually meant."
+        }
+      ],
+      "effects": {
+        "interpretFragment": "next"
+      },
+      "summary": "Ellery read one of the fragments with you, by lamplight."
+    },
+    {
+      "id": "ellery.service.interpret",
+      "trigger": "idle",
+      "priority": 20,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [
+        {
+          "kind": "seen",
+          "node": "ellery.arc.interpret-offer"
+        },
+        {
+          "kind": "affinity",
+          "character": "ellery",
+          "gte": 3
+        },
+        {
+          "kind": "fragmentCount",
+          "gte": 2
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Bring today's page to the lamp, then. His hand slants left when he's lying to himself — you learn to read around that."
+        }
+      ],
+      "effects": {
+        "interpretFragment": "next"
+      }
+    },
+    {
+      "id": "ellery.quest1.ask",
+      "trigger": "parlor",
+      "priority": 520,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "posy.errand-ellery"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "Posy mentioned me? Meddling by mail — how efficient. Then I'll confess it: one bookplate in this Library has lost its book, and I cannot rest an inch until it's found."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "Sort a whole case perfectly — not one slip — and I believe the shelves will surrender it. They respect precision. It's their one romance."
+        }
+      ],
+      "choices": [
+        {
+          "text": "I'll sort it out.",
+          "effects": {
+            "setFlags": [
+              "ellery.quest1.started"
+            ]
+          }
+        },
+        {
+          "text": "Another day, perhaps.",
+          "effects": {}
+        }
+      ],
+      "summary": "Ellery's favor: sort a Library case perfectly to find the lost book."
+    },
+    {
+      "id": "ellery.quest1.done",
+      "trigger": "parlor",
+      "priority": 730,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "ellery.quest1.started"
+        },
+        {
+          "kind": "event",
+          "event": "room-solved",
+          "where": {
+            "kind": "word-web",
+            "perfect": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "There — do you hear it? A book just came home, three shelves over. Not a sound a living ear would catch. Lucky, then, that you brought me."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "The plate reads: 'Ex libris — to E., who stayed.' He made it for me. All these years, I never found the nerve to go looking."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "ellery.quest1.done"
+        ],
+        "affinity": {
+          "ellery": 2
+        }
+      },
+      "summary": "Found Ellery's lost bookplate: 'To E., who stayed.'"
+    },
+    {
+      "id": "ellery.arc.locked",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "ellery",
+          "gte": 9
+        },
+        {
+          "kind": "flag",
+          "flag": "ellery.quest1.done"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "His carrel. I've kept it locked since — well. Since. You've earned the chair, and the chair has earned better company than a ghost's."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "Read what he underlined, some quiet evening. A man's pencil is far honester than his pen."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "ellery.carrel-open"
+        ]
+      },
+      "summary": "Ellery unlocked the lexicographer's private carrel for you."
+    },
+    {
+      "id": "ellery.arc.keepsake",
+      "trigger": "idle",
+      "priority": 1000,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "sys.first-gift.ellery"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "A bookmark — for me? I have marked my place with regret for thirty years, and you hand me ribbon and gilt as if it were nothing."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Take my card in trade. The Library honors it anywhere in the manor. Which is to say: I vouch for you. Loudly, for a ghost."
+        }
+      ],
+      "summary": "Gave Ellery a bookmark; received her library card in trade."
+    },
+    {
+      "id": "ellery.gen.marginalia",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "I do love marginalia. A book tells you what an author thought; the margins tell you what a reader felt. Always read the pencil."
+        }
+      ]
+    },
+    {
+      "id": "ellery.gen.moth",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "There's a moth in the poetry section I've named Chapman. We have an arrangement: he eats only the reviews."
+        }
+      ]
+    },
+    {
+      "id": "ellery.gen.weather",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "Rain through a wall is a strange thing to miss. I can hear it, you understand. I simply can't be rained on. Do stand in some for me."
+        }
+      ]
+    },
+    {
+      "id": "ellery.gen.catalogue",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "The manor shelves itself by a system I've almost cracked. Twice I've found the atlases hiding in Biography — which is either an error or a thesis."
+        }
+      ]
+    },
+    {
+      "id": "ellery.gen.tea",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Bramble still pours a second cup at four o'clock and lets it go cold. It's mine. We don't discuss it, and you mustn't either."
+        }
+      ]
+    },
+    {
+      "id": "ellery.gen.dewey",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "The cat outranks me, technically. Dewey — as in the decimal system. He enforces it by sitting on exceptions."
+        }
+      ]
+    },
+    {
+      "id": "ellery.gen.sanctum",
+      "trigger": "parlor",
+      "priority": 110,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "fragmentCount",
+          "gte": 3
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "concerned",
+          "text": "Three of his pages now, is it? When his lines begin to finish each other in your head, go stand at the top door. Say nothing until you're sure. Then say it like you mean it."
+        }
+      ]
+    },
+    {
+      "id": "ellery.idle.valve-1",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Tomorrow, dear — the books do sulk if I chat past closing."
+        }
+      ]
+    },
+    {
+      "id": "ellery.idle.valve-2",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Shoo, gently. Even a ghost keeps hours."
+        }
+      ]
+    },
+    {
+      "id": "ellery.idle.shelving",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "narration": true,
+          "text": "Ellery drifts along a high shelf, tapping spines flush without quite touching them."
+        }
+      ]
+    },
+    {
+      "id": "ellery.idle.reading",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "narration": true,
+          "text": "A book lies open on the desk. The pages turn themselves, patiently, one sigh at a time."
+        }
+      ]
+    },
+    {
+      "id": "ellery.idle.warm",
+      "trigger": "idle",
+      "priority": 10,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "ellery",
+          "gte": 3
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "It's a better library with you in it. The books agree — I hear them lean."
+        }
+      ]
+    }
+  ]
+}

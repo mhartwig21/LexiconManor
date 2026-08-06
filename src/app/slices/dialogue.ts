@@ -6,11 +6,23 @@
  * Flag names follow docs/flags.md (frozen). Selection is a pure function of
  * the DialogueQuery snapshot (engine/events.ts) — Hades rules: forced >
  * event-react > arc > general > idle; stale content never invalidated.
+ *
+ * A6 ADDITIVE MEMBER (consumed only by ui/dialogue/*): `applyDialogueEffects`
+ * — applies a node/choice effects block atomically (affinity deltas, flag
+ * sets, Ellery's fragment interpretation with 'next' resolution). Skipping a
+ * conversation applies effects too (AAA 5.10), so the UI needs exactly one
+ * entry point.
  */
 
 import type { StateCreator } from 'zustand';
 import type { CharacterId } from '../../engine/types';
 import type { DialogueQuery, DialogueTrigger } from '../../engine/events';
+import type { DialogueEffects } from '../../engine/dialogue/schema';
+import { isSubstantive } from '../../engine/dialogue/schema';
+import { getDialogueFile } from '../../engine/dialogue/content';
+import { findNode } from '../../engine/dialogue/select';
+import { rankFor } from '../../engine/dialogue/affinity';
+import { FLAG_REGEX } from '../../engine/dialogue/validate';
 import type { ManorStore } from '../store';
 import type { SaveV2 } from '../save';
 
@@ -30,6 +42,9 @@ export interface DialogueSlice {
   adjustAffinity(character: CharacterId, delta: number): void;
   /** Bookmark gift: one per character per day; emits 'gift-given'. */
   giveGift(character: CharacterId): void;
+
+  /** A6 additive (ui/dialogue only): apply a node/choice effects block. */
+  applyDialogueEffects(effects: DialogueEffects | undefined): void;
 }
 
 export const createDialogueSlice =
@@ -58,20 +73,69 @@ export const createDialogueSlice =
         fragmentsFound: s.volume.foundFragmentIds.length,
       };
     },
+
     markNodeSeen: (nodeId, character) => {
+      const node = findNode(getDialogueFile(character), nodeId);
       set((s) => ({
         seenNodeIds: s.seenNodeIds.includes(nodeId) ? s.seenNodeIds : [...s.seenNodeIds, nodeId],
+        // Pacing valve (AAA 5.9): a substantive (non-idle) top-level node
+        // spends the one-conversation-per-character-per-day slot. chainOnly
+        // continuations belong to the same conversation; idle lines are free.
+        talkedToday:
+          node && isSubstantive(node) && !node.chainOnly && !s.talkedToday.includes(character)
+            ? [...s.talkedToday, character]
+            : s.talkedToday,
       }));
       get().recordEvent({ type: 'dialogue-seen', nodeId, character });
-      // TODO(A6): substantive-vs-idle valve bookkeeping (talkedToday), journal summary line.
+      // Journal side (AAA 5.10): the one-line `summary` is derivable from
+      // seenNodeIds + authored JSON — A7's journal reads it, nothing stored.
     },
+
     setFlag: (flag) => {
+      if (!FLAG_REGEX.test(flag)) {
+        console.warn(`setFlag rejected (docs/flags.md grammar): "${flag}"`);
+        return;
+      }
       set((s) => ({ flags: s.flags.includes(flag) ? s.flags : [...s.flags, flag] }));
     },
-    adjustAffinity: (_character, _delta) => {
-      // TODO(A6): rank thresholds → 'affinity-rank-up' event + bespoke scene flag.
+
+    adjustAffinity: (character, delta) => {
+      if (delta === 0) return;
+      const before = get().affinities[character] ?? 0;
+      const after = Math.max(0, before + delta);
+      if (after === before) return;
+      set((s) => ({ affinities: { ...s.affinities, [character]: after } }));
+      const rank = rankFor(after);
+      if (rank > rankFor(before)) {
+        // Bespoke rank-up scenes are authored nodes conditioned on the new
+        // affinity band (AAA 5.7) — the event is for reactions elsewhere.
+        get().recordEvent({ type: 'affinity-rank-up', character, rank });
+      }
     },
-    giveGift: (_character) => {
-      // TODO(A6): one per character per day; 'gift-given' event; keepsake on first gift.
+
+    giveGift: (character) => {
+      if (character === 'dewey') return; // gifts are for people (and paintings)
+      if (get().giftedToday.includes(character)) return; // valve (AAA 5.9)
+      set((s) => ({ giftedToday: [...s.giftedToday, character] }));
+      // First gift → sys flag the bespoke keepsake scene keys off (AAA 5.7).
+      get().setFlag(`sys.first-gift.${character}`);
+      get().adjustAffinity(character, 1);
+      get().recordEvent({ type: 'gift-given', character });
+    },
+
+    applyDialogueEffects: (effects) => {
+      if (!effects) return;
+      for (const [who, delta] of Object.entries(effects.affinity ?? {})) {
+        get().adjustAffinity(who as CharacterId, delta ?? 0);
+      }
+      for (const flag of effects.setFlags ?? []) get().setFlag(flag);
+      if (effects.interpretFragment) {
+        const v = get().volume;
+        const id =
+          effects.interpretFragment === 'next'
+            ? v.foundFragmentIds.find((f) => !v.interpretedFragmentIds.includes(f))
+            : effects.interpretFragment;
+        if (id) get().interpretFragment(id);
+      }
     },
   });

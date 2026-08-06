@@ -1,0 +1,209 @@
+/* ==========================================================================
+   Dialogue scene — OWNER: A6. Per-module CSS (conflict rule 3); consumes
+   ui/theme/tokens.css only. Built for 390px first: portrait plate left,
+   nameplate ribbon, fixed-height text box (zero layout shift while the
+   typewriter runs), 44px choice targets. All animation transform/opacity;
+   prefers-reduced-motion strips the juice, never the information (AAA U.3).
+   No page scroll — the scene is a fixed overlay (house rule / AAA 7.7).
+   ========================================================================== */
+
+.dlg {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: color-mix(in srgb, var(--paper-shade) 55%, transparent);
+  font-family: var(--font-body);
+  color: var(--ink);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dlg__sheet {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 0 0.6rem calc(0.6rem + env(safe-area-inset-bottom));
+}
+
+/* --- Portrait plate: overlaps the box top-left, Hades-style ------------- */
+.dlg-portrait {
+  position: absolute;
+  left: 1rem;
+  top: -6.4rem;
+  width: 7.2rem;
+  height: 9rem;
+  z-index: 1;
+  background: var(--paper-raised);
+  border: var(--rule);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 var(--radius-sheet);
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+  animation: dlg-portrait-in 200ms var(--ease-settle);
+}
+
+.dlg-portrait__art {
+  width: 100%;
+  height: 100%;
+  color: var(--ink);
+  display: block;
+  transition: opacity var(--dur-toast);
+}
+.dlg-portrait__art--dim { opacity: 0.45; }
+
+@keyframes dlg-portrait-in {
+  from { transform: translateY(6px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+/* --- Text box ------------------------------------------------------------ */
+.dlg__box {
+  position: relative;
+  background: var(--paper-raised);
+  border: var(--rule);
+  border-radius: var(--radius-sheet);
+  box-shadow: var(--shadow-lift);
+  padding: 0.65rem 0.9rem 0.8rem;
+  animation: dlg-box-in 180ms var(--ease-settle);
+}
+
+@keyframes dlg-box-in {
+  from { transform: translateY(10px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.dlg__plate-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  /* leave room for the portrait plate overlapping at the left */
+  padding-left: 7.4rem;
+  min-height: 1.6rem;
+}
+
+.dlg__nameplate {
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.dlg__pips { display: inline-flex; gap: 0.25rem; align-self: center; }
+.dlg__pip {
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1px solid var(--ink-faint);
+  transform: rotate(45deg);
+  border-radius: 1px;
+}
+.dlg__pip--lit {
+  background: var(--gilt);
+  border-color: var(--gilt);
+}
+
+.dlg__skip {
+  margin-left: auto;
+  min-height: 2rem;
+  padding: 0 0.7rem;
+  border: none;
+  background: none;
+  color: var(--ink-faint);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.dlg__skip:active { color: var(--ink-soft); }
+
+/* Fixed-height line area: the longest authored box (validator-capped at 220
+   chars) fits at 390px with zero scrolling and zero reflow (AAA 5.11). */
+.dlg__text-area {
+  min-height: 7.2rem;
+  padding: 0.35rem 0.1rem 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.dlg__text {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+.dlg__text--narration {
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.dlg-caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: var(--ink-faint);
+  animation: dlg-caret-blink 0.9s steps(1) infinite;
+}
+
+@keyframes dlg-caret-blink { 50% { opacity: 0; } }
+
+.dlg__advance {
+  position: absolute;
+  right: 0.9rem;
+  bottom: 0.5rem;
+  color: var(--ink-faint);
+  font-size: var(--text-body);
+  animation: dlg-advance-bob 1.2s ease-in-out infinite;
+}
+
+@keyframes dlg-advance-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(3px); }
+}
+
+/* --- Choices ------------------------------------------------------------- */
+.dlg-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding-top: 0.3rem;
+}
+
+.dlg-choice {
+  min-height: var(--tap-target);
+  padding: 0.4rem 0.9rem;
+  border: var(--rule);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  text-align: left;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-settle);
+}
+.dlg-choice:active { transform: scale(0.985); }
+
+.dlg-choice--primary { border-color: var(--ink-soft); }
+
+.dlg-choice--gift {
+  border-color: var(--gilt);
+  color: var(--gilt);
+}
+.dlg-choice--gift::before {
+  content: '❦ ';
+}
+
+/* --- Reduced motion: information stays, the juice goes ------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .dlg-portrait,
+  .dlg__box { animation: none; }
+  .dlg__advance { animation: none; }
+  .dlg-caret { animation: none; opacity: 0.5; }
+  .dlg-choice { transition: none; }
+  .dlg-portrait__art { transition: none; }
+}

@@ -1,0 +1,379 @@
+/* ==========================================================================
+   Game chrome — OWNER: A2 (Economy/Day).
+   The persistent frame: day header, step candle, gem/key chips, and the
+   day transitions (morning card, dusk veil, night digest).
+
+   Consumes ui/theme/tokens.css only. Both themes come free via tokens.
+   All motion is transform/opacity (AAA U.3); `.chr--reduced` (settings
+   toggle) and prefers-reduced-motion both strip it. Costs render as
+   spending, never dying (R.3): no red flashes, no shakes here — the wax
+   hue appears only on mistake deltas, which ARE the mistake state (6.15).
+   ========================================================================== */
+
+/* --- Header bar ----------------------------------------------------------- */
+
+.chr-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: calc(4px + env(safe-area-inset-top, 0px)) 12px 4px;
+  min-height: 48px;
+  background: var(--paper-raised);
+  border-bottom: var(--rule);
+  box-shadow: 0 1px 0 rgba(43, 33, 24, 0.04);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.chr-day {
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm); /* 22px Fell floor (AAA 6.6) */
+  color: var(--ink);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.chr-day__phase {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+.chr-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* --- Currency chips ------------------------------------------------------- */
+
+.chr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 2px 8px;
+  border-radius: var(--radius-card);
+  background: var(--paper-shade);
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+}
+
+.chr-chip svg { display: block; }
+.chr-chip--gems { color: var(--gilt); }
+.chr-chip--keys { color: var(--ink-soft); }
+.chr-chip__n { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* --- Step meter (the candle) ---------------------------------------------- */
+
+.chr-steps {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 10px;
+  min-width: 96px;
+  justify-content: center;
+}
+
+.chr-steps__candle { display: block; overflow: visible; }
+
+.chr-steps__wax {
+  fill: var(--paper-shade);
+  stroke: var(--ink-faint);
+  stroke-width: 1;
+  transition: height 400ms var(--ease-settle), y 400ms var(--ease-settle);
+}
+
+.chr-steps__flame {
+  fill: var(--gilt);
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+/* Guttering: the low-steps band. The flame shrinks and sways — tension is
+   legible from the candle alone, no alarm colors, no pulsing numerals. */
+.chr-steps--waning .chr-steps__flame { fill: var(--gilt); }
+.chr-steps--guttering .chr-steps__flame {
+  animation: chrGutter 1.6s ease-in-out infinite;
+}
+
+@keyframes chrGutter {
+  0%, 100% { transform: scale(0.72) rotate(-4deg); opacity: 0.85; }
+  35%      { transform: scale(0.9) rotate(3deg);  opacity: 1; }
+  70%      { transform: scale(0.66) rotate(-2deg); opacity: 0.8; }
+}
+
+.chr-steps__count {
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.chr-steps__label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.05em;
+}
+
+/* Counter pulse on any change — spending has weight, gaining has lift. */
+.chr-steps__count--tick {
+  animation: chrTick 220ms var(--ease-settle);
+}
+
+@keyframes chrTick {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+/* --- Floating ±N deltas (AAA 4.9: every entry renders on the counter) ----- */
+
+.chr-float {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: chrFloat 1100ms var(--ease-settle) forwards;
+}
+
+.chr-float--spend { color: var(--ink-soft); }
+.chr-float--mistake { color: var(--wax); }   /* wax = the mistake itself (6.15) */
+.chr-float--gain { color: var(--moss); }
+.chr-float--warm { color: var(--gilt); }     /* tea, snacks — hospitality */
+
+@keyframes chrFloat {
+  0%   { opacity: 0; transform: translate(-50%, 2px); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, 26px); }
+}
+
+.chr-float--gain,
+.chr-float--warm { animation-name: chrFloatUp; }
+
+@keyframes chrFloatUp {
+  0%   { opacity: 0; transform: translate(-50%, 10px); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -22px); }
+}
+
+/* --- Retire button (moon) ------------------------------------------------- */
+
+.chr-retire {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap-target);
+  min-height: 36px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--radius-card);
+  background: transparent;
+  color: var(--ink-faint);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chr-retire:active { transform: translateY(1px); }
+
+.chr-retire--armed {
+  background: var(--paper-shade);
+  color: var(--ink);
+}
+
+/* --- Day transitions ------------------------------------------------------ */
+
+.chr-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 30; /* under the header so the candle & floats stay visible */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 72px 24px calc(24px + env(safe-area-inset-bottom, 0px));
+  background: var(--paper);
+  text-align: center;
+}
+
+.chr-scene__title {
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg);
+  color: var(--ink);
+  margin: 0;
+}
+
+.chr-scene__line {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--ink-soft);
+  max-width: 34ch;
+  margin: 0;
+}
+
+.chr-scene__rule {
+  width: 88px;
+  border: none;
+  border-top: var(--rule);
+  margin: 6px 0;
+}
+
+.chr-scene__btn {
+  margin-top: 12px;
+  min-height: var(--tap-target);
+  padding: 10px 22px;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-sheet);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  cursor: pointer;
+  box-shadow: var(--shadow-lift);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chr-scene__btn:active { transform: translateY(1px); box-shadow: none; }
+
+.chr-scene--enter { animation: chrSceneIn 400ms var(--ease-settle); }
+
+@keyframes chrSceneIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Night digest stat rows */
+.chr-digest {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 6px 18px;
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--ink-soft);
+}
+
+.chr-digest dt { text-align: right; }
+.chr-digest dd {
+  margin: 0;
+  text-align: left;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- The dusk veil (AAA 4.12: ≤4s, walk-but-no-interact, gentle) ---------- */
+
+.chr-dusk {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none; /* the walking grace — taps pass through the veil */
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(36, 29, 21, 0.0) 0%, rgba(36, 29, 21, 0.55) 100%),
+    rgba(36, 29, 21, 0.0);
+  opacity: 0;
+  animation: chrDuskFall 3200ms ease-in forwards; /* under the 4s bar */
+}
+
+@keyframes chrDuskFall {
+  from { opacity: 0; }
+  to   { opacity: 1; background-color: rgba(36, 29, 21, 0.82); }
+}
+
+.chr-dusk__line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  color: #e7dcc6; /* candlelit ink on the darkened veil, both themes */
+  opacity: 0;
+  animation: chrDuskLine 1400ms ease-out 1800ms forwards;
+}
+
+@keyframes chrDuskLine {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 0.95; transform: none; }
+}
+
+.chr-dusk__skip {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  pointer-events: auto; /* the one interactive island on the veil */
+  min-height: var(--tap-target);
+  padding: 8px 18px;
+  border: 1px solid rgba(231, 220, 198, 0.4);
+  border-radius: var(--radius-sheet);
+  background: transparent;
+  color: #e7dcc6;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* --- Reduced motion: state changes stay legible, nothing moves ------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .chr-steps__wax { transition: none; }
+  .chr-steps--guttering .chr-steps__flame { animation: none; transform: scale(0.7); }
+  .chr-steps__count--tick { animation: none; }
+  .chr-float { animation: chrFloatStill 1100ms linear forwards; }
+  .chr-float--gain, .chr-float--warm { animation-name: chrFloatStill; }
+  .chr-scene--enter { animation: none; }
+  .chr-dusk { animation: chrDuskStill 200ms linear forwards; }
+  .chr-dusk__line { animation: chrDuskLineStill 200ms linear 300ms forwards; }
+}
+
+.chr--reduced .chr-steps__wax { transition: none; }
+.chr--reduced .chr-steps--guttering .chr-steps__flame { animation: none; transform: scale(0.7); }
+.chr--reduced .chr-steps__count--tick { animation: none; }
+.chr--reduced .chr-float { animation: chrFloatStill 1100ms linear forwards; }
+.chr--reduced .chr-scene--enter { animation: none; }
+.chr--reduced .chr-dusk { animation: chrDuskStill 200ms linear forwards; }
+.chr--reduced .chr-dusk__line { animation: chrDuskLineStill 200ms linear 300ms forwards; }
+
+@keyframes chrFloatStill {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes chrDuskStill {
+  from { opacity: 0; }
+  to   { opacity: 1; background-color: rgba(36, 29, 21, 0.82); }
+}
+
+@keyframes chrDuskLineStill {
+  from { opacity: 0; }
+  to   { opacity: 0.95; }
+}

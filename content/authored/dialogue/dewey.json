@@ -1,0 +1,201 @@
+{
+  "character": "dewey",
+  "nodes": [
+    {
+      "id": "dewey.presence.first",
+      "trigger": "parlor",
+      "priority": 1000,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "A large orange cat occupies the exact center of the room — which is also the exact center of whatever you were about to do."
+        },
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "He does not move. He is not going to move. You are, apparently, the one being evaluated here."
+        }
+      ],
+      "summary": "Met Dewey. He was unimpressed, magnificently."
+    },
+    {
+      "id": "dewey.react.first-pet",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "counter",
+          "event": "dewey-petted",
+          "gte": 1
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "The purr is entirely disproportionate to the cat. Somewhere below your ribs, the day's arithmetic quietly improves."
+        }
+      ],
+      "summary": "Petted Dewey. Worth the step. Worth most steps."
+    },
+    {
+      "id": "dewey.react.regular",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "counter",
+          "event": "dewey-petted",
+          "gte": 5
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "Dewey sees you coming and rolls over with the weary generosity of a monarch extending a hand. This is your job now. There is no pension."
+        }
+      ],
+      "summary": "You are now Dewey's staff. There is no pension."
+    },
+    {
+      "id": "dewey.react.devoted",
+      "trigger": "parlor",
+      "priority": 705,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "counter",
+          "event": "dewey-petted",
+          "gte": 15
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "He is asleep before you touch him, purring before you are near. The manor's most rigorous critic has filed his review: staying."
+        }
+      ],
+      "summary": "Dewey's review of you is in: staying."
+    },
+    {
+      "id": "dewey.react.journal",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "fragmentCount",
+          "gte": 1
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "Dewey is sitting on your journal. Precisely on it. The page he warmed is one of the lexicographer's fragments. Cats file by importance."
+        }
+      ],
+      "summary": "Dewey sat on a fragment. Cats file by importance."
+    },
+    {
+      "id": "dewey.react.perfect",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-solved",
+          "where": {
+            "perfect": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "One slow blink as you pass. In cat, this is a standing ovation."
+        }
+      ]
+    },
+    {
+      "id": "dewey.react.victory",
+      "trigger": "parlor",
+      "priority": 1000,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "vol.volume-1.solved"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "The night the word came back, Dewey sat on the Sanctum landing until dawn. The Portrait swears they did not speak. The cat has made no statement."
+        }
+      ],
+      "summary": "Dewey kept vigil on the landing. No statement was issued."
+    },
+    {
+      "id": "dewey.idle.loaf",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "The cat has achieved loaf. The loaf is total. Interrupting it would be a crime in several old languages."
+        }
+      ]
+    },
+    {
+      "id": "dewey.idle.tail",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "The tail tip flicks: once, twice. Whatever Dewey is watching on the empty wall, it is apparently riveting."
+        }
+      ]
+    },
+    {
+      "id": "dewey.idle.sun",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "Dewey is asleep in a square of sunlight. There is no window on this wall. Nobody asks anymore."
+        }
+      ]
+    },
+    {
+      "id": "dewey.idle.escort",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "Dewey escorts you to the door — three steps ahead, tail up, entirely certain the whole house is his idea."
+        }
+      ]
+    }
+  ]
+}

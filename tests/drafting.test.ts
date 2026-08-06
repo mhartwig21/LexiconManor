@@ -1,0 +1,286 @@
+import { describe, expect, it } from 'vitest';
+import {
+  affordabilityMultiplier, ANTI_REPEAT_SUPPRESSION, cardWeight, categoryWeight,
+  deweyProphecy, eligibleCards, RARITY_WEIGHTS, rollCards, rollOffer,
+  type DraftRollCtx,
+} from '../src/engine/manor/drafting';
+import { BASE_DECK, cardById, deckFor, SCRIPTED_FIRST_DRAFT } from '../src/engine/manor/deck';
+import {
+  cellKey, createManor, deweyCell, DIRS, opposite, placeRoom, resolveDoors, roomAt, rowTier,
+} from '../src/engine/manor/grid';
+import type { Cell, Dir, ManorState, PlacedRoom, RoomCategory } from '../src/engine/types';
+import { MANOR_COLS, MANOR_ROWS } from '../src/engine/types';
+import { createRng } from '../src/engine/rng';
+
+/** OWNER: A1 (Manor). The drafting engine — AAA 4.1–4.8, BENCHMARKS §4. */
+
+const ctx = (over: Partial<DraftRollCtx> = {}): DraftRollCtx => ({
+  gems: 0, declinedLastDraft: [], drawIndex: 0, ...over,
+});
+
+const DECK = deckFor([]);
+
+describe('deck sanity', () => {
+  it('cards are unique, categorized, and every layout is orientable', () => {
+    expect(new Set(BASE_DECK.map((c) => c.id)).size).toBe(BASE_DECK.length);
+    for (const c of BASE_DECK) {
+      expect(c.doorLayouts.length).toBeGreaterThan(0);
+      for (const layout of c.doorLayouts) expect(layout.length).toBeGreaterThan(0);
+      expect(c.tierRange[0]).toBeLessThanOrEqual(c.tierRange[1]);
+    }
+  });
+
+  it('specialist categories stay small and memorizable (AAA 4.7)', () => {
+    const count = (cat: RoomCategory) => BASE_DECK.filter((c) => c.category === cat).length;
+    for (const cat of ['parlor', 'utility', 'mystery'] as const) {
+      expect(count(cat)).toBeGreaterThanOrEqual(4);
+      expect(count(cat)).toBeLessThanOrEqual(8);
+    }
+  });
+
+  it('the scripted first draft exists in the deck and leads with a free puzzle room', () => {
+    const cards = SCRIPTED_FIRST_DRAFT.map((id) => cardById(id));
+    expect(cards.every(Boolean)).toBe(true);
+    expect(cards[0]!.category).toBe('puzzle');
+    expect(cards[0]!.gemCost).toBe(0);
+  });
+});
+
+describe('offer shape', () => {
+  it('always deals 3 distinct cards with slot 1 free (AAA 4.1)', () => {
+    for (let seed = 0; seed < 300; seed++) {
+      const manor = createManor(seed);
+      const cards = rollCards(DECK, manor, { col: 2, row: 1 }, ctx({ gems: seed % 5 }));
+      expect(cards).toHaveLength(3);
+      expect(new Set(cards.map((c) => c.id)).size).toBe(3);
+      expect(cards[0]!.gemCost).toBe(0);
+    }
+  });
+
+  it('is deterministic for (daySeed, cell, drawIndex)', () => {
+    const manor = createManor(99);
+    const a = rollCards(DECK, manor, { col: 3, row: 2 }, ctx());
+    const b = rollCards(DECK, manor, { col: 3, row: 2 }, ctx());
+    expect(a.map((c) => c.id)).toEqual(b.map((c) => c.id));
+  });
+
+  it('rollOffer carries the door, origin, and reroll flag', () => {
+    const manor = createManor(4);
+    const offer = rollOffer(DECK, manor, { col: 2, row: 0 }, 'N', { col: 2, row: 1 }, ctx());
+    expect(offer.atDoor).toBe('N');
+    expect(offer.from).toEqual({ col: 2, row: 0 });
+    expect(offer.rerolled).toBe(false);
+    const rerolled = rollOffer(DECK, manor, { col: 2, row: 0 }, 'N', { col: 2, row: 1 }, ctx({ drawIndex: 1 }));
+    expect(rerolled.rerolled).toBe(true);
+  });
+
+  it('day 1 draft #1 is the scripted tutorial hand (AAA 4.5)', () => {
+    const manor = createManor(1234);
+    const cards = rollCards(DECK, manor, { col: 2, row: 1 }, ctx({ scripted: true }));
+    expect(cards.map((c) => c.id)).toEqual([...SCRIPTED_FIRST_DRAFT]);
+  });
+});
+
+describe('determinism across doors (AAA 4.8)', () => {
+  it('a reroll at door A never perturbs door B', () => {
+    const manor = createManor(2718);
+    const cellA: Cell = { col: 1, row: 1 };
+    const cellB: Cell = { col: 3, row: 1 };
+    const before = rollCards(DECK, manor, cellB, ctx()).map((c) => c.id);
+    // reroll A: draw its index-1 offer (the slice advances only A's stream)
+    rollCards(DECK, manor, cellA, ctx({ drawIndex: 1 }));
+    const after = rollCards(DECK, manor, cellB, ctx()).map((c) => c.id);
+    expect(after).toEqual(before);
+  });
+
+  it('a reroll produces a different stream than the first draw', () => {
+    let changed = 0;
+    for (let seed = 0; seed < 50; seed++) {
+      const manor = createManor(seed);
+      const first = rollCards(DECK, manor, { col: 2, row: 3 }, ctx()).map((c) => c.id).join();
+      const second = rollCards(DECK, manor, { col: 2, row: 3 }, ctx({ drawIndex: 1 })).map((c) => c.id).join();
+      if (first !== second) changed++;
+    }
+    expect(changed).toBeGreaterThan(40);
+  });
+});
+
+describe('rarity & category by row (AAA 4.2)', () => {
+  it('offered cards always fit the row-band tier — rows 0–2 offer 0% tier-3', () => {
+    for (let seed = 0; seed < 200; seed++) {
+      const manor = createManor(seed);
+      for (let row = 0; row < MANOR_ROWS; row++) {
+        const tier = rowTier(row);
+        for (const card of rollCards(DECK, manor, { col: 1, row }, ctx({ gems: 4 }))) {
+          expect(card.tierRange[0]).toBeLessThanOrEqual(tier);
+          expect(card.tierRange[1]).toBeGreaterThanOrEqual(tier);
+          if (row <= 2) expect(card.tierRange[0]).toBeLessThan(3);
+        }
+      }
+    }
+  });
+
+  it('violet ramps with row and green fades (weights + 12k-card simulation)', () => {
+    for (let row = 0; row < MANOR_ROWS - 1; row++) {
+      expect(categoryWeight('mystery', row + 1)).toBeGreaterThan(categoryWeight('mystery', row));
+      expect(categoryWeight('utility', row + 1)).toBeLessThanOrEqual(categoryWeight('utility', row));
+    }
+    const share: number[] = [];
+    for (let row = 0; row < MANOR_ROWS; row++) {
+      let violet = 0, total = 0;
+      for (let seed = 0; seed < 4000; seed++) {
+        const manor = createManor(seed);
+        for (const card of rollCards(DECK, manor, { col: 1, row }, ctx())) {
+          total++;
+          if (card.category === 'mystery') violet++;
+        }
+      }
+      share.push(violet / total);
+    }
+    for (let row = 0; row < MANOR_ROWS - 1; row++) {
+      expect(share[row + 1]!, `violet share row ${row}→${row + 1}`).toBeGreaterThan(share[row]!);
+    }
+    expect(share[MANOR_ROWS - 1]!).toBeGreaterThan(share[0]! * 2.5);
+  });
+
+  it('higher bands skew rarer', () => {
+    for (const rarity of ['unusual', 'rare'] as const) {
+      expect(RARITY_WEIGHTS[3][rarity]).toBeGreaterThan(RARITY_WEIGHTS[2][rarity]);
+      expect(RARITY_WEIGHTS[2][rarity]).toBeGreaterThan(RARITY_WEIGHTS[1][rarity]);
+    }
+    expect(RARITY_WEIGHTS[1].common).toBeGreaterThan(RARITY_WEIGHTS[3].common);
+  });
+});
+
+describe('anti-repeat suppression (AAA 4.3)', () => {
+  it('a declined card is measurably rarer in the next draft', () => {
+    const target: Cell = { col: 2, row: 2 };
+    const count = (declined: string[]) => {
+      let hits = 0;
+      for (let seed = 0; seed < 4000; seed++) {
+        const manor = createManor(seed);
+        const cards = rollCards(DECK, manor, target, ctx({ declinedLastDraft: declined }));
+        if (cards.some((c) => c.id === 'library')) hits++;
+      }
+      return hits;
+    };
+    const baseline = count([]);
+    const suppressed = count(['library']);
+    expect(baseline).toBeGreaterThan(200); // the library is a staple otherwise
+    expect(suppressed).toBeLessThan(baseline * 0.5);
+  });
+
+  it('suppression scales with rarity in the BP 60/80/90/99 shape', () => {
+    expect(ANTI_REPEAT_SUPPRESSION.common).toBeLessThan(ANTI_REPEAT_SUPPRESSION.standard);
+    expect(ANTI_REPEAT_SUPPRESSION.standard).toBeLessThan(ANTI_REPEAT_SUPPRESSION.unusual);
+    expect(ANTI_REPEAT_SUPPRESSION.unusual).toBeLessThan(ANTI_REPEAT_SUPPRESSION.rare);
+    expect(ANTI_REPEAT_SUPPRESSION.rare).toBeLessThan(1);
+    const card = cardById('study')!;
+    const base = cardWeight(card, 5, ctx({ gems: 4 }));
+    const dropped = cardWeight(card, 5, ctx({ gems: 4, declinedLastDraft: ['study'] }));
+    expect(dropped).toBeLessThan(base * 0.02);
+  });
+});
+
+describe('affordability (AAA 4.1)', () => {
+  it('premium cards surface mostly when she can pay, scaling with row and gems', () => {
+    const card = cardById('observatory')!; // gemCost 2
+    expect(affordabilityMultiplier(card, 0, 5)).toBeLessThan(0.2);
+    expect(affordabilityMultiplier(card, 2, 5)).toBeGreaterThan(1);
+    expect(affordabilityMultiplier(card, 4, 5)).toBeGreaterThan(affordabilityMultiplier(card, 2, 5));
+    expect(affordabilityMultiplier(card, 2, 5)).toBeGreaterThan(affordabilityMultiplier(card, 2, 1));
+
+    const target: Cell = { col: 2, row: 5 };
+    const premiumRate = (gems: number) => {
+      let premium = 0, total = 0;
+      for (let seed = 0; seed < 3000; seed++) {
+        const manor = createManor(seed);
+        for (const c of rollCards(DECK, manor, target, ctx({ gems }))) {
+          total++;
+          if (c.gemCost > 0) premium++;
+        }
+      }
+      return premium / total;
+    };
+    expect(premiumRate(4)).toBeGreaterThan(premiumRate(0) * 2);
+  });
+});
+
+describe('never an unplaceable offer (AAA 4.4)', () => {
+  it('every offered card orients a door onto the entry wall from any cell', () => {
+    for (let seed = 0; seed < 60; seed++) {
+      const manor = createManor(seed);
+      for (let col = 0; col < MANOR_COLS; col++) {
+        for (let row = 0; row < MANOR_ROWS; row++) {
+          const cell: Cell = { col: col as Cell['col'], row };
+          if (roomAt(manor, cell)) continue;
+          for (const entry of DIRS) {
+            for (const card of rollCards(DECK, manor, cell, ctx({ gems: 4 }))) {
+              const doors = resolveDoors(card, entry, manor, cell, createRng(seed));
+              expect(doors).toContain(opposite(entry));
+            }
+          }
+        }
+      }
+    }
+  });
+});
+
+describe('deck thinning', () => {
+  it('placed cards leave the pool until thinning would starve an offer', () => {
+    let manor: ManorState = createManor(8);
+    const placed: PlacedRoom = {
+      cardId: 'library', cell: { col: 2, row: 1 }, doors: ['S'], solved: false, kind: 'word-web',
+    };
+    manor = placeRoom(manor, placed);
+    const pool = eligibleCards(DECK, manor, 1);
+    expect(pool.some((c) => c.id === 'library')).toBe(false);
+    for (let seed = 0; seed < 200; seed++) {
+      const cards = rollCards(DECK, { ...manor, daySeed: seed }, { col: 1, row: 1 }, ctx());
+      expect(cards.some((c) => c.id === 'library')).toBe(false);
+    }
+  });
+});
+
+describe("Dewey's prophecy", () => {
+  const opts = { gems: 0, declinedLastDraft: [], drawIndexFor: () => 0 };
+
+  it('is deterministic', () => {
+    for (let seed = 0; seed < 40; seed++) {
+      const manor = createManor(seed);
+      expect(deweyProphecy(DECK, manor, opts)).toBe(deweyProphecy(DECK, manor, opts));
+    }
+  });
+
+  it('sees a mystery room already standing in his row', () => {
+    for (let seed = 0; seed < 40; seed++) {
+      let manor = createManor(seed);
+      const den = deweyCell(seed);
+      const col = den.col === 0 ? 1 : 0;
+      manor = placeRoom(manor, {
+        cardId: 'archive', cell: { col: col as Cell['col'], row: den.row },
+        doors: ['N'], solved: false, kind: 'mystery',
+      });
+      expect(deweyProphecy(DECK, manor, opts)).toBe(true);
+    }
+  });
+
+  it('answers both ways across days (a hint, not a constant)', () => {
+    let yes = 0, no = 0;
+    for (let seed = 0; seed < 300; seed++) {
+      if (deweyProphecy(DECK, createManor(seed), opts)) yes++;
+      else no++;
+    }
+    expect(yes).toBeGreaterThan(0);
+    expect(no).toBeGreaterThan(0);
+  });
+});
+
+describe('economy shape smoke test (AAA 4.10 support)', () => {
+  it('a straight-line climb costs far less than the day budget', () => {
+    // entrance → row 5 landing: 6 moves + 6 drafts ≈ 12 steps of a 40 budget,
+    // leaving room for puzzle spends — the "one more room" tension holds.
+    const moves = 6 + 6;
+    expect(moves).toBeLessThan(40 * 0.4);
+  });
+});

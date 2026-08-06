@@ -25,6 +25,8 @@ export interface MetaSlice {
   toggleSound(): void;
   toggleMusic(): void;
   toggleReducedMotion(): void;
+  /** AAA 7.16: "Play through the ring switch" (audioSession policy toggle). */
+  toggleMuteSwitchBypass(): void;
 }
 
 export const createMetaSlice =
@@ -58,4 +60,6 @@ export const createMetaSlice =
       set((s) => ({ settings: { ...s.settings, musicEnabled: !s.settings.musicEnabled } })),
     toggleReducedMotion: () =>
       set((s) => ({ settings: { ...s.settings, reducedMotion: !s.settings.reducedMotion } })),
+    toggleMuteSwitchBypass: () =>
+      set((s) => ({ settings: { ...s.settings, muteSwitchBypass: !s.settings.muteSwitchBypass } })),
   });

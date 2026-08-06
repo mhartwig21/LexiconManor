@@ -1,0 +1,362 @@
+/* ==========================================================================
+   Micro-room views (batch 1) — OWNER: A4. Per-module CSS (conflict rule 3).
+   Consumes ui/theme/tokens.css only; never redefines tokens.
+   All animation is transform/opacity (AAA U.3); nothing exceeds 300ms unless
+   it is a celebration, and every celebration is tap-skippable (AAA U.2).
+   "Shake" is a ≤350ms element wiggle, no screen shake (AAA U.4), stripped
+   under prefers-reduced-motion with every state change still legible.
+   ========================================================================== */
+
+.mic {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 0.8rem 0.9rem calc(0.9rem + env(safe-area-inset-bottom));
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* One accent per room, spent only on state — never decoration (AAA 1.14). */
+.mic--vestibule { --room-accent: var(--cat-puzzle); }
+.mic--staircase { --room-accent: var(--cat-utility); }
+.mic--darkroom  { --room-accent: var(--cat-mystery); }
+
+.mic__head { text-align: center; }
+.mic__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+.mic__sub { margin: 0.15rem 0 0; font-size: var(--text-sm); color: var(--ink-soft); }
+.mic__meta { text-align: center; font-size: var(--text-sm); color: var(--ink-soft); }
+
+.mic-row { display: flex; gap: 0.6rem; justify-content: center; align-items: center; flex-wrap: wrap; }
+
+.mic-btn {
+  min-height: var(--tap-target);
+  min-width: var(--tap-target);
+  padding: 0.5rem 1.05rem;
+  border: 1px solid var(--paper-edge);
+  border-radius: 999px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform var(--dur-press), filter var(--dur-press);
+}
+.mic-btn:active { transform: translateY(1px); filter: brightness(0.94); }
+.mic-btn:disabled { opacity: 0.45; cursor: default; }
+.mic-btn--primary {
+  background: var(--room-accent);
+  border-color: transparent;
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.mic-chip {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--paper-edge);
+  border-radius: 999px;
+  background: var(--paper-raised);
+  font-size: var(--text-sm);
+}
+.mic-chip--solved { border-color: var(--moss); color: var(--moss); font-weight: 600; }
+.mic-chip--missed { color: var(--ink-faint); text-decoration: line-through; }
+
+/* Reserved toast slot — zero layout shift (AAA 1.5's principle). */
+.mic-toastslot {
+  min-height: 1.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.mic-toast { font-size: var(--text-sm); animation: mic-rise 220ms var(--ease-settle); }
+.mic-toast--good { color: var(--moss); }
+.mic-toast--bad  { color: var(--wax); }
+.mic-toast--info { color: var(--ink-soft); }
+
+/* End-of-room celebration (AAA 3.4 — distinct from any reveal juice). */
+.mic-done { text-align: center; animation: mic-pop 260ms var(--ease-settle); }
+.mic-done__title {
+  margin: 0.2rem 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  color: var(--room-accent);
+}
+.mic-done__line { margin: 0.2rem 0; color: var(--ink-soft); }
+
+.mic-shake { animation: mic-shake 320ms ease-in-out; }
+.mic-pop   { animation: mic-pop 220ms var(--ease-settle); }
+
+@keyframes mic-shake {
+  0%, 100% { transform: translateX(0); }
+  16% { transform: translateX(-7px); }
+  33% { transform: translateX(6px); }
+  50% { transform: translateX(-5px); }
+  66% { transform: translateX(4px); }
+  83% { transform: translateX(-2px); }
+}
+@keyframes mic-pop {
+  from { transform: scale(0.82); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes mic-rise {
+  from { transform: translateY(5px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes mic-hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes mic-dance {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-9px); }
+  70% { transform: translateY(2px); }
+}
+@keyframes mic-flip {
+  from { transform: rotateX(90deg); opacity: 0; }
+  to   { transform: rotateX(0); opacity: 1; }
+}
+
+/* On-screen letter keys (shared by Staircase & Darkroom) — every key ≥44pt
+   (AAA 6.19; deliberately larger than the NYT keyboards that fail that bar). */
+.mic-keys {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.mic-key {
+  min-height: var(--tap-target);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-card);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 90ms ease, filter 90ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.mic-key:active { transform: scale(0.92); }
+.mic-key:disabled { opacity: 0.4; cursor: default; }
+.mic-key--dim { color: var(--ink-faint); }
+.mic-key--wide { grid-column: span 2; font-size: var(--text-sm); font-weight: 400; }
+
+/* --------------------------------------------------------------------------
+   The Vestibule (Anagram) — AAA §3
+   -------------------------------------------------------------------------- */
+
+/* Answer slots: fixed row, zero layout shift as letters land. */
+.va-slots { display: flex; justify-content: center; gap: 6px; }
+.va-slot {
+  width: clamp(38px, 11vw, 46px);
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--paper-edge);
+  border-radius: var(--radius-card);
+  background: var(--paper-shade);
+  font-weight: 700;
+  font-size: 1.35rem;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding: 0;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: transform 90ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.va-slot:active { transform: scale(0.94); }
+.va-slot--empty { background: transparent; }
+.va-slot--locked {
+  background: var(--paper-raised);
+  border-color: var(--room-accent);
+  color: var(--room-accent);
+  cursor: default;
+}
+.va-slot--filled { background: var(--paper-raised); animation: mic-pop 140ms var(--ease-settle); }
+
+/* Letter tray: the mat the scramble sits on. */
+.va-tray { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; min-height: 60px; }
+.va-tile {
+  width: clamp(44px, 12vw, 52px);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-card);
+  background: var(--paper-raised);
+  box-shadow: 0 1.5px 0 var(--paper-edge);
+  font-weight: 700;
+  font-size: 1.45rem;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: transform 110ms var(--ease-settle), opacity 110ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.va-tile:active { transform: scale(0.88); }
+.va-tile--used { opacity: 0.25; transform: scale(0.92); pointer-events: none; }
+.va-tray--shuffling .va-tile { opacity: 0; }
+
+.va-reveal { display: flex; justify-content: center; gap: 0.18rem; }
+.va-reveal__ch {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  color: var(--room-accent);
+  animation: mic-dance 520ms ease-in-out both;
+}
+
+/* --------------------------------------------------------------------------
+   The Staircase (Word Ladder) — AAA §3
+   -------------------------------------------------------------------------- */
+
+.st-flight { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.st-step {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.st-step--dance { animation: mic-dance 520ms ease-in-out both; }
+.st-cell {
+  width: clamp(40px, 11vw, 48px);
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--paper-edge);
+  border-radius: var(--radius-card);
+  background: var(--paper-raised);
+  font-weight: 700;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  color: var(--ink);
+  padding: 0;
+}
+.st-step--target .st-cell { background: transparent; border-style: dashed; color: var(--room-accent); border-color: var(--room-accent); }
+.st-step--past .st-cell { background: var(--paper-shade); color: var(--ink-soft); border-color: var(--paper-shade); }
+.st-step--bought .st-cell { border-color: var(--gilt); color: var(--gilt); }
+.st-step--in { animation: mic-hop 260ms ease both; }
+.st-gap {
+  display: flex;
+  gap: 0.4rem;
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+  letter-spacing: 0.35em;
+  line-height: 1;
+  padding: 0.05rem 0;
+}
+
+/* The editable next rung: selected cell owns the accent. */
+.st-edit .st-cell { cursor: pointer; transition: transform 90ms ease, border-color 90ms ease; }
+.st-edit .st-cell:active { transform: scale(0.94); }
+.st-edit .st-cell--sel {
+  border-color: var(--room-accent);
+  box-shadow: inset 0 -3px 0 var(--room-accent);
+}
+.st-more { color: var(--ink-faint); font-size: var(--text-sm); }
+
+/* --------------------------------------------------------------------------
+   The Darkroom (Cipher) — AAA §3
+   -------------------------------------------------------------------------- */
+
+.dk-sheet {
+  background: var(--paper-raised);
+  border: var(--rule);
+  border-radius: var(--radius-sheet);
+  padding: 0.7rem 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem 0.9rem;
+}
+.dk-word { display: flex; gap: 2px; }
+.dk-cell {
+  width: clamp(24px, 7vw, 30px);
+  height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  border: none;
+  border-bottom: 1.5px solid var(--paper-edge);
+  border-radius: 2px 2px 0 0;
+  background: transparent;
+  padding: 0 0 2px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  color: var(--ink);
+  transition: background-color 90ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.dk-cell__cipher {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  line-height: 1.1;
+}
+.dk-cell__plain {
+  min-height: 1.5rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+.dk-cell--sel { background: color-mix(in srgb, var(--room-accent) 16%, transparent); border-bottom-color: var(--room-accent); }
+.dk-cell--sel .dk-cell__cipher { color: var(--room-accent); }
+.dk-cell--locked { cursor: default; }
+.dk-cell--locked .dk-cell__plain { color: var(--room-accent); }
+.dk-cell--locked .dk-cell__cipher { color: color-mix(in srgb, var(--room-accent) 55%, transparent); }
+.dk-cell--dupe .dk-cell__plain { color: var(--wax); }
+
+.dk-reveal { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+.dk-reveal__word { display: flex; gap: 0.1rem; }
+.dk-reveal__ch {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  color: var(--room-accent);
+  animation: mic-flip 360ms var(--ease-settle) both;
+}
+.dk-reveal--skip .dk-reveal__ch { animation: none; }
+
+/* --------------------------------------------------------------------------
+   Reduced motion: juice goes quiet, every state stays legible (AAA U.3).
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .mic-shake, .mic-pop, .mic-toast, .mic-done,
+  .va-slot--filled, .va-reveal__ch,
+  .st-step--in, .st-step--dance,
+  .dk-reveal__ch {
+    animation: none;
+  }
+  .va-tile:active, .va-slot:active, .mic-key:active, .mic-btn:active,
+  .st-edit .st-cell:active { transform: none; }
+  .va-tile--used { transform: none; }
+  .va-tray--shuffling .va-tile { opacity: 1; }
+}

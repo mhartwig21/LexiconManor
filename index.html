@@ -2,21 +2,81 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- A8 (Platform): viewport-fit=cover so safe-area env() vars exist (AAA 7.8). -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#112929" />
-    <!-- A8: theme-color → parchment, self-hosted OFL fonts (<200KB, AAA 6.8),
-         manifest + apple meta/splash set (ARCHITECTURE §9). -->
     <title>Lexicon Manor</title>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23112929'/%3E%3Ctext x='12' y='17' font-size='14' text-anchor='middle' fill='%23d9b342' font-family='serif'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E"
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@700&display=swap"
-      rel="stylesheet"
-    />
+
+    <!-- Theme: parchment day / candlelit night (tokens.css families, AAA 6.4). -->
+    <meta name="theme-color" content="#f0e7d8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#241d15" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- PWA identity (ARCHITECTURE §9). start_url/scope stamped with the deploy
+         base by scripts/build-sw-precache.ts after vite build. -->
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- black-translucent: the top safe-area band is decorative parchment only
+         (iOS 26.1 bar defense, AAA 7.8). -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Lexicon Manor" />
+
+    <!-- Icons: generated inked monogram (scripts/gen-pwa-assets.ts).
+         apple-touch-icon is 180×180 and fully opaque (AAA 7.1). -->
+    <link rel="icon" type="image/png" sizes="192x192" href="%BASE_URL%icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%icons/apple-touch-icon.png" />
+
+    <!-- iOS launch splash set, light + dark (AAA 7.2), generated. -->
+    <!-- SE-class -->
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="%BASE_URL%splash/splash-750x1334.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) and (prefers-color-scheme: dark)" href="%BASE_URL%splash/splash-750x1334-dark.png" />
+    <!-- iPhone 12/13/14 -->
+    <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="%BASE_URL%splash/splash-1170x2532.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="%BASE_URL%splash/splash-1170x2532-dark.png" />
+    <!-- iPhone 15/16 Pro -->
+    <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="%BASE_URL%splash/splash-1179x2556.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="%BASE_URL%splash/splash-1179x2556-dark.png" />
+    <!-- Pro Max -->
+    <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="%BASE_URL%splash/splash-1290x2796.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="%BASE_URL%splash/splash-1290x2796-dark.png" />
+
+    <!-- Self-hosted OFL fonts, latin subset, 187KB total (< 200KB, AAA 6.8).
+         No third-party font hosts: external requests would break offline play
+         (AAA 7.4). font-display: swap with serif fallbacks matched in
+         tokens.css font stacks. -->
+    <link rel="preload" href="%BASE_URL%fonts/im-fell-english-400-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="%BASE_URL%fonts/eb-garamond-400-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      @font-face {
+        font-family: 'IM Fell English';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('%BASE_URL%fonts/im-fell-english-400-latin.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'IM Fell English';
+        font-style: italic;
+        font-weight: 400;
+        font-display: swap;
+        src: url('%BASE_URL%fonts/im-fell-english-400-italic-latin.woff2') format('woff2');
+      }
+      /* EB Garamond ships as a variable font — one file covers 400–800. */
+      @font-face {
+        font-family: 'EB Garamond';
+        font-style: normal;
+        font-weight: 400 800;
+        font-display: swap;
+        src: url('%BASE_URL%fonts/eb-garamond-400-latin.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'EB Garamond';
+        font-style: italic;
+        font-weight: 400;
+        font-display: swap;
+        src: url('%BASE_URL%fonts/eb-garamond-400-italic-latin.woff2') format('woff2');
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

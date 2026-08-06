@@ -114,16 +114,17 @@ export function buildDayRecord(
 }
 
 /**
- * What survives dusk on the recent-events stream: everything from the closing
- * day is cleared EXCEPT its 'day-ended' event, so Bramble's morning recap can
- * still react to yesterday's cause of day end (AAA 5.2, `withinDays: 1`)
- * while the stream stays one day deep. Lifetime counters are untouched.
+ * What survives dusk on the recent-events stream: ALL of the closing day's
+ * events (older days age off), so the morning's reactions can key off
+ * yesterday's room events — dry archetypes, recap buckets, the day-ended
+ * cause (AAA 5.2, `withinDays: 1`). The stream stays exactly one day deep;
+ * lifetime counters are untouched. (Integration: widened from day-ended-only
+ * per A6's shared-file request — the Hypnos recap bucket needs yesterday's
+ * room events, not just the cause.)
  */
 export function pruneEventsAtDusk(
   recentEvents: readonly RecordedEvent[],
   closingDay: number,
 ): RecordedEvent[] {
-  return recentEvents.filter(
-    (e) => e.day === closingDay && e.event.type === 'day-ended',
-  );
+  return recentEvents.filter((e) => e.day === closingDay);
 }

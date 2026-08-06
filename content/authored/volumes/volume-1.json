@@ -1,0 +1,253 @@
+{
+  "id": "volume-1",
+  "title": "The Unfinished Dictionary",
+  "epigraph": "Every dictionary is a house. I closed one door.",
+  "answer": "LACUNA",
+  "accepted": ["LACUNA", "LACUNAE"],
+  "fragments": [
+    {
+      "id": "v1-d1",
+      "kind": "definition-line",
+      "group": "definition",
+      "sourceRoomCategory": "mystery",
+      "revealOrder": 1,
+      "source": "A torn leaf in the lexicographer's hand",
+      "text": "Where a thing is missing, I am what remains: not nothing — the shape that nothing takes.",
+      "interpretation": "Ellery reads it twice. “A word that means an absence, then. Not a thing, but a missing. Very few words dare to mean a hole.”"
+    },
+    {
+      "id": "v1-e1",
+      "kind": "engraving",
+      "group": "engravings",
+      "sourceRoomCategory": "puzzle",
+      "revealOrder": 2,
+      "source": "Brass plate beneath the Entrance Hall clock",
+      "text": "Six candles burned on his desk at the end. “One for each letter,” he told the house, “and I shall put them out myself.”",
+      "constraint": { "kind": "length", "length": 6 },
+      "relatedIds": ["v1-t2", "v1-e6"],
+      "interpretation": "Ellery taps the plate. “Plainly: the word has six letters. He was never careless with a number.”"
+    },
+    {
+      "id": "v1-t2",
+      "kind": "testimony",
+      "group": "testimony",
+      "sourceRoomCategory": "parlor",
+      "revealOrder": 3,
+      "speaker": "bramble",
+      "source": "Mrs. Bramble, over morning tea",
+      "text": "“Six candles at his desk, always six. Near the end he let one gutter out each night — and I never dared relight them.”",
+      "relatedIds": ["v1-e1"]
+    },
+    {
+      "id": "v1-d2",
+      "kind": "definition-line",
+      "group": "definition",
+      "sourceRoomCategory": "mystery",
+      "revealOrder": 4,
+      "source": "A torn leaf in the lexicographer's hand",
+      "text": "The copyist blinks above his candle, and his sentence steps mid-breath onto air. I am that step. I am that air.",
+      "interpretation": "Ellery smiles faintly. “Scribes had a word for a break in a manuscript — a passage the copyist lost. He is quoting his own trade at you.”"
+    },
+    {
+      "id": "v1-e2",
+      "kind": "engraving",
+      "group": "engravings",
+      "sourceRoomCategory": "mystery",
+      "revealOrder": 5,
+      "source": "Scratched inside the Library windowsill",
+      "text": "Call me WORDSMITH no longer. What I took shares not one letter with that name.",
+      "constraint": { "kind": "shares-no-letter", "word": "WORDSMITH" },
+      "interpretation": "Ellery writes the name out and strikes it through. “Then W, O, R, D, S, M, I, T and H appear nowhere in the word. That is nine letters gone from your alphabet.”"
+    },
+    {
+      "id": "v1-t4",
+      "kind": "testimony",
+      "group": "testimony",
+      "sourceRoomCategory": "parlor",
+      "revealOrder": 6,
+      "speaker": "posy",
+      "source": "Posy, sorting the evening post",
+      "text": "“His last letter went out with one word cut clean from it — a little window in the paper. You could read the whole sentence around the hole. I believe that was rather the point.”",
+      "relatedIds": ["v1-d4"]
+    },
+    {
+      "id": "v1-d3",
+      "kind": "definition-line",
+      "group": "definition",
+      "sourceRoomCategory": "mystery",
+      "revealOrder": 7,
+      "source": "A torn leaf in the lexicographer's hand",
+      "text": "In my mother Latin I was a little pool — a hollow where the rain remembered what the ground forgot.",
+      "interpretation": "Ellery goes very still. “Mother Latin. A little pool, a hollow. The word crossed into English still wearing its Latin dress — when you find it, it will look Latin. Hold that thought like a candle.”"
+    },
+    {
+      "id": "v1-e3",
+      "kind": "engraving",
+      "group": "engravings",
+      "sourceRoomCategory": "puzzle",
+      "revealOrder": 8,
+      "source": "Carved on the Gallery lintel",
+      "text": "It begins as LULLABY and LANTERN begin — with the tall letter, the candlestick.",
+      "constraint": { "kind": "starts-with", "letter": "L" },
+      "interpretation": "Ellery: “The first letter is L. He did love an L — half his marginalia lean on one.”"
+    },
+    {
+      "id": "v1-t3",
+      "kind": "testimony",
+      "group": "testimony",
+      "sourceRoomCategory": "parlor",
+      "revealOrder": 9,
+      "speaker": "fern",
+      "source": "Fern, by the west beds",
+      "text": "“There is a bed in the west garden where nothing grows. He would stand at it an hour at a time. Said there was a word for that exact shape of missing — and that he meant to see it filled again.”",
+      "relatedIds": ["v1-d3"]
+    },
+    {
+      "id": "v1-d4",
+      "kind": "definition-line",
+      "group": "definition",
+      "sourceRoomCategory": "mystery",
+      "revealOrder": 10,
+      "source": "A torn leaf in the lexicographer's hand",
+      "text": "The moth eats a word from the page and leaves me behind as the payment.",
+      "interpretation": "Ellery: “Moth-eaten pages, missing text. It is the scholar's word for the gap the moth leaves behind — librarians grieve it by name.”",
+      "relatedIds": ["v1-t4"]
+    },
+    {
+      "id": "v1-e4",
+      "kind": "engraving",
+      "group": "engravings",
+      "sourceRoomCategory": "mystery",
+      "revealOrder": 11,
+      "source": "A rubbing from the Conservatory arch",
+      "text": "Its breath runs A, then U, then A — exhale, hollow, exhale. All the rest of it is consonant bone.",
+      "constraint": { "kind": "vowel-sequence", "vowels": "AUA" },
+      "interpretation": "Ellery: “Its vowels, in order, are A, U, A — three, and no others. So no E, no I, no O anywhere in it.”"
+    },
+    {
+      "id": "v1-t1",
+      "kind": "testimony",
+      "group": "testimony",
+      "sourceRoomCategory": "parlor",
+      "revealOrder": 12,
+      "speaker": "ellery",
+      "source": "Ellery, among the reading lamps",
+      "text": "“He told me once that in all the dictionary there is exactly one word that names the hole it would leave behind. Then he went and made it true.”",
+      "relatedIds": ["v1-d6"]
+    },
+    {
+      "id": "v1-d5",
+      "kind": "definition-line",
+      "group": "definition",
+      "sourceRoomCategory": "mystery",
+      "revealOrder": 13,
+      "source": "A torn leaf in the lexicographer's hand",
+      "text": "Seek me in ledgers, in memory, in a row of teeth: wherever something was, and is not, and is missed by its own outline.",
+      "interpretation": "Ellery: “Anatomists borrow it too — for small hollows in bone. One word, and every science of missing pays it rent.”"
+    },
+    {
+      "id": "v1-e5",
+      "kind": "engraving",
+      "group": "engravings",
+      "sourceRoomCategory": "mystery",
+      "revealOrder": 14,
+      "source": "Etched around the Study inkstand",
+      "text": "One letter enters it twice, like a guest who cannot keep away. Every other letter calls only once.",
+      "constraint": { "kind": "one-letter-twice" },
+      "interpretation": "Ellery: “Exactly one letter is doubled somewhere in the word; the rest appear a single time each.”"
+    },
+    {
+      "id": "v1-d6",
+      "kind": "definition-line",
+      "group": "definition",
+      "sourceRoomCategory": "mystery",
+      "revealOrder": 15,
+      "source": "A torn leaf in the lexicographer's hand",
+      "text": "A dictionary keeps my chair forever empty. Speak me at the door, and I will sit.",
+      "interpretation": "Ellery closes the journal softly. “He built the door to want the word itself. Name the gap, and it is a gap no longer. That is the whole of his apology, I think.”",
+      "relatedIds": ["v1-t1"]
+    },
+    {
+      "id": "v1-e6",
+      "kind": "engraving",
+      "group": "engravings",
+      "sourceRoomCategory": "mystery",
+      "revealOrder": 16,
+      "source": "Cut into the Sanctum door itself",
+      "text": "Somewhere in it, a hard C — cut like a keyhole. He carved this line the night the sixth candle went out.",
+      "constraint": { "kind": "contains-letter", "letter": "C" },
+      "relatedIds": ["v1-e1"],
+      "interpretation": "Ellery: “It contains a C. Carved into the very door — he wanted it found, at the end.”"
+    },
+    {
+      "id": "v1-t5",
+      "kind": "testimony",
+      "group": "testimony",
+      "sourceRoomCategory": "mystery",
+      "revealOrder": 17,
+      "speaker": "portrait",
+      "source": "The Portrait, unprompted, just once",
+      "text": "“I did not destroy it. I unhoused it. There is a difference — and the difference is the word.”"
+    }
+  ],
+  "letters": [
+    {
+      "id": "first-post",
+      "from": "posy",
+      "earliestDay": 1,
+      "subject": "On the matter of your journal",
+      "body": "Dear newcomer,\n\nWelcome to the manor. Two things, before the kettle: first, the house files things. Anything you find — a torn page, a carved line, something one of us lets slip — goes into your journal on its own, sorted and cross-referenced. You need only do the noticing.\n\nSecond: the door at the top does not want a key. It wants a word, spoken once a day, and it is patient about wrong ones. We all rather hope you'll manage it.\n\n— Posy, Post Room"
+    },
+    {
+      "id": "readers-note",
+      "from": "ellery",
+      "earliestDay": 2,
+      "minFragments": 1,
+      "subject": "A loose leaf, returned",
+      "grantsFragmentIds": ["v1-d2"],
+      "body": "I found this tucked into the returns tray, in his hand, torn from the same leaf as the fragment you filed. I have taken the liberty of pressing it flat.\n\nHe wrote his definitions like letters to someone who had already forgotten him. Read this one aloud, slowly — his meanings live in the pauses.\n\n— E.",
+      "afterSolved": false
+    },
+    {
+      "id": "a-pressed-rubbing",
+      "from": "fern",
+      "earliestDay": 4,
+      "subject": "From between the pages of my flower book",
+      "grantsFragmentIds": ["v1-e4"],
+      "body": "Found this pressed between the campion and the sweet-pea — a charcoal rubbing he took of the Conservatory arch, years back. The arch has weathered; the rubbing hasn't.\n\nHe rubbed it the way you'd take a keepsake of a face. Whatever is written on it mattered to him. Mind the charcoal on your cuffs.\n\n— Fern"
+    },
+    {
+      "id": "the-cut-word",
+      "from": "posy",
+      "earliestDay": 6,
+      "minFragments": 4,
+      "subject": "The letter with the window in it",
+      "grantsFragmentIds": ["v1-t4"],
+      "body": "I kept it. I oughtn't have — post is post — but the last letter he ever gave me to send had a word cut out of it, neat as a stamp, and I could not bring myself to let it leave the house incomplete.\n\nI enclose it now. Hold it to the light: you can read the whole sentence around the hole. He wanted the hole read too, I think.\n\n— Posy"
+    },
+    {
+      "id": "under-the-tray",
+      "from": "posy",
+      "earliestDay": 4,
+      "pity": true,
+      "subject": "Found under the mail tray, dear",
+      "body": "This was under the mail tray this morning, of all places — no stamp, no sender, just your name in pencil. The house does this, you know, when it thinks a search has gone quiet too long. It seemed to want finding.\n\nI've filed the enclosure in your journal already. Do come by; the kettle's on.\n\n— Posy"
+    },
+    {
+      "id": "second-under-the-tray",
+      "from": "posy",
+      "earliestDay": 8,
+      "pity": true,
+      "subject": "Again, under the tray",
+      "body": "Again! Under the tray, same pencil, same nothing-else. I begin to suspect the house keeps its own postal service for slow evenings, and I try not to take it personally.\n\nThe enclosure is in your journal. Whatever it is you're circling, dear — you are closer than the quiet makes it feel.\n\n— Posy"
+    },
+    {
+      "id": "after-the-door",
+      "from": "bramble",
+      "earliestDay": 1,
+      "afterSolved": true,
+      "subject": "The morning after",
+      "body": "I went up at first light and the door stood open, and the six candles on his desk were lit. All six. I did not light them.\n\nThe house is warmer today — you'll have noticed. Whatever else he was, he was waiting to be contradicted, and you did it kindly, which is the only way it could be done.\n\nBreakfast is on the sideboard. You've earned the window seat.\n\n— Mrs. B."
+    }
+  ]
+}

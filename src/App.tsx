@@ -1,26 +1,31 @@
 import { Route, Router, Switch, useLocation } from 'wouter';
 import { useHashLocation } from 'wouter/use-hash-location';
-import HomePage from './pages/HomePage';
 import ManorPage from './pages/ManorPage';
 import RoomPage from './pages/RoomPage';
 import JournalPage from './pages/JournalPage';
 import ChroniclesPage from './pages/ChroniclesPage';
 import SanctumPage from './pages/SanctumPage';
+import GameChrome from './ui/chrome/GameChrome';
 
 /**
- * ARCHITECT-OWNED. Hash routing so the static build works from any
- * host/subpath (GitHub Pages) with zero server config — deep links land on
- * the single index.html.
+ * ARCHITECT-OWNED (integration pass applied). Hash routing so the static
+ * build works from any host/subpath (GitHub Pages) with zero server config —
+ * deep links land on the single index.html.
  *
- * Route ownership: / (architect) · /manor (A1) · /room (A3 via RoomHost) ·
- * /journal + /sanctum (A7) · /chronicles (A8). Agents implement their PAGE
- * component; this file's route table stays frozen.
+ * Routes: / and /manor are both the blueprint (the manor IS the home —
+ * MANOR_DESIGN §2's loop starts on the front step) · /room (RoomHost) ·
+ * /journal + /sanctum (A7) · /chronicles (A8).
+ *
+ * <GameChrome /> mounts once, after the Switch (A2's shared-file request):
+ * DayHeader/StepMeter + the morning/dusk/night scenes overlay every route
+ * and never unmount across navigation, so the candle and its floating ±N
+ * survive room entry/exit.
  */
 export default function App() {
   return (
     <Router hook={useHashLocation}>
       <Switch>
-        <Route path="/" component={HomePage} />
+        <Route path="/" component={ManorPage} />
         <Route path="/manor" component={ManorPage} />
         <Route path="/room" component={RoomPage} />
         <Route path="/journal" component={JournalPage} />
@@ -30,6 +35,7 @@ export default function App() {
           <NotFound />
         </Route>
       </Switch>
+      <GameChrome />
     </Router>
   );
 }

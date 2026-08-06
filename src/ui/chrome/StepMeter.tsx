@@ -1,0 +1,107 @@
+/**
+ * StepMeter — OWNER: A2 (Economy/Day).
+ *
+ * The tension instrument: a candle whose wax burns down against the day's
+ * starting total, a tabular-nums counter, and a floating ±N for every ledger
+ * entry (AAA 4.9). Tension is legible from presentation alone — the flame
+ * gutters when the day runs low — with no alarm colors and no shake (R.3):
+ * spending reads as spending. Wax red appears only on mistake deltas, which
+ * are the mistake state itself (AAA 6.15).
+ */
+
+import { useEffect, useRef, useState } from 'react';
+import { useManorStore } from '../../app/store';
+import { dayStartTotal, stepsRemaining } from '../../engine/economy/steps';
+import type { StepReason } from '../../engine/types';
+
+interface Float {
+  id: number;
+  delta: number;
+  reason: StepReason;
+}
+
+const FLOAT_MS = 1150;
+
+function floatClass(reason: StepReason, delta: number): string {
+  if (reason === 'mistake') return 'chr-float--mistake';
+  if (reason === 'tea' || reason === 'snack') return 'chr-float--warm';
+  return delta >= 0 ? 'chr-float--gain' : 'chr-float--spend';
+}
+
+export default function StepMeter() {
+  const ledger = useManorStore((s) => s.ledger);
+  const steps = stepsRemaining(ledger);
+  const startTotal = Math.max(1, dayStartTotal(ledger));
+  const ratio = Math.max(0, Math.min(1, steps / startTotal));
+
+  // Guttering when the evening is close — either fraction or absolute band.
+  const band =
+    steps <= Math.max(6, startTotal * 0.15) ? 'guttering'
+    : ratio <= 0.5 ? 'waning'
+    : 'bright';
+
+  // A floating ±N for each new ledger entry (max 3 per batch to stay calm).
+  const [floats, setFloats] = useState<Float[]>([]);
+  const seenCount = useRef(ledger.entries.length);
+  const nextId = useRef(0);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    const entries = ledger.entries;
+    if (entries.length < seenCount.current) {
+      seenCount.current = entries.length; // fresh ledger: a new day, no floats
+      return;
+    }
+    if (entries.length === seenCount.current) return;
+    const fresh = entries.slice(seenCount.current).slice(-3);
+    seenCount.current = entries.length;
+    const spawned = fresh
+      .filter((e) => e.delta !== 0)
+      .map((e) => ({ id: nextId.current++, delta: e.delta, reason: e.reason }));
+    if (spawned.length === 0) return;
+    setFloats((f) => [...f, ...spawned]);
+    const ids = spawned.map((s) => s.id);
+    // Each batch expires on its own timer — a new batch must never cancel an
+    // older batch's removal (mistake → solve inside 1.2s is the common case).
+    timers.current.push(
+      setTimeout(() => setFloats((f) => f.filter((fl) => !ids.includes(fl.id))), FLOAT_MS),
+    );
+  }, [ledger.entries]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  // Candle geometry: wax height tracks the burn-down.
+  const waxMax = 20;
+  const waxH = 3 + ratio * waxMax;
+  const waxY = 30 - waxH;
+
+  return (
+    <div className={`chr-steps chr-steps--${band}`} aria-live="polite">
+      <svg
+        className="chr-steps__candle"
+        width="20"
+        height="34"
+        viewBox="0 0 20 34"
+        role="img"
+        aria-label={`${steps} steps left of ${startTotal}`}
+      >
+        {/* flame sits on the wick, above the current wax line */}
+        <ellipse className="chr-steps__flame" cx="10" cy={waxY - 4.5} rx="2.6" ry="4.2" />
+        <line x1="10" y1={waxY} x2="10" y2={waxY - 2.5} stroke="var(--ink-soft)" strokeWidth="1" />
+        <rect className="chr-steps__wax" x="5" y={waxY} width="10" height={waxH} rx="1.5" />
+        {/* the candle dish */}
+        <line x1="2" y1="31" x2="18" y2="31" stroke="var(--ink-faint)" strokeWidth="1.5" />
+      </svg>
+      <div>
+        {/* key retriggers the tick pulse on every change */}
+        <span key={steps} className="chr-steps__count chr-steps__count--tick tabular-nums">
+          {steps}
+        </span>
+        <span className="chr-steps__label"> steps</span>
+      </div>
+      {floats.map((f) => (
+        <span key={f.id} className={`chr-float ${floatClass(f.reason, f.delta)}`}>
+          {f.delta > 0 ? `+${f.delta}` : `−${-f.delta}`}
+        </span>
+      ))}
+    </div>
+  );
+}

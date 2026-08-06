@@ -100,6 +100,13 @@ const PHRASES: string[] = [
   'THE CANDLE KNOWS THE SHAPE OF NIGHT',
   'PATIENCE TURNS EVERY PAGE',
   'LOST WORDS LEAVE WARM SHADOWS',
+  'A MISLAID WORD ALWAYS COMES HOME',
+  'THE MARGINS HOLD THE BRAVEST NOTES',
+  'DUST SETTLES ONLY ON QUIET SHELVES',
+  'A GOOD INDEX FORGIVES A BAD MEMORY',
+  'THE LAMP BURNS LONGEST FOR SLOW READERS',
+  'EVERY LOCKED DRAWER HIDES A FIRST DRAFT',
+  'MORNING LIGHT FADES THE BOLDEST INK',
 ];
 
 function letterCount(phrase: string): number {
@@ -125,9 +132,15 @@ function derangedMapping(rng: Rng, present: string[]): Record<string, string> {
 function main() {
   const rng = createRng(SEED);
 
+  // Authoring guard (mirrors validate()): a phrase with a thin alphabet is a
+  // degenerate cipher — filter at intake so authors can add freely above.
+  const usable = PHRASES.filter((p) => distinctLetters(p).length >= 9 && p.split(' ').length >= 3);
+  const dropped = PHRASES.length - usable.length;
+  if (dropped > 0) console.log(`dropped ${dropped} phrase(s) with a thin alphabet or too few words`);
+
   // Longest quartile = easy … shortest = expert (ties broken alphabetically
   // for determinism). More text = more statistical footholds.
-  const sorted = [...PHRASES].sort((a, b) => letterCount(b) - letterCount(a) || a.localeCompare(b));
+  const sorted = [...usable].sort((a, b) => letterCount(b) - letterCount(a) || a.localeCompare(b));
   const q = Math.ceil(sorted.length / 4);
   const byDifficulty: [Difficulty, string[]][] = [
     ['easy', sorted.slice(0, q)],

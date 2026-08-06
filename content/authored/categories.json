@@ -1,0 +1,253 @@
+{
+  "comment": "Pantry category curation — OWNER: A5. Members are GENEROUS (a player's honest answer is never rejected as a miss she should have had); the generator expands simple plural/singular variants that exist in enable1 and validates structure. Traps are the room's teeth: near-misses the Pantry is famously particular about, each with an authored knowing line (weight-1 mistake). Everything else off-shelf is a free miss.",
+  "categories": [
+    {
+      "id": "farm-animals",
+      "label": "Animals kept on a farm",
+      "flavor": "The Pantry keeps the ledger of the yard.",
+      "difficulty": "easy",
+      "members": ["COW", "CALF", "BULL", "OX", "OXEN", "HORSE", "PONY", "FOAL", "MARE", "STALLION", "SHEEP", "LAMB", "EWE", "RAM", "GOAT", "PIG", "HOG", "SOW", "PIGLET", "BOAR", "HEN", "ROOSTER", "CHICKEN", "CHICK", "DUCK", "DUCKLING", "GOOSE", "GEESE", "GOSLING", "TURKEY", "DONKEY", "MULE", "ALPACA", "LLAMA", "RABBIT"],
+      "traps": [
+        { "word": "FOX", "note": "A henhouse visitor, never a resident." },
+        { "word": "DEER", "note": "Wild — it only watches the farm from the treeline." }
+      ]
+    },
+    {
+      "id": "fruits",
+      "label": "Fruits for the bowl",
+      "flavor": "Orchard, vine, and bramble all report here.",
+      "difficulty": "easy",
+      "members": ["APPLE", "PEAR", "PLUM", "PEACH", "CHERRY", "GRAPE", "ORANGE", "LEMON", "LIME", "BANANA", "MANGO", "MELON", "WATERMELON", "CANTALOUPE", "BERRY", "FIG", "DATE", "APRICOT", "NECTARINE", "KIWI", "PAPAYA", "QUINCE", "PINEAPPLE", "POMEGRANATE", "STRAWBERRY", "RASPBERRY", "BLUEBERRY", "BLACKBERRY", "GOOSEBERRY", "CURRANT", "CRANBERRY", "TANGERINE", "CLEMENTINE", "GRAPEFRUIT", "GUAVA", "PERSIMMON", "MULBERRY", "DAMSON"],
+      "traps": [
+        { "word": "RHUBARB", "note": "A stalk with ambitions. The Pantry files it under pie." }
+      ]
+    },
+    {
+      "id": "colors",
+      "label": "Colors, plain or fancy",
+      "flavor": "Name a shade; the paint cupboard is deep.",
+      "difficulty": "easy",
+      "members": ["RED", "BLUE", "GREEN", "YELLOW", "ORANGE", "PURPLE", "VIOLET", "INDIGO", "PINK", "BROWN", "BLACK", "WHITE", "GRAY", "GREY", "GOLD", "SILVER", "CRIMSON", "SCARLET", "AZURE", "TEAL", "MAROON", "BEIGE", "CREAM", "TAN", "LAVENDER", "LILAC", "AMBER", "RUST", "OLIVE", "NAVY", "CORAL", "TURQUOISE", "MAGENTA", "MAUVE", "OCHRE", "UMBER", "IVORY", "CHARCOAL", "BRONZE", "COPPER", "PEACH", "MINT", "PLUM", "SALMON", "BURGUNDY", "AQUA", "CYAN", "SEPIA"],
+      "traps": [
+        { "word": "RAINBOW", "note": "All of them at once is not one of them." }
+      ]
+    },
+    {
+      "id": "weather",
+      "label": "Weather, of any temper",
+      "flavor": "The Manor's windows have seen it all.",
+      "difficulty": "easy",
+      "members": ["RAIN", "SNOW", "HAIL", "SLEET", "WIND", "FOG", "MIST", "FROST", "STORM", "THUNDER", "LIGHTNING", "DRIZZLE", "BREEZE", "GALE", "CLOUD", "SUNSHINE", "SHOWER", "TEMPEST", "GUST", "BLIZZARD", "DEW", "ICE", "HEATWAVE", "RAINBOW", "CYCLONE", "HURRICANE", "TORNADO", "SQUALL", "MONSOON", "DOWNPOUR", "FLURRY", "CHILL", "THAW"],
+      "traps": [
+        { "word": "UMBRELLA", "note": "A reply to weather, not weather itself." }
+      ]
+    },
+    {
+      "id": "hot-drinks",
+      "label": "Something hot in a cup",
+      "flavor": "Mrs. Bramble insists there is always time.",
+      "difficulty": "easy",
+      "members": ["TEA", "COFFEE", "COCOA", "CHOCOLATE", "CIDER", "TODDY", "CHAI", "ESPRESSO", "LATTE", "MOCHA", "CAPPUCCINO", "BROTH", "TISANE", "MATCHA", "MULLED"],
+      "traps": [
+        { "word": "LEMONADE", "note": "Served cold, on the veranda, in better weather." }
+      ]
+    },
+    {
+      "id": "vegetables",
+      "label": "Vegetables for the pot",
+      "flavor": "The Pantry is botanically precise, and proud of it.",
+      "difficulty": "easy",
+      "members": ["CARROT", "POTATO", "ONION", "LEEK", "PEA", "BEAN", "CABBAGE", "LETTUCE", "SPINACH", "KALE", "BROCCOLI", "CAULIFLOWER", "TURNIP", "PARSNIP", "BEET", "BEETROOT", "RADISH", "CELERY", "PEPPER", "SQUASH", "PUMPKIN", "ZUCCHINI", "MARROW", "ASPARAGUS", "ARTICHOKE", "SPROUT", "CORN", "YAM", "OKRA", "GARLIC", "SHALLOT", "CUCUMBER", "EGGPLANT", "AUBERGINE", "FENNEL", "SWEDE", "CRESS", "CHARD", "ENDIVE"],
+      "traps": [
+        { "word": "TOMATO", "note": "Botanically a berry. The Pantry stands firm." },
+        { "word": "MUSHROOM", "note": "A fungus keeps its own kingdom." }
+      ]
+    },
+
+    {
+      "id": "herbs",
+      "label": "Herbs on the rack",
+      "flavor": "Leaves only — the Pantry is particular.",
+      "difficulty": "medium",
+      "members": ["BASIL", "THYME", "SAGE", "MINT", "PARSLEY", "ROSEMARY", "DILL", "CHIVE", "CHIVES", "OREGANO", "TARRAGON", "CILANTRO", "CORIANDER", "MARJORAM", "LOVAGE", "SORREL", "CHERVIL", "BAY", "LAVENDER", "BORAGE", "RUE", "HYSSOP", "COMFREY", "VERBENA"],
+      "traps": [
+        { "word": "CINNAMON", "note": "Bark. The spice shelf is one over." },
+        { "word": "GINGER", "note": "A root, and it knows it." }
+      ]
+    },
+    {
+      "id": "instruments",
+      "label": "Musical instruments",
+      "flavor": "The Music Room lends its inventory.",
+      "difficulty": "medium",
+      "members": ["PIANO", "VIOLIN", "VIOLA", "CELLO", "BASS", "HARP", "FLUTE", "OBOE", "CLARINET", "BASSOON", "TRUMPET", "TROMBONE", "TUBA", "HORN", "DRUM", "ORGAN", "GUITAR", "LUTE", "LYRE", "FIDDLE", "BANJO", "MANDOLIN", "ACCORDION", "RECORDER", "PICCOLO", "HARPSICHORD", "UKULELE", "BAGPIPES", "CORNET", "TIMPANI", "XYLOPHONE", "TAMBOURINE", "TRIANGLE", "HARMONICA", "ZITHER", "DULCIMER"],
+      "traps": [
+        { "word": "BATON", "note": "It commands the music but makes none." }
+      ]
+    },
+    {
+      "id": "trees",
+      "label": "Trees of the grounds",
+      "flavor": "Fern the groundskeeper checked this list twice.",
+      "difficulty": "medium",
+      "members": ["OAK", "ELM", "ASH", "BIRCH", "MAPLE", "PINE", "FIR", "SPRUCE", "CEDAR", "WILLOW", "POPLAR", "BEECH", "ALDER", "HAZEL", "ROWAN", "YEW", "HOLLY", "CHESTNUT", "WALNUT", "SYCAMORE", "LINDEN", "LARCH", "ASPEN", "HAWTHORN", "ELDER", "JUNIPER", "CYPRESS", "MAGNOLIA", "REDWOOD", "SEQUOIA", "HORNBEAM", "LAUREL", "OLIVE", "APPLE", "PEAR", "CHERRY"],
+      "traps": [
+        { "word": "BAMBOO", "note": "A grass in a tall coat." }
+      ]
+    },
+    {
+      "id": "birds",
+      "label": "Birds of hedge and sky",
+      "flavor": "The Conservatory windows keep a running list.",
+      "difficulty": "medium",
+      "members": ["WREN", "ROBIN", "SPARROW", "FINCH", "THRUSH", "BLACKBIRD", "STARLING", "SWALLOW", "SWIFT", "LARK", "OWL", "HAWK", "FALCON", "EAGLE", "KESTREL", "ROOK", "CROW", "RAVEN", "MAGPIE", "JAY", "DOVE", "PIGEON", "GULL", "HERON", "CRANE", "SWAN", "GOOSE", "DUCK", "PLOVER", "CURLEW", "NIGHTINGALE", "WARBLER", "NUTHATCH", "KINGFISHER", "WOODPECKER", "CUCKOO", "PHEASANT", "PARTRIDGE", "QUAIL", "OSPREY", "BUZZARD", "TIT", "SISKIN", "LINNET", "DUNNOCK"],
+      "traps": [
+        { "word": "BAT", "note": "Leather wings — the belfry's tenant, not a bird." }
+      ]
+    },
+    {
+      "id": "sea-creatures",
+      "label": "Creatures of the sea",
+      "flavor": "Salt water only, if you please.",
+      "difficulty": "medium",
+      "members": ["WHALE", "DOLPHIN", "SEAL", "SHARK", "RAY", "EEL", "COD", "HERRING", "MACKEREL", "TUNA", "SARDINE", "ANCHOVY", "HADDOCK", "PLAICE", "SOLE", "OCTOPUS", "SQUID", "CUTTLEFISH", "CRAB", "LOBSTER", "SHRIMP", "PRAWN", "OYSTER", "MUSSEL", "CLAM", "SCALLOP", "URCHIN", "STARFISH", "JELLYFISH", "TURTLE", "WALRUS", "PORPOISE", "BARNACLE", "SEAHORSE", "MANATEE", "NARWHAL", "ORCA", "MARLIN", "SWORDFISH", "HALIBUT"],
+      "traps": [
+        { "word": "MERMAID", "note": "The Manor keeps an open mind, and an empty tank." }
+      ]
+    },
+    {
+      "id": "fabrics",
+      "label": "Fabrics in the linen press",
+      "flavor": "The Linen Closet sends its regards.",
+      "difficulty": "medium",
+      "members": ["SILK", "WOOL", "COTTON", "LINEN", "SATIN", "VELVET", "TWEED", "FLANNEL", "LACE", "FELT", "DENIM", "CANVAS", "MUSLIN", "CHIFFON", "TAFFETA", "CORDUROY", "GINGHAM", "CALICO", "DAMASK", "BROCADE", "CASHMERE", "MOHAIR", "GAUZE", "BURLAP", "CHINTZ", "SERGE", "POPLIN", "JERSEY", "HESSIAN", "ORGANZA", "TULLE", "BATISTE"],
+      "traps": [
+        { "word": "LEATHER", "note": "A hide, not a weave." }
+      ]
+    },
+    {
+      "id": "flowers",
+      "label": "Flowers for the vase",
+      "flavor": "Fern grows them; the Pantry names them.",
+      "difficulty": "medium",
+      "members": ["ROSE", "TULIP", "DAISY", "LILY", "IRIS", "VIOLET", "PANSY", "POPPY", "PEONY", "DAHLIA", "ORCHID", "DAFFODIL", "CROCUS", "SNOWDROP", "BLUEBELL", "FOXGLOVE", "MARIGOLD", "SUNFLOWER", "LILAC", "CARNATION", "CHRYSANTHEMUM", "HYACINTH", "PRIMROSE", "BUTTERCUP", "ASTER", "ZINNIA", "PETUNIA", "GERANIUM", "HONEYSUCKLE", "ANEMONE", "CAMELLIA", "AZALEA", "BEGONIA", "CLEMATIS", "COWSLIP", "LUPIN", "WISTERIA", "JASMINE", "FREESIA", "HOLLYHOCK"],
+      "traps": [
+        { "word": "FERN", "note": "Green, graceful, and never once has it flowered." }
+      ]
+    },
+
+    {
+      "id": "gemstones",
+      "label": "Stones worth setting",
+      "flavor": "Mined and cut — the jeweler's shelf.",
+      "difficulty": "hard",
+      "members": ["RUBY", "EMERALD", "SAPPHIRE", "DIAMOND", "OPAL", "TOPAZ", "GARNET", "AMETHYST", "PERIDOT", "JADE", "ONYX", "AGATE", "JASPER", "BERYL", "AQUAMARINE", "CITRINE", "TOURMALINE", "MOONSTONE", "ZIRCON", "TURQUOISE", "LAPIS", "SPINEL", "TANZANITE", "ALEXANDRITE", "CARNELIAN", "OBSIDIAN", "MALACHITE", "SARDONYX", "CHALCEDONY"],
+      "traps": [
+        { "word": "PEARL", "note": "Grown, not mined — the oyster's patience." },
+        { "word": "AMBER", "note": "Old resin with good publicity." }
+      ]
+    },
+    {
+      "id": "words-for-rain",
+      "label": "Words for rain",
+      "flavor": "The Manor has needed most of them.",
+      "difficulty": "hard",
+      "members": ["DRIZZLE", "MIZZLE", "SHOWER", "DOWNPOUR", "DELUGE", "TORRENT", "CLOUDBURST", "MONSOON", "SQUALL", "SPRINKLE", "RAINSTORM", "SPIT", "PELT", "SOAKER", "SPATE"],
+      "traps": [
+        { "word": "PETRICHOR", "note": "The smell after — the Study would like a word with you." }
+      ]
+    },
+    {
+      "id": "ways-to-walk",
+      "label": "Ways to walk",
+      "flavor": "Steps being the house currency, we collect the verbs.",
+      "difficulty": "hard",
+      "members": ["STROLL", "AMBLE", "SAUNTER", "MARCH", "STRIDE", "STRUT", "TRUDGE", "PLOD", "SHUFFLE", "STAGGER", "STUMBLE", "LIMP", "TIPTOE", "CREEP", "SNEAK", "PACE", "ROAM", "WANDER", "RAMBLE", "HIKE", "TREK", "TRAMP", "TODDLE", "WADDLE", "SWAGGER", "LOPE", "TROT", "PROWL", "SLINK", "MOSEY", "STOMP", "SHAMBLE", "MEANDER", "TRAIPSE", "STALK", "PAD"],
+      "traps": [
+        { "word": "GALLOP", "note": "Four legs required." }
+      ]
+    },
+    {
+      "id": "words-for-quiet",
+      "label": "Words for quiet",
+      "flavor": "Whisper them, naturally.",
+      "difficulty": "hard",
+      "members": ["SILENT", "HUSHED", "MUTED", "MUTE", "STILL", "SOFT", "CALM", "SERENE", "TRANQUIL", "PEACEFUL", "NOISELESS", "SOUNDLESS", "SUBDUED", "FAINT", "WHISPERED", "QUIESCENT", "PLACID", "HUSH", "LULL", "SILENCE"],
+      "traps": [
+        { "word": "LOUD", "note": "The Pantry trusts you were only testing it." }
+      ]
+    },
+    {
+      "id": "cheeses",
+      "label": "Cheeses under the dome",
+      "flavor": "The cellar's proudest shelf.",
+      "difficulty": "hard",
+      "members": ["CHEDDAR", "BRIE", "GOUDA", "STILTON", "PARMESAN", "FETA", "MOZZARELLA", "CAMEMBERT", "GRUYERE", "EDAM", "SWISS", "RICOTTA", "GORGONZOLA", "MANCHEGO", "HALLOUMI", "PROVOLONE", "EMMENTAL", "WENSLEYDALE", "ROQUEFORT", "MASCARPONE", "ASIAGO", "COLBY", "HAVARTI", "PECORINO", "BURRATA", "PANEER"],
+      "traps": [
+        { "word": "BUTTER", "note": "Churned, not aged." },
+        { "word": "TOFU", "note": "A guest from another pantry entirely." }
+      ]
+    },
+    {
+      "id": "dances",
+      "label": "Dances from the ballroom",
+      "flavor": "The floor remembers every one.",
+      "difficulty": "hard",
+      "members": ["WALTZ", "POLKA", "TANGO", "FOXTROT", "MINUET", "JIG", "REEL", "GAVOTTE", "MAZURKA", "QUADRILLE", "BOLERO", "FLAMENCO", "SALSA", "RUMBA", "SAMBA", "CANCAN", "HORNPIPE", "COTILLION", "PAVANE", "SARABANDE", "TARANTELLA", "CHARLESTON", "MAMBO", "MERENGUE"],
+      "traps": [
+        { "word": "SONATA", "note": "Music for sitting still." }
+      ]
+    },
+
+    {
+      "id": "words-for-ghost",
+      "label": "Words for a ghost",
+      "flavor": "Choose kindly — the Library is listening.",
+      "difficulty": "expert",
+      "members": ["GHOST", "SPIRIT", "PHANTOM", "SPECTER", "SPECTRE", "WRAITH", "SHADE", "APPARITION", "SPOOK", "POLTERGEIST", "REVENANT", "PHANTASM", "BANSHEE", "EIDOLON", "HAUNT", "SHADOW", "PRESENCE", "VISITANT"],
+      "traps": [
+        { "word": "ELLERY", "note": "Our librarian prefers the word 'resident'." }
+      ]
+    },
+    {
+      "id": "dwellings",
+      "label": "Words for a dwelling",
+      "flavor": "From hovel to hall, all are homes.",
+      "difficulty": "expert",
+      "members": ["COTTAGE", "MANOR", "CASTLE", "HUT", "CABIN", "LODGE", "HALL", "ABODE", "HOVEL", "SHACK", "COTE", "CROFT", "GRANGE", "VILLA", "CHATEAU", "PALACE", "BUNGALOW", "FARMHOUSE", "HOMESTEAD", "TENEMENT", "FLAT", "HOUSE", "HOME", "APARTMENT", "DWELLING", "RESIDENCE", "CHALET", "MANSE", "RECTORY", "VICARAGE", "MAISONETTE", "SHANTY", "HACIENDA", "IGLOO", "YURT", "WIGWAM", "TEPEE", "TEEPEE"],
+      "traps": [
+        { "word": "STABLE", "note": "For the horses, dear." }
+      ]
+    },
+    {
+      "id": "shades-of-red",
+      "label": "Shades of red",
+      "flavor": "The wax cabinet's favorite question.",
+      "difficulty": "expert",
+      "members": ["CRIMSON", "SCARLET", "VERMILION", "CARMINE", "MAROON", "BURGUNDY", "RUBY", "GARNET", "CERISE", "CLARET", "RUSSET", "BRICK", "RUST", "CORAL", "SALMON", "WINE", "MADDER", "CHERRY", "ROSE", "BLUSH", "CARDINAL", "CINNABAR", "OXBLOOD", "SANGRIA"],
+      "traps": [
+        { "word": "ORANGE", "note": "Close to the fire, but its own color." }
+      ]
+    },
+    {
+      "id": "tiny-amounts",
+      "label": "Words for a tiny amount",
+      "flavor": "A pinch of this, a whisper of that.",
+      "difficulty": "expert",
+      "members": ["BIT", "DAB", "SMIDGEN", "SMIDGE", "PINCH", "DASH", "TRACE", "MORSEL", "CRUMB", "SLIVER", "SHRED", "SPECK", "MITE", "DROP", "IOTA", "JOT", "WHIT", "TAD", "DOLLOP", "SCRAP", "GRAIN", "HINT", "TOUCH", "TITTLE", "MODICUM", "SCINTILLA", "SOUPCON", "SKOSH", "DRIB"],
+      "traps": [
+        { "word": "HEAP", "note": "Generous, but no." }
+      ]
+    },
+    {
+      "id": "library-things",
+      "label": "Things shelved in the Library",
+      "flavor": "Ellery drew this list up personally.",
+      "difficulty": "expert",
+      "members": ["TOME", "VOLUME", "FOLIO", "CODEX", "MANUSCRIPT", "ALMANAC", "ATLAS", "LEDGER", "JOURNAL", "DIARY", "NOVEL", "PRIMER", "GRIMOIRE", "BESTIARY", "LEXICON", "DICTIONARY", "ANTHOLOGY", "COMPENDIUM", "TREATISE", "CHRONICLE", "GAZETTEER", "ENCYCLOPEDIA", "THESAURUS", "MONOGRAPH", "QUARTO", "OCTAVO", "SCROLL", "PAMPHLET", "GAZETTE"],
+      "traps": [
+        { "word": "DEWEY", "note": "He does sit on the shelves, granted." }
+      ]
+    }
+  ]
+}

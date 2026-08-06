@@ -1,0 +1,714 @@
+{
+  "character": "posy",
+  "nodes": [
+    {
+      "id": "posy.meet.1",
+      "trigger": "parlor",
+      "priority": 1000,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Customer! No — guest! No — resident? Oh, I'll open you a file either way. Posy, postmistress. The house writes letters overnight and I sort where they land."
+        }
+      ],
+      "choices": [
+        {
+          "text": "A file, please.",
+          "goto": "posy.meet.1a",
+          "effects": {
+            "affinity": {
+              "posy": 1
+            }
+          }
+        },
+        {
+          "text": "Letters? From whom?",
+          "goto": "posy.meet.1b"
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "met.posy"
+        ]
+      },
+      "summary": "Met Posy, the postmistress. You have a file now."
+    },
+    {
+      "id": "posy.meet.1a",
+      "trigger": "parlor",
+      "priority": 0,
+      "once": true,
+      "chainOnly": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Excellent attitude. Name, no fixed room — like everyone here. You'll have mail by morning; the house is a terrible gossip in writing."
+        }
+      ]
+    },
+    {
+      "id": "posy.meet.1b",
+      "trigger": "parlor",
+      "priority": 0,
+      "once": true,
+      "chainOnly": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "The house, mostly. Old friends of the master. The odd bill, which I file under 'fiction.' You'll see — check with me after breakfast."
+        }
+      ]
+    },
+    {
+      "id": "posy.meet.2",
+      "trigger": "parlor",
+      "priority": 1000,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "seen",
+          "node": "posy.meet.1"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "House rules of the Post Room: string is sacred, brown paper is reusable, and nothing marked 'urgent' ever is. The truly urgent arrives unstamped."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "posy.house-rules"
+        ]
+      },
+      "summary": "Learned the Post Room rules. String is sacred."
+    },
+    {
+      "id": "posy.react.letter-1",
+      "trigger": "letter",
+      "priority": 720,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "letter-opened",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Opened your post, did you? Good. An unread letter is just a secret with a stamp on it, and secrets curdle."
+        }
+      ]
+    },
+    {
+      "id": "posy.react.letter-2",
+      "trigger": "letter",
+      "priority": 715,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "letter-opened",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "That seal came out of my good wax, I'll have you know. Crimson. I save it for letters that matter — and I am rarely wrong about which do."
+        }
+      ]
+    },
+    {
+      "id": "posy.react.letter-parlor",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "letter-opened"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "You read this morning's letter? I don't peek, officially. Unofficially: the house presses harder with its pen when it likes you."
+        }
+      ]
+    },
+    {
+      "id": "posy.react.guess",
+      "trigger": "parlor",
+      "priority": 710,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "concerned",
+          "text": "A wrong word at that door posts itself straight back — return to sender, no postage owed. The right one gets delivered. Keep writing, dear."
+        }
+      ]
+    },
+    {
+      "id": "posy.react.fragment",
+      "trigger": "parlor",
+      "priority": 705,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "fragment-found"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "A scrap of his hand turned up? Naturally. This house never lost a page in its life — it only ever forwards them. Everything arrives eventually."
+        }
+      ]
+    },
+    {
+      "id": "posy.react.gift",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "gift-given"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Someone's beaming down the corridor about a certain little gift. I'd never name names. I have a face that names them for me."
+        }
+      ]
+    },
+    {
+      "id": "posy.react.perfect",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-solved",
+          "where": {
+            "perfect": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "A flawless room? First-class work. I'd frank you a commendation if I thought your head could take the extra weight."
+        }
+      ]
+    },
+    {
+      "id": "posy.react.steps",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "You look posted through a hedge, if I'm honest. Long day yesterday? The manor over-delivers. It gets it from me."
+        }
+      ]
+    },
+    {
+      "id": "posy.react.rankup",
+      "trigger": "parlor",
+      "priority": 703,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "affinity-rank-up"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "You're becoming rather dear to this household, you know. It shows in the mail volume. Affection is measurable; I keep charts."
+        }
+      ]
+    },
+    {
+      "id": "posy.react.victory",
+      "trigger": "parlor",
+      "priority": 1000,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "vol.volume-1.solved"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "wistful",
+          "text": "The morning it happened, every dead letter in my bins went light. Years of undeliverables — suddenly addressed. All of them his. All of them home."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "I cried on the franking machine, and I would do it again. Now sit down and let me stamp your hand like a parcel. Tradition. New one. Starting now."
+        }
+      ],
+      "summary": "Every dead letter went light. Posy cried on the franking machine."
+    },
+    {
+      "id": "posy.errand.ellery",
+      "trigger": "parlor",
+      "priority": 730,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "day",
+          "gte": 2
+        },
+        {
+          "kind": "flag",
+          "flag": "met.posy"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "Delivery for you — sort of. Ellery's been rereading one empty bookplate all week and pretending she isn't. Go see her, would you? Some parcels need legs."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "posy.errand-ellery"
+        ]
+      },
+      "summary": "Posy's errand: Ellery is fretting over an empty bookplate."
+    },
+    {
+      "id": "posy.errand.fern",
+      "trigger": "parlor",
+      "priority": 728,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "day",
+          "gte": 3
+        },
+        {
+          "kind": "flag",
+          "flag": "met.posy"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "Second item: Fern's been standing about the Conservatory like an unwatered hat-stand. Something about a bloom. She won't ask for help. That's what I'm for."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "posy.errand-fern"
+        ]
+      },
+      "summary": "Posy's errand: Fern is waiting on a bloom and won't ask for help."
+    },
+    {
+      "id": "posy.quest1.ask",
+      "trigger": "parlor",
+      "priority": 520,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "posy",
+          "gte": 2
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "Now — a personal favor, strictly off the books. There is a word for the smell of rain on warm dust. The master knew it. I lost it. It's somewhere in this house."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "wistful",
+          "text": "He used it in a letter once, and I have spent years failing to re-read it from memory. Shake his rooms hard enough and it will fall out. Words do."
+        }
+      ],
+      "choices": [
+        {
+          "text": "I'll find your word.",
+          "effects": {
+            "setFlags": [
+              "posy.quest1.started"
+            ]
+          }
+        },
+        {
+          "text": "That's a tall order, Posy.",
+          "effects": {}
+        }
+      ],
+      "summary": "Posy's favor: find the lost word for the smell of rain."
+    },
+    {
+      "id": "posy.quest1.done",
+      "trigger": "parlor",
+      "priority": 731,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "posy.quest1.started"
+        },
+        {
+          "kind": "event",
+          "event": "letter-opened"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "This came overnight — open franking, his hand, no address needed. One word on the page: PETRICHOR. You shook it loose, whatever you did in those rooms."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Petrichor. The smell of rain on warm dust. I've said it eleven times this morning and it has rained indoors twice. Worth every year of waiting."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "posy.quest1.done"
+        ],
+        "affinity": {
+          "posy": 2
+        }
+      },
+      "summary": "Found Posy's word: PETRICHOR. It has already rained indoors twice."
+    },
+    {
+      "id": "posy.arc.undelivered",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "posy",
+          "gte": 3
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "wistful",
+          "text": "One drawer in this room I never open. A letter he wrote and never posted. No address — just 'To—' and then thirty years of the nerve failing."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "posy.undelivered"
+        ]
+      },
+      "summary": "There is an unposted letter in Posy's drawer, addressed 'To—'."
+    },
+    {
+      "id": "posy.arc.undelivered-2",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "posy.undelivered"
+        },
+        {
+          "kind": "affinity",
+          "character": "posy",
+          "gte": 5
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "You'll wonder why I don't deliver his unposted letter myself. Postmistress's oath: we carry, we don't decide. He had to want it sent."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "wistful",
+          "text": "But learn who 'To—' was meant for, and I will walk that letter up those stairs personally. Full uniform. Best wax."
+        }
+      ],
+      "summary": "Learn who 'To—' is, and Posy will deliver the letter herself."
+    },
+    {
+      "id": "posy.arc.locked",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "posy",
+          "gte": 9
+        },
+        {
+          "kind": "flag",
+          "flag": "posy.quest1.done"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Deputy's sash. Go on, take it — you're Post Office staff now, which means the house is obliged to tell you things in writing. Use it wisely. Or nosily. Both work."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "posy.deputy"
+        ]
+      },
+      "summary": "Sworn in as Posy's deputy. The house must tell you things in writing."
+    },
+    {
+      "id": "posy.arc.keepsake",
+      "trigger": "idle",
+      "priority": 1000,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "sys.first-gift.posy"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "A bookmark! For the postmistress! It's going straight in the ledger under 'valuables, sentimental, uninsurable.'"
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Here — my spare letter-opener. Brass. Opens envelopes, jammed drawers, and most kinds of silence."
+        }
+      ],
+      "summary": "Gave Posy a bookmark; received her brass letter-opener."
+    },
+    {
+      "id": "posy.gen.postmark",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "The manor has its own postmark, you know. A little house with too many windows. Accurate."
+        }
+      ]
+    },
+    {
+      "id": "posy.gen.moved-rooms",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "Hardest part of the job? Rooms move overnight and forwarding addresses don't exist. I deliver by intuition and mild threats."
+        }
+      ]
+    },
+    {
+      "id": "posy.gen.dewey",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Dewey sleeps in the parcel bin. Anything he sits on gets priority handling — cat-certified. It's an excellent system and I did not design it."
+        }
+      ]
+    },
+    {
+      "id": "posy.gen.string",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "People underestimate string. Empires of correspondence, dear, held together by string and someone who cares."
+        }
+      ]
+    },
+    {
+      "id": "posy.gen.bills",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "A bill arrived for the master today. Thirty years late. I stamped it 'DECEASED — TRY THE PORTRAIT' and felt wonderful about it."
+        }
+      ]
+    },
+    {
+      "id": "posy.gen.sanctum",
+      "trigger": "parlor",
+      "priority": 110,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "fragmentCount",
+          "gte": 3
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "Those fragments you're collecting — that's a correspondence, you know. Him to you. When you're ready to reply, the address is the top of the stairs."
+        }
+      ]
+    },
+    {
+      "id": "posy.gen.kettle",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Bramble and I trade: tea for stamps. The exchange rate is friendship, and neither of us audits it."
+        }
+      ]
+    },
+    {
+      "id": "posy.idle.valve-1",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Proper chat tomorrow, promise — the afternoon sort waits for no one."
+        }
+      ]
+    },
+    {
+      "id": "posy.idle.valve-2",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Off you pop. Some of us have a kingdom of brown paper to run."
+        }
+      ]
+    },
+    {
+      "id": "posy.idle.sorting",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "posy",
+          "narration": true,
+          "text": "Posy deals envelopes into pigeonholes like a card sharp — lips moving, counting rooms that may not exist yet."
+        }
+      ]
+    },
+    {
+      "id": "posy.idle.stamp",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "posy",
+          "narration": true,
+          "text": "Thunk. Thunk. The franking stamp keeps better time than the hall clock, and both of them are lying."
+        }
+      ]
+    },
+    {
+      "id": "posy.idle.warm",
+      "trigger": "idle",
+      "priority": 10,
+      "once": false,
+      "cooldownDays": 1,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "posy",
+          "gte": 3
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Mail's better since you came. Heavier. Houses write more when they're happy."
+        }
+      ]
+    }
+  ]
+}

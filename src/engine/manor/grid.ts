@@ -258,10 +258,10 @@ export function hashSeed(daySeed: number, key: string, drawIndex: number): numbe
 }
 
 /**
- * Per-room puzzle seed — MUST stay bit-identical to RoomHost.roomSeed
- * (ui/rooms/RoomHost.tsx), which re-selects the puzzle deterministically on
- * entry. Used at placement to pin PlacedRoom.puzzleId for seen-marking.
- * SHARED-FILE REQUEST: export roomSeed from one place (architect glue).
+ * Per-room puzzle seed — THE single source of truth (integration: RoomHost
+ * now imports this; its private bit-identical copy is gone). Used at
+ * placement to pin PlacedRoom.puzzleId and on entry to re-select the same
+ * puzzle deterministically for seen-marking.
  */
 export function roomSeed(daySeed: number, key: string): number {
   let h = daySeed | 0;

@@ -135,8 +135,11 @@ export interface DialogueFile {
 
 /**
  * A substantive conversation (vs. an idle line) — seeing one spends the
- * one-per-character-per-day pacing valve (AAA 5.9).
+ * one-per-character-per-day pacing valve (AAA 5.9). Only the visiting slots
+ * count: 'sanctum-after-guess', 'letter', and 'night' are forced-context
+ * reaction beats (the Portrait's sigh, Posy's letter aside) that must play
+ * even after the day's conversation — and never spend the valve themselves.
  */
 export function isSubstantive(node: DialogueNode): boolean {
-  return node.trigger !== 'idle';
+  return node.trigger === 'morning' || node.trigger === 'parlor';
 }

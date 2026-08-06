@@ -13,7 +13,18 @@
     "content:dictionary": "tsx content/build-dictionary.ts",
     "content:hive": "tsx content/generate-hive.ts",
     "content:twistle": "tsx content/generate-twistle.ts",
-    "content:all": "npm run content:dictionary && npm run content:hive && npm run content:twistle"
+    "content:anagram": "tsx content/generate-anagram.ts",
+    "content:ladder": "tsx content/generate-ladder.ts",
+    "content:cipher": "tsx content/generate-cipher.ts",
+    "content:crossword": "tsx content/generate-crossword.ts",
+    "content:rhyme": "tsx content/generate-rhyme.ts",
+    "content:category": "tsx content/generate-category.ts",
+    "content:volume": "tsx content/generate-volume.ts",
+    "content:validate-dialogue": "tsx content/validate-dialogue.ts",
+    "content:verify": "npm run content:validate-dialogue && tsx content/generate-volume.ts --check content/authored/volumes/volume-1.json",
+    "content:all": "npm run content:dictionary && npm run content:hive && npm run content:twistle && npm run content:anagram && npm run content:ladder && npm run content:cipher && npm run content:crossword && npm run content:rhyme && npm run content:category && npm run content:verify",
+    "build:pages": "npm run content:verify && tsc --noEmit && vite build && tsx scripts/build-sw-precache.ts",
+    "assets:pwa": "tsx scripts/gen-pwa-assets.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

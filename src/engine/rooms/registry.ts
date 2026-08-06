@@ -20,8 +20,14 @@ import { twistleAdapter } from './adapters/twistle';
 import { wordWebAdapter } from './adapters/word-web';
 // <<end A3:imports>>
 // <<A4:imports>> micro batch 1 — alphabetical: anagram, cipher, ladder
+import { anagramAdapter } from '../puzzles/anagram-adapter';
+import { cipherAdapter } from '../puzzles/cipher-adapter';
+import { ladderAdapter } from '../puzzles/ladder-adapter';
 // <<end A4:imports>>
 // <<A5:imports>> micro batch 2 — alphabetical: category, crossword, rhyme
+import { categoryAdapter } from '../puzzles/category-adapter';
+import { crosswordAdapter } from '../puzzles/crossword-adapter';
+import { rhymeAdapter } from '../puzzles/rhyme-adapter';
 // <<end A5:imports>>
 
 const ADAPTERS: Partial<Record<RoomPuzzleKind, RoomPuzzleAdapter>> = {
@@ -32,8 +38,14 @@ const ADAPTERS: Partial<Record<RoomPuzzleKind, RoomPuzzleAdapter>> = {
   'word-web': wordWebAdapter as RoomPuzzleAdapter,
   // <<end A3:entries>>
   // <<A4:entries>> micro batch 1 — alphabetical: anagram, cipher, ladder
+  'anagram': anagramAdapter as RoomPuzzleAdapter,
+  'cipher': cipherAdapter as RoomPuzzleAdapter,
+  'ladder': ladderAdapter as RoomPuzzleAdapter,
   // <<end A4:entries>>
   // <<A5:entries>> micro batch 2 — alphabetical: category, crossword, rhyme
+  'category': categoryAdapter as RoomPuzzleAdapter,
+  'crossword': crosswordAdapter as RoomPuzzleAdapter,
+  'rhyme': rhymeAdapter as RoomPuzzleAdapter,
   // <<end A5:entries>>
 };
 

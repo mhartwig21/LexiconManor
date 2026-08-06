@@ -1,0 +1,65 @@
+# Deploy Lexicon Manor to GitHub Pages — OWNER: A8 (Platform).
+#
+# Build carries the /LexiconManor/ base (vite.config.ts default; MANOR_BASE
+# pins it explicitly here), then scripts/build-sw-precache.ts injects the SW
+# precache manifest, stamps the webmanifest, and HARD-FAILS the build if any
+# artifact lacks the base prefix (AAA 7.5).
+
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  MANOR_BASE: /LexiconManor/
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run check
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npx vite build
+
+      - name: Inject SW precache + verify base-path integrity (AAA 7.5)
+        run: npx tsx scripts/build-sw-precache.ts
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,25 +1,11 @@
-import { useLocation } from 'wouter';
-import { useManorStore } from '../app/store';
+import SanctumView from '../ui/sanctum/SanctumView';
 
 /**
- * Phase-0 placeholder — OWNER: A7 (Mystery). Replace with ui/sanctum/*:
- * the Portrait scene + the daily typed guess (one per day, sympathetic
- * closeness-keyed reactions, AAA 4.17). This route REPLACES the v1
+ * /sanctum — OWNER: A7 (Mystery). The climax screen: the Portrait, the
+ * sealed door, the one typed word a day (sympathetic closeness-keyed
+ * reactions, AAA 4.17; solvable from day one, AAA 4.18). Replaces the v1
  * perk-loadout Sanctum page (parked in legacy/, pending AAA §10.1).
  */
 export default function SanctumPage() {
-  const [, navigate] = useLocation();
-  const guessesToday = useManorStore(
-    (s) => s.volume.guesses.filter((g) => g.day === (s.day?.day ?? s.volume.day)).length,
-  );
-  return (
-    <div className="page" style={{ textAlign: 'center', paddingTop: '18vh' }}>
-      <h2>The Sanctum</h2>
-      <p style={{ opacity: 0.85 }}>
-        The sealed door waits at the top of the manor.
-        {guessesToday > 0 ? ' The Portrait has heard your guess for today.' : ''}
-      </p>
-      <button className="btn" onClick={() => navigate('/')}>Back down the stairs</button>
-    </div>
-  );
+  return <SanctumView />;
 }

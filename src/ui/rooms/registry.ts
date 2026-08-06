@@ -30,8 +30,14 @@ import TwistleView from './anchor/TwistleView';
 import WordWebView from './anchor/WordWebView';
 // <<end A3:imports>>
 // <<A4:imports>> micro batch 1 — alphabetical: anagram, cipher, ladder
+import AnagramView from './micro/AnagramView';
+import CipherView from './micro/CipherView';
+import LadderView from './micro/LadderView';
 // <<end A4:imports>>
 // <<A5:imports>> micro batch 2 — alphabetical: category, crossword, rhyme
+import CategoryView from './micro/CategoryView';
+import CrosswordView from './micro/CrosswordView';
+import RhymeView from './micro/RhymeView';
 // <<end A5:imports>>
 
 const VIEWS: Partial<Record<RoomPuzzleKind, ComponentType<RoomViewProps>>> = {
@@ -42,8 +48,14 @@ const VIEWS: Partial<Record<RoomPuzzleKind, ComponentType<RoomViewProps>>> = {
   'word-web': WordWebView as unknown as ComponentType<RoomViewProps>,
   // <<end A3:entries>>
   // <<A4:entries>> micro batch 1 — alphabetical: anagram, cipher, ladder
+  'anagram': AnagramView as unknown as ComponentType<RoomViewProps>,
+  'cipher': CipherView as unknown as ComponentType<RoomViewProps>,
+  'ladder': LadderView as unknown as ComponentType<RoomViewProps>,
   // <<end A4:entries>>
   // <<A5:entries>> micro batch 2 — alphabetical: category, crossword, rhyme
+  'category': CategoryView as unknown as ComponentType<RoomViewProps>,
+  'crossword': CrosswordView as unknown as ComponentType<RoomViewProps>,
+  'rhyme': RhymeView as unknown as ComponentType<RoomViewProps>,
   // <<end A5:entries>>
 };
 

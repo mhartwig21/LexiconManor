@@ -1,0 +1,426 @@
+{
+  "character": "portrait",
+  "nodes": [
+    {
+      "id": "portrait.meet.1",
+      "trigger": "parlor",
+      "priority": 1000,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "So. The house has let another one climb this far. State your business with my door — no. Don't. I know your business. Everyone wants the word."
+        },
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "I am — I was — the lexicographer of this house. The Portrait will do. He is all of me the frame could hold."
+        }
+      ],
+      "choices": [
+        {
+          "text": "It's an honor.",
+          "goto": "portrait.meet.1a"
+        },
+        {
+          "text": "What happened to the word?",
+          "goto": "portrait.meet.1b"
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "met.portrait"
+        ]
+      },
+      "summary": "Met the Portrait on the landing. He is all the frame could hold."
+    },
+    {
+      "id": "portrait.meet.1a",
+      "trigger": "parlor",
+      "priority": 0,
+      "once": true,
+      "chainOnly": true,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "Flattery. The paint absorbs it; none reaches me. Still — thank you. It has been quiet up here."
+        }
+      ]
+    },
+    {
+      "id": "portrait.meet.1b",
+      "trigger": "parlor",
+      "priority": 0,
+      "once": true,
+      "chainOnly": true,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "I un-happened it. That is all the door will get from me, and rather more than you have earned before breakfast."
+        }
+      ]
+    },
+    {
+      "id": "portrait.meet.2",
+      "trigger": "parlor",
+      "priority": 1000,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "seen",
+          "node": "portrait.meet.1"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "Understand the terms. The door wants the word spoken — once a day, no more. I do not set the rules. I merely became them."
+        }
+      ],
+      "summary": "The Sanctum's terms: one spoken word per day."
+    },
+    {
+      "id": "portrait.guess.cold",
+      "trigger": "sanctum-after-guess",
+      "priority": 700,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "No. Not a letter of it true. The door didn't even creak. Go and read more of him — of me — before you spend tomorrow's breath."
+        }
+      ]
+    },
+    {
+      "id": "portrait.guess.warm-letters",
+      "trigger": "sanctum-after-guess",
+      "priority": 710,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong",
+          "withinDays": 0,
+          "whereGte": {
+            "closeness.sharedLetters": 2
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "Wrong. And yet the hinges shifted. Some of those letters belong to the word. You are circling, reader. Circle tighter."
+        }
+      ]
+    },
+    {
+      "id": "portrait.guess.right-length",
+      "trigger": "sanctum-after-guess",
+      "priority": 715,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong",
+          "withinDays": 0,
+          "where": {
+            "closeness.rightLength": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "curious",
+          "text": "The right shape. The wrong soul. You have measured the hole in the dictionary exactly — now find what actually fell through it."
+        }
+      ]
+    },
+    {
+      "id": "portrait.guess.repeat",
+      "trigger": "sanctum-after-guess",
+      "priority": 720,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong",
+          "withinDays": 0,
+          "where": {
+            "closeness.repeat": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "You have said that word to this door before. It was not the word then. Doors do not change their minds; neither, it appears, do you."
+        }
+      ]
+    },
+    {
+      "id": "portrait.guess.thaw",
+      "trigger": "sanctum-after-guess",
+      "priority": 705,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong",
+          "withinDays": 0
+        },
+        {
+          "kind": "counter",
+          "event": "sanctum-guess-wrong",
+          "gte": 3
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "wistful",
+          "text": "Three wrong words, and still you climb back up. Persistence. She had it too — no. Never mind. Guess again tomorrow."
+        }
+      ],
+      "summary": "The Portrait almost mentioned someone. 'She had it too.'"
+    },
+    {
+      "id": "portrait.guess.thaw-2",
+      "trigger": "sanctum-after-guess",
+      "priority": 708,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong",
+          "withinDays": 0
+        },
+        {
+          "kind": "counter",
+          "event": "sanctum-guess-wrong",
+          "gte": 6
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "wistful",
+          "text": "Do you know what it costs a portrait to hope? The varnish cracks. Six wrong words now, and still I find I want you to manage it. Curious."
+        }
+      ],
+      "summary": "The varnish is cracking. The Portrait wants you to succeed."
+    },
+    {
+      "id": "portrait.react.victory",
+      "trigger": "sanctum-after-guess",
+      "priority": 1000,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "volume-solved",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "wistful",
+          "text": "...You said it. Out loud. In my house. Thirty years I kept that door shut on it, and you hand it back like a dropped glove."
+        },
+        {
+          "speaker": "portrait",
+          "portrait": "wistful",
+          "text": "I spent the end of a life unwriting that word, because grief with a pen believes erasure is mercy. It is not. It is only quiet."
+        },
+        {
+          "speaker": "portrait",
+          "portrait": "warm",
+          "text": "Thank you for returning it. To the books. To the door. To me."
+        },
+        {
+          "speaker": "portrait",
+          "narration": true,
+          "text": "For the first time in thirty years, the Portrait is smiling in his frame."
+        }
+      ],
+      "summary": "The word came home. The Portrait smiled."
+    },
+    {
+      "id": "portrait.arc.gathering",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "fragmentCount",
+          "gte": 3
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "You have been gathering my scraps. Yes — I know my own hand when it walks past in a pocket. Read them in order, reader. I wrote them out of it."
+        }
+      ],
+      "summary": "The fragments were written out of order. Deliberately."
+    },
+    {
+      "id": "portrait.arc.read",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "fragmentCount",
+          "gte": 6
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "wistful",
+          "text": "You have read more of me now than anyone living. I would object, if it weren't such a relief to be legible again."
+        }
+      ],
+      "summary": "The Portrait finds it a relief to be legible again."
+    },
+    {
+      "id": "portrait.arc.keepsake",
+      "trigger": "idle",
+      "priority": 1000,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "sys.first-gift.portrait"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "wistful",
+          "text": "A bookmark. Tucked into my frame as though I were mid-chapter. I have not been mid-anything in thirty years."
+        },
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "Leave it there. Let the house see that the old man is still being read."
+        }
+      ],
+      "summary": "Left a bookmark in the Portrait's frame. He is still being read."
+    },
+    {
+      "id": "portrait.gen.stairs",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "Mind the last stair. It squeaks in iambs. I had it built that way, so nothing could sneak up on a thought."
+        }
+      ]
+    },
+    {
+      "id": "portrait.gen.dust",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "Bramble dusts my frame on Thursdays and tells me the news. I pretend not to listen. She pretends I am not pretending. A sound arrangement."
+        }
+      ]
+    },
+    {
+      "id": "portrait.gen.dewey",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "amused",
+          "text": "The cat sits on the landing some nights and stares at me. I stare back. So far it is a draw, though he has the advantage of blinking."
+        }
+      ]
+    },
+    {
+      "id": "portrait.gen.after",
+      "trigger": "parlor",
+      "priority": 120,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "vol.volume-1.solved"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "warm",
+          "text": "The door stands easier now. So do I. Odd, how a frame can feel like a window once the word is back in circulation."
+        }
+      ]
+    },
+    {
+      "id": "portrait.idle.regard",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "narration": true,
+          "text": "The Portrait regards you. Paint cannot blink; he manages the impression regardless."
+        }
+      ]
+    },
+    {
+      "id": "portrait.idle.valve",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "We have spoken today. A portrait must ration himself, or become wallpaper."
+        }
+      ]
+    },
+    {
+      "id": "portrait.idle.candle",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "narration": true,
+          "text": "The candle bracket beneath the frame is always lit. No one in the house will admit to lighting it."
+        }
+      ]
+    }
+  ]
+}

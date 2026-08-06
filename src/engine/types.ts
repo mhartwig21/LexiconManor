@@ -18,6 +18,7 @@
  */
 
 import type { RoomPuzzleKind } from './rooms/room-puzzle';
+import type { DayEndCause } from './events';
 
 // ===========================================================================
 // 1. LEGACY V1 (quarantined — see header)
@@ -310,7 +311,7 @@ export interface DraftOffer {
 // --- Step economy (logic: engine/economy/steps.ts, owned by A2) ------------
 
 export type StepReason =
-  | 'day-start' | 'move' | 'mistake' | 'solve' | 'perfect'
+  | 'day-start' | 'move' | 'mistake' | 'hint' | 'solve' | 'perfect'
   | 'tea' | 'snack' | 'pet-dewey' | 'gift';
 
 export interface StepEntry {
@@ -387,7 +388,7 @@ export interface VolumeState {
 export interface DayRecord {
   day: number;
   endedAt: number;
-  cause: string;                                 // DayEndCause (engine/events.ts)
+  cause: DayEndCause;                            // engine/events.ts
   roomsDrafted: number;
   roomsSolved: number;
   stepsSpent: number;

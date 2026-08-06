@@ -1,0 +1,374 @@
+/* ==========================================================================
+   The Journal — OWNER: A7. Per-module CSS (conflict rule 3); consumes
+   ui/theme/tokens.css only. The cozy-detective case file: auto-filed
+   fragments, the definition poem with gaps, the alphabet plate, letters.
+   Navigation = ribbon tabs (AAA 6.16); wax red only for unread/state
+   (AAA 6.15). All animation transform/opacity; reduced-motion strips it.
+   Panels scroll internally (overscroll contained), scrollbars hidden
+   (house rule): the page itself never scrolls.
+   ========================================================================== */
+
+.jrn-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.jrn {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 470px;
+  margin: 0 auto;
+  padding: max(0.7rem, env(safe-area-inset-top)) 0.9rem 0;
+}
+
+.jrn__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.jrn__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  font-weight: 400;
+}
+.jrn__volume {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.jrn__back {
+  min-height: var(--tap-target);
+  min-width: var(--tap-target);
+  border: none;
+  background: none;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 0 0.35rem;
+}
+.jrn__back:active { transform: translateY(1px); }
+
+/* --- Ribbon tabs ---------------------------------------------------------- */
+.jrn-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.55rem;
+  border-bottom: var(--rule);
+}
+.jrn-tab {
+  position: relative;
+  flex: 1;
+  min-height: var(--tap-target);
+  border: 1px solid var(--paper-edge);
+  border-bottom: none;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  background: var(--paper-shade);
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 0.35rem 0.2rem;
+  transition: transform var(--dur-press);
+}
+.jrn-tab:active { transform: translateY(1px); }
+.jrn-tab--active {
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-weight: 600;
+  transform: translateY(1px);
+}
+/* Unread marker: wax red = state, never decoration (AAA 6.15). */
+.jrn-tab__dot {
+  position: absolute;
+  top: 7px;
+  right: 9px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wax);
+}
+
+/* --- Scrolling sheet (internal scroll, hidden scrollbar) ------------------- */
+.jrn-sheet {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  background: var(--paper-raised);
+  border: var(--rule);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sheet) var(--radius-sheet);
+  padding: 0.9rem 0.95rem calc(0.9rem + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.jrn-sheet::-webkit-scrollbar { display: none; }
+
+.jrn-empty {
+  text-align: center;
+  color: var(--ink-soft);
+  font-style: italic;
+  padding: 2.2rem 0.6rem;
+}
+
+.jrn-caption {
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+
+/* --- The Word tab ---------------------------------------------------------- */
+.jrn-solved {
+  text-align: center;
+  padding: 0.4rem 0 0.1rem;
+}
+.jrn-solved__word {
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg);
+  letter-spacing: 0.18em;
+  color: var(--gilt);
+}
+.jrn-solved__closed {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.jrn-boxes {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: center;
+}
+.jrn-box {
+  width: 2.2rem;
+  height: 2.6rem;
+  border: 1.5px solid var(--paper-edge);
+  border-radius: var(--radius-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  color: var(--ink);
+  background: var(--paper);
+}
+.jrn-box--known { border-color: var(--gilt); color: var(--gilt); }
+
+.jrn-poem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  border-left: 2px solid var(--paper-edge);
+  padding-left: 0.8rem;
+}
+.jrn-poem__line { font-style: italic; }
+.jrn-poem__line em { font-style: normal; }
+.jrn-poem__gap {
+  color: var(--ink-faint);
+  letter-spacing: 0.35em;
+  user-select: none;
+}
+.jrn-note {
+  margin-top: 0.25rem;
+  font-size: var(--text-sm);
+  font-style: normal;
+  color: var(--ink-soft);
+  border-left: 2px solid var(--moss);
+  padding-left: 0.55rem;
+}
+
+/* Alphabet plate */
+.jrn-plate {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.3rem;
+}
+.jrn-plate__cell {
+  min-height: 2.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+.jrn-plate__cell--out {
+  color: var(--ink-faint);
+  text-decoration: line-through;
+  background: var(--paper-shade);
+  border-color: transparent;
+}
+.jrn-plate__cell--in {
+  color: var(--moss);
+  border-color: var(--moss);
+  font-weight: 700;
+}
+.jrn-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+/* Guess history — her own elimination record (AAA 4.17) */
+.jrn-guesses { display: flex; flex-direction: column; gap: 0.4rem; }
+.jrn-guess {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-variant-numeric: tabular-nums;
+}
+.jrn-guess__word {
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+  text-decoration: line-through;
+  text-decoration-color: var(--wax);
+  text-decoration-thickness: 1.5px;
+}
+.jrn-guess__word--answer {
+  text-decoration: none;
+  color: var(--gilt);
+}
+.jrn-guess__meta { font-size: var(--text-sm); color: var(--ink-faint); }
+
+.jrn-nudge {
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--ink-soft);
+  text-align: center;
+  padding: 0.3rem 0.4rem 0;
+}
+
+/* --- Cards (engravings, testimony) ----------------------------------------- */
+.jrn-card {
+  background: var(--paper);
+  border: var(--rule);
+  border-radius: var(--radius-sheet);
+  padding: 0.75rem 0.85rem;
+  animation: jrn-settle 240ms var(--ease-settle);
+}
+.jrn-card--rubbing { border-style: dashed; }
+.jrn-card__source {
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.jrn-card__new {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--wax);
+  flex: none;
+}
+.jrn-card__text { margin: 0.35rem 0 0; }
+.jrn-card__sealednote {
+  margin-top: 0.4rem;
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--ink-faint);
+}
+.jrn-refs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+.jrn-ref {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  border: 1px solid var(--paper-edge);
+  border-radius: 999px;
+  padding: 0.05rem 0.55rem;
+}
+
+.jrn-medallion {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--paper-edge);
+  background: var(--paper-shade);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  color: var(--ink-soft);
+}
+.jrn-card__speakerrow { display: flex; align-items: center; gap: 0.55rem; }
+.jrn-card__speaker { font-weight: 600; }
+
+/* --- Letters ---------------------------------------------------------------- */
+.jrn-letter {
+  background: var(--paper);
+  border: var(--rule);
+  border-radius: var(--radius-sheet);
+  overflow: hidden;
+}
+.jrn-letter__head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: var(--tap-target);
+  padding: 0.55rem 0.8rem;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  text-align: left;
+  cursor: pointer;
+}
+.jrn-letter__head:active { transform: translateY(1px); }
+.jrn-seal {
+  flex: none;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: var(--wax);
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.12);
+}
+.jrn-seal--broken {
+  background: transparent;
+  border: 1.5px dashed var(--paper-edge);
+  box-shadow: none;
+}
+.jrn-letter__from { font-size: var(--text-sm); color: var(--ink-faint); }
+.jrn-letter__subject { font-weight: 600; }
+.jrn-letter__body {
+  padding: 0 0.85rem 0.8rem;
+  border-top: 1px dashed var(--paper-edge);
+  animation: jrn-settle 260ms var(--ease-settle);
+}
+.jrn-letter__body p { margin: 0.6rem 0 0; }
+
+@keyframes jrn-settle {
+  from { transform: translateY(6px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jrn-card, .jrn-letter__body { animation: none; }
+  .jrn-tab, .jrn__back, .jrn-letter__head { transition: none; }
+}

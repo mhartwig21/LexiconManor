@@ -65,9 +65,13 @@ function pick(nodes: DialogueNode[], q: DialogueQuery): DialogueNode | undefined
  * character has no eligible content anywhere (authoring floor failure).
  */
 export function selectDialogue(file: DialogueFile, query: DialogueQuery): DialogueNode | undefined {
-  // Pacing valve (AAA 5.9): substantive slot spent → idle pool.
-  const valveSpent = query.talkedToday.has(query.character);
-  const slot = valveSpent && query.slot !== 'idle' ? 'idle' : query.slot;
+  // Pacing valve (AAA 5.9): substantive slot spent → idle pool. Only the
+  // visiting slots are valved — 'sanctum-after-guess'/'letter'/'night' are
+  // forced-context reaction beats and always play (the Portrait's sigh must
+  // never be suppressed by "we already talked today").
+  const valved = query.slot === 'morning' || query.slot === 'parlor';
+  const valveSpent = valved && query.talkedToday.has(query.character);
+  const slot = valveSpent ? 'idle' : query.slot;
   const q: DialogueQuery = slot === query.slot ? query : { ...query, slot };
 
   const node = pick(file.nodes, q);
