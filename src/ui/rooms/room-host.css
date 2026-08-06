@@ -1,0 +1,129 @@
+/* ==========================================================================
+   RoomHost shell fit — OWNER: rooms (round-4 mobile ergonomics).
+   Per-module CSS (conflict rule 3), imported by RoomHost.tsx. Consumes
+   tokens.css only; index.css is architect-owned, so the corrected geometry
+   lives HERE and out-specifies the `.room-host` block over there
+   (`.room-host.room-host` = two classes) regardless of import order.
+
+   THE BUG THIS FIXES (owner playtest: "buttons are too low"):
+   `#root` is already `height:100dvh` with `padding-top: env(safe-area-inset-
+   top)` and `padding-bottom: max(12px, env(safe-area-inset-bottom))`, and it
+   is `overflow:hidden`. index.css then gave `.room-host` `min-height:100dvh`
+   PLUS `padding-top: calc(52px + env(safe-area-inset-top))` and a footer
+   padded by `env(safe-area-inset-bottom)` again — so the room column was
+   ~(top inset + bottom inset + 52px) ≈ 93–133px TALLER than the box it lives
+   in. On the emulator the excess merely clipped; on a real iPhone (where the
+   insets are non-zero and dvh resolves against the true screen) the bottom
+   CTA slid under the home indicator or off the glass entirely. Every
+   surviving room reproduced it — see docs/shots/round4/ergo/before-metrics.json.
+
+   THE CONTRACT NOW:
+     .room-host          fits its parent exactly (height:100%), pads only for
+                         the fixed chrome bar — never for a safe area #root
+                         already paid for.
+     .room-host__stage   the puzzle view. Grows to fill so sparse rooms centre
+                         their play surface in the thumb zone (AAA 6.20);
+                         scrolls INSIDE itself (contained, no scrollbar) as
+                         the last resort so a dense room can never push an
+                         interactive element off-screen.
+     .room-deck          opt-in bottom cluster (on-screen keys + the room's
+                         primary verb). Sticks to the bottom of the stage, so
+                         in the tall rooms the buttons stay in the thumb zone
+                         while the board scrolls behind them.
+     .room-host__footer  the always-visible abandon/leave affordance
+                         (AAA 4.13), pinned outside the scroll region.
+   ========================================================================== */
+
+.room-host.room-host {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Clear the fixed chrome bar ONLY (.chr-header pads its own safe-area top,
+     and #root already pads env(safe-area-inset-top) for this subtree). */
+  padding-top: var(--chrome-h);
+  padding-bottom: 0;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.room-host.room-host > .room-host__stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* house rule: no scrollbars, ever */
+}
+.room-host.room-host > .room-host__stage::-webkit-scrollbar {
+  display: none;
+}
+
+/* The room column: fills the slack (so its own centring/spacers work) but
+   never shrinks below its content (so nothing overlaps when it doesn't fit —
+   the stage scrolls instead). The auto-margin centring index.css puts on
+   `.room-host > :first-child > :first-child/:last-child` would now land on
+   THIS element inside a scroll container, where auto margins clip the top —
+   neutralised here and replaced with justify-content, which degrades safely. */
+.room-host.room-host > .room-host__stage > * {
+  flex: 1 0 auto;
+  min-height: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  justify-content: center;
+}
+
+/* The sticky bottom cluster. Rooms whose controls cannot fit above the fold
+   at 375×667 (the Darkroom's 27 keys, the Linen Closet's keyboard + verb)
+   wrap them in `.room-deck`; the board scrolls behind, the buttons stay put.
+   The paper backing + hairline keep the scrolled board from bleeding through. */
+.room-deck {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.45rem;
+  margin-top: auto;
+  background: var(--paper);
+  box-shadow: 0 -1px 0 var(--paper-edge);
+}
+
+.room-host.room-host > .room-host__footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  /* #root already reserves max(12px, env(safe-area-inset-bottom)) below this;
+     adding the inset again is what pushed the CTA under the home indicator. */
+  padding: 0.45rem 0.9rem 0.5rem;
+}
+
+/* Short screens (iPhone SE/8 at 375×667, and any device in a compact
+   standalone frame): the shell trims its own chrome first, before any room
+   has to give up board size. */
+@media (max-height: 700px) {
+  /* --chrome-h is re-declared to 50px by tokens.css at this breakpoint; the
+     padding rule above already tracks it, so nothing is restated here. */
+  .room-host.room-host > .room-host__footer {
+    padding: 0.3rem 0.9rem 0.35rem;
+  }
+  .room-deck {
+    gap: 0.35rem;
+    padding-top: 0.3rem;
+  }
+}
+
+/* iOS keyboard open (html.kb-open, stamped by app/platform/viewport.ts):
+   the shell is already lifted by --kb-shift, so give the lift as little to do
+   as possible — the room's decorative head is the first thing to go. */
+html.kb-open .room-host .anch__head,
+html.kb-open .room-host .mic__head,
+html.kb-open .room-host .m2__head {
+  display: none;
+}

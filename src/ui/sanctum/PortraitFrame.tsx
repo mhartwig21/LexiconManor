@@ -106,9 +106,24 @@ export default function PortraitFrame({
         <path d="M146 142 L 141 145 M145 148 L 140 151" strokeWidth="0.9" opacity="0.45" />
       </g>
 
-      {/* Nameplate */}
-      <rect x="72" y="282" width="96" height="14" rx="3" fill="none" stroke="var(--gilt)" strokeWidth="1.2" opacity="0.7" />
-      <text x="120" y="292.5" textAnchor="middle" fontSize="9" fill="currentColor" opacity="0.75" style={{ fontFamily: 'var(--font-display)', letterSpacing: '0.12em' }}>
+      {/* Nameplate. Round-4 fix: at 96 user units the plate was engraved for a
+          shorter man — "THE LEXICOGRAPHER" set at 9px/0.12em measures ~166
+          units and ran ~55 units past both ends of its own brass. The plate is
+          widened to 156 (still inside the inner gilt oval, rx 97 → 23..217)
+          and `textLength` pins the engraving to 132 units so it can never
+          overrun again, whatever face the display stack resolves to. */}
+      <rect x="42" y="281" width="156" height="15" rx="3" fill="none" stroke="var(--gilt)" strokeWidth="1.2" opacity="0.7" />
+      <text
+        x="120"
+        y="292"
+        textAnchor="middle"
+        fontSize="8.6"
+        textLength="132"
+        lengthAdjust="spacingAndGlyphs"
+        fill="currentColor"
+        opacity="0.75"
+        style={{ fontFamily: 'var(--font-display)' }}
+      >
         THE LEXICOGRAPHER
       </text>
     </svg>

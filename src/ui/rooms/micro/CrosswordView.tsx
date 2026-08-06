@@ -58,12 +58,34 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
 
   const handledAttempt = useRef(0);
   const timers = useRef<number[]>([]);
+  // Round-4: on a 667-tall screen the clue list is a capped, contained scroll
+  // box (a5micro.css) so it can never push the keyboard off the glass — which
+  // means the active clue has to be walked into view when it changes.
+  const activeClueRef = useRef<HTMLButtonElement | null>(null);
+  const activeCellRef = useRef<HTMLButtonElement | null>(null);
   const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)); };
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const won = state.cw.status === 'won';
   const stepCost = tier === 3 ? 3 : 2;
   const activeEntry = puzzle.entries.find((e) => e.id === active.entryId) ?? firstEntry;
+
+  // Keep the clue she is answering inside the clue box. `nearest` scrolls the
+  // box only, never the page (the shell has no page scroll at all), and only
+  // when the clue is actually out of view.
+  useEffect(() => {
+    activeClueRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [active.entryId]);
+
+  // Same guarantee for the square she is typing into. On a 375x667 screen the
+  // grid, the clue, a full keyboard and two verbs cannot all fit at once
+  // without dropping tap targets under the 44pt bar (AAA 6.19) — so the grid
+  // is what scrolls, and the active square is always walked back onto the
+  // glass. `nearest` is a no-op whenever it is already visible, so nothing
+  // jitters on a tall phone where the whole grid fits.
+  useEffect(() => {
+    activeCellRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [active.cell]);
 
   // Feedback choreography (keyed off adapter attempts).
   useEffect(() => {
@@ -163,7 +185,9 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
 
       <div
         className={`lc-grid${shaking ? ' m2-shake' : ''}`}
-        style={{ gridTemplateColumns: `repeat(${puzzle.size}, 56px)` }}
+        // The square size is a CSS variable capped on both axes (a5micro.css)
+        // so the grid + clues + keyboard fit a 375x667 screen (round-4).
+        style={{ gridTemplateColumns: `repeat(${puzzle.size}, var(--lc-cell, 56px))` }}
       >
         {Array.from({ length: puzzle.size * puzzle.size }, (_, i) => {
           const open = cells.includes(i);
@@ -179,6 +203,7 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
           return (
             <button
               key={i}
+              ref={i === active.cell ? activeCellRef : undefined}
               className={classes.join(' ')}
               onPointerDown={(ev) => { ev.preventDefault(); selectCell(i); }}
               aria-label={`Square ${i}`}
@@ -203,10 +228,18 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
         </div>
       ) : (
         <>
+          {/* The deck: clues + keyboard + the room's verb stay pinned to the
+              bottom of the scrolling stage, so they sit in the thumb zone on
+              every iPhone instead of being pushed off the glass by the grid
+              (round-4 owner report; see ui/rooms/room-host.css). The clue
+              rides WITH the keyboard — a clue you cannot see while typing is
+              not a memory prosthetic, it is a memory test. */}
+          <div className="room-deck">
           <div className="lc-clues m2-card">
             {puzzle.entries.map((e) => (
               <button
                 key={e.id}
+                ref={e.id === active.entryId ? activeClueRef : undefined}
                 className={`lc-clue${e.id === active.entryId ? ' lc-clue--active' : ''}${entryDone(e) ? ' lc-clue--done' : ''}`}
                 onPointerDown={(ev) => { ev.preventDefault(); selectEntry(e); }}
               >
@@ -245,6 +278,7 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
             <button className="m2-btn" onClick={reveal} disabled={state.cw.revealedCells.includes(active.cell)}>
               Smooth a crease · −{stepCost} steps
             </button>
+          </div>
           </div>
         </>
       )}

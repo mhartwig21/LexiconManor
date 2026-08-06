@@ -16,19 +16,25 @@
  *     pays a gem via a `reward` event.
  */
 
-import type { Difficulty, HivePuzzle, Tier } from '../../types';
-import { createRng, pick } from '../../rng';
+import type { HivePuzzle, Tier } from '../../types';
 import { startHive, submitHiveWord, type HiveState } from '../../hive';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../room-puzzle';
 import { getPools, lazyContent } from '../../../app/pools';
+import { selectByTier } from './tier-select';
 
-export const HIVE_POOL = lazyContent<HivePuzzle[]>(() => getPools().hive);
+/**
+ * Round 4: the generator stamps a `tier` on every hive and the tiers differ
+ * structurally — tier 1 ships ~70 curated words with an everyday-band pangram
+ * and ≥52% of its points reachable on everyday vocabulary; tier 3 ships ~37
+ * words, no everyday pangram, and ≤42% everyday point share, so Full Bloom
+ * (70% of the room's points) cannot be reached without the rarer finds. The
+ * ladder percentages stay fixed — the BAR moved, not the ruler.
+ */
+/** @deprecated `tier` is now REQUIRED on HivePuzzle in engine/types.ts;
+ *  this alias is kept so existing imports keep resolving. */
+export type HivePuzzleEx = HivePuzzle;
 
-const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
-  1: ['medium', 'easy'],
-  2: ['hard', 'medium'],
-  3: ['expert', 'hard'],
-};
+export const HIVE_POOL = lazyContent<HivePuzzleEx[]>(() => getPools().hive as HivePuzzleEx[]);
 
 /**
  * Garden-themed rank ladder on the SB curve shape (AAA 1.11), with the early
@@ -89,22 +95,13 @@ function isPerfect(s: HiveRoomState): boolean {
   return s.costedMistakes === 0;
 }
 
-export const hiveAdapter: RoomPuzzleAdapter<HivePuzzle, HiveRoomState, HiveAction> = {
+export const hiveAdapter: RoomPuzzleAdapter<HivePuzzleEx, HiveRoomState, HiveAction> = {
   kind: 'hive',
   size: 'anchor',
 
-  select({ tier, seed, seenIds }) {
-    const rng = createRng(seed);
-    const seen = new Set(seenIds);
-    for (const difficulty of TIER_DIFFICULTY[tier]) {
-      const fresh = HIVE_POOL.filter((p) => p.difficulty === difficulty && !seen.has(p.id));
-      if (fresh.length > 0) return pick(rng, fresh);
-    }
-    const anyFresh = HIVE_POOL.filter((p) => !seen.has(p.id));
-    return anyFresh.length > 0 ? pick(rng, anyFresh) : pick(rng, HIVE_POOL);
-  },
+  select: (opts) => selectByTier(HIVE_POOL, opts),
 
-  start(puzzle: HivePuzzle, _ctx: RoomContext): HiveRoomState {
+  start(puzzle: HivePuzzleEx, _ctx: RoomContext): HiveRoomState {
     // The v1 win gate (puzzle.pointThreshold) is retired: raise the engine's
     // threshold to the full total so it never blocks play; the manor's solve
     // point is the ladder's Full Bloom (70% of totalPoints), managed below.

@@ -4,7 +4,7 @@ import {
   beginDay, buildDayRecord, canAdvancePhase, canEndDay, daySeedFor, pruneEventsAtDusk,
   shouldTriggerDusk, DAY_FLOW, DUSK_FADE_MS,
 } from '../src/engine/day';
-import { appendEntry, createLedger } from '../src/engine/economy/steps';
+import { appendEntry, createLedger, teaBonus, STEP_TABLE } from '../src/engine/economy/steps';
 import type { DayState, DraftOffer, StepLedger } from '../src/engine/types';
 import type { RecordedEvent } from '../src/engine/events';
 import { draftTargets } from '../src/engine/manor/grid';
@@ -67,8 +67,11 @@ describe('beginDay', () => {
     expect(begun!.day.day).toBe(1);
     expect(begun!.day.phase).toBe('morning');
     expect(begun!.day.activeRoom).toBeNull();
-    expect(begun!.ledger.budget).toBe(40);
-    expect(begun!.teaSteps).toBe(0);
+    // Owner-playtest overhaul: the base budget is deliberately too lean to
+    // buy the top of the house; the tea arc is what eventually pays for it.
+    expect(begun!.ledger.budget).toBe(STEP_TABLE.dayStart);
+    expect(begun!.ledger.budget).toBe(18);
+    expect(begun!.teaSteps).toBe(0);          // day 1: they have only just met
   });
 
   it('rolls to the next morning only from night', () => {
@@ -76,7 +79,7 @@ describe('beginDay', () => {
     expect(beginDay(day({ phase: 'dusk' }), { brambleAffinity: 0, entropy: 1 })).toBeNull();
     const begun = beginDay(day({ phase: 'night', day: 7 }), { brambleAffinity: 2, entropy: 1 });
     expect(begun!.day.day).toBe(8);
-    expect(begun!.teaSteps).toBe(6);
+    expect(begun!.teaSteps).toBe(teaBonus(2));
   });
 
   it('derives a deterministic, day-distinct seed', () => {
@@ -284,7 +287,7 @@ describe('the gift is a priced action through the audited ledger (AAA 4.9)', () 
     const gift = s.ledger.entries.find((e) => e.reason === 'gift');
     expect(gift).toBeDefined();
     expect(gift!.delta).toBe(-1);
-    expect(s.stepsRemaining()).toBe(39);
+    expect(s.stepsRemaining()).toBe(STEP_TABLE.dayStart - 1);
     expect(s.affinities.bramble).toBe(1);
     expect(s.giftedToday).toContain('bramble');
     await flush();

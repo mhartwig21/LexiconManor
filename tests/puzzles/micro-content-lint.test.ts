@@ -4,7 +4,13 @@ import {
 } from '../../content/generate-gate';
 import { BLOCKLIST } from '../../content/lib/dictionary';
 import type { CipherPuzzle } from '../../src/engine/puzzles/cipher';
+import type { CrosswordPuzzle } from '../../src/engine/puzzles/crossword';
+import type { HivePuzzle, TwistlePuzzle, WordWebPuzzle } from '../../src/engine/types';
 import cipherData from '../../content/generated/cipher.json';
+import crosswordData from '../../content/generated/crossword.json';
+import hiveData from '../../content/generated/hive.json';
+import twistleData from '../../content/generated/twistle.json';
+import wordWebData from '../../content/generated/word-web.json';
 
 /**
  * Content lint — the COZY gate replayed against SHIPPED JSON (AAA COZY
@@ -55,5 +61,41 @@ describe('cipher.json lint (Darkroom)', () => {
   it('displayable() itself refuses a gated word (self-test)', () => {
     expect(displayable('kill')).toBe(false);
     expect(displayable('teapot')).toBe(true);
+  });
+});
+
+/**
+ * Round 4 extends the lint to every surviving room's DISPLAY surfaces. The
+ * Conservatory prints its found words and its exit silhouettes; the Gallery
+ * prints its targets as chips; the Library sets all sixteen tiles in display
+ * type; the Linen Closet prints its answers. Each generator now applies the
+ * gate at build time — this suite fails CI if a gated word ever reappears in
+ * the shipped JSON, whether or not the generator was re-run honestly.
+ */
+describe('anchor + micro pool lint (the manor never prints a gated word)', () => {
+  it('hive valid words all pass the cozy gate', () => {
+    for (const p of hiveData as HivePuzzle[]) {
+      for (const w of p.validWords) expect(displayable(w), `${p.id}: ${w}`).toBe(true);
+    }
+  });
+
+  it('twistle target words all pass the cozy gate', () => {
+    for (const p of twistleData as TwistlePuzzle[]) {
+      for (const w of p.targetWords) expect(displayable(w), `${p.id}: ${w}`).toBe(true);
+    }
+  });
+
+  it('word-web tiles all pass the tone gate', () => {
+    for (const p of wordWebData as WordWebPuzzle[]) {
+      for (const g of p.groups) {
+        for (const w of g.words) expect(toneOk(w.toLowerCase()), `${p.id}: ${w}`).toBe(true);
+      }
+    }
+  });
+
+  it('crossword answers all pass the cozy gate', () => {
+    for (const p of crosswordData as CrosswordPuzzle[]) {
+      for (const e of p.entries) expect(displayable(e.answer), `${p.id}: ${e.answer}`).toBe(true);
+    }
   });
 });

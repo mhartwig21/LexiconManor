@@ -17,6 +17,9 @@ import { useManorStore } from '../../app/store';
 // slice's puzzleId pinning at placement (integration: replaced the private
 // bit-identical copy that lived here).
 import { roomSeed } from '../../engine/manor/grid';
+// Round-4 ergonomics: the shell-fit contract (stage scrolls, footer pinned,
+// no double-counted safe areas). See room-host.css for the why.
+import './room-host.css';
 
 interface Session {
   puzzle: unknown;
@@ -77,7 +80,12 @@ export default function RoomHost() {
 
   return (
     <div className="room-host">
-      <View puzzle={session.puzzle} state={session.state} tier={activeRoom.tier} dispatch={dispatch} />
+      {/* The stage owns the overflow: a room that cannot fit scrolls inside
+          this box instead of pushing its buttons off the bottom of the glass
+          (round-4 owner report). The footer below always stays visible. */}
+      <div className="room-host__stage">
+        <View puzzle={session.puzzle} state={session.state} tier={activeRoom.tier} dispatch={dispatch} />
+      </div>
       <div className="room-host__footer">
         {session.done ? (
           <button className="btn btn--primary" onClick={leaveRoom}>Step back out</button>

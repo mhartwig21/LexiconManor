@@ -9,11 +9,12 @@
  *     view; the priced intruder nudge (AAA 2.10) emits a `hint` event.
  */
 
-import type { Difficulty, Tier, WordWebGroup, WordWebPuzzle } from '../../types';
+import type { Tier, WordWebGroup, WordWebPuzzle } from '../../types';
 import { createRng, pick, shuffle } from '../../rng';
 import { startWordWeb, submitGroup, type WordWebState } from '../../word-web';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../room-puzzle';
 import { getPools, lazyContent } from '../../../app/pools';
+import { selectByTier } from './tier-select';
 
 /**
  * Generator enrichments carried in the content JSON (content/generate-wordweb.ts)
@@ -30,17 +31,20 @@ export interface WordWebPuzzleEx extends WordWebPuzzle {
   groups: WordWebGroupEx[];
   /** 2.6 adversarial opening layout: herrings clustered, no gift rows. */
   layout?: string[];
+  /**
+   * Round 4 — manor row band. Now declared REQUIRED on WordWebPuzzle in
+   * engine/types.ts (the honest home); restated here only for the doc.
+   * Tier differences are structural: tier 1 keeps its trivia gimme and ships
+   * at most one loose trap; tier 3 bans trivia, requires two SUBTLE categories
+   * (rhyme / anagram / silent-letter / hidden word), and must carry 2–3 tight
+   * traps that the build-time solver scored.
+   */
+  tier: Tier;
 }
 
 export const WORD_WEB_POOL = lazyContent<WordWebPuzzleEx[]>(
   () => getPools().wordWeb as WordWebPuzzleEx[],
 );
-
-const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
-  1: ['medium', 'easy'],
-  2: ['hard', 'medium'],
-  3: ['expert', 'hard'],
-};
 
 /** What the view renders after the last action. Never consumed by slices. */
 export type WordWebFeedback =
@@ -125,16 +129,7 @@ export const wordWebAdapter: RoomPuzzleAdapter<WordWebPuzzleEx, WordWebRoomState
   kind: 'word-web',
   size: 'anchor',
 
-  select({ tier, seed, seenIds }) {
-    const rng = createRng(seed);
-    const seen = new Set(seenIds);
-    for (const difficulty of TIER_DIFFICULTY[tier]) {
-      const fresh = WORD_WEB_POOL.filter((p) => p.difficulty === difficulty && !seen.has(p.id));
-      if (fresh.length > 0) return pick(rng, fresh);
-    }
-    const anyFresh = WORD_WEB_POOL.filter((p) => !seen.has(p.id));
-    return anyFresh.length > 0 ? pick(rng, anyFresh) : pick(rng, WORD_WEB_POOL);
-  },
+  select: (opts) => selectByTier(WORD_WEB_POOL, opts),
 
   start(puzzle: WordWebPuzzleEx, _ctx: RoomContext): WordWebRoomState {
     return {

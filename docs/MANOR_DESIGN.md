@@ -64,14 +64,18 @@ from v2 carry over (see §10).
 | Solve a small room (micro-puzzle) | +3 |
 | Solve a large room (anchor mode) | +6 to +8 |
 | Perfect solve (no mistakes) | +2 bonus |
-| Kitchen snack / Bramble's tea | +5 to +10 |
+| Kitchen snack / Bramble's tea | snack +3..+7 · tea 0 → +11 across the friendship |
 | Petting Dewey (the cat) | −1 (worth it) |
 
 - Steps never go negative mid-puzzle: a puzzle can always be *abandoned* (the room stays
   unsolved and yields nothing, no extra penalty — cozy, not cruel).
 - Day ends at 0 steps with a gentle "dusk" transition, never a failure sting.
-- Target: a decent day visits 8–12 rooms; a great day with refills reaches the Sanctum
-  row. Wife-playtest and tune (§12).
+- Target (RETUNED, round 4 — see AAA 4.10a–f, which is the live spec): a decent day
+  visits **5–8 rooms** and solves 2–4 puzzles in **10–15 minutes**; a great day reaches
+  row 5–6, and the Sanctum row is a *campaign* event (first reached around day 6–10),
+  not something refills buy on a Tuesday. Base budget is **18 steps**, and movement is
+  priced per row (−1 on the ground floor rising to −5 up top), so the climb — not the
+  puzzle count — is what a day is spent on.
 
 **Other currencies** (secondary, all reset nightly except keys' meta-variants):
 - **Gems** — spent to draft premium room cards and reroll a draft offer (1 gem).
@@ -104,16 +108,17 @@ Anchor rooms (ported from v2 engine, one mode each):
 | The Gallery | Twistle (grid word search) | Large |
 | The Study | Forgotten Word (poetic definitions) | Large, rare — feeds the meta-mystery directly |
 
-New micro-rooms (new engine modules, 30–90 seconds each):
+New micro-rooms (new engine modules, 30–90 seconds each). **Round 4 culled four of
+the original six** — the Vestibule (anagram), Staircase (word ladder), Music Room
+(rhyme chain) and Pantry (category sprint) were shallow, and shipping four thin games
+cost more than it bought. Their engines, views, generators, pools and dialogue are
+gone, not disabled. The surviving two are listed below, plus the round-4 addition:
 
-| Room | Game |
-|---|---|
-| The Vestibule | Anagram: unscramble 1–3 words |
-| The Staircase | Word ladder (CAT→COT→DOT…), one rung per landing |
-| The Darkroom | Simple substitution cipher over a short phrase |
-| The Linen Closet | Mini crossword (3–5 clues) |
-| The Music Room | Rhyme chain: supply words rhyming with a prompt |
-| The Pantry | Category sprint: name N words fitting a label before steps tick |
+| Room | Game | Status |
+|---|---|---|
+| The Darkroom | Simple substitution cipher over a short phrase | shipped |
+| The Linen Closet | Mini crossword (3–5 clues) | shipped |
+| The Counting House / The Strong Room | Sudoku on a 9×9 ledger leaf — expert baseline, three technique tiers | shipped (round 4; priced as an **anchor**, not a micro, despite living in `ui/rooms/micro/`) |
 
 Micro-room content comes from the existing build-time content pipeline with new
 generators + validators (same pattern as the hive/twistle generators: generated offline,
@@ -202,12 +207,14 @@ micro-room engine modules + generators.
 - Any 3D or camera motion. Any screen-shake beyond the mildest existing juice.
 - Multiplayer, accounts, servers — local-first static SPA stays.
 - Health/damage framing anywhere in copy or UI.
-- Timed pressure as a core mechanic (the Pantry sprint is the one playful exception,
-  and it only ticks steps, never a real-time fail state).
+- Timed pressure as a core mechanic. (The Pantry sprint used to be the one playful
+  exception; it was culled in round 4, so there is now no timed room at all.)
 
 ## 12. Open tuning questions (answer via wife-playtests)
 
-1. Day length: does 40 steps land in the 10–15 min window?
+1. ~~Day length: does 40 steps land in the 10–15 min window?~~ **Answered (round 4):**
+   no — 40 steps ran long and made the manor trivially climbable. The budget is now 18
+   with per-row movement pricing; measured median 11.2 min, p90 21.5 (AAA 4.10b).
 2. Mistake cost: is −2 felt-but-fair in each mode? (Hive invalid words may need −1.)
 3. Volume 1 mystery difficulty: target "solved in roughly 2–4 evenings of play,"
    solvable-in-principle much sooner.

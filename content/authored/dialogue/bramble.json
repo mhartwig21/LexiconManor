@@ -806,6 +806,45 @@
       ]
     },
     {
+      "id": "bramble.recap.dry-counting-house",
+      "trigger": "morning",
+      "priority": 712,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        },
+        {
+          "kind": "event",
+          "event": "room-abandoned",
+          "where": {
+            "kind": "sudoku"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "The Counting House had you till the candle went, did it. That ledger has outlasted better bookkeepers than either of us, pet — it outlasted him twice a quarter."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Don't argue with a column, is my advice. Find the figure that has nowhere else in the world to go, and set it down. The rest follow it like ducklings."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "And pencil freely. Pencil costs nothing in that room and never did — it's the ink that wants you certain first."
+        }
+      ]
+    },
+    {
       "id": "bramble.recap.victory",
       "trigger": "morning",
       "priority": 1000,

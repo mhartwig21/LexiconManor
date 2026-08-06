@@ -48,8 +48,14 @@ export interface BeginDayResult {
 
 /**
  * Roll to a new morning. Legal from a fresh save (prev null) or from 'night'.
- * Budget = 40; the affinity tea bonus arrives as a ledger entry so it renders
- * as a floating +N during the morning scene (AAA 4.9).
+ *
+ * Budget = `STEP_TABLE.dayStart` (18 after the 2026-08 owner-playtest
+ * overhaul), and Bramble's tea arrives SEPARATELY as a ledger entry so it
+ * renders as a floating +N during the morning scene (AAA 4.9). That split is
+ * load-bearing now: the base budget is deliberately too small to reach the
+ * Sanctum row, and the tea — which grows with her affinity across weeks — is
+ * the campaign arc that eventually makes the climb affordable (AAA 4.10).
+ * Day 1 therefore starts at a bare 18 and cannot buy the top of the house.
  */
 export function beginDay(
   prev: DayState | null,

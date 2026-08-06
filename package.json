@@ -17,10 +17,11 @@
     "content:crossword": "tsx content/generate-crossword.ts",
     "content:wordweb": "tsx content/generate-wordweb.ts",
     "content:forgotten-word": "tsx content/generate-forgotten-word.ts",
+    "content:sudoku": "tsx content/generate-sudoku.ts",
     "content:volume": "tsx content/generate-volume.ts",
     "content:validate-dialogue": "tsx content/validate-dialogue.ts",
     "content:verify": "npm run content:validate-dialogue && tsx content/generate-volume.ts --check content/authored/volumes/volume-1.json",
-    "content:all": "npm run content:dictionary && npm run content:hive && npm run content:twistle && npm run content:cipher && npm run content:crossword && npm run content:wordweb && npm run content:forgotten-word && npm run content:verify",
+    "content:all": "npm run content:dictionary && npm run content:hive && npm run content:twistle && npm run content:cipher && npm run content:crossword && npm run content:wordweb && npm run content:forgotten-word && npm run content:sudoku && npm run content:verify",
     "build:pages": "npm run content:verify && tsc --noEmit && vite build && tsx scripts/build-sw-precache.ts",
     "assets:pwa": "tsx scripts/gen-pwa-assets.ts"
   },

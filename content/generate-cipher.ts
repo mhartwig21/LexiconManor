@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { createRng, shuffle, type Rng } from '../src/engine/rng';
 import { cipherLettersOf, decodeMap, type CipherPuzzle } from '../src/engine/puzzles/cipher';
 import { toneOk } from './generate-gate';
-import type { Difficulty } from '../src/engine/types';
+import type { Difficulty, Tier } from '../src/engine/types';
 
 /**
  * Cipher generator for The Darkroom.
@@ -13,14 +13,40 @@ import type { Difficulty } from '../src/engine/types';
  * A–Z and spaces only), encoded with a seeded substitution that is a strict
  * derangement over the letters present (no letter ever maps to itself).
  *
- * Difficulty: longer phrases give more statistical footholds, so the longest
- * quartile is 'easy' and the shortest is 'expert'; starting reveals taper
- * 3/2/1/0 with difficulty (the tier mercy). Validation round-trips every
- * puzzle through the runtime decoder and re-checks the derangement.
+ * ---------------------------------------------------------------------------
+ * THREE TIERS, MAPPED TO MANOR ROWS (owner directive, round 4: "longer
+ * phrases, no-crib tier 3")
+ * ---------------------------------------------------------------------------
+ * This REVERSES the old quartile rule (which called the longest phrases the
+ * easiest). What actually makes a cryptogram tractable is not text volume but
+ * a CRIB — a place to stand. So the tiers are defined by which crib the phrase
+ * hands you, and length now climbs with the row instead of falling:
+ *
+ *   tier 1 — the phrase contains a ONE-LETTER WORD (A or I). That word is a
+ *            two-way guess before a single deduction, and three revealed
+ *            high-frequency letters sit on top of it (≤ TIER1_MAX_LETTERS).
+ *   tier 2 — no one-letter word, but a TWO-LETTER word (IS/IT/TO/OF…) still
+ *            narrows things fast, plus exactly one revealed letter — and it is
+ *            deliberately a MID-frequency letter, not the easy E/T.
+ *   tier 3 — NO CRIB AT ALL: every word is 3+ letters, nothing is revealed,
+ *            the phrase is long (≥ TIER3_MIN_LETTERS) and its alphabet is wide
+ *            (≥ TIER3_MIN_DISTINCT distinct letters). You start from pure
+ *            pattern: doubles, word shapes, and the manor's own voice.
+ *
+ * Validation round-trips every puzzle through the runtime decoder, re-checks
+ * the derangement, and enforces every tier gate above.
  */
 
 const SEED = 20260807;
-const REVEALS: Record<Difficulty, number> = { easy: 3, medium: 2, hard: 1, expert: 0 };
+/** Starting reveals by tier — the crib the Darkroom hands you, or doesn't. */
+const REVEALS: Record<Tier, number> = { 1: 3, 2: 1, 3: 0 };
+/** Legacy display label per tier (engine/types.ts Difficulty stays frozen). */
+const TIER_LABEL: Record<Tier, Difficulty> = { 1: 'easy', 2: 'medium', 3: 'hard' };
+/** Tier-1 phrases stay short — the crib plus a long phrase is no puzzle. */
+const TIER1_MAX_LETTERS = 34;
+/** Tier 3 is the long one: more cells to fill and no foothold to start from. */
+const TIER3_MIN_LETTERS = 26;
+const TIER3_MIN_DISTINCT = 13;
 /**
  * Longest word a phrase may carry: the Darkroom renders each word unbroken
  * as 44pt-tappable cells (micro.css .dk-cell, AAA 6.19), and 8 cells is the
@@ -114,10 +140,47 @@ const PHRASES: string[] = [
   'THE LAMP BURNS LONGEST FOR SLOW READERS',
   'EVERY LOCKED DRAWER HIDES A FIRST DRAFT',
   'MORNING LIGHT FADES THE BOLDEST INK',
+  // Round 4 — the no-crib tier: long, every word 3+ letters, wide alphabet.
+  'EVERY LOCKED DRAWER HIDES ANOTHER SMALL SECRET',
+  'THE QUIET HOUSE KEEPS EVERY VISITOR WARM',
+  'GOOD READERS NEVER HURRY THE LAST PAGE',
+  'THE GARDEN FORGIVES EVERY CLUMSY GARDENER',
+  'SMALL LAMPS OUTLAST GREAT BONFIRES',
+  'EVERY MARGIN HOLDS SOME BRAVER SENTENCE',
+  'THE OLDEST INK STILL SMELLS FAINTLY SWEET',
+  'PATIENT HANDS MEND WHAT HASTE UNDID',
+  'THE HOUSE LEARNS EVERY GUEST FROM THEIR FOOTFALL',
+  'WARM TEA MENDS MORE THAN CLEVER ADVICE',
+  'EVERY SHELF KEEPS ONE UNREAD STORY',
+  'THE KETTLE SINGS FOR ANYONE WHO WAITS',
+  'LOST LETTERS FIND WARMER ROOMS LATER',
+  'SLOW READING KEEPS THE LONGEST COMPANY',
+  'THE MANOR COUNTS ITS DAYS AND NOT ITS CLOCKS',
+  'EVERY GOOD QUESTION OUTLIVES ITS ANSWER',
+  'THE CANDLE KEEPS ITS OWN QUIET COUNSEL',
+  'DUSTY SHELVES HOLD THE WARMEST STORIES',
 ];
 
 function letterCount(phrase: string): number {
   return phrase.replace(/[^A-Z]/g, '').length;
+}
+
+function shortestWord(phrase: string): number {
+  return Math.min(...phrase.split(' ').map((w) => w.length));
+}
+
+/**
+ * The tier a phrase's own shape earns: which crib it hands the player, plus
+ * the length/alphabet floors. Returns null for phrases that fit nowhere (a
+ * one-letter-word phrase that is too long to be a gentle tier-1 opener).
+ */
+function tierOf(phrase: string): Tier | null {
+  const shortest = shortestWord(phrase);
+  const letters = letterCount(phrase);
+  if (shortest === 1) return letters <= TIER1_MAX_LETTERS ? 1 : null;
+  if (shortest >= 3 && letters >= TIER3_MIN_LETTERS
+    && distinctLetters(phrase).length >= TIER3_MIN_DISTINCT) return 3;
+  return 2;
 }
 
 function distinctLetters(phrase: string): string[] {
@@ -151,36 +214,46 @@ function main() {
   const dropped = PHRASES.length - usable.length;
   if (dropped > 0) console.log(`dropped ${dropped} phrase(s) with a thin alphabet or too few words`);
 
-  // Longest quartile = easy … shortest = expert (ties broken alphabetically
-  // for determinism). More text = more statistical footholds.
-  const sorted = [...usable].sort((a, b) => letterCount(b) - letterCount(a) || a.localeCompare(b));
-  const q = Math.ceil(sorted.length / 4);
-  const byDifficulty: [Difficulty, string[]][] = [
-    ['easy', sorted.slice(0, q)],
-    ['medium', sorted.slice(q, q * 2)],
-    ['hard', sorted.slice(q * 2, q * 3)],
-    ['expert', sorted.slice(q * 3)],
-  ];
+  // Tier by phrase shape (the crib it hands you), sorted for determinism.
+  const byTier: Record<Tier, string[]> = { 1: [], 2: [], 3: [] };
+  let unplaced = 0;
+  for (const phrase of [...usable].sort((a, b) => a.localeCompare(b))) {
+    const tier = tierOf(phrase);
+    if (tier === null) { unplaced++; continue; }
+    byTier[tier].push(phrase);
+  }
+  if (unplaced > 0) console.log(`${unplaced} phrase(s) fit no tier band`);
 
-  const puzzles: CipherPuzzle[] = [];
-  for (const [difficulty, phrases] of byDifficulty) {
-    phrases.forEach((plaintext, i) => {
+  const puzzles: TieredCipherPuzzle[] = [];
+  for (const tier of [1, 2, 3] as Tier[]) {
+    byTier[tier].forEach((plaintext, i) => {
       const present = distinctLetters(plaintext);
       const encode = derangedMapping(rng, present);
       const ciphertext = [...plaintext].map((ch) => encode[ch] ?? ch).join('');
 
-      // Starting reveals: the most frequent plain letters, as cipher letters.
+      // Tier 1's crib is generous — the most frequent letters. Tier 2 gets one
+      // MID-frequency letter instead: a foothold, but not the free E.
       const freq: Record<string, number> = {};
       for (const ch of plaintext) {
         if (/[A-Z]/.test(ch)) freq[ch] = (freq[ch] ?? 0) + 1;
       }
-      const reveals = [...present]
-        .sort((a, b) => (freq[b] ?? 0) - (freq[a] ?? 0) || a.localeCompare(b))
-        .slice(0, REVEALS[difficulty])
-        .map((plain) => encode[plain]!);
+      const byFreq = [...present]
+        .sort((a, b) => (freq[b] ?? 0) - (freq[a] ?? 0) || a.localeCompare(b));
+      const chosen = tier === 2
+        ? byFreq.slice(Math.floor(byFreq.length / 2), Math.floor(byFreq.length / 2) + REVEALS[2])
+        : byFreq.slice(0, REVEALS[tier]);
+      const reveals = chosen.map((plain) => encode[plain]!);
 
-      puzzles.push({ id: `cipher-${difficulty}-${i + 1}`, difficulty, ciphertext, plaintext, reveals });
+      puzzles.push({
+        id: `cipher-t${tier}-${i + 1}`,
+        tier,
+        difficulty: TIER_LABEL[tier],
+        ciphertext,
+        plaintext,
+        reveals,
+      });
     });
+    console.log(`tier ${tier}: ${byTier[tier].length} phrases`);
   }
 
   validate(puzzles);
@@ -189,13 +262,31 @@ function main() {
   console.log(`cipher.json: ${puzzles.length} puzzles`);
 }
 
+type TieredCipherPuzzle = CipherPuzzle & { tier: Tier };
+
 /** Fail the build on any puzzle the runtime decoder cannot round-trip. */
-function validate(puzzles: CipherPuzzle[]) {
+function validate(puzzles: TieredCipherPuzzle[]) {
   const problems: string[] = [];
   const ids = new Set<string>();
   for (const p of puzzles) {
     if (ids.has(p.id)) problems.push(`${p.id}: duplicate id`);
     ids.add(p.id);
+
+    // Tier gates (round 4): the crib rule, the length floor, the reveal count.
+    if (p.difficulty !== TIER_LABEL[p.tier]) problems.push(`${p.id}: label/tier mismatch`);
+    if (tierOf(p.plaintext) !== p.tier) problems.push(`${p.id}: phrase shape does not earn tier ${p.tier}`);
+    if (p.reveals.length !== REVEALS[p.tier]) {
+      problems.push(`${p.id}: ${p.reveals.length} reveals (tier ${p.tier} gives ${REVEALS[p.tier]})`);
+    }
+    if (p.tier === 3) {
+      if (shortestWord(p.plaintext) < 3) problems.push(`${p.id}: tier 3 must have no crib word shorter than 3 letters`);
+      if (letterCount(p.plaintext) < TIER3_MIN_LETTERS) problems.push(`${p.id}: tier 3 phrase too short`);
+      if (cipherLettersOf(p).length < TIER3_MIN_DISTINCT) problems.push(`${p.id}: tier 3 alphabet too thin`);
+      if (p.reveals.length !== 0) problems.push(`${p.id}: tier 3 is the no-crib tier`);
+    }
+    if (p.tier === 1 && shortestWord(p.plaintext) !== 1) {
+      problems.push(`${p.id}: tier 1 must hand over a one-letter crib word`);
+    }
     if (!/^[A-Z ]+$/.test(p.plaintext)) problems.push(`${p.id}: plaintext has characters outside A-Z/space`);
     if (p.plaintext.length !== p.ciphertext.length) problems.push(`${p.id}: length mismatch`);
 

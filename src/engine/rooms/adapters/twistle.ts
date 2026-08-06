@@ -11,19 +11,27 @@
  *   - everything malformed (too short, impossible path, already found) → weight 0
  */
 
-import type { Difficulty, Tier, TwistlePuzzle } from '../../types';
-import { createRng, pick } from '../../rng';
+import type { Tier, TwistlePuzzle } from '../../types';
 import { startTwistle, submitTwistleWord, type TwistleState } from '../../twistle';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../room-puzzle';
 import { getPools, lazyContent } from '../../../app/pools';
+import { selectByTier } from './tier-select';
 
-export const TWISTLE_POOL = lazyContent<TwistlePuzzle[]>(() => getPools().twistle);
+/**
+ * Round 4: the generator stamps a `tier` on every grid and the tiers differ
+ * structurally — tier 1 offers five near-straight everyday traces at
+ * minLength 4; tier 2 requires every target to turn at least twice; tier 3
+ * raises minLength to 5, sets `centerRequired`, and ships only targets whose
+ * straightest trace already corkscrews three times. The board's own `rules`
+ * carry the escalation into the engine, so no runtime branch is needed.
+ */
+/** @deprecated `tier` is now REQUIRED on TwistlePuzzle in engine/types.ts;
+ *  this alias is kept so existing imports keep resolving. */
+export type TwistlePuzzleEx = TwistlePuzzle;
 
-const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
-  1: ['medium', 'easy'],
-  2: ['hard', 'medium'],
-  3: ['expert', 'hard'],
-};
+export const TWISTLE_POOL = lazyContent<TwistlePuzzleEx[]>(
+  () => getPools().twistle as TwistlePuzzleEx[],
+);
 
 export type TwistleFeedback =
   | { kind: 'valid'; word: string; found: number; target: number; won: boolean }
@@ -44,22 +52,13 @@ function isPerfect(s: TwistleRoomState): boolean {
   return s.costedMistakes === 0;
 }
 
-export const twistleAdapter: RoomPuzzleAdapter<TwistlePuzzle, TwistleRoomState, TwistleAction> = {
+export const twistleAdapter: RoomPuzzleAdapter<TwistlePuzzleEx, TwistleRoomState, TwistleAction> = {
   kind: 'twistle',
   size: 'anchor',
 
-  select({ tier, seed, seenIds }) {
-    const rng = createRng(seed);
-    const seen = new Set(seenIds);
-    for (const difficulty of TIER_DIFFICULTY[tier]) {
-      const fresh = TWISTLE_POOL.filter((p) => p.difficulty === difficulty && !seen.has(p.id));
-      if (fresh.length > 0) return pick(rng, fresh);
-    }
-    const anyFresh = TWISTLE_POOL.filter((p) => !seen.has(p.id));
-    return anyFresh.length > 0 ? pick(rng, anyFresh) : pick(rng, TWISTLE_POOL);
-  },
+  select: (opts) => selectByTier(TWISTLE_POOL, opts),
 
-  start(_puzzle: TwistlePuzzle, _ctx: RoomContext): TwistleRoomState {
+  start(_puzzle: TwistlePuzzleEx, _ctx: RoomContext): TwistleRoomState {
     return {
       twistle: startTwistle(_puzzle),
       costedMistakes: 0,

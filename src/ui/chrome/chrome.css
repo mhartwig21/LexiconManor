@@ -184,7 +184,7 @@
   align-items: center;
   justify-content: center;
   min-width: var(--tap-target);
-  min-height: 36px;
+  min-height: var(--tap-target); /* AAA 6.19: was 36px, under the 44pt floor */
   padding: 0 8px;
   border: none;
   border-radius: var(--radius-card);
@@ -196,7 +196,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.chr-retire:active { transform: translateY(1px); }
+/* U.1: iOS never fires :active on a plain button, so the boot.ts pointer
+   delegate stamps `.is-pressed`. Both selectors, always paired. */
+.chr-retire:active,
+.chr-retire.is-pressed { transform: translateY(1px); }
 
 .chr-retire--armed {
   background: var(--paper-shade);
@@ -257,7 +260,8 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.chr-scene__btn:active { transform: translateY(1px); box-shadow: none; }
+.chr-scene__btn:active,
+.chr-scene__btn.is-pressed { transform: translateY(1px); box-shadow: none; }
 
 .chr-scene--enter { animation: chrSceneIn 400ms var(--ease-settle); }
 

@@ -32,7 +32,11 @@
   width: 100%;
   max-width: 430px;
   margin: 0 auto;
-  padding: max(0.8rem, env(safe-area-inset-top)) 1rem calc(0.9rem + env(safe-area-inset-bottom));
+  /* Round-4: .snc-page is position:fixed against the VIEWPORT, so it pays its
+     own safe areas — but it must also clear the fixed chrome bar (48px + its
+     own top inset), which was overlapping "Back down the stairs". */
+  padding: calc(var(--chrome-h) + max(0.4rem, env(safe-area-inset-top))) 1rem
+    calc(0.9rem + env(safe-area-inset-bottom));
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
@@ -53,8 +57,12 @@
   padding: 0 0.2rem;
 }
 
+/* The Lexicographer scales on the SHORT axis too: at 375x667 a 190px-wide
+   portrait (215px tall) pushed the door's Speak row into the home-indicator
+   band and the journal link clean off the glass (round-4 owner report). */
 .snc-portrait {
   width: min(46vw, 190px);
+  max-height: 21vh;
   height: auto;
   color: var(--ink);
   flex: none;
@@ -70,7 +78,7 @@
 
 /* The Portrait's line — reserved space, no layout shift between states. */
 .snc-line {
-  min-height: 4.4rem;
+  min-height: min(4.4rem, 9vh);
   display: flex;
   align-items: center;
   text-align: center;
@@ -122,6 +130,20 @@
 }
 .snc-input:focus { border-color: var(--cat-mystery); }
 .snc-input:disabled { opacity: 0.5; }
+/* The prompt is a whisper, not a specimen: the field's display face,
+   0.14em tracking and uppercase transform rendered "the forgotten word" at
+   308px inside a 216px box, so it clipped mid-word at both iPhone widths
+   (round-4 evidence). The placeholder opts out of all three; the TYPED word
+   keeps the full engraved treatment. */
+.snc-input::placeholder {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--ink-faint);
+  opacity: 1;
+}
 
 /* The wax-seal commit button (AAA 6.16: seal = confirm). */
 .snc-speak {
@@ -137,7 +159,10 @@
   cursor: pointer;
   transition: transform var(--dur-press), filter var(--dur-press);
 }
-.snc-speak:active { transform: translateY(1px) scale(0.98); }
+/* U.1: pointerdown-driven press (app/platform/boot.ts delegate); :active is
+   the desktop fallback only — iOS Safari applies it late or not at all. */
+.snc-speak:active,
+.snc-speak.is-pressed { transform: translateY(1px) scale(0.98); }
 .snc-speak:disabled { opacity: 0.45; cursor: default; }
 
 .snc-shake { animation: snc-shake 340ms ease-in-out; }
@@ -270,7 +295,8 @@
   cursor: pointer;
   transition: transform var(--dur-press);
 }
-.snc-btn:active { transform: translateY(1px); }
+.snc-btn:active,
+.snc-btn.is-pressed { transform: translateY(1px); }
 .snc-btn--primary {
   background: var(--cat-mystery);
   border-color: transparent;
@@ -307,6 +333,34 @@
 @keyframes snc-pulse {
   0%, 100% { opacity: 0.45; }
   50% { opacity: 0.9; }
+}
+
+/* --- Short screens + the iOS keyboard (round-4 ergonomics) ------------------ */
+/* At 375x667 every pixel above the door is discretionary; the door, its Speak
+   button and the journal link are not. */
+@media (max-height: 700px) {
+  .snc { gap: 0.4rem; }
+  .snc-portrait { max-height: 17.5vh; }
+  .snc__title { font-size: 1.15rem; }
+  .snc-line { min-height: 3.4rem; }
+  .snc-line--nudge { min-height: 1.8rem; }
+  .snc-door { padding: 0.7rem 0.8rem 0.8rem; gap: 0.55rem; }
+}
+
+/* Keyboard open: the door is the only thing she is looking at. Dropping the
+   Portrait and his line shortens the lift the platform has to apply
+   (--kb-shift, computed in app/platform/viewport.ts) to almost nothing, so
+   the Speak row rises into place without the whole landing sliding under her
+   thumb (AAA 7.9). Restored the instant the keyboard dismisses. */
+html.kb-open .snc-portrait,
+html.kb-open .snc__title,
+html.kb-open .snc-line,
+html.kb-open .snc-struck {
+  display: none;
+}
+html.kb-open .snc {
+  justify-content: flex-end;
+  padding-top: calc(var(--chrome-h) + max(0.4rem, env(safe-area-inset-top)));
 }
 
 @media (prefers-reduced-motion: reduce) {

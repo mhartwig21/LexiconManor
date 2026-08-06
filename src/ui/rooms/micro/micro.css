@@ -14,7 +14,9 @@
   width: 100%;
   max-width: 430px;
   margin: 0 auto;
-  padding: 0.8rem 0.9rem calc(0.9rem + env(safe-area-inset-bottom));
+  /* No env(safe-area-inset-bottom): #root already reserves the home-indicator
+     band and RoomHost's pinned footer sits below this column (round-4). */
+  padding: 0.7rem 0.9rem 0.5rem;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: var(--text-body);
@@ -54,7 +56,12 @@
   cursor: pointer;
   transition: transform var(--dur-press), filter var(--dur-press);
 }
-.mic-btn:active { transform: translateY(1px); filter: brightness(0.94); }
+/* U.1: `.is-pressed` lands from pointerdown (the capture-phase delegate in
+   app/platform/boot.ts) — the same-frame signal. `:active` is kept only as
+   the desktop/mouse fallback; on iOS Safari it fires late or not at all, so
+   :active ALONE is not a pass (round-3 platform major). */
+.mic-btn:active,
+.mic-btn.is-pressed { transform: translateY(1px); filter: brightness(0.94); }
 .mic-btn:disabled { opacity: 0.45; cursor: default; }
 .mic-btn--primary {
   background: var(--room-accent);
@@ -154,7 +161,8 @@
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-.mic-key:active { transform: scale(0.92); }
+.mic-key:active,
+.mic-key.is-pressed { transform: scale(0.92); }
 .mic-key:disabled { opacity: 0.4; cursor: default; }
 .mic-key--dim { color: var(--ink-faint); }
 .mic-key--wide { grid-column: span 2; font-size: var(--text-sm); font-weight: 400; }
@@ -218,6 +226,7 @@
   line-height: 1.25;
   text-transform: uppercase;
 }
+.dk-cell.is-pressed { background: color-mix(in srgb, var(--room-accent) 10%, transparent); }
 .dk-cell--sel { background: color-mix(in srgb, var(--room-accent) 16%, transparent); border-bottom-color: var(--room-accent); }
 .dk-cell--sel .dk-cell__cipher { color: var(--room-accent); }
 /* Developed (verified-true) letters are double-encoded by SHAPE, not hue
@@ -246,6 +255,23 @@
 .dk-reveal--skip .dk-reveal__ch { animation: none; }
 
 /* --------------------------------------------------------------------------
+   Short screens — round-4 mobile ergonomics.
+   At 375×667 the Darkroom's 27-key pad + the two verbs ran ~300px past the
+   bottom of the glass. The keys and verbs now ride in `.room-deck` (pinned to
+   the bottom of the scrolling stage — see ui/rooms/room-host.css), and the
+   reserve above them is trimmed so the print itself still reads.
+   -------------------------------------------------------------------------- */
+@media (max-height: 700px) {
+  .mic { gap: 0.45rem; padding-top: 0.4rem; }
+  .mic__sub { display: none; }
+  .mic-toastslot { min-height: 2.2rem; }
+  .mic-keys { gap: 5px; }
+  .dk-cell { height: 46px; }
+  .dk-cell__plain { font-size: 1.05rem; min-height: 1.3rem; }
+  .dk-sheet { padding: 0.5rem 0.4rem; gap: 0.4rem 0.7rem; }
+}
+
+/* --------------------------------------------------------------------------
    Reduced motion: juice goes quiet, every state stays legible (AAA U.3).
    -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
@@ -253,5 +279,6 @@
   .dk-reveal__ch {
     animation: none;
   }
-  .mic-key:active, .mic-btn:active { transform: none; }
+  .mic-key:active, .mic-key.is-pressed,
+  .mic-btn:active, .mic-btn.is-pressed { transform: none; }
 }

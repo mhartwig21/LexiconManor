@@ -31,6 +31,7 @@ describe('app/pools registry (AAA 9.6 lazy content contract)', () => {
     for (const pool of [
       pools.cipher,
       pools.crossword,
+      pools.sudoku,
     ]) {
       expect(pool).toBeTruthy();
       expect(typeof pool).toBe('object');

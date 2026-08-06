@@ -315,7 +315,7 @@ and stranger (Charon precedent); Dewey needs 0 by design.
 
 | Thing | Benchmark value | Our starting value |
 |---|---|---|
-| Day budget vs map size | BP: 50 steps / 45 cells (~1.1×) | 40 steps / 33 cells (~1.2×) — refunds carry deep runs |
+| Day budget vs map size | BP: 50 steps / 45 cells (~1.1×) | 18 steps / 35 cells (~0.5×) — refunds and per-row movement pricing decide how deep a run goes |
 | Draft offers | 3 cards, slot-1 free, affordability-aware | same, plus 1-gem reroll and cancel-out |
 | Invalid-word cost | SB: 0 (shake only) | Conservatory 0 for dictionary misses; see AAA_BAR §0.3 |
 | Rank ladder | 2/5/8/15/25/40/50/70% (+hidden 100%) | same curve, garden-themed, room "solved" at 70% |

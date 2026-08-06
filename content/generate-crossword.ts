@@ -6,38 +6,78 @@ import {
   validateCrosswordPuzzle,
   type CrosswordDir, type CrosswordEntry, type CrosswordPuzzle,
 } from '../src/engine/puzzles/crossword';
-import type { Difficulty } from '../src/engine/types';
+import { gateOk } from './generate-gate';
+import type { Difficulty, Tier } from '../src/engine/types';
 
 /**
  * Mini-crossword generator for The Linen Closet. OWNER: A5.
  *
- * Assembles criss-cross layouts (3–5 clued words, grid ≤5×5) from the
- * hand-authored clue bank (content/authored/crossword-clues.json). The
- * solver check is structural honesty: every maximal run of ≥2 letters in
- * the finished grid is exactly one clued entry (no accidental words the
- * player is never clued about), intersections agree, and the layout is one
- * connected piece — enforced by validateCrosswordPuzzle, the same routine
- * the tests replay over the shipped pool.
+ * Assembles criss-cross layouts from the hand-authored clue bank
+ * (content/authored/crossword-clues.json). The solver check is structural
+ * honesty: every maximal run of ≥2 letters in the finished grid is exactly
+ * one clued entry (no accidental words the player is never clued about),
+ * intersections agree, and the layout is one connected piece — enforced by
+ * validateCrosswordPuzzle, the same routine the tests replay over the
+ * shipped pool.
  *
  * Every clue-bank word must exist in enable1 (build fails otherwise): the
  * Closet never asks for a word the house dictionary would refuse.
+ *
+ * ---------------------------------------------------------------------------
+ * THREE TIERS, MAPPED TO MANOR ROWS (owner directive, round 4: "5x5 tier 3
+ * with harder clue styles")
+ * ---------------------------------------------------------------------------
+ *   tier 1 — a 4×4 closet, 3 entries, easy words with plain definition clues.
+ *   tier 2 — the full 5×5, 4 entries, easy+medium words, plain clues.
+ *   tier 3 — 5×5, 5 entries (a denser criss-cross), the whole bank including
+ *            hard/expert words, and at least MIN_WRY_ENTRIES of the clues are
+ *            drawn from the bank's `wry` column: misdirecting, double-meaning,
+ *            manor-voiced clues rather than dictionary glosses. Difficulty here
+ *            is a knob on how the CLUE reads, not on how much there is to do —
+ *            AAA 3.8's hard-mode philosophy.
  */
 
 const SEED = 20260806;
-const SIZE = 5;
 const dir = dirname(fileURLToPath(import.meta.url));
 
-interface ClueDef { word: string; clue: string; difficulty: Difficulty; }
+interface ClueDef {
+  word: string;
+  clue: string;
+  /** Optional harder clue style: misdirection / double meaning (tier 3). */
+  wry?: string;
+  difficulty: Difficulty;
+}
 
 const DIFFS: Difficulty[] = ['easy', 'medium', 'hard', 'expert'];
-const TARGET: Record<Difficulty, number> = { easy: 30, medium: 30, hard: 24, expert: 18 };
-const ENTRIES: Record<Difficulty, number> = { easy: 3, medium: 4, hard: 4, expert: 5 };
-/** Cap on how often one word may headline puzzles of a difficulty. */
+const TIERS: Tier[] = [1, 2, 3];
+
+/** Legacy display label per tier (engine/types.ts Difficulty stays frozen). */
+const TIER_LABEL: Record<Tier, Difficulty> = { 1: 'easy', 2: 'medium', 3: 'hard' };
+/** Grid side per tier — the closet itself grows. */
+const SIZES: Record<Tier, number> = { 1: 4, 2: 5, 3: 5 };
+const TARGET: Record<Tier, number> = { 1: 30, 2: 30, 3: 30 };
+const ENTRIES: Record<Tier, number> = { 1: 3, 2: 4, 3: 5 };
+/** Bank words a tier may draw on (by their authored difficulty). */
+const BANK_DIFFS: Record<Tier, Difficulty[]> = {
+  1: ['easy'],
+  2: ['easy', 'medium'],
+  3: ['easy', 'medium', 'hard', 'expert'],
+};
+/** Every puzzle must headline at least one word of one of these difficulties. */
+const HEADLINE_DIFFS: Record<Tier, Difficulty[]> = {
+  1: ['easy'], 2: ['medium'], 3: ['hard', 'expert'],
+};
+/** Tier 3 must read at least this many clues in the harder, wry style. */
+const MIN_WRY_ENTRIES = 2;
+/** Cap on how often one word may headline puzzles of a tier. */
 const MAX_WORD_USES = 4;
+
+type TieredCrosswordPuzzle = CrosswordPuzzle & { tier: Tier };
 
 interface Placed { dir: CrosswordDir; row: number; col: number; word: ClueDef; }
 
-function toPuzzle(id: string, difficulty: Difficulty, placed: Placed[]): CrosswordPuzzle {
+function toPuzzle(id: string, tier: Tier, placed: Placed[], useWry: boolean): TieredCrosswordPuzzle {
+  const SIZE = SIZES[tier];
   // Real-crossword numbering: entry starts in reading order.
   const sorted = [...placed].sort((a, b) => a.row - b.row || a.col - b.col || (a.dir === 'across' ? -1 : 1));
   const numberOf = new Map<string, number>();
@@ -55,23 +95,25 @@ function toPuzzle(id: string, difficulty: Difficulty, placed: Placed[]): Crosswo
       row: p.row,
       col: p.col,
       answer: p.word.word,
-      clue: p.word.clue,
+      clue: useWry && p.word.wry ? p.word.wry : p.word.clue,
     };
   });
-  return { id, difficulty, size: SIZE, entries };
+  return { id, tier, difficulty: TIER_LABEL[tier], size: SIZE, entries };
 }
 
 /** Structural problems, ignoring the entry-count rule while mid-build. */
-function partialProblems(placed: Placed[]): string[] {
-  const puzzle = toPuzzle('partial', 'easy', placed);
+function partialProblems(tier: Tier, placed: Placed[]): string[] {
+  const puzzle = toPuzzle('partial', tier, placed, false);
   return validateCrosswordPuzzle(puzzle).filter((p) => !p.includes('entries (want'));
 }
 
-function tryBuild(rng: Rng, bank: ClueDef[], exact: ClueDef[], count: number): Placed[] | null {
+function tryBuild(rng: Rng, tier: Tier, bank: ClueDef[], exact: ClueDef[], count: number): Placed[] | null {
+  const SIZE = SIZES[tier];
   const first = pick(rng, exact);
+  if (first.word.length > SIZE) return null;
   const placed: Placed[] = [{
     dir: 'across',
-    row: 2,
+    row: Math.floor((SIZE - 1) / 2),
     col: Math.floor((SIZE - first.word.length) / 2),
     word: first,
   }];
@@ -97,7 +139,7 @@ function tryBuild(rng: Rng, bank: ClueDef[], exact: ClueDef[], count: number): P
       if (newDir === 'down' && row + cand.word.length > SIZE) continue;
       if (newDir === 'across' && col + cand.word.length > SIZE) continue;
       const attempt: Placed[] = [...placed, { dir: newDir, row, col, word: cand }];
-      if (partialProblems(attempt).length > 0) continue;
+      if (partialProblems(tier, attempt).length > 0) continue;
       placed.push({ dir: newDir, row, col, word: cand });
       used.add(cand.word);
       stalls = 0;
@@ -122,8 +164,15 @@ function main() {
     seen.add(c.word);
     if (!/^[A-Z]{3,5}$/.test(c.word)) problems.push(`${c.word}: not 3–5 uppercase letters`);
     if (!enable1.has(c.word)) problems.push(`${c.word}: not in enable1`);
+    // The cozy gate: the Closet prints its answers in the manor's voice (task 2).
+    if (!gateOk(c.word.toLowerCase())) problems.push(`${c.word}: fails the cozy gate`);
     if (!c.clue || c.clue.trim().length < 3) problems.push(`${c.word}: missing clue`);
     if (c.clue.length > 60) problems.push(`${c.word}: clue too long for the 390px clue bar`);
+    if (c.wry !== undefined) {
+      if (c.wry.trim().length < 3) problems.push(`${c.word}: empty wry clue`);
+      if (c.wry.length > 60) problems.push(`${c.word}: wry clue too long for the 390px clue bar`);
+      if (c.wry === c.clue) problems.push(`${c.word}: wry clue is the plain clue`);
+    }
     if (!DIFFS.includes(c.difficulty)) problems.push(`${c.word}: bad difficulty ${c.difficulty}`);
   }
   if (problems.length > 0) {
@@ -131,37 +180,52 @@ function main() {
     throw new Error(`crossword clue bank failed validation with ${problems.length} problem(s)`);
   }
 
-  const puzzles: CrosswordPuzzle[] = [];
-  for (const difficulty of DIFFS) {
-    const maxTier = DIFFS.indexOf(difficulty);
-    const bank = raw.clues.filter((c) => DIFFS.indexOf(c.difficulty) <= maxTier);
-    const exact = raw.clues.filter((c) => c.difficulty === difficulty);
+  const puzzles: TieredCrosswordPuzzle[] = [];
+  for (const tier of TIERS) {
+    const size = SIZES[tier];
+    const bank = raw.clues.filter(
+      (c) => BANK_DIFFS[tier].includes(c.difficulty) && c.word.length <= size,
+    );
+    const exact = bank.filter((c) => HEADLINE_DIFFS[tier].includes(c.difficulty));
+    const wryNeeded = tier === 3 ? MIN_WRY_ENTRIES : 0;
     const signatures = new Set<string>();
     const uses = new Map<string, number>();
     let made = 0;
     let attempts = 0;
-    while (made < TARGET[difficulty] && attempts < TARGET[difficulty] * 400) {
+    while (made < TARGET[tier] && attempts < TARGET[tier] * 600) {
       attempts++;
       const available = bank.filter((c) => (uses.get(c.word) ?? 0) < MAX_WORD_USES);
       const availableExact = exact.filter((c) => (uses.get(c.word) ?? 0) < MAX_WORD_USES);
       if (availableExact.length === 0) break;
-      const placed = tryBuild(rng, available, availableExact, ENTRIES[difficulty]);
+      const placed = tryBuild(rng, tier, available, availableExact, ENTRIES[tier]);
       if (!placed) continue;
-      if (!placed.some((p) => p.word.difficulty === difficulty)) continue;
+      if (!placed.some((p) => HEADLINE_DIFFS[tier].includes(p.word.difficulty))) continue;
+      // Tier 3's promise: at least MIN_WRY_ENTRIES clues in the harder style.
+      if (placed.filter((p) => p.word.wry).length < wryNeeded) continue;
       const sig = placed.map((p) => p.word.word).sort().join('|');
       if (signatures.has(sig)) continue;
-      const puzzle = toPuzzle(`crossword-${difficulty}-${made + 1}`, difficulty, placed);
+      const puzzle = toPuzzle(`crossword-t${tier}-${made + 1}`, tier, placed, tier === 3);
       if (validateCrosswordPuzzle(puzzle).length > 0) continue;
       signatures.add(sig);
       for (const p of placed) uses.set(p.word.word, (uses.get(p.word.word) ?? 0) + 1);
       puzzles.push(puzzle);
       made++;
     }
-    console.log(`${difficulty}: ${made} puzzles (${attempts} attempts)`);
+    console.log(`tier ${tier}: ${made} puzzles, ${size}×${size}, ${ENTRIES[tier]} entries (${attempts} attempts)`);
   }
 
-  // Final replay of the shipped pool.
+  // Final replay of the shipped pool + the tier gates.
   const finalProblems = puzzles.flatMap((p) => validateCrosswordPuzzle(p).map((m) => `${p.id}: ${m}`));
+  const wryTexts = new Set(raw.clues.filter((c) => c.wry).map((c) => c.wry!));
+  for (const p of puzzles) {
+    if (p.size !== SIZES[p.tier]) finalProblems.push(`${p.id}: ${p.size}×${p.size} is not tier ${p.tier}'s grid`);
+    if (p.entries.length !== ENTRIES[p.tier]) finalProblems.push(`${p.id}: ${p.entries.length} entries, tier ${p.tier} wants ${ENTRIES[p.tier]}`);
+    if (p.difficulty !== TIER_LABEL[p.tier]) finalProblems.push(`${p.id}: label/tier mismatch`);
+    if (p.tier === 3) {
+      const wry = p.entries.filter((e) => wryTexts.has(e.clue)).length;
+      if (wry < MIN_WRY_ENTRIES) finalProblems.push(`${p.id}: only ${wry} wry clues (tier 3 needs ${MIN_WRY_ENTRIES})`);
+    }
+  }
   if (finalProblems.length > 0) {
     console.error(finalProblems.slice(0, 20).join('\n'));
     throw new Error(`crossword validation failed with ${finalProblems.length} problem(s)`);

@@ -1,0 +1,2004 @@
+{
+  "phase": "after",
+  "safeAreaEmulated": true,
+  "viewports": {
+    "390x844": {
+      "surfaces": {
+        "dialogue": {
+          "surface": "dialogue",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Cabinet",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 763,
+              "bottom": 807
+            },
+            {
+              "label": "Journal",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 763,
+              "bottom": 807
+            },
+            {
+              "label": "Skip",
+              "cls": "dlg__skip",
+              "top": 620,
+              "bottom": 652
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "press-dialogue": {
+          "surface": "dialogue",
+          "probes": [
+            {
+              "sel": ".dlg__skip",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".dlg-choice",
+              "found": false
+            }
+          ]
+        },
+        "blueprint": {
+          "surface": "blueprint",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Call on Mrs. Bramble",
+              "cls": "bp-btn",
+              "top": 763,
+              "bottom": 807
+            },
+            {
+              "label": "Cabinet",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 763,
+              "bottom": 807
+            },
+            {
+              "label": "Journal",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 763,
+              "bottom": 807
+            },
+            {
+              "label": "Draft a room here",
+              "cls": "[object SVGAnimatedString]",
+              "top": 580,
+              "bottom": 647
+            },
+            {
+              "label": "Draft a room here",
+              "cls": "[object SVGAnimatedString]",
+              "top": 580,
+              "bottom": 647
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "room-hive": {
+          "surface": "room-hive",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 758,
+              "bottom": 802
+            },
+            {
+              "label": "Shuffle",
+              "cls": "anch-btn",
+              "top": 699,
+              "bottom": 743
+            },
+            {
+              "label": "E",
+              "cls": "hv-cell hv-cell--p3",
+              "top": 583,
+              "bottom": 666
+            },
+            {
+              "label": "C",
+              "cls": "hv-cell hv-cell--p2",
+              "top": 540,
+              "bottom": 623
+            },
+            {
+              "label": "T",
+              "cls": "hv-cell hv-cell--p4",
+              "top": 540,
+              "bottom": 623
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "press-hive": {
+          "surface": "room-hive",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".ww-tile",
+              "found": false
+            },
+            {
+              "sel": ".tw-cell",
+              "found": false
+            },
+            {
+              "sel": ".anch-btn",
+              "found": false
+            },
+            {
+              "sel": ".mic-key",
+              "found": false
+            },
+            {
+              "sel": ".mic-btn",
+              "found": false
+            },
+            {
+              "sel": ".dk-cell",
+              "found": false
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": false
+            },
+            {
+              "sel": ".lc-key",
+              "found": false
+            },
+            {
+              "sel": ".lc-clue",
+              "found": false
+            },
+            {
+              "sel": ".m2-btn",
+              "found": false
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": false
+            },
+            {
+              "sel": ".ch-tool",
+              "found": false
+            }
+          ]
+        },
+        "room-twistle": {
+          "surface": "room-twistle",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 758,
+              "bottom": 802
+            },
+            {
+              "label": "L",
+              "cls": "tw-cell    ",
+              "top": 484,
+              "bottom": 552
+            },
+            {
+              "label": "R",
+              "cls": "tw-cell    ",
+              "top": 484,
+              "bottom": 552
+            },
+            {
+              "label": "C",
+              "cls": "tw-cell    ",
+              "top": 484,
+              "bottom": 552
+            },
+            {
+              "label": "T",
+              "cls": "tw-cell    ",
+              "top": 484,
+              "bottom": 552
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "press-twistle": {
+          "surface": "room-twistle",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": false
+            },
+            {
+              "sel": ".ww-tile",
+              "found": false
+            },
+            {
+              "sel": ".tw-cell",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".anch-btn",
+              "found": false
+            },
+            {
+              "sel": ".mic-key",
+              "found": false
+            },
+            {
+              "sel": ".mic-btn",
+              "found": false
+            },
+            {
+              "sel": ".dk-cell",
+              "found": false
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": false
+            },
+            {
+              "sel": ".lc-key",
+              "found": false
+            },
+            {
+              "sel": ".lc-clue",
+              "found": false
+            },
+            {
+              "sel": ".m2-btn",
+              "found": false
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": false
+            },
+            {
+              "sel": ".ch-tool",
+              "found": false
+            }
+          ]
+        },
+        "room-word-web": {
+          "surface": "room-word-web",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 758,
+              "bottom": 802
+            },
+            {
+              "label": "Shuffle",
+              "cls": "anch-btn",
+              "top": 596,
+              "bottom": 640
+            },
+            {
+              "label": "PLANE",
+              "cls": "ww-tile   ",
+              "top": 489,
+              "bottom": 547
+            },
+            {
+              "label": "BLIGHT",
+              "cls": "ww-tile   ",
+              "top": 489,
+              "bottom": 547
+            },
+            {
+              "label": "FRIGHT",
+              "cls": "ww-tile   ",
+              "top": 489,
+              "bottom": 547
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "press-word-web": {
+          "surface": "room-word-web",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": false
+            },
+            {
+              "sel": ".ww-tile",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".tw-cell",
+              "found": false
+            },
+            {
+              "sel": ".anch-btn",
+              "found": false
+            },
+            {
+              "sel": ".mic-key",
+              "found": false
+            },
+            {
+              "sel": ".mic-btn",
+              "found": false
+            },
+            {
+              "sel": ".dk-cell",
+              "found": false
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": false
+            },
+            {
+              "sel": ".lc-key",
+              "found": false
+            },
+            {
+              "sel": ".lc-clue",
+              "found": false
+            },
+            {
+              "sel": ".m2-btn",
+              "found": false
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": false
+            },
+            {
+              "sel": ".ch-tool",
+              "found": false
+            }
+          ]
+        },
+        "room-forgotten-word": {
+          "surface": "room-forgotten-word",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 758,
+              "bottom": 802
+            },
+            {
+              "label": "Your guess",
+              "cls": "fw-input",
+              "top": 592,
+              "bottom": 636
+            },
+            {
+              "label": "Unseal · −2 steps",
+              "cls": "anch-btn",
+              "top": 522,
+              "bottom": 566
+            },
+            {
+              "label": "Unseal · −2 steps",
+              "cls": "anch-btn",
+              "top": 438,
+              "bottom": 482
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "press-forgotten-word": {
+          "surface": "room-forgotten-word",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": false
+            },
+            {
+              "sel": ".ww-tile",
+              "found": false
+            },
+            {
+              "sel": ".tw-cell",
+              "found": false
+            },
+            {
+              "sel": ".anch-btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".mic-key",
+              "found": false
+            },
+            {
+              "sel": ".mic-btn",
+              "found": false
+            },
+            {
+              "sel": ".dk-cell",
+              "found": false
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": false
+            },
+            {
+              "sel": ".lc-key",
+              "found": false
+            },
+            {
+              "sel": ".lc-clue",
+              "found": false
+            },
+            {
+              "sel": ".m2-btn",
+              "found": false
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": false
+            },
+            {
+              "sel": ".ch-tool",
+              "found": false
+            }
+          ]
+        },
+        "study-keyboard": {
+          "kbTopY": 508,
+          "inputBottom": 496,
+          "clearsKeyboard": true,
+          "kbOpenClass": true,
+          "vars": {
+            "vv": "508px",
+            "inset": "336px",
+            "shift": "79px"
+          },
+          "placeholder": {
+            "text": "Whisper the forgotten word…",
+            "textW": 169.5,
+            "availW": 234.9,
+            "clips": false
+          }
+        },
+        "room-cipher": {
+          "surface": "room-cipher",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 758,
+              "bottom": 802
+            },
+            {
+              "label": "Develop the print",
+              "cls": "mic-btn mic-btn--primary",
+              "top": 707,
+              "bottom": 751
+            },
+            {
+              "label": "Develop one letter · −2",
+              "cls": "mic-btn",
+              "top": 707,
+              "bottom": 751
+            },
+            {
+              "label": "V",
+              "cls": "mic-key",
+              "top": 655,
+              "bottom": 699
+            },
+            {
+              "label": "W",
+              "cls": "mic-key",
+              "top": 655,
+              "bottom": 699
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": [
+            {
+              "cls": "room-host__stage",
+              "scrollHeight": 723,
+              "clientHeight": 652
+            }
+          ]
+        },
+        "press-cipher": {
+          "surface": "room-cipher",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": false
+            },
+            {
+              "sel": ".ww-tile",
+              "found": false
+            },
+            {
+              "sel": ".tw-cell",
+              "found": false
+            },
+            {
+              "sel": ".anch-btn",
+              "found": false
+            },
+            {
+              "sel": ".mic-key",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".mic-btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".dk-cell",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": false
+            },
+            {
+              "sel": ".lc-key",
+              "found": false
+            },
+            {
+              "sel": ".lc-clue",
+              "found": false
+            },
+            {
+              "sel": ".m2-btn",
+              "found": false
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": false
+            },
+            {
+              "sel": ".ch-tool",
+              "found": false
+            }
+          ]
+        },
+        "room-crossword": {
+          "surface": "room-crossword",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 758,
+              "bottom": 802
+            },
+            {
+              "label": "Smooth a crease · −2 steps",
+              "cls": "m2-btn",
+              "top": 707,
+              "bottom": 751
+            },
+            {
+              "label": "Z",
+              "cls": "lc-key",
+              "top": 643,
+              "bottom": 699
+            },
+            {
+              "label": "X",
+              "cls": "lc-key",
+              "top": 643,
+              "bottom": 699
+            },
+            {
+              "label": "C",
+              "cls": "lc-key",
+              "top": 643,
+              "bottom": 699
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [
+            {
+              "label": "3DRiser at dawn",
+              "cls": "lc-clue",
+              "top": 502,
+              "bottom": 531,
+              "by": "lc-clues m2-card",
+              "ancestorBottom": 514
+            }
+          ],
+          "scrollers": [
+            {
+              "cls": "room-host__stage",
+              "scrollHeight": 729,
+              "clientHeight": 652
+            },
+            {
+              "cls": "lc-clues m2-card",
+              "scrollHeight": 114,
+              "clientHeight": 84
+            }
+          ]
+        },
+        "press-crossword": {
+          "surface": "room-crossword",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": false
+            },
+            {
+              "sel": ".ww-tile",
+              "found": false
+            },
+            {
+              "sel": ".tw-cell",
+              "found": false
+            },
+            {
+              "sel": ".anch-btn",
+              "found": false
+            },
+            {
+              "sel": ".mic-key",
+              "found": false
+            },
+            {
+              "sel": ".mic-btn",
+              "found": false
+            },
+            {
+              "sel": ".dk-cell",
+              "found": false
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".lc-key",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".lc-clue",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".m2-btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": false
+            },
+            {
+              "sel": ".ch-tool",
+              "found": false
+            }
+          ]
+        },
+        "room-sudoku": {
+          "surface": "room-sudoku",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 758,
+              "bottom": 802
+            },
+            {
+              "label": "66",
+              "cls": "ch-key ch-key--fig",
+              "top": 699,
+              "bottom": 751
+            },
+            {
+              "label": "79",
+              "cls": "ch-key ch-key--fig",
+              "top": 699,
+              "bottom": 751
+            },
+            {
+              "label": "86",
+              "cls": "ch-key ch-key--fig",
+              "top": 699,
+              "bottom": 751
+            },
+            {
+              "label": "96",
+              "cls": "ch-key ch-key--fig",
+              "top": 699,
+              "bottom": 751
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": [
+            {
+              "cls": "room-host__stage",
+              "scrollHeight": 731,
+              "clientHeight": 652
+            }
+          ]
+        },
+        "press-sudoku": {
+          "surface": "room-sudoku",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": false
+            },
+            {
+              "sel": ".ww-tile",
+              "found": false
+            },
+            {
+              "sel": ".tw-cell",
+              "found": false
+            },
+            {
+              "sel": ".anch-btn",
+              "found": false
+            },
+            {
+              "sel": ".mic-key",
+              "found": false
+            },
+            {
+              "sel": ".mic-btn",
+              "found": false
+            },
+            {
+              "sel": ".dk-cell",
+              "found": false
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": false
+            },
+            {
+              "sel": ".lc-key",
+              "found": false
+            },
+            {
+              "sel": ".lc-clue",
+              "found": false
+            },
+            {
+              "sel": ".m2-btn",
+              "found": false
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".ch-tool",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            }
+          ]
+        },
+        "sanctum": {
+          "surface": "sanctum",
+          "vh": 844,
+          "interactive": [
+            {
+              "label": "Consult the journal (0 of 17 fragments f",
+              "cls": "snc-journal-link",
+              "top": 717,
+              "bottom": 761
+            },
+            {
+              "label": "Your one word for today",
+              "cls": "snc-input",
+              "top": 648,
+              "bottom": 692
+            },
+            {
+              "label": "Back down the stairs",
+              "cls": "snc__back",
+              "top": 99,
+              "bottom": 143
+            },
+            {
+              "label": "☾",
+              "cls": "chr-retire",
+              "top": 51,
+              "bottom": 95
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "sanctum-minors": {
+          "placeholder": {
+            "text": "THE FORGOTTEN WORD",
+            "textW": 175.3,
+            "availW": 216,
+            "clips": false
+          },
+          "nameplate": {
+            "units": "svg-user-units",
+            "plateW": 156,
+            "textW": 132,
+            "overrun": -24,
+            "overflows": false
+          }
+        },
+        "press-sanctum": {
+          "surface": "sanctum",
+          "probes": [
+            {
+              "sel": ".snc-speak",
+              "found": false
+            },
+            {
+              "sel": ".snc-journal-link",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".snc__back",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            }
+          ]
+        },
+        "sanctum-keyboard": {
+          "kbTopY": 508,
+          "rowBottom": 496,
+          "clearsKeyboard": true,
+          "kbOpenClass": true,
+          "vars": {
+            "vv": "508px",
+            "inset": "336px",
+            "shift": "230px"
+          }
+        }
+      },
+      "errors": []
+    },
+    "375x667": {
+      "surfaces": {
+        "dialogue": {
+          "surface": "dialogue",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Cabinet",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 586,
+              "bottom": 630
+            },
+            {
+              "label": "Journal",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 586,
+              "bottom": 630
+            },
+            {
+              "label": "Skip",
+              "cls": "dlg__skip",
+              "top": 455,
+              "bottom": 487
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "press-dialogue": {
+          "surface": "dialogue",
+          "probes": [
+            {
+              "sel": ".dlg__skip",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".dlg-choice",
+              "found": false
+            }
+          ]
+        },
+        "blueprint": {
+          "surface": "blueprint",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Journal",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 586,
+              "bottom": 630
+            },
+            {
+              "label": "Call on Mrs. Bramble",
+              "cls": "bp-btn",
+              "top": 533,
+              "bottom": 577
+            },
+            {
+              "label": "Cabinet",
+              "cls": "bp-btn bp-btn--quiet",
+              "top": 533,
+              "bottom": 577
+            },
+            {
+              "label": "Draft a room here",
+              "cls": "[object SVGAnimatedString]",
+              "top": 418,
+              "bottom": 466
+            },
+            {
+              "label": "Draft a room here",
+              "cls": "[object SVGAnimatedString]",
+              "top": 418,
+              "bottom": 466
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "room-hive": {
+          "surface": "room-hive",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 583,
+              "bottom": 627
+            },
+            {
+              "label": "Shuffle",
+              "cls": "anch-btn",
+              "top": 527,
+              "bottom": 571
+            },
+            {
+              "label": "V",
+              "cls": "hv-cell hv-cell--p3",
+              "top": 443,
+              "bottom": 504
+            },
+            {
+              "label": "T",
+              "cls": "hv-cell hv-cell--p2",
+              "top": 411,
+              "bottom": 472
+            },
+            {
+              "label": "L",
+              "cls": "hv-cell hv-cell--p4",
+              "top": 411,
+              "bottom": 472
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "press-hive": {
+          "surface": "room-hive",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".ww-tile",
+              "found": false
+            },
+            {
+              "sel": ".tw-cell",
+              "found": false
+            },
+            {
+              "sel": ".anch-btn",
+              "found": false
+            },
+            {
+              "sel": ".mic-key",
+              "found": false
+            },
+            {
+              "sel": ".mic-btn",
+              "found": false
+            },
+            {
+              "sel": ".dk-cell",
+              "found": false
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": false
+            },
+            {
+              "sel": ".lc-key",
+              "found": false
+            },
+            {
+              "sel": ".lc-clue",
+              "found": false
+            },
+            {
+              "sel": ".m2-btn",
+              "found": false
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": false
+            },
+            {
+              "sel": ".ch-tool",
+              "found": false
+            }
+          ]
+        },
+        "room-twistle": {
+          "surface": "room-twistle",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 583,
+              "bottom": 627
+            },
+            {
+              "label": "T",
+              "cls": "tw-cell    ",
+              "top": 424,
+              "bottom": 489
+            },
+            {
+              "label": "E",
+              "cls": "tw-cell    ",
+              "top": 424,
+              "bottom": 489
+            },
+            {
+              "label": "L",
+              "cls": "tw-cell    ",
+              "top": 424,
+              "bottom": 489
+            },
+            {
+              "label": "D",
+              "cls": "tw-cell    ",
+              "top": 424,
+              "bottom": 489
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": [
+            {
+              "cls": "room-host__stage",
+              "scrollHeight": 543,
+              "clientHeight": 482
+            }
+          ]
+        },
+        "press-twistle": {
+          "surface": "room-twistle",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": false
+            },
+            {
+              "sel": ".ww-tile",
+              "found": false
+            },
+            {
+              "sel": ".tw-cell",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".anch-btn",
+              "found": false
+            },
+            {
+              "sel": ".mic-key",
+              "found": false
+            },
+            {
+              "sel": ".mic-btn",
+              "found": false
+            },
+            {
+              "sel": ".dk-cell",
+              "found": false
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": false
+            },
+            {
+              "sel": ".lc-key",
+              "found": false
+            },
+            {
+              "sel": ".lc-clue",
+              "found": false
+            },
+            {
+              "sel": ".m2-btn",
+              "found": false
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": false
+            },
+            {
+              "sel": ".ch-tool",
+              "found": false
+            }
+          ]
+        },
+        "room-word-web": {
+          "surface": "room-word-web",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 583,
+              "bottom": 627
+            },
+            {
+              "label": "Shuffle",
+              "cls": "anch-btn",
+              "top": 467,
+              "bottom": 511
+            },
+            {
+              "label": "PLANE",
+              "cls": "ww-tile   ",
+              "top": 383,
+              "bottom": 433
+            },
+            {
+              "label": "BLIGHT",
+              "cls": "ww-tile   ",
+              "top": 383,
+              "bottom": 433
+            },
+            {
+              "label": "FRIGHT",
+              "cls": "ww-tile   ",
+              "top": 383,
+              "bottom": 433
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "press-word-web": {
+          "surface": "room-word-web",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": false
+            },
+            {
+              "sel": ".ww-tile",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".tw-cell",
+              "found": false
+            },
+            {
+              "sel": ".anch-btn",
+              "found": false
+            },
+            {
+              "sel": ".mic-key",
+              "found": false
+            },
+            {
+              "sel": ".mic-btn",
+              "found": false
+            },
+            {
+              "sel": ".dk-cell",
+              "found": false
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": false
+            },
+            {
+              "sel": ".lc-key",
+              "found": false
+            },
+            {
+              "sel": ".lc-clue",
+              "found": false
+            },
+            {
+              "sel": ".m2-btn",
+              "found": false
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": false
+            },
+            {
+              "sel": ".ch-tool",
+              "found": false
+            }
+          ]
+        },
+        "room-forgotten-word": {
+          "surface": "room-forgotten-word",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 583,
+              "bottom": 627
+            },
+            {
+              "label": "Your guess",
+              "cls": "fw-input",
+              "top": 455,
+              "bottom": 499
+            },
+            {
+              "label": "Unseal · −2 steps",
+              "cls": "anch-btn",
+              "top": 389,
+              "bottom": 433
+            },
+            {
+              "label": "Unseal · −2 steps",
+              "cls": "anch-btn",
+              "top": 310,
+              "bottom": 354
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "press-forgotten-word": {
+          "surface": "room-forgotten-word",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": false
+            },
+            {
+              "sel": ".ww-tile",
+              "found": false
+            },
+            {
+              "sel": ".tw-cell",
+              "found": false
+            },
+            {
+              "sel": ".anch-btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".mic-key",
+              "found": false
+            },
+            {
+              "sel": ".mic-btn",
+              "found": false
+            },
+            {
+              "sel": ".dk-cell",
+              "found": false
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": false
+            },
+            {
+              "sel": ".lc-key",
+              "found": false
+            },
+            {
+              "sel": ".lc-clue",
+              "found": false
+            },
+            {
+              "sel": ".m2-btn",
+              "found": false
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": false
+            },
+            {
+              "sel": ".ch-tool",
+              "found": false
+            }
+          ]
+        },
+        "study-keyboard": {
+          "kbTopY": 407,
+          "inputBottom": 395,
+          "clearsKeyboard": true,
+          "kbOpenClass": true,
+          "vars": {
+            "vv": "407px",
+            "inset": "260px",
+            "shift": "85px"
+          },
+          "placeholder": {
+            "text": "Whisper the forgotten word…",
+            "textW": 169.5,
+            "availW": 219.9,
+            "clips": false
+          }
+        },
+        "room-cipher": {
+          "surface": "room-cipher",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 583,
+              "bottom": 627
+            },
+            {
+              "label": "Develop the print",
+              "cls": "mic-btn mic-btn--primary",
+              "top": 535,
+              "bottom": 579
+            },
+            {
+              "label": "Develop one letter · −2",
+              "cls": "mic-btn",
+              "top": 535,
+              "bottom": 579
+            },
+            {
+              "label": "V",
+              "cls": "mic-key",
+              "top": 485,
+              "bottom": 529
+            },
+            {
+              "label": "W",
+              "cls": "mic-key",
+              "top": 485,
+              "bottom": 529
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": [
+            {
+              "cls": "room-host__stage",
+              "scrollHeight": 595,
+              "clientHeight": 482
+            }
+          ]
+        },
+        "press-cipher": {
+          "surface": "room-cipher",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": false
+            },
+            {
+              "sel": ".ww-tile",
+              "found": false
+            },
+            {
+              "sel": ".tw-cell",
+              "found": false
+            },
+            {
+              "sel": ".anch-btn",
+              "found": false
+            },
+            {
+              "sel": ".mic-key",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".mic-btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".dk-cell",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": false
+            },
+            {
+              "sel": ".lc-key",
+              "found": false
+            },
+            {
+              "sel": ".lc-clue",
+              "found": false
+            },
+            {
+              "sel": ".m2-btn",
+              "found": false
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": false
+            },
+            {
+              "sel": ".ch-tool",
+              "found": false
+            }
+          ]
+        },
+        "room-crossword": {
+          "surface": "room-crossword",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 583,
+              "bottom": 627
+            },
+            {
+              "label": "Smooth a crease · −2 steps",
+              "cls": "m2-btn",
+              "top": 535,
+              "bottom": 579
+            },
+            {
+              "label": "Z",
+              "cls": "lc-key",
+              "top": 485,
+              "bottom": 529
+            },
+            {
+              "label": "X",
+              "cls": "lc-key",
+              "top": 485,
+              "bottom": 529
+            },
+            {
+              "label": "C",
+              "cls": "lc-key",
+              "top": 485,
+              "bottom": 529
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [
+            {
+              "label": "2ASoft coat on old stone",
+              "cls": "lc-clue",
+              "top": 364,
+              "bottom": 393,
+              "by": "lc-clues m2-card",
+              "ancestorBottom": 383
+            },
+            {
+              "label": "3DRiser at dawn",
+              "cls": "lc-clue",
+              "top": 395,
+              "bottom": 424,
+              "by": "lc-clues m2-card",
+              "ancestorBottom": 383
+            }
+          ],
+          "scrollers": [
+            {
+              "cls": "room-host__stage",
+              "scrollHeight": 546,
+              "clientHeight": 482
+            },
+            {
+              "cls": "lc-clues m2-card",
+              "scrollHeight": 103,
+              "clientHeight": 56
+            }
+          ]
+        },
+        "press-crossword": {
+          "surface": "room-crossword",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": false
+            },
+            {
+              "sel": ".ww-tile",
+              "found": false
+            },
+            {
+              "sel": ".tw-cell",
+              "found": false
+            },
+            {
+              "sel": ".anch-btn",
+              "found": false
+            },
+            {
+              "sel": ".mic-key",
+              "found": false
+            },
+            {
+              "sel": ".mic-btn",
+              "found": false
+            },
+            {
+              "sel": ".dk-cell",
+              "found": false
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".lc-key",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".lc-clue",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".m2-btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": false
+            },
+            {
+              "sel": ".ch-tool",
+              "found": false
+            }
+          ]
+        },
+        "room-sudoku": {
+          "surface": "room-sudoku",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Leave it for tomorrow",
+              "cls": "btn",
+              "top": 583,
+              "bottom": 627
+            },
+            {
+              "label": "66",
+              "cls": "ch-key ch-key--fig",
+              "top": 533,
+              "bottom": 579
+            },
+            {
+              "label": "79",
+              "cls": "ch-key ch-key--fig",
+              "top": 533,
+              "bottom": 579
+            },
+            {
+              "label": "86",
+              "cls": "ch-key ch-key--fig",
+              "top": 533,
+              "bottom": 579
+            },
+            {
+              "label": "96",
+              "cls": "ch-key ch-key--fig",
+              "top": 533,
+              "bottom": 579
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": [
+            {
+              "cls": "room-host__stage",
+              "scrollHeight": 636,
+              "clientHeight": 482
+            }
+          ]
+        },
+        "press-sudoku": {
+          "surface": "room-sudoku",
+          "probes": [
+            {
+              "sel": ".room-host__footer .btn",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".hv-cell",
+              "found": false
+            },
+            {
+              "sel": ".ww-tile",
+              "found": false
+            },
+            {
+              "sel": ".tw-cell",
+              "found": false
+            },
+            {
+              "sel": ".anch-btn",
+              "found": false
+            },
+            {
+              "sel": ".mic-key",
+              "found": false
+            },
+            {
+              "sel": ".mic-btn",
+              "found": false
+            },
+            {
+              "sel": ".dk-cell",
+              "found": false
+            },
+            {
+              "sel": ".lc-cell:not(.lc-cell--void)",
+              "found": false
+            },
+            {
+              "sel": ".lc-key",
+              "found": false
+            },
+            {
+              "sel": ".lc-clue",
+              "found": false
+            },
+            {
+              "sel": ".m2-btn",
+              "found": false
+            },
+            {
+              "sel": ".ch-key--fig",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".ch-tool",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            }
+          ]
+        },
+        "sanctum": {
+          "surface": "sanctum",
+          "vh": 667,
+          "interactive": [
+            {
+              "label": "Consult the journal (0 of 17 fragments f",
+              "cls": "snc-journal-link",
+              "top": 575,
+              "bottom": 619
+            },
+            {
+              "label": "Your one word for today",
+              "cls": "snc-input",
+              "top": 510,
+              "bottom": 554
+            },
+            {
+              "label": "Back down the stairs",
+              "cls": "snc__back",
+              "top": 97,
+              "bottom": 141
+            },
+            {
+              "label": "☾",
+              "cls": "chr-retire",
+              "top": 51,
+              "bottom": 95
+            }
+          ],
+          "belowViewport": [],
+          "inHomeIndicatorBand": [],
+          "clipped": [],
+          "offStage": [],
+          "scrollers": []
+        },
+        "sanctum-minors": {
+          "placeholder": {
+            "text": "THE FORGOTTEN WORD",
+            "textW": 175.3,
+            "availW": 204.2,
+            "clips": false
+          },
+          "nameplate": {
+            "units": "svg-user-units",
+            "plateW": 156,
+            "textW": 132,
+            "overrun": -24,
+            "overflows": false
+          }
+        },
+        "press-sanctum": {
+          "surface": "sanctum",
+          "probes": [
+            {
+              "sel": ".snc-speak",
+              "found": false
+            },
+            {
+              "sel": ".snc-journal-link",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            },
+            {
+              "sel": ".snc__back",
+              "found": true,
+              "hasClass": true,
+              "visuallyChanged": true,
+              "released": true
+            }
+          ]
+        },
+        "sanctum-keyboard": {
+          "kbTopY": 407,
+          "rowBottom": 395,
+          "clearsKeyboard": true,
+          "kbOpenClass": true,
+          "vars": {
+            "vv": "407px",
+            "inset": "260px",
+            "shift": "159px"
+          }
+        }
+      },
+      "errors": []
+    }
+  }
+}

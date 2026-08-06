@@ -7,14 +7,22 @@
  *
  * OWNER DIRECTIVE (playtest round): the player is an EXPERT solver — expert
  * difficulty is the BASELINE. Difficulty is rated by SOLVER TECHNIQUE TIERS,
- * not by given count:
+ * not by given count (given count is a famously bad proxy):
  *   level 0  naked/hidden singles              (below the bar — never shipped)
  *   level 1  locked candidates, naked/hidden pairs   ≈ NYT hard/expert (tier 1)
- *   level 2  naked/hidden triples, X-wing            (tier 2)
- *   level 3  swordfish, XY-wing                      ≈ diabolical (tier 3)
+ *   level 2  naked/hidden triples, X-wing, XY-wing   (tier 2)
+ *   level 3  swordfish, XYZ-wing, simple colouring   ≈ diabolical (tier 3)
  * A shipped tier-N puzzle REQUIRES at least one level-N technique (lower
  * ladders stall) and is fully solvable with the ladder — verified offline by
  * content/generate-sudoku.ts and replayed in tests/puzzles/sudoku.test.ts.
+ *
+ * The band boundaries were set from the measured ceiling distribution over
+ * ~1500 dug boards, not from taste: with XY-wing sitting at level 3 the
+ * middle band was empty (a board that needs a triple or an X-wing almost
+ * always needs an XY-wing too), and with no chain technique on the ladder the
+ * top band was ~0.2% (swordfish alone). Colouring pulls genuinely diabolical
+ * boards — the ones that stall every subset and wing — into a verifiable
+ * tier 3 instead of the discard pile.
  *
  * Play model (economy semantics live in sudoku-adapter.ts): pencil marks are
  * thinking — free, unlimited. INKING a figure is the claim; a figure that
@@ -36,8 +44,8 @@ export type SudokuTier = 1 | 2 | 3;
 export type TechniqueId =
   | 'naked-single' | 'hidden-single'
   | 'locked-candidates' | 'naked-pair' | 'hidden-pair'
-  | 'naked-triple' | 'hidden-triple' | 'x-wing'
-  | 'swordfish' | 'xy-wing';
+  | 'naked-triple' | 'hidden-triple' | 'x-wing' | 'xy-wing'
+  | 'swordfish' | 'xyz-wing' | 'simple-colouring';
 
 export type TechniqueLevel = 0 | 1 | 2 | 3;
 
@@ -50,8 +58,26 @@ export const TECHNIQUE_LEVEL: Record<TechniqueId, TechniqueLevel> = {
   'naked-triple': 2,
   'hidden-triple': 2,
   'x-wing': 2,
+  'xy-wing': 2,
   'swordfish': 3,
-  'xy-wing': 3,
+  'xyz-wing': 3,
+  'simple-colouring': 3,
+};
+
+/** Player-facing names for the journal / room copy (never a bare id). */
+export const TECHNIQUE_NAMES: Record<TechniqueId, string> = {
+  'naked-single': 'naked single',
+  'hidden-single': 'hidden single',
+  'locked-candidates': 'locked candidates',
+  'naked-pair': 'naked pair',
+  'hidden-pair': 'hidden pair',
+  'naked-triple': 'naked triple',
+  'hidden-triple': 'hidden triple',
+  'x-wing': 'X-wing',
+  'xy-wing': 'XY-wing',
+  'swordfish': 'swordfish',
+  'xyz-wing': 'XYZ-wing',
+  'simple-colouring': 'colouring chain',
 };
 
 export interface SudokuPuzzle {
@@ -482,6 +508,120 @@ const xyWing: Technique = (b) => {
   return false;
 };
 
+/** XYZ-wing: pivot {x,y,z} (three candidates) with bivalue pincers {x,z} and
+ *  {y,z} among its peers → z falls from every cell seeing ALL THREE. */
+const xyzWing: Technique = (b) => {
+  for (let pivot = 0; pivot < 81; pivot++) {
+    if (b.values[pivot] !== 0 || popcount(b.cands[pivot]!) !== 3) continue;
+    const pm = b.cands[pivot]!;
+    const pincers = PEERS[pivot]!.filter(
+      (c) => b.values[c] === 0 && popcount(b.cands[c]!) === 2 && (b.cands[c]! & pm) === b.cands[c]!,
+    );
+    for (let a = 0; a < pincers.length; a++) {
+      for (let c2 = a + 1; c2 < pincers.length; c2++) {
+        const ma = b.cands[pincers[a]!]!;
+        const mb = b.cands[pincers[c2]!]!;
+        if (ma === mb) continue;                 // both pincers must differ
+        if ((ma | mb) !== pm) continue;          // together they cover the pivot
+        const z = ma & mb;                       // the shared digit
+        if (popcount(z) !== 1) continue;
+        const seenPivot = new Set(PEERS[pivot]!);
+        const seenA = new Set(PEERS[pincers[a]!]!);
+        let changed = false;
+        for (const cell of PEERS[pincers[c2]!]!) {
+          if (cell === pivot || cell === pincers[a]!) continue;
+          if (!seenPivot.has(cell) || !seenA.has(cell)) continue;
+          if (b.values[cell] === 0 && (b.cands[cell]! & z)) {
+            b.cands[cell] = b.cands[cell]! & ~z;
+            changed = true;
+          }
+        }
+        if (changed) return true;
+      }
+    }
+  }
+  return false;
+};
+
+/**
+ * Simple colouring (single-digit chains) — the first genuinely chained
+ * inference on the ladder, and the technique that makes the diabolical band
+ * verifiable instead of "needs a guess".
+ *
+ * For one digit: every unit where the digit has exactly two candidate cells
+ * is a STRONG link (exactly one of the pair is true). Two-colour each
+ * connected component of that link graph, then:
+ *   Rule 2 — two cells of the same colour share a unit → that whole colour
+ *            is false → the digit falls from every cell wearing it;
+ *   Rule 4 — an outside cell that sees both colours cannot hold the digit
+ *            (one of the two colours is true, whichever it is).
+ */
+const simpleColouring: Technique = (b) => {
+  for (let d = 1; d <= 9; d++) {
+    const bit = 1 << (d - 1);
+    const has = (c: number) => b.values[c] === 0 && (b.cands[c]! & bit) !== 0;
+
+    // Strong links: units where d has exactly two homes.
+    const links: number[][] = Array.from({ length: 81 }, () => []);
+    for (const unit of UNITS) {
+      if (unit.some((c) => b.values[c] === d)) continue;
+      const spots = unit.filter(has);
+      if (spots.length !== 2) continue;
+      const [p, q] = spots as [number, number];
+      if (!links[p]!.includes(q)) links[p]!.push(q);
+      if (!links[q]!.includes(p)) links[q]!.push(p);
+    }
+
+    const colour = new Int8Array(81).fill(-1);
+    for (let start = 0; start < 81; start++) {
+      if (!has(start) || colour[start] !== -1 || links[start]!.length === 0) continue;
+
+      // BFS 2-colouring of this component.
+      const component: number[] = [start];
+      colour[start] = 0;
+      for (let head = 0; head < component.length; head++) {
+        const cell = component[head]!;
+        for (const next of links[cell]!) {
+          if (colour[next] === -1) {
+            colour[next] = colour[cell] === 0 ? 1 : 0;
+            component.push(next);
+          }
+        }
+      }
+      if (component.length < 4) continue; // too short to say anything
+
+      const wearing = (k: 0 | 1) => component.filter((c) => colour[c] === k);
+
+      // Rule 2: a colour that appears twice in one unit is false outright.
+      for (const k of [0, 1] as const) {
+        const cells = wearing(k);
+        const clash = cells.some((a, i) => cells.slice(i + 1).some((z) => PEERS[a]!.includes(z)));
+        if (!clash) continue;
+        let changed = false;
+        for (const c of cells) {
+          if (b.cands[c]! & bit) { b.cands[c] = b.cands[c]! & ~bit; changed = true; }
+        }
+        if (changed) return true;
+      }
+
+      // Rule 4: an outside cell seeing both colours loses the digit.
+      const zero = new Set(wearing(0));
+      const one = new Set(wearing(1));
+      let changed = false;
+      for (let c = 0; c < 81; c++) {
+        if (!has(c) || colour[c] !== -1) continue;
+        const peers = PEERS[c]!;
+        if (peers.some((p) => zero.has(p)) && peers.some((p) => one.has(p))) {
+          b.cands[c] = b.cands[c]! & ~bit;
+          changed = true;
+        }
+      }
+      if (changed) return true;
+    }
+  }
+  return false;
+};
+
 function kCombinations(items: readonly number[], k: number): number[][] {
   const out: number[][] = [];
   const combo: number[] = [];
@@ -508,8 +648,10 @@ const LADDER: readonly { id: TechniqueId; apply: Technique }[] = [
   { id: 'naked-triple', apply: nakedSubset(3) },
   { id: 'hidden-triple', apply: hiddenSubset(3) },
   { id: 'x-wing', apply: fish(2) },
-  { id: 'swordfish', apply: fish(3) },
   { id: 'xy-wing', apply: xyWing },
+  { id: 'swordfish', apply: fish(3) },
+  { id: 'xyz-wing', apply: xyzWing },
+  { id: 'simple-colouring', apply: simpleColouring },
 ];
 
 export interface Rating {
@@ -520,6 +662,15 @@ export interface Rating {
   techniques: TechniqueId[];
   /** Solved grid when solved. */
   grid: string | null;
+  /**
+   * Candidate bitmasks where the ladder stopped (solved or stalled). Exposed
+   * for the SOUNDNESS test: a technique that ever eliminates a true digit is
+   * a lying rater, and this is the state that proves it didn't (see
+   * tests/puzzles/sudoku.test.ts).
+   */
+  cands: number[];
+  /** Cell values where the ladder stopped (0 = still blank). */
+  values: number[];
 }
 
 /**
@@ -528,13 +679,16 @@ export interface Rating {
  */
 export function solveWithTechniques(givens: string, maxLevel: TechniqueLevel = 3): Rating {
   const board = boardFrom(parseGrid(givens));
-  if (!board) return { solved: false, maxLevel: 0, techniques: [], grid: null };
+  if (!board) return { solved: false, maxLevel: 0, techniques: [], grid: null, cands: [], values: [] };
   const used: TechniqueId[] = [];
   let level: TechniqueLevel = 0;
 
   for (;;) {
     if (board.values.every((v) => v !== 0)) {
-      return { solved: true, maxLevel: level, techniques: used, grid: gridToString(board.values) };
+      return {
+        solved: true, maxLevel: level, techniques: used,
+        grid: gridToString(board.values), cands: board.cands, values: board.values,
+      };
     }
     let progressed = false;
     for (const t of LADDER) {
@@ -546,7 +700,12 @@ export function solveWithTechniques(givens: string, maxLevel: TechniqueLevel = 3
         break;
       }
     }
-    if (!progressed) return { solved: false, maxLevel: level, techniques: used, grid: null };
+    if (!progressed) {
+      return {
+        solved: false, maxLevel: level, techniques: used, grid: null,
+        cands: board.cands, values: board.values,
+      };
+    }
   }
 }
 

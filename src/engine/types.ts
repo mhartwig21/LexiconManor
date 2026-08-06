@@ -26,6 +26,13 @@ import type { DayEndCause } from './events';
 
 export type GameMode = 'word-web' | 'hive' | 'twistle' | 'forgotten-word';
 
+/**
+ * @deprecated Display alias only. Since round 4 the authoritative field on every
+ * shipped puzzle is `tier` (1|2|3 → rows 0–2 / 3–4 / 5–6); `difficulty` maps 1:1
+ * onto it (1→easy, 2→medium, 3→hard) and `'expert'` is retired from generated
+ * content. Selectors MUST read `tier` — reaching for a difficulty *band* is what
+ * let a tier-3 room serve a tier-2 puzzle. See rooms/adapters/tier-select.ts.
+ */
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
 
 // ---------------------------------------------------------------------------
@@ -36,6 +43,8 @@ export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
 export interface WordWebPuzzle {
   id: string;
   difficulty: Difficulty;
+  /** Authoritative row band (round 4): 1|2|3 → rows 0–2 / 3–4 / 5–6. */
+  tier: Tier;
   groups: WordWebGroup[]; // exactly 4
   /** Words that plausibly fit more than one group (UI may highlight them). */
   ambiguousWords?: string[];
@@ -52,6 +61,8 @@ export interface WordWebGroup {
 export interface HivePuzzle {
   id: string;
   difficulty: Difficulty;
+  /** Authoritative row band (round 4): 1|2|3 → rows 0–2 / 3–4 / 5–6. */
+  tier: Tier;
   center: string; // single uppercase letter
   outer: string[]; // exactly 6 uppercase letters
   /** A real word using all 7 letters — guaranteed by the generator. */
@@ -63,12 +74,20 @@ export interface HivePuzzle {
   totalPoints: number;
 }
 
-/** 5x5 grid word search. Words trace king-move-adjacent paths. */
+/** n×n grid word search (n defaults to 5). Words trace king-move-adjacent paths. */
 export interface TwistlePuzzle {
   id: string;
   difficulty: Difficulty;
-  /** Row-major 5x5 grid of uppercase letters. */
-  grid: string[]; // exactly 25 single letters
+  /** Authoritative row band (round 4): 1|2|3 → rows 0–2 / 3–4 / 5–6. */
+  tier: Tier;
+  /**
+   * Board side length. Omitted = 5 (every board shipped through round 4).
+   * `grid.length` must equal size²; the engine derives size from the grid, so
+   * this field exists for the view's layout and for authoring intent.
+   */
+  size?: number;
+  /** Row-major size×size grid of uppercase letters. */
+  grid: string[]; // size² single letters (25 by default)
   /** Words guaranteed findable — verified by the generator's solver. */
   targetWords: string[];
   /** How many words the player must find to win. */
@@ -88,6 +107,8 @@ export interface ForgottenWordPuzzle {
   id: string;
   word: string; // uppercase
   obscurity: 'common' | 'medium' | 'rare' | 'archaic';
+  /** Authoritative row band (round 4): 1|2|3 → rows 0–2 / 3–4 / 5–6. */
+  tier: Tier;
   /**
    * Definitions by clarity. Higher levels/streaks show riddlier text —
    * this implements the clarity scaling the original designed but never built.

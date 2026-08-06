@@ -39,6 +39,12 @@ const ROOMS = [
   ['forgotten-word', 'study'],
   ['cipher', 'darkroom'],
   ['crossword', 'linen-closet'],
+  // Round 4's new room. Landed after this harness was first written; the
+  // Counting House is the one surface with a documented sub-44pt element
+  // (42px grid cells at 390 — nine across a phone cannot reach 44), so the
+  // press probe deliberately targets the PAD keys, which are the only costed
+  // controls and must clear the bar.
+  ['sudoku', 'counting-house'],
 ];
 
 for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {
@@ -86,7 +92,15 @@ for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {
   const measure = (surface, extraSel = []) =>
     page.evaluate(({ surface, extraSel, insetBottom }) => {
       const vh = window.innerHeight;
-      const out = { surface, vh, interactive: [], belowViewport: [], inHomeIndicatorBand: [], clipped: [] };
+      const out = { surface, vh, interactive: [], belowViewport: [], inHomeIndicatorBand: [], clipped: [], offStage: [], scrollers: [] };
+      // Any panel that has to scroll to reveal content — an element sitting
+      // past the visible box of an overflow:auto ancestor is just as
+      // unreachable-at-a-glance as one past the bottom of the glass.
+      for (const el of document.querySelectorAll('.room-host__stage, .snc, .lc-clues')) {
+        if (el.scrollHeight > el.clientHeight + 1) {
+          out.scrollers.push({ cls: el.className.slice(0, 30), scrollHeight: el.scrollHeight, clientHeight: el.clientHeight });
+        }
+      }
       const els = [
         ...document.querySelectorAll('button, input, [role="button"], a'),
         ...extraSel.flatMap((s) => [...document.querySelectorAll(s)]),
@@ -102,13 +116,17 @@ for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {
         out.interactive.push(rec);
         if (r.bottom > vh + 1) out.belowViewport.push(rec);
         else if (r.bottom > vh - insetBottom + 1) out.inHomeIndicatorBand.push(rec);
-        // Clipped by an overflow:hidden ancestor (e.g. #root)?
+        // Clipped by an overflow:hidden ancestor (e.g. #root) — hard failure:
+        // unreachable. Or sitting past the visible box of an overflow:auto
+        // ancestor — soft: reachable, but only after a scroll.
         let p = el.parentElement;
         while (p) {
           const st = getComputedStyle(p);
+          const pr = p.getBoundingClientRect();
           if (/hidden|clip/.test(st.overflowY)) {
-            const pr = p.getBoundingClientRect();
             if (r.bottom > pr.bottom + 1) { out.clipped.push({ ...rec, by: p.id || p.className.slice(0, 20), ancestorBottom: Math.round(pr.bottom) }); break; }
+          } else if (/auto|scroll/.test(st.overflowY) && p.scrollHeight > p.clientHeight + 1) {
+            if (r.bottom > pr.bottom + 1) { out.offStage.push({ ...rec, by: p.className.slice(0, 24), ancestorBottom: Math.round(pr.bottom) }); break; }
           }
           p = p.parentElement;
         }
@@ -117,6 +135,40 @@ for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {
       out.interactive = out.interactive.slice(0, 5);
       return out;
     }, { surface, extraSel, insetBottom: metrics.safeAreaEmulated ? INSETS.bottom : 0 });
+
+  /**
+   * U.1 contract: pointerdown (NOT :active) must put `.is-pressed` on the
+   * tappable AND that class must actually change how it renders — a class
+   * with no matching rule is not a pass. Probes every distinct tappable
+   * shape on the current surface, comparing computed transform/filter/
+   * background before and during the press.
+   */
+  const pressProbe = (surface, selectors) =>
+    page.evaluate(({ surface, selectors }) => {
+      const out = { surface, probes: [] };
+      for (const sel of selectors) {
+        const el = document.querySelector(sel);
+        // Disabled tappables are deliberately excluded from the contract —
+        // boot.ts skips them so a dead button never squashes under a finger.
+        if (!el || el.disabled) { out.probes.push({ sel, found: false }); continue; }
+        const snap = () => {
+          const cs = getComputedStyle(el);
+          return `${cs.transform}|${cs.filter}|${cs.backgroundColor}|${cs.color}`;
+        };
+        const before = snap();
+        el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }));
+        const hasClass = el.classList.contains('is-pressed');
+        const during = snap();
+        el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
+        const after = snap();
+        out.probes.push({
+          sel, found: true, hasClass,
+          visuallyChanged: during !== before,
+          released: !el.classList.contains('is-pressed') && after === before,
+        });
+      }
+      return out;
+    }, { surface, selectors });
 
   const enterRoom = async (kind, cardId) => {
     await page.evaluate(({ kind, cardId }) => {
@@ -147,14 +199,22 @@ for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {
     await page.waitForSelector('.dlg', { timeout: 9000 });
     // let the typewriter reach choices if any; tap once to complete the line
     await sleep(500);
-    await page.dispatchEvent('.dlg__sheet', 'pointerdown');
+    await page.dispatchEvent('.dlg__sheet', 'pointerdown', { timeout: 4000 }).catch(() => {});
     await sleep(400);
     vpMetrics.surfaces['dialogue'] = await measure('dialogue');
     await shot('dialogue');
-    // close the scene
-    for (let i = 0; i < 60 && (await page.$('.dlg')); i++) {
-      const c = await page.$('.dlg-choices .dlg-choice:not(.dlg-choice--gift)');
-      if (c) { await c.click(); } else { await page.dispatchEvent('.dlg__sheet', 'pointerdown'); }
+    // Pressing a choice ADVANCES the scene — probe last, and let the close
+    // loop below pick up wherever that leaves us.
+    vpMetrics.surfaces['press-dialogue'] = await pressProbe('dialogue', ['.dlg__skip', '.dlg-choice']);
+    // close the scene (the last tap navigates, which tears down the execution
+    // context mid-poll — every probe in the loop is best-effort)
+    for (let i = 0; i < 60; i++) {
+      try {
+        if (!(await page.$('.dlg'))) break;
+        const c = await page.$('.dlg-choices .dlg-choice:not(.dlg-choice--gift)');
+        if (c) { await c.click({ timeout: 2000 }); }
+        else { await page.dispatchEvent('.dlg__sheet', 'pointerdown'); }
+      } catch { /* navigation raced the probe — re-check next tick */ }
       await sleep(220);
     }
     await page.waitForSelector('.bp-sheet');
@@ -168,6 +228,13 @@ for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {
     for (const [kind, cardId] of ROOMS) {
       await enterRoom(kind, cardId);
       vpMetrics.surfaces[`room-${kind}`] = await measure(`room-${kind}`);
+      vpMetrics.surfaces[`press-${kind}`] = await pressProbe(`room-${kind}`, [
+        '.room-host__footer .btn',
+        '.hv-cell', '.ww-tile', '.tw-cell', '.anch-btn',
+        '.mic-key', '.mic-btn', '.dk-cell',
+        '.lc-cell:not(.lc-cell--void)', '.lc-key', '.lc-clue', '.m2-btn',
+        '.ch-key--fig', '.ch-tool',
+      ]);
       await shot(`room-${kind}`);
 
       // Study: keyboard-avoidance exercise on the whisper input.
@@ -187,13 +254,30 @@ for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {
             vars: { vv: cs.getPropertyValue('--vv-height').trim(), inset: cs.getPropertyValue('--kb-inset').trim(), shift: cs.getPropertyValue('--kb-shift').trim() },
           };
         }, kb);
+        kbState.placeholder = await page.evaluate(() => {
+          const input = document.querySelector('.fw-input');
+          const cs = getComputedStyle(input);
+          const pcs = getComputedStyle(input, '::placeholder');
+          const ctx = document.createElement('canvas').getContext('2d');
+          ctx.font = `${pcs.fontStyle} ${pcs.fontWeight} ${pcs.fontSize} ${pcs.fontFamily}`;
+          const text = pcs.textTransform.includes('uppercase') ? input.placeholder.toUpperCase() : input.placeholder;
+          const ls = parseFloat(pcs.letterSpacing) || 0;
+          const textW = ctx.measureText(text).width + ls * text.length;
+          const r = input.getBoundingClientRect();
+          const availW = r.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+          return { text, textW: +textW.toFixed(1), availW: +availW.toFixed(1), clips: textW > availW };
+        });
         vpMetrics.surfaces['study-keyboard'] = kbState;
         await shot('room-forgotten-word-keyboard');
         await page.evaluate(() => window.__fakeVV.setKeyboard(0));
         await page.evaluate(() => document.activeElement?.blur());
         await sleep(400);
       }
-      await page.evaluate(() => { window.__manorStore.getState().leaveRoom(); location.hash = '#/manor'; });
+      // leaveRoom clears day.activeRoom, which makes RoomPage navigate — the
+      // hash write can race the teardown of this execution context.
+      await page
+        .evaluate(() => { window.__manorStore.getState().leaveRoom(); location.hash = '#/manor'; })
+        .catch(() => {});
       await sleep(300);
     }
 
@@ -216,22 +300,31 @@ for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {
       const ls = parseFloat(pcs.letterSpacing) || parseFloat(cs.letterSpacing) || 0;
       const textW = canvas.measureText(text).width + ls * text.length;
       const availW = ir.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-      const plateRect = document.querySelector('.snc-portrait rect')?.getBoundingClientRect();
+      // Nameplate: compare like with like. getComputedTextLength() reports in
+      // SVG USER units, so measure the plate in user units too (rect.width
+      // .baseVal.value) rather than mixing in CSS pixels.
+      const plateRectEl = document.querySelector('.snc-portrait rect:last-of-type');
       const plateText = [...document.querySelectorAll('.snc-portrait text')].pop();
       let plate = null;
-      if (plateRect && plateText) {
-        const tw = plateText.getComputedTextLength();
-        plate = { plateW: +plateRect.width.toFixed(1), textW: +tw.toFixed(1), overrun: +(tw - plateRect.width * (plateRect.width / plateRect.width)).toFixed(1), overflows: tw > (plateText.ownerSVGElement.viewBox.baseVal.width ? 96 * (plateRect.width / 96) : plateRect.width) };
-        // simpler: compare in SVG user units
-        const svg = plateText.ownerSVGElement;
-        const scale = plateRect.width / 96; // rect width=96 user units (before fix)
-        plate.userUnitsTextW = +(tw / (svg.getBoundingClientRect().width / svg.viewBox.baseVal.width)).toFixed(1);
+      if (plateRectEl && plateText) {
+        const tw = plateText.getComputedTextLength();          // user units
+        const plateW = plateRectEl.width.baseVal.value;        // user units
+        plate = {
+          units: 'svg-user-units',
+          plateW: +plateW.toFixed(1),
+          textW: +tw.toFixed(1),
+          overrun: +(tw - plateW).toFixed(1),
+          overflows: tw > plateW,
+        };
       }
       return {
         placeholder: { text, textW: +textW.toFixed(1), availW: +availW.toFixed(1), clips: textW > availW },
         nameplate: plate,
       };
     });
+    vpMetrics.surfaces['press-sanctum'] = await pressProbe('sanctum', [
+      '.snc-speak', '.snc-journal-link', '.snc__back',
+    ]);
     await shot('sanctum');
     // Sanctum keyboard exercise.
     {

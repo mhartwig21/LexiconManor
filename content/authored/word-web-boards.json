@@ -1,2532 +1,2532 @@
 [
- {
-  "id": "web-1",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Breakfast Items",
-    "tier": "yellow",
-    "words": [
-     "WAFFLE",
-     "PANCAKE",
-     "TOAST",
-     "BAGEL"
-    ]
-   },
-   {
-    "theme": "Basketball Terms",
-    "tier": "green",
-    "words": [
-     "DUNK",
-     "BLOCK",
-     "ASSIST",
-     "REBOUND"
-    ]
-   },
-   {
-    "theme": "Things That Can Be \"Iron\"",
-    "tier": "blue",
-    "words": [
-     "FIST",
-     "WILL",
-     "CURTAIN",
-     "MAN"
-    ]
-   },
-   {
-    "theme": "___ BAR",
-    "tier": "purple",
-    "words": [
-     "CANDY",
-     "SALAD",
-     "SPACE",
-     "CROW"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-2",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Weather Phenomena",
-    "tier": "yellow",
-    "words": [
-     "TORNADO",
-     "HURRICANE",
-     "BLIZZARD",
-     "MONSOON"
-    ]
-   },
-   {
-    "theme": "Things With Teeth",
-    "tier": "green",
-    "words": [
-     "COMB",
-     "SAW",
-     "ZIPPER",
-     "GEAR"
-    ]
-   },
-   {
-    "theme": "Poker Terms",
-    "tier": "blue",
-    "words": [
-     "RIVER",
-     "FLOP",
-     "TURN",
-     "BLIND"
-    ]
-   },
-   {
-    "theme": "Named After People",
-    "tier": "purple",
-    "words": [
-     "DIESEL",
-     "SAXOPHONE",
-     "SHRAPNEL",
-     "CARDIGAN"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-3",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Garden Tools",
-    "tier": "yellow",
-    "words": [
-     "RAKE",
-     "SHOVEL",
-     "HOE",
-     "TROWEL"
-    ]
-   },
-   {
-    "theme": "Words Meaning \"Great\"",
-    "tier": "green",
-    "words": [
-     "SUPER",
-     "EXCELLENT",
-     "FANTASTIC",
-     "WONDERFUL"
-    ]
-   },
-   {
-    "theme": "One-Word Oscar Winners",
-    "tier": "blue",
-    "words": [
-     "MOONLIGHT",
-     "BIRDMAN",
-     "ARGO",
-     "CRASH"
-    ]
-   },
-   {
-    "theme": "Contains \"ANT\"",
-    "tier": "purple",
-    "words": [
-     "ELEPHANT",
-     "PLEASANT",
-     "DISTANT",
-     "MERCHANT"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-4",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Ocean Creatures",
-    "tier": "yellow",
-    "words": [
-     "OCTOPUS",
-     "JELLYFISH",
-     "SEAHORSE",
-     "STARFISH"
-    ]
-   },
-   {
-    "theme": "Parts of a Book",
-    "tier": "green",
-    "words": [
-     "SPINE",
-     "COVER",
-     "CHAPTER",
-     "INDEX"
-    ]
-   },
-   {
-    "theme": "Heteronyms",
-    "tier": "blue",
-    "words": [
-     "LEAD",
-     "READ",
-     "BOW",
-     "TEAR"
-    ]
-   },
-   {
-    "theme": "___ HOUSE",
-    "tier": "purple",
-    "words": [
-     "WHITE",
-     "FULL",
-     "TREE",
-     "POWER"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-5",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Citrus Fruits",
-    "tier": "yellow",
-    "words": [
-     "ORANGE",
-     "LEMON",
-     "LIME",
-     "GRAPEFRUIT"
-    ]
-   },
-   {
-    "theme": "Things That Spin",
-    "tier": "green",
-    "words": [
-     "TOP",
-     "WHEEL",
-     "RECORD",
-     "GLOBE"
-    ]
-   },
-   {
-    "theme": "Slang for Money",
-    "tier": "blue",
-    "words": [
-     "BREAD",
-     "DOUGH",
-     "CHEDDAR",
-     "CABBAGE"
-    ]
-   },
-   {
-    "theme": "DOUBLE ___",
-    "tier": "purple",
-    "words": [
-     "DUTCH",
-     "AGENT",
-     "TAKE",
-     "STANDARD"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-6",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Things That Are Red",
-    "tier": "yellow",
-    "words": [
-     "APPLE",
-     "TOMATO",
-     "STRAWBERRY",
-     "CHERRY"
-    ]
-   },
-   {
-    "theme": "Yoga Poses",
-    "tier": "green",
-    "words": [
-     "COBRA",
-     "WARRIOR",
-     "TREE",
-     "EAGLE"
-    ]
-   },
-   {
-    "theme": "Contronyms",
-    "tier": "blue",
-    "words": [
-     "CLEAVE",
-     "DUST",
-     "SANCTION",
-     "OVERSIGHT"
-    ]
-   },
-   {
-    "theme": "___ LIGHT",
-    "tier": "purple",
-    "words": [
-     "FLASH",
-     "LIME",
-     "HIGH",
-     "SPOT"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-7",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Ball Sports",
-    "tier": "yellow",
-    "words": [
-     "SOCCER",
-     "BASKETBALL",
-     "TENNIS",
-     "CRICKET"
-    ]
-   },
-   {
-    "theme": "Things With Strings",
-    "tier": "green",
-    "words": [
-     "GUITAR",
-     "KITE",
-     "PUPPET",
-     "BALLOON"
-    ]
-   },
-   {
-    "theme": "James Bond Films",
-    "tier": "blue",
-    "words": [
-     "SPECTRE",
-     "SKYFALL",
-     "GOLDENEYE",
-     "THUNDERBALL"
-    ]
-   },
-   {
-    "theme": "Words From Personal Names",
-    "tier": "purple",
-    "words": [
-     "GUILLOTINE",
-     "MAVERICK",
-     "LEOTARD",
-     "SILHOUETTE"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-8",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Kitchen Appliances",
-    "tier": "yellow",
-    "words": [
-     "TOASTER",
-     "BLENDER",
-     "MIXER",
-     "OVEN"
-    ]
-   },
-   {
-    "theme": "Things That Float",
-    "tier": "green",
-    "words": [
-     "BOAT",
-     "DUCK",
-     "CLOUD",
-     "BUBBLE"
-    ]
-   },
-   {
-    "theme": "Golf Scoring Terms",
-    "tier": "blue",
-    "words": [
-     "EAGLE",
-     "BIRDIE",
-     "BOGEY",
-     "ALBATROSS"
-    ]
-   },
-   {
-    "theme": "___ BALL",
-    "tier": "purple",
-    "words": [
-     "CRYSTAL",
-     "FIRE",
-     "MEAT",
-     "ODD"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-9",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Farm Animals",
-    "tier": "yellow",
-    "words": [
-     "COW",
-     "PIG",
-     "CHICKEN",
-     "SHEEP"
-    ]
-   },
-   {
-    "theme": "Things You Flip",
-    "tier": "green",
-    "words": [
-     "PANCAKE",
-     "COIN",
-     "SWITCH",
-     "PAGE"
-    ]
-   },
-   {
-    "theme": "Palindromes",
-    "tier": "blue",
-    "words": [
-     "KAYAK",
-     "RADAR",
-     "LEVEL",
-     "CIVIC"
-    ]
-   },
-   {
-    "theme": "Can Follow \"DEAD\"",
-    "tier": "purple",
-    "words": [
-     "END",
-     "HEAT",
-     "LINE",
-     "WEIGHT"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-10",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Desserts",
-    "tier": "yellow",
-    "words": [
-     "PIE",
-     "CAKE",
-     "COOKIE",
-     "BROWNIE"
-    ]
-   },
-   {
-    "theme": "Things That Buzz",
-    "tier": "green",
-    "words": [
-     "BEE",
-     "PHONE",
-     "DOORBELL",
-     "SAW"
-    ]
-   },
-   {
-    "theme": "Pixar Movie Titles",
-    "tier": "blue",
-    "words": [
-     "BRAVE",
-     "UP",
-     "COCO",
-     "SOUL"
-    ]
-   },
-   {
-    "theme": "Genericized Trademarks",
-    "tier": "purple",
-    "words": [
-     "ESCALATOR",
-     "ZIPPER",
-     "ASPIRIN",
-     "TRAMPOLINE"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-11",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Vegetables",
-    "tier": "yellow",
-    "words": [
-     "CARROT",
-     "BROCCOLI",
-     "SPINACH",
-     "CELERY"
-    ]
-   },
-   {
-    "theme": "Things With Keys",
-    "tier": "green",
-    "words": [
-     "PIANO",
-     "CAR",
-     "COMPUTER",
-     "LOCK"
-    ]
-   },
-   {
-    "theme": "Music Notation Terms",
-    "tier": "blue",
-    "words": [
-     "SHARP",
-     "FLAT",
-     "NATURAL",
-     "REST"
-    ]
-   },
-   {
-    "theme": "___ BOARD",
-    "tier": "purple",
-    "words": [
-     "CARD",
-     "KEY",
-     "CLIP",
-     "DASH"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-12",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Types of Dogs",
-    "tier": "yellow",
-    "words": [
-     "BEAGLE",
-     "POODLE",
-     "BULLDOG",
-     "DALMATIAN"
-    ]
-   },
-   {
-    "theme": "Things That Drip",
-    "tier": "green",
-    "words": [
-     "FAUCET",
-     "CANDLE",
-     "NOSE",
-     "ICE"
-    ]
-   },
-   {
-    "theme": "Portmanteau Words",
-    "tier": "blue",
-    "words": [
-     "BRUNCH",
-     "SMOG",
-     "MOTEL",
-     "CHORTLE"
-    ]
-   },
-   {
-    "theme": "Types of Haircuts",
-    "tier": "purple",
-    "words": [
-     "CREW",
-     "BUZZ",
-     "BOB",
-     "PIXIE"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-13",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Body Parts",
-    "tier": "yellow",
-    "words": [
-     "ARM",
-     "LEG",
-     "HEAD",
-     "HAND"
-    ]
-   },
-   {
-    "theme": "Things That Fold",
-    "tier": "green",
-    "words": [
-     "CHAIR",
-     "MAP",
-     "CLOTHES",
-     "NAPKIN"
-    ]
-   },
-   {
-    "theme": "Clue Board Game Weapons",
-    "tier": "blue",
-    "words": [
-     "ROPE",
-     "WRENCH",
-     "PIPE",
-     "CANDLESTICK"
-    ]
-   },
-   {
-    "theme": "Contains \"STATE\"",
-    "tier": "purple",
-    "words": [
-     "OVERSTATE",
-     "UNDERSTATE",
-     "REINSTATE",
-     "INTERSTATE"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-14",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Flowers",
-    "tier": "yellow",
-    "words": [
-     "ROSE",
-     "TULIP",
-     "DAISY",
-     "LILY"
-    ]
-   },
-   {
-    "theme": "Things That Pop",
-    "tier": "green",
-    "words": [
-     "BALLOON",
-     "CORN",
-     "BUBBLE",
-     "CHAMPAGNE"
-    ]
-   },
-   {
-    "theme": "Ship Parts",
-    "tier": "blue",
-    "words": [
-     "DECK",
-     "BOW",
-     "STERN",
-     "HULL"
-    ]
-   },
-   {
-    "theme": "Can Be \"Running\"",
-    "tier": "purple",
-    "words": [
-     "WATER",
-     "NOSE",
-     "JOKE",
-     "COMMENTARY"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-15",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Writing Tools",
-    "tier": "yellow",
-    "words": [
-     "PEN",
-     "PENCIL",
-     "MARKER",
-     "CRAYON"
-    ]
-   },
-   {
-    "theme": "Things That Leak",
-    "tier": "green",
-    "words": [
-     "PIPE",
-     "SECRET",
-     "BOAT",
-     "ROOF"
-    ]
-   },
-   {
-    "theme": "Disney Princess Names",
-    "tier": "blue",
-    "words": [
-     "JASMINE",
-     "BELLE",
-     "ARIEL",
-     "AURORA"
-    ]
-   },
-   {
-    "theme": "___ SHOT",
-    "tier": "purple",
-    "words": [
-     "BIG",
-     "CHEAP",
-     "HOT",
-     "LONG"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-16",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Breakfast Drinks",
-    "tier": "yellow",
-    "words": [
-     "COFFEE",
-     "JUICE",
-     "MILK",
-     "TEA"
-    ]
-   },
-   {
-    "theme": "Things That Roll",
-    "tier": "green",
-    "words": [
-     "BALL",
-     "DICE",
-     "WHEEL",
-     "THUNDER"
-    ]
-   },
-   {
-    "theme": "Words Also Used as Names",
-    "tier": "blue",
-    "words": [
-     "FRANK",
-     "BILL",
-     "GRACE",
-     "MARK"
-    ]
-   },
-   {
-    "theme": "___ STONE",
-    "tier": "purple",
-    "words": [
-     "KEY",
-     "MILE",
-     "LIME",
-     "CORNER"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-17",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Planets",
-    "tier": "yellow",
-    "words": [
-     "MARS",
-     "VENUS",
-     "JUPITER",
-     "SATURN"
-    ]
-   },
-   {
-    "theme": "Things That Tick",
-    "tier": "green",
-    "words": [
-     "CLOCK",
-     "BOMB",
-     "HEART",
-     "BOX"
-    ]
-   },
-   {
-    "theme": "Onomatopoeia",
-    "tier": "blue",
-    "words": [
-     "BUZZ",
-     "HISS",
-     "SPLASH",
-     "THUD"
-    ]
-   },
-   {
-    "theme": "___ FISH",
-    "tier": "purple",
-    "words": [
-     "CAT",
-     "GOLD",
-     "JELLY",
-     "STAR"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-18",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Musical Instruments",
-    "tier": "yellow",
-    "words": [
-     "PIANO",
-     "GUITAR",
-     "VIOLIN",
-     "DRUMS"
-    ]
-   },
-   {
-    "theme": "Things That Grow",
-    "tier": "green",
-    "words": [
-     "PLANT",
-     "CHILD",
-     "BUSINESS",
-     "HAIR"
-    ]
-   },
-   {
-    "theme": "Things on Ships",
-    "tier": "blue",
-    "words": [
-     "ANCHOR",
-     "MAST",
-     "SAIL",
-     "CAPTAIN"
-    ]
-   },
-   {
-    "theme": "Can Follow \"BLIND\"",
-    "tier": "purple",
-    "words": [
-     "DATE",
-     "SPOT",
-     "SIDE",
-     "FAITH"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-19",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Pizza Toppings",
-    "tier": "yellow",
-    "words": [
-     "PEPPERONI",
-     "MUSHROOM",
-     "OLIVE",
-     "SAUSAGE"
-    ]
-   },
-   {
-    "theme": "Things That Stick",
-    "tier": "green",
-    "words": [
-     "GLUE",
-     "TAPE",
-     "GUM",
-     "HONEY"
-    ]
-   },
-   {
-    "theme": "Star Wars Names",
-    "tier": "blue",
-    "words": [
-     "LUKE",
-     "LEIA",
-     "HAN",
-     "REY"
-    ]
-   },
-   {
-    "theme": "Can Be \"BROKEN\"",
-    "tier": "purple",
-    "words": [
-     "HEART",
-     "ENGLISH",
-     "RECORD",
-     "DAWN"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-20",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Birds",
-    "tier": "yellow",
-    "words": [
-     "EAGLE",
-     "ROBIN",
-     "SPARROW",
-     "HAWK"
-    ]
-   },
-   {
-    "theme": "Things That Beep",
-    "tier": "green",
-    "words": [
-     "ALARM",
-     "MICROWAVE",
-     "WATCH",
-     "HORN"
-    ]
-   },
-   {
-    "theme": "Monopoly Properties",
-    "tier": "blue",
-    "words": [
-     "PARK",
-     "BOARDWALK",
-     "BALTIC",
-     "READING"
-    ]
-   },
-   {
-    "theme": "___ CAKE",
-    "tier": "purple",
-    "words": [
-     "BEEF",
-     "FISH",
-     "HOT",
-     "RICE"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-21",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Countries",
-    "tier": "yellow",
-    "words": [
-     "FRANCE",
-     "ITALY",
-     "SPAIN",
-     "GERMANY"
-    ]
-   },
-   {
-    "theme": "Things That Melt",
-    "tier": "green",
-    "words": [
-     "ICE",
-     "BUTTER",
-     "SNOW",
-     "CHOCOLATE"
-    ]
-   },
-   {
-    "theme": "Taylor Swift Albums",
-    "tier": "blue",
-    "words": [
-     "REPUTATION",
-     "FOLKLORE",
-     "EVERMORE",
-     "FEARLESS"
-    ]
-   },
-   {
-    "theme": "___ BLOCK",
-    "tier": "purple",
-    "words": [
-     "ROAD",
-     "MENTAL",
-     "WRITER",
-     "SUN"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-22",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "School Subjects",
-    "tier": "yellow",
-    "words": [
-     "MATH",
-     "SCIENCE",
-     "ENGLISH",
-     "HISTORY"
-    ]
-   },
-   {
-    "theme": "Things That Crack",
-    "tier": "green",
-    "words": [
-     "EGG",
-     "WHIP",
-     "VOICE",
-     "JOKE"
-    ]
-   },
-   {
-    "theme": "Groups of Four",
-    "tier": "blue",
-    "words": [
-     "SEASONS",
-     "SUITS",
-     "QUARTERS",
-     "HORSEMEN"
-    ]
-   },
-   {
-    "theme": "Contains \"DOG\"",
-    "tier": "purple",
-    "words": [
-     "HOTDOG",
-     "UNDERDOG",
-     "WATCHDOG",
-     "DOGMA"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-23",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Winter Clothes",
-    "tier": "yellow",
-    "words": [
-     "COAT",
-     "SCARF",
-     "GLOVES",
-     "BOOTS"
-    ]
-   },
-   {
-    "theme": "Things That Shine",
-    "tier": "green",
-    "words": [
-     "STAR",
-     "DIAMOND",
-     "SUN",
-     "GOLD"
-    ]
-   },
-   {
-    "theme": "Beatles Songs",
-    "tier": "blue",
-    "words": [
-     "HELP",
-     "YESTERDAY",
-     "REVOLUTION",
-     "IMAGINE"
-    ]
-   },
-   {
-    "theme": "Hidden Numbers (Spelled Out)",
-    "tier": "purple",
-    "words": [
-     "WONDERFUL",
-     "FREIGHT",
-     "CANINE",
-     "ATTEND"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-24",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Seafood",
-    "tier": "yellow",
-    "words": [
-     "SHRIMP",
-     "LOBSTER",
-     "CRAB",
-     "SALMON"
-    ]
-   },
-   {
-    "theme": "Things That Click",
-    "tier": "green",
-    "words": [
-     "MOUSE",
-     "PEN",
-     "CAMERA",
-     "HEELS"
-    ]
-   },
-   {
-    "theme": "TV Shows Starting with \"The\"",
-    "tier": "blue",
-    "words": [
-     "OFFICE",
-     "WIRE",
-     "CROWN",
-     "BEAR"
-    ]
-   },
-   {
-    "theme": "Contains Roman Numerals",
-    "tier": "purple",
-    "words": [
-     "CIVIL",
-     "MAXIMUM",
-     "DIVIDE",
-     "VIVID"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-25",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Things in a Wallet",
-    "tier": "yellow",
-    "words": [
-     "CASH",
-     "CARD",
-     "LICENSE",
-     "PHOTO"
-    ]
-   },
-   {
-    "theme": "Things That Sink",
-    "tier": "green",
-    "words": [
-     "SHIP",
-     "ANCHOR",
-     "STONE",
-     "HEART"
-    ]
-   },
-   {
-    "theme": "Playing Card Terms",
-    "tier": "blue",
-    "words": [
-     "ROYAL",
-     "FLUSH",
-     "STRAIGHT",
-     "HOUSE"
-    ]
-   },
-   {
-    "theme": "___ CHIP",
-    "tier": "purple",
-    "words": [
-     "POKER",
-     "CHOCOLATE",
-     "MICRO",
-     "BLUE"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-26",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Candy",
-    "tier": "yellow",
-    "words": [
-     "CHOCOLATE",
-     "LICORICE",
-     "CARAMEL",
-     "TAFFY"
-    ]
-   },
-   {
-    "theme": "Things That Bounce",
-    "tier": "green",
-    "words": [
-     "BALL",
-     "CHECK",
-     "BABY",
-     "EMAIL"
-    ]
-   },
-   {
-    "theme": "Dances",
-    "tier": "blue",
-    "words": [
-     "SWING",
-     "TAP",
-     "BREAK",
-     "SALSA"
-    ]
-   },
-   {
-    "theme": "___ STORM",
-    "tier": "purple",
-    "words": [
-     "BRAIN",
-     "FIRE",
-     "ICE",
-     "THUNDER"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-27",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Things That Are Soft",
-    "tier": "yellow",
-    "words": [
-     "PILLOW",
-     "COTTON",
-     "SILK",
-     "FUR"
-    ]
-   },
-   {
-    "theme": "Things That Ring",
-    "tier": "green",
-    "words": [
-     "BELL",
-     "PHONE",
-     "ALARM",
-     "EAR"
-    ]
-   },
-   {
-    "theme": "Semordnilaps",
-    "tier": "blue",
-    "words": [
-     "STRESSED",
-     "DESSERTS",
-     "LIVE",
-     "EVIL"
-    ]
-   },
-   {
-    "theme": "___ POINT",
-    "tier": "purple",
-    "words": [
-     "POWER",
-     "VIEW",
-     "BALL",
-     "GUN"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-28",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Things That Fly",
-    "tier": "yellow",
-    "words": [
-     "BIRD",
-     "PLANE",
-     "KITE",
-     "BUTTERFLY"
-    ]
-   },
-   {
-    "theme": "Things That Slide",
-    "tier": "green",
-    "words": [
-     "DOOR",
-     "DRAWER",
-     "TROMBONE",
-     "ICE"
-    ]
-   },
-   {
-    "theme": "Contains \"EAR\"",
-    "tier": "blue",
-    "words": [
-     "SEARCH",
-     "RESEARCH",
-     "REHEARSE",
-     "UNCLEAR"
-    ]
-   },
-   {
-    "theme": "___ RING",
-    "tier": "purple",
-    "words": [
-     "SPRING",
-     "EAR",
-     "KEY",
-     "BOX"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-29",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Things That Are Loud",
-    "tier": "yellow",
-    "words": [
-     "THUNDER",
-     "SIREN",
-     "EXPLOSION",
-     "CONCERT"
-    ]
-   },
-   {
-    "theme": "Things That Stretch",
-    "tier": "green",
-    "words": [
-     "RUBBER",
-     "YOGA",
-     "TRUTH",
-     "BUDGET"
-    ]
-   },
-   {
-    "theme": "Contains \"OVER\"",
-    "tier": "blue",
-    "words": [
-     "DISCOVER",
-     "RECOVER",
-     "MOREOVER",
-     "CLOVER"
-    ]
-   },
-   {
-    "theme": "Music Song Structure Terms",
-    "tier": "purple",
-    "words": [
-     "BRIDGE",
-     "HOOK",
-     "BREAK",
-     "DROP"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-30",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Things That Are Cold",
-    "tier": "yellow",
-    "words": [
-     "ICE",
-     "SNOW",
-     "WINTER",
-     "FREEZER"
-    ]
-   },
-   {
-    "theme": "Things That Splash",
-    "tier": "green",
-    "words": [
-     "WATER",
-     "WAVE",
-     "RAIN",
-     "POOL"
-    ]
-   },
-   {
-    "theme": "Contains \"UNDER\"",
-    "tier": "blue",
-    "words": [
-     "THUNDER",
-     "BLUNDER",
-     "ASUNDER",
-     "FLOUNDER"
-    ]
-   },
-   {
-    "theme": "Contronyms (Own Opposite)",
-    "tier": "purple",
-    "words": [
-     "CLIP",
-     "FAST",
-     "LEFT",
-     "SCREEN"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-31",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Vegetables",
-    "tier": "yellow",
-    "words": [
-     "CARROT",
-     "BROCCOLI",
-     "CELERY",
-     "SPINACH"
-    ]
-   },
-   {
-    "theme": "Things That Pop",
-    "tier": "green",
-    "words": [
-     "BALLOON",
-     "BUBBLE",
-     "CORN",
-     "QUESTION"
-    ]
-   },
-   {
-    "theme": "Famous Michaels",
-    "tier": "blue",
-    "words": [
-     "JORDAN",
-     "JACKSON",
-     "PHELPS",
-     "TYSON"
-    ]
-   },
-   {
-    "theme": "___ LINE",
-    "tier": "purple",
-    "words": [
-     "PUNCH",
-     "BOTTOM",
-     "FINISH",
-     "DEAD"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-32",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Things With Wheels",
-    "tier": "yellow",
-    "words": [
-     "CAR",
-     "BIKE",
-     "WAGON",
-     "SKATEBOARD"
-    ]
-   },
-   {
-    "theme": "Things That Leak",
-    "tier": "green",
-    "words": [
-     "FAUCET",
-     "SECRET",
-     "ROOF",
-     "NEWS"
-    ]
-   },
-   {
-    "theme": "Board Games",
-    "tier": "blue",
-    "words": [
-     "CLUE",
-     "RISK",
-     "SORRY",
-     "LIFE"
-    ]
-   },
-   {
-    "theme": "Can Precede \"MARKET\"",
-    "tier": "purple",
-    "words": [
-     "SUPER",
-     "STOCK",
-     "FLEA",
-     "BLACK"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-33",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Pets",
-    "tier": "yellow",
-    "words": [
-     "DOG",
-     "CAT",
-     "HAMSTER",
-     "PARROT"
-    ]
-   },
-   {
-    "theme": "Things That Drip",
-    "tier": "green",
-    "words": [
-     "FAUCET",
-     "ICICLE",
-     "SWEAT",
-     "PAINT"
-    ]
-   },
-   {
-    "theme": "Broadway Musicals",
-    "tier": "blue",
-    "words": [
-     "CATS",
-     "RENT",
-     "WICKED",
-     "HAMILTON"
-    ]
-   },
-   {
-    "theme": "___ CASE",
-    "tier": "purple",
-    "words": [
-     "BRIEF",
-     "COLD",
-     "UPPER",
-     "SUIT"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-34",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Breakfast Foods",
-    "tier": "yellow",
-    "words": [
-     "EGGS",
-     "BACON",
-     "PANCAKES",
-     "CEREAL"
-    ]
-   },
-   {
-    "theme": "Things That Fold",
-    "tier": "green",
-    "words": [
-     "PAPER",
-     "CLOTHES",
-     "TENT",
-     "POKER"
-    ]
-   },
-   {
-    "theme": "Famous Williams",
-    "tier": "blue",
-    "words": [
-     "SHAKESPEARE",
-     "SHATNER",
-     "PRINCE",
-     "WALLACE"
-    ]
-   },
-   {
-    "theme": "Contains \"ICE\"",
-    "tier": "purple",
-    "words": [
-     "SERVICE",
-     "JUSTICE",
-     "PRACTICE",
-     "NOTICE"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-35",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Things in a Bedroom",
-    "tier": "yellow",
-    "words": [
-     "BED",
-     "PILLOW",
-     "LAMP",
-     "CLOSET"
-    ]
-   },
-   {
-    "theme": "Things That Grow",
-    "tier": "green",
-    "words": [
-     "PLANT",
-     "CHILD",
-     "INTEREST",
-     "TENSION"
-    ]
-   },
-   {
-    "theme": "One-Word Movie Titles",
-    "tier": "blue",
-    "words": [
-     "JAWS",
-     "FROZEN",
-     "PSYCHO",
-     "GLADIATOR"
-    ]
-   },
-   {
-    "theme": "___ HAND",
-    "tier": "purple",
-    "words": [
-     "SECOND",
-     "UPPER",
-     "SHORT",
-     "FREE"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-36",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Jewelry",
-    "tier": "yellow",
-    "words": [
-     "RING",
-     "NECKLACE",
-     "BRACELET",
-     "EARRING"
-    ]
-   },
-   {
-    "theme": "Things That Spread",
-    "tier": "green",
-    "words": [
-     "BUTTER",
-     "RUMOR",
-     "FIRE",
-     "DISEASE"
-    ]
-   },
-   {
-    "theme": "Poker Hands",
-    "tier": "blue",
-    "words": [
-     "FLUSH",
-     "STRAIGHT",
-     "FULL",
-     "PAIR"
-    ]
-   },
-   {
-    "theme": "RUNNING ___",
-    "tier": "purple",
-    "words": [
-     "MATE",
-     "BACK",
-     "START",
-     "WATER"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-37",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Trees",
-    "tier": "yellow",
-    "words": [
-     "OAK",
-     "MAPLE",
-     "PINE",
-     "BIRCH"
-    ]
-   },
-   {
-    "theme": "Things That Wrap",
-    "tier": "green",
-    "words": [
-     "GIFT",
-     "TORTILLA",
-     "ARMS",
-     "MOVIE"
-    ]
-   },
-   {
-    "theme": "Disney Villains",
-    "tier": "blue",
-    "words": [
-     "SCAR",
-     "URSULA",
-     "JAFAR",
-     "MALEFICENT"
-    ]
-   },
-   {
-    "theme": "Contains \"AIR\"",
-    "tier": "purple",
-    "words": [
-     "REPAIR",
-     "AFFAIR",
-     "DESPAIR",
-     "IMPAIR"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-38",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Months",
-    "tier": "yellow",
-    "words": [
-     "MARCH",
-     "APRIL",
-     "MAY",
-     "JUNE"
-    ]
-   },
-   {
-    "theme": "Things That Roll",
-    "tier": "green",
-    "words": [
-     "DICE",
-     "THUNDER",
-     "CREDITS",
-     "EYES"
-    ]
-   },
-   {
-    "theme": "Greek Gods",
-    "tier": "blue",
-    "words": [
-     "ZEUS",
-     "APOLLO",
-     "HERMES",
-     "POSEIDON"
-    ]
-   },
-   {
-    "theme": "___ POOL",
-    "tier": "purple",
-    "words": [
-     "CAR",
-     "GENE",
-     "DEAD",
-     "WHIRL"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-39",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Baked Goods",
-    "tier": "yellow",
-    "words": [
-     "BREAD",
-     "MUFFIN",
-     "CROISSANT",
-     "SCONE"
-    ]
-   },
-   {
-    "theme": "Things That Twist",
-    "tier": "green",
-    "words": [
-     "TORNADO",
-     "PLOT",
-     "ARM",
-     "PRETZEL"
-    ]
-   },
-   {
-    "theme": "Contains \"MAN\"",
-    "tier": "blue",
-    "words": [
-     "WOMAN",
-     "ROMANCE",
-     "DEMAND",
-     "COMMAND"
-    ]
-   },
-   {
-    "theme": "___ TRIP",
-    "tier": "purple",
-    "words": [
-     "ROAD",
-     "GUILT",
-     "EGO",
-     "POWER"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-40",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Dairy Products",
-    "tier": "yellow",
-    "words": [
-     "MILK",
-     "CHEESE",
-     "YOGURT",
-     "CREAM"
-    ]
-   },
-   {
-    "theme": "Things That Lock",
-    "tier": "green",
-    "words": [
-     "DOOR",
-     "PHONE",
-     "JAW",
-     "EYES"
-    ]
-   },
-   {
-    "theme": "Famous Johns",
-    "tier": "blue",
-    "words": [
-     "LENNON",
-     "WAYNE",
-     "TRAVOLTA",
-     "CANDY"
-    ]
-   },
-   {
-    "theme": "___ DRIVE",
-    "tier": "purple",
-    "words": [
-     "HARD",
-     "TEST",
-     "SEX",
-     "FLASH"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-41",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Things With Buttons",
-    "tier": "yellow",
-    "words": [
-     "SHIRT",
-     "REMOTE",
-     "ELEVATOR",
-     "KEYBOARD"
-    ]
-   },
-   {
-    "theme": "Things That Bloom",
-    "tier": "green",
-    "words": [
-     "FLOWER",
-     "LOVE",
-     "ALGAE",
-     "YOUTH"
-    ]
-   },
-   {
-    "theme": "One-Word Band Names",
-    "tier": "blue",
-    "words": [
-     "QUEEN",
-     "KISS",
-     "JOURNEY",
-     "RUSH"
-    ]
-   },
-   {
-    "theme": "Can Follow \"BREAK\"",
-    "tier": "purple",
-    "words": [
-     "DANCE",
-     "EVEN",
-     "THROUGH",
-     "NECK"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-42",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Footwear",
-    "tier": "yellow",
-    "words": [
-     "BOOTS",
-     "SANDALS",
-     "SNEAKERS",
-     "HEELS"
-    ]
-   },
-   {
-    "theme": "Things That Tick",
-    "tier": "green",
-    "words": [
-     "CLOCK",
-     "BOMB",
-     "HEART",
-     "BOX"
-    ]
-   },
-   {
-    "theme": "Shakespeare Plays",
-    "tier": "blue",
-    "words": [
-     "HAMLET",
-     "OTHELLO",
-     "MACBETH",
-     "TEMPEST"
-    ]
-   },
-   {
-    "theme": "Contains \"END\"",
-    "tier": "purple",
-    "words": [
-     "FRIEND",
-     "BLEND",
-     "DEFEND",
-     "LEGEND"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-43",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Zoo Animals",
-    "tier": "yellow",
-    "words": [
-     "LION",
-     "ELEPHANT",
-     "GIRAFFE",
-     "MONKEY"
-    ]
-   },
-   {
-    "theme": "Things That Hang",
-    "tier": "green",
-    "words": [
-     "PICTURE",
-     "LAUNDRY",
-     "HEAD",
-     "JURY"
-    ]
-   },
-   {
-    "theme": "Famous Jennifers",
-    "tier": "blue",
-    "words": [
-     "ANISTON",
-     "LOPEZ",
-     "LAWRENCE",
-     "GARNER"
-    ]
-   },
-   {
-    "theme": "___ FIELD",
-    "tier": "purple",
-    "words": [
-     "LEFT",
-     "TRACK",
-     "MINE",
-     "FORCE"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-44",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Things in a Garden",
-    "tier": "yellow",
-    "words": [
-     "FLOWER",
-     "VEGETABLE",
-     "SOIL",
-     "HOSE"
-    ]
-   },
-   {
-    "theme": "Things That Burn",
-    "tier": "green",
-    "words": [
-     "FIRE",
-     "CANDLE",
-     "CALORIES",
-     "BRIDGE"
-    ]
-   },
-   {
-    "theme": "DC Comics Heroes",
-    "tier": "blue",
-    "words": [
-     "BATMAN",
-     "SUPERMAN",
-     "WONDER",
-     "FLASH"
-    ]
-   },
-   {
-    "theme": "BIG ___",
-    "tier": "purple",
-    "words": [
-     "BANG",
-     "DEAL",
-     "APPLE",
-     "FOOT"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-45",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Pasta Types",
-    "tier": "yellow",
-    "words": [
-     "SPAGHETTI",
-     "MACARONI",
-     "LASAGNA",
-     "RAVIOLI"
-    ]
-   },
-   {
-    "theme": "Things That Wave",
-    "tier": "green",
-    "words": [
-     "FLAG",
-     "OCEAN",
-     "HAIR",
-     "GOODBYE"
-    ]
-   },
-   {
-    "theme": "Marvel Avengers",
-    "tier": "blue",
-    "words": [
-     "THOR",
-     "HULK",
-     "WIDOW",
-     "PANTHER"
-    ]
-   },
-   {
-    "theme": "___ DUCK",
-    "tier": "purple",
-    "words": [
-     "SITTING",
-     "LAME",
-     "DEAD",
-     "RUBBER"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-46",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Office Supplies",
-    "tier": "yellow",
-    "words": [
-     "PEN",
-     "STAPLER",
-     "PAPER",
-     "CLIP"
-    ]
-   },
-   {
-    "theme": "Things That Break",
-    "tier": "green",
-    "words": [
-     "HEART",
-     "PROMISE",
-     "RECORD",
-     "DAWN"
-    ]
-   },
-   {
-    "theme": "Famous Davids",
-    "tier": "blue",
-    "words": [
-     "BOWIE",
-     "LETTERMAN",
-     "BECKHAM",
-     "COPPERFIELD"
-    ]
-   },
-   {
-    "theme": "COLD ___",
-    "tier": "purple",
-    "words": [
-     "CASE",
-     "FEET",
-     "SHOULDER",
-     "TURKEY"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-47",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Things in Space",
-    "tier": "yellow",
-    "words": [
-     "STAR",
-     "PLANET",
-     "MOON",
-     "COMET"
-    ]
-   },
-   {
-    "theme": "Things That Shake",
-    "tier": "green",
-    "words": [
-     "EARTHQUAKE",
-     "HAND",
-     "HEAD",
-     "SALT"
-    ]
-   },
-   {
-    "theme": "Harry Potter Houses",
-    "tier": "blue",
-    "words": [
-     "GRYFFINDOR",
-     "SLYTHERIN",
-     "HUFFLEPUFF",
-     "RAVENCLAW"
-    ]
-   },
-   {
-    "theme": "___ TONGUE",
-    "tier": "purple",
-    "words": [
-     "MOTHER",
-     "SHARP",
-     "SLIP",
-     "SILVER"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-48",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Things With Wings",
-    "tier": "yellow",
-    "words": [
-     "BIRD",
-     "PLANE",
-     "ANGEL",
-     "BUTTERFLY"
-    ]
-   },
-   {
-    "theme": "Things That Steam",
-    "tier": "green",
-    "words": [
-     "COFFEE",
-     "SHOWER",
-     "IRON",
-     "ANGER"
-    ]
-   },
-   {
-    "theme": "Contains \"IGHT\"",
-    "tier": "blue",
-    "words": [
-     "MIDNIGHT",
-     "INSIGHT",
-     "FRIGHT",
-     "BLIGHT"
-    ]
-   },
-   {
-    "theme": "___ CARD",
-    "tier": "purple",
-    "words": [
-     "WILD",
-     "TRUMP",
-     "REPORT",
-     "GREEN"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-49",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Beverages",
-    "tier": "yellow",
-    "words": [
-     "COFFEE",
-     "TEA",
-     "JUICE",
-     "SODA"
-    ]
-   },
-   {
-    "theme": "Things That Crash",
-    "tier": "green",
-    "words": [
-     "CAR",
-     "WAVE",
-     "COMPUTER",
-     "PARTY"
-    ]
-   },
-   {
-    "theme": "Famous Roberts",
-    "tier": "blue",
-    "words": [
-     "DENIRO",
-     "REDFORD",
-     "DOWNEY",
-     "PLANT"
-    ]
-   },
-   {
-    "theme": "___ BAND",
-    "tier": "purple",
-    "words": [
-     "RUBBER",
-     "BOY",
-     "HEAD",
-     "BROAD"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-50",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Writing Tools",
-    "tier": "yellow",
-    "words": [
-     "PEN",
-     "PENCIL",
-     "MARKER",
-     "CRAYON"
-    ]
-   },
-   {
-    "theme": "Things That Glow",
-    "tier": "green",
-    "words": [
-     "FIREFLY",
-     "EMBER",
-     "SKIN",
-     "PRAISE"
-    ]
-   },
-   {
-    "theme": "Indiana Jones Films",
-    "tier": "blue",
-    "words": [
-     "RAIDERS",
-     "TEMPLE",
-     "CRUSADE",
-     "SKULL"
-    ]
-   },
-   {
-    "theme": "Contains \"OUT\"",
-    "tier": "purple",
-    "words": [
-     "ABOUT",
-     "SHOUT",
-     "DROUGHT",
-     "SPROUT"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-51",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Cleaning Products",
-    "tier": "yellow",
-    "words": [
-     "SOAP",
-     "BLEACH",
-     "DETERGENT",
-     "POLISH"
-    ]
-   },
-   {
-    "theme": "Things That Flow",
-    "tier": "green",
-    "words": [
-     "RIVER",
-     "TRAFFIC",
-     "LAVA",
-     "CASH"
-    ]
-   },
-   {
-    "theme": "Famous Toms",
-    "tier": "blue",
-    "words": [
-     "HANKS",
-     "CRUISE",
-     "BRADY",
-     "PETTY"
-    ]
-   },
-   {
-    "theme": "___ HEAD",
-    "tier": "purple",
-    "words": [
-     "HAMMER",
-     "HOT",
-     "PIN",
-     "BONE"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-52",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Citrus Drinks",
-    "tier": "yellow",
-    "words": [
-     "LEMONADE",
-     "ORANGEADE",
-     "LIMEADE",
-     "GRAPEFRUIT"
-    ]
-   },
-   {
-    "theme": "Things That Swing",
-    "tier": "green",
-    "words": [
-     "PENDULUM",
-     "MOOD",
-     "BAT",
-     "VOTER"
-    ]
-   },
-   {
-    "theme": "Contains \"RAIN\"",
-    "tier": "blue",
-    "words": [
-     "BRAIN",
-     "TRAIN",
-     "DRAIN",
-     "STRAIN"
-    ]
-   },
-   {
-    "theme": "BLIND ___",
-    "tier": "purple",
-    "words": [
-     "DATE",
-     "SPOT",
-     "SIDE",
-     "FOLD"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-53",
-  "difficulty": "expert",
-  "groups": [
-   {
-    "theme": "Camping Gear",
-    "tier": "yellow",
-    "words": [
-     "TENT",
-     "SLEEPING",
-     "FLASHLIGHT",
-     "COMPASS"
-    ]
-   },
-   {
-    "theme": "Things That Stick",
-    "tier": "green",
-    "words": [
-     "GLUE",
-     "GUM",
-     "VELCRO",
-     "MEMORY"
-    ]
-   },
-   {
-    "theme": "Famous Chrises",
-    "tier": "blue",
-    "words": [
-     "ROCK",
-     "PRATT",
-     "HEMSWORTH",
-     "PINE"
-    ]
-   },
-   {
-    "theme": "___ MOON",
-    "tier": "purple",
-    "words": [
-     "HONEY",
-     "FULL",
-     "BLUE",
-     "HALF"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-54",
-  "difficulty": "medium",
-  "groups": [
-   {
-    "theme": "Garden Flowers",
-    "tier": "yellow",
-    "words": [
-     "ROSE",
-     "TULIP",
-     "DAISY",
-     "LILY"
-    ]
-   },
-   {
-    "theme": "Things That Drop",
-    "tier": "green",
-    "words": [
-     "JAW",
-     "BALL",
-     "NAME",
-     "BEAT"
-    ]
-   },
-   {
-    "theme": "Friends Characters",
-    "tier": "blue",
-    "words": [
-     "RACHEL",
-     "MONICA",
-     "PHOEBE",
-     "ROSS"
-    ]
-   },
-   {
-    "theme": "SHORT ___",
-    "tier": "purple",
-    "words": [
-     "CUT",
-     "CIRCUIT",
-     "STORY",
-     "FUSE"
-    ]
-   }
-  ]
- },
- {
-  "id": "web-55",
-  "difficulty": "hard",
-  "groups": [
-   {
-    "theme": "Kitchen Utensils",
-    "tier": "yellow",
-    "words": [
-     "SPOON",
-     "FORK",
-     "KNIFE",
-     "LADLE"
-    ]
-   },
-   {
-    "theme": "Things That Split",
-    "tier": "green",
-    "words": [
-     "BANANA",
-     "ATOM",
-     "CHECK",
-     "SECOND"
-    ]
-   },
-   {
-    "theme": "Contains \"LAND\"",
-    "tier": "blue",
-    "words": [
-     "ISLAND",
-     "BLAND",
-     "GLAND",
-     "INLAND"
-    ]
-   },
-   {
-    "theme": "___ WORK",
-    "tier": "purple",
-    "words": [
-     "FIRE",
-     "HOME",
-     "FRAME",
-     "DREAM"
-    ]
-   }
-  ]
- }
+  {
+    "id": "web-1",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Breakfast Items",
+        "tier": "yellow",
+        "words": [
+          "WAFFLE",
+          "PANCAKE",
+          "TOAST",
+          "BAGEL"
+        ]
+      },
+      {
+        "theme": "Basketball Terms",
+        "tier": "green",
+        "words": [
+          "DUNK",
+          "BLOCK",
+          "ASSIST",
+          "REBOUND"
+        ]
+      },
+      {
+        "theme": "Things That Can Be \"Iron\"",
+        "tier": "blue",
+        "words": [
+          "FIST",
+          "WILL",
+          "CURTAIN",
+          "MAN"
+        ]
+      },
+      {
+        "theme": "___ BAR",
+        "tier": "purple",
+        "words": [
+          "CANDY",
+          "SALAD",
+          "SPACE",
+          "CROW"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-2",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Weather Phenomena",
+        "tier": "yellow",
+        "words": [
+          "TORNADO",
+          "HURRICANE",
+          "BLIZZARD",
+          "MONSOON"
+        ]
+      },
+      {
+        "theme": "Things With Teeth",
+        "tier": "green",
+        "words": [
+          "COMB",
+          "SAW",
+          "ZIPPER",
+          "GEAR"
+        ]
+      },
+      {
+        "theme": "Poker Terms",
+        "tier": "blue",
+        "words": [
+          "RIVER",
+          "FLOP",
+          "TURN",
+          "BLIND"
+        ]
+      },
+      {
+        "theme": "Named After People",
+        "tier": "purple",
+        "words": [
+          "DIESEL",
+          "SAXOPHONE",
+          "SHRAPNEL",
+          "CARDIGAN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-3",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Garden Tools",
+        "tier": "yellow",
+        "words": [
+          "RAKE",
+          "SHOVEL",
+          "HOE",
+          "TROWEL"
+        ]
+      },
+      {
+        "theme": "Words Meaning \"Great\"",
+        "tier": "green",
+        "words": [
+          "SUPER",
+          "EXCELLENT",
+          "FANTASTIC",
+          "WONDERFUL"
+        ]
+      },
+      {
+        "theme": "One-Word Oscar Winners",
+        "tier": "blue",
+        "words": [
+          "MOONLIGHT",
+          "BIRDMAN",
+          "ARGO",
+          "CRASH"
+        ]
+      },
+      {
+        "theme": "Contains \"ANT\"",
+        "tier": "purple",
+        "words": [
+          "ELEPHANT",
+          "PLEASANT",
+          "DISTANT",
+          "MERCHANT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-4",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Ocean Creatures",
+        "tier": "yellow",
+        "words": [
+          "OCTOPUS",
+          "JELLYFISH",
+          "SEAHORSE",
+          "STARFISH"
+        ]
+      },
+      {
+        "theme": "Parts of a Book",
+        "tier": "green",
+        "words": [
+          "SPINE",
+          "COVER",
+          "CHAPTER",
+          "INDEX"
+        ]
+      },
+      {
+        "theme": "Heteronyms",
+        "tier": "blue",
+        "words": [
+          "LEAD",
+          "READ",
+          "BOW",
+          "TEAR"
+        ]
+      },
+      {
+        "theme": "___ HOUSE",
+        "tier": "purple",
+        "words": [
+          "WHITE",
+          "FULL",
+          "TREE",
+          "POWER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-5",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Citrus Fruits",
+        "tier": "yellow",
+        "words": [
+          "ORANGE",
+          "LEMON",
+          "LIME",
+          "GRAPEFRUIT"
+        ]
+      },
+      {
+        "theme": "Things That Spin",
+        "tier": "green",
+        "words": [
+          "TOP",
+          "WHEEL",
+          "RECORD",
+          "GLOBE"
+        ]
+      },
+      {
+        "theme": "Slang for Money",
+        "tier": "blue",
+        "words": [
+          "BREAD",
+          "DOUGH",
+          "CHEDDAR",
+          "CABBAGE"
+        ]
+      },
+      {
+        "theme": "DOUBLE ___",
+        "tier": "purple",
+        "words": [
+          "DUTCH",
+          "AGENT",
+          "TAKE",
+          "STANDARD"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-6",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things That Are Red",
+        "tier": "yellow",
+        "words": [
+          "APPLE",
+          "TOMATO",
+          "STRAWBERRY",
+          "CHERRY"
+        ]
+      },
+      {
+        "theme": "Yoga Poses",
+        "tier": "green",
+        "words": [
+          "COBRA",
+          "WARRIOR",
+          "TREE",
+          "EAGLE"
+        ]
+      },
+      {
+        "theme": "Contronyms",
+        "tier": "blue",
+        "words": [
+          "CLEAVE",
+          "DUST",
+          "SANCTION",
+          "OVERSIGHT"
+        ]
+      },
+      {
+        "theme": "___ LIGHT",
+        "tier": "purple",
+        "words": [
+          "FLASH",
+          "LIME",
+          "HIGH",
+          "SPOT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-7",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Ball Sports",
+        "tier": "yellow",
+        "words": [
+          "SOCCER",
+          "BASKETBALL",
+          "TENNIS",
+          "CRICKET"
+        ]
+      },
+      {
+        "theme": "Things With Strings",
+        "tier": "green",
+        "words": [
+          "GUITAR",
+          "KITE",
+          "PUPPET",
+          "BALLOON"
+        ]
+      },
+      {
+        "theme": "James Bond Films",
+        "tier": "blue",
+        "words": [
+          "SPECTRE",
+          "SKYFALL",
+          "GOLDENEYE",
+          "THUNDERBALL"
+        ]
+      },
+      {
+        "theme": "Words From Personal Names",
+        "tier": "purple",
+        "words": [
+          "GUILLOTINE",
+          "MAVERICK",
+          "LEOTARD",
+          "SILHOUETTE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-8",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Kitchen Appliances",
+        "tier": "yellow",
+        "words": [
+          "TOASTER",
+          "BLENDER",
+          "MIXER",
+          "OVEN"
+        ]
+      },
+      {
+        "theme": "Things That Float",
+        "tier": "green",
+        "words": [
+          "BOAT",
+          "DUCK",
+          "CLOUD",
+          "BUBBLE"
+        ]
+      },
+      {
+        "theme": "Golf Scoring Terms",
+        "tier": "blue",
+        "words": [
+          "EAGLE",
+          "BIRDIE",
+          "BOGEY",
+          "ALBATROSS"
+        ]
+      },
+      {
+        "theme": "___ BALL",
+        "tier": "purple",
+        "words": [
+          "CRYSTAL",
+          "FIRE",
+          "MEAT",
+          "ODD"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-9",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Farm Animals",
+        "tier": "yellow",
+        "words": [
+          "COW",
+          "PIG",
+          "CHICKEN",
+          "SHEEP"
+        ]
+      },
+      {
+        "theme": "Things You Flip",
+        "tier": "green",
+        "words": [
+          "PANCAKE",
+          "COIN",
+          "SWITCH",
+          "PAGE"
+        ]
+      },
+      {
+        "theme": "Palindromes",
+        "tier": "blue",
+        "words": [
+          "KAYAK",
+          "RADAR",
+          "LEVEL",
+          "CIVIC"
+        ]
+      },
+      {
+        "theme": "Can Follow \"DEAD\"",
+        "tier": "purple",
+        "words": [
+          "END",
+          "HEAT",
+          "LINE",
+          "WEIGHT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-10",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Desserts",
+        "tier": "yellow",
+        "words": [
+          "PIE",
+          "CAKE",
+          "COOKIE",
+          "BROWNIE"
+        ]
+      },
+      {
+        "theme": "Things That Buzz",
+        "tier": "green",
+        "words": [
+          "BEE",
+          "PHONE",
+          "DOORBELL",
+          "SAW"
+        ]
+      },
+      {
+        "theme": "Pixar Movie Titles",
+        "tier": "blue",
+        "words": [
+          "BRAVE",
+          "UP",
+          "COCO",
+          "SOUL"
+        ]
+      },
+      {
+        "theme": "Genericized Trademarks",
+        "tier": "purple",
+        "words": [
+          "ESCALATOR",
+          "ZIPPER",
+          "ASPIRIN",
+          "TRAMPOLINE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-11",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Vegetables",
+        "tier": "yellow",
+        "words": [
+          "CARROT",
+          "BROCCOLI",
+          "SPINACH",
+          "CELERY"
+        ]
+      },
+      {
+        "theme": "Things With Keys",
+        "tier": "green",
+        "words": [
+          "PIANO",
+          "CAR",
+          "COMPUTER",
+          "LOCK"
+        ]
+      },
+      {
+        "theme": "Music Notation Terms",
+        "tier": "blue",
+        "words": [
+          "SHARP",
+          "FLAT",
+          "NATURAL",
+          "REST"
+        ]
+      },
+      {
+        "theme": "___ BOARD",
+        "tier": "purple",
+        "words": [
+          "CARD",
+          "KEY",
+          "CLIP",
+          "DASH"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-12",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Types of Dogs",
+        "tier": "yellow",
+        "words": [
+          "BEAGLE",
+          "POODLE",
+          "BULLDOG",
+          "DALMATIAN"
+        ]
+      },
+      {
+        "theme": "Things That Drip",
+        "tier": "green",
+        "words": [
+          "FAUCET",
+          "CANDLE",
+          "NOSE",
+          "ICE"
+        ]
+      },
+      {
+        "theme": "Portmanteau Words",
+        "tier": "blue",
+        "words": [
+          "BRUNCH",
+          "SMOG",
+          "MOTEL",
+          "CHORTLE"
+        ]
+      },
+      {
+        "theme": "Types of Haircuts",
+        "tier": "purple",
+        "words": [
+          "CREW",
+          "BUZZ",
+          "BOB",
+          "PIXIE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-13",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Body Parts",
+        "tier": "yellow",
+        "words": [
+          "ARM",
+          "LEG",
+          "HEAD",
+          "HAND"
+        ]
+      },
+      {
+        "theme": "Things That Fold",
+        "tier": "green",
+        "words": [
+          "CHAIR",
+          "MAP",
+          "CLOTHES",
+          "NAPKIN"
+        ]
+      },
+      {
+        "theme": "Clue Board Game Weapons",
+        "tier": "blue",
+        "words": [
+          "ROPE",
+          "WRENCH",
+          "PIPE",
+          "CANDLESTICK"
+        ]
+      },
+      {
+        "theme": "Contains \"STATE\"",
+        "tier": "purple",
+        "words": [
+          "OVERSTATE",
+          "UNDERSTATE",
+          "REINSTATE",
+          "INTERSTATE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-14",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Flowers",
+        "tier": "yellow",
+        "words": [
+          "ROSE",
+          "TULIP",
+          "DAISY",
+          "LILY"
+        ]
+      },
+      {
+        "theme": "Things That Pop",
+        "tier": "green",
+        "words": [
+          "BALLOON",
+          "CORN",
+          "BUBBLE",
+          "CHAMPAGNE"
+        ]
+      },
+      {
+        "theme": "Ship Parts",
+        "tier": "blue",
+        "words": [
+          "DECK",
+          "BOW",
+          "STERN",
+          "HULL"
+        ]
+      },
+      {
+        "theme": "Can Be \"Running\"",
+        "tier": "purple",
+        "words": [
+          "WATER",
+          "NOSE",
+          "JOKE",
+          "COMMENTARY"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-15",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Writing Tools",
+        "tier": "yellow",
+        "words": [
+          "PEN",
+          "PENCIL",
+          "MARKER",
+          "CRAYON"
+        ]
+      },
+      {
+        "theme": "Things That Leak",
+        "tier": "green",
+        "words": [
+          "PIPE",
+          "SECRET",
+          "BOAT",
+          "ROOF"
+        ]
+      },
+      {
+        "theme": "Disney Princess Names",
+        "tier": "blue",
+        "words": [
+          "JASMINE",
+          "BELLE",
+          "ARIEL",
+          "AURORA"
+        ]
+      },
+      {
+        "theme": "___ SHOT",
+        "tier": "purple",
+        "words": [
+          "BIG",
+          "CHEAP",
+          "HOT",
+          "LONG"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-16",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Breakfast Drinks",
+        "tier": "yellow",
+        "words": [
+          "COFFEE",
+          "JUICE",
+          "MILK",
+          "TEA"
+        ]
+      },
+      {
+        "theme": "Things That Roll",
+        "tier": "green",
+        "words": [
+          "BALL",
+          "DICE",
+          "WHEEL",
+          "THUNDER"
+        ]
+      },
+      {
+        "theme": "Words Also Used as Names",
+        "tier": "blue",
+        "words": [
+          "FRANK",
+          "BILL",
+          "GRACE",
+          "MARK"
+        ]
+      },
+      {
+        "theme": "___ STONE",
+        "tier": "purple",
+        "words": [
+          "KEY",
+          "MILE",
+          "LIME",
+          "CORNER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-17",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Planets",
+        "tier": "yellow",
+        "words": [
+          "MARS",
+          "VENUS",
+          "JUPITER",
+          "SATURN"
+        ]
+      },
+      {
+        "theme": "Things That Tick",
+        "tier": "green",
+        "words": [
+          "CLOCK",
+          "BOMB",
+          "HEART",
+          "BOX"
+        ]
+      },
+      {
+        "theme": "Onomatopoeia",
+        "tier": "blue",
+        "words": [
+          "BUZZ",
+          "HISS",
+          "SPLASH",
+          "THUD"
+        ]
+      },
+      {
+        "theme": "___ FISH",
+        "tier": "purple",
+        "words": [
+          "CAT",
+          "GOLD",
+          "JELLY",
+          "STAR"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-18",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Musical Instruments",
+        "tier": "yellow",
+        "words": [
+          "PIANO",
+          "GUITAR",
+          "VIOLIN",
+          "DRUMS"
+        ]
+      },
+      {
+        "theme": "Things That Grow",
+        "tier": "green",
+        "words": [
+          "PLANT",
+          "CHILD",
+          "BUSINESS",
+          "HAIR"
+        ]
+      },
+      {
+        "theme": "Things on Ships",
+        "tier": "blue",
+        "words": [
+          "ANCHOR",
+          "MAST",
+          "SAIL",
+          "CAPTAIN"
+        ]
+      },
+      {
+        "theme": "Can Follow \"BLIND\"",
+        "tier": "purple",
+        "words": [
+          "DATE",
+          "SPOT",
+          "SIDE",
+          "FAITH"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-19",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Pizza Toppings",
+        "tier": "yellow",
+        "words": [
+          "PEPPERONI",
+          "MUSHROOM",
+          "OLIVE",
+          "SAUSAGE"
+        ]
+      },
+      {
+        "theme": "Things That Stick",
+        "tier": "green",
+        "words": [
+          "GLUE",
+          "TAPE",
+          "GUM",
+          "HONEY"
+        ]
+      },
+      {
+        "theme": "Star Wars Names",
+        "tier": "blue",
+        "words": [
+          "LUKE",
+          "LEIA",
+          "HAN",
+          "REY"
+        ]
+      },
+      {
+        "theme": "Can Be \"BROKEN\"",
+        "tier": "purple",
+        "words": [
+          "HEART",
+          "ENGLISH",
+          "RECORD",
+          "DAWN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-20",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Birds",
+        "tier": "yellow",
+        "words": [
+          "EAGLE",
+          "ROBIN",
+          "SPARROW",
+          "HAWK"
+        ]
+      },
+      {
+        "theme": "Things That Beep",
+        "tier": "green",
+        "words": [
+          "ALARM",
+          "MICROWAVE",
+          "WATCH",
+          "HORN"
+        ]
+      },
+      {
+        "theme": "Monopoly Properties",
+        "tier": "blue",
+        "words": [
+          "PARK",
+          "BOARDWALK",
+          "BALTIC",
+          "READING"
+        ]
+      },
+      {
+        "theme": "___ CAKE",
+        "tier": "purple",
+        "words": [
+          "BEEF",
+          "FISH",
+          "HOT",
+          "RICE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-21",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Countries",
+        "tier": "yellow",
+        "words": [
+          "FRANCE",
+          "ITALY",
+          "SPAIN",
+          "GERMANY"
+        ]
+      },
+      {
+        "theme": "Things That Melt",
+        "tier": "green",
+        "words": [
+          "ICE",
+          "BUTTER",
+          "SNOW",
+          "CHOCOLATE"
+        ]
+      },
+      {
+        "theme": "Taylor Swift Albums",
+        "tier": "blue",
+        "words": [
+          "REPUTATION",
+          "FOLKLORE",
+          "EVERMORE",
+          "FEARLESS"
+        ]
+      },
+      {
+        "theme": "___ BLOCK",
+        "tier": "purple",
+        "words": [
+          "ROAD",
+          "MENTAL",
+          "WRITER",
+          "SUN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-22",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "School Subjects",
+        "tier": "yellow",
+        "words": [
+          "MATH",
+          "SCIENCE",
+          "ENGLISH",
+          "HISTORY"
+        ]
+      },
+      {
+        "theme": "Things That Crack",
+        "tier": "green",
+        "words": [
+          "EGG",
+          "WHIP",
+          "VOICE",
+          "JOKE"
+        ]
+      },
+      {
+        "theme": "Groups of Four",
+        "tier": "blue",
+        "words": [
+          "SEASONS",
+          "SUITS",
+          "QUARTERS",
+          "HORSEMEN"
+        ]
+      },
+      {
+        "theme": "Contains \"DOG\"",
+        "tier": "purple",
+        "words": [
+          "HOTDOG",
+          "UNDERDOG",
+          "WATCHDOG",
+          "DOGMA"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-23",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Winter Clothes",
+        "tier": "yellow",
+        "words": [
+          "COAT",
+          "SCARF",
+          "GLOVES",
+          "BOOTS"
+        ]
+      },
+      {
+        "theme": "Things That Shine",
+        "tier": "green",
+        "words": [
+          "STAR",
+          "DIAMOND",
+          "SUN",
+          "GOLD"
+        ]
+      },
+      {
+        "theme": "Beatles Songs",
+        "tier": "blue",
+        "words": [
+          "HELP",
+          "YESTERDAY",
+          "REVOLUTION",
+          "IMAGINE"
+        ]
+      },
+      {
+        "theme": "Hidden Numbers (Spelled Out)",
+        "tier": "purple",
+        "words": [
+          "WONDERFUL",
+          "FREIGHT",
+          "CANINE",
+          "ATTEND"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-24",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Seafood",
+        "tier": "yellow",
+        "words": [
+          "SHRIMP",
+          "LOBSTER",
+          "CRAB",
+          "SALMON"
+        ]
+      },
+      {
+        "theme": "Things That Click",
+        "tier": "green",
+        "words": [
+          "MOUSE",
+          "PEN",
+          "CAMERA",
+          "HEELS"
+        ]
+      },
+      {
+        "theme": "TV Shows Starting with \"The\"",
+        "tier": "blue",
+        "words": [
+          "OFFICE",
+          "WIRE",
+          "CROWN",
+          "BEAR"
+        ]
+      },
+      {
+        "theme": "Contains Roman Numerals",
+        "tier": "purple",
+        "words": [
+          "CIVIL",
+          "MAXIMUM",
+          "DIVIDE",
+          "VIVID"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-25",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Wallet",
+        "tier": "yellow",
+        "words": [
+          "CASH",
+          "CARD",
+          "LICENSE",
+          "PHOTO"
+        ]
+      },
+      {
+        "theme": "Things That Sink",
+        "tier": "green",
+        "words": [
+          "SHIP",
+          "ANCHOR",
+          "STONE",
+          "HEART"
+        ]
+      },
+      {
+        "theme": "Playing Card Terms",
+        "tier": "blue",
+        "words": [
+          "ROYAL",
+          "FLUSH",
+          "STRAIGHT",
+          "HOUSE"
+        ]
+      },
+      {
+        "theme": "___ CHIP",
+        "tier": "purple",
+        "words": [
+          "POKER",
+          "CHOCOLATE",
+          "MICRO",
+          "BLUE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-26",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Candy",
+        "tier": "yellow",
+        "words": [
+          "CHOCOLATE",
+          "LICORICE",
+          "CARAMEL",
+          "TAFFY"
+        ]
+      },
+      {
+        "theme": "Things That Bounce",
+        "tier": "green",
+        "words": [
+          "BALL",
+          "CHECK",
+          "BABY",
+          "EMAIL"
+        ]
+      },
+      {
+        "theme": "Dances",
+        "tier": "blue",
+        "words": [
+          "SWING",
+          "TAP",
+          "BREAK",
+          "SALSA"
+        ]
+      },
+      {
+        "theme": "___ STORM",
+        "tier": "purple",
+        "words": [
+          "BRAIN",
+          "FIRE",
+          "ICE",
+          "THUNDER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-27",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things That Are Soft",
+        "tier": "yellow",
+        "words": [
+          "PILLOW",
+          "COTTON",
+          "SILK",
+          "FUR"
+        ]
+      },
+      {
+        "theme": "Things That Ring",
+        "tier": "green",
+        "words": [
+          "BELL",
+          "PHONE",
+          "ALARM",
+          "EAR"
+        ]
+      },
+      {
+        "theme": "Semordnilaps",
+        "tier": "blue",
+        "words": [
+          "STRESSED",
+          "DESSERTS",
+          "LIVE",
+          "EVIL"
+        ]
+      },
+      {
+        "theme": "___ POINT",
+        "tier": "purple",
+        "words": [
+          "POWER",
+          "VIEW",
+          "BALL",
+          "PIN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-28",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things That Fly",
+        "tier": "yellow",
+        "words": [
+          "BIRD",
+          "PLANE",
+          "KITE",
+          "BUTTERFLY"
+        ]
+      },
+      {
+        "theme": "Things That Slide",
+        "tier": "green",
+        "words": [
+          "DOOR",
+          "DRAWER",
+          "TROMBONE",
+          "ICE"
+        ]
+      },
+      {
+        "theme": "Contains \"EAR\"",
+        "tier": "blue",
+        "words": [
+          "SEARCH",
+          "RESEARCH",
+          "REHEARSE",
+          "UNCLEAR"
+        ]
+      },
+      {
+        "theme": "___ RING",
+        "tier": "purple",
+        "words": [
+          "SPRING",
+          "EAR",
+          "KEY",
+          "BOX"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-29",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Things That Are Loud",
+        "tier": "yellow",
+        "words": [
+          "THUNDER",
+          "SIREN",
+          "EXPLOSION",
+          "CONCERT"
+        ]
+      },
+      {
+        "theme": "Things That Stretch",
+        "tier": "green",
+        "words": [
+          "RUBBER",
+          "YOGA",
+          "TRUTH",
+          "BUDGET"
+        ]
+      },
+      {
+        "theme": "Contains \"OVER\"",
+        "tier": "blue",
+        "words": [
+          "DISCOVER",
+          "RECOVER",
+          "MOREOVER",
+          "CLOVER"
+        ]
+      },
+      {
+        "theme": "Music Song Structure Terms",
+        "tier": "purple",
+        "words": [
+          "BRIDGE",
+          "HOOK",
+          "BREAK",
+          "DROP"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-30",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things That Are Cold",
+        "tier": "yellow",
+        "words": [
+          "ICE",
+          "SNOW",
+          "WINTER",
+          "FREEZER"
+        ]
+      },
+      {
+        "theme": "Things That Splash",
+        "tier": "green",
+        "words": [
+          "WATER",
+          "WAVE",
+          "RAIN",
+          "POOL"
+        ]
+      },
+      {
+        "theme": "Contains \"UNDER\"",
+        "tier": "blue",
+        "words": [
+          "THUNDER",
+          "BLUNDER",
+          "ASUNDER",
+          "FLOUNDER"
+        ]
+      },
+      {
+        "theme": "Contronyms (Own Opposite)",
+        "tier": "purple",
+        "words": [
+          "CLIP",
+          "FAST",
+          "LEFT",
+          "SCREEN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-31",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Vegetables",
+        "tier": "yellow",
+        "words": [
+          "CARROT",
+          "BROCCOLI",
+          "CELERY",
+          "SPINACH"
+        ]
+      },
+      {
+        "theme": "Things That Pop",
+        "tier": "green",
+        "words": [
+          "BALLOON",
+          "BUBBLE",
+          "CORN",
+          "QUESTION"
+        ]
+      },
+      {
+        "theme": "Famous Michaels",
+        "tier": "blue",
+        "words": [
+          "JORDAN",
+          "JACKSON",
+          "PHELPS",
+          "TYSON"
+        ]
+      },
+      {
+        "theme": "___ LINE",
+        "tier": "purple",
+        "words": [
+          "PUNCH",
+          "BOTTOM",
+          "FINISH",
+          "HEAD"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-32",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Things With Wheels",
+        "tier": "yellow",
+        "words": [
+          "CAR",
+          "BIKE",
+          "WAGON",
+          "SKATEBOARD"
+        ]
+      },
+      {
+        "theme": "Things That Leak",
+        "tier": "green",
+        "words": [
+          "FAUCET",
+          "SECRET",
+          "ROOF",
+          "NEWS"
+        ]
+      },
+      {
+        "theme": "Board Games",
+        "tier": "blue",
+        "words": [
+          "CLUE",
+          "RISK",
+          "SORRY",
+          "LIFE"
+        ]
+      },
+      {
+        "theme": "Can Precede \"MARKET\"",
+        "tier": "purple",
+        "words": [
+          "SUPER",
+          "STOCK",
+          "FLEA",
+          "BLACK"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-33",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Pets",
+        "tier": "yellow",
+        "words": [
+          "DOG",
+          "CAT",
+          "HAMSTER",
+          "PARROT"
+        ]
+      },
+      {
+        "theme": "Things That Drip",
+        "tier": "green",
+        "words": [
+          "FAUCET",
+          "ICICLE",
+          "SWEAT",
+          "PAINT"
+        ]
+      },
+      {
+        "theme": "Broadway Musicals",
+        "tier": "blue",
+        "words": [
+          "CATS",
+          "RENT",
+          "WICKED",
+          "HAMILTON"
+        ]
+      },
+      {
+        "theme": "___ CASE",
+        "tier": "purple",
+        "words": [
+          "BRIEF",
+          "COLD",
+          "UPPER",
+          "SUIT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-34",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Breakfast Foods",
+        "tier": "yellow",
+        "words": [
+          "EGGS",
+          "BACON",
+          "PANCAKES",
+          "CEREAL"
+        ]
+      },
+      {
+        "theme": "Things That Fold",
+        "tier": "green",
+        "words": [
+          "PAPER",
+          "CLOTHES",
+          "TENT",
+          "POKER"
+        ]
+      },
+      {
+        "theme": "Famous Williams",
+        "tier": "blue",
+        "words": [
+          "SHAKESPEARE",
+          "SHATNER",
+          "PRINCE",
+          "WALLACE"
+        ]
+      },
+      {
+        "theme": "Contains \"ICE\"",
+        "tier": "purple",
+        "words": [
+          "SERVICE",
+          "JUSTICE",
+          "PRACTICE",
+          "NOTICE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-35",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Things in a Bedroom",
+        "tier": "yellow",
+        "words": [
+          "BED",
+          "PILLOW",
+          "LAMP",
+          "CLOSET"
+        ]
+      },
+      {
+        "theme": "Things That Grow",
+        "tier": "green",
+        "words": [
+          "PLANT",
+          "CHILD",
+          "INTEREST",
+          "TENSION"
+        ]
+      },
+      {
+        "theme": "One-Word Movie Titles",
+        "tier": "blue",
+        "words": [
+          "JAWS",
+          "FROZEN",
+          "PSYCHO",
+          "GLADIATOR"
+        ]
+      },
+      {
+        "theme": "___ HAND",
+        "tier": "purple",
+        "words": [
+          "SECOND",
+          "UPPER",
+          "SHORT",
+          "FREE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-36",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Jewelry",
+        "tier": "yellow",
+        "words": [
+          "RING",
+          "NECKLACE",
+          "BRACELET",
+          "EARRING"
+        ]
+      },
+      {
+        "theme": "Things That Spread",
+        "tier": "green",
+        "words": [
+          "BUTTER",
+          "RUMOR",
+          "FIRE",
+          "DISEASE"
+        ]
+      },
+      {
+        "theme": "Poker Hands",
+        "tier": "blue",
+        "words": [
+          "FLUSH",
+          "STRAIGHT",
+          "FULL",
+          "PAIR"
+        ]
+      },
+      {
+        "theme": "RUNNING ___",
+        "tier": "purple",
+        "words": [
+          "MATE",
+          "BACK",
+          "START",
+          "WATER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-37",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Trees",
+        "tier": "yellow",
+        "words": [
+          "OAK",
+          "MAPLE",
+          "PINE",
+          "BIRCH"
+        ]
+      },
+      {
+        "theme": "Things That Wrap",
+        "tier": "green",
+        "words": [
+          "GIFT",
+          "TORTILLA",
+          "ARMS",
+          "MOVIE"
+        ]
+      },
+      {
+        "theme": "Disney Villains",
+        "tier": "blue",
+        "words": [
+          "SCAR",
+          "URSULA",
+          "JAFAR",
+          "MALEFICENT"
+        ]
+      },
+      {
+        "theme": "Contains \"AIR\"",
+        "tier": "purple",
+        "words": [
+          "REPAIR",
+          "AFFAIR",
+          "DESPAIR",
+          "IMPAIR"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-38",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Months",
+        "tier": "yellow",
+        "words": [
+          "MARCH",
+          "APRIL",
+          "MAY",
+          "JUNE"
+        ]
+      },
+      {
+        "theme": "Things That Roll",
+        "tier": "green",
+        "words": [
+          "DICE",
+          "THUNDER",
+          "CREDITS",
+          "EYES"
+        ]
+      },
+      {
+        "theme": "Greek Gods",
+        "tier": "blue",
+        "words": [
+          "ZEUS",
+          "APOLLO",
+          "HERMES",
+          "POSEIDON"
+        ]
+      },
+      {
+        "theme": "___ POOL",
+        "tier": "purple",
+        "words": [
+          "CAR",
+          "GENE",
+          "TIDE",
+          "WHIRL"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-39",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Baked Goods",
+        "tier": "yellow",
+        "words": [
+          "BREAD",
+          "MUFFIN",
+          "CROISSANT",
+          "SCONE"
+        ]
+      },
+      {
+        "theme": "Things That Twist",
+        "tier": "green",
+        "words": [
+          "TORNADO",
+          "PLOT",
+          "ARM",
+          "PRETZEL"
+        ]
+      },
+      {
+        "theme": "Contains \"MAN\"",
+        "tier": "blue",
+        "words": [
+          "WOMAN",
+          "ROMANCE",
+          "DEMAND",
+          "COMMAND"
+        ]
+      },
+      {
+        "theme": "___ TRIP",
+        "tier": "purple",
+        "words": [
+          "ROAD",
+          "GUILT",
+          "EGO",
+          "POWER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-40",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Dairy Products",
+        "tier": "yellow",
+        "words": [
+          "MILK",
+          "CHEESE",
+          "YOGURT",
+          "CREAM"
+        ]
+      },
+      {
+        "theme": "Things That Lock",
+        "tier": "green",
+        "words": [
+          "DOOR",
+          "PHONE",
+          "JAW",
+          "EYES"
+        ]
+      },
+      {
+        "theme": "Famous Johns",
+        "tier": "blue",
+        "words": [
+          "LENNON",
+          "WAYNE",
+          "TRAVOLTA",
+          "CANDY"
+        ]
+      },
+      {
+        "theme": "___ DRIVE",
+        "tier": "purple",
+        "words": [
+          "HARD",
+          "TEST",
+          "DISK",
+          "FLASH"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-41",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Things With Buttons",
+        "tier": "yellow",
+        "words": [
+          "SHIRT",
+          "REMOTE",
+          "ELEVATOR",
+          "KEYBOARD"
+        ]
+      },
+      {
+        "theme": "Things That Bloom",
+        "tier": "green",
+        "words": [
+          "FLOWER",
+          "LOVE",
+          "ALGAE",
+          "YOUTH"
+        ]
+      },
+      {
+        "theme": "One-Word Band Names",
+        "tier": "blue",
+        "words": [
+          "QUEEN",
+          "KISS",
+          "JOURNEY",
+          "RUSH"
+        ]
+      },
+      {
+        "theme": "Can Follow \"BREAK\"",
+        "tier": "purple",
+        "words": [
+          "DANCE",
+          "EVEN",
+          "THROUGH",
+          "NECK"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-42",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Footwear",
+        "tier": "yellow",
+        "words": [
+          "BOOTS",
+          "SANDALS",
+          "SNEAKERS",
+          "HEELS"
+        ]
+      },
+      {
+        "theme": "Things That Tick",
+        "tier": "green",
+        "words": [
+          "CLOCK",
+          "BOMB",
+          "HEART",
+          "BOX"
+        ]
+      },
+      {
+        "theme": "Shakespeare Plays",
+        "tier": "blue",
+        "words": [
+          "HAMLET",
+          "OTHELLO",
+          "MACBETH",
+          "TEMPEST"
+        ]
+      },
+      {
+        "theme": "Contains \"END\"",
+        "tier": "purple",
+        "words": [
+          "FRIEND",
+          "BLEND",
+          "DEFEND",
+          "LEGEND"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-43",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Zoo Animals",
+        "tier": "yellow",
+        "words": [
+          "LION",
+          "ELEPHANT",
+          "GIRAFFE",
+          "MONKEY"
+        ]
+      },
+      {
+        "theme": "Things That Hang",
+        "tier": "green",
+        "words": [
+          "PICTURE",
+          "LAUNDRY",
+          "HEAD",
+          "JURY"
+        ]
+      },
+      {
+        "theme": "Famous Jennifers",
+        "tier": "blue",
+        "words": [
+          "ANISTON",
+          "LOPEZ",
+          "LAWRENCE",
+          "GARNER"
+        ]
+      },
+      {
+        "theme": "___ FIELD",
+        "tier": "purple",
+        "words": [
+          "LEFT",
+          "TRACK",
+          "MINE",
+          "FORCE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-44",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Things in a Garden",
+        "tier": "yellow",
+        "words": [
+          "FLOWER",
+          "VEGETABLE",
+          "SOIL",
+          "HOSE"
+        ]
+      },
+      {
+        "theme": "Things That Burn",
+        "tier": "green",
+        "words": [
+          "FIRE",
+          "CANDLE",
+          "CALORIES",
+          "BRIDGE"
+        ]
+      },
+      {
+        "theme": "DC Comics Heroes",
+        "tier": "blue",
+        "words": [
+          "BATMAN",
+          "SUPERMAN",
+          "WONDER",
+          "FLASH"
+        ]
+      },
+      {
+        "theme": "BIG ___",
+        "tier": "purple",
+        "words": [
+          "BANG",
+          "DEAL",
+          "APPLE",
+          "FOOT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-45",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Pasta Types",
+        "tier": "yellow",
+        "words": [
+          "SPAGHETTI",
+          "MACARONI",
+          "LASAGNA",
+          "RAVIOLI"
+        ]
+      },
+      {
+        "theme": "Things That Wave",
+        "tier": "green",
+        "words": [
+          "FLAG",
+          "OCEAN",
+          "HAIR",
+          "GOODBYE"
+        ]
+      },
+      {
+        "theme": "Marvel Avengers",
+        "tier": "blue",
+        "words": [
+          "THOR",
+          "HULK",
+          "WIDOW",
+          "PANTHER"
+        ]
+      },
+      {
+        "theme": "___ DUCK",
+        "tier": "purple",
+        "words": [
+          "SITTING",
+          "LAME",
+          "DECOY",
+          "RUBBER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-46",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Office Supplies",
+        "tier": "yellow",
+        "words": [
+          "PEN",
+          "STAPLER",
+          "PAPER",
+          "CLIP"
+        ]
+      },
+      {
+        "theme": "Things That Break",
+        "tier": "green",
+        "words": [
+          "HEART",
+          "PROMISE",
+          "RECORD",
+          "DAWN"
+        ]
+      },
+      {
+        "theme": "Famous Davids",
+        "tier": "blue",
+        "words": [
+          "BOWIE",
+          "LETTERMAN",
+          "BECKHAM",
+          "COPPERFIELD"
+        ]
+      },
+      {
+        "theme": "COLD ___",
+        "tier": "purple",
+        "words": [
+          "CASE",
+          "FEET",
+          "SHOULDER",
+          "TURKEY"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-47",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Things in Space",
+        "tier": "yellow",
+        "words": [
+          "STAR",
+          "PLANET",
+          "MOON",
+          "COMET"
+        ]
+      },
+      {
+        "theme": "Things That Shake",
+        "tier": "green",
+        "words": [
+          "EARTHQUAKE",
+          "HAND",
+          "HEAD",
+          "SALT"
+        ]
+      },
+      {
+        "theme": "Harry Potter Houses",
+        "tier": "blue",
+        "words": [
+          "GRYFFINDOR",
+          "SLYTHERIN",
+          "HUFFLEPUFF",
+          "RAVENCLAW"
+        ]
+      },
+      {
+        "theme": "___ TONGUE",
+        "tier": "purple",
+        "words": [
+          "MOTHER",
+          "SHARP",
+          "SLIP",
+          "SILVER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-48",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things With Wings",
+        "tier": "yellow",
+        "words": [
+          "BIRD",
+          "PLANE",
+          "ANGEL",
+          "BUTTERFLY"
+        ]
+      },
+      {
+        "theme": "Things That Steam",
+        "tier": "green",
+        "words": [
+          "COFFEE",
+          "SHOWER",
+          "IRON",
+          "ANGER"
+        ]
+      },
+      {
+        "theme": "Contains \"IGHT\"",
+        "tier": "blue",
+        "words": [
+          "MIDNIGHT",
+          "INSIGHT",
+          "FRIGHT",
+          "BLIGHT"
+        ]
+      },
+      {
+        "theme": "___ CARD",
+        "tier": "purple",
+        "words": [
+          "WILD",
+          "TRUMP",
+          "REPORT",
+          "GREEN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-49",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Beverages",
+        "tier": "yellow",
+        "words": [
+          "COFFEE",
+          "TEA",
+          "JUICE",
+          "SODA"
+        ]
+      },
+      {
+        "theme": "Things That Crash",
+        "tier": "green",
+        "words": [
+          "CAR",
+          "WAVE",
+          "COMPUTER",
+          "PARTY"
+        ]
+      },
+      {
+        "theme": "Famous Roberts",
+        "tier": "blue",
+        "words": [
+          "DENIRO",
+          "REDFORD",
+          "DOWNEY",
+          "PLANT"
+        ]
+      },
+      {
+        "theme": "___ BAND",
+        "tier": "purple",
+        "words": [
+          "RUBBER",
+          "BOY",
+          "HEAD",
+          "BROAD"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-50",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Writing Tools",
+        "tier": "yellow",
+        "words": [
+          "PEN",
+          "PENCIL",
+          "MARKER",
+          "CRAYON"
+        ]
+      },
+      {
+        "theme": "Things That Glow",
+        "tier": "green",
+        "words": [
+          "FIREFLY",
+          "EMBER",
+          "SKIN",
+          "PRAISE"
+        ]
+      },
+      {
+        "theme": "Indiana Jones Films",
+        "tier": "blue",
+        "words": [
+          "RAIDERS",
+          "TEMPLE",
+          "CRUSADE",
+          "SKULL"
+        ]
+      },
+      {
+        "theme": "Contains \"OUT\"",
+        "tier": "purple",
+        "words": [
+          "ABOUT",
+          "SHOUT",
+          "DROUGHT",
+          "SPROUT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-51",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Cleaning Products",
+        "tier": "yellow",
+        "words": [
+          "SOAP",
+          "BLEACH",
+          "DETERGENT",
+          "POLISH"
+        ]
+      },
+      {
+        "theme": "Things That Flow",
+        "tier": "green",
+        "words": [
+          "RIVER",
+          "TRAFFIC",
+          "LAVA",
+          "CASH"
+        ]
+      },
+      {
+        "theme": "Famous Toms",
+        "tier": "blue",
+        "words": [
+          "HANKS",
+          "CRUISE",
+          "BRADY",
+          "PETTY"
+        ]
+      },
+      {
+        "theme": "___ HEAD",
+        "tier": "purple",
+        "words": [
+          "HAMMER",
+          "HOT",
+          "PIN",
+          "BONE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-52",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Citrus Drinks",
+        "tier": "yellow",
+        "words": [
+          "LEMONADE",
+          "ORANGEADE",
+          "LIMEADE",
+          "GRAPEFRUIT"
+        ]
+      },
+      {
+        "theme": "Things That Swing",
+        "tier": "green",
+        "words": [
+          "PENDULUM",
+          "MOOD",
+          "BAT",
+          "VOTER"
+        ]
+      },
+      {
+        "theme": "Contains \"RAIN\"",
+        "tier": "blue",
+        "words": [
+          "BRAIN",
+          "TRAIN",
+          "DRAIN",
+          "STRAIN"
+        ]
+      },
+      {
+        "theme": "BLIND ___",
+        "tier": "purple",
+        "words": [
+          "DATE",
+          "SPOT",
+          "SIDE",
+          "FOLD"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-53",
+    "difficulty": "expert",
+    "groups": [
+      {
+        "theme": "Camping Gear",
+        "tier": "yellow",
+        "words": [
+          "TENT",
+          "SLEEPING",
+          "FLASHLIGHT",
+          "COMPASS"
+        ]
+      },
+      {
+        "theme": "Things That Stick",
+        "tier": "green",
+        "words": [
+          "GLUE",
+          "GUM",
+          "VELCRO",
+          "MEMORY"
+        ]
+      },
+      {
+        "theme": "Famous Chrises",
+        "tier": "blue",
+        "words": [
+          "ROCK",
+          "PRATT",
+          "HEMSWORTH",
+          "PINE"
+        ]
+      },
+      {
+        "theme": "___ MOON",
+        "tier": "purple",
+        "words": [
+          "HONEY",
+          "FULL",
+          "BLUE",
+          "HALF"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-54",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Garden Flowers",
+        "tier": "yellow",
+        "words": [
+          "ROSE",
+          "TULIP",
+          "DAISY",
+          "LILY"
+        ]
+      },
+      {
+        "theme": "Things That Drop",
+        "tier": "green",
+        "words": [
+          "JAW",
+          "BALL",
+          "NAME",
+          "BEAT"
+        ]
+      },
+      {
+        "theme": "Friends Characters",
+        "tier": "blue",
+        "words": [
+          "RACHEL",
+          "MONICA",
+          "PHOEBE",
+          "ROSS"
+        ]
+      },
+      {
+        "theme": "SHORT ___",
+        "tier": "purple",
+        "words": [
+          "CUT",
+          "CIRCUIT",
+          "STORY",
+          "FUSE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-55",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Kitchen Utensils",
+        "tier": "yellow",
+        "words": [
+          "SPOON",
+          "FORK",
+          "KNIFE",
+          "LADLE"
+        ]
+      },
+      {
+        "theme": "Things That Split",
+        "tier": "green",
+        "words": [
+          "BANANA",
+          "ATOM",
+          "CHECK",
+          "SECOND"
+        ]
+      },
+      {
+        "theme": "Contains \"LAND\"",
+        "tier": "blue",
+        "words": [
+          "ISLAND",
+          "BLAND",
+          "GLAND",
+          "INLAND"
+        ]
+      },
+      {
+        "theme": "___ WORK",
+        "tier": "purple",
+        "words": [
+          "FIRE",
+          "HOME",
+          "FRAME",
+          "DREAM"
+        ]
+      }
+    ]
+  }
 ]

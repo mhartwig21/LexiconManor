@@ -107,6 +107,7 @@
 }
 
 .dlg__skip {
+  position: relative;
   margin-left: auto;
   min-height: 2rem;
   padding: 0 0.7rem;
@@ -117,7 +118,16 @@
   font-size: var(--text-sm);
   cursor: pointer;
 }
-.dlg__skip:active { color: var(--ink-soft); }
+/* The skip verb reads as a small aside but must still be a ≥44pt target
+   (AAA 6.19). Extending the hit area with a pseudo-element buys the pt
+   without inflating the plate row and reflowing the nameplate (round-4). */
+.dlg__skip::after {
+  content: '';
+  position: absolute;
+  inset: -0.45rem -0.35rem;
+}
+.dlg__skip:active,
+.dlg__skip.is-pressed { color: var(--ink-soft); }
 
 /* Fixed-height line area: the longest authored box (validator-capped at 220
    chars) fits at 390px with zero scrolling and zero reflow (AAA 5.11). */
@@ -186,7 +196,10 @@
   cursor: pointer;
   transition: transform var(--dur-press) var(--ease-settle);
 }
-.dlg-choice:active { transform: scale(0.985); }
+/* U.1: pointerdown-driven press (app/platform/boot.ts delegate); :active is
+   the desktop fallback only. */
+.dlg-choice:active,
+.dlg-choice.is-pressed { transform: scale(0.985); }
 
 .dlg-choice--primary { border-color: var(--ink-soft); }
 
@@ -207,12 +220,28 @@
   font-style: italic;
 }
 
+/* --- Short screens (round-4 mobile ergonomics) ---------------------------- */
+/* At 375x667 the portrait plate hangs 6.4rem above a box whose fixed text
+   area + up to four 44pt choices can reach past the top of the glass. The
+   plate and the reserved line area give way first; the choices never do. */
+@media (max-height: 700px) {
+  .dlg-portrait {
+    top: -5rem;
+    width: 5.8rem;
+    height: 7.2rem;
+  }
+  .dlg__plate-row { padding-left: 6rem; }
+  .dlg__text-area { min-height: 6rem; }
+  .dlg__box { padding: 0.55rem 0.8rem 0.7rem; }
+}
+
 /* --- Reduced motion: information stays, the juice goes ------------------- */
 @media (prefers-reduced-motion: reduce) {
   .dlg-portrait,
   .dlg__box { animation: none; }
   .dlg__advance { animation: none; }
   .dlg-caret { animation: none; opacity: 0.5; }
-  .dlg-choice { transition: none; }
+  .dlg-choice,
+  .dlg-choice.is-pressed { transition: none; transform: none; }
   .dlg-portrait__art { transition: none; }
 }

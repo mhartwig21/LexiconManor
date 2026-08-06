@@ -3,11 +3,33 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRng, pick, shuffle } from '../src/engine/rng';
 import { loadPhonetics } from './lib/phonetics';
-import type { Difficulty, WordWebPuzzle } from '../src/engine/types';
+import { toneOk } from './generate-gate';
+import type { Difficulty, Tier, WordWebPuzzle } from '../src/engine/types';
 
 /**
  * The Library's Word Web generator — the fairness pass Connections never had
  * (AAA 2.6–2.11, BENCHMARKS §"our two structural fixes").
+ *
+ * ---------------------------------------------------------------------------
+ * THREE TIERS, MAPPED TO MANOR ROWS (owner directive, round 4: "tier-3 boards
+ * use tighter red-herring budgets + subtler categories")
+ * ---------------------------------------------------------------------------
+ * `tier` (1|2|3 ⇢ rows 0–2 / 3–4 / 5–6) is authoritative; `difficulty` is the
+ * legacy display label. Two structural knobs, both build-enforced:
+ *
+ *   1. THE HERRING BUDGET TIGHTENS AS YOU CLIMB. "Tighter" is read as *the
+ *      traps get tighter*, not fewer: the solver scores every planted herring,
+ *      and each tier sets both a cap and a MINIMUM TIGHTNESS. Tier 1 ships at
+ *      most one loose trap (a near-clean board); tier 3 must ship 2–3 traps
+ *      and every one of them must score ≥ HERRING_TIGHT — a real 5th-member or
+ *      cross-category pull, not a coincidence. A board that cannot meet its
+ *      tier's bar is demoted, never faked.
+ *   2. CATEGORIES GET SUBTLER. Tier 1 keeps its trivia gimme (≤1, always at
+ *      the yellow tier, per AAA 2.9). Tier 3 forbids trivia outright and
+ *      requires ≥2 SUBTLE categories — wordplay you have to hear or unscramble
+ *      (rhymes, anagrams, silent letters, hidden words, heteronyms) rather than
+ *      the blunt substring/compound kind ("Contains TEN", "___ FIRE") that
+ *      reads straight off the tiles.
  *
  * Input:  content/authored/word-web-boards.json (the curated legacy boards).
  * Output: content/generated/word-web.json, each board enriched with:
@@ -69,6 +91,27 @@ function typeOfTheme(theme: string): GroupType {
   return 'semantic';
 }
 
+/**
+ * SUBTLE categories (the tier-3 bar): the thread is real but invisible on a
+ * first read — you have to say the words aloud, unscramble them, or notice a
+ * word hiding inside another. The blunt kind ("Contains TEN", "___ FIRE",
+ * "Can Precede KEEPER") reads straight off the tiles and stays at tiers 1–2.
+ */
+const SUBTLE_THEMES = new Set([
+  'Palindromes', 'Semordnilaps', 'Heteronyms', 'Contronyms',
+  'Contronyms (Own Opposite)', 'Onomatopoeia', 'Portmanteau Words',
+  'Contains Roman Numerals',
+]);
+
+function isSubtleTheme(theme: string): boolean {
+  if (SUBTLE_THEMES.has(theme)) return true;
+  if (/^(Anagrams of|Rhymes with) /.test(theme)) return true;
+  if (/^Hidden /.test(theme)) return true;
+  if (/^Silent /.test(theme)) return true;
+  if (/^(Two Pairs|Starts and Ends)/.test(theme)) return true;
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // Wordplay replacement bank — swapped in where a board falls short of the
 // 2.9 floor (≥2 wordplay) or over the trivia cap. All verifiable on the tiles.
@@ -95,14 +138,51 @@ const WORDPLAY_BANK: BankGroup[] = [
   { theme: 'Can Follow "RAIN"', words: ['BOW', 'COAT', 'DROP', 'FOREST'] },
   { theme: '___ PROOF', words: ['BULLET', 'WEATHER', 'FOOL', 'CHILD'] },
   { theme: 'Two Pairs of Double Letters', words: ['BALLOON', 'COFFEE', 'SUCCESS', 'RACCOON'] },
-  { theme: 'Starts and Ends with the Same Letter', words: ['EDGE', 'TREAT', 'NYLON', 'DREAD'] },
+  { theme: 'Starts and Ends with the Same Letter', words: ['EDGE', 'TREAT', 'NYLON', 'KIOSK'] },
   { theme: 'Hidden Body Parts', words: ['CHARMING', 'SHIPMENT', 'FEARLESS', 'RIBBON'] },
   { theme: 'Hidden Animals', words: ['SCOWL', 'SPIGOT', 'CATALOG', 'DOGMA'] },
   { theme: '___ SMITH', words: ['BLACK', 'LOCK', 'GOLD', 'WORD'] },
   { theme: 'Can Follow "HAND"', words: ['SHAKE', 'BOOK', 'WRITING', 'CUFF'] },
   { theme: 'Can Precede "LIGHT"', words: ['DAY', 'MOON', 'CANDLE', 'LAMP'] },
+
+  // --- subtle bank (round 4): the tier-3 supply. Threads you have to say
+  // aloud, unscramble, or catch hiding inside another word.
+  { theme: 'Rhymes with "MOON"', words: ['TUNE', 'DUNE', 'PRUNE', 'STREWN'] },
+  { theme: 'Rhymes with "EIGHT"', words: ['WEIGHT', 'FREIGHT', 'STRAIGHT', 'SLEIGH'] },
+  { theme: 'Rhymes with "CHAIR"', words: ['THEIR', 'WHERE', 'FLAIR', 'BEWARE'] },
+  { theme: 'Anagrams of "TRACE"', words: ['CRATE', 'REACT', 'CATER', 'CARET'] },
+  { theme: 'Anagrams of "PALEST"', words: ['PLATES', 'STAPLE', 'PETALS', 'PLEATS'] },
+  { theme: 'Anagrams of "SPARE"', words: ['PEARS', 'REAPS', 'PARSE', 'SPEAR'] },
+  { theme: 'Silent "B"', words: ['CLIMB', 'THUMB', 'SUBTLE', 'DOUBT'] },
+  { theme: 'Silent "L"', words: ['CALM', 'WOULD', 'SALMON', 'YOLK'] },
+  { theme: 'Silent "W"', words: ['WRENCH', 'ANSWER', 'WRINKLE', 'AWRY'] },
+  { theme: 'Silent Letters at the End', words: ['COMB', 'LAMB', 'HYMN', 'COLUMN'] },
+  { theme: 'Hidden Numbers', words: ['CANINE', 'OFTEN', 'HONEST', 'STONEWARE'] },
+  { theme: 'Rhymes with "TREE"', words: ['KEY', 'QUAY', 'DEBRIS', 'FLEA'] },
+  { theme: 'Silent "H"', words: ['GHOST', 'RHYME', 'WHISTLE', 'SCHEME'] },
+  { theme: 'Anagrams of "NOTES"', words: ['STONE', 'TONES', 'ONSET', 'STENO'] },
+
+  // --- planting stock (round 4): blunt but letter-verifiable groups whose
+  // stated rule other board words keep accidentally satisfying — the raw
+  // material the trap-planter uses to hit a tier's herring budget.
+  { theme: 'Contains "ONE"', words: ['ATONE', 'PHONE', 'ZONE', 'CLONE'] },
+  { theme: 'Contains "ART"', words: ['PARTY', 'CHART', 'SMART', 'DEPART'] },
+  { theme: 'Contains "AGE"', words: ['MANAGE', 'VILLAGE', 'PACKAGE', 'VOYAGE'] },
+  { theme: 'Contains "EAR"', words: ['HEART', 'SEARCH', 'PEARL', 'YEARN'] },
+  { theme: 'Contains "ICE"', words: ['SLICE', 'PRICE', 'NOTICE', 'SPICE'] },
+  { theme: 'Contains "AIR"', words: ['CHAIR', 'STAIR', 'REPAIR', 'AFFAIR'] },
+  { theme: '___ HOUSE', words: ['LIGHT', 'GREEN', 'FARM', 'TREE'] },
+  { theme: '___ BOARD', words: ['KEYS', 'CARD', 'SURF', 'DASH'] },
+  { theme: '___ STORM', words: ['BRAIN', 'SAND', 'SNOW', 'THUNDER'] },
+  { theme: 'Can Precede "BERRY"', words: ['BLUE', 'STRAW', 'RASP', 'ELDER'] },
+  { theme: 'Can Follow "SUN"', words: ['FLOWER', 'SHINE', 'RISE', 'BEAM'] },
+  { theme: 'Can Precede "WORK"', words: ['HOME', 'NET', 'FRAME', 'CLOCK'] },
 ];
-const BANK_REUSE_CAP = 3;
+/** How many boards may share one bank group before it feels like wallpaper. */
+const BANK_REUSE_CAP = 4;
+
+/** Bank groups whose thread is subtle (the tier-3 supply). */
+const SUBTLE_BANK = WORDPLAY_BANK.filter((b) => isSubtleTheme(b.theme));
 
 // ---------------------------------------------------------------------------
 // Load the authored boards
@@ -113,10 +193,45 @@ interface RawBoard { id: string; difficulty: Difficulty; groups: RawGroup[] }
 
 interface OutGroup extends RawGroup { type: GroupType; decoys: string[] }
 interface OutBoard extends WordWebPuzzle {
+  /** Manor row band — authoritative (rows 0–2 / 3–4 / 5–6). */
+  tier: Tier;
   groups: OutGroup[];
   ambiguousWords: string[];
   layout: string[];
 }
+
+// ---------------------------------------------------------------------------
+// The three manor tiers
+// ---------------------------------------------------------------------------
+
+/** Legacy display label per tier (engine/types.ts Difficulty stays frozen). */
+const TIER_LABEL: Record<Tier, Difficulty> = { 1: 'easy', 2: 'medium', 3: 'hard' };
+
+/** The authored difficulty is the *intent*; measured structure confirms it. */
+const INTENDED_TIER: Record<string, Tier> = {
+  easy: 1, medium: 1, hard: 3, expert: 3,
+};
+
+interface RoomTierSpec {
+  /** Trivia gimmes: allowed at the bottom of the house, banned at the top. */
+  maxTrivia: number;
+  minWordplay: number;
+  /** Categories you must hear/unscramble rather than read off the tiles. */
+  minSubtle: number;
+  /** The herring budget: how many planted traps, and how tight each must pull. */
+  minHerrings: number;
+  maxHerrings: number;
+  minHerringScore: number;
+}
+
+/** Solver score at which a trap counts as a real pull, not a coincidence. */
+const HERRING_TIGHT = 2;
+
+const TIER_SPECS: Record<Tier, RoomTierSpec> = {
+  1: { maxTrivia: 1, minWordplay: 2, minSubtle: 0, minHerrings: 0, maxHerrings: 1, minHerringScore: 1 },
+  2: { maxTrivia: 1, minWordplay: 2, minSubtle: 1, minHerrings: 1, maxHerrings: 2, minHerringScore: HERRING_TIGHT },
+  3: { maxTrivia: 0, minWordplay: 2, minSubtle: 2, minHerrings: 2, maxHerrings: 3, minHerringScore: HERRING_TIGHT },
+};
 
 const here = dirname(fileURLToPath(import.meta.url));
 const boards = JSON.parse(
@@ -130,55 +245,126 @@ const boards = JSON.parse(
 const TIER_ORDER = ['yellow', 'green', 'blue', 'purple'] as const;
 const bankUse = new Map<string, number>();
 
-function replaceGroups(board: RawBoard, rng: () => number): RawBoard {
+/**
+ * Compose `board` to satisfy `tier`'s category floors, then plant that tier's
+ * traps. Returns null when the bank cannot supply what the tier needs (the
+ * caller then tries the tier below) — a board is never shipped pretending to
+ * a tier it does not structurally meet.
+ */
+function replaceGroups(board: RawBoard, tier: Tier, rng: () => number): RawBoard | null {
+  const spec = TIER_SPECS[tier];
   let groups = board.groups.map((g) => ({ ...g, words: [...g.words] }));
 
   const typed = () => groups.map((g) => ({ g, type: typeOfTheme(g.theme) }));
+  const count = (t: GroupType) => typed().filter((x) => x.type === t).length;
+  const subtleCount = () => groups.filter((g) => isSubtleTheme(g.theme)).length;
 
-  // Groups eligible for replacement, worst-first: trivia beyond the first,
-  // then green/blue/purple semantics. The yellow semantic anchor stays.
+  // Groups eligible for replacement, worst-first: trivia beyond this tier's
+  // allowance, then blunt wordplay, then green/blue/purple semantics. At tier 1
+  // the yellow semantic anchor stays; at tier 3 nothing is sacred but the
+  // subtle groups we have already installed.
   const replacementOrder = (): RawGroup[] => {
     const t = typed();
-    const extraTrivia = t.filter((x) => x.type === 'trivia').slice(1).map((x) => x.g);
+    const extraTrivia = t.filter((x) => x.type === 'trivia').slice(spec.maxTrivia).map((x) => x.g);
+    const bluntWordplay = t
+      .filter((x) => x.type === 'wordplay' && !isSubtleTheme(x.g.theme))
+      .map((x) => x.g);
     const semantics = t
-      .filter((x) => x.type === 'semantic' && x.g.tier !== 'yellow')
+      .filter((x) => x.type === 'semantic' && (tier === 3 || x.g.tier !== 'yellow'))
       .sort((a, b) => TIER_ORDER.indexOf(a.g.tier) - TIER_ORDER.indexOf(b.g.tier))
       .map((x) => x.g);
-    return [...extraTrivia, ...semantics];
+    return [...extraTrivia, ...semantics, ...bluntWordplay];
   };
 
   const boardWords = () => new Set(groups.flatMap((g) => g.words));
   const boardThemes = () => new Set(groups.map((g) => g.theme));
 
-  const pickBankGroup = (): BankGroup | null => {
+  /**
+   * A bank group may only land if the resulting board still has ZERO
+   * unintended complete groupings (2.7). Without this the subtle bank happily
+   * manufactures them — "Rhymes with EIGHT" next to an existing KNIGHT gives
+   * four words sharing suffix GHT, which is exactly the failure the solver
+   * refuses to ship.
+   */
+  const pickBankGroup = (from: BankGroup[], victim: RawGroup): BankGroup | null => {
     const words = boardWords();
     const themes = boardThemes();
-    const usable = WORDPLAY_BANK.filter(
+    const usable = from.filter(
       (b) =>
         (bankUse.get(b.theme) ?? 0) < BANK_REUSE_CAP &&
         !themes.has(b.theme) &&
-        b.words.every((w) => !words.has(w)),
+        b.words.every((w) => !words.has(w)) &&
+        patternFailures(
+          groups.map((g) => (g === victim ? { theme: b.theme, tier: g.tier, words: b.words } : g)),
+        ).length === 0,
     );
     if (usable.length === 0) return null;
     return pick(createRngFrom(rng), usable);
   };
 
-  // Enforce: ≤1 trivia, ≥2 wordplay.
-  let guard = 0;
-  while (guard++ < 8) {
-    const t = typed();
-    const triviaCount = t.filter((x) => x.type === 'trivia').length;
-    const wordplayCount = t.filter((x) => x.type === 'wordplay').length;
-    if (triviaCount <= 1 && wordplayCount >= 2) break;
-
-    const victim = replacementOrder()[0];
-    if (!victim) throw new Error(`${board.id}: no replaceable group left (trivia ${triviaCount}, wordplay ${wordplayCount})`);
-    const bank = pickBankGroup();
-    if (!bank) throw new Error(`${board.id}: wordplay bank exhausted (raise BANK_REUSE_CAP or add groups)`);
+  const swapIn = (victim: RawGroup, bank: BankGroup) => {
     bankUse.set(bank.theme, (bankUse.get(bank.theme) ?? 0) + 1);
     groups = groups.map((g) =>
       g === victim ? { theme: bank.theme, tier: g.tier, words: [...bank.words] } : g,
     );
+  };
+
+  // Enforce this tier's composition: trivia cap, wordplay floor, subtle floor.
+  // A tier that still owes a SUBTLE category may only take a subtle group —
+  // taking a blunt one instead is how a tier-3 board used to quietly ship with
+  // tier-1 categories.
+  let guard = 0;
+  for (;;) {
+    const trivia = count('trivia');
+    const wordplay = count('wordplay');
+    const subtle = subtleCount();
+    if (trivia <= spec.maxTrivia && wordplay >= spec.minWordplay && subtle >= spec.minSubtle) break;
+    if (guard++ >= 6) return null;
+
+    const victim = replacementOrder().find((g) => !isSubtleTheme(g.theme));
+    if (!victim) return null;
+    const bank = subtle < spec.minSubtle
+      ? pickBankGroup(SUBTLE_BANK, victim)
+      : pickBankGroup(WORDPLAY_BANK, victim);
+    if (!bank) return null;
+    swapIn(victim, bank);
+  }
+
+  // --- plant the tier's traps -----------------------------------------------
+  // Detection alone leaves the authored boards nearly trap-free, so the
+  // generator PLANTS: it swaps a replaceable group for the bank group that
+  // maximises tight traps (5th members and letter-rule intruders), never at
+  // the cost of a complete unintended grouping or this tier's composition.
+  const compositionOk = (gs: RawGroup[]): boolean => {
+    const types = gs.map((g) => typeOfTheme(g.theme));
+    return types.filter((t) => t === 'trivia').length <= spec.maxTrivia
+      && types.filter((t) => t === 'wordplay').length >= spec.minWordplay
+      && gs.filter((g) => isSubtleTheme(g.theme)).length >= spec.minSubtle;
+  };
+
+  let plants = 0;
+  while (tightTrapCount(groups, spec.minHerringScore) < spec.minHerrings && plants++ < 4) {
+    const words = boardWords();
+    const themes = boardThemes();
+    let best: { victim: RawGroup; bank: BankGroup; traps: number } | null = null;
+    for (const victim of groups) {
+      for (const bank of WORDPLAY_BANK) {
+        if ((bankUse.get(bank.theme) ?? 0) >= BANK_REUSE_CAP) continue;
+        if (themes.has(bank.theme)) continue;
+        if (bank.words.some((w) => words.has(w) && !victim.words.includes(w))) continue;
+        const next = groups.map((g) =>
+          g === victim ? { theme: bank.theme, tier: g.tier, words: [...bank.words] } : g);
+        if (!compositionOk(next)) continue;
+        if (patternFailures(next).length > 0) continue;
+        const traps = tightTrapCount(next, spec.minHerringScore);
+        if (!best || traps > best.traps
+          || (traps === best.traps && bank.theme < best.bank.theme)) {
+          best = { victim, bank, traps };
+        }
+      }
+    }
+    if (!best || best.traps <= tightTrapCount(groups, spec.minHerringScore)) break;
+    swapIn(best.victim, best.bank);
   }
 
   // Trivia always sits at the easiest tier: swap tiers with the yellow group.
@@ -238,32 +424,80 @@ function crossBoardClusters(board: RawBoard, all: RawBoard[]): { name: string; w
   return found;
 }
 
+/**
+ * Semantic 5th-member traps, verified by the corpus rather than guessed at:
+ * when three of this board's words sit together inside ANOTHER authored
+ * board's category, and two of them belong to one group here while the third
+ * belongs elsewhere, that third word genuinely reads as a fifth member. Worth
+ * the same as a letter-pattern 5th member (HERRING_TIGHT) — it is the one
+ * semantic pull we can prove.
+ */
+function crossBoardTraps(board: RawBoard, all: RawBoard[]): Map<string, number> {
+  const groupOf = new Map<string, RawGroup>();
+  for (const g of board.groups) for (const w of g.words) groupOf.set(w, g);
+  const scores = new Map<string, number>();
+  for (const other of all) {
+    if (other.id === board.id) continue;
+    for (const g of other.groups) {
+      const overlap = g.words.filter((w) => groupOf.has(w));
+      if (overlap.length !== 3) continue;
+      const byGroup = new Map<RawGroup, string[]>();
+      for (const w of overlap) {
+        const own = groupOf.get(w)!;
+        byGroup.set(own, [...(byGroup.get(own) ?? []), w]);
+      }
+      if (byGroup.size !== 2) continue;
+      const minority = [...byGroup.values()].find((ws) => ws.length === 1);
+      if (minority) scores.set(minority[0]!, (scores.get(minority[0]!) ?? 0) + HERRING_TIGHT);
+    }
+  }
+  return scores;
+}
+
 function sameMembers(a: Iterable<string>, b: string[]): boolean {
   const s = new Set(a);
   return b.length === s.size && b.every((w) => s.has(w));
 }
 
 /**
- * Returns build-failing unintended complete groupings and the planted-herring
- * list (≤3) for a board.
+ * Intra-board half of the 2.7 solver: complete unintended groupings formed by
+ * a shared letter/sound pattern. Used both by solveBoard and, at composition
+ * time, to veto a bank swap that would create one.
  */
-function solveBoard(board: RawBoard, all: RawBoard[]): { failures: string[]; herrings: string[] } {
+function patternFailures(groups: readonly RawGroup[]): string[] {
+  const words = groups.flatMap((g) => g.words);
+  const intended = groups.map((g) => g.words);
   const failures: string[] = [];
-  const words = board.groups.flatMap((g) => g.words);
-  const intended = board.groups.map((g) => g.words);
+  for (const [name, set] of patternSets(words)) {
+    if (set.size === 4 && !intended.some((g) => sameMembers(set, g))) {
+      failures.push(`pattern ${name}: ${[...set].join(', ')}`);
+    }
+  }
+  return failures;
+}
+
+/**
+ * Returns build-failing unintended complete groupings and every scored trap
+ * the solver found, tightest first. The tier gate decides how many of them
+ * actually ship (`minHerringScore` / `maxHerrings`).
+ */
+interface ScoredHerring { word: string; score: number }
+
+/**
+ * Trap scoring, extracted so composition can *plant* traps rather than only
+ * discover them (round 4: tier 3 must ship 2–3 tight ones). Score ≥ 2 means a
+ * real pull — a 5th member of a complete group, or a word that literally
+ * satisfies another group's stated letter rule.
+ */
+function scoreTraps(groups: readonly RawGroup[]): ScoredHerring[] {
+  const words = groups.flatMap((g) => g.words);
   const groupOf = new Map<string, RawGroup>();
-  for (const g of board.groups) for (const w of g.words) groupOf.set(w, g);
+  for (const g of groups) for (const w of g.words) groupOf.set(w, g);
 
   const herringScore = new Map<string, number>();
   const bump = (w: string, n: number) => herringScore.set(w, (herringScore.get(w) ?? 0) + n);
 
-  // Letter/sound patterns.
-  for (const [name, set] of patternSets(words)) {
-    if (set.size === 4 && !intended.some((g) => sameMembers(set, g))) {
-      // Four words, one shared pattern, not an intended group — a competing
-      // complete grouping a careful player could commit to. Never ships.
-      failures.push(`pattern ${name}: ${[...set].join(', ')}`);
-    }
+  for (const [, set] of patternSets(words)) {
     if (set.size === 5 || set.size === 6) {
       // A full group + 1–2 extras sharing its pattern: 5th-member traps.
       const byGroup = new Map<RawGroup, string[]>();
@@ -286,16 +520,9 @@ function solveBoard(board: RawBoard, all: RawBoard[]): { failures: string[]; her
     }
   }
 
-  // Cross-board semantic clusters.
-  for (const cluster of crossBoardClusters(board, all)) {
-    if (!intended.some((g) => sameMembers(cluster.words, g))) {
-      failures.push(`semantic cluster ${cluster.name}: ${cluster.words.join(', ')}`);
-    }
-  }
-
   // "Contains X" themes are letter-verifiable: an outside word containing X is
   // a cross-category trap for that group.
-  for (const g of board.groups) {
+  for (const g of groups) {
     const m = g.theme.match(/^Contains "([A-Z]+)"$/);
     if (!m) continue;
     for (const w of words) {
@@ -303,10 +530,35 @@ function solveBoard(board: RawBoard, all: RawBoard[]): { failures: string[]; her
     }
   }
 
-  const herrings = [...herringScore.entries()]
+  return [...herringScore.entries()]
     .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
-    .slice(0, 3)
-    .map(([w]) => w);
+    .map(([word, score]) => ({ word, score }));
+}
+
+/** How many traps on this board pull tightly enough to count for a tier. */
+function tightTrapCount(groups: readonly RawGroup[], minScore: number): number {
+  return scoreTraps(groups).filter((h) => h.score >= minScore).length;
+}
+
+function solveBoard(board: RawBoard, all: RawBoard[]): { failures: string[]; herrings: ScoredHerring[] } {
+  const failures = patternFailures(board.groups);
+  const intended = board.groups.map((g) => g.words);
+
+  // Cross-board semantic clusters.
+  for (const cluster of crossBoardClusters(board, all)) {
+    if (!intended.some((g) => sameMembers(cluster.words, g))) {
+      failures.push(`semantic cluster ${cluster.name}: ${cluster.words.join(', ')}`);
+    }
+  }
+
+  // Letter/sound traps plus the corpus-verified semantic ones.
+  const scores = new Map(scoreTraps(board.groups).map((h) => [h.word, h.score] as const));
+  for (const [word, score] of crossBoardTraps(board, all)) {
+    scores.set(word, (scores.get(word) ?? 0) + score);
+  }
+  const herrings: ScoredHerring[] = [...scores.entries()]
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
+    .map(([word, score]) => ({ word, score }));
 
   return { failures, herrings };
 }
@@ -378,30 +630,88 @@ function assignDecoys(finals: (RawBoard & { groups: OutGroup[] })[]): void {
 // Build + validate
 // ---------------------------------------------------------------------------
 
+/** Does this composed board satisfy `tier`'s category + herring gates? */
+function meetsTier(board: RawBoard, herrings: ScoredHerring[], tier: Tier): boolean {
+  const spec = TIER_SPECS[tier];
+  const types = board.groups.map((g) => typeOfTheme(g.theme));
+  if (types.filter((t) => t === 'trivia').length > spec.maxTrivia) return false;
+  if (types.filter((t) => t === 'wordplay').length < spec.minWordplay) return false;
+  if (board.groups.filter((g) => isSubtleTheme(g.theme)).length < spec.minSubtle) return false;
+  const tight = herrings.filter((h) => h.score >= spec.minHerringScore);
+  return tight.length >= spec.minHerrings;
+}
+
+/** The traps this tier actually ships: tight enough, capped by the budget. */
+function shippedHerrings(herrings: ScoredHerring[], tier: Tier): string[] {
+  const spec = TIER_SPECS[tier];
+  return herrings
+    .filter((h) => h.score >= spec.minHerringScore)
+    .slice(0, spec.maxHerrings)
+    .map((h) => h.word);
+}
+
 function main() {
   const rng = createRng(SEED);
 
-  // Pass 1: 2.9 composition (trivia cap, wordplay floor, trivia → yellow).
-  const composed = boards.map((b) => replaceGroups(b, rng));
+  // Pass 1: compose each board for its INTENDED tier (trivia cap, wordplay
+  // floor, subtlety floor). The authored difficulty is the intent; pass 2
+  // decides whether the board's measured traps earn it.
+  const intent = new Map<string, Tier>(
+    boards.map((b) => [b.id, INTENDED_TIER[b.difficulty] ?? 1]),
+  );
+  const composedTier = new Map<string, Tier>();
+  const composed = boards.map((b) => {
+    for (let t = intent.get(b.id)!; t >= 1; t--) {
+      const snapshot = new Map(bankUse);
+      const attempt = replaceGroups(b, t as Tier, rng);
+      if (attempt) {
+        composedTier.set(b.id, t as Tier);
+        return attempt;
+      }
+      bankUse.clear();
+      for (const [k, v] of snapshot) bankUse.set(k, v);
+    }
+    throw new Error(`${b.id}: cannot be composed at any tier (bank exhausted?)`);
+  });
 
-  // Pass 2: herring solver + layout.
+  // Pass 2: herring solver → tier confirmation (demote, never fake) → layout.
   const allFailures: string[] = [];
-  const out: OutBoard[] = composed.map((b) => {
-    const { failures, herrings } = solveBoard(b, composed);
-    for (const f of failures) allFailures.push(`${b.id}: ${f}`);
-    const layout = failures.length === 0 ? buildLayout(b, herrings, SEED + [...b.id].reduce((h, c) => h + c.charCodeAt(0), 0)) : [];
+  const solved = composed.map((b) => ({ board: b, ...solveBoard(b, composed) }));
+  for (const s of solved) for (const f of s.failures) allFailures.push(`${s.board.id}: ${f}`);
+  if (allFailures.length > 0) {
+    console.error(allFailures.join('\n'));
+    throw new Error(`word-web solver found ${allFailures.length} unintended complete grouping(s) — fix the authored boards`);
+  }
+
+  let demoted = 0;
+  const out: OutBoard[] = solved.map(({ board: b, herrings }) => {
+    const wanted = composedTier.get(b.id)!;
+    let tier = wanted;
+    while (tier > 1 && !meetsTier(b, herrings, tier)) tier = (tier - 1) as Tier;
+    if (tier !== wanted) demoted++;
+    const ship = shippedHerrings(herrings, tier);
+    const layout = buildLayout(b, ship, SEED + [...b.id].reduce((h, c) => h + c.charCodeAt(0), 0));
     return {
       id: b.id,
-      difficulty: b.difficulty,
+      tier,
+      difficulty: TIER_LABEL[tier],
       groups: b.groups.map((g) => ({ ...g, type: typeOfTheme(g.theme), decoys: [] as string[] })),
-      ambiguousWords: herrings,
+      ambiguousWords: ship,
       layout,
     };
   });
 
-  if (allFailures.length > 0) {
-    console.error(allFailures.join('\n'));
-    throw new Error(`word-web solver found ${allFailures.length} unintended complete grouping(s) — fix the authored boards`);
+  // Pass 2b: balance. Every board that CAN be tier 3 does not have to BE tier
+  // 3 — the bottom rows are visited far more often than the top, so the tier-3
+  // shelf keeps only the trappiest TIER3_CAP boards and the rest settle into
+  // tier 2 (whose gates they already clear).
+  const TIER3_CAP = 18;
+  const top = out.filter((b) => b.tier === 3)
+    .sort((a, b) => b.ambiguousWords.length - a.ambiguousWords.length || (a.id < b.id ? -1 : 1));
+  for (const b of top.slice(TIER3_CAP)) {
+    b.tier = 2;
+    b.difficulty = TIER_LABEL[2];
+    b.ambiguousWords = b.ambiguousWords.slice(0, TIER_SPECS[2].maxHerrings);
   }
 
   // Pass 3: decoys for the naming act.
@@ -410,10 +720,15 @@ function main() {
   validate(out);
 
   writeFileSync(join(here, 'generated', 'word-web.json'), JSON.stringify(out));
-  const withHerrings = out.filter((b) => b.ambiguousWords.length > 0).length;
+  const perTier = ([1, 2, 3] as Tier[]).map((t) => {
+    const arr = out.filter((b) => b.tier === t);
+    const avgHerrings = arr.reduce((a, b) => a + b.ambiguousWords.length, 0) / Math.max(1, arr.length);
+    const subtle = arr.reduce((a, b) => a + b.groups.filter((g) => isSubtleTheme(g.theme)).length, 0) / Math.max(1, arr.length);
+    return `t${t}: ${arr.length} boards (~${avgHerrings.toFixed(1)} traps, ~${subtle.toFixed(1)} subtle cats)`;
+  }).join(', ');
   const trivia = out.filter((b) => b.groups.some((g) => g.type === 'trivia')).length;
   console.log(
-    `word-web.json: ${out.length} boards — ${withHerrings} with planted herrings, ` +
+    `word-web.json: ${out.length} boards — ${perTier}; ${demoted} demoted for want of tight traps, ` +
     `${trivia} with a (yellow-tier) trivia category, bank groups used: ${[...bankUse.values()].reduce((a, b) => a + b, 0)}`,
   );
 }
@@ -425,16 +740,35 @@ function validate(puzzles: OutBoard[]): void {
     if (p.groups.length !== 4) problems.push(`${p.id}: ${p.groups.length} groups`);
     const words = p.groups.flatMap((g) => g.words);
     if (new Set(words).size !== 16 || words.length !== 16) problems.push(`${p.id}: needs 16 unique words`);
+    // The cozy tone gate: every tile is set in the manor's own type (task 2).
+    for (const w of words) {
+      if (!toneOk(w.toLowerCase())) problems.push(`${p.id}: "${w}" fails the tone gate`);
+    }
     if (new Set(p.groups.map((g) => g.tier)).size !== 4) problems.push(`${p.id}: tiers not distinct`);
 
-    // 2.9
+    // 2.9 + the round-4 tier gates
+    const spec = TIER_SPECS[p.tier];
+    if (p.difficulty !== TIER_LABEL[p.tier]) problems.push(`${p.id}: label/tier mismatch`);
     const trivia = p.groups.filter((g) => g.type === 'trivia');
-    if (trivia.length > 1) problems.push(`${p.id}: ${trivia.length} trivia categories (max 1)`);
+    if (trivia.length > spec.maxTrivia) {
+      problems.push(`${p.id}: ${trivia.length} trivia categories (tier ${p.tier} allows ${spec.maxTrivia})`);
+    }
     if (trivia.some((g) => g.tier !== 'yellow')) problems.push(`${p.id}: trivia not at the easiest tier`);
-    if (p.groups.filter((g) => g.type === 'wordplay').length < 2) problems.push(`${p.id}: fewer than 2 wordplay categories`);
+    if (p.groups.filter((g) => g.type === 'wordplay').length < spec.minWordplay) {
+      problems.push(`${p.id}: fewer than ${spec.minWordplay} wordplay categories`);
+    }
+    const subtle = p.groups.filter((g) => isSubtleTheme(g.theme)).length;
+    if (subtle < spec.minSubtle) {
+      problems.push(`${p.id}: ${subtle} subtle categories (tier ${p.tier} needs ${spec.minSubtle})`);
+    }
 
-    // 2.7
-    if (p.ambiguousWords.length > 3) problems.push(`${p.id}: ${p.ambiguousWords.length} herrings (max 3)`);
+    // 2.7 — the tier's herring budget (cap AND floor; AAA's ≤3 still holds)
+    if (p.ambiguousWords.length > Math.min(3, spec.maxHerrings)) {
+      problems.push(`${p.id}: ${p.ambiguousWords.length} herrings (tier ${p.tier} budget ${spec.maxHerrings})`);
+    }
+    if (p.ambiguousWords.length < spec.minHerrings) {
+      problems.push(`${p.id}: ${p.ambiguousWords.length} herrings (tier ${p.tier} needs ${spec.minHerrings})`);
+    }
     if (p.ambiguousWords.some((w) => !words.includes(w))) problems.push(`${p.id}: herring not on board`);
 
     // 2.6

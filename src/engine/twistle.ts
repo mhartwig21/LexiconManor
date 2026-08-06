@@ -1,14 +1,39 @@
 import type { TwistlePuzzle, TwistleRules } from './types';
 
 /**
- * Twistle (5x5 grid word search) engine.
+ * Twistle (n×n grid word search) engine.
  * Words trace king-move-adjacent paths without reusing a tile. The same
  * path solver validates player submissions here and puzzle solvability
  * in the content generator.
+ *
+ * ROUND 4 — grid size is no longer a module constant. `TwistlePuzzle.size`
+ * declares the side length (default 5) so a tier-3 Gallery can ship a 6×6
+ * board. Nothing needs to be told the size twice: a square grid carries it in
+ * `grid.length`, so `findPath` and the solver derive it and every existing
+ * caller keeps its signature. GRID_SIZE / CENTER_INDEX remain exported as the
+ * DEFAULT board's metrics — do not use them to index a puzzle whose `size`
+ * you have not checked.
  */
 
+/** Side length of the default board. */
 export const GRID_SIZE = 5;
+/** Centre tile of the DEFAULT 5×5 board. For any puzzle use `centerIndex()`. */
 export const CENTER_INDEX = 12;
+
+/** Side length of a square grid, derived from its tile count. */
+export function gridSize(grid: string[]): number {
+  return Math.round(Math.sqrt(grid.length));
+}
+
+/** Centre tile index of an n×n board (n is odd for a true centre). */
+export function centerIndex(n: number): number {
+  return Math.floor((n * n) / 2);
+}
+
+/** The board's side length: the declared `size`, else derived from the grid. */
+export function puzzleSize(puzzle: Pick<TwistlePuzzle, 'grid' | 'size'>): number {
+  return puzzle.size ?? gridSize(puzzle.grid);
+}
 
 export interface TwistleState {
   puzzleId: string;
@@ -25,16 +50,17 @@ export function startTwistle(puzzle: TwistlePuzzle): TwistleState {
   return { puzzleId: puzzle.id, foundWords: [], wrongAttempts: 0, status: 'playing' };
 }
 
-function neighbors(index: number): number[] {
-  const r = Math.floor(index / GRID_SIZE);
-  const c = index % GRID_SIZE;
+/** King-move neighbours of `index` on an n×n board. */
+export function neighbors(index: number, n: number = GRID_SIZE): number[] {
+  const r = Math.floor(index / n);
+  const c = index % n;
   const out: number[] = [];
   for (let dr = -1; dr <= 1; dr++) {
     for (let dc = -1; dc <= 1; dc++) {
       if (dr === 0 && dc === 0) continue;
       const nr = r + dr;
       const nc = c + dc;
-      if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) out.push(nr * GRID_SIZE + nc);
+      if (nr >= 0 && nr < n && nc >= 0 && nc < n) out.push(nr * n + nc);
     }
   }
   return out;
@@ -42,19 +68,24 @@ function neighbors(index: number): number[] {
 
 /**
  * Find a tile path spelling `word` under the given rules, or null.
- * Depth-first with tile-reuse prevention; grids are 25 tiles so this is fast.
+ * Depth-first with tile-reuse prevention; grids are 25–36 tiles so this is fast.
  */
 export function findPath(grid: string[], word: string, rules: TwistleRules): number[] | null {
   const target = word.toUpperCase();
   if (target.length < rules.minLength) return null;
 
+  // Size comes from the grid itself, so 5×5 and 6×6 boards use one solver and
+  // every existing caller keeps its three-argument signature.
+  const size = gridSize(grid);
+  const centre = centerIndex(size);
+
   const walk = (path: number[], depth: number): number[] | null => {
     if (depth === target.length) {
-      if (rules.centerRequired && !path.includes(CENTER_INDEX)) return null;
+      if (rules.centerRequired && !path.includes(centre)) return null;
       return path;
     }
     const last = path[path.length - 1]!;
-    for (const n of neighbors(last)) {
+    for (const n of neighbors(last, size)) {
       if (path.includes(n)) continue;
       if (grid[n] !== target[depth]) continue;
       const found = walk([...path, n], depth + 1);

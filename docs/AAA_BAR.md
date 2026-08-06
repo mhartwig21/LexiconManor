@@ -214,9 +214,46 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
 - 4.9 One audited ledger: every step delta (move, mistake, solve, perfect, tea, snack,
   Dewey, gift) flows through the single `STEP_TABLE`/ledger function; steps never
   negative; every delta renders as a floating +N/−N on the counter. **[PARITY]**
-- 4.10 A no-refund day (skip all puzzles) reaches row 4–5 and ends in ~5 min; a
-  competent day (70% solve rate at listed payouts) reaches row 6–7 in 10–15 min —
-  verified by economy simulation.
+- 4.10 **The campaign arc** (rewritten from the 2026-08 owner playtest: *"way too easy —
+  I reached the Forgotten Word on my first day; Blue Prince took me 28 days"*). The
+  economy is a push-your-luck **climb** whose ceiling rises across weeks, and every
+  number below is verified by `tests/economy-simulation.test.ts` over thousands of
+  seeded days and hundreds of seeded multi-week campaigns played through the real
+  `STEP_TABLE` + ledger — **before** any playtest, and re-run on every tuning edit:
+  - **4.10a — the no-refund day.** Skipping every puzzle tops out on the middle floors
+    (median row 3–5, never the Sanctum row) and is over in **2–5 minutes**. Refunds are
+    what buy a real day.
+  - **4.10b — the decent day is 10–15 MINUTES at the median, p90 ≤ 23.** Not 20 (the
+    pre-overhaul measurement) and not 29 at p90; measured median ~11.2, p90 ~21.5. That is **5–8 rooms** with 2–4 puzzles
+    actually solved — the post-cull deck is anchor-heavy, so fewer rooms *is* the same
+    amount of game. The simulation's clock must be calibrated against the **live deck
+    mix** (`deckMixAt` derives category and micro/anchor shares from `BASE_DECK` ×
+    `categoryWeight` × `RARITY_WEIGHTS` × the room-adapter registry, so sudoku's
+    Counting House counts as anchor-weight and a future deck edit breaks the test
+    rather than the owner's evening).
+  - **4.10c — a great single day flirts with the top, it does not own it.** A sharply
+    played day reaches row 5–6; the Sanctum row is reached on **<25%** of even great
+    days. Standing at that door is a campaign event, not a Tuesday.
+  - **4.10d — a skilled player FIRST REACHES the Sanctum row on day 6–10** (median),
+    **<8% on day 1**, and >90% of campaigns get there by day 21. The gate must be
+    **meta, not skill**: the simulated player's puzzle ability is identical on day 1 and
+    day 30 — what changes is Bramble's tea (the step arc) and Fern/Key-Cabinet access
+    (the padlock arc), both affinity-gated at one conversation per day (5.9). A bare,
+    perfectly efficient ascent must cost **more than the entire base day budget**
+    (`reserveToTop(1) > BASE_DAY_BUDGET`), so the top is always bought with refunds.
+  - **4.10e — the volume is typically won in 14–28 days** of daily play (median), <2%
+    inside the first week, >90% by day 35. Winning requires **both** gates independently:
+    knowing the word (fragments) *and* reaching the door that day.
+  - **4.10f — sessions never inflate.** The median day stays inside 10–15 minutes for the
+    whole campaign: the tea arc's extra budget goes into the *climb* (cheap in minutes),
+    never into more puzzles per evening.
+  - **Levers, in the order they were pulled** (all in `engine/economy/steps.ts`, the one
+    tunable file): per-row movement pricing (`MOVE_COST_BY_ROW`, −1 ground floor → −5 up
+    top — *climbing is the expense*); leaner-as-you-climb refunds (anchor +6/+5/+4, micro
+    +3/+3/+2 — a tier-3 solve no longer funds the storey that reached it); a lean base
+    budget (18); locked upper-row doors (`DOOR_LOCKS`, rows 4–6 only, keys reset nightly
+    so every ascent re-earns its way up); and scarce refills (snack +3..+7, tea 0 → +11
+    across the friendship).
 - 4.11 At least two rooms/services implement *compounding* refunds (BP's Nursery
   pattern: "+N per future X") and at least one cross-day investment exists (Fern's
   seeds; a tea variant).
@@ -469,8 +506,13 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
 
 1. **Glyphs/perks** (MANOR_DESIGN §12.5): return as room effects, bookmark-trinkets, or
    die? Data stays quarantined until decided.
-2. **Day length**: does 40 steps land 10–15 min? (Simulation first — criterion 4.10 —
-   then playtest.)
+2. ~~**Day length**: does 40 steps land 10–15 min?~~ **ANSWERED by the 2026-08 owner
+   playtest + the economy overhaul**: 40 steps landed ~20 min *and* handed her the
+   Sanctum on day 1. The budget is 18 with per-row movement pricing; simulation now
+   pins median 10–15 min, first Sanctum reach day 6–10, volume win 14–28 days (4.10).
+   Remaining playtest question is only whether the *felt* pace matches the model —
+   `TIME_TABLE` in `engine/economy/simulate.ts` carries estimated durations and must be
+   replaced with instrumented medians once 3.5's playtest lands.
 3. **Mistake-cost table**: R.1 fixes the Conservatory; are −2/−3 felt-but-fair in the
    deduction rooms? Is the Library's escalating-hint pricing right?
 4. **Mute switch**: honor it (arguably correct for cozy) or bypass via

@@ -1,0 +1,330 @@
+/* ==========================================================================
+   The Counting House (Sudoku) — OWNER: sudoku room agent.
+   Per-module CSS (conflict rule 3). Consumes ui/theme/tokens.css only; never
+   redefines a token, never touches index.css.
+
+   MOBILE-FIRST, 390px: the ledger leaf takes the full usable width so the
+   figures stay large, and every *control* — the figure pad, the pencil
+   toggle, the consult button — lives in `.room-deck` (room-host.css), the
+   sticky bottom cluster inside the thumb zone. The board scrolls behind the
+   pad on short screens; the pad never moves.
+
+   TAP TARGETS (AAA 6.19): every control is >=44px. The 81 grid cells are the
+   one deliberate exception in the game — nine cells across a 390px viewport
+   is 42px, and no 9x9 grid on any phone can do better. Mitigations: the grid
+   is edge-to-edge (widest cell the glass allows), cells are contiguous with
+   ZERO gaps (no dead gutters to miss into), and NOTHING is committed by
+   touching a cell — selection is free and re-selectable, and every costed
+   action happens on a >=44px pad key. A fat-fingered cell tap costs nothing.
+
+   GRAYSCALE (AAA 6.3): every cell state is double-encoded by shape/weight,
+   never by hue alone —
+     given      = bold + shaded backing
+     inked      = regular weight on plain paper
+     consulted  = italic + a corner tick (a bought figure stays honest)
+     selected   = 2px inset ring
+     peer       = faint shade block
+     same figure= dotted underline
+     refused    = wax + wobble, and the figure never lands
+   ========================================================================== */
+
+.ch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  /* No env(safe-area-inset-bottom) here: #root already reserves it for this
+     subtree, and paying it twice is exactly what pushed room CTAs under the
+     home indicator in the round-4 ergonomics report (room-host.css). */
+  padding: 0.5rem 0.35rem 0.2rem;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* One accent, spent only on state (AAA 1.14). Blue: this is a puzzle room. */
+.ch { --room-accent: var(--cat-puzzle); }
+
+.ch__head { text-align: center; }
+.ch__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+.ch__sub { margin: 0.1rem 0 0; font-size: var(--text-sm); color: var(--ink-soft); }
+.ch__meta {
+  display: flex;
+  justify-content: center;
+  gap: 0.9rem;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   The ledger leaf
+   -------------------------------------------------------------------------- */
+
+.ch-leaf {
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  background: var(--paper-raised);
+  border: 2px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+  /* No double-tap zoom (AAA 7.11) — but NOT `none`: the leaf is tall enough
+     that the stage scrolls on a 667px screen, and a board that swallows pan
+     would trap the scroll under her thumb. Pinch is already blocked globally
+     by the viewport meta + `gesturestart` preventDefault. */
+  touch-action: manipulation;
+}
+
+.ch-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--paper-edge);
+  border-bottom: 1px solid var(--paper-edge);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+/* The 3x3 quarter rules: heavier ink, drawn as cell edges so the grid stays
+   one contiguous hit surface (no gutters). */
+.ch-cell--boxr { border-right: 2px solid var(--ink); }
+.ch-cell--boxb { border-bottom: 2px solid var(--ink); }
+.ch-cell--edger { border-right: 0; }
+.ch-cell--edgeb { border-bottom: 0; }
+
+/* Peer of the selection (same row / column / quarter) — the standard expert
+   prosthetic, kept at a whisper so it never competes with the figures. */
+.ch-cell--peer { background: color-mix(in srgb, var(--paper-shade) 62%, transparent); }
+
+/* Givens: the ledger's own hand. Bold + shaded backing (shape, not hue). */
+.ch-cell--given {
+  font-weight: 700;
+  background: color-mix(in srgb, var(--paper-shade) 85%, transparent);
+  cursor: default;
+}
+.ch-cell--given.ch-cell--peer { background: var(--paper-shade); }
+
+/* Figures the player inked: lighter weight, plain paper. */
+.ch-cell--inked { font-weight: 400; }
+
+/* Bought from the ledger (a purchased reveal): italic + a corner tick, so a
+   consulted figure never passes itself off as one she found. */
+.ch-cell--consulted { font-style: italic; color: var(--gilt); }
+.ch-cell--consulted::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  border-top: 5px solid var(--gilt);
+  border-left: 5px solid transparent;
+}
+
+/* Every other cell holding the figure under the cursor: dotted underline. */
+.ch-cell--samefig .ch-cell__fig {
+  border-bottom: 2px dotted currentColor;
+  padding-bottom: 1px;
+}
+
+.ch-cell--sel {
+  background: color-mix(in srgb, var(--room-accent) 15%, var(--paper-raised));
+  box-shadow: inset 0 0 0 2px var(--room-accent);
+  z-index: 1;
+}
+
+.ch-cell--wrong { color: var(--wax); }
+.ch-cell--wrong .ch-cell__ghost {
+  position: absolute;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--wax);
+  animation: ch-refuse 340ms ease-in-out both;
+}
+
+.ch-cell__fig { display: inline-block; }
+.ch-cell--pop .ch-cell__fig { animation: ch-pop 200ms var(--ease-settle); }
+
+/* Pencil marks: nine slots so a mark never moves when its neighbours change
+   (a moving pencil grid is unreadable at speed). */
+.ch-pencil {
+  position: absolute;
+  inset: 2px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  font-size: 0.56rem;
+  line-height: 1;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+.ch-pencil span { display: flex; align-items: center; justify-content: center; }
+.ch-pencil span.is-hit { color: var(--room-accent); font-weight: 700; }
+
+/* --------------------------------------------------------------------------
+   Thumb zone: the figure pad + the room's verbs (all >=44px)
+   -------------------------------------------------------------------------- */
+
+.ch-tools { display: flex; gap: 0.4rem; }
+
+.ch-tool {
+  flex: 1;
+  min-height: var(--tap-target);
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--paper-edge);
+  border-radius: 999px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: transform var(--dur-press), filter var(--dur-press);
+  touch-action: manipulation;
+}
+.ch-tool:active { transform: translateY(1px); filter: brightness(0.94); }
+.ch-tool:disabled { opacity: 0.45; cursor: default; }
+/* Pencil mode ON is a MODE, so it reads as pressed ink, not as a commit. */
+.ch-tool--on {
+  background: var(--ink);
+  border-color: transparent;
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.ch-pad {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+.ch-key {
+  position: relative;
+  min-height: 52px;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-card);
+  background: var(--paper-raised);
+  box-shadow: var(--deckle);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 90ms ease, filter 90ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.ch-key:active { transform: scale(0.94); }
+.ch-key:disabled { opacity: 0.5; cursor: default; }
+/* Pencil mode: the pad is drawn in pencil too, so the mode is visible from
+   the keys themselves and not only from the toggle. */
+.ch-pad--pencil .ch-key--fig { color: var(--ink-soft); font-family: var(--font-body); }
+/* All nine of a figure placed: the key retires (dimmed + struck). */
+.ch-key--done { opacity: 0.42; text-decoration: line-through; }
+.ch-key__left {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  color: var(--ink-faint);
+}
+.ch-key--wide { font-family: var(--font-body); font-size: 0.85rem; }
+
+/* Reserved feedback slot — two lines at 390px, zero layout shift. */
+.ch-toastslot {
+  min-height: 2.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.ch-toast { font-size: var(--text-sm); animation: ch-rise 220ms var(--ease-settle); }
+.ch-toast--good { color: var(--moss); }
+.ch-toast--bad  { color: var(--wax); }
+.ch-toast--info { color: var(--ink-soft); }
+
+/* --------------------------------------------------------------------------
+   Balanced (the win) — a celebration distinct from any in-play juice (AAA 3.4)
+   -------------------------------------------------------------------------- */
+
+.ch-done { text-align: center; animation: ch-pop 260ms var(--ease-settle); }
+.ch-done__title {
+  margin: 0.2rem 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  color: var(--room-accent);
+}
+.ch-done__line { margin: 0.25rem 0; color: var(--ink-soft); }
+.ch-done__note { margin: 0.5rem 0 0; font-size: var(--text-sm); color: var(--ink-faint); }
+.ch-leaf--won { border-color: var(--moss); }
+.ch-leaf--won .ch-cell__fig { animation: ch-settle 520ms var(--ease-settle) both; }
+
+.ch-shake { animation: ch-shake 320ms ease-in-out; }
+
+@keyframes ch-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  45% { transform: translateX(4px); }
+  70% { transform: translateX(-3px); }
+  90% { transform: translateX(2px); }
+}
+@keyframes ch-pop {
+  from { transform: scale(0.84); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes ch-rise {
+  from { transform: translateY(5px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes ch-refuse {
+  0%   { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+@keyframes ch-settle {
+  from { transform: translateY(-3px); opacity: 0.35; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* Short screens: trim the chrome, never the ledger. */
+@media (max-height: 700px) {
+  .ch { gap: 0.35rem; }
+  .ch__sub { display: none; }
+  .ch-key { min-height: 46px; font-size: 1.3rem; }
+  .ch-toastslot { min-height: 2.1rem; }
+}
+
+/* Juice goes quiet; every state stays legible (AAA U.3). */
+@media (prefers-reduced-motion: reduce) {
+  .ch-shake, .ch-toast, .ch-done,
+  .ch-cell--pop .ch-cell__fig,
+  .ch-leaf--won .ch-cell__fig,
+  .ch-cell--wrong .ch-cell__ghost {
+    animation: none;
+  }
+  .ch-cell--wrong .ch-cell__ghost { display: none; }
+  .ch-key:active, .ch-tool:active { transform: none; }
+}

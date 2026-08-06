@@ -12,21 +12,28 @@
  */
 
 import type { Tier } from '../types';
-import { createRng, pick } from '../rng';
 import {
   checkCrossword, isGridFull, revealCrosswordCell, setCrosswordCell, startCrossword,
   type CrosswordEngineState, type CrosswordPuzzle,
 } from './crossword';
 import type { RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../rooms/room-puzzle';
 import { getPools, lazyContent } from '../../app/pools';
+import { selectByTier } from '../rooms/adapters/tier-select';
 
-export const CROSSWORD_POOL = lazyContent<CrosswordPuzzle[]>(() => getPools().crossword as CrosswordPuzzle[]);
+/**
+ * Round 4: the generator stamps a `tier` on every puzzle and the closet itself
+ * grows with the row — tier 1 is a 4×4 with three easy, plainly-clued entries;
+ * tier 2 the full 5×5 with four; tier 3 a 5×5 with five entries, the hard and
+ * expert words in play, and at least two clues written in the bank's `wry`
+ * style (misdirection and double meaning rather than a dictionary gloss).
+ * The grid size travels in `puzzle.size`, which the engine and view already
+ * read, so nothing outside the content needed to change.
+ */
+export type CrosswordPuzzleEx = CrosswordPuzzle & { tier?: Tier };
 
-const TIER_DIFFICULTY: Record<Tier, CrosswordPuzzle['difficulty'][]> = {
-  1: ['medium', 'easy'],
-  2: ['hard', 'medium'],
-  3: ['expert', 'hard'],
-};
+export const CROSSWORD_POOL = lazyContent<CrosswordPuzzleEx[]>(
+  () => getPools().crossword as CrosswordPuzzleEx[],
+);
 
 export type CrosswordFeedback =
   | { kind: 'checked-wrong'; wrongCount: number; charged: boolean }
@@ -54,20 +61,11 @@ function outcomeOf(s: CrosswordRoomState): RoomOutcome {
     : { status: 'active', perfect: isPerfect(s) };
 }
 
-export const crosswordAdapter: RoomPuzzleAdapter<CrosswordPuzzle, CrosswordRoomState, CrosswordAction> = {
+export const crosswordAdapter: RoomPuzzleAdapter<CrosswordPuzzleEx, CrosswordRoomState, CrosswordAction> = {
   kind: 'crossword',
   size: 'micro',
 
-  select({ tier, seed, seenIds }) {
-    const rng = createRng(seed);
-    const seen = new Set(seenIds);
-    for (const difficulty of TIER_DIFFICULTY[tier]) {
-      const fresh = CROSSWORD_POOL.filter((p) => p.difficulty === difficulty && !seen.has(p.id));
-      if (fresh.length > 0) return pick(rng, fresh);
-    }
-    const anyFresh = CROSSWORD_POOL.filter((p) => !seen.has(p.id));
-    return anyFresh.length > 0 ? pick(rng, anyFresh) : pick(rng, CROSSWORD_POOL);
-  },
+  select: (opts) => selectByTier(CROSSWORD_POOL, opts),
 
   start(puzzle, ctx): CrosswordRoomState {
     return { cw: startCrossword(puzzle), tier: ctx.tier, attempts: 0, lastFeedback: null };

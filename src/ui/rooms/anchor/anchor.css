@@ -14,7 +14,11 @@
   width: 100%;
   max-width: 430px;
   margin: 0 auto;
-  padding: 0.8rem 0.9rem calc(0.9rem + env(safe-area-inset-bottom));
+  /* No env(safe-area-inset-bottom) here: #root pads the home-indicator band
+     once and RoomHost's pinned footer sits below this column. Paying the
+     inset a second time is what pushed the room's own controls under the
+     indicator on device (round-4 owner report). */
+  padding: 0.7rem 0.9rem 0.5rem;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: var(--text-body);
@@ -228,10 +232,14 @@
 }
 @keyframes hv-blink { 50% { opacity: 0; } }
 
-/* The hive: one scalable unit, absolute % geometry — zero layout shift. */
+/* The hive: one scalable unit, absolute % geometry — zero layout shift.
+   Round-4: the board is also capped against the VIEWPORT HEIGHT. At 375×667
+   the 300px square plus the entry line, toast slot and Shuffle row overran
+   the stage and pushed the lower petals under the home indicator; scaling on
+   vh keeps the whole flower on the glass on every iPhone. */
 .hv-board {
   position: relative;
-  width: min(78vw, 300px);
+  width: min(78vw, 300px, 42vh);
   aspect-ratio: 1 / 1;
   margin: 0 auto;
 }
@@ -429,9 +437,11 @@
    The Gallery (Twistle) — AAA §3
    -------------------------------------------------------------------------- */
 
+/* Column count comes from the puzzle (--tw-size, set inline by TwistleView) so
+   a tier-3 6×6 Gallery lays itself out; 5 is the default board. */
 .tw-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(var(--tw-size, 5), 1fr);
   gap: 6px;
   touch-action: none;                 /* board owns the gesture (AAA 7.11) */
 }
@@ -526,6 +536,18 @@
   letter-spacing: 0.04em;
 }
 .fw-input:focus { outline: 2px solid var(--room-accent); outline-offset: -1px; }
+/* Same defect as the Sanctum's door (round-4): the field's uppercase
+   transform + tracking blew "Whisper the forgotten word…" past the right edge
+   and clipped it mid-word. The prompt opts out of both; the TYPED guess keeps
+   the engraved treatment. */
+.fw-input::placeholder {
+  font-size: 0.95rem;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--ink-faint);
+  opacity: 1;
+}
 
 .fw-reveal { display: flex; justify-content: center; gap: 0.18rem; }
 .fw-reveal__ch {
@@ -538,6 +560,41 @@
 @keyframes fw-turn {
   from { transform: rotateX(90deg); opacity: 0; }
   to   { transform: rotateX(0); opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   Short screens (375×667 and friends) — round-4 mobile ergonomics.
+   The decorative reserve gives way first; every tap target keeps its ≥44pt
+   floor (AAA 6.19) and the play surface stays in the bottom-half thumb zone.
+   -------------------------------------------------------------------------- */
+@media (max-height: 700px) {
+  .anch { gap: 0.45rem; padding-top: 0.4rem; }
+  .anch__sub { display: none; }
+  .anch-toastslot { min-height: 1.2rem; }
+  .hv-found { min-height: 1.3rem; }
+  .hv-ladder { gap: 0.4rem; }
+  .hv-entry { min-height: 2rem; font-size: 1.3rem; }
+  /* Measured: at 375x667 a 42vh hive left the Shuffle row 62px past the
+     bottom of the stage. 33vh brings the whole cluster back on-screen and
+     still leaves every petal a ~72px hit target (AAA 6.19). */
+  .hv-board { width: min(78vw, 300px, 33vh); }
+  .fw-def__text { font-size: 1.05rem; margin: 0.3rem 0; }
+  .tw-word { min-height: 1.8rem; }
+  .tw-lists { min-height: 1.4rem; }
+  .ww-tile { min-height: 50px; }
+}
+
+/* iOS keyboard open: the Study's whisper row is the only thing that matters
+   while she is typing. Collapsing the definition card shrinks the lift the
+   platform has to apply (--kb-shift), so the entry row rides up with far less
+   of the room moving under her thumb (AAA 7.9). */
+html.kb-open .anch .fw-def__meta,
+html.kb-open .anch .anch-toastslot {
+  display: none;
+}
+html.kb-open .anch .fw-def__text {
+  font-size: 1rem;
+  margin: 0.2rem 0;
 }
 
 /* --------------------------------------------------------------------------

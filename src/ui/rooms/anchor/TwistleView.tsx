@@ -6,23 +6,29 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { RoomViewProps } from '../registry';
 import type { TwistlePuzzle } from '../../../engine/types';
 import type { TwistleAction, TwistleRoomState } from '../../../engine/rooms/adapters/twistle';
-import { CENTER_INDEX, GRID_SIZE } from '../../../engine/twistle';
+import { centerIndex, puzzleSize } from '../../../engine/twistle';
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
 import './anchor.css';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
 
-function areNeighbors(a: number, b: number): boolean {
-  const dr = Math.abs(Math.floor(a / GRID_SIZE) - Math.floor(b / GRID_SIZE));
-  const dc = Math.abs((a % GRID_SIZE) - (b % GRID_SIZE));
+/** King adjacency on an n×n board (n comes from the puzzle, not a constant). */
+function areNeighbors(a: number, b: number, n: number): boolean {
+  const dr = Math.abs(Math.floor(a / n) - Math.floor(b / n));
+  const dc = Math.abs((a % n) - (b % n));
   return dr <= 1 && dc <= 1 && !(dr === 0 && dc === 0);
 }
 
 export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewProps<TwistlePuzzle, TwistleRoomState, TwistleAction>) {
+  // Board metrics ride on the puzzle so a tier-3 Gallery can ship 6×6.
+  const size = puzzleSize(puzzle);
+  const centre = centerIndex(size);
+
   const [path, setPath] = useState<number[]>([]);
   const [shaking, setShaking] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
@@ -120,7 +126,7 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
       if (head === idx) return p;
       if (p.length >= 2 && p[p.length - 2] === idx) return p.slice(0, -1); // backtrack
       if (p.includes(idx)) return p;
-      if (head !== undefined && !areNeighbors(head, idx)) return p;
+      if (head !== undefined && !areNeighbors(head, idx, size)) return p;
       sfx.tap();
       return [...p, idx];
     });
@@ -148,7 +154,7 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
       if (p.length === 0) return [idx];
       if (p[p.length - 1] === idx) return p.slice(0, -1);           // tap head: undo
       if (p.includes(idx)) return p;
-      return areNeighbors(p[p.length - 1]!, idx) ? [...p, idx] : p;
+      return areNeighbors(p[p.length - 1]!, idx, size) ? [...p, idx] : p;
     });
   };
 
@@ -181,6 +187,7 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
         <>
           <div
             className={`tw-grid${shaking ? ' anch-shake' : ''}`}
+            style={{ '--tw-size': size } as CSSProperties}
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
@@ -189,7 +196,7 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
             {puzzle.grid.map((letter, i) => {
               const pos = path.indexOf(i);
               const head = path.length > 0 ? path[path.length - 1]! : null;
-              const reachable = path.length === 0 || pos >= 0 || (head !== null && areNeighbors(head, i));
+              const reachable = path.length === 0 || pos >= 0 || (head !== null && areNeighbors(head, i, size));
               return (
                 <button
                   key={i}
@@ -198,7 +205,7 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
                     'tw-cell',
                     pos >= 0 ? 'tw-cell--traced' : '',
                     pos >= 0 && pos === path.length - 1 ? 'tw-cell--head' : '',
-                    i === CENTER_INDEX && puzzle.rules.centerRequired ? 'tw-cell--center' : '',
+                    i === centre && puzzle.rules.centerRequired ? 'tw-cell--center' : '',
                     !reachable ? 'tw-cell--far' : '',
                   ].join(' ')}
                 >

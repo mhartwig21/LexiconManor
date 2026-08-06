@@ -1,153 +1,846 @@
 {
-  "comment": "Linen Closet clue bank — OWNER: A5. Words 3-5 letters, must be in enable1 (generator hard-fails otherwise). Difficulty tags the WORD+CLUE pair; a puzzle of difficulty D uses only words <= D and at least one word == D. Clues are manor-toned, terse enough for a 390px clue bar.",
+  "comment": "Linen Closet clue bank — OWNER: A5. Words 3-5 letters, must be in enable1 (generator hard-fails otherwise). Difficulty tags the WORD+CLUE pair; a puzzle of difficulty D uses only words <= D and at least one word == D. Clues are manor-toned, terse enough for a 390px clue bar. Round 4: an optional `wry` clue carries the harder, misdirecting clue style — the Linen Closet's tier-3 puzzles must use at least two of them.",
   "clues": [
-    { "word": "TEA", "clue": "Mrs. Bramble's morning ritual", "difficulty": "easy" },
-    { "word": "CAT", "clue": "Dewey, for one", "difficulty": "easy" },
-    { "word": "INK", "clue": "What fills the manor's pens", "difficulty": "easy" },
-    { "word": "KEY", "clue": "A locked drawer's desire", "difficulty": "easy" },
-    { "word": "MAP", "clue": "Parchment guide", "difficulty": "easy" },
-    { "word": "SUN", "clue": "Riser at dawn", "difficulty": "easy" },
-    { "word": "OWL", "clue": "Night's librarian", "difficulty": "easy" },
-    { "word": "FOX", "clue": "Sly red visitor", "difficulty": "easy" },
-    { "word": "ASH", "clue": "What the hearth leaves behind", "difficulty": "easy" },
-    { "word": "OAK", "clue": "Sturdy old tree", "difficulty": "easy" },
-    { "word": "IVY", "clue": "Wall climber", "difficulty": "easy" },
-    { "word": "PIE", "clue": "Windowsill cooler", "difficulty": "easy" },
-    { "word": "EGG", "clue": "Breakfast oval", "difficulty": "easy" },
-    { "word": "JAM", "clue": "Toast's sweet topping", "difficulty": "easy" },
-    { "word": "BED", "clue": "Where the day ends", "difficulty": "easy" },
-    { "word": "BOOK", "clue": "Shelved companion", "difficulty": "easy" },
-    { "word": "LAMP", "clue": "Reading light", "difficulty": "easy" },
-    { "word": "DOOR", "clue": "It waits for a draft", "difficulty": "easy" },
-    { "word": "MOON", "clue": "Night's lantern", "difficulty": "easy" },
-    { "word": "STAR", "clue": "Night-sky glimmer", "difficulty": "easy" },
-    { "word": "RAIN", "clue": "The garden's drink", "difficulty": "easy" },
-    { "word": "LEAF", "clue": "One page of a tree", "difficulty": "easy" },
-    { "word": "ROSE", "clue": "Thorned beauty", "difficulty": "easy" },
-    { "word": "MILK", "clue": "Tea's pale partner", "difficulty": "easy" },
-    { "word": "SOUP", "clue": "Ladled comfort", "difficulty": "easy" },
-    { "word": "PEAR", "clue": "Fruit with a waist", "difficulty": "easy" },
-    { "word": "PLUM", "clue": "Purple orchard fruit", "difficulty": "easy" },
-    { "word": "CAKE", "clue": "Celebration slice", "difficulty": "easy" },
-    { "word": "BELL", "clue": "Rung for supper", "difficulty": "easy" },
-    { "word": "GATE", "clue": "The garden's iron door", "difficulty": "easy" },
-    { "word": "POND", "clue": "A duck's mirror", "difficulty": "easy" },
-    { "word": "BIRD", "clue": "Feathered singer", "difficulty": "easy" },
-    { "word": "WREN", "clue": "Small brown songbird", "difficulty": "easy" },
-    { "word": "SNOW", "clue": "Winter's quilt", "difficulty": "easy" },
-    { "word": "WIND", "clue": "Unseen page-turner", "difficulty": "easy" },
-    { "word": "FIRE", "clue": "The hearth's heart", "difficulty": "easy" },
-    { "word": "SEED", "clue": "Fern's little promise", "difficulty": "easy" },
-    { "word": "HERB", "clue": "Rack resident", "difficulty": "easy" },
-    { "word": "SALT", "clue": "The sea's seasoning", "difficulty": "easy" },
-    { "word": "MOSS", "clue": "Soft coat on old stone", "difficulty": "easy" },
-    { "word": "NOOK", "clue": "Cozy corner", "difficulty": "easy" },
-    { "word": "HONEY", "clue": "The hive's gold", "difficulty": "easy" },
-    { "word": "BREAD", "clue": "Loaf of the pantry", "difficulty": "easy" },
-    { "word": "APPLE", "clue": "Orchard classic", "difficulty": "easy" },
-    { "word": "CHAIR", "clue": "Seat at the desk", "difficulty": "easy" },
-    { "word": "TABLE", "clue": "Where letters are written", "difficulty": "easy" },
-    { "word": "CLOCK", "clue": "Keeper of the hour", "difficulty": "easy" },
-    { "word": "MOUSE", "clue": "Dewey's quarry", "difficulty": "easy" },
-
-    { "word": "WAX", "clue": "A seal's material", "difficulty": "medium" },
-    { "word": "LORE", "clue": "Handed-down knowledge", "difficulty": "medium" },
-    { "word": "MYTH", "clue": "Story the old gods left", "difficulty": "medium" },
-    { "word": "POEM", "clue": "Fourteen lines, sometimes", "difficulty": "medium" },
-    { "word": "DICE", "clue": "Tumbling cubes", "difficulty": "medium" },
-    { "word": "MAZE", "clue": "Hedge puzzle", "difficulty": "medium" },
-    { "word": "HARP", "clue": "Instrument plucked by angels", "difficulty": "medium" },
-    { "word": "DUSK", "clue": "When the day ends, gently", "difficulty": "medium" },
-    { "word": "DAWN", "clue": "First light", "difficulty": "medium" },
-    { "word": "GLEN", "clue": "Narrow valley", "difficulty": "medium" },
-    { "word": "WICK", "clue": "A candle's core", "difficulty": "medium" },
-    { "word": "SILL", "clue": "A window's ledge", "difficulty": "medium" },
-    { "word": "HASP", "clue": "A latch's loop", "difficulty": "medium" },
-    { "word": "JAMB", "clue": "A door's side post", "difficulty": "medium" },
-    { "word": "NAVE", "clue": "A church's long middle", "difficulty": "medium" },
-    { "word": "APSE", "clue": "A church's rounded end", "difficulty": "medium" },
-    { "word": "RUNE", "clue": "Letter cut in northern stone", "difficulty": "medium" },
-    { "word": "QUILL", "clue": "Pen before pens", "difficulty": "medium" },
-    { "word": "ATTIC", "clue": "Storage under the roof", "difficulty": "medium" },
-    { "word": "CELLO", "clue": "Deep-voiced string", "difficulty": "medium" },
-    { "word": "ORGAN", "clue": "The chapel's pipes", "difficulty": "medium" },
-    { "word": "OPERA", "clue": "Drama, sung", "difficulty": "medium" },
-    { "word": "RHYME", "clue": "What a poet trades in", "difficulty": "medium" },
-    { "word": "FABLE", "clue": "Tale with a moral", "difficulty": "medium" },
-    { "word": "RELIC", "clue": "Museum-worthy remnant", "difficulty": "medium" },
-    { "word": "CHESS", "clue": "Game of patient kings", "difficulty": "medium" },
-    { "word": "CRYPT", "clue": "Vault below the chapel", "difficulty": "medium" },
-    { "word": "GHOST", "clue": "Ellery, kindly put", "difficulty": "medium" },
-    { "word": "SPELL", "clue": "A witch's wording", "difficulty": "medium" },
-    { "word": "CHARM", "clue": "Bracelet dangler", "difficulty": "medium" },
-    { "word": "AMBER", "clue": "Fossil gold", "difficulty": "medium" },
-    { "word": "PEARL", "clue": "The oyster's prize", "difficulty": "medium" },
-    { "word": "OPAL", "clue": "Milky gem", "difficulty": "medium" },
-    { "word": "TOPAZ", "clue": "November's stone", "difficulty": "medium" },
-    { "word": "SATIN", "clue": "Slippery fabric", "difficulty": "medium" },
-    { "word": "LINEN", "clue": "This closet's namesake", "difficulty": "medium" },
-    { "word": "TWEED", "clue": "A professor's jacket cloth", "difficulty": "medium" },
-    { "word": "SHAWL", "clue": "Shoulder warmer", "difficulty": "medium" },
-    { "word": "CAMEO", "clue": "Carved portrait brooch", "difficulty": "medium" },
-    { "word": "EASEL", "clue": "A painter's stand", "difficulty": "medium" },
-    { "word": "MURAL", "clue": "Wall-sized painting", "difficulty": "medium" },
-    { "word": "PIANO", "clue": "The parlor's eighty-eight", "difficulty": "medium" },
-    { "word": "VIOLA", "clue": "String between violin and cello", "difficulty": "medium" },
-    { "word": "FLUTE", "clue": "Silver woodwind", "difficulty": "medium" },
-    { "word": "EMBER", "clue": "The fire's last word", "difficulty": "medium" },
-    { "word": "FROST", "clue": "Morning window lace", "difficulty": "medium" },
-    { "word": "BROOK", "clue": "Small talkative stream", "difficulty": "medium" },
-    { "word": "HEATH", "clue": "Open moorland", "difficulty": "medium" },
-    { "word": "CREST", "clue": "Family emblem", "difficulty": "medium" },
-    { "word": "MOTTO", "clue": "Words beneath the crest", "difficulty": "medium" },
-    { "word": "LADLE", "clue": "Soup server", "difficulty": "medium" },
-    { "word": "SCONE", "clue": "Teatime crumbler", "difficulty": "medium" },
-    { "word": "TAPER", "clue": "Slim candle", "difficulty": "medium" },
-    { "word": "GABLE", "clue": "The roof's triangle", "difficulty": "medium" },
-    { "word": "EAVES", "clue": "The roof's overhang", "difficulty": "medium" },
-    { "word": "HINGE", "clue": "A door's pivot", "difficulty": "medium" },
-    { "word": "SPADE", "clue": "The groundskeeper's digger", "difficulty": "medium" },
-
-    { "word": "AWL", "clue": "Leather-piercer", "difficulty": "hard" },
-    { "word": "TOR", "clue": "Rocky hilltop", "difficulty": "hard" },
-    { "word": "ICHOR", "clue": "Blood of the gods", "difficulty": "hard" },
-    { "word": "ETHER", "clue": "The airy old fifth element", "difficulty": "hard" },
-    { "word": "SIGIL", "clue": "Occult sign", "difficulty": "hard" },
-    { "word": "TAROT", "clue": "The fortune-teller's deck", "difficulty": "hard" },
-    { "word": "AUGUR", "clue": "Reader of omens", "difficulty": "hard" },
-    { "word": "FJORD", "clue": "Norwegian inlet", "difficulty": "hard" },
-    { "word": "LOCH", "clue": "Scottish lake", "difficulty": "hard" },
-    { "word": "TARN", "clue": "Mountain pool", "difficulty": "hard" },
-    { "word": "WEIR", "clue": "Small river dam", "difficulty": "hard" },
-    { "word": "CAIRN", "clue": "Trail-marking stones", "difficulty": "hard" },
-    { "word": "LATHE", "clue": "The woodturner's wheel", "difficulty": "hard" },
-    { "word": "CRUET", "clue": "Vinegar's little bottle", "difficulty": "hard" },
-    { "word": "FOLIO", "clue": "Large book format", "difficulty": "hard" },
-    { "word": "CODEX", "clue": "Bound manuscript", "difficulty": "hard" },
-    { "word": "NICHE", "clue": "A statue's recess", "difficulty": "hard" },
-    { "word": "EPEE", "clue": "A fencer's blade", "difficulty": "hard" },
-    { "word": "WHEY", "clue": "What the curds leave behind", "difficulty": "hard" },
-    { "word": "SLOE", "clue": "Blackthorn berry", "difficulty": "hard" },
-    { "word": "BRINE", "clue": "The pickle's bath", "difficulty": "hard" },
-    { "word": "TITHE", "clue": "A tenth, rendered", "difficulty": "hard" },
-    { "word": "SKEIN", "clue": "Loose coil of yarn", "difficulty": "hard" },
-    { "word": "PLAIT", "clue": "A braid, in older parlance", "difficulty": "hard" },
-    { "word": "BALM", "clue": "Soother from the still-room", "difficulty": "hard" },
-
-    { "word": "ETUI", "clue": "A needle's little case", "difficulty": "expert" },
-    { "word": "ADIT", "clue": "A mine's entrance", "difficulty": "expert" },
-    { "word": "QUERN", "clue": "Hand mill for grain", "difficulty": "expert" },
-    { "word": "VERSO", "clue": "The left-hand page", "difficulty": "expert" },
-    { "word": "RECTO", "clue": "The right-hand page", "difficulty": "expert" },
-    { "word": "NEWEL", "clue": "The staircase's post", "difficulty": "expert" },
-    { "word": "ADZE", "clue": "The axe's carving cousin", "difficulty": "expert" },
-    { "word": "ORLE", "clue": "Heraldic inner border", "difficulty": "expert" },
-    { "word": "OGEE", "clue": "S-curved molding", "difficulty": "expert" },
-    { "word": "TILDE", "clue": "The wave over an n", "difficulty": "expert" },
-    { "word": "OBOL", "clue": "Coin for the ferryman", "difficulty": "expert" },
-    { "word": "ATTAR", "clue": "Essence of rose petals", "difficulty": "expert" },
-    { "word": "SENNA", "clue": "Apothecary's laxative leaf", "difficulty": "expert" },
-    { "word": "OSIER", "clue": "Willow for weaving", "difficulty": "expert" },
-    { "word": "MAUND", "clue": "Old basket measure", "difficulty": "expert" }
+    {
+      "word": "TEA",
+      "clue": "Mrs. Bramble's morning ritual",
+      "difficulty": "easy",
+      "wry": "The manor's answer to nearly every question"
+    },
+    {
+      "word": "CAT",
+      "clue": "Dewey, for one",
+      "difficulty": "easy",
+      "wry": "Sits on whatever you are reading"
+    },
+    {
+      "word": "INK",
+      "clue": "What fills the manor's pens",
+      "difficulty": "easy",
+      "wry": "It remembers longer than the writer does"
+    },
+    {
+      "word": "KEY",
+      "clue": "A locked drawer's desire",
+      "difficulty": "easy",
+      "wry": "It opens a door, or explains a map"
+    },
+    {
+      "word": "MAP",
+      "clue": "Parchment guide",
+      "difficulty": "easy",
+      "wry": "Flat country, folded twice"
+    },
+    {
+      "word": "SUN",
+      "clue": "Riser at dawn",
+      "difficulty": "easy",
+      "wry": "The only lamp nobody pays for"
+    },
+    {
+      "word": "OWL",
+      "clue": "Night's librarian",
+      "difficulty": "easy",
+      "wry": "All question, no answer"
+    },
+    {
+      "word": "FOX",
+      "clue": "Sly red visitor",
+      "difficulty": "easy",
+      "wry": "The one the fable always sides with"
+    },
+    {
+      "word": "ASH",
+      "clue": "What the hearth leaves behind",
+      "difficulty": "easy",
+      "wry": "What the hearth has to say afterwards"
+    },
+    {
+      "word": "OAK",
+      "clue": "Sturdy old tree",
+      "difficulty": "easy",
+      "wry": "An acorn that kept at it"
+    },
+    {
+      "word": "IVY",
+      "clue": "Wall climber",
+      "difficulty": "easy",
+      "wry": "It takes the wall without asking"
+    },
+    {
+      "word": "PIE",
+      "clue": "Windowsill cooler",
+      "difficulty": "easy",
+      "wry": "Cooling evidence of a good morning"
+    },
+    {
+      "word": "EGG",
+      "clue": "Breakfast oval",
+      "difficulty": "easy",
+      "wry": "Breakfast, still in its packaging"
+    },
+    {
+      "word": "JAM",
+      "clue": "Toast's sweet topping",
+      "difficulty": "easy",
+      "wry": "A traffic problem, or breakfast"
+    },
+    {
+      "word": "BED",
+      "clue": "Where the day ends",
+      "difficulty": "easy",
+      "wry": "Where the day is finally put down"
+    },
+    {
+      "word": "BOOK",
+      "clue": "Shelved companion",
+      "difficulty": "easy",
+      "wry": "It talks only when opened"
+    },
+    {
+      "word": "LAMP",
+      "clue": "Reading light",
+      "difficulty": "easy",
+      "wry": "It makes the evening habitable"
+    },
+    {
+      "word": "DOOR",
+      "clue": "It waits for a draft",
+      "difficulty": "easy",
+      "wry": "A wall that changed its mind"
+    },
+    {
+      "word": "MOON",
+      "clue": "Night's lantern",
+      "difficulty": "easy",
+      "wry": "The night's borrowed light"
+    },
+    {
+      "word": "STAR",
+      "clue": "Night-sky glimmer",
+      "difficulty": "easy",
+      "wry": "A distant sun with better press"
+    },
+    {
+      "word": "RAIN",
+      "clue": "The garden's drink",
+      "difficulty": "easy",
+      "wry": "The garden's uninvited watering"
+    },
+    {
+      "word": "LEAF",
+      "clue": "One page of a tree",
+      "difficulty": "easy",
+      "wry": "A page the tree turns for you"
+    },
+    {
+      "word": "ROSE",
+      "clue": "Thorned beauty",
+      "difficulty": "easy",
+      "wry": "It defends itself in the prettiest way"
+    },
+    {
+      "word": "MILK",
+      "clue": "Tea's pale partner",
+      "difficulty": "easy",
+      "wry": "It goes in first, the argument runs"
+    },
+    {
+      "word": "SOUP",
+      "clue": "Ladled comfort",
+      "difficulty": "easy",
+      "wry": "Dinner you can drink"
+    },
+    {
+      "word": "PEAR",
+      "clue": "Fruit with a waist",
+      "difficulty": "easy",
+      "wry": "An apple that let itself go"
+    },
+    {
+      "word": "PLUM",
+      "clue": "Purple orchard fruit",
+      "difficulty": "easy",
+      "wry": "A choice assignment, or a fruit"
+    },
+    {
+      "word": "CAKE",
+      "clue": "Celebration slice",
+      "difficulty": "easy",
+      "wry": "You cannot have it and eat it"
+    },
+    {
+      "word": "BELL",
+      "clue": "Rung for supper",
+      "difficulty": "easy",
+      "wry": "It only speaks when struck"
+    },
+    {
+      "word": "GATE",
+      "clue": "The garden's iron door",
+      "difficulty": "easy",
+      "wry": "A fence that agreed to open"
+    },
+    {
+      "word": "POND",
+      "clue": "A duck's mirror",
+      "difficulty": "easy",
+      "wry": "Where the sky goes to be looked at"
+    },
+    {
+      "word": "BIRD",
+      "clue": "Feathered singer",
+      "difficulty": "easy",
+      "wry": "It gets the worm, allegedly"
+    },
+    {
+      "word": "WREN",
+      "clue": "Small brown songbird",
+      "difficulty": "easy",
+      "wry": "Small, brown, and famously loud"
+    },
+    {
+      "word": "SNOW",
+      "clue": "Winter's quilt",
+      "difficulty": "easy",
+      "wry": "Weather that tucks the garden in"
+    },
+    {
+      "word": "WIND",
+      "clue": "Unseen page-turner",
+      "difficulty": "easy",
+      "wry": "It turns pages nobody asked it to"
+    },
+    {
+      "word": "FIRE",
+      "clue": "The hearth's heart",
+      "difficulty": "easy",
+      "wry": "The hearth, being enthusiastic"
+    },
+    {
+      "word": "SEED",
+      "clue": "Fern's little promise",
+      "difficulty": "easy",
+      "wry": "A whole garden, being patient"
+    },
+    {
+      "word": "HERB",
+      "clue": "Rack resident",
+      "difficulty": "easy",
+      "wry": "The pot plant with a purpose"
+    },
+    {
+      "word": "SALT",
+      "clue": "The sea's seasoning",
+      "difficulty": "easy",
+      "wry": "It takes the sea's side in every dish"
+    },
+    {
+      "word": "MOSS",
+      "clue": "Soft coat on old stone",
+      "difficulty": "easy",
+      "wry": "Old stone's green opinion"
+    },
+    {
+      "word": "NOOK",
+      "clue": "Cozy corner",
+      "difficulty": "easy",
+      "wry": "A corner with ambitions"
+    },
+    {
+      "word": "HONEY",
+      "clue": "The hive's gold",
+      "difficulty": "easy",
+      "wry": "What the hive charges for rent"
+    },
+    {
+      "word": "BREAD",
+      "clue": "Loaf of the pantry",
+      "difficulty": "easy",
+      "wry": "Loaf now, toast later"
+    },
+    {
+      "word": "APPLE",
+      "clue": "Orchard classic",
+      "difficulty": "easy",
+      "wry": "It fell, and physics followed"
+    },
+    {
+      "word": "CHAIR",
+      "clue": "Seat at the desk",
+      "difficulty": "easy",
+      "wry": "It waits, patiently, for anyone"
+    },
+    {
+      "word": "TABLE",
+      "clue": "Where letters are written",
+      "difficulty": "easy",
+      "wry": "Where the letters get written and turned"
+    },
+    {
+      "word": "CLOCK",
+      "clue": "Keeper of the hour",
+      "difficulty": "easy",
+      "wry": "It has two hands and no patience"
+    },
+    {
+      "word": "MOUSE",
+      "clue": "Dewey's quarry",
+      "difficulty": "easy",
+      "wry": "Dewey's chief professional interest"
+    },
+    {
+      "word": "WAX",
+      "clue": "A seal's material",
+      "difficulty": "medium",
+      "wry": "It seals a letter and ruins a candle"
+    },
+    {
+      "word": "LORE",
+      "clue": "Handed-down knowledge",
+      "difficulty": "medium",
+      "wry": "Knowledge with no footnotes"
+    },
+    {
+      "word": "MYTH",
+      "clue": "Story the old gods left",
+      "difficulty": "medium",
+      "wry": "A story that outlived its believers"
+    },
+    {
+      "word": "POEM",
+      "clue": "Fourteen lines, sometimes",
+      "difficulty": "medium",
+      "wry": "It says less and means more"
+    },
+    {
+      "word": "DICE",
+      "clue": "Tumbling cubes",
+      "difficulty": "medium",
+      "wry": "Chance, in cubes"
+    },
+    {
+      "word": "MAZE",
+      "clue": "Hedge puzzle",
+      "difficulty": "medium",
+      "wry": "A garden that disagrees with you"
+    },
+    {
+      "word": "HARP",
+      "clue": "Instrument plucked by angels",
+      "difficulty": "medium",
+      "wry": "Strings the angels take credit for"
+    },
+    {
+      "word": "DUSK",
+      "clue": "When the day ends, gently",
+      "difficulty": "medium",
+      "wry": "The day, losing interest"
+    },
+    {
+      "word": "DAWN",
+      "clue": "First light",
+      "difficulty": "medium",
+      "wry": "The day, trying again"
+    },
+    {
+      "word": "GLEN",
+      "clue": "Narrow valley",
+      "difficulty": "medium",
+      "wry": "A valley that never got famous"
+    },
+    {
+      "word": "WICK",
+      "clue": "A candle's core",
+      "difficulty": "medium",
+      "wry": "The candle's short temper"
+    },
+    {
+      "word": "SILL",
+      "clue": "A window's ledge",
+      "difficulty": "medium",
+      "wry": "Where the cat and the pie compete"
+    },
+    {
+      "word": "HASP",
+      "clue": "A latch's loop",
+      "difficulty": "medium"
+    },
+    {
+      "word": "JAMB",
+      "clue": "A door's side post",
+      "difficulty": "medium"
+    },
+    {
+      "word": "NAVE",
+      "clue": "A church's long middle",
+      "difficulty": "medium"
+    },
+    {
+      "word": "APSE",
+      "clue": "A church's rounded end",
+      "difficulty": "medium"
+    },
+    {
+      "word": "RUNE",
+      "clue": "Letter cut in northern stone",
+      "difficulty": "medium"
+    },
+    {
+      "word": "QUILL",
+      "clue": "Pen before pens",
+      "difficulty": "medium",
+      "wry": "A bird's contribution to literature"
+    },
+    {
+      "word": "ATTIC",
+      "clue": "Storage under the roof",
+      "difficulty": "medium",
+      "wry": "Where the manor keeps its regrets"
+    },
+    {
+      "word": "CELLO",
+      "clue": "Deep-voiced string",
+      "difficulty": "medium",
+      "wry": "A violin that grew up"
+    },
+    {
+      "word": "ORGAN",
+      "clue": "The chapel's pipes",
+      "difficulty": "medium",
+      "wry": "Pipes with opinions"
+    },
+    {
+      "word": "OPERA",
+      "clue": "Drama, sung",
+      "difficulty": "medium",
+      "wry": "Drama that refuses to speak"
+    },
+    {
+      "word": "RHYME",
+      "clue": "What a poet trades in",
+      "difficulty": "medium",
+      "wry": "Reason's noisier partner"
+    },
+    {
+      "word": "FABLE",
+      "clue": "Tale with a moral",
+      "difficulty": "medium",
+      "wry": "A tale with a lesson attached"
+    },
+    {
+      "word": "RELIC",
+      "clue": "Museum-worthy remnant",
+      "difficulty": "medium",
+      "wry": "Old enough to be admired"
+    },
+    {
+      "word": "CHESS",
+      "clue": "Game of patient kings",
+      "difficulty": "medium",
+      "wry": "War, at a polite pace"
+    },
+    {
+      "word": "CRESS",
+      "clue": "Peppery salad sprout",
+      "difficulty": "medium",
+      "wry": "It grows on a windowsill sponge"
+    },
+    {
+      "word": "GHOST",
+      "clue": "Ellery, kindly put",
+      "difficulty": "medium",
+      "wry": "Ellery, in the technical sense"
+    },
+    {
+      "word": "SPELL",
+      "clue": "A witch's wording",
+      "difficulty": "medium",
+      "wry": "Words with consequences"
+    },
+    {
+      "word": "CHARM",
+      "clue": "Bracelet dangler",
+      "difficulty": "medium",
+      "wry": "It hangs about, hopefully"
+    },
+    {
+      "word": "AMBER",
+      "clue": "Fossil gold",
+      "difficulty": "medium",
+      "wry": "Tree sap that got ambitious"
+    },
+    {
+      "word": "PEARL",
+      "clue": "The oyster's prize",
+      "difficulty": "medium",
+      "wry": "The oyster's complaint, formalised"
+    },
+    {
+      "word": "OPAL",
+      "clue": "Milky gem",
+      "difficulty": "medium",
+      "wry": "A gem that cannot pick a colour"
+    },
+    {
+      "word": "TOPAZ",
+      "clue": "November's stone",
+      "difficulty": "medium"
+    },
+    {
+      "word": "SATIN",
+      "clue": "Slippery fabric",
+      "difficulty": "medium"
+    },
+    {
+      "word": "LINEN",
+      "clue": "This closet's namesake",
+      "difficulty": "medium"
+    },
+    {
+      "word": "TWEED",
+      "clue": "A professor's jacket cloth",
+      "difficulty": "medium"
+    },
+    {
+      "word": "SHAWL",
+      "clue": "Shoulder warmer",
+      "difficulty": "medium"
+    },
+    {
+      "word": "CAMEO",
+      "clue": "Carved portrait brooch",
+      "difficulty": "medium"
+    },
+    {
+      "word": "EASEL",
+      "clue": "A painter's stand",
+      "difficulty": "medium"
+    },
+    {
+      "word": "MURAL",
+      "clue": "Wall-sized painting",
+      "difficulty": "medium"
+    },
+    {
+      "word": "PIANO",
+      "clue": "The parlor's eighty-eight",
+      "difficulty": "medium"
+    },
+    {
+      "word": "VIOLA",
+      "clue": "String between violin and cello",
+      "difficulty": "medium"
+    },
+    {
+      "word": "FLUTE",
+      "clue": "Silver woodwind",
+      "difficulty": "medium"
+    },
+    {
+      "word": "EMBER",
+      "clue": "The fire's last word",
+      "difficulty": "medium",
+      "wry": "The fire, still arguing"
+    },
+    {
+      "word": "FROST",
+      "clue": "Morning window lace",
+      "difficulty": "medium",
+      "wry": "The window's overnight drawing"
+    },
+    {
+      "word": "BROOK",
+      "clue": "Small talkative stream",
+      "difficulty": "medium",
+      "wry": "A river still finding its voice"
+    },
+    {
+      "word": "HEATH",
+      "clue": "Open moorland",
+      "difficulty": "medium"
+    },
+    {
+      "word": "CREST",
+      "clue": "Family emblem",
+      "difficulty": "medium",
+      "wry": "The family, in one small picture"
+    },
+    {
+      "word": "MOTTO",
+      "clue": "Words beneath the crest",
+      "difficulty": "medium"
+    },
+    {
+      "word": "LADLE",
+      "clue": "Soup server",
+      "difficulty": "medium",
+      "wry": "A spoon with delusions"
+    },
+    {
+      "word": "SCONE",
+      "clue": "Teatime crumbler",
+      "difficulty": "medium",
+      "wry": "It divides the nation, and crumbles"
+    },
+    {
+      "word": "TAPER",
+      "clue": "Slim candle",
+      "difficulty": "medium",
+      "wry": "It narrows, then it burns"
+    },
+    {
+      "word": "GABLE",
+      "clue": "The roof's triangle",
+      "difficulty": "medium",
+      "wry": "The roof, coming to a point"
+    },
+    {
+      "word": "EAVES",
+      "clue": "The roof's overhang",
+      "difficulty": "medium"
+    },
+    {
+      "word": "HINGE",
+      "clue": "A door's pivot",
+      "difficulty": "medium",
+      "wry": "The small thing everything turns on"
+    },
+    {
+      "word": "SPADE",
+      "clue": "The groundskeeper's digger",
+      "difficulty": "medium",
+      "wry": "Called by its own name, they say"
+    },
+    {
+      "word": "AWL",
+      "clue": "Leather-piercer",
+      "difficulty": "hard",
+      "wry": "It makes a point of leather"
+    },
+    {
+      "word": "TOR",
+      "clue": "Rocky hilltop",
+      "difficulty": "hard",
+      "wry": "A hill with rocky manners"
+    },
+    {
+      "word": "ICHOR",
+      "clue": "Blood of the gods",
+      "difficulty": "hard",
+      "wry": "What gods bleed, poetically"
+    },
+    {
+      "word": "ETHER",
+      "clue": "The airy old fifth element",
+      "difficulty": "hard",
+      "wry": "The element that turned out not to exist"
+    },
+    {
+      "word": "SIGIL",
+      "clue": "Occult sign",
+      "difficulty": "hard",
+      "wry": "A sign with intentions"
+    },
+    {
+      "word": "TAROT",
+      "clue": "The fortune-teller's deck",
+      "difficulty": "hard",
+      "wry": "Cards that claim to know"
+    },
+    {
+      "word": "AUGUR",
+      "clue": "Reader of omens",
+      "difficulty": "hard",
+      "wry": "He reads birds for a living"
+    },
+    {
+      "word": "FJORD",
+      "clue": "Norwegian inlet",
+      "difficulty": "hard",
+      "wry": "Norway, cut deeply"
+    },
+    {
+      "word": "LOCH",
+      "clue": "Scottish lake",
+      "difficulty": "hard",
+      "wry": "A lake with a Scottish accent"
+    },
+    {
+      "word": "TARN",
+      "clue": "Mountain pool",
+      "difficulty": "hard",
+      "wry": "A pool the mountain kept"
+    },
+    {
+      "word": "WEIR",
+      "clue": "Small river dam",
+      "difficulty": "hard",
+      "wry": "The river, mildly interrupted"
+    },
+    {
+      "word": "CAIRN",
+      "clue": "Trail-marking stones",
+      "difficulty": "hard",
+      "wry": "Stones that point the way"
+    },
+    {
+      "word": "LATHE",
+      "clue": "The woodturner's wheel",
+      "difficulty": "hard",
+      "wry": "It turns wood, and turns it again"
+    },
+    {
+      "word": "CRUET",
+      "clue": "Vinegar's little bottle",
+      "difficulty": "hard"
+    },
+    {
+      "word": "FOLIO",
+      "clue": "Large book format",
+      "difficulty": "hard",
+      "wry": "A book that will not fit the shelf"
+    },
+    {
+      "word": "CODEX",
+      "clue": "Bound manuscript",
+      "difficulty": "hard",
+      "wry": "Pages before spines were fashionable"
+    },
+    {
+      "word": "NICHE",
+      "clue": "A statue's recess",
+      "difficulty": "hard",
+      "wry": "A wall, making room for a saint"
+    },
+    {
+      "word": "EPEE",
+      "clue": "A fencer's blade",
+      "difficulty": "hard"
+    },
+    {
+      "word": "WHEY",
+      "clue": "What the curds leave behind",
+      "difficulty": "hard",
+      "wry": "What the curds left behind"
+    },
+    {
+      "word": "SLOE",
+      "clue": "Blackthorn berry",
+      "difficulty": "hard"
+    },
+    {
+      "word": "BRINE",
+      "clue": "The pickle's bath",
+      "difficulty": "hard",
+      "wry": "The pickle's holiday at the sea"
+    },
+    {
+      "word": "TITHE",
+      "clue": "A tenth, rendered",
+      "difficulty": "hard",
+      "wry": "One part in ten, requested firmly"
+    },
+    {
+      "word": "SKEIN",
+      "clue": "Loose coil of yarn",
+      "difficulty": "hard",
+      "wry": "Yarn, before the cat finds it"
+    },
+    {
+      "word": "PLAIT",
+      "clue": "A braid, in older parlance",
+      "difficulty": "hard",
+      "wry": "Three strands, one argument"
+    },
+    {
+      "word": "BALM",
+      "clue": "Soother from the still-room",
+      "difficulty": "hard",
+      "wry": "The still-room's soothing answer"
+    },
+    {
+      "word": "ETUI",
+      "clue": "A needle's little case",
+      "difficulty": "expert",
+      "wry": "A little case with needle business"
+    },
+    {
+      "word": "ADIT",
+      "clue": "A mine's entrance",
+      "difficulty": "expert"
+    },
+    {
+      "word": "QUERN",
+      "clue": "Hand mill for grain",
+      "difficulty": "expert"
+    },
+    {
+      "word": "VERSO",
+      "clue": "The left-hand page",
+      "difficulty": "expert",
+      "wry": "The page you have already read"
+    },
+    {
+      "word": "RECTO",
+      "clue": "The right-hand page",
+      "difficulty": "expert",
+      "wry": "The page you are about to"
+    },
+    {
+      "word": "NEWEL",
+      "clue": "The staircase's post",
+      "difficulty": "expert",
+      "wry": "The post the staircase leans on"
+    },
+    {
+      "word": "ADZE",
+      "clue": "The axe's carving cousin",
+      "difficulty": "expert"
+    },
+    {
+      "word": "ORLE",
+      "clue": "Heraldic inner border",
+      "difficulty": "expert"
+    },
+    {
+      "word": "OGEE",
+      "clue": "S-curved molding",
+      "difficulty": "expert",
+      "wry": "A moulding that changes its mind"
+    },
+    {
+      "word": "TILDE",
+      "clue": "The wave over an n",
+      "difficulty": "expert",
+      "wry": "The wave that sits on an n"
+    },
+    {
+      "word": "OBOL",
+      "clue": "Coin for the ferryman",
+      "difficulty": "expert"
+    },
+    {
+      "word": "ATTAR",
+      "clue": "Essence of rose petals",
+      "difficulty": "expert",
+      "wry": "A rose, distilled to its opinion"
+    },
+    {
+      "word": "SENNA",
+      "clue": "Apothecary's laxative leaf",
+      "difficulty": "expert"
+    },
+    {
+      "word": "OSIER",
+      "clue": "Willow for weaving",
+      "difficulty": "expert",
+      "wry": "Willow, ready to be woven"
+    },
+    {
+      "word": "MAUND",
+      "clue": "Old basket measure",
+      "difficulty": "expert"
+    }
   ]
 }

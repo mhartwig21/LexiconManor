@@ -6,6 +6,11 @@ import {
   startCrossword, validateCrosswordPuzzle, type CrosswordPuzzle,
 } from '../../src/engine/puzzles/crossword';
 import { crosswordAdapter, CROSSWORD_POOL, type CrosswordRoomState } from '../../src/engine/puzzles/crossword-adapter';
+import clueBank from '../../content/authored/crossword-clues.json';
+
+const CLUE_BANK = clueBank as {
+  clues: { word: string; clue: string; wry?: string; difficulty: string }[];
+};
 
 /**
  * A5 — the surviving batch-2 micro room (Linen Closet crossword) behind the
@@ -80,10 +85,61 @@ describe('selection', () => {
 // ---------------------------------------------------------------------------
 
 describe('crossword pool', () => {
-  it('ships puzzles for every difficulty', () => {
-    for (const d of ['easy', 'medium', 'hard', 'expert'] as const) {
-      expect(CROSSWORD_POOL.filter((p) => p.difficulty === d).length).toBeGreaterThanOrEqual(10);
+  it('ships puzzles for every manor tier', () => {
+    for (const tier of [1, 2, 3] as const) {
+      expect(CROSSWORD_POOL.filter((p) => (p.tier ?? 1) === tier).length, `tier ${tier}`)
+        .toBeGreaterThanOrEqual(10);
     }
+  });
+
+  /**
+   * Round 4 (owner: "5x5 tier 3 with harder clue styles"). The closet grows
+   * with the row and the clue register hardens at the top.
+   */
+  describe('tier escalation', () => {
+    const at = (tier: 1 | 2 | 3) => CROSSWORD_POOL.filter((p) => (p.tier ?? 1) === tier);
+
+    it('the grid and the entry count both grow with the row', () => {
+      for (const p of at(1)) {
+        expect(p.size, p.id).toBe(4);
+        expect(p.entries.length, p.id).toBe(3);
+      }
+      for (const p of at(2)) {
+        expect(p.size, p.id).toBe(5);
+        expect(p.entries.length, p.id).toBe(4);
+      }
+      for (const p of at(3)) {
+        expect(p.size, p.id).toBe(5);
+        expect(p.entries.length, p.id).toBe(5);
+      }
+    });
+
+    it('tier 3 reads at least two clues in the wry (misdirecting) style', () => {
+      const wry = new Set(
+        (CLUE_BANK.clues.filter((c) => c.wry).map((c) => c.wry)) as string[],
+      );
+      for (const p of at(3)) {
+        const wryCount = p.entries.filter((e) => wry.has(e.clue)).length;
+        expect(wryCount, p.id).toBeGreaterThanOrEqual(2);
+      }
+    });
+
+    it('tiers 1 and 2 keep the plain definition register', () => {
+      const wry = new Set(
+        (CLUE_BANK.clues.filter((c) => c.wry).map((c) => c.wry)) as string[],
+      );
+      for (const p of [...at(1), ...at(2)]) {
+        for (const e of p.entries) expect(wry.has(e.clue), `${p.id} ${e.id}`).toBe(false);
+      }
+    });
+
+    it('tier 3 always headlines a hard or expert bank word', () => {
+      const byWord = new Map(CLUE_BANK.clues.map((c) => [c.word, c.difficulty]));
+      for (const p of at(3)) {
+        const diffs = p.entries.map((e) => byWord.get(e.answer));
+        expect(diffs.some((d) => d === 'hard' || d === 'expert'), p.id).toBe(true);
+      }
+    });
   });
 
   it('every shipped puzzle passes the structural solver (runs, crossings, connectivity)', () => {

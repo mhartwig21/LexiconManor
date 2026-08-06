@@ -15,7 +15,9 @@
   width: 100%;
   max-width: 430px;
   margin: 0 auto;
-  padding: 0.8rem 0.9rem calc(0.9rem + env(safe-area-inset-bottom));
+  /* No env(safe-area-inset-bottom): #root already reserves the home-indicator
+     band and RoomHost's pinned footer sits below this column (round-4). */
+  padding: 0.7rem 0.9rem 0.5rem;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: var(--text-body);
@@ -59,7 +61,11 @@
   cursor: pointer;
   transition: transform var(--dur-press), filter var(--dur-press);
 }
-.m2-btn:active { transform: translateY(1px); filter: brightness(0.94); }
+/* U.1: `.is-pressed` comes from pointerdown (the capture delegate in
+   app/platform/boot.ts) — the guaranteed same-frame signal. `:active` stays
+   only as the desktop fallback; iOS Safari applies it late or not at all. */
+.m2-btn:active,
+.m2-btn.is-pressed { transform: translateY(1px); filter: brightness(0.94); }
 .m2-btn:disabled { opacity: 0.45; cursor: default; }
 .m2-btn--primary { background: var(--room-accent); border-color: transparent; color: var(--paper); font-weight: 600; }
 
@@ -109,7 +115,13 @@
    The Linen Closet (mini crossword)
    -------------------------------------------------------------------------- */
 
+/* Round-4: the square size is a variable capped against BOTH axes. A fixed
+   56px grid plus the clue list plus a 3-row keyboard is ~460px taller than a
+   375×667 screen can hold; scaling the squares on vh recovers most of it and
+   the rest is handled by the pinned `.room-deck`. The floor (44px) is the
+   AAA 6.19 tap-target bar — squares never go under it. */
 .lc-grid {
+  --lc-cell: clamp(44px, min(15vw, 6.6vh), 56px);
   display: grid;
   gap: 5px;
   justify-content: center;
@@ -117,8 +129,8 @@
 }
 .lc-cell {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: var(--lc-cell, 56px);
+  height: var(--lc-cell, 56px);
   border: 1px solid var(--paper-edge);
   border-radius: var(--radius-card);
   background: var(--paper-raised);
@@ -132,7 +144,8 @@
   transition: transform 90ms ease, background-color 90ms ease;
   -webkit-tap-highlight-color: transparent;
 }
-.lc-cell:active { transform: scale(0.94); }
+.lc-cell:active,
+.lc-cell.is-pressed { transform: scale(0.94); }
 .lc-cell--void {
   visibility: hidden;               /* linen — keeps the grid's geometry */
   pointer-events: none;
@@ -168,6 +181,7 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
+.lc-clue.is-pressed { background: color-mix(in srgb, var(--room-accent) 8%, transparent); }
 .lc-clue--active { background: color-mix(in srgb, var(--room-accent) 14%, transparent); }
 .lc-clue--done .lc-clue__text { color: var(--ink-faint); }
 .lc-clue__id { font-family: var(--font-display); min-width: 1.7rem; color: var(--room-accent); }
@@ -180,7 +194,9 @@
    benchmark played seconds earlier. */
 .lc-key {
   flex: 1;
-  min-height: 56px;
+  /* 56px on a 390-class phone (Wordle parity); never below the 44pt bar on a
+     667-tall screen, where the deck has to share the glass with the grid. */
+  min-height: clamp(44px, 6.6vh, 56px);
   border: 1px solid var(--paper-edge);
   border-radius: var(--radius-card);
   background: var(--paper-raised);
@@ -195,8 +211,38 @@
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-.lc-key:active { transform: translateY(1px) scale(0.94); filter: brightness(0.92); }
+.lc-key:active,
+.lc-key.is-pressed { transform: translateY(1px) scale(0.94); filter: brightness(0.92); }
 .lc-key--wide { flex: 1.6; font-size: 0.85rem; }
+
+/* --------------------------------------------------------------------------
+   Short screens — round-4 mobile ergonomics.
+   The clue list is the one block that can grow without bound (6 entries of
+   free-authored text). It gets a capped, contained scroll box so it can never
+   again be the thing that shoves the keyboard and the verb off the glass;
+   every clue stays reachable, and the scrollbar stays invisible (house rule).
+   -------------------------------------------------------------------------- */
+/* The clue list rides in the pinned deck, directly above the keys (the NYT
+   Mini's arrangement, and the only one where the clue is legible while she is
+   typing the answer). It is capped and contained so it can never grow the
+   deck past the thumb zone; the active clue is walked into view by
+   CrosswordView whenever the selection changes. */
+.lc-clues {
+  max-height: 5.4rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.lc-clues::-webkit-scrollbar { display: none; }
+
+@media (max-height: 700px) {
+  .m2 { gap: 0.4rem; padding-top: 0.4rem; }
+  .m2__sub { display: none; }
+  .m2-toastslot { min-height: 2rem; }
+  .lc-clues { max-height: 3.6rem; padding: 0.35rem 0.55rem; }
+  .lc-keys { gap: 4px; }
+  .lc-keys__row { gap: 3px; }
+}
 
 /* --------------------------------------------------------------------------
    Reduced motion: juice goes quiet, state stays legible (AAA U.3).
@@ -206,5 +252,7 @@
   .lc-cell--pop .lc-cell__ch, .lc-cell--won .lc-cell__ch {
     animation: none;
   }
-  .lc-cell:active, .lc-key:active, .m2-btn:active { transform: none; }
+  .lc-cell:active, .lc-cell.is-pressed,
+  .lc-key:active, .lc-key.is-pressed,
+  .m2-btn:active, .m2-btn.is-pressed { transform: none; }
 }

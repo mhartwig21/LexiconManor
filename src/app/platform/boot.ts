@@ -23,7 +23,14 @@ let booted = false;
  * layer richer specs like the hex scale-spring on the same class).
  */
 function initPressedState(): void {
-  const PRESSABLE = 'button, [role="button"], .hex, .tile';
+  // Round-4: `.hex`/`.tile` were speculative names that no shipped room ever
+  // used. The real tappables are all real <button>s (hive cells, web tiles,
+  // twistle cells, cipher letters, crossword squares/keys/clues, choices,
+  // seals) — plus anything that opts in with [data-pressable] or an ARIA
+  // button role. Every one of them now carries a `.is-pressed` rule in its
+  // own module CSS, so the bespoke press spec fires from pointerdown rather
+  // than from iOS Safari's late/absent :active (round-3 platform major).
+  const PRESSABLE = 'button, [role="button"], a[href], [data-pressable]';
   const pressed = new Map<number, Element>();
 
   document.addEventListener(

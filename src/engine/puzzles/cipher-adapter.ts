@@ -10,22 +10,25 @@
  * Penciled letters persist and locked letters never regress (AAA 3.3).
  */
 
-import type { Difficulty, Tier } from '../types';
-import { createRng, pick } from '../rng';
+import type { Tier } from '../types';
 import {
   assignCipher, developCipher, revealCipherLetter, startCipher,
   type CipherEngineState, type CipherPuzzle,
 } from './cipher';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../rooms/room-puzzle';
 import { getPools, lazyContent } from '../../app/pools';
+import { selectByTier } from '../rooms/adapters/tier-select';
 
-export const CIPHER_POOL = lazyContent<CipherPuzzle[]>(() => getPools().cipher as CipherPuzzle[]);
+/**
+ * Round 4: the generator stamps a `tier` on every phrase, defined by the CRIB
+ * it hands you — tier 1 contains a one-letter word and reveals three
+ * high-frequency letters; tier 2 has no one-letter word and reveals a single
+ * mid-frequency letter; tier 3 is the no-crib tier: every word is 3+ letters,
+ * the phrase is long, its alphabet wide, and nothing at all is revealed.
+ */
+export type CipherPuzzleEx = CipherPuzzle & { tier?: Tier };
 
-const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
-  1: ['medium', 'easy'],
-  2: ['hard', 'medium'],
-  3: ['expert', 'hard'],
-};
+export const CIPHER_POOL = lazyContent<CipherPuzzleEx[]>(() => getPools().cipher as CipherPuzzleEx[]);
 
 export type CipherFeedback =
   | { kind: 'developed' }
@@ -57,22 +60,13 @@ function outcomeOf(s: CipherRoomState): RoomOutcome {
   };
 }
 
-export const cipherAdapter: RoomPuzzleAdapter<CipherPuzzle, CipherRoomState, CipherAction> = {
+export const cipherAdapter: RoomPuzzleAdapter<CipherPuzzleEx, CipherRoomState, CipherAction> = {
   kind: 'cipher',
   size: 'micro',
 
-  select({ tier, seed, seenIds }) {
-    const rng = createRng(seed);
-    const seen = new Set(seenIds);
-    for (const difficulty of TIER_DIFFICULTY[tier]) {
-      const fresh = CIPHER_POOL.filter((p) => p.difficulty === difficulty && !seen.has(p.id));
-      if (fresh.length > 0) return pick(rng, fresh);
-    }
-    const anyFresh = CIPHER_POOL.filter((p) => !seen.has(p.id));
-    return anyFresh.length > 0 ? pick(rng, anyFresh) : pick(rng, CIPHER_POOL);
-  },
+  select: (opts) => selectByTier(CIPHER_POOL, opts),
 
-  start(puzzle: CipherPuzzle, _ctx: RoomContext): CipherRoomState {
+  start(puzzle: CipherPuzzleEx, _ctx: RoomContext): CipherRoomState {
     return {
       engine: startCipher(puzzle),
       costedMistakes: 0,

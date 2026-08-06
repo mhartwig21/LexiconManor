@@ -70,6 +70,7 @@ export function loadPools(): Promise<ContentPools> {
     import('../../content/generated/forgotten-word.json'),
     import('../../content/generated/cipher.json'),
     import('../../content/generated/crossword.json'),
+    import('../../content/generated/sudoku.json'),
     import('../../content/authored/dialogue/bramble.json'),
     import('../../content/authored/dialogue/ellery.json'),
     import('../../content/authored/dialogue/posy.json'),
@@ -85,6 +86,7 @@ export function loadPools(): Promise<ContentPools> {
       forgottenWord,
       cipher,
       crossword,
+      sudoku,
       bramble,
       ellery,
       posy,
@@ -93,13 +95,14 @@ export function loadPools(): Promise<ContentPools> {
       portrait,
       volume1,
     ]) => {
-      pools = {
+      const loaded: ContentPools = {
         wordWeb: wordWeb.default as WordWebPuzzle[],
         hive: hive.default as HivePuzzle[],
         twistle: twistle.default as TwistlePuzzle[],
         forgottenWord: forgottenWord.default as ForgottenWordPuzzle[],
         cipher: cipher.default,
         crossword: crossword.default,
+        sudoku: sudoku.default,
         dialogue: {
           bramble: bramble.default,
           ellery: ellery.default,
@@ -110,7 +113,8 @@ export function loadPools(): Promise<ContentPools> {
         },
         volumes: [volume1.default],
       };
-      return pools;
+      pools = loaded;
+      return loaded;
     },
   );
   // A failed fetch (flaky network before the SW has precached) must not wedge

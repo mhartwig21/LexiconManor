@@ -23,8 +23,11 @@ export interface DraftCardStake {
 
 /**
  * The economy line for a draft card at the target row's tier.
- * - puzzle rooms: "micro · +3 steps on solve" / "anchor · +6/+7/+8 steps on
- *   solve" (value from STEP_TABLE.solve at this tier);
+ * - puzzle rooms: "micro · +3 steps on solve" / "anchor · +6/+5/+4 steps on
+ *   solve" (value from STEP_TABLE.solve at this tier — note the payouts get
+ *   LEANER as you climb after the 2026-08 owner retune, so the card face is
+ *   also the warning that a tier-3 room will not pay for the stairs it took
+ *   to reach it);
  * - mystery rooms: "+1 fragment" (the clue drips on entry, AAA 4.14);
  * - parlor/utility: null — parlors trade in conversation, and utility cards
  *   already print their own numbers in the card preview line.

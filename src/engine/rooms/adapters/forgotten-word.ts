@@ -15,21 +15,29 @@
  */
 
 import type { ForgottenWordPuzzle, Tier } from '../../types';
-import { createRng, pick } from '../../rng';
 import {
   startForgottenWord, submitGuess, unlockClue,
   type ClueId, type ForgottenWordState,
 } from '../../forgotten-word';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../room-puzzle';
 import { getPools, lazyContent } from '../../../app/pools';
+import { selectByTier } from './tier-select';
 
-export const FORGOTTEN_WORD_POOL = lazyContent<ForgottenWordPuzzle[]>(() => getPools().forgottenWord);
+/**
+ * Round 4: the generator stamps a `tier` on every entry (common → 1,
+ * medium → 2, rare/archaic → 3) AND build-lints that the three definition
+ * registers are three different kinds of sentence — plain gloss, third-person
+ * image, first-person riddle — with a content-word overlap gate between them.
+ * The old selector let tier 3 fall back to 'medium' obscurity, which is how a
+ * row-6 Study ended up reading like a row-3 one; tier is now honoured exactly.
+ */
+/** @deprecated `tier` is now REQUIRED on ForgottenWordPuzzle in engine/types.ts;
+ *  this alias is kept so existing imports keep resolving. */
+export type ForgottenWordPuzzleEx = ForgottenWordPuzzle;
 
-const TIER_OBSCURITY: Record<Tier, ForgottenWordPuzzle['obscurity'][]> = {
-  1: ['common', 'medium'],
-  2: ['medium', 'rare'],
-  3: ['rare', 'archaic', 'medium'],
-};
+export const FORGOTTEN_WORD_POOL = lazyContent<ForgottenWordPuzzleEx[]>(
+  () => getPools().forgottenWord as ForgottenWordPuzzleEx[],
+);
 
 export type ForgottenWordFeedback =
   | { kind: 'correct'; word: string }
@@ -58,22 +66,13 @@ function isPerfect(s: ForgottenWordRoomState): boolean {
   return s.costedMistakes === 0 && s.hintsBought === 0;
 }
 
-export const forgottenWordAdapter: RoomPuzzleAdapter<ForgottenWordPuzzle, ForgottenWordRoomState, ForgottenWordAction> = {
+export const forgottenWordAdapter: RoomPuzzleAdapter<ForgottenWordPuzzleEx, ForgottenWordRoomState, ForgottenWordAction> = {
   kind: 'forgotten-word',
   size: 'anchor',
 
-  select({ tier, seed, seenIds }) {
-    const rng = createRng(seed);
-    const seen = new Set(seenIds);
-    for (const obscurity of TIER_OBSCURITY[tier]) {
-      const fresh = FORGOTTEN_WORD_POOL.filter((p) => p.obscurity === obscurity && !seen.has(p.id));
-      if (fresh.length > 0) return pick(rng, fresh);
-    }
-    const anyFresh = FORGOTTEN_WORD_POOL.filter((p) => !seen.has(p.id));
-    return anyFresh.length > 0 ? pick(rng, anyFresh) : pick(rng, FORGOTTEN_WORD_POOL);
-  },
+  select: (opts) => selectByTier(FORGOTTEN_WORD_POOL, opts),
 
-  start(puzzle: ForgottenWordPuzzle, ctx: RoomContext): ForgottenWordRoomState {
+  start(puzzle: ForgottenWordPuzzleEx, ctx: RoomContext): ForgottenWordRoomState {
     return {
       fw: startForgottenWord(puzzle, ctx.tier),
       tier: ctx.tier,

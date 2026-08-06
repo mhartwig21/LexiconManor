@@ -219,12 +219,13 @@ export const stepsRemaining = (l: StepLedger) => Math.max(0, l.budget + sum(l.en
 
 - **STEP_TABLE** is the single tunable const mapping `(mistake weight, tier)` and solve
   payouts to deltas: weight 0 → 0; weight 1 → −2 (tier 3: −3); weight 2 reserved for
-  future risk rooms. Solve: micro +3, anchor +6..+8 by tier, perfect +2. This file is
+  future risk rooms. Solve: micro +3/+3/+2, anchor +6/+5/+4 by tier (leaner as you
+  climb — a tier-3 solve no longer funds the storey that reached it), perfect +2. This file is
   the only thing wife-playtest tuning touches (AAA 4.9, open questions §10.2–3).
 - Every delta flows through `applyRoomEvents`/ledger helpers — no slice writes steps
   directly. UI renders each entry as a floating ±N.
-- `engine/day.ts` — lifecycle FSM: `morning` (Bramble scene, budget = 40 +
-  affinityBonus) → `exploring` → `dusk` (steps hit 0; **never fires inside an active
+- `engine/day.ts` — lifecycle FSM: `morning` (Bramble scene, budget = `BASE_DAY_BUDGET`
+  (18) + affinityBonus) → `exploring` → `dusk` (steps hit 0; **never fires inside an active
   puzzle** — the puzzle finishes, dusk fires on exit; ≤4s fade, AAA 4.12) → `night`
   (journal digest, letters roll, meta banks, manor resets) → next `morning`. Day state
   lives in the save; closing the tab mid-day resumes.

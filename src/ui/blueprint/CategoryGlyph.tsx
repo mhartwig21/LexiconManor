@@ -43,6 +43,7 @@ export const PUZZLE_KIND_LABELS: Record<RoomPuzzleKind, string> = {
   'forgotten-word': 'Forgotten-word room',
   'cipher': 'Cipher room',
   'crossword': 'Crossword room',
+  'sudoku': 'Ledger room',
 };
 
 export const CATEGORY_GLYPH_PATHS: Record<RoomCategory, ReactNode> = {
@@ -124,6 +125,18 @@ export const PUZZLE_KIND_GLYPH_PATHS: Record<RoomPuzzleKind, ReactNode> = {
       <rect x="4.8" y="4.8" width="14.4" height="14.4" rx="1" fill="none" />
       <path d="M4.8 9.6h14.4M4.8 14.4h14.4M9.6 4.8v14.4M14.4 4.8v14.4" strokeWidth="1.1" fill="none" />
       <path d="M14.4 4.8h4.6a.4.4 0 0 1 .2.3v4.5h-4.8Z" fill="currentColor" stroke="none" />
+    </g>
+  ),
+  // ledger leaf: heading rule, ruled entries, a double money column
+  // (deliberately NOT another 3×3 grid — the crossword already owns that
+  // silhouette, and these two must stay apart in grayscale, AAA 6.3)
+  'sudoku': (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5.4 3.8h13.2v16.4H5.4Z" />
+      <path d="M5.4 8.4h13.2" strokeWidth="1.7" />
+      <path d="M13.6 8.4v11.8M15.8 8.4v11.8" strokeWidth="1" />
+      <path d="M7.8 11.6h3.6M7.8 14.6h3.6M7.8 17.6h3.6" strokeWidth="1" />
+      <path d="M13.6 11.6h2.2M15.8 14.6h2.2M13.6 17.6h2.2" strokeWidth="1" />
     </g>
   ),
   // traced winding path, start dot to arrowhead (trace the word)

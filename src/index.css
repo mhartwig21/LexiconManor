@@ -103,43 +103,13 @@ h3 {
 }
 
 /* --------------------------------------------------------------------------
-   RoomHost frame: the puzzle view fills the sheet; the footer holds the
-   host-level leave/abandon affordance (AAA 4.13). Sits below the chrome.
+   RoomHost frame: MOVED. The shell-fit contract (height, chrome clearance,
+   the scrolling stage, the sticky deck and the abandon footer) now lives in
+   `src/ui/rooms/room-host.css`, imported by RoomHost.tsx — one source of
+   truth. The block that used to sit here double-paid the safe-area insets
+   against `#root` and pushed the bottom CTA under the home indicator; see
+   that file's header for the full diagnosis.
    -------------------------------------------------------------------------- */
-
-.room-host {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding-top: calc(52px + env(safe-area-inset-top, 0px));
-  background: var(--paper);
-  color: var(--ink);
-}
-
-.room-host > :first-child {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-/* Sparse rooms: the room column's own gap stays capped,
-   and auto margins on its first/last blocks center the play surface in the
-   thumb zone instead of stranding the CTA a screen away (AAA 6.20 fix).
-   Every room view root is a flex column; auto margins collapse to 0 when a
-   dense room fills the height, so nothing ever clips. */
-.room-host > :first-child > :first-child {
-  margin-top: auto;
-}
-.room-host > :first-child > :last-child {
-  margin-bottom: auto;
-}
-
-.room-host__footer {
-  flex: 0 0 auto;
-  display: flex;
-  justify-content: center;
-  padding: 0.5rem 0.9rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
-}
 
 /* ==========================================================================
    Paper material — visual-global exception 1 (AAA 6.13; BENCHMARKS: Strange

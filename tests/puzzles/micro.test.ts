@@ -203,8 +203,53 @@ describe('shipped pools', () => {
     }
   });
 
-  it('difficulty coverage: all four bands shipped', () => {
-    const bands = new Set(CIPHER_POOL.map((p) => p.difficulty));
-    for (const d of ['easy', 'medium', 'hard', 'expert']) expect(bands).toContain(d);
+  it('tier coverage: all three manor tiers shipped', () => {
+    for (const tier of [1, 2, 3] as const) {
+      expect(CIPHER_POOL.filter((p) => (p.tier ?? 1) === tier).length, `tier ${tier}`)
+        .toBeGreaterThanOrEqual(10);
+    }
+  });
+
+  /**
+   * Round 4 (owner: "longer phrases, no-crib tier 3"). The Darkroom's tiers are
+   * defined by the CRIB the phrase hands you, and length climbs with the row.
+   */
+  describe('tier escalation (the crib rule)', () => {
+    const at = (tier: 1 | 2 | 3) => CIPHER_POOL.filter((p) => (p.tier ?? 1) === tier);
+    const shortestWord = (p: { plaintext: string }) =>
+      Math.min(...p.plaintext.split(' ').map((w) => w.length));
+    const letters = (p: { plaintext: string }) => p.plaintext.replace(/[^A-Z]/g, '').length;
+
+    it('tier 1 always hands over a one-letter crib word plus three reveals', () => {
+      for (const p of at(1)) {
+        expect(shortestWord(p), p.id).toBe(1);
+        expect(p.reveals.length, p.id).toBe(3);
+      }
+    });
+
+    it('tier 2 has no one-letter word and exactly one revealed letter', () => {
+      for (const p of at(2)) {
+        expect(shortestWord(p), p.id).toBeGreaterThanOrEqual(2);
+        expect(p.reveals.length, p.id).toBe(1);
+      }
+    });
+
+    it('tier 3 is the no-crib tier: no short words, no reveals, long and wide', () => {
+      for (const p of at(3)) {
+        expect(shortestWord(p), p.id).toBeGreaterThanOrEqual(3);
+        expect(p.reveals.length, p.id).toBe(0);
+        expect(letters(p), p.id).toBeGreaterThanOrEqual(26);
+        expect(cipherLettersOf(p).length, p.id).toBeGreaterThanOrEqual(13);
+      }
+    });
+
+    it('phrases get longer as the row climbs', () => {
+      const mean = (tier: 1 | 2 | 3) => {
+        const arr = at(tier);
+        return arr.reduce((a, p) => a + letters(p), 0) / arr.length;
+      };
+      expect(mean(3)).toBeGreaterThan(mean(2));
+      expect(mean(3)).toBeGreaterThan(mean(1));
+    });
   });
 });

@@ -17,6 +17,10 @@ import {
   forgottenWordAdapter, FORGOTTEN_WORD_POOL, type ForgottenWordRoomState,
 } from '../../src/engine/rooms/adapters/forgotten-word';
 import { STEP_TABLE } from '../../src/engine/economy/steps';
+import { findPath } from '../../src/engine/twistle';
+import { definitionForLevel } from '../../src/engine/forgotten-word';
+import { hiveWordPoints } from '../../src/engine/scoring';
+import { bandOf, loadDictionary } from '../../content/lib/dictionary';
 
 /**
  * A3 — the four anchor rooms behind the RoomPuzzle contract.
@@ -36,7 +40,7 @@ const eventsOfType = (events: RoomEvent[], type: RoomEvent['type']) =>
 
 const webPuzzle: WordWebPuzzle = {
   id: 'web-fixture',
-  difficulty: 'medium',
+  difficulty: 'medium', tier: 2,
   groups: [
     { theme: 'Breakfast', tier: 'yellow', words: ['WAFFLE', 'PANCAKE', 'TOAST', 'BAGEL'] },
     { theme: 'Basketball', tier: 'green', words: ['DUNK', 'BLOCK', 'ASSIST', 'REBOUND'] },
@@ -48,7 +52,7 @@ const webPuzzle: WordWebPuzzle = {
 
 const hivePuzzle: HivePuzzle = {
   id: 'hive-fixture',
-  difficulty: 'easy',
+  difficulty: 'easy', tier: 1,
   center: 'E',
   outer: ['S', 'T', 'A', 'R', 'N', 'I'],
   pangrams: ['RETAINS'],
@@ -59,7 +63,7 @@ const hivePuzzle: HivePuzzle = {
 
 const twistlePuzzle: TwistlePuzzle = {
   id: 'twistle-fixture',
-  difficulty: 'easy',
+  difficulty: 'easy', tier: 1,
   // S T O N E
   // A R A T S
   // L E X I C
@@ -80,7 +84,7 @@ const twistleCenterPuzzle: TwistlePuzzle = {
 const fwPuzzle: ForgottenWordPuzzle = {
   id: 'fw-fixture',
   word: 'PETRICHOR',
-  obscurity: 'rare',
+  obscurity: 'rare', tier: 3,
   definitions: {
     plain: 'The smell of rain on dry earth.',
     poetic: 'The stone remembers the storm.',
@@ -137,27 +141,31 @@ describe('selection', () => {
     }
   });
 
-  it('serves tier-appropriate difficulty when the pool allows', () => {
-    const wanted: Record<1 | 2 | 3, string[]> = {
-      1: ['medium', 'easy'],
-      2: ['hard', 'medium'],
-      3: ['expert', 'hard'],
-    };
+  /**
+   * Round 4 (owner: "escalating difficulty as you move closer to the door").
+   * The tier a room asks for is the tier it gets — EXACTLY, across many seeds.
+   * The old band-based selector let tier 3 serve the same 'hard' puzzle tier 2
+   * served; this is the regression guard for that leak.
+   */
+  it('serves the EXACT tier it is asked for, on every seed', () => {
     for (const tier of [1, 2, 3] as const) {
-      for (const { name, adapter, pool } of cases.slice(0, 3)) {
-        if (!pool.some((p) => wanted[tier].includes((p as { difficulty: string }).difficulty))) continue;
-        const p = adapter.select({ tier, seed: 99, seenIds: [] }) as { difficulty: string };
-        expect(wanted[tier], `${name} tier ${tier}`).toContain(p.difficulty);
+      for (const { name, adapter, pool } of cases) {
+        const typed = pool as readonly { tier?: 1 | 2 | 3 }[];
+        expect(typed.some((p) => p.tier === tier), `${name} pool has tier ${tier}`).toBe(true);
+        for (let seed = 1; seed <= 40; seed++) {
+          const p = adapter.select({ tier, seed, seenIds: [] }) as { tier?: 1 | 2 | 3 };
+          expect(p.tier, `${name} tier ${tier} seed ${seed}`).toBe(tier);
+        }
       }
-      const fw = forgottenWordAdapter.select({ tier, seed: 99, seenIds: [] });
-      const fwWanted: Record<1 | 2 | 3, string[]> = {
-        1: ['common', 'medium'],
-        2: ['medium', 'rare'],
-        3: ['rare', 'archaic', 'medium'],
-      };
-      if (FORGOTTEN_WORD_POOL.some((p) => fwWanted[tier].includes(p.obscurity))) {
-        expect(fwWanted[tier], `forgotten-word tier ${tier}`).toContain(fw.obscurity);
-      }
+    }
+  });
+
+  it('keeps the tier promise even when every puzzle at that tier is seen', () => {
+    for (const { name, adapter, pool } of cases) {
+      const typed = pool as readonly { id: string; tier?: 1 | 2 | 3 }[];
+      const seen = typed.filter((p) => p.tier === 3).map((p) => p.id);
+      const p = adapter.select({ tier: 3, seed: 11, seenIds: seen }) as { tier?: 1 | 2 | 3 };
+      expect(p.tier, `${name} exhausted tier 3`).toBe(3);
     }
   });
 
@@ -485,11 +493,65 @@ describe('forgotten-word adapter', () => {
 // ---------------------------------------------------------------------------
 
 describe('shipped content — Conservatory pool (BENCHMARKS §1 / AAA 3.5)', () => {
-  it('every puzzle is curated into the SB 45–80 word band', () => {
+  /**
+   * Round 4: the curated band is now PER TIER and shrinks as you climb — the
+   * owner's "smaller curated word count so it fits the day" for the top of the
+   * house. Tier 1 still sits inside the SB 45–80 shape.
+   */
+  const HIVE_WORD_BANDS: Record<1 | 2 | 3, [number, number]> = {
+    1: [48, 80], 2: [40, 62], 3: [26, 44],
+  };
+
+  it('every puzzle is curated into its tier word band, shrinking with the row', () => {
     for (const p of HIVE_POOL) {
-      expect(p.validWords.length, p.id).toBeGreaterThanOrEqual(45);
-      expect(p.validWords.length, p.id).toBeLessThanOrEqual(80);
+      const [lo, hi] = HIVE_WORD_BANDS[p.tier ?? 1];
+      expect(p.validWords.length, p.id).toBeGreaterThanOrEqual(lo);
+      expect(p.validWords.length, p.id).toBeLessThanOrEqual(hi);
     }
+    const avg = (tier: 1 | 2 | 3) => {
+      const arr = HIVE_POOL.filter((p) => (p.tier ?? 1) === tier);
+      return arr.reduce((a, p) => a + p.validWords.length, 0) / arr.length;
+    };
+    expect(avg(1)).toBeGreaterThan(avg(2));
+    expect(avg(2)).toBeGreaterThan(avg(3));
+  });
+
+  /**
+   * The Full-Bloom bar rises without moving the 70% ladder (owner: "higher
+   * Full-Bloom bar"). `everyday point share` is the fraction of a room's total
+   * points reachable using only everyday-band vocabulary. At tier 1 it clears
+   * 70%, so Full Bloom is attainable on common words alone; at tier 3 it sits
+   * far below 70%, so Full Bloom cannot be reached without the rarer finds —
+   * the same 70% rung, a much harder climb.
+   */
+  it('the Full-Bloom bar rises with the row (everyday point share)', () => {
+    const dict = loadDictionary();
+    const share = (p: (typeof HIVE_POOL)[number]) => {
+      let everyday = 0;
+      for (const w of p.validWords) {
+        if (bandOf(dict.rankOf(w.toLowerCase())) !== 'everyday') continue;
+        everyday += hiveWordPoints(w, new Set(w).size === 7);
+      }
+      return everyday / p.totalPoints;
+    };
+    const mean = (tier: 1 | 2 | 3) => {
+      const arr = HIVE_POOL.filter((p) => (p.tier ?? 1) === tier);
+      return arr.reduce((a, p) => a + share(p), 0) / arr.length;
+    };
+    expect(mean(1)).toBeGreaterThan(mean(2));
+    expect(mean(2)).toBeGreaterThan(mean(3));
+    // Tier 3 can never Full Bloom (70%) on everyday vocabulary alone.
+    for (const p of HIVE_POOL.filter((p) => (p.tier ?? 1) === 3)) {
+      expect(share(p), p.id).toBeLessThan(0.7);
+    }
+  });
+
+  it('tier 3 hives are pangram-scarce compared with tier 1', () => {
+    const avgPangrams = (tier: 1 | 2 | 3) => {
+      const arr = HIVE_POOL.filter((p) => (p.tier ?? 1) === tier);
+      return arr.reduce((a, p) => a + p.pangrams.length, 0) / arr.length;
+    };
+    expect(avgPangrams(1)).toBeGreaterThan(avgPangrams(3));
   });
 
   it('the S-ban holds and every puzzle keeps a pangram', () => {
@@ -499,9 +561,10 @@ describe('shipped content — Conservatory pool (BENCHMARKS §1 / AAA 3.5)', () 
     }
   });
 
-  it('all four difficulties are stocked', () => {
-    for (const d of ['easy', 'medium', 'hard', 'expert'] as const) {
-      expect(HIVE_POOL.filter((p) => p.difficulty === d).length, d).toBeGreaterThanOrEqual(30);
+  it('all three tiers are stocked', () => {
+    for (const tier of [1, 2, 3] as const) {
+      expect(HIVE_POOL.filter((p) => (p.tier ?? 1) === tier).length, `tier ${tier}`)
+        .toBeGreaterThanOrEqual(30);
     }
   });
 });
@@ -570,6 +633,163 @@ describe('shipped content — Study pool (AAA 3.7)', () => {
       ]) {
         expect(clue.toLowerCase().includes(stem), `${p.id}: "${clue}"`).toBe(false);
       }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Round 4 — the three tiers are STRUCTURALLY different, not relabelled
+// (owner directive: "fewer but better quality and escalating difficulty as you
+//  move closer to the door"). Each block below is the shipped-content proof
+//  for one anchor room's tier ladder.
+// ---------------------------------------------------------------------------
+
+/** Mirrors content/generate-wordweb.ts's SUBTLE class (kept explicit here). */
+function isSubtleTheme(theme: string): boolean {
+  if (['Palindromes', 'Semordnilaps', 'Heteronyms', 'Contronyms',
+    'Contronyms (Own Opposite)', 'Onomatopoeia', 'Portmanteau Words',
+    'Contains Roman Numerals'].includes(theme)) return true;
+  return /^(Anagrams of|Rhymes with|Hidden |Silent |Two Pairs|Starts and Ends)/.test(theme);
+}
+
+describe('tier escalation — The Library (herring budget + category subtlety)', () => {
+  const at = (tier: 1 | 2 | 3) => WORD_WEB_POOL.filter((p) => (p.tier ?? 1) === tier);
+
+  it('all three tiers are stocked', () => {
+    for (const tier of [1, 2, 3] as const) {
+      expect(at(tier).length, `tier ${tier}`).toBeGreaterThanOrEqual(10);
+    }
+  });
+
+  it('the herring budget widens with the row, and never past the AAA 2.7 cap of 3', () => {
+    for (const p of at(1)) expect((p.ambiguousWords ?? []).length, p.id).toBeLessThanOrEqual(1);
+    for (const p of at(2)) expect((p.ambiguousWords ?? []).length, p.id).toBeLessThanOrEqual(2);
+    for (const p of at(3)) {
+      expect((p.ambiguousWords ?? []).length, p.id).toBeGreaterThanOrEqual(2);
+      expect((p.ambiguousWords ?? []).length, p.id).toBeLessThanOrEqual(3);
+    }
+  });
+
+  it('tier 3 bans the trivia gimme; tier 1 is allowed one', () => {
+    for (const p of at(3)) {
+      expect(p.groups.filter((g) => g.type === 'trivia').length, p.id).toBe(0);
+    }
+    expect(at(1).some((p) => p.groups.some((g) => g.type === 'trivia'))).toBe(true);
+  });
+
+  it('tier 3 boards carry at least two SUBTLE categories', () => {
+    for (const p of at(3)) {
+      const subtle = p.groups.filter((g) => isSubtleTheme(g.theme)).length;
+      expect(subtle, `${p.id}: ${p.groups.map((g) => g.theme).join(' | ')}`).toBeGreaterThanOrEqual(2);
+    }
+    const mean = (tier: 1 | 2 | 3) => {
+      const arr = at(tier);
+      return arr.reduce((a, p) => a + p.groups.filter((g) => isSubtleTheme(g.theme)).length, 0) / arr.length;
+    };
+    expect(mean(3)).toBeGreaterThan(mean(1));
+  });
+});
+
+describe('tier escalation — The Gallery (bigger asks, twistier paths)', () => {
+  const at = (tier: 1 | 2 | 3) => TWISTLE_POOL.filter((p) => (p.tier ?? 1) === tier);
+
+  it('all three tiers are stocked', () => {
+    for (const tier of [1, 2, 3] as const) {
+      expect(at(tier).length, `tier ${tier}`).toBeGreaterThanOrEqual(30);
+    }
+  });
+
+  it('tier 3 raises the word-length floor and demands the centre tile', () => {
+    for (const p of at(1)) {
+      expect(p.rules.minLength, p.id).toBe(4);
+      expect(p.rules.centerRequired, p.id).toBe(false);
+    }
+    for (const p of at(2)) {
+      expect(p.rules.minLength, p.id).toBe(4);
+      expect(p.rules.centerRequired, p.id).toBe(false);
+    }
+    for (const p of at(3)) {
+      expect(p.rules.minLength, p.id).toBe(5);
+      expect(p.rules.centerRequired, p.id).toBe(true);
+      for (const w of p.targetWords) expect(w.length, `${p.id}: ${w}`).toBeGreaterThanOrEqual(5);
+    }
+  });
+
+  it('target words get longer as the row climbs', () => {
+    const meanLen = (tier: 1 | 2 | 3) => {
+      const arr = at(tier);
+      const all = arr.flatMap((p) => p.targetWords);
+      return all.reduce((a, w) => a + w.length, 0) / all.length;
+    };
+    expect(meanLen(3)).toBeGreaterThan(meanLen(2));
+    expect(meanLen(2)).toBeGreaterThanOrEqual(meanLen(1));
+  });
+
+  it('every shipped target still has a legal path under its own rules', () => {
+    for (const p of TWISTLE_POOL) {
+      for (const w of p.targetWords) {
+        expect(findPath(p.grid, w, p.rules), `${p.id}: ${w}`).not.toBeNull();
+      }
+    }
+  });
+});
+
+describe('tier escalation — The Study (three registers, riddle-only at the top)', () => {
+  const at = (tier: 1 | 2 | 3) => FORGOTTEN_WORD_POOL.filter((p) => (p.tier ?? 1) === tier);
+  const FIRST_PERSON = /\b(I|I'm|I've|me|my|mine)\b/;
+
+  it('all three tiers are stocked', () => {
+    for (const tier of [1, 2, 3] as const) {
+      expect(at(tier).length, `tier ${tier}`).toBeGreaterThanOrEqual(10);
+    }
+  });
+
+  it('a tier-3 Study shows the RIDDLE and nothing gentler', () => {
+    for (const p of FORGOTTEN_WORD_POOL) {
+      expect(definitionForLevel(p, 3), p.id).toBe(p.definitions.riddle);
+      expect(definitionForLevel(p, 2), p.id).toBe(p.definitions.poetic);
+      expect(definitionForLevel(p, 1), p.id).toBe(p.definitions.plain);
+    }
+    // …and the adapter hands the room's tier straight through.
+    const puzzle = forgottenWordAdapter.select({ tier: 3, seed: 3, seenIds: [] });
+    const state = forgottenWordAdapter.start(puzzle, ctx(3));
+    expect(state.tier).toBe(3);
+    expect(definitionForLevel(puzzle, state.tier)).toBe(puzzle.definitions.riddle);
+  });
+
+  it('the registers are three different KINDS of sentence, not three phrasings', () => {
+    for (const p of FORGOTTEN_WORD_POOL) {
+      // Only the riddle speaks in the first person (or asks outright).
+      expect(FIRST_PERSON.test(p.definitions.plain), `${p.id} plain`).toBe(false);
+      expect(FIRST_PERSON.test(p.definitions.poetic), `${p.id} poetic`).toBe(false);
+      expect(
+        FIRST_PERSON.test(p.definitions.riddle) || p.definitions.riddle.trim().endsWith('?'),
+        `${p.id} riddle`,
+      ).toBe(true);
+    }
+  });
+
+  it('no two registers lean on the same content words', () => {
+    const STOP = new Set(['a', 'an', 'and', 'as', 'at', 'be', 'but', 'by', 'for', 'from',
+      'in', 'is', 'it', 'its', 'of', 'on', 'or', 'that', 'the', 'to', 'up', 'was', 'what',
+      'when', 'which', 'who', 'with', 'you', 'your', 'i', 'me', 'my', 'am', 'are', 'no',
+      'not', 'so', 'than', 'then', 'there', 'they', 'this', 'too', 'very']);
+    const words = (t: string) => new Set(
+      t.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/)
+        .filter((w) => w.length > 2 && !STOP.has(w)),
+    );
+    const share = (a: string, b: string) => {
+      const A = words(a), B = words(b);
+      if (A.size === 0 || B.size === 0) return 0;
+      let n = 0;
+      for (const w of A) if (B.has(w)) n++;
+      return n / Math.min(A.size, B.size);
+    };
+    for (const p of FORGOTTEN_WORD_POOL) {
+      const d = p.definitions;
+      expect(share(d.plain, d.poetic), `${p.id} plain/poetic`).toBeLessThanOrEqual(0.4);
+      expect(share(d.poetic, d.riddle), `${p.id} poetic/riddle`).toBeLessThanOrEqual(0.4);
+      expect(share(d.plain, d.riddle), `${p.id} plain/riddle`).toBeLessThanOrEqual(0.4);
     }
   });
 });

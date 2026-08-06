@@ -27,11 +27,18 @@ export interface DaySlice {
   recentEvents: RecordedEvent[];
   counters: Partial<Record<GameEventType, number>>;
 
-  /** morning: Bramble scene, budget = 40 + affinity bonus (engine/day.ts). */
+  /** morning: Bramble scene, budget = STEP_TABLE.dayStart + tea (engine/day.ts). */
   startDay(): void;
   /** dusk → night → bank meta, reset manor. Never fires inside an active puzzle. */
   endDay(cause: DayEndCause): void;
-  /** Append a step delta through the single audited ledger (engine/economy). */
+  /**
+   * Append a step delta through the single audited ledger (engine/economy).
+   * `appendEntry` re-prices every 'move' entry by the row named in its
+   * `roomKey` ("col,row"), so per-row movement pricing (`moveAt`) holds for
+   * every caller — including ones still passing the deprecated flat
+   * `STEP_TABLE.move`. Callers must therefore pass the DESTINATION cell key
+   * on a move (AAA 4.9/4.10).
+   */
   applyStepEntry(entry: StepEntry): void;
   /** Append to the event spine: day-stamps it, bumps the lifetime counter. */
   recordEvent(event: GameEvent): void;

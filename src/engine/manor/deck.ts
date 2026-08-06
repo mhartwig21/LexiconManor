@@ -38,8 +38,13 @@ const PUZZLE_CARDS: RoomCard[] = [
     doorLayouts: [CORRIDOR, TEE], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'long-gallery', name: 'The Long Gallery', category: 'puzzle', puzzleKind: 'twistle',
     doorLayouts: [CROSS], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
+  // A2 ROW-GATING (2026-08 owner playtest: "I reached the Forgotten Word on my
+  // FIRST DAY"). The Study is the room that feeds the meta-mystery directly —
+  // MANOR_DESIGN §6 already calls it "large, rare". Gating it to tier 3 puts
+  // it on rows 5–6 only, i.e. behind the padlocks and the priced climb, so
+  // finding it is the reward for an ascent instead of a day-1 coin flip.
   { id: 'study', name: 'The Study', category: 'puzzle', puzzleKind: 'forgotten-word',
-    doorLayouts: [DEAD_END], tierRange: [2, 3], gemCost: 2, rarity: 'rare' },
+    doorLayouts: [DEAD_END], tierRange: [3, 3], gemCost: 2, rarity: 'rare' },
 
   // Micro-rooms (30-90s). OWNER CULL round ("fewer but better"): the
   // Vestibule/Staircase/Music Room/Pantry archetypes are retired; the two
@@ -50,6 +55,17 @@ const PUZZLE_CARDS: RoomCard[] = [
     doorLayouts: [DEAD_END, CORNER, CORRIDOR], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
   { id: 'linen-closet', name: 'The Linen Closet', category: 'puzzle', puzzleKind: 'crossword',
     doorLayouts: [DEAD_END, CORNER], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
+
+  // The ledger rooms (sudoku). Playtest round: the owner's expert-baseline
+  // request, so BOTH cards draw from a pool with no easy bin — the Counting
+  // House spans every row (tier by manor row: rows 1-2 draw technique-tier 1
+  // ≈ NYT hard/expert, rows 5-6 draw tier 3 ≈ diabolical), and the Strong
+  // Room is the premium upper-row card that never offers anything softer
+  // than tier 2. Same anchor pattern as Library/Reading Room.
+  { id: 'counting-house', name: 'The Counting House', category: 'puzzle', puzzleKind: 'sudoku',
+    doorLayouts: [CORRIDOR, CORNER], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
+  { id: 'strong-room', name: 'The Strong Room', category: 'puzzle', puzzleKind: 'sudoku',
+    doorLayouts: [DEAD_END], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -153,6 +169,8 @@ export const CARD_PREVIEWS: Record<string, string> = {
   'study': 'A definition missing its word',
   'darkroom': 'A phrase in cipher',
   'linen-closet': 'A crossword folded small',
+  'counting-house': 'Nine figures, nine columns, one ledger',
+  'strong-room': 'The ledger the auditors gave up on',
   'kitchen': '+6 steps · +2 per green room drafted after',
   'larder': '+5 steps',
   'boot-room': '+3 steps',

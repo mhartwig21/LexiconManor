@@ -1,23 +1,44 @@
 import { writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { ForgottenWordPuzzle } from '../src/engine/types';
+import type { ForgottenWordPuzzle, Tier } from '../src/engine/types';
 
 /**
  * The Study's Forgotten Word pool — fully hand-authored (AAA 3.7: the best
  * writing in the game, editorial read-aloud standard).
  *
- * Rules enforced at build time (the answer-leak lint):
- *  - no clue string (definitions, etymology, usage) may contain the first
- *    four letters of the answer — a paid clue must never contain the answer
- *    or its stem (the fw-serendipity lesson);
- *  - the three definition registers are genuinely distinct strings: plain
- *    (tier 1) → poetic (tier 2) → riddle (tier 3), implementing the clarity
- *    scaling the adapter documents;
- *  - usage carries a ___ blank; words ≤15 letters; pool ≥30 entries.
+ * ---------------------------------------------------------------------------
+ * THREE TIERS, MAPPED TO MANOR ROWS (owner directive, round 4: "tier-3 =
+ * riddle-tier definitions only")
+ * ---------------------------------------------------------------------------
+ * The Study's escalation is the REGISTER OF THE CLUE, not merely how obscure
+ * the word is. engine/forgotten-word.ts already serves plain (1) → poetic (2)
+ * → riddle (3) by level, and the adapter passes the room's tier straight
+ * through, so a row-6 Study is riddle-only by construction. What this file
+ * guarantees is that those three registers are genuinely DIFFERENT KINDS OF
+ * WRITING rather than three phrasings of one gloss — build-linted below:
+ *
+ *   - plain  : a dictionary gloss. Third person, no riddling voice.
+ *   - poetic : an image. Third person, must not reuse the plain gloss's
+ *              content words (token overlap gate), never first-person.
+ *   - riddle : the word SPEAKING or a question put to the player. Must carry
+ *              first-person voice or end in a question mark, and must not
+ *              reuse the poetic line's content words either.
+ *
+ * Plus the answer-leak lint (no clue may contain the answer's 4-letter stem),
+ * usage blanks, ≤15-letter words, ≥20 entries, and ≥10 entries per tier so no
+ * row runs out of Studies.
  *
  * Run: npx tsx content/generate-forgotten-word.ts
  */
+
+/** Obscurity → manor row band. The Study's pool splits three ways. */
+const TIER_OF_OBSCURITY: Record<ForgottenWordPuzzle['obscurity'], Tier> = {
+  common: 1, medium: 2, rare: 3, archaic: 3,
+};
+
+/** Minimum entries per tier — a row must never run dry of Studies. */
+const MIN_PER_TIER = 10;
 
 interface Entry {
   word: string;
@@ -95,6 +116,40 @@ const ENTRIES: Entry[] = [
     riddle: 'Your eyes stay open while I carry you elsewhere; a dropped teacup calls you back.',
     etymology: 'From an old French word for wild rejoicing and rambling talk; crossing the Channel, it grew quiet and dreamy.',
     usage: 'The lecture dissolved into a ___ about lighthouses and summer storms.',
+  },
+  // Round 4: four more tier-1 entries so the bottom rows never run dry of
+  // Studies (MIN_PER_TIER), each written to the three-register bar.
+  {
+    word: 'HEIRLOOM', obscurity: 'common',
+    plain: 'A treasured object handed down through a family for generations.',
+    poetic: 'A thing that outlives its owners and keeps the fingerprints of hands now gone.',
+    riddle: 'I am worth little at auction and everything on a mantelpiece.',
+    etymology: 'Middle English joined an inherited estate to ‘loom’, which then meant simply a tool — the family tool that passed on.',
+    usage: 'The clock in the hall was the only ___ that survived the move.',
+  },
+  {
+    word: 'LULLABY', obscurity: 'common',
+    plain: 'A gentle song sung to send a child to sleep.',
+    poetic: 'A small tune with a door in it, opening onto sleep.',
+    riddle: 'Sing me badly and I work just as well; my audience is already half gone.',
+    etymology: 'From the hushing sounds nurses have always made, joined to an old word for goodbye.',
+    usage: 'She hummed the same ___ her grandmother had hummed to her.',
+  },
+  {
+    word: 'WHISPER', obscurity: 'common',
+    plain: 'To speak very softly, using breath instead of voice.',
+    poetic: 'Words with their shoes off, crossing a quiet room.',
+    riddle: 'Raise me and I stop being myself.',
+    etymology: 'Old English, imitative — the word sounds like the thing it names, as its cousins in Dutch and German also do.',
+    usage: 'A ___ went round the reading room, and then the hush came back.',
+  },
+  {
+    word: 'THRESHOLD', obscurity: 'common',
+    plain: 'The strip of floor beneath a doorway; the point where something begins.',
+    poetic: 'The line a house draws between itself and the weather.',
+    riddle: 'Cross me and you have arrived, though you have not yet gone anywhere.',
+    etymology: 'Old English for the sill of a door; the second half of the word is a puzzle even to scholars.',
+    usage: 'He paused on the ___ with the letter still unopened.',
   },
   // ---- medium --------------------------------------------------------------
   {
@@ -261,7 +316,7 @@ const ENTRIES: Entry[] = [
   },
   {
     word: 'YESTREEN', obscurity: 'archaic',
-    plain: 'Last night.',
+    plain: 'The evening that has just gone by; the hours after dark, now past.',
     poetic: 'The night just past, still warm on the pillow of memory.',
     riddle: 'I am gone mere hours, yet the ballads mourn me like a lost year.',
     etymology: 'A Scots contraction of an older phrase for the night just gone — beloved of Burns and the border ballads.',
@@ -297,9 +352,70 @@ const ENTRIES: Entry[] = [
 // The answer-leak lint + structural validation (build fails on any problem).
 // ---------------------------------------------------------------------------
 
+/** Content words of a line, for the register-overlap gate. */
+const STOPWORDS = new Set([
+  'a', 'an', 'and', 'as', 'at', 'be', 'but', 'by', 'for', 'from', 'in', 'is',
+  'it', 'its', 'of', 'on', 'or', 'that', 'the', 'to', 'up', 'was', 'what',
+  'when', 'which', 'who', 'with', 'you', 'your', 'i', 'me', 'my', 'am', 'are',
+  'no', 'not', 'so', 'than', 'then', 'there', 'they', 'this', 'too', 'very',
+]);
+
+function contentWords(text: string): Set<string> {
+  return new Set(
+    text.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/)
+      .filter((w) => w.length > 2 && !STOPWORDS.has(w)),
+  );
+}
+
+function overlap(a: string, b: string): number {
+  const A = contentWords(a), B = contentWords(b);
+  if (A.size === 0 || B.size === 0) return 0;
+  let shared = 0;
+  for (const w of A) if (B.has(w)) shared++;
+  return shared / Math.min(A.size, B.size);
+}
+
+/** First-person voice — the riddle's register, forbidden to plain and poetic. */
+const FIRST_PERSON = /\b(I|I'm|I've|me|my|mine)\b/;
+
+/** Highest tolerated content-word overlap between two registers. */
+const MAX_REGISTER_OVERLAP = 0.4;
+
+/**
+ * The register lint (round 4). Three tiers are only "real" if the three
+ * definitions are three different kinds of sentence — this is what proves it.
+ */
+function registerProblems(id: string, e: Entry): string[] {
+  const problems: string[] = [];
+  if (FIRST_PERSON.test(e.plain)) problems.push(`${id}: plain uses the riddle's first-person voice`);
+  if (FIRST_PERSON.test(e.poetic)) problems.push(`${id}: poetic uses the riddle's first-person voice`);
+  if (!FIRST_PERSON.test(e.riddle) && !e.riddle.trim().endsWith('?')) {
+    problems.push(`${id}: riddle neither speaks in first person nor asks a question`);
+  }
+  if (e.plain.length > 120) problems.push(`${id}: plain is ${e.plain.length} chars — a gloss, not an essay`);
+  for (const [a, b, an, bn] of [
+    [e.plain, e.poetic, 'plain', 'poetic'],
+    [e.poetic, e.riddle, 'poetic', 'riddle'],
+    [e.plain, e.riddle, 'plain', 'riddle'],
+  ] as [string, string, string, string][]) {
+    const o = overlap(a, b);
+    if (o > MAX_REGISTER_OVERLAP) {
+      problems.push(`${id}: ${an}/${bn} share ${(o * 100).toFixed(0)}% of their content words — rewrite one`);
+    }
+  }
+  return problems;
+}
+
 function lint(entries: Entry[]): string[] {
   const problems: string[] = [];
-  if (entries.length < 30) problems.push(`pool too small: ${entries.length} < 30`);
+  if (entries.length < 20) problems.push(`pool too small: ${entries.length} < 20`);
+  const perTier: Record<Tier, number> = { 1: 0, 2: 0, 3: 0 };
+  for (const e of entries) perTier[TIER_OF_OBSCURITY[e.obscurity]]++;
+  for (const tier of [1, 2, 3] as Tier[]) {
+    if (perTier[tier] < MIN_PER_TIER) {
+      problems.push(`tier ${tier} has only ${perTier[tier]} entries (min ${MIN_PER_TIER})`);
+    }
+  }
   const seen = new Set<string>();
   for (const e of entries) {
     const id = `fw-${e.word.toLowerCase()}`;
@@ -313,6 +429,7 @@ function lint(entries: Entry[]): string[] {
     if (e.plain === e.poetic || e.poetic === e.riddle || e.plain === e.riddle) {
       problems.push(`${id}: definition registers are not distinct`);
     }
+    problems.push(...registerProblems(id, e));
 
     // No clue may contain the answer's stem (first 4 letters ⇒ catches every
     // prefix of 4+). A paid clue containing the answer is a refund with a bow.
@@ -337,10 +454,11 @@ function main() {
     throw new Error(`forgotten-word lint failed with ${problems.length} problem(s)`);
   }
 
-  const puzzles: ForgottenWordPuzzle[] = ENTRIES.map((e) => ({
+  const puzzles: (ForgottenWordPuzzle & { tier: Tier })[] = ENTRIES.map((e) => ({
     id: `fw-${e.word.toLowerCase()}`,
     word: e.word,
     obscurity: e.obscurity,
+    tier: TIER_OF_OBSCURITY[e.obscurity],
     definitions: { plain: e.plain, poetic: e.poetic, riddle: e.riddle },
     etymology: e.etymology,
     usage: e.usage,
@@ -350,10 +468,10 @@ function main() {
   const outPath = join(dirname(fileURLToPath(import.meta.url)), 'generated', 'forgotten-word.json');
   writeFileSync(outPath, JSON.stringify(puzzles));
   const counts = puzzles.reduce<Record<string, number>>((m, p) => {
-    m[p.obscurity] = (m[p.obscurity] ?? 0) + 1;
+    m[`t${p.tier}`] = (m[`t${p.tier}`] ?? 0) + 1;
     return m;
   }, {});
-  console.log(`forgotten-word.json: ${puzzles.length} entries (${Object.entries(counts).map(([k, v]) => `${k}: ${v}`).join(', ')})`);
+  console.log(`forgotten-word.json: ${puzzles.length} entries (${Object.entries(counts).sort().map(([k, v]) => `${k}: ${v}`).join(', ')})`);
 }
 
 main();

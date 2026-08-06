@@ -84,6 +84,13 @@
   --dur-toast: 300ms;        /* interaction ceiling (AAA U.2) */
   --dur-shuffle: 400ms;
   --ease-settle: cubic-bezier(0.2, 0.8, 0.3, 1);
+
+  /* --- Shell metrics ------------------------------------------------------ */
+  /* Height of the fixed chrome bar (chrome.css owns the real bar; this token
+     is what every subordinate surface clears itself by, so the number lives in
+     exactly one place). Consumed by rooms/room-host.css and sanctum/sanctum.css.
+     Trimmed on short screens by the compaction block at the bottom of this file. */
+  --chrome-h: 52px;
 }
 
 /* --- Candlelit dark (authored, warm charcoal — never inverted) ------------ */
@@ -129,6 +136,13 @@
   --shadow-lift: 0 4px 10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(231, 220, 198, 0.06);
   --deckle: inset 0 1px 0 rgba(231, 220, 198, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
   --grain-blend: screen; --grain-opacity: 0.05; --vignette-ink: rgba(0, 0, 0, 0.2);
+}
+
+/* Short screens (iPhone SE/8 at 375x667 and any compact standalone frame):
+   the shell trims its own chrome before any room gives up board size. Rooms
+   read --chrome-h, so this one declaration retunes every clearance at once. */
+@media (max-height: 700px) {
+  :root { --chrome-h: 50px; }
 }
 
 /* All counters everywhere: no jitter while counting (AAA 6.6). */

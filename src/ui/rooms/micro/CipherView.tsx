@@ -179,6 +179,12 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
             ))}
           </div>
 
+          {/* The deck: progress, the refusal toast, the 27-key pad and the two
+              verbs all stay pinned to the bottom of the scrolling stage so
+              they land in the thumb zone on every iPhone, and so the print
+              scrolls BEHIND a clean edge instead of half-cutting a line of
+              type (round-4; see ui/rooms/room-host.css). */}
+          <div className="room-deck">
           <div className="mic__meta tabular-nums">{penciled} of {letters.length} letters penciled</div>
 
           <div className="mic-toastslot" aria-live="polite">
@@ -209,6 +215,7 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
             <button className="mic-btn" onClick={() => dispatch({ type: 'reveal-letter' })}>
               Develop one letter · −{hintCost}
             </button>
+          </div>
           </div>
         </>
       )}
