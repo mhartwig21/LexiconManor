@@ -264,14 +264,14 @@ describe('forgotten word', () => {
   it('loses after maxGuesses wrong answers, fewer at higher levels', () => {
     let s = startForgottenWord(fwPuzzle, 3);
     expect(s.maxGuesses).toBe(3);
-    for (const g of ['MIST', 'OZONE', 'DEW']) s = submitGuess(fwPuzzle, s, g).state;
+    for (const g of ['RAINSTORM', 'DOWNPOURS', 'SPLASHING']) s = submitGuess(fwPuzzle, s, g).state;
     expect(s.status).toBe('lost');
   });
 
   it('rejects repeats without consuming a guess', () => {
     let s = startForgottenWord(fwPuzzle, 1);
-    s = submitGuess(fwPuzzle, s, 'MIST').state;
-    const { state, result } = submitGuess(fwPuzzle, s, 'mist');
+    s = submitGuess(fwPuzzle, s, 'RAINSTORM').state;
+    const { state, result } = submitGuess(fwPuzzle, s, 'rainstorm');
     expect(result.kind).toBe('invalid');
     expect(state.guesses).toHaveLength(1);
   });

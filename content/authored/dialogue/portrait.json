@@ -421,6 +421,74 @@
           "text": "The candle bracket beneath the frame is always lit. No one in the house will admit to lighting it."
         }
       ]
+    },
+    {
+      "id": "portrait.react.gift-thanks",
+      "trigger": "idle",
+      "priority": 800,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "gift-given",
+          "withinDays": 0,
+          "where": {
+            "character": "portrait"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "Another ribbon, for a man made of varnish. You do know I cannot hold it."
+        },
+        {
+          "speaker": "portrait",
+          "portrait": "warm",
+          "text": "...Tuck it in the frame, then. Left corner. The dust there has been wanting a reason."
+        }
+      ]
+    },
+    {
+      "id": "portrait.arc.testimony",
+      "trigger": "idle",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "met.portrait"
+        },
+        {
+          "kind": "fragmentCount",
+          "gte": 11
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "You. Before you go — I will say this once, and to no one's question."
+        },
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "I did not destroy it. I unhoused it. There is a difference — and the difference is the word."
+        },
+        {
+          "speaker": "portrait",
+          "portrait": "wistful",
+          "text": "Write it down. I shall not repeat myself."
+        }
+      ],
+      "effects": {
+        "grantsFragmentIds": [
+          "v1-t5"
+        ]
+      },
+      "summary": "The Portrait, unprompted: he did not destroy it — he unhoused it."
     }
   ]
 }

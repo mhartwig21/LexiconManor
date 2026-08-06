@@ -81,9 +81,12 @@
 .m2-chip--in     { animation: m2-pop 220ms var(--ease-settle); }
 .m2-chip--dance  { animation: m2-dance 520ms ease-in-out both; }
 
-/* Reserved toast slot — zero layout shift (AAA 1.5). */
+/* Reserved toast slot — zero layout shift (AAA 1.5).
+   Sized for TWO lines at 390px: Pantry trap notes are authored free-text
+   with real wrap risk, and a wrapping toast must never push the input or
+   keys under her thumbs mid-flow (same reserve as .mic-toastslot). */
 .m2-toastslot {
-  min-height: 1.9rem;
+  min-height: 3.4rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -207,10 +210,13 @@
 
 .lc-keys { display: flex; flex-direction: column; gap: 5px; }
 .lc-keys__row { display: flex; gap: 4px; justify-content: center; }
+/* Benchmark parity (6.19 + capture 62: Wordle keys 32×59px at the same
+   viewport): no width cap — flex distributes the full row with 4px
+   gutters — and 56px tall so two-thumb typing isn't crampier than the
+   benchmark played seconds earlier. */
 .lc-key {
   flex: 1;
-  max-width: 38px;
-  min-height: 46px;
+  min-height: 56px;
   border: 1px solid var(--paper-edge);
   border-radius: var(--radius-card);
   background: var(--paper-raised);
@@ -226,7 +232,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 .lc-key:active { transform: translateY(1px) scale(0.94); filter: brightness(0.92); }
-.lc-key--wide { max-width: 62px; font-size: 0.85rem; }
+.lc-key--wide { flex: 1.6; font-size: 0.85rem; }
 
 /* --------------------------------------------------------------------------
    The Music Room (rhyme chain)

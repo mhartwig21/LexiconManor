@@ -21,7 +21,7 @@ const log = (...a) => console.log('[smoke]', ...a);
 const fail = (msg) => { console.error('[smoke] FAIL:', msg); process.exitCode = 1; };
 
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
-const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
 page.setDefaultTimeout(15000);
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
@@ -137,14 +137,16 @@ try {
   if (!puzzle) { fail(`puzzle ${puzzleId} not found in pool`); throw new Error('stop'); }
   await shot('06-vestibule');
 
-  // 4a. Mistake: a wrong full arrangement (a claim → −2 steps).
+  // 4a. Refusal: a wrong full arrangement. Post-fix economy (micro finding 8):
+  // the Vestibule is the front door, not a toll booth — every refusal is FREE
+  // (weight 0), with Staircase-register copy.
   const before = (await store()).steps;
   const wrong = wrongArrangement(puzzle.rounds[0]);
   if (wrong) {
     await placeAndSubmit(wrong);
     const after = (await store()).steps;
-    log(`mistake: steps ${before} -> ${after}`);
-    if (after !== before - 2) fail(`expected -2 steps on mistake, saw ${before} -> ${after}`);
+    log(`refusal: steps ${before} -> ${after}`);
+    if (after !== before) fail(`expected FREE refusal (weight 0), saw ${before} -> ${after}`);
     await shot('07-mistake');
     await clearSlots();
   } else {

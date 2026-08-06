@@ -211,7 +211,8 @@ div.bp-page::before {
 :root button.bp-btn--seal,
 :root button.anch-btn--primary,
 :root button.mic-btn--primary,
-:root button.m2-btn--primary {
+:root button.m2-btn--primary,
+:root button.snc-btn--primary {
   background: var(--commit-bg);
   border-color: var(--commit-bg);
   color: var(--commit-ink);

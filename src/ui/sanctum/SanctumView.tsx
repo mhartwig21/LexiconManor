@@ -47,13 +47,13 @@ type Phase =
 /** Fallback sigh when dialogue selection has nothing for the slot (authoring
  *  floor) — the authored portrait.guess.* variants normally play instead. */
 function sighFor(c: GuessCloseness): string {
-  if (c.repeat) return 'That word again. The door remembers, dear — even when we do not.';
+  if (c.repeat) return 'That word again. The door has heard it once, and once was its full measure.';
   if (c.rightLength && c.sharedLetters >= 4)
     return '…No. And yet the door held its breath a moment, I think. The shape of it is not wrong.';
   if (c.sharedLetters >= 3) return 'No. Though some of those letters do belong to it. I shall say no more.';
   if (c.rightLength) return 'The right length of silence. The wrong silence.';
   if (c.sharedLetters === 0)
-    return 'Not one of its letters, I am afraid. Strike it through, and be glad of the ink.';
+    return 'Not one of its letters, I am afraid. Strike it through; the list grows more honest as it shortens.';
   return 'No. But the house is warmer for hearing you try.';
 }
 

@@ -80,7 +80,7 @@ export function createEmptySaveV2(profileName: string): SaveV2 {
     day: null,
     manor: null,
     ledger: { budget: 0, entries: [] },
-    currencies: { gems: 0, keys: 0 },
+    currencies: { gems: 0, keys: 0, bookmarks: 1 }, // one starter bookmark in the coat pocket
     volume: {
       volumeId: 'volume-1',
       day: 0,

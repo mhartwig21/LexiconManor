@@ -35,6 +35,14 @@ export const BLOCKLIST = new Set([
   'gooks', 'heeb', 'hebe', 'honky', 'kikes', 'nigga', 'niggas', 'nigger', 'niggers',
   'raped', 'raper', 'rapes', 'rapist', 'shit', 'shits', 'slut', 'sluts', 'spic', 'spick',
   'tard', 'tards', 'twat', 'twats', 'wetback', 'whore', 'whores',
+  // Core profanity families (previously only partially covered — see micro-rooms
+  // fix pass; generate-gate.ts layers finer editorial gating on top of this).
+  'shitty', 'shittier', 'shittiest', 'shitted', 'shitting', 'bullshit', 'bullshits',
+  'bullshitted', 'bullshitting', 'horseshit', 'batshit', 'shite', 'shites',
+  'fuck', 'fucks', 'fucked', 'fucker', 'fuckers', 'fucking', 'motherfucker',
+  'motherfuckers', 'motherfucking', 'fuckup', 'fuckups',
+  'cunts', 'asshole', 'assholes', 'arsehole', 'arseholes',
+  'cocksucker', 'cocksuckers', 'dickhead', 'dickheads', 'pissed', 'pisser', 'pissers', 'pisses',
 ]);
 
 export function loadDictionary(): Dictionary {

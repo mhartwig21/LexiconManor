@@ -72,6 +72,7 @@ export function migrate(raw: unknown): SaveV2 {
       ...empty,
       ...v2,
       version: 2,
+      currencies: { ...empty.currencies, ...v2.currencies },
       volume: { ...empty.volume, ...v2.volume },
       journal: { ...empty.journal, ...v2.journal },
       events: { ...empty.events, ...v2.events },

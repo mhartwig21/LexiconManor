@@ -125,6 +125,31 @@
 .bp-band { fill: var(--ink); pointer-events: none; }
 .bp-band--t2 { opacity: 0.028; }
 .bp-band--t3 { opacity: 0.055; }
+
+/* Sheet furniture (AAA 6.13): surveyor's-plot chrome, all static ink. */
+.bp-furniture { pointer-events: none; }
+.bp-plot { fill: none; stroke: var(--ink-faint); stroke-width: 1; opacity: 0.5; }
+.bp-plot__ticks { fill: none; stroke: var(--ink-faint); stroke-width: 1.4; opacity: 0.75; }
+.bp-plot__title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-anchor: middle;
+  fill: var(--ink-soft);
+  opacity: 0.85;
+}
+.bp-hatch__line { stroke: var(--ink); stroke-width: 0.75; }
+.bp-band--hatch { pointer-events: none; }
+.bp-band--hatch-t2 { opacity: 0.035; }
+.bp-band--hatch-t3 { opacity: 0.06; }
+.bp-scale__seg { fill: none; stroke: var(--ink-faint); stroke-width: 0.7; opacity: 0.7; }
+.bp-scale__seg--fill { fill: var(--ink-faint); stroke: none; opacity: 0.7; }
+.bp-scale__label {
+  font-family: var(--font-display);
+  font-size: 7.5px;
+  letter-spacing: 0.22em;
+  fill: var(--ink-faint);
+}
 .bp-tierpips path { fill: var(--ink-faint); }
 .bp-porch {
   stroke: var(--ink-faint);
@@ -423,6 +448,12 @@
   font-style: italic;
   font-size: var(--text-sm);
   color: var(--ink-soft);
+}
+.bp-card__stake {
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
 }
 .bp-card__meta {
   font-size: var(--text-sm);

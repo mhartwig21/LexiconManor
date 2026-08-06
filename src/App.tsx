@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Route, Router, Switch, useLocation } from 'wouter';
 import { useHashLocation } from 'wouter/use-hash-location';
+import { loadPools, poolsReady } from './app/pools';
 import ManorPage from './pages/ManorPage';
 import RoomPage from './pages/RoomPage';
 import JournalPage from './pages/JournalPage';
@@ -22,6 +24,32 @@ import GameChrome from './ui/chrome/GameChrome';
  * survive room entry/exit.
  */
 export default function App() {
+  // AAA 9.6/7.3 gate: content pools ride the lazy 'content' chunk
+  // (app/pools.ts; bootPlatform warms the fetch right after first paint).
+  // Every selector/adapter downstream reads pools synchronously, so the one
+  // await lives here — the app shell paints instantly, then the manor wakes.
+  const [ready, setReady] = useState(poolsReady);
+  useEffect(() => {
+    if (ready) return;
+    let alive = true;
+    const attempt = () => {
+      loadPools().then(
+        () => { if (alive) setReady(true); },
+        () => { if (alive) window.setTimeout(attempt, 800); }, // flaky first fetch: retry
+      );
+    };
+    attempt();
+    return () => { alive = false; };
+  }, [ready]);
+
+  if (!ready) {
+    return (
+      <div className="page" style={{ textAlign: 'center', paddingTop: '30vh' }} aria-busy="true">
+        <p style={{ fontStyle: 'italic', opacity: 0.7 }}>The manor is waking&hellip;</p>
+      </div>
+    );
+  }
+
   return (
     <Router hook={useHashLocation}>
       <Switch>

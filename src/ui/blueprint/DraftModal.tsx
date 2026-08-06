@@ -13,6 +13,7 @@ import type { PointerEvent } from 'react';
 import type { Dir, DraftOffer, RoomCard } from '../../engine/types';
 import { neighbor, rowTier } from '../../engine/manor/grid';
 import { CARD_PREVIEWS } from '../../engine/manor/deck';
+import { draftCardStake } from '../../engine/economy/preview';
 import { RoomGlyph } from './CategoryGlyph';
 
 const TIER_LABELS = ['', 'the ground floors', 'the middle landings', 'the high floors'];
@@ -76,6 +77,10 @@ export default function DraftModal({ offer, gems, onChoose, onReroll, onCancel }
                 <span className="bp-card__body">
                   <span className="bp-card__name">{card.name}</span>
                   <span className="bp-card__preview">{CARD_PREVIEWS[card.id] ?? ''}</span>
+                  {(() => {
+                    const stake = draftCardStake(card, tier);
+                    return stake ? <span className="bp-card__stake">{stake.label}</span> : null;
+                  })()}
                   <span className="bp-card__meta">
                     <span className="bp-card__rarity">{card.rarity}</span>
                     <span aria-hidden="true"> · </span>

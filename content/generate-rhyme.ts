@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRng, pick, shuffle } from '../src/engine/rng';
+import { createRng, shuffle } from '../src/engine/rng';
 import { isVowelPhone, loadPhonetics, rhymeKeyOfPron, type Phonetics } from './lib/phonetics';
 import { BLOCKLIST } from './lib/dictionary';
 import { gateOk } from './generate-gate';
@@ -113,7 +113,6 @@ function sharesLooseKey(ph: Phonetics, a: string, b: string): boolean {
 }
 
 function main() {
-  const rng = createRng(SEED);
   console.log('loading phonetics + word lists…');
   const ph: Phonetics = loadPhonetics();
   const ranks = loadRanks();
@@ -219,16 +218,23 @@ function main() {
   }
 
   // Prompt candidates per difficulty, shuffled deterministically.
+  const lexSet = new Set(lexicon);
   const puzzles: RhymePuzzle[] = [];
   const usedPrompts = new Set<string>();
   // One puzzle per rhyme family across the WHOLE pool — KILL/ILL twice is
   // the same puzzle sold as two (3.5 integrity).
   const usedFamilies = new Set<string>();
-  for (const difficulty of DIFFS) {
+  for (const [di, difficulty] of DIFFS.entries()) {
     const spec = SPECS[difficulty];
-    const candidates = shuffle(rng, lexicon.filter(
-      (w) => w.length >= 3 && w.length <= 6 && inBand(w, spec.promptRank),
-    ));
+    // Draw order is stable under GATING: shuffle the UNGATED structural
+    // pool with a per-difficulty rng, THEN filter by the gate (lexSet).
+    // An editorial blocklist addition deletes only its own word from the
+    // sequence — every other prompt keeps its slot, so successive 3.7
+    // read-aloud passes converge instead of reshuffling the whole room.
+    const candidates = shuffle(createRng(SEED + di + 1), enable1.filter(
+      (w) => w.length >= 3 && w.length <= 6 && /^[a-z]+$/.test(w) && ph.has(w)
+        && inBand(w, spec.promptRank),
+    )).filter((w) => lexSet.has(w));
     let made = 0;
     let cursor = 0;
     let allowReuse = false;

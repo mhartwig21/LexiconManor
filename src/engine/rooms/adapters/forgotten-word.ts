@@ -21,9 +21,9 @@ import {
   type ClueId, type ForgottenWordState,
 } from '../../forgotten-word';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../room-puzzle';
-import forgottenWordData from '../../../../content/generated/forgotten-word.json';
+import { getPools, lazyContent } from '../../../app/pools';
 
-export const FORGOTTEN_WORD_POOL = forgottenWordData as ForgottenWordPuzzle[];
+export const FORGOTTEN_WORD_POOL = lazyContent<ForgottenWordPuzzle[]>(() => getPools().forgottenWord);
 
 const TIER_OBSCURITY: Record<Tier, ForgottenWordPuzzle['obscurity'][]> = {
   1: ['common', 'medium'],

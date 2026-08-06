@@ -17,9 +17,9 @@ import {
   type RhymeEngineState, type RhymePuzzle, type RhymeResult,
 } from './rhyme';
 import type { RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../rooms/room-puzzle';
-import rhymeData from '../../../content/generated/rhyme.json';
+import { getPools, lazyContent } from '../../app/pools';
 
-export const RHYME_POOL = rhymeData as RhymePuzzle[];
+export const RHYME_POOL = lazyContent<RhymePuzzle[]>(() => getPools().rhyme as RhymePuzzle[]);
 
 const TIER_DIFFICULTY: Record<Tier, RhymePuzzle['difficulty'][]> = {
   1: ['medium', 'easy'],

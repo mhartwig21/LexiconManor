@@ -28,6 +28,33 @@ for (const name of readdirSync(dir).filter((f) => f.endsWith('.json')).sort()) {
 
 const issues = validateDialogueSet(files);
 
+// grantsFragmentIds (testimony spoken in person) must name real fragments in
+// an authored volume — a typo here would silently strand a testimony channel.
+const volumesDir = join(dirname(fileURLToPath(import.meta.url)), 'authored', 'volumes');
+const knownFragmentIds = new Set<string>();
+for (const name of readdirSync(volumesDir).filter((f) => f.endsWith('.json'))) {
+  const vol = JSON.parse(readFileSync(join(volumesDir, name), 'utf-8')) as {
+    fragments?: { id: string }[];
+  };
+  for (const f of vol.fragments ?? []) knownFragmentIds.add(f.id);
+}
+for (const file of files) {
+  for (const node of file.nodes) {
+    const effectBlocks = [node.effects, ...(node.choices ?? []).map((ch) => ch.effects)];
+    for (const eff of effectBlocks) {
+      for (const id of eff?.grantsFragmentIds ?? []) {
+        if (!knownFragmentIds.has(id)) {
+          issues.push({
+            file: file.character,
+            nodeId: node.id,
+            message: `grantsFragmentIds names unknown fragment "${id}"`,
+          });
+        }
+      }
+    }
+  }
+}
+
 if (issues.length > 0) {
   for (const issue of issues) {
     console.error(`✗ [${issue.file}]${issue.nodeId ? ` ${issue.nodeId}:` : ''} ${issue.message}`);

@@ -15,7 +15,7 @@ import {
   guessHistory, isInterpreted, journalNudge, letterBoxes, sanctumReadiness,
 } from '../../engine/journal';
 import {
-  arrivedLetters, fragmentDroughtDays, openedLetterFlag, type FragmentContent,
+  arrivedLetters, fragmentDroughtDays, openedLetterIds, type FragmentContent,
 } from '../../engine/volume';
 import type { CharacterId } from '../../engine/types';
 import { getDialogueFile } from '../../engine/dialogue/content';
@@ -63,11 +63,10 @@ export default function JournalView() {
 
   const solved = volume.status === 'solved';
   const newToday = filedToday(recentEvents, day);
-  const openedIds = new Set(
-    content.letters
-      .filter((l) => flags.includes(openedLetterFlag(content.id, l.id)))
-      .map((l) => l.id),
-  );
+  // Derived from the write-once flags directly (NOT by filtering
+  // content.letters) so opened synthesized pity letters ('pity-extra-N',
+  // never in the authored array) stay marked opened and readable.
+  const openedIds = openedLetterIds(content.id, flags);
   const letters = arrivedLetters(content, volume, day, {
     droughtDays: fragmentDroughtDays(dayRecords),
     openedIds,

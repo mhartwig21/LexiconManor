@@ -17,9 +17,9 @@ import {
   type CipherEngineState, type CipherPuzzle,
 } from './cipher';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../rooms/room-puzzle';
-import cipherData from '../../../content/generated/cipher.json';
+import { getPools, lazyContent } from '../../app/pools';
 
-export const CIPHER_POOL = cipherData as CipherPuzzle[];
+export const CIPHER_POOL = lazyContent<CipherPuzzle[]>(() => getPools().cipher as CipherPuzzle[]);
 
 const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
   1: ['medium', 'easy'],

@@ -86,6 +86,14 @@ export interface DialogueEffects {
    * 'next' = the first found-but-uninterpreted fragment at apply time.
    */
   interpretFragment?: string;
+  /**
+   * Testimony delivered in person (AAA 4.14 second channel): volume fragment
+   * ids filed when this node/choice plays. engine/volume.ts reserves these
+   * ids out of the violet-room drip while the speaker's scene is unseen;
+   * fileFragment is idempotent, so double-granting with letters is safe.
+   * Ids are validated against the volume files by content/validate-dialogue.ts.
+   */
+  grantsFragmentIds?: string[];
 }
 
 export interface DialogueLine {

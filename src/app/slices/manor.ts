@@ -126,6 +126,7 @@ export const createManorSlice =
         if (effect.gems || effect.keys) {
           set((s) => ({
             currencies: {
+              ...s.currencies,
               gems: s.currencies.gems + (effect.gems ?? 0),
               keys: s.currencies.keys + (effect.keys ?? 0),
             },
@@ -191,9 +192,9 @@ export const createManorSlice =
           },
         );
         // The step to the door is spent on opening (AAA 4.6: cancelling costs
-        // only this). If it was her last, dusk falls and the offer never opens.
+        // only this). Even if it was her last, the offer still opens — dusk is
+        // deferred by the day slice until the offer resolves (AAA 4.12/R.3).
         get().applyStepEntry({ reason: 'move', delta: STEP_TABLE.move, at: Date.now(), roomKey: key });
-        if (get().day?.phase !== 'exploring') return;
         set({ draftOffer: offer });
       },
 

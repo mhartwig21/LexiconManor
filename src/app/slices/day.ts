@@ -112,7 +112,8 @@ export const createDaySlice =
         // Nightly resets (MANOR_DESIGN §9): manor layout, gems, keys. The
         // journal/volume/affinities/cabinet persist forever, untouched here.
         manor: null,
-        currencies: { gems: 0, keys: 0 },
+        // Bookmarks persist across nights (gift currency, AAA 5.7).
+        currencies: { gems: 0, keys: 0, bookmarks: s.currencies.bookmarks },
         // Pacing valves re-open for tomorrow (AAA 5.9).
         talkedToday: [],
         giftedToday: [],

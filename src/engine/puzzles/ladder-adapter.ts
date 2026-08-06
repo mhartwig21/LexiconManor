@@ -23,19 +23,24 @@ import {
   type LadderEngineState, type LadderPuzzle,
 } from './ladder';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../rooms/room-puzzle';
-import ladderData from '../../../content/generated/ladder.json';
+import { getPools, lazyContent } from '../../app/pools';
 
-const bundle = ladderData as { words: string[]; solutionWords: string[]; puzzles: LadderPuzzle[] };
-export const LADDER_POOL = bundle.puzzles;
+interface LadderBundle { words: string[]; solutionWords: string[]; puzzles: LadderPuzzle[] }
+const bundle = (): LadderBundle => getPools().ladder as LadderBundle;
+export const LADDER_POOL = lazyContent<LadderPuzzle[]>(() => bundle().puzzles);
 /** The shipped probe lexicon — the generous dictionary of the room. */
-export const LADDER_WORDS: ReadonlySet<string> = new Set(bundle.words);
+export const LADDER_WORDS: ReadonlySet<string> = lazyContent<Set<string>>(
+  () => new Set(bundle().words), new Set(),
+);
 /**
  * The climbing lexicon: frequency-floored common words the generator built
  * endpoints, solutions, and par from. The "next stone" hint routes through
  * THIS list first, so a bought stone is always a word she knows — never
  * PACS or SHEW (Koster-fairness; Wordle's curated answer list).
  */
-export const LADDER_SOLUTION_WORDS: ReadonlySet<string> = new Set(bundle.solutionWords);
+export const LADDER_SOLUTION_WORDS: ReadonlySet<string> = lazyContent<Set<string>>(
+  () => new Set(bundle().solutionWords), new Set(),
+);
 
 const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
   1: ['medium', 'easy'],

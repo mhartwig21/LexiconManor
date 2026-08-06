@@ -15,7 +15,7 @@ import {
   type LadderPuzzle,
 } from '../../src/engine/puzzles/ladder';
 import {
-  ladderAdapter, LADDER_POOL, LADDER_WORDS, type LadderRoomState,
+  ladderAdapter, LADDER_POOL, LADDER_SOLUTION_WORDS, LADDER_WORDS, type LadderRoomState,
 } from '../../src/engine/puzzles/ladder-adapter';
 
 import {
@@ -178,12 +178,14 @@ describe('anagram engine', () => {
 // ---------------------------------------------------------------------------
 
 describe('anagram adapter', () => {
-  it('a wrong full arrangement is a claim: mistake weight 1, perfect forfeited', () => {
+  it('a non-word arrangement is a free probe: weight 0, perfect kept (R.1)', () => {
+    // In a single-answer anagram nearly every wrong arrangement IS a
+    // non-word — taxing it would tax the room's only exploration verb.
     const s0 = anagramAdapter.start(anagramFixture, ctx(1));
     const { state, events, outcome } = anagramAdapter.reduce(anagramFixture, s0, { type: 'submit', word: 'TSOP' });
-    expect(ofType(events, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
-    expect(outcome).toMatchObject({ status: 'active', perfect: false });
-    expect((state as AnagramRoomState).costedMistakes).toBe(1);
+    expect(ofType(events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+    expect(outcome).toMatchObject({ status: 'active', perfect: true });
+    expect((state as AnagramRoomState).costedMistakes).toBe(0);
   });
 
   it('malformed input is free (weight 0)', () => {
@@ -470,15 +472,24 @@ describe('shipped pools', () => {
       expect(p.solution.length, p.id).toBe(p.par + 1);
       for (let i = 1; i < p.solution.length; i++) {
         expect(oneLetterApart(p.solution[i - 1]!, p.solution[i]!), p.id).toBe(true);
+        // Every rung — including what "Next stone" can sell — is a
+        // frequency-floored COMMON word (Koster-fairness, BENCHMARKS §2),
+        // and the probe dictionary accepts all of them.
+        expect(LADDER_SOLUTION_WORDS.has(p.solution[i]!), p.id).toBe(true);
         expect(LADDER_WORDS.has(p.solution[i]!), p.id).toBe(true);
       }
+      expect(LADDER_SOLUTION_WORDS.has(p.start), p.id).toBe(true);
+      expect(LADDER_SOLUTION_WORDS.has(p.target), p.id).toBe(true);
     }
   });
 
-  it('ladder: par is optimal (sampled BFS re-verification)', () => {
+  it('ladder: par is optimal over the climbing lexicon (sampled BFS re-verification)', () => {
+    // Par is defined over the curated climbing lexicon — that is the claim
+    // "perfect climb" grades against. Probes through the wider dictionary
+    // may legitimately beat it; the adapter treats at-or-under par as perfect.
     const sample = [0, 59, 60, 119, 120, 179, 180, 239].map((i) => LADDER_POOL[i]).filter(Boolean);
     for (const p of sample) {
-      const best = shortestLadderPath(p!.start, p!.target, LADDER_WORDS);
+      const best = shortestLadderPath(p!.start, p!.target, LADDER_SOLUTION_WORDS);
       expect(best, p!.id).not.toBeNull();
       expect(best!.length - 1, p!.id).toBe(p!.par);
     }

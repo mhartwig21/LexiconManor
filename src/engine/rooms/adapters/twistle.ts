@@ -15,9 +15,9 @@ import type { Difficulty, Tier, TwistlePuzzle } from '../../types';
 import { createRng, pick } from '../../rng';
 import { startTwistle, submitTwistleWord, type TwistleState } from '../../twistle';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../room-puzzle';
-import twistleData from '../../../../content/generated/twistle.json';
+import { getPools, lazyContent } from '../../../app/pools';
 
-export const TWISTLE_POOL = twistleData as TwistlePuzzle[];
+export const TWISTLE_POOL = lazyContent<TwistlePuzzle[]>(() => getPools().twistle);
 
 const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
   1: ['medium', 'easy'],

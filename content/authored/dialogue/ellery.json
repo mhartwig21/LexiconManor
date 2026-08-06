@@ -16,6 +16,16 @@
           "speaker": "ellery",
           "portrait": "neutral",
           "text": "Ellery. Librarian. The 'late' is silent, but I'll spare us both the arithmetic — I've kept these shelves rather longer than a living person would."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "You'll want the tour: fiction sulks by the window, reference never sleeps, and the poetry cases are load-bearing. Do not test that last one."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "And I shall want your opinions. On everything. I've had thirty years of my own and they've gone soft from no argument."
         }
       ],
       "choices": [
@@ -51,6 +61,16 @@
           "speaker": "ellery",
           "portrait": "warm",
           "text": "Manners! Oh, I have missed manners. The manor mostly sends me weather, and the occasional moth."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Weather, moths, and once — memorably — a bat with opinions about Restoration drama. You will be a marked improvement."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Come by whenever the shelves confuse you. Confusion is the catalogue working; I merely translate."
         }
       ]
     },
@@ -65,6 +85,16 @@
           "speaker": "ellery",
           "portrait": "amused",
           "text": "Librarian first, ghost second. Death was only ever a change of department, and frankly the hours suit me."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "Don't make the face, dear. I'm not cold spots and corridor-wailing. I am mostly filing, with occasional gloating."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "The wailing section is upstairs anyway, and we do not lend from it."
         }
       ]
     },
@@ -89,6 +119,21 @@
           "speaker": "ellery",
           "portrait": "curious",
           "text": "If you find loose pages in odd rooms — his handwriting, ink gone brown — bring them where I can see them. I knew his hand better than my own."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "Don't take the rearranging personally. The house isn't hiding things — it's showing them to you in the wrong order. A librarian's distinction, I grant, but I died for less."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "If a shelf refuses you outright, bow slightly and try again after tea. I wish I were joking. I have never once been joking about shelves."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "And the pages — brown ink, a hand that slants left when it lies. You'll know them when they hum at you."
         }
       ],
       "effects": {
@@ -114,6 +159,21 @@
           "speaker": "ellery",
           "portrait": "wistful",
           "text": "You're carrying one of his pages — I can hear it. Paper with his ink on it hums a little flat. Keep it safe in the journal; it's been alone a long while."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "He wrote on anything, at the end. Flyleaves. Receipts. The backs of my overdue notices — which I have chosen to read as affection."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "Where did this one turn up? No — don't tell me. Let me guess from the water stains. It's the last game he left me."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Bring it to the lamp when you've a minute. Paper settles wonderfully once it's been read properly."
         }
       ]
     },
@@ -133,6 +193,16 @@
           "speaker": "ellery",
           "portrait": "curious",
           "text": "Another fragment? He scattered them like a man hiding pieces of his own heart from himself. Which, between us, is exactly what it was."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "Look how the hand wavers there — he wrote that one late, and by a poor candle. You can date a sentence by its shivering."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Keep gathering. A heart in pieces is still a complete work; it only wants collating."
         }
       ]
     },
@@ -152,6 +222,16 @@
           "speaker": "ellery",
           "portrait": "warm",
           "text": "That line we read together keeps opening further, doesn't it. Good annotation is like that — a little door drawn in a margin."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "He'd have liked that you puzzle at his meaning instead of taking him at his word. He never once took himself at his word."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "That is the whole tragedy, filed in a sentence. No charge."
         }
       ]
     },
@@ -175,6 +255,16 @@
           "speaker": "ellery",
           "portrait": "amused",
           "text": "A whole case sorted without one slip — the Library is preening. Shelves have feelings, you know. Mostly smug ones."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "I have entered it in the ledger as 'a good day, witnessed.' The ledger has embarrassingly few of those entries. Guard your average."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Dewey supervised, of course. He'll be claiming the credit by supper, and I shall let him. Seniority."
         }
       ]
     },
@@ -197,6 +287,21 @@
           "speaker": "ellery",
           "portrait": "warm",
           "text": "You put words back where they belong today. That's the entire job, you know. It took me forty years and a death to learn it."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "I watched you work, by the by. Rude of me — but ghosts have no doorbells, so we make do with lurking."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "You sort like he did. Impatient with the almost-right. Keep that; it is the entire difference between shelving a thing and hiding it."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Rest your eyes tonight. The catalogue rewards the well-slept, and so, on my better days, do I."
         }
       ]
     },
@@ -219,6 +324,16 @@
           "speaker": "ellery",
           "portrait": "neutral",
           "text": "You left a case half-sorted. Quite right — a puzzle keeps better than a person does. It will still be wrong tomorrow. That's a promise, not a threat."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "The books don't mind, before you ask. Half of them waited thirty years for you; a night more is a rounding error."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Leave your place marked and your conscience unmarked. That's the whole of my policy on unfinished business — present company included."
         }
       ]
     },
@@ -238,6 +353,21 @@
           "speaker": "ellery",
           "portrait": "concerned",
           "text": "The whole house rang like a struck shelf when you spoke at that door. Not the word — but the ringing lasted longer this time. I count such things."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "It rang truer, I mean. Wrong notes come in families, and I believe you have found the right family."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "Go back through his margins tonight. He argued with himself in pencil, and the pencil usually won."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "And eat something first. Revelation on an empty stomach reads as dizziness, and Bramble will blame me."
         }
       ]
     },
@@ -260,6 +390,16 @@
           "speaker": "ellery",
           "portrait": "neutral",
           "text": "You've offered the door that word before, dear. It kept the receipt. Doors and librarians never forget a request."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "No shame in it. I once reshelved the same atlas four days running and blamed the atlas."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "But do consult your journal, dear — that is precisely what the poor thing is for."
         }
       ]
     },
@@ -282,6 +422,16 @@
           "speaker": "ellery",
           "portrait": "amused",
           "text": "Word travels — every petal in one bloom, down in the Conservatory. Even the botany section is jealous, and it does not impress easily."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Fern will pretend she didn't smile about it. She smiled. The ivy told the moth, and Chapman tells me everything."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "A whole alphabet in one bloom. He'd have written it down twice — once to keep, once to lose somewhere you'd find it."
         }
       ]
     },
@@ -302,6 +452,16 @@
           "speaker": "ellery",
           "portrait": "warm",
           "text": "Ten rooms set right since you arrived. You turn this house like pages. I've opened a card for you in the catalogue — filed under 'recurring joy.'"
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "The card has a proper number and a crest and everything. You may not borrow yourself; library policy is firm on that point."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "Ten rooms. He managed nine in his best week, and I recorded it, and now you know why my ledger locks."
         }
       ],
       "summary": "Ellery filed you in the catalogue under 'recurring joy.'"
@@ -322,6 +482,16 @@
           "speaker": "ellery",
           "portrait": "curious",
           "text": "Posy's seals again? She strings and stamps like the post is a sacrament. She's right, of course. Never tell her I said so."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "She has kept that post longer than I have been dead — which, between us, constitutes a career."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Answer your mail, incidentally. The house files silence under 'no', and it sulks accordingly."
         }
       ]
     },
@@ -346,6 +516,21 @@
           "speaker": "ellery",
           "portrait": "warm",
           "text": "He can rest now. And I — well. I believe I shall finally read something for pleasure."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "I keep starting novels and shelving them mid-sentence, out of vigilance. Habit. It will pass, I'm told, by people with less experience of 'eventually' than I have."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "The carrel gets the morning light again. I hadn't noticed it had stopped. Houses hold their breath so quietly."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Come by the lamp anyway, won't you? A library with its mystery finished still wants readers. Perhaps more than ever."
         }
       ],
       "summary": "The books sat up an inch. Ellery is reading for pleasure now."
@@ -367,6 +552,16 @@
           "speaker": "ellery",
           "portrait": "wistful",
           "text": "You'll want to know how I died. Everyone does, eventually. A storm, that chair, a very good book. I finished the chapter, closed my eyes, and simply — stayed."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "You needn't look stricken. As deaths go, it was practically a recommendation for the book."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "The chair is still here, if you'd like to try the sitting half of the experience. I recommend stopping there."
         }
       ],
       "choices": [
@@ -397,6 +592,16 @@
           "speaker": "ellery",
           "portrait": "warm",
           "text": "So am I, most days. The manor is drafty, but the company has improved enormously of late."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "He found me the next morning, you know. Put the book back himself — right shelf, right place, spine flush."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "That was the eulogy, as far as I was concerned. Everything after was just weather."
         }
       ],
       "effects": {
@@ -416,6 +621,16 @@
           "speaker": "ellery",
           "portrait": "amused",
           "text": "A dictionary. Volume three, F through H. I have never once regretted it, which tells you everything about me worth shelving."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "F through H. 'Grief' is in there, you know. So is 'home'. I have had time to notice the neighborhood."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "One shelf apart, those two. I used to think that was filing. Now I suspect it was a promise."
         }
       ],
       "effects": {
@@ -441,6 +656,21 @@
           "speaker": "ellery",
           "portrait": "wistful",
           "text": "He worked at that desk till the candle drowned, most nights. Then one spring he stopped writing words down and started crossing one out. Everywhere. Every copy. Every margin."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "I thought it was proofreading, at first. He was thorough that way. Then I saw which word he was drowning, and understood it was surgery."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "concerned",
+          "text": "A man can unwrite a word from every book in a house. He cannot unwrite it from the house. You have noticed that by now, I think."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "I still hear the nib some nights. A little rasp, like a moth against glass, going from room to room being merciful."
         }
       ],
       "effects": {
@@ -471,6 +701,21 @@
           "speaker": "ellery",
           "portrait": "concerned",
           "text": "I watched him ink out that word, and I said nothing. Librarians archive; we don't intervene. It is the one entry in my whole catalogue I would amend."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "I told myself it was respect. Grief deserves privacy, I said, and stamped it, and shelved it, and called the shelving kindness."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "It was fear, of course. The catalogue is honest even when I am not."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "So intervene, dear — wherever you find a thing being quietly erased. Consider that an amendment to my rules. Consider it his."
         }
       ],
       "summary": "Ellery watched the erasure and said nothing. She regrets the silence."
@@ -496,6 +741,21 @@
           "speaker": "ellery",
           "portrait": "curious",
           "text": "That fragment you carry — bring it to the lamp. Reading him alone is like shelving in the dark; together we might make out what he actually meant."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "There. See how the sentence unclenched? He wrote in knots when he was ashamed."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "It says more than he meant and less than he felt. Most true things do."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "Bring me the others as you find them. Two readers make a margin; one only makes an echo."
         }
       ],
       "effects": {
@@ -529,6 +789,11 @@
           "speaker": "ellery",
           "portrait": "warm",
           "text": "Bring today's page to the lamp, then. His hand slants left when he's lying to himself — you learn to read around that."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "There — another knot out. He would be mortified, then grateful. In that order. Always in that order."
         }
       ],
       "effects": {
@@ -556,6 +821,16 @@
           "speaker": "ellery",
           "portrait": "neutral",
           "text": "Sort a whole case perfectly — not one slip — and I believe the shelves will surrender it. They respect precision. It's their one romance."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Yes, I could search myself. I have tried. The shelves treat me as staff, and staff never get the good surprises."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "It will be a small book. Green, I think, though memory paints. Mind the third case from the window; it bites."
         }
       ],
       "choices": [
@@ -603,6 +878,21 @@
           "speaker": "ellery",
           "portrait": "wistful",
           "text": "The plate reads: 'Ex libris — to E., who stayed.' He made it for me. All these years, I never found the nerve to go looking."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "'Who stayed.' He knew, then. All those years I thought my staying was a secret, and he had already sent it to the printer's."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "I shall keep it face-out on the desk, against every rule of conservation I hold dear. Some things are for reading, not keeping."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "Thank you. I mean the word in its oldest binding — the one with weight in it."
         }
       ],
       "effects": {
@@ -641,6 +931,16 @@
           "speaker": "ellery",
           "portrait": "curious",
           "text": "Read what he underlined, some quiet evening. A man's pencil is far honester than his pen."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "And if his pencil says things about me — the atlas incident in particular — I was provoked, and the atlas knows it."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Sit with the door open, won't you? I like the lamplight in the aisle. It reads as company."
         }
       ],
       "effects": {
@@ -671,6 +971,16 @@
           "speaker": "ellery",
           "portrait": "amused",
           "text": "Take my card in trade. The Library honors it anywhere in the manor. Which is to say: I vouch for you. Loudly, for a ghost."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Use it on something difficult, won't you? Ribbon this good is wasted on a book you'd finish anyway."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "And yes, the card works after hours. Especially after hours. Libraries are mostly night, if we're honest."
         }
       ],
       "summary": "Gave Ellery a bookmark; received her library card in trade."
@@ -685,6 +995,16 @@
           "speaker": "ellery",
           "portrait": "amused",
           "text": "I do love marginalia. A book tells you what an author thought; the margins tell you what a reader felt. Always read the pencil."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "His margins were full of arguments — with authors, with himself. Once, gloriously, with a recipe. The recipe was wrong, mind."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "When I go — further, I mean — I should like to be summarized in pencil, in a margin, by someone who read closely. That's the whole ambition."
         }
       ]
     },
@@ -698,6 +1018,16 @@
           "speaker": "ellery",
           "portrait": "neutral",
           "text": "There's a moth in the poetry section I've named Chapman. We have an arrangement: he eats only the reviews."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "He has eaten three reviews of the master's dictionary this month. I have never fed him better, and we are both a little ashamed."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Chapman stays out of the fragments, before you worry. Even a moth knows which paper is somebody's heart."
         }
       ]
     },
@@ -711,6 +1041,16 @@
           "speaker": "ellery",
           "portrait": "wistful",
           "text": "Rain through a wall is a strange thing to miss. I can hear it, you understand. I simply can't be rained on. Do stand in some for me."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "There's a window seat in the Gallery that takes the storm straight on the glass. Sit there once for me and don't hurry off."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "I'll take the report after. Sound of it, smell of it, whether it got in your collar. Spare no detail; I have shelf-room."
         }
       ]
     },
@@ -724,6 +1064,16 @@
           "speaker": "ellery",
           "portrait": "curious",
           "text": "The manor shelves itself by a system I've almost cracked. Twice I've found the atlases hiding in Biography — which is either an error or a thesis."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "My working theory is that the house shelves by feeling. Atlases in Biography, because maps are lives. It is an error. It is also correct."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "When I crack the system fully I expect to find one empty shelf at the center, labeled in his hand. I try not to guess the label."
         }
       ]
     },
@@ -737,6 +1087,16 @@
           "speaker": "ellery",
           "portrait": "amused",
           "text": "Bramble still pours a second cup at four o'clock and lets it go cold. It's mine. We don't discuss it, and you mustn't either."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "Steam curls differently over a cup that is meant for someone. That is not science. It is merely true."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Drink yours while it's hot, incidentally. Cold tea is for the dead, and we're territorial about it."
         }
       ]
     },
@@ -750,6 +1110,16 @@
           "speaker": "ellery",
           "portrait": "amused",
           "text": "The cat outranks me, technically. Dewey — as in the decimal system. He enforces it by sitting on exceptions."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "He sat on the returns bin for a week once, until I apologized. I still don't know what for. Neither does he. It's the principle of the thing."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Between us, he cannot actually read. Do not tell him. He sits on the dictionaries with such conviction."
         }
       ]
     },
@@ -769,6 +1139,16 @@
           "speaker": "ellery",
           "portrait": "concerned",
           "text": "Three of his pages now, is it? When his lines begin to finish each other in your head, go stand at the top door. Say nothing until you're sure. Then say it like you mean it."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "And don't fear the wrong answer. The door refuses gently — I have heard it. It learned refusal from him, and he only ever refused himself."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "When you do go up, go fed and unhurried. Words arrive better to a body that isn't braced."
         }
       ]
     },
@@ -782,6 +1162,11 @@
           "speaker": "ellery",
           "portrait": "warm",
           "text": "Tomorrow, dear — the books do sulk if I chat past closing."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Take a book with you, if you like. The trust is the point — the reading is merely encouraged."
         }
       ]
     },
@@ -795,6 +1180,11 @@
           "speaker": "ellery",
           "portrait": "amused",
           "text": "Shoo, gently. Even a ghost keeps hours."
+        },
+        {
+          "speaker": "ellery",
+          "text": "She is already drifting back toward the shelves, straightening spines as she goes.",
+          "narration": true
         }
       ]
     },
@@ -808,6 +1198,11 @@
           "speaker": "ellery",
           "narration": true,
           "text": "Ellery drifts along a high shelf, tapping spines flush without quite touching them."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "If you must haunt the doorway, dear, do it one step in. You're letting the quiet out."
         }
       ]
     },
@@ -821,6 +1216,11 @@
           "speaker": "ellery",
           "narration": true,
           "text": "A book lies open on the desk. The pages turn themselves, patiently, one sigh at a time."
+        },
+        {
+          "speaker": "ellery",
+          "text": "Ellery glances up, marks her place with a finger that touches nothing, and nods you on your way.",
+          "narration": true
         }
       ]
     },
@@ -842,8 +1242,270 @@
           "speaker": "ellery",
           "portrait": "warm",
           "text": "It's a better library with you in it. The books agree — I hear them lean."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Go on, now. The day's shelf-life is shorter than it looks."
         }
       ]
+    },
+    {
+      "id": "ellery.react.gift-thanks",
+      "trigger": "idle",
+      "priority": 800,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "gift-given",
+          "withinDays": 0,
+          "where": {
+            "character": "ellery"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Another bookmark? You are single-handedly reforming my relationship with stopping. I used to dog-ear, you know. In life. The confessions this house drags out of one."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "It goes with the others — I keep them in Volume Three, F through H, so the best words get the company."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "Now off you go before I waive your fines out of sentiment. ...They were waived the day we met. Don't tell the ledger."
+        }
+      ]
+    },
+    {
+      "id": "ellery.react.rankup",
+      "trigger": "parlor",
+      "priority": 703,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "affinity-rank-up",
+          "where": {
+            "character": "ellery"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "The catalogue asked me to re-file you this morning. Closer to the front. I don't argue with the catalogue when it's right."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "This is me being demonstrative, by the way. Librarians emote in classification."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "Now — what shall we read you next? Don't answer. I've been planning it for days."
+        }
+      ],
+      "summary": "Re-filed closer to the front of Ellery’s catalogue."
+    },
+    {
+      "id": "ellery.gen.restoration",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "I've been mending a broken spine all week. Linen, paste, patience. Mostly patience."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "You can't make a damaged book new. You can make it whole. The two get confused by people who have never been either."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "It'll outlive the both of us. Well. You. It'll outlive you. I intend to check on it."
+        }
+      ]
+    },
+    {
+      "id": "ellery.gen.first-edition",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "We keep one first edition so rare I've never told the house where it is. The house pretends not to know. We are both lying and it's very companionable."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "No, I shan't say which book. A librarian with no secrets is just furniture that alphabetizes."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Earn a few more years of my acquaintance and we'll see."
+        }
+      ]
+    },
+    {
+      "id": "ellery.gen.dust",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "Dust is just the house thinking. It settles thickest where nobody's finished grieving — that isn't poetry, it's observation. The Study, for instance."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "I don't clear it anymore. Seemed rude. Like interrupting."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "The feather duster and I have an understanding: ceremonial duties only."
+        }
+      ]
+    },
+    {
+      "id": "ellery.gen.lamp",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "The green lamp was his. It lights when someone's reading honestly — skimmers get flicker. I don't make the rules; I only enjoy them."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "It's been steady all week, since you started coming by. I've told the lamp it's being obvious."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "Sit under it whenever you like. It misses honest work."
+        }
+      ]
+    },
+    {
+      "id": "ellery.gen.quiet",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "There are eleven kinds of quiet in this library. I've catalogued them. Reading-quiet, waiting-quiet, snow-quiet."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "The twelfth arrived the year he died and refuses classification. It sits in the Study, mostly."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "You've been thinning it, for what it's worth. Whatever you're doing — it files under 'remedy'."
+        }
+      ]
+    },
+    {
+      "id": "ellery.gen.endings",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "I read endings first. Yes, I know. Thirty years dead and still getting letters about it."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "It isn't impatience. A librarian ought to know where a thing is headed before recommending the road."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Yours, I haven't peeked at. Some books you'd rather read at the author's pace."
+        }
+      ]
+    },
+    {
+      "id": "ellery.idle.dusting",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "text": "Ellery runs a cloth along a shelf without disturbing a single mote. The gesture is the point.",
+          "narration": true
+        }
+      ]
+    },
+    {
+      "id": "ellery.arc.testimony",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "met.ellery"
+        },
+        {
+          "kind": "fragmentCount",
+          "gte": 3
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "You've been filling that journal. Good. Then you're ready for the thing he said to me that I have shelved and reshelved for years without ever finding it a place."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "He told me once that in all the dictionary there is exactly one word that names the hole it would leave behind. I laughed. Librarians laugh at paradoxes; it's a professional hazard."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "stern",
+          "text": "Then he went and made it true. Write it down exactly as I said it. The wording matters — with him it always did."
+        }
+      ],
+      "effects": {
+        "grantsFragmentIds": [
+          "v1-t1"
+        ]
+      },
+      "summary": "Ellery's testimony: one word names the hole it would leave."
     }
   ]
 }

@@ -155,3 +155,36 @@ export function getPools(): ContentPools {
 export function poolsReady(): boolean {
   return pools !== null;
 }
+
+/**
+ * Lazy const-shaped view over a slice of the loaded pools. Adapters and
+ * content modules keep their `export const POOL` contract (synchronous,
+ * array/record/set-shaped) while the JSON itself rides the lazy 'content'
+ * chunk: the underlying read is deferred to the first property touch and
+ * memoized. Touching a lazy pool before loadPools() resolved surfaces
+ * getPools()'s ordering error — a bug at the call site, not a race.
+ *
+ * `target` must match the eventual shape's kind so exotic checks stay honest:
+ * `[]` (default) for array pools, `{}` for records, `new Set()` for sets.
+ */
+export function lazyContent<T extends object>(read: () => T, target?: object): T {
+  let cache: T | null = null;
+  const src = (): T => (cache ??= read());
+  return new Proxy((target ?? []) as T, {
+    get(_t, prop, _recv) {
+      const v = Reflect.get(src(), prop);
+      return typeof v === 'function' ? (v as (...a: unknown[]) => unknown).bind(src()) : v;
+    },
+    has: (_t, prop) => Reflect.has(src(), prop),
+    ownKeys: () => Reflect.ownKeys(src()),
+    getOwnPropertyDescriptor(t, prop) {
+      const d = Object.getOwnPropertyDescriptor(src(), prop);
+      if (!d) return undefined;
+      // Proxy invariant: a prop that is non-configurable on the target (an
+      // array's 'length') must not be reported configurable.
+      const td = Object.getOwnPropertyDescriptor(t, prop);
+      if (td && !td.configurable) return d;
+      return { ...d, configurable: true };
+    },
+  });
+}

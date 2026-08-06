@@ -11,6 +11,21 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "Customer! No — guest! No — resident? Oh, I'll open you a file either way. Posy, postmistress. The house writes letters overnight and I sort where they land."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Don't mind the avalanche — that's the Unclaimed pile. Fifty years of letters for rooms that wandered off mid-delivery. They'll turn up. Rooms always do, and mail outlives embarrassment."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Now. First stamp's free, first cup of tea is mandatory, and the kettle's just gone. Sit."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "Name for the file? No — don't tell me. The house already wrote it on your pigeonhole. It has never once misspelled anybody."
         }
       ],
       "choices": [
@@ -46,6 +61,16 @@
           "speaker": "posy",
           "portrait": "amused",
           "text": "Excellent attitude. Name, no fixed room — like everyone here. You'll have mail by morning; the house is a terrible gossip in writing."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "There — filed. You've a pigeonhole now, third row, next to the Conservatory's. It gets pollen on its neighbors, but good ones are worth the dusting."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Come by after breakfast, always. News lands overnight. So do opinions."
         }
       ]
     },
@@ -60,6 +85,21 @@
           "speaker": "posy",
           "portrait": "curious",
           "text": "The house, mostly. Old friends of the master. The odd bill, which I file under 'fiction.' You'll see — check with me after breakfast."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Oh, and the occasional letter from a room to another room. The Gallery and the Study correspond. It's frosty this decade."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "The Study writes to no one, mind. Never has. We all pretend not to notice, the way you do with a quiet uncle."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "You'll get used to it. Or you won't, and that's its own kind of fun."
         }
       ]
     },
@@ -79,6 +119,21 @@
           "speaker": "posy",
           "portrait": "neutral",
           "text": "House rules of the Post Room: string is sacred, brown paper is reusable, and nothing marked 'urgent' ever is. The truly urgent arrives unstamped."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Rule the fourth: if Dewey is asleep on a parcel, the parcel waits. I fought that battle in '61 and the scars are administrative."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "Rule the fifth — and this one's yours specially: anything in his brown ink comes straight to a friendly face. Mine's on duty, Ellery's is on lamplight."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "That's the lot. Everything else in this room runs on string and affection, same as me."
         }
       ],
       "effects": {
@@ -106,6 +161,16 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "Opened your post, did you? Good. An unread letter is just a secret with a stamp on it, and secrets curdle."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "I could tell it was a good one from the way the envelope sat. Good news perches. Bad news lies flat."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Well — go on about your day. The post loves a busy addressee."
         }
       ]
     },
@@ -127,6 +192,16 @@
           "speaker": "posy",
           "portrait": "amused",
           "text": "That seal came out of my good wax, I'll have you know. Crimson. I save it for letters that matter — and I am rarely wrong about which do."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "The house asked for the good wax, mind — I just held the spoon. It has opinions about you. Nice ones, lately."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Wax readings are free with every delivery. Interpretations of the actual letter cost tea."
         }
       ]
     },
@@ -146,6 +221,21 @@
           "speaker": "posy",
           "portrait": "curious",
           "text": "You read this morning's letter? I don't peek, officially. Unofficially: the house presses harder with its pen when it likes you."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Handwriting analysis, free of charge: the loops say fondness, the crossings-out say it drafted that letter four times. Houses get nervous too, you know."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Keep them, by the way. Letters like being kept. It's the one thing paper and people agree on."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "And I'm told nothing, officially. Unofficially, my ears are the best-sorted things in this room."
         }
       ]
     },
@@ -165,6 +255,21 @@
           "speaker": "posy",
           "portrait": "concerned",
           "text": "A wrong word at that door posts itself straight back — return to sender, no postage owed. The right one gets delivered. Keep writing, dear."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "I heard the knocker jump from down here. Don't you go quiet over it — a returned letter isn't a lost one. Different bins entirely."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "Redraft, dear. The best correspondents are just the stubbornest ones with better spelling."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "And if the door's feeling smug, remind it who oils its hinges. We keep accounts, the door and I."
         }
       ]
     },
@@ -184,6 +289,21 @@
           "speaker": "posy",
           "portrait": "curious",
           "text": "A scrap of his hand turned up? Naturally. This house never lost a page in its life — it only ever forwards them. Everything arrives eventually."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Give it here a moment — just to hold. ...His hand, all right. Heavier down-strokes than his letters had. He pressed harder when it mattered."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "File it with the journal, and mind the corners. Some post takes thirty years to find its addressee, and it's rude to bend it on arrival."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "wistful",
+          "text": "Paper's only half a thing till somebody reads it. You're the other half now."
         }
       ]
     },
@@ -203,6 +323,21 @@
           "speaker": "posy",
           "portrait": "amused",
           "text": "Someone's beaming down the corridor about a certain little gift. I'd never name names. I have a face that names them for me."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "It's good practice, gifting. Keeps the house's arteries clear. Affection clots if you hoard it — that's medical fact, postal division."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "I'll note the date in the ledger. Under 'nice things, unprompted.' We're building quite the file on you."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Keep it up and this house will be unbearable with contentment. I look forward to complaining."
         }
       ]
     },
@@ -225,6 +360,21 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "A flawless room? First-class work. I'd frank you a commendation if I thought your head could take the extra weight."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "The room's letter arrived before you did — glowing, if slightly smug about its own floorboards."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "For the record: the Post Office defines 'first-class' by handling. You handle things first-class. That's the entire review."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Keep it up and I'll need a bigger commendation drawer. Don't keep it up on my account. Keep it up on yours."
         }
       ]
     },
@@ -247,6 +397,21 @@
           "speaker": "posy",
           "portrait": "amused",
           "text": "You look posted through a hedge, if I'm honest. Long day yesterday? The manor over-delivers. It gets it from me."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Sit a minute before you launch off. The morning sort can watch us both do nothing; it's very educational for the mail."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "And drink water. Postmistress's orders. Yes, we can order that. There's a form."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "The mail ran itself ragged once too. 1953. We don't speak of the Great Overdelivery, except to say: sit down, dear."
         }
       ]
     },
@@ -266,6 +431,21 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "You're becoming rather dear to this household, you know. It shows in the mail volume. Affection is measurable; I keep charts."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Today's haul: two notes about you, one poem — unsigned, terrible meter, lovely sentiment — and a pressed flower I suspect is Fern being demonstrative."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "Charts don't lie. Well — mine don't. I refuse to draw a dishonest axis."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Keep on as you are. Everything's pointing up and to the dear."
         }
       ]
     },
@@ -290,6 +470,21 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "I cried on the franking machine, and I would do it again. Now sit down and let me stamp your hand like a parcel. Tradition. New one. Starting now."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "The stamp washes off in a day or two. The standing in this house does not. You're franked, dear — official, first-class, no further postage owed."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "wistful",
+          "text": "One of those dead letters was his, you know. To the house itself. It just says thank you. I read it aloud in the empty sorting room, and the floor creaked back."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "There. Now you know everything the Post Office knows. Took me fifty years, and it took you one good word."
         }
       ],
       "summary": "Every dead letter went light. Posy cried on the franking machine."
@@ -314,6 +509,21 @@
           "speaker": "posy",
           "portrait": "curious",
           "text": "Delivery for you — sort of. Ellery's been rereading one empty bookplate all week and pretending she isn't. Go see her, would you? Some parcels need legs."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Tell her the string's from me. She'll know what it means. It doesn't mean anything — that's the joke. We've had it forty years."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "She'll deny the fretting, mind. Librarians grieve in reshelving. You'll see it if you look slant."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "And walk slow on the Library stairs. News keeps. Friends keep better."
         }
       ],
       "effects": {
@@ -343,6 +553,21 @@
           "speaker": "posy",
           "portrait": "neutral",
           "text": "Second item: Fern's been standing about the Conservatory like an unwatered hat-stand. Something about a bloom. She won't ask for help. That's what I'm for."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "Don't say I sent you. Say you were passing. She can smell an errand at forty paces."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Take her something green if you find it. Or say something short. She trades in short."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "She's softer than the boots suggest. Most standing things are."
         }
       ],
       "effects": {
@@ -374,6 +599,21 @@
           "speaker": "posy",
           "portrait": "wistful",
           "text": "He used it in a letter once, and I have spent years failing to re-read it from memory. Shake his rooms hard enough and it will fall out. Words do."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "I know the shape of it. Starts soft, ends like thunder cooling. Three syllables, I think. Or four. Memory rounds things."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "And no — I can't just requisition it. Words don't answer forms. Believe me. Form 11-B, Request for a Word. Filed it twice."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "No rush, mind. I've waited years; I can wait weeks. It's the not-looking I couldn't do anymore."
         }
       ],
       "choices": [
@@ -417,6 +657,21 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "Petrichor. The smell of rain on warm dust. I've said it eleven times this morning and it has rained indoors twice. Worth every year of waiting."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "I've written it on the sorting-room wall, small, where only I look. Officially that's vandalism. I've fined myself a biscuit."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "wistful",
+          "text": "Funny thing — the ledger says the word was never lost. Just in transit. Longest delivery of my career, and worth it."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "You're in the story now, you know. When I tell it — and I will tell it — there's a knock at the door and it's you."
         }
       ],
       "effects": {
@@ -446,6 +701,21 @@
           "speaker": "posy",
           "portrait": "wistful",
           "text": "One drawer in this room I never open. A letter he wrote and never posted. No address — just 'To—' and then thirty years of the nerve failing."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "It's not that I forgot it. A postmistress forgets nothing in her care; that's the whole oath. It's that remembering is the only delivering I'm allowed."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "wistful",
+          "text": "Thirty years I've dusted around that drawer. You can wear a groove in a room just by not-looking at one spot in it."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "There. Now two of us know. Secrets keep better in pairs — they don't rattle so."
         }
       ],
       "effects": {
@@ -481,6 +751,21 @@
           "speaker": "posy",
           "portrait": "wistful",
           "text": "But learn who 'To—' was meant for, and I will walk that letter up those stairs personally. Full uniform. Best wax."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "I have my suspicions, mind. A postmistress always does. But suspicion isn't an address, and this one has to be right the first time."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "You're good at finding what this house misplaced. I'm only saying. No pressure, dear. Well — postal pressure. The gentle kind."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "Until then it stays in the drawer. Safe as houses. Safer — houses wander."
         }
       ],
       "summary": "Learn who 'To—' is, and Posy will deliver the letter herself."
@@ -506,6 +791,21 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "Deputy's sash. Go on, take it — you're Post Office staff now, which means the house is obliged to tell you things in writing. Use it wisely. Or nosily. Both work."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Duties: nosiness, kindness, and the defense of string. Benefits: first look at the morning sort and my unqualified fondness. You had that last one already."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "The sash was mine, when I started. Fifty years of pockets. There's a peppermint in the left one from an era when peppermints were better."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Wear it Sundays, or never, or always. The house knows what it means either way."
         }
       ],
       "effects": {
@@ -536,6 +836,21 @@
           "speaker": "posy",
           "portrait": "amused",
           "text": "Here — my spare letter-opener. Brass. Opens envelopes, jammed drawers, and most kinds of silence."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Careful with the point — it has opened fifty years of other people's news and it's kept every bit of the edge."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "And mind it around Dewey. He believes all brass is his. He's not entirely wrong; that's the trouble."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "When it opens something that changes your day, come tell me. That's the fee. Payable in gossip, as all the best debts are."
         }
       ],
       "summary": "Gave Posy a bookmark; received her brass letter-opener."
@@ -550,6 +865,21 @@
           "speaker": "posy",
           "portrait": "amused",
           "text": "The manor has its own postmark, you know. A little house with too many windows. Accurate."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "Look close and the windows in the postmark shift, printing to printing. Nobody engraves that. I've stopped asking how; the asking spoils the trick."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "Collectors would weep for it. Let them. Some things aren't for albums; they're for envelopes."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "I'll stamp you a spare on an envelope corner, if you like. Everyone should own proof their house exists."
         }
       ]
     },
@@ -563,6 +893,21 @@
           "speaker": "posy",
           "portrait": "neutral",
           "text": "Hardest part of the job? Rooms move overnight and forwarding addresses don't exist. I deliver by intuition and mild threats."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Once delivered the same parcel to the same door three days running. Different room behind it every time. All three signed for it. Bureaucracy finds a way."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "If a corridor looks new, walk it before noon. Rooms are shy their first day, and it's polite to visit early."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "You get a feel for it, in time. The house moves like a sleeper, not a stranger. Roll with it and nothing lands on you."
         }
       ]
     },
@@ -576,6 +921,21 @@
           "speaker": "posy",
           "portrait": "amused",
           "text": "Dewey sleeps in the parcel bin. Anything he sits on gets priority handling — cat-certified. It's an excellent system and I did not design it."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "He knows which parcels matter, is the thing. Sat a whole week on a box of seeds once and wouldn't budge till Fern came for it. Cats read futures. Ours just reads freight."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "I pay him in the string ends. He is the only staff member who has never once complained about wages."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "Official position: the Post Office does not employ a cat. The cat employs us. It's tidier, legally."
         }
       ]
     },
@@ -589,6 +949,21 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "People underestimate string. Empires of correspondence, dear, held together by string and someone who cares."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "The master sent for string from six counties. Said the local stuff had no memory. He was wrong, but he was wrong carefully, and that's the best kind of eccentric."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "You can tell a parcel wrapped in love from one wrapped in duty by the knots alone. Yours, incidentally, would be love. Bit clumsy. Love usually is."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "There's a ball of it in my drawer from my first week here. Retired now. We've been through things, that string and I."
         }
       ]
     },
@@ -602,6 +977,21 @@
           "speaker": "posy",
           "portrait": "amused",
           "text": "A bill arrived for the master today. Thirty years late. I stamped it 'DECEASED — TRY THE PORTRAIT' and felt wonderful about it."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "It came back this morning marked 'ADDRESSEE OTHERWISE ENGAGED.' The Portrait has developed a correspondence style. Heaven help the utilities."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "I've framed the envelope. Some paperwork is simply art with a due date."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "The gas company writes such passionate prose when ignored. Fifty years of it. The longest correspondence this house has ever kept, arguably."
         }
       ]
     },
@@ -621,6 +1011,21 @@
           "speaker": "posy",
           "portrait": "curious",
           "text": "Those fragments you're collecting — that's a correspondence, you know. Him to you. When you're ready to reply, the address is the top of the stairs."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "And when you write back — because that's what the guess is, dear, a reply — sign it like yourself. Doors read signatures the way I read wax."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "One word a day is good postage discipline, anyway. Makes you choose. Choosing is nine-tenths of writing."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Whatever the door says back, come tell me. Good news wants witnesses. Bad news wants tea. Either way you know where I am."
         }
       ]
     },
@@ -634,6 +1039,21 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "Bramble and I trade: tea for stamps. The exchange rate is friendship, and neither of us audits it."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "She claims my stamps for the household accounts, then posts nothing. I claim her tea for the afternoon sort, then sort nothing. It's a flawless economy."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "Four o'clock sharp, mind. The kettle is the one punctual thing in a house that eats clocks."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Sit in on it some afternoon. We'll say it's official business. Everything's official if the tea's hot."
         }
       ]
     },
@@ -647,6 +1067,11 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "Proper chat tomorrow, promise — the afternoon sort waits for no one."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Go on — anything urgent, I'll send a boy. We haven't got a boy. I'll send the cat."
         }
       ]
     },
@@ -660,6 +1085,11 @@
           "speaker": "posy",
           "portrait": "amused",
           "text": "Off you pop. Some of us have a kingdom of brown paper to run."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Tomorrow, first thing. I'll save you the good stamp."
         }
       ]
     },
@@ -673,6 +1103,16 @@
           "speaker": "posy",
           "narration": true,
           "text": "Posy deals envelopes into pigeonholes like a card sharp — lips moving, counting rooms that may not exist yet."
+        },
+        {
+          "speaker": "posy",
+          "text": "Without looking up: a small wave, a smaller smile, and an envelope slid to the counter's edge with your name on it. There is nothing inside. It's the principle.",
+          "narration": true
+        },
+        {
+          "speaker": "posy",
+          "text": "The pile on the left is shrinking. The pile on the right is not growing. Postal arithmetic answers to no one.",
+          "narration": true
         }
       ]
     },
@@ -686,6 +1126,11 @@
           "speaker": "posy",
           "narration": true,
           "text": "Thunk. Thunk. The franking stamp keeps better time than the hall clock, and both of them are lying."
+        },
+        {
+          "speaker": "posy",
+          "text": "Between thunks, Posy mouths the room names like a psalm: parlor, gallery, pantry, hush.",
+          "narration": true
         }
       ]
     },
@@ -707,8 +1152,249 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "Mail's better since you came. Heavier. Houses write more when they're happy."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Off with you, dear heart. The mail and I will mind the fort."
         }
       ]
+    },
+    {
+      "id": "posy.react.gift-thanks",
+      "trigger": "idle",
+      "priority": 800,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "gift-given",
+          "withinDays": 0,
+          "where": {
+            "character": "posy"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Another bookmark for the ledger! 'Valuables, sentimental, uninsurable' is becoming my thickest file, and it is entirely your fault."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "I've started rotating them so none of them feels like a spare. Yes, they have feelings. Everything in this room has feelings; it's the humidity."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Off you go, dear. You can't stand about being generous all day — there's a schedule."
+        }
+      ]
+    },
+    {
+      "id": "posy.react.room-left",
+      "trigger": "parlor",
+      "priority": 707,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-abandoned"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "A room went unfinished yesterday — no, don't look caught out, the house sends me the manifests. Unfinished isn't undelivered, dear. It's in transit."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "I keep a whole shelf for in-transit. Cozier than it sounds. Everything on it gets where it's going eventually."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Besides — a room mid-puzzle is a room with something to look forward to. Enviable, really."
+        }
+      ]
+    },
+    {
+      "id": "posy.react.dewey",
+      "trigger": "parlor",
+      "priority": 702,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "dewey-petted"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "The cat came through here purring like a franking machine. Your doing, I hear. He's told everyone. He has no discretion and we love him anyway."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "One step for a pet is the best exchange rate in the building. Don't tell the economy."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "He's filed your kindness under permanent record, mind. Cats keep the only archives that never burn."
+        }
+      ]
+    },
+    {
+      "id": "posy.gen.pigeonholes",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "Every pigeonhole is a room's whole biography, if you read it right. The Gallery's gets postcards. The Pantry's gets recipes and apologies."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Yours? Yours gets thicker by the week, dear. I've had to move the Conservatory up a row. Pollen and all."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Come read yours whenever you like. It's your biography. You're allowed."
+        }
+      ]
+    },
+    {
+      "id": "posy.gen.nightpost",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "The house writes at night. I've heard the nib through the floor — a scratching in the joists, patient as woodworm but kinder spelling."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "I leave ink out for it now. The level drops. That's between us and the floorboards."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "I've thought about staying up to catch it at the writing. Decided against. Some correspondents deserve their privacy."
+        }
+      ]
+    },
+    {
+      "id": "posy.gen.lost-stamps",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "My first week, I dropped a whole sheet of stamps behind the counter. Found them last spring — the house had filed them by color. Fifty years late and alphabetized. That's this place all over."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Nothing's lost here, dear. It's all just very, very patient."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "I've stopped dropping things on purpose, mind. The house grades on presentation."
+        }
+      ]
+    },
+    {
+      "id": "posy.gen.telegrams",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "Before letters, this room did telegrams. STOP after every thought. Ghastly way to speak."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "The machine's under a sheet in the corner. It clacks once a year, on the master's birthday. We've never traced the sender."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "I write the message down anyway. Every year. It's always just: STILL HERE. STOP. Good message, as they go."
+        }
+      ]
+    },
+    {
+      "id": "posy.idle.string",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "posy",
+          "text": "Posy is winding string from one ball onto another ball. There is, as far as can be told, no difference between the balls. She seems deeply content.",
+          "narration": true
+        }
+      ]
+    },
+    {
+      "id": "posy.arc.testimony",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "met.posy"
+        },
+        {
+          "kind": "fragmentCount",
+          "gte": 9
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "Your file's getting properly thick — which means it's time. One item I never posted into anyone's pigeonhole, because it was his."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "His last letter went out with one word cut clean from it. A little window in the paper. You could read the whole sentence around the hole."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "wistful",
+          "text": "I believe that was rather the point. First-class evidence, that. Consider it delivered."
+        }
+      ],
+      "effects": {
+        "grantsFragmentIds": [
+          "v1-t4"
+        ]
+      },
+      "summary": "Posy's testimony: the letter with a window cut in it."
     }
   ]
 }

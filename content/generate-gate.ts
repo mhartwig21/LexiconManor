@@ -53,6 +53,37 @@ const TONE_WORDS = [
   'pill', 'pills', 'drug', 'drugs', 'heroin', 'meth', 'opium',
   'tumor', 'tumors', 'tumour', 'cancer', 'cancers', 'plague', 'plagues',
   'leper', 'lepers', 'wound', 'wounds', 'wounded', 'bleed', 'bleeds', 'bled',
+  'manic', 'mania', 'manias',              // illness (mania) — not cozy display
+  'dike', 'dikes', 'dyke', 'dykes',        // slur-adjacent homograph — never in gilt type
+  // second 3.7 read of the regenerated draw (2026-08-06)
+  'dong', 'dongs', 'butt', 'suck', 'sucks', 'sucked', 'sucker', 'suckers',
+  'gob', 'gobs', 'hag', 'hags',
+  'gun', 'guns', 'gunned', 'gunner', 'gunners',
+  'scar', 'scars', 'scarred', 'shank', 'shanks', 'shanked',
+  'sever', 'severs', 'severed', 'shroud', 'shrouds', 'shrouded',
+  // third 3.7 read (2026-08-06)
+  'tomb', 'tombs', 'crypt', 'crypts',
+  // NOT gated: 'tramp' — the walking verb is cozy (authored "ways to walk"
+  // member); the unkind-noun reading doesn't dominate.
+  'ich', 'ichs',                            // aquarium disease
+  // fourth 3.7 read (2026-08-06)
+  'shitty', 'shittier', 'shittiest', 'bullshit',   // base BLOCKLIST only has shit/shits
+  'noose', 'nooses', 'grave', 'graves',
+  'war', 'wars', 'warred', 'warring',
+  'drunk', 'drunks', 'drunken', 'booze', 'boozy', 'bender', 'benders',
+  'slum', 'slums', 'grieve', 'grieves', 'grieved', 'grieving',
+  'dread', 'dreads', 'dreaded', 'moan', 'moans', 'moaned', 'moaning',
+  'hick', 'hicks',                          // derogatory
+  // fifth 3.7 read (2026-08-06) — the base BLOCKLIST is slur-focused and
+  // omits core profanity families; cover them fully here.
+  'fuck', 'fucks', 'fucked', 'fucker', 'fuckers', 'fucking',
+  'motherfucker', 'motherfuckers', 'shag', 'shags', 'shagged',
+  'bollocks', 'bugger', 'buggers', 'buggered', 'douche', 'douches',
+  'jizz', 'cum', 'cums',
+  'abuse', 'abuses', 'abused', 'abusive', 'abuser', 'abusers',
+  'demise', 'demises', 'cull', 'culls', 'culled', 'culling',
+  'coke', 'cokes', 'dope', 'dopes', 'doped', 'molly', 'mollies',
+  'stoner', 'stoners', 'git', 'gits',
 ];
 
 const NAME_WORDS = [
@@ -77,6 +108,32 @@ const NAME_WORDS = [
   // surnames that surface as 4-letter ladder rungs
   'howe', 'howes', 'shaw', 'shaws', 'mays', 'mads', 'hays', 'hayes',
   'ames', 'amos', 'otis', 'ross', 'penn', 'penns',
+  // caught by the 3.7 editorial read of shipped prompts/rungs (2026-08-06)
+  'billie', 'berlin', 'berlins', 'sally', 'sallies', 'harry', 'harries',
+  'tory', 'tories', 'bates', 'lex', 'jane', 'janes', 'marc', 'marcs',
+  'tony', 'tonies', 'hong', 'sharif', 'sharifs',
+  'brazil', 'brazils', 'shawn', 'chitty', 'chitties', 'parr', 'parrs',
+  'tom', 'toms', 'marge', 'marges', 'sabine', 'sabines',
+  'matt', 'matts', 'carr', 'carrs', 'spence', 'spences', 'lutz', 'lutzes',
+  'greek', 'greeks',
+];
+
+/**
+ * Corpus artifacts: abbreviation-shaped or slangy strings that ride high in
+ * web-frequency lists (EXEC, SIM, HIST, PARA, LITE, DIS, RAH) without being
+ * words a manor would set in gilt or sell as a stone. Blocked from DISPLAY
+ * surfaces via gateOk; toneOk still admits them, so typed probes of real
+ * enable1 words stay generously accepted.
+ */
+const ARTIFACT_WORDS = [
+  'dis', 'sim', 'sims', 'exec', 'execs', 'rah', 'rahs',
+  'hist', 'para', 'paras', 'lite',
+  'hoy', 'hoys', 'pix', 'vig', 'vigs', 'ess', 'esses',
+  'nam', 'jun', 'mag', 'mags', 'ids', 'trans',
+  'mora', 'moras', 'morae', 'reif', 'reifs', 'trois',
+  'til', 'tils', 'sis', 'mach', 'machs', 'gast', 'gasts', 'raff', 'raffs',
+  'hast', 'cos', 'coss', 'hons', 'ins', 'sept', 'septs', 'licht',
+  'sarge', 'sarges',
 ];
 
 function clean(list: string[]): Set<string> {
@@ -89,10 +146,13 @@ export const TONE_BLOCKLIST: ReadonlySet<string> = clean(TONE_WORDS);
 /** Predominantly-a-name words — lowercase. */
 export const NAME_BLOCKLIST: ReadonlySet<string> = clean(NAME_WORDS);
 
-/** True when a word passes both tone and proper-noun gates. */
+/** Abbreviation/slang corpus artifacts — lowercase, display surfaces only. */
+export const ARTIFACT_BLOCKLIST: ReadonlySet<string> = clean(ARTIFACT_WORDS);
+
+/** True when a word passes the tone, proper-noun, and artifact gates. */
 export function gateOk(word: string): boolean {
   const w = word.toLowerCase();
-  return !TONE_BLOCKLIST.has(w) && !NAME_BLOCKLIST.has(w);
+  return !TONE_BLOCKLIST.has(w) && !NAME_BLOCKLIST.has(w) && !ARTIFACT_BLOCKLIST.has(w);
 }
 
 /** True when a word passes the tone gate alone (names allowed). */

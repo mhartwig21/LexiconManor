@@ -337,14 +337,23 @@
 .dk-cell__plain {
   min-height: 1.5rem;
   font-size: 1.15rem;
-  font-weight: 700;
+  font-weight: 400; /* pencil conjecture — locked truth goes bold below */
   line-height: 1.25;
   text-transform: uppercase;
 }
 .dk-cell--sel { background: color-mix(in srgb, var(--room-accent) 16%, transparent); border-bottom-color: var(--room-accent); }
 .dk-cell--sel .dk-cell__cipher { color: var(--room-accent); }
-.dk-cell--locked { cursor: default; }
-.dk-cell--locked .dk-cell__plain { color: var(--room-accent); }
+/* Developed (verified-true) letters are double-encoded by SHAPE, not hue
+   alone (AAA 6.3 grayscale pass): a filled chip + SOLID 2.5px underline
+   + bold, while pencil conjecture stays open-air on a dotted line in a
+   lighter weight. In grayscale the epistemic split survives intact. */
+.dk-cell--locked {
+  cursor: default;
+  background: var(--paper-shade);
+  border-bottom: 2.5px solid var(--room-accent);
+  padding-bottom: 1px; /* 1px taller underline: keep total height at 52px */
+}
+.dk-cell--locked .dk-cell__plain { color: var(--room-accent); font-weight: 700; }
 .dk-cell--locked .dk-cell__cipher { color: color-mix(in srgb, var(--room-accent) 55%, transparent); }
 .dk-cell--dupe .dk-cell__plain { color: var(--wax); }
 

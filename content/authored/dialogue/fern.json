@@ -11,6 +11,21 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "You're new. The plants said. They notice feet."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Feet say a lot. Yours say curious. Good start."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Mind the ivy by the door. Friendly. Too friendly."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Boots stay on indoors here. Garden's everywhere. You'll see."
         }
       ],
       "choices": [
@@ -46,6 +61,21 @@
           "speaker": "fern",
           "portrait": "amused",
           "text": "Fern. Groundskeeper. Yes, really Fern. My mother thought she was funny. She was."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "She kept grounds before me. Her mother before that. Ferns all the way down."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "One of us was bound to grow up literal."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Call me Fern either way. Everything answers to green here eventually."
         }
       ]
     },
@@ -60,6 +90,21 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "Listen low. Growing's loud, if you're patient."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Roots gossip. Leaves eavesdrop. A garden's just a slow conversation."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "You'll learn the language. First word's always 'water'."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Second word's usually 'more water'. Plants are simple. It's their best quality."
         }
       ]
     },
@@ -79,6 +124,21 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "Garden's indoors here. Rooms grow like beds — some seasons you get nettles. Bring me seeds if you find any. I trade fair."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Nettles aren't a punishment, mind. House grows what it's feeling. Some days that's roses. Some days it stings."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Seeds turn up in odd corners. Drawers. Hems. One in a teapot once. Bramble still brings it up."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Bring me any you find. Fair trade, always. I don't haggle. Gardens taught me patience, not commerce."
         }
       ],
       "effects": {
@@ -107,6 +167,21 @@
           "speaker": "fern",
           "portrait": "amused",
           "text": "Every petal, one word. Whole flower at once. Don't tell the roses — competitive, roses."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Whole alphabet, one flower. Doesn't happen twice a season."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "The bees will talk about it for days. Let them. Winters are long."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Good hands. Said it before. Saying it again. Repetition's how gardens compliment."
         }
       ]
     },
@@ -129,6 +204,21 @@
           "speaker": "fern",
           "portrait": "warm",
           "text": "Full Bloom in the Conservatory. Smelled it from the stairwell. Good hands."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Thirty years since the glass sweated like that. Place remembers how to be warm. Just needed reminding."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Bramble asked what smells different. Told her: spring. Indoors. In whatever month this is. She dusted at it suspiciously."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Come stand in it sometime. Bloom's better shared. Most things are, I'm told."
         }
       ]
     },
@@ -151,6 +241,21 @@
           "speaker": "fern",
           "portrait": "warm",
           "text": "Every petal. The whole hundred. Once a decade, that. The master managed it twice and bragged for years — quiet-like, but he bragged."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "I pressed one petal. For the record. Groundskeeper's privilege."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "He'd have stood here an hour, hat off. So I did it for him. Felt right."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Don't do it again too soon. Miracles keep best rationed."
         }
       ],
       "summary": "Every petal in the Conservatory. Fern was almost effusive."
@@ -174,6 +279,21 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "Conservatory's humming again. You planted well today."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "The comb's gone gold at the edges. That's contentment, in bee."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "The queen approves. I know because nothing stung me all morning. That's bee for 'well done'."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Same tomorrow, if you like. Garden holds no grudges about yesterday. Only lesson it ever taught me twice."
         }
       ]
     },
@@ -196,6 +316,21 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "Left the garden mid-bloom? It keeps. Gardens are patient. It's their whole trick."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "The flowers you did find are still standing. Growth keeps. That's the whole contract."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "The bees marked your tab. They're fair about it. Fairer than banks."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Come back when you come back. That's the whole rule here."
         }
       ]
     },
@@ -215,6 +350,21 @@
           "speaker": "fern",
           "portrait": "amused",
           "text": "Cat's been bragging. Wears your pets like a medal. One step's cheap for that much smug."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "He naps in the seed trays after. Warm dirt, warm cat. System works."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Keep petting him. Cheapest good deed in the building, and he banks every one."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "He'll expect it daily now. You've made a contract. Cat law's strict."
         }
       ]
     },
@@ -234,6 +384,21 @@
           "speaker": "fern",
           "portrait": "concerned",
           "text": "House shivered last night. Felt it in the roots. Wrong word. Roots held. They always hold."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Wrong guesses are pruning. Looks brutal. Isn't. You're shaping the thing."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Roots don't rush. Neither should you. Door's not going anywhere. Doors famously don't."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Every 'no' narrows the bed. Fewer weeds each pass. That's progress wearing its work clothes."
         }
       ]
     },
@@ -253,6 +418,21 @@
           "speaker": "fern",
           "portrait": "wistful",
           "text": "Found one of his papers. He buried words like bulbs. Figured someone would come along with the right spring."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Hold it flat and let it warm. Paper relaxes. Tells you more relaxed."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "He'd be glad it's your hands. Careful ones. Bulbs know the difference."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Keep it dry, keep it flat. Same rule as seeds. Same reason."
         }
       ]
     },
@@ -275,6 +455,21 @@
           "speaker": "fern",
           "portrait": "warm",
           "text": "No missteps yesterday. Like watching frost mind its own business. Tidy."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "No wasted moves. Garden calls that grace. So do I, on the days I talk."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Don't chase it, mind. Chased grace trips. Just walk like that again tomorrow."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "The floors mentioned it. Floors notice grace first. All that weight on them."
         }
       ]
     },
@@ -297,6 +492,21 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "Walked yourself to stubble yesterday. Even fields lie fallow. There's a bench in here that does nothing. Use it."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Fallow's not idle. Fields do their best work looking useless. Learned that the slow way."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Bench is under the fig. Does nothing beautifully. Join it."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "I'll know if you didn't. The bench reports to me."
         }
       ]
     },
@@ -321,6 +531,21 @@
           "speaker": "fern",
           "portrait": "warm",
           "text": "He used to say gardens forgive first. Now the rest of the house has caught up."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "The rosebush held its bloom a full week after. Out of respect, I'd say. Roses understand occasions."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "I told the garden he could rest now. Roots passed it down. Whole house heard by supper, my way."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Come dig with me some morning. No reason. That's the point of it now."
         }
       ],
       "summary": "Every pot flowered out of season. Gardens forgive first."
@@ -342,6 +567,21 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "Planted for him thirty years. He'd name seedlings in Latin. Wrong Latin, mostly. Never corrected him. You don't prune a man's joy."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "He'd sit on an upturned pot and read me definitions while I weeded. Said the garden improved his spelling. Nonsense. He just liked company that didn't argue."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "'Fern,' he'd say, 'this seedling is Quercus ridiculus.' Wasn't. Wasn't even an oak."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "I'd give a good spade to hear the wrong Latin again."
         }
       ],
       "effects": {
@@ -372,6 +612,21 @@
           "speaker": "fern",
           "portrait": "wistful",
           "text": "After the word went, he stopped coming down. Garden waited. I waited. Waiting's just planting with no seed. Wouldn't recommend it."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "I sent shoots up under his window. Green's a knock, if you do it slow. He never answered."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Grief's a hard frost. Some things come back after. Some don't. He didn't get his after. That's the whole sadness of him."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "You're the after, I reckon. Late spring. Still spring."
         }
       ],
       "summary": "After the erasure, the garden waited. So did Fern."
@@ -392,6 +647,21 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "Posy sent you? Meddler. Fine. The old rosebush won't open till the Conservatory blooms proper — Full Bloom, the whole garden singing. Bring it up and I'll owe you."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "It was his rosebush, strictly. I've kept it alive. Alive isn't open. Open takes joy, and joy wants a whole garden behind it."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "That's the horticulture. Rest is up to your hands."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Ask the bees for the corners you can't reach. They owe me one. Several."
         }
       ],
       "choices": [
@@ -438,6 +708,21 @@
           "speaker": "fern",
           "portrait": "wistful",
           "text": "He planted it for someone. Never said who. Now it can say it for him."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "I sat with it an hour this morning. Didn't weed. Didn't prune. Just sat. First idle hour I've spent in years that didn't itch."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "Thirty years is nothing to a rose, turns out. Just long enough to mean it."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Come see it before it drops. Some things you owe your own eyes."
         }
       ],
       "effects": {
@@ -471,6 +756,21 @@
           "speaker": "fern",
           "portrait": "warm",
           "text": "Here. Key to the seed vault. Every room this house ever grew, sleeping in paper packets. Plant what you like. You've earned dirt-rights."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Vault's behind the potting bench. Key sticks. Lock's sentimental."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Some packets are labeled in his Latin. Plant those blind. Best surprises in the house."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Dirt-rights aren't nothing, mind. I've given out two sets in my life. Other one's buried with him."
         }
       ],
       "effects": {
@@ -501,6 +801,21 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "Take the seed tin. Rattle it near a door you want tomorrow. Superstition. Works, though."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Pressed a sweet-pea leaf beside it already. They'll keep each other flat."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Rattle the tin gentle, mind. Seeds startle. Everything young does."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Tin's older than me. Passed hand to hand, always dirt-first. Keep the tradition."
         }
       ],
       "summary": "Gave Fern a bookmark; received her rattling seed tin."
@@ -515,6 +830,21 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "Moss gets a bad name. Patient stuff. Covers what the house regrets."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "There's moss on the north wall older than the deeds. Outlasted three roofs. Never once hurried."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "I consult it on hard decisions. Sits there. Very wise."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Sit by it when the house feels loud. Nothing hurries near moss. Catching."
         }
       ]
     },
@@ -528,6 +858,21 @@
           "speaker": "fern",
           "portrait": "amused",
           "text": "No sky in here, but the Conservatory invents its own weather. Tuesdays it drizzles. We've an understanding."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Wednesdays it's sun, wherever the real sky stands. The glass just decides."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Drizzle days are best for planting. Come Tuesday, if you want dirt under your nails and no talking."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Mind the fig on drizzle days. Drips down collars. Thinks it's funny."
         }
       ]
     },
@@ -541,6 +886,21 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "Sharp spade, soft heart. Only rule of grounds-keeping worth keeping."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "His trowel's still on the third hook. Oiled. Handle worn to his grip."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "Not a shrine. A tool waiting. There's a difference, and the difference is hope."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Take the second-hook trowel if you fancy digging. Good handle. No history. History's heavy in a tool."
         }
       ]
     },
@@ -554,6 +914,21 @@
           "speaker": "fern",
           "portrait": "amused",
           "text": "Cat helps me garden. Supervises. Sits on the trowel at quitting time. Union cat."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Filed a grievance once. Sat on my seed catalogue till I opened the good window. Grievance upheld."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Best foreman I've had. Sleeps on the job and the job improves."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Never feed him in the Conservatory, mind. He'll expect soil rights. Slippery negotiator."
         }
       ]
     },
@@ -567,6 +942,21 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "Rooms grow faster upstairs. Richer soil, or richer secrets. Same thing, in a house."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Cellar rooms come up mushroomy. Quick, quiet, gone by Thursday. Attic rooms take all season and keep forever."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Same as people, roughly. Don't quote me to the attic."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "The Study grew slowest of all. Some rooms wait for their person. Still waiting, that one. Warmer lately, though."
         }
       ]
     },
@@ -586,6 +976,21 @@
           "speaker": "fern",
           "portrait": "wistful",
           "text": "His papers you're gathering — seeds, those. When they all sprout in your head at once, that's harvest. Top of the stairs. Go gentle."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Don't force the harvest, mind. Green fruit teaches nothing but patience, the loud way."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "You'll know ripe. Everyone does. It's the one wisdom nobody has to be taught."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "And take water up with you. Long stairs. Dry work, truth."
         }
       ]
     },
@@ -599,6 +1004,11 @@
           "speaker": "fern",
           "portrait": "neutral",
           "text": "Tomorrow. Watering hour."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Plants first. You understand. You're the sort that understands."
         }
       ]
     },
@@ -612,6 +1022,11 @@
           "speaker": "fern",
           "portrait": "amused",
           "text": "Enough of me. Go grow something."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Standing's growing, technically. Do it somewhere green."
         }
       ]
     },
@@ -625,6 +1040,11 @@
           "speaker": "fern",
           "narration": true,
           "text": "Fern waters a fern. Neither remarks on it. Some jokes are thirty years deep and still bearing."
+        },
+        {
+          "speaker": "fern",
+          "text": "She tips the last of the can into a pot that holds, as far as anyone knows, plain dirt. 'Early days,' she says, to the dirt.",
+          "narration": true
         }
       ]
     },
@@ -638,6 +1058,11 @@
           "speaker": "fern",
           "narration": true,
           "text": "Snip. A single yellow leaf drops. Fern pockets it like a coin."
+        },
+        {
+          "speaker": "fern",
+          "text": "The leaf goes in a left pocket that bulges with a season of such coins.",
+          "narration": true
         }
       ]
     },
@@ -651,6 +1076,11 @@
           "speaker": "fern",
           "narration": true,
           "text": "Fern hums two notes, over and over. The vines nearest her keep time."
+        },
+        {
+          "speaker": "fern",
+          "text": "You almost catch the tune. It's older than the house. The vines clearly know the words.",
+          "narration": true
         }
       ]
     },
@@ -672,8 +1102,337 @@
           "speaker": "fern",
           "portrait": "warm",
           "text": "House breathes easier with you in it. Plants said. Plants don't flatter."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Go on. Grow the day."
         }
       ]
+    },
+    {
+      "id": "fern.react.gift-thanks",
+      "trigger": "idle",
+      "priority": 800,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "gift-given",
+          "withinDays": 0,
+          "where": {
+            "character": "fern"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Another one? You'll spoil the pressing book."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "It's gone in beside the sweet-pea. Growing quite the meadow of ribbon in there."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Go on, now. Kindness that stands about gets planted, and you've things to do."
+        }
+      ]
+    },
+    {
+      "id": "fern.react.letter",
+      "trigger": "parlor",
+      "priority": 701,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "letter-opened"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "You had post this morning. Posy hummed all through her rounds. She only hums for the good deliveries."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Letters are pressed flowers with more words. Keep them flat and out of the sun."
+        }
+      ]
+    },
+    {
+      "id": "fern.react.rankup",
+      "trigger": "parlor",
+      "priority": 704,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "affinity-rank-up",
+          "where": {
+            "character": "fern"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "The garden's been leaning your way lately. Whole beds of it. I don't correct them."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Means you're rooting here. Took me three winters. You're quicker."
+        }
+      ],
+      "summary": "The garden leans your way now. Fern does not correct it."
+    },
+    {
+      "id": "fern.react.twistle",
+      "trigger": "parlor",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-solved",
+          "where": {
+            "kind": "twistle"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Heard the Gallery's chimes from here. Word after word after word. Like rain deciding to be a river."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "The paintings straighten themselves when it goes well. Vain room, the Gallery. Earned it today."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Good work. The kind that echoes."
+        }
+      ]
+    },
+    {
+      "id": "fern.gen.frost",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "First frost, I cover the tender beds with his old dust-sheets. House lends them. Never asks for them back till spring."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "The statues underneath look like shy ghosts. Ellery says it's crowded feeling. She'd know."
+        }
+      ]
+    },
+    {
+      "id": "fern.gen.names",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "I name the long beds after words he liked. Vestibule bed. Petrichor bed. Grows better, named. Everything does."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "There's an unnamed bed by the east glass. Been saving it. No rush. Names come when they come."
+        }
+      ]
+    },
+    {
+      "id": "fern.gen.winter",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "House never lets it snow indoors but once a year. One night. One corridor. Nobody knows which till it's ankle-deep."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "I leave a shovel out anyway. Tradition. The shovel's never once been needed and never once been optional."
+        }
+      ]
+    },
+    {
+      "id": "fern.gen.compost",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Compost's just patience with a smell. Everything the house is done with goes in. Comes back soil."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "Best batch I ever turned had his old blotting paper in it. Roses that year spelled things, I'd swear."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Don't look like that. It's the politest resurrection going."
+        }
+      ]
+    },
+    {
+      "id": "fern.gen.bees",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "The bees came with the house. No one keeps them. They keep us, near as I can tell."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "curious",
+          "text": "They dance their directions, you know. Lately the dances point up the stairs. Bees know where the sweetness is stuck."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "Take the hint or don't. They'll dance it again tomorrow. Patient as sums."
+        }
+      ]
+    },
+    {
+      "id": "fern.gen.autumn",
+      "trigger": "parlor",
+      "priority": 100,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "House does autumn in one hallway only. Keeps it like a jar of something. Leaves down all year."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Walk it slow if you find it. Crunch is good for thinking."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "amused",
+          "text": "I sweep it Sundays. It's back by Monday. Best arrangement I have with anything."
+        }
+      ]
+    },
+    {
+      "id": "fern.arc.mother",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "fern",
+          "gte": 4
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "My mother kept these grounds when the master was young. Her hands in every bed. Mine over hers now, like tracing."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "She told me: gardens don't die, they change hands. Took me years to hear the kindness in it."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Your hands are in it now too. Noted in the soil, that. Soil keeps records ink would envy."
+        }
+      ],
+      "summary": "Gardens do not die; they change hands. Yours are in it now."
+    },
+    {
+      "id": "fern.idle.seedlings",
+      "trigger": "idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "fern",
+          "text": "A tray of seedlings sits in the warm. Fern turns it a quarter, so they all get their fair look at the light.",
+          "narration": true
+        }
+      ]
+    },
+    {
+      "id": "fern.arc.testimony",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "met.fern"
+        },
+        {
+          "kind": "fragmentCount",
+          "gte": 7
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "You keep finding pieces. Here's mine."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Bed in the west garden. Nothing grows there. He'd stand at it an hour at a time. Said there was a word for that exact shape of missing."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "Said he meant to see it filled again. Plants remember. So do I."
+        }
+      ],
+      "effects": {
+        "grantsFragmentIds": [
+          "v1-t3"
+        ]
+      },
+      "summary": "Fern's testimony: the empty bed in the west garden."
     }
   ]
 }

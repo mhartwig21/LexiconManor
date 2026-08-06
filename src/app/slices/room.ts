@@ -128,6 +128,7 @@ export const createRoomSlice =
             if (ev.gems || ev.keys) {
               set((s) => ({
                 currencies: {
+                  ...s.currencies,
                   gems: s.currencies.gems + (ev.gems ?? 0),
                   keys: s.currencies.keys + (ev.keys ?? 0),
                 },

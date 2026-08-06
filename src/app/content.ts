@@ -1,20 +1,19 @@
 import type { Difficulty, GameMode, WordWebPuzzle, HivePuzzle, TwistlePuzzle, ForgottenWordPuzzle } from '../engine/types';
 import { createRng, pick } from '../engine/rng';
-import wordWebData from '../../content/generated/word-web.json';
-import hiveData from '../../content/generated/hive.json';
-import twistleData from '../../content/generated/twistle.json';
-import forgottenWordData from '../../content/generated/forgotten-word.json';
+import { getPools, lazyContent } from './pools';
 
 /**
  * Puzzle selection over the shipped bundles. Selection is seeded per
  * (run, node) so re-entering a node shows the same puzzle, and seen-tracking
  * in the save file prevents repeats across runs until a pool exhausts.
+ * Content arrives via the lazy pools registry (AAA 9.6 — app/pools.ts is the
+ * one importer of content JSON); the exported consts are lazy views.
  */
 
-export const WORD_WEB_PUZZLES = wordWebData as WordWebPuzzle[];
-export const HIVE_PUZZLES = hiveData as HivePuzzle[];
-export const TWISTLE_PUZZLES = twistleData as TwistlePuzzle[];
-export const FORGOTTEN_WORD_PUZZLES = forgottenWordData as ForgottenWordPuzzle[];
+export const WORD_WEB_PUZZLES = lazyContent<WordWebPuzzle[]>(() => getPools().wordWeb);
+export const HIVE_PUZZLES = lazyContent<HivePuzzle[]>(() => getPools().hive);
+export const TWISTLE_PUZZLES = lazyContent<TwistlePuzzle[]>(() => getPools().twistle);
+export const FORGOTTEN_WORD_PUZZLES = lazyContent<ForgottenWordPuzzle[]>(() => getPools().forgottenWord);
 
 /** Difficulty tiers served per level, in preference order. */
 export function difficultiesForLevel(level: number): Difficulty[] {

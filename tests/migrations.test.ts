@@ -201,11 +201,11 @@ describe('v2 → v2 normalization (forward-compat backfill)', () => {
 
   it('keeps live v2 data untouched', () => {
     const save = createEmptySaveV2('Meredith');
-    save.currencies = { gems: 3, keys: 1 };
+    save.currencies = { gems: 3, keys: 1, bookmarks: 2 };
     save.volume.foundFragmentIds = ['frag.v1.01'];
     save.journal.affinities.bramble = 2;
     const v2 = migrate(JSON.parse(JSON.stringify(save)));
-    expect(v2.currencies).toEqual({ gems: 3, keys: 1 });
+    expect(v2.currencies).toEqual({ gems: 3, keys: 1, bookmarks: 2 });
     expect(v2.volume.foundFragmentIds).toEqual(['frag.v1.01']);
     expect(v2.journal.affinities.bramble).toBe(2);
   });

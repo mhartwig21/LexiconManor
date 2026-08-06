@@ -127,6 +127,11 @@ export const createJournalSlice =
       const grants = letterGrants(content, letter, v);
       get().setFlag(flag);
       for (const fid of grants) get().fileFragment(fid);
+      // Posy tucks a bookmark into every letter — the renewable gift-currency
+      // source (AAA 5.7; empty-pocket copy in DialogueScene names letters).
+      set((s) => ({
+        currencies: { ...s.currencies, bookmarks: s.currencies.bookmarks + 1 },
+      }));
       get().recordEvent({ type: 'letter-opened', letterId });
     },
 

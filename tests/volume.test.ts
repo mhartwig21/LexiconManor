@@ -11,7 +11,7 @@ import type { DayRecord, VolumeState } from '../src/engine/types';
 import {
   advanceVolume, applyGuess, arrivedLetters, computeCloseness, findLetter,
   fragmentDroughtDays, freshVolumeState, hasGuessedOnDay, letterGrants,
-  nextFragmentForRoom, normalizeGuess, openedLetterFlag, pityDue,
+  nextFragmentForRoom, normalizeGuess, openedLetterFlag, openedLetterIds, pityDue,
   reservedTestimonyIds, solvedFlag, synthesizedPityCount, synthesizedPityLetter,
   unfoundFragments, DEFAULT_PITY_TEMPLATES, PITY_DROUGHT_DAYS, SYNTH_PITY_PREFIX,
   type VolumeContent,
@@ -298,6 +298,23 @@ describe('letters — overnight post, pure derivation', () => {
     expect(arrivedLetters(volume, fresh(), 30, opts).map((l) => l.id)).not.toContain('after-the-door');
     const solved: VolumeState = { ...fresh(), status: 'solved' };
     expect(arrivedLetters(volume, solved, 30, opts).map((l) => l.id)).toContain('after-the-door');
+  });
+
+  it('openedLetterIds derives from flags — synthesized pity ids included', () => {
+    const flags = [
+      openedLetterFlag(volume.id, 'first-post'),
+      openedLetterFlag(volume.id, 'pity-extra-1'),
+      openedLetterFlag('volume-2', 'first-post'), // another volume — ignored
+      'sys.first-gift.posy',                      // unrelated flag — ignored
+    ];
+    expect(openedLetterIds(volume.id, flags)).toEqual(new Set(['first-post', 'pity-extra-1']));
+    // Round-trips into arrivedLetters: the opened synthesized letter stays
+    // readable in a calm tray (the bug this helper exists to prevent).
+    const calm = arrivedLetters(volume, fresh(), 16, {
+      droughtDays: 0,
+      openedIds: openedLetterIds(volume.id, flags),
+    });
+    expect(calm.map((l) => l.id)).toContain('pity-extra-1');
   });
 
   it('static grants skip fragments already found', () => {

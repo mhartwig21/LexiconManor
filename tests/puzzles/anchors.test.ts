@@ -16,6 +16,7 @@ import {
 import {
   forgottenWordAdapter, FORGOTTEN_WORD_POOL, type ForgottenWordRoomState,
 } from '../../src/engine/rooms/adapters/forgotten-word';
+import { STEP_TABLE } from '../../src/engine/economy/steps';
 
 /**
  * A3 — the four anchor rooms behind the RoomPuzzle contract.
@@ -174,7 +175,7 @@ describe('selection', () => {
 describe('word-web adapter', () => {
   const startState = () => wordWebAdapter.start(webPuzzle, ctx(1));
 
-  it('solves through all four groups with a perfect outcome', () => {
+  it('solves through all four groups, names the final thread, perfect outcome (AAA 2.11)', () => {
     let s: WordWebRoomState = startState();
     let lastEvents: RoomEvent[] = [];
     for (const g of webPuzzle.groups) {
@@ -183,8 +184,32 @@ describe('word-web adapter', () => {
       lastEvents = r.events;
       expect(eventsOfType(r.events, 'progress').length).toBeGreaterThan(0);
     }
-    expect(eventsOfType(lastEvents, 'solved')).toEqual([{ type: 'solved', perfect: true }]);
-    expect(s.web.status).toBe('won');
+    // The last four fell together, but the room is NOT solved yet: the final
+    // group is never pure leftovers — the thread must be named first.
+    expect(eventsOfType(lastEvents, 'solved')).toEqual([]);
+    expect(s.pendingNaming).not.toBeNull();
+    expect(s.lastFeedback?.kind).toBe('name-final');
+    const options = s.pendingNaming!.options;
+    expect(options).toHaveLength(3);
+    expect(options).toContain(s.pendingNaming!.theme);
+
+    const named = wordWebAdapter.reduce(webPuzzle, s, { type: 'name-theme', theme: s.pendingNaming!.theme });
+    expect(eventsOfType(named.events, 'solved')).toEqual([{ type: 'solved', perfect: true }]);
+    expect(named.outcome).toEqual({ status: 'solved', perfect: true });
+    expect(named.state.web.status).toBe('won');
+  });
+
+  it('naming the final thread wrong still solves, but forfeits perfect — never steps', () => {
+    let s: WordWebRoomState = startState();
+    for (const g of webPuzzle.groups) {
+      s = wordWebAdapter.reduce(webPuzzle, s, { type: 'submit', selection: g.words }).state;
+    }
+    const wrongLabel = s.pendingNaming!.options.find((t) => t !== s.pendingNaming!.theme)!;
+    const r = wordWebAdapter.reduce(webPuzzle, s, { type: 'name-theme', theme: wrongLabel });
+    expect(eventsOfType(r.events, 'mistake')).toEqual([]); // no step cost for a missed name
+    expect(eventsOfType(r.events, 'solved')).toEqual([{ type: 'solved', perfect: false }]);
+    expect(r.outcome).toEqual({ status: 'solved', perfect: false });
+    expect(r.state.namedCorrectly).toBe(false);
   });
 
   it('a wrong group costs weight 1 and forfeits perfect; selection info is kept', () => {
@@ -284,17 +309,28 @@ describe('hive adapter', () => {
     expect(r.state.lastFeedback).toMatchObject({ kind: 'invalid', reason: 'already-found' });
   });
 
-  it('pre-warned structural violations cost weight 1 and map to the 1.6 taxonomy', () => {
+  it('pre-warned structural violations cost the flat structural row (−1, AAA R.1)', () => {
     const s = startState();
     for (const [word, reason] of [
       ['STAR', 'missing-center'],   // no center letter — live coloring warned
       ['EXAMS', 'bad-letters'],     // X/M not in the hive — muted in the entry
     ] as const) {
       const r = submit(s, word);
-      expect(eventsOfType(r.events, 'mistake'), word).toEqual([{ type: 'mistake', weight: 1 }]);
+      // Never the −2/−3 deduction row: weight 'structural' maps to a flat −1
+      // at every tier in STEP_TABLE.
+      expect(eventsOfType(r.events, 'mistake'), word).toEqual([{ type: 'mistake', weight: 'structural' }]);
       expect(r.state.lastFeedback, word).toMatchObject({ kind: 'invalid', reason, costed: true });
       expect(r.outcome.perfect, word).toBe(false);
     }
+  });
+
+  it("STEP_TABLE prices 'structural' at −1 for every tier", () => {
+    for (const tier of [1, 2, 3] as const) {
+      expect(STEP_TABLE.mistake('structural', tier)).toBe(-1);
+    }
+    // The deliberate-claim row stays −2 (−3 at tier 3).
+    expect(STEP_TABLE.mistake(1, 1)).toBe(-2);
+    expect(STEP_TABLE.mistake(1, 3)).toBe(-3);
   });
 
   it('entropy is retired: letters never fade, the hive is never lost', () => {
@@ -397,10 +433,19 @@ describe('forgotten-word adapter', () => {
     expect(r.outcome).toEqual({ status: 'solved', perfect: true });
   });
 
-  it('a wrong guess is a deliberate claim: weight 1', () => {
-    const r = guess(start(1), 'RAIN');
+  it('a wrong guess (of an announced-plausible length) is a deliberate claim: weight 1', () => {
+    const r = guess(start(1), 'RAINSTORM'); // 9 letters, same as PETRICHOR
     expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
-    expect(r.state.lastFeedback).toMatchObject({ kind: 'wrong', guess: 'RAIN', guessesLeft: 4 });
+    expect(r.state.lastFeedback).toMatchObject({ kind: 'wrong', guess: 'RAINSTORM', guessesLeft: 4 });
+  });
+
+  it('a wrong-LENGTH guess is malformed input: free, no whisper consumed (AAA 3.2)', () => {
+    const r = guess(start(1), 'LANTERN'); // 7 letters against a 9-letter card
+    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+    expect(r.state.lastFeedback).toEqual({ kind: 'invalid', reason: 'wrong-length' });
+    expect(r.state.fw.guesses).toEqual([]);           // whisper NOT consumed
+    expect(r.state.costedMistakes).toBe(0);
+    expect(r.outcome.perfect).toBe(true);
   });
 
   it('unsealing a clue is a costed hint that forfeits perfect', () => {
@@ -418,9 +463,9 @@ describe('forgotten-word adapter', () => {
 
   it('out of whispers auto-abandons — never a fail — and reveals for closure', () => {
     let s = start(3); // 3 guesses
-    s = guess(s, 'RAIN').state;
-    s = guess(s, 'DUST').state;
-    const r = guess(s, 'STORM');
+    s = guess(s, 'RAINSTORM').state;
+    s = guess(s, 'DOWNPOURS').state;
+    const r = guess(s, 'SPLASHING');
     expect(r.outcome).toEqual({ status: 'abandoned', perfect: false });
     expect(r.state.lastFeedback).toEqual({ kind: 'slipped', word: 'PETRICHOR' });
     expect(r.events.some((e) => e.type === 'progress' && e.detail === 'slipped-away')).toBe(true);
@@ -428,9 +473,103 @@ describe('forgotten-word adapter', () => {
 
   it('a repeated whisper is a free slip', () => {
     let s = start(1);
-    s = guess(s, 'RAIN').state;
-    const r = guess(s, 'rain');
+    s = guess(s, 'RAINSTORM').state;
+    const r = guess(s, 'rainstorm');
     expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
-    expect(r.state.fw.guesses).toEqual(['RAIN']);
+    expect(r.state.fw.guesses).toEqual(['RAINSTORM']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Shipped-content invariants (the generators' contract with the rooms)
+// ---------------------------------------------------------------------------
+
+describe('shipped content — Conservatory pool (BENCHMARKS §1 / AAA 3.5)', () => {
+  it('every puzzle is curated into the SB 45–80 word band', () => {
+    for (const p of HIVE_POOL) {
+      expect(p.validWords.length, p.id).toBeGreaterThanOrEqual(45);
+      expect(p.validWords.length, p.id).toBeLessThanOrEqual(80);
+    }
+  });
+
+  it('the S-ban holds and every puzzle keeps a pangram', () => {
+    for (const p of HIVE_POOL) {
+      expect(p.validWords.some((w) => w.endsWith('S')), p.id).toBe(false);
+      expect(p.pangrams.length, p.id).toBeGreaterThan(0);
+    }
+  });
+
+  it('all four difficulties are stocked', () => {
+    for (const d of ['easy', 'medium', 'hard', 'expert'] as const) {
+      expect(HIVE_POOL.filter((p) => p.difficulty === d).length, d).toBeGreaterThanOrEqual(30);
+    }
+  });
+});
+
+describe('shipped content — Library boards (AAA 2.6–2.11)', () => {
+  it('every board carries the fairness fields: layout, herring budget, typed groups, decoys', () => {
+    for (const p of WORD_WEB_POOL) {
+      const words = p.groups.flatMap((g) => g.words);
+      // 2.6 adversarial opening layout: a permutation of the 16 words.
+      expect(p.layout?.length, p.id).toBe(16);
+      expect(new Set(p.layout).size, p.id).toBe(16);
+      for (const w of p.layout!) expect(words, p.id).toContain(w);
+      // 2.7 herring budget: ≤3, all on the board.
+      expect((p.ambiguousWords ?? []).length, p.id).toBeLessThanOrEqual(3);
+      for (const w of p.ambiguousWords ?? []) expect(words, p.id).toContain(w);
+      // 2.11 decoys for the act of naming.
+      for (const g of p.groups) {
+        expect(g.decoys?.length, `${p.id} "${g.theme}"`).toBe(2);
+        expect(g.decoys, `${p.id} "${g.theme}"`).not.toContain(g.theme);
+      }
+    }
+  });
+
+  it('2.9: ≤1 trivia category (always yellow) and ≥2 wordplay categories per board', () => {
+    for (const p of WORD_WEB_POOL) {
+      const trivia = p.groups.filter((g) => g.type === 'trivia');
+      expect(trivia.length, p.id).toBeLessThanOrEqual(1);
+      for (const g of trivia) expect(g.tier, `${p.id} "${g.theme}"`).toBe('yellow');
+      expect(p.groups.filter((g) => g.type === 'wordplay').length, p.id).toBeGreaterThanOrEqual(2);
+      for (const g of p.groups) expect(['semantic', 'trivia', 'wordplay'], p.id).toContain(g.type);
+    }
+  });
+
+  it('planted herrings cluster adjacently in the opening layout (2.6)', () => {
+    for (const p of WORD_WEB_POOL) {
+      const herrings = p.ambiguousWords ?? [];
+      if (herrings.length < 2) continue;
+      const idxs = herrings.map((w) => p.layout!.indexOf(w)).sort((a, b) => a - b);
+      expect(idxs[idxs.length - 1]! - idxs[0]!, p.id).toBe(herrings.length - 1);
+    }
+  });
+});
+
+describe('shipped content — Study pool (AAA 3.7)', () => {
+  it('the pool is a volume deep (≥30) with all four obscurities stocked', () => {
+    expect(FORGOTTEN_WORD_POOL.length).toBeGreaterThanOrEqual(30);
+    for (const o of ['common', 'medium', 'rare', 'archaic'] as const) {
+      expect(FORGOTTEN_WORD_POOL.some((p) => p.obscurity === o), o).toBe(true);
+    }
+  });
+
+  it('the three definition registers are genuinely distinct per entry', () => {
+    for (const p of FORGOTTEN_WORD_POOL) {
+      expect(p.definitions.plain, p.id).not.toBe(p.definitions.poetic);
+      expect(p.definitions.poetic, p.id).not.toBe(p.definitions.riddle);
+      expect(p.definitions.plain, p.id).not.toBe(p.definitions.riddle);
+    }
+  });
+
+  it('no clue leaks the answer stem (the fw-serendipity lesson)', () => {
+    for (const p of FORGOTTEN_WORD_POOL) {
+      const stem = p.word.slice(0, 4).toLowerCase();
+      for (const clue of [
+        p.definitions.plain, p.definitions.poetic, p.definitions.riddle,
+        p.etymology, p.usage,
+      ]) {
+        expect(clue.toLowerCase().includes(stem), `${p.id}: "${clue}"`).toBe(false);
+      }
+    }
   });
 });

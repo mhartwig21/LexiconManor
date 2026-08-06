@@ -18,9 +18,9 @@ import {
   type CrosswordEngineState, type CrosswordPuzzle,
 } from './crossword';
 import type { RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../rooms/room-puzzle';
-import crosswordData from '../../../content/generated/crossword.json';
+import { getPools, lazyContent } from '../../app/pools';
 
-export const CROSSWORD_POOL = crosswordData as CrosswordPuzzle[];
+export const CROSSWORD_POOL = lazyContent<CrosswordPuzzle[]>(() => getPools().crossword as CrosswordPuzzle[]);
 
 const TIER_DIFFICULTY: Record<Tier, CrosswordPuzzle['difficulty'][]> = {
   1: ['medium', 'easy'],

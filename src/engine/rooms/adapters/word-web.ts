@@ -13,7 +13,7 @@ import type { Difficulty, Tier, WordWebGroup, WordWebPuzzle } from '../../types'
 import { createRng, pick, shuffle } from '../../rng';
 import { startWordWeb, submitGroup, type WordWebState } from '../../word-web';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../room-puzzle';
-import wordWebData from '../../../../content/generated/word-web.json';
+import { getPools, lazyContent } from '../../../app/pools';
 
 /**
  * Generator enrichments carried in the content JSON (content/generate-wordweb.ts)
@@ -32,7 +32,9 @@ export interface WordWebPuzzleEx extends WordWebPuzzle {
   layout?: string[];
 }
 
-export const WORD_WEB_POOL = wordWebData as WordWebPuzzleEx[];
+export const WORD_WEB_POOL = lazyContent<WordWebPuzzleEx[]>(
+  () => getPools().wordWeb as WordWebPuzzleEx[],
+);
 
 const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
   1: ['medium', 'easy'],

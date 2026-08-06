@@ -42,14 +42,11 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
   const canGift = useManorStore(
     (s) => character !== 'dewey' && !s.giftedToday.includes(character),
   );
-  // Bookmarks are a scarce currency (AAA 5.7): once the shared Currencies
-  // shape carries `bookmarks` (architect request pending, see A6 report),
-  // the gift offer is gated on having one. Until the field lands the read is
-  // undefined and gifting stays ungated rather than falsely locked.
-  const bookmarks = useManorStore(
-    (s) => (s.currencies as { bookmarks?: number }).bookmarks,
-  );
-  const giftLocked = bookmarks !== undefined && bookmarks <= 0;
+  // Bookmarks are a scarce currency (AAA 5.7): the gift offer is gated on
+  // having one, and — like any other spend — on having a step left to give.
+  const bookmarks = useManorStore((s) => s.currencies.bookmarks);
+  const outOfSteps = useManorStore((s) => s.stepsRemaining() < 1);
+  const giftLocked = bookmarks <= 0 || outOfSteps;
   const settingsReduced = useManorStore((s) => s.settings.reducedMotion);
   const reducedMotion = useMemo(
     () =>
@@ -202,12 +199,14 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
             <div className="dlg-choices" onPointerDown={(e) => e.stopPropagation()}>
               {canGift && !giftLocked && (
                 <button type="button" className="dlg-choice dlg-choice--gift" onClick={handleGift}>
-                  Offer a bookmark{bookmarks !== undefined ? ` (${bookmarks} in pocket)` : ''}
+                  Offer a bookmark ({bookmarks} in pocket)
                 </button>
               )}
               {canGift && giftLocked && (
                 <p className="dlg-gift-empty">
-                  Your pocket wants for bookmarks — the manor tucks them into rooms and letters.
+                  {outOfSteps
+                    ? 'No steps left for giving tonight — tomorrow, then.'
+                    : 'Your pocket wants for bookmarks — the manor tucks them into rooms and letters.'}
                 </p>
               )}
               <button type="button" className="dlg-choice dlg-choice--primary" onClick={onClose}>

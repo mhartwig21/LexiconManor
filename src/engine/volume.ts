@@ -329,6 +329,20 @@ export function openedLetterFlag(volumeId: string, letterId: string): string {
   return `vol.${volumeId}.opened-${letterId}`;
 }
 
+/**
+ * All letter ids this volume has opened, derived from the write-once flags.
+ * This is the ONLY correct way to build `openedIds` for arrivedLetters:
+ * filtering content.letters by flag misses synthesized pity letters
+ * ('pity-extra-N'), which exist purely as derivation and must still count as
+ * opened (they stay readable in the tray and advance the mint counter).
+ */
+export function openedLetterIds(volumeId: string, flags: Iterable<string>): Set<string> {
+  const prefix = `vol.${volumeId}.opened-`;
+  const out = new Set<string>();
+  for (const f of flags) if (f.startsWith(prefix)) out.add(f.slice(prefix.length));
+  return out;
+}
+
 export function letterArrived(
   letter: LetterContent,
   state: VolumeState,

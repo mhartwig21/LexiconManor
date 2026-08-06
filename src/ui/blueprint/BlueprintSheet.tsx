@@ -210,9 +210,49 @@ export default function BlueprintSheet({
       role="application"
       aria-label="The manor blueprint"
     >
+      {/* Sheet furniture (AAA 6.13): the drawing is a surveyor's plot, not a
+          floating grid — plot border with corner ticks, Fell-caps title block
+          in the reserved top margin, scale mark in the bottom margin. All
+          static ink; inside the viewBox so it survives preserveAspectRatio. */}
+      <defs>
+        <pattern
+          id="bp-hatch"
+          width={6}
+          height={6}
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(45)"
+        >
+          <line className="bp-hatch__line" x1={0.5} y1={0} x2={0.5} y2={6} />
+        </pattern>
+      </defs>
+      <g className="bp-furniture" aria-hidden="true">
+        <rect className="bp-plot" x={4} y={4} width={VIEW_W - 8} height={VIEW_H - 8} />
+        <path
+          className="bp-plot__ticks"
+          d={[
+            `M4 12V4h8`, `M${VIEW_W - 12} 4h8v8`,
+            `M${VIEW_W - 4} ${VIEW_H - 12}v8h-8`, `M12 ${VIEW_H - 4}H4v-8`,
+          ].join('')}
+        />
+        <text className="bp-plot__title" x={VIEW_W / 2} y={21}>
+          LEXICON MANOR&thinsp;&mdash;&thinsp;GROUNDS
+        </text>
+        {/* scale mark: one bar = one room */}
+        <g className="bp-scale" transform={`translate(${MX} ${VIEW_H - 12})`}>
+          <rect x={0} y={0} width={CELL / 4} height={3} className="bp-scale__seg bp-scale__seg--fill" />
+          <rect x={CELL / 4} y={0} width={CELL / 4} height={3} className="bp-scale__seg" />
+          <rect x={CELL / 2} y={0} width={CELL / 4} height={3} className="bp-scale__seg bp-scale__seg--fill" />
+          <rect x={(3 * CELL) / 4} y={0} width={CELL / 4} height={3} className="bp-scale__seg" />
+          <text className="bp-scale__label" x={CELL + 8} y={3.4}>ONE ROOM</text>
+        </g>
+      </g>
+
       {/* rank pressure: the higher floors are visibly graver (MANOR_DESIGN §3) */}
       <rect className="bp-band bp-band--t2" x={MX - 3} y={py(4)} width={MANOR_COLS * CELL + 6} height={2 * CELL} />
       <rect className="bp-band bp-band--t3" x={MX - 3} y={py(6)} width={MANOR_COLS * CELL + 6} height={2 * CELL} />
+      {/* hatched deepening of the locked/graver bands, layered under the rooms */}
+      <rect className="bp-band--hatch bp-band--hatch-t2" fill="url(#bp-hatch)" x={MX - 3} y={py(4)} width={MANOR_COLS * CELL + 6} height={2 * CELL} />
+      <rect className="bp-band--hatch bp-band--hatch-t3" fill="url(#bp-hatch)" x={MX - 3} y={py(6)} width={MANOR_COLS * CELL + 6} height={2 * CELL} />
       <path className="bp-graph" d={graphCrosses()} />
 
       {/* tier pips in the left margin: one, two, three diamonds by band */}

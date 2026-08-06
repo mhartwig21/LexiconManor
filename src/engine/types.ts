@@ -324,7 +324,8 @@ export interface StepEntry {
 /** Pure, replayable, journal-friendly ledger. Steps never render negative. */
 export interface StepLedger { budget: number; entries: StepEntry[]; }
 
-export interface Currencies { gems: number; keys: number; }
+/** gems/keys reset nightly; bookmarks (the gift currency, AAA 5.7) persist. */
+export interface Currencies { gems: number; keys: number; bookmarks: number; }
 
 // --- Day lifecycle (logic: engine/day.ts, owned by A2) ---------------------
 

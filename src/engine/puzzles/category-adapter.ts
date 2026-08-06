@@ -21,9 +21,9 @@ import {
   type CategoryEngineState, type CategoryPuzzle, type CategoryResult,
 } from './category';
 import type { RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../rooms/room-puzzle';
-import categoryData from '../../../content/generated/category.json';
+import { getPools, lazyContent } from '../../app/pools';
 
-export const CATEGORY_POOL = categoryData as CategoryPuzzle[];
+export const CATEGORY_POOL = lazyContent<CategoryPuzzle[]>(() => getPools().category as CategoryPuzzle[]);
 
 /** The pantry clock's cadence — the ONE tunable of the game's one timer. */
 export const TICK_SECONDS = 8;

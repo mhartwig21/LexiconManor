@@ -19,9 +19,9 @@ import {
   type AnagramEngineState, type AnagramPuzzle,
 } from './anagram';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../rooms/room-puzzle';
-import anagramData from '../../../content/generated/anagram.json';
+import { getPools, lazyContent } from '../../app/pools';
 
-export const ANAGRAM_POOL = anagramData as AnagramPuzzle[];
+export const ANAGRAM_POOL = lazyContent<AnagramPuzzle[]>(() => getPools().anagram as AnagramPuzzle[]);
 
 const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
   1: ['medium', 'easy'],

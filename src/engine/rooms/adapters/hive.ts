@@ -20,9 +20,9 @@ import type { Difficulty, HivePuzzle, Tier } from '../../types';
 import { createRng, pick } from '../../rng';
 import { startHive, submitHiveWord, type HiveState } from '../../hive';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../room-puzzle';
-import hiveData from '../../../../content/generated/hive.json';
+import { getPools, lazyContent } from '../../../app/pools';
 
-export const HIVE_POOL = hiveData as HivePuzzle[];
+export const HIVE_POOL = lazyContent<HivePuzzle[]>(() => getPools().hive);
 
 const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
   1: ['medium', 'easy'],
@@ -30,14 +30,19 @@ const TIER_DIFFICULTY: Record<Tier, Difficulty[]> = {
   3: ['expert', 'hard'],
 };
 
-/** Garden-themed rank ladder on the SB curve shape (AAA 1.11). */
+/**
+ * Garden-themed rank ladder on the SB curve shape (AAA 1.11), with the early
+ * rungs front-loaded so a 50th-percentile finding rate (~6 words in the first
+ * two minutes of a curated 45–80 word hive) crosses ≥3 rungs (AAA 1.13 —
+ * verified by simulation over the shipped pool in content/generate-hive.ts).
+ */
 export interface HiveLadderTier { name: string; pct: number }
 export const HIVE_LADDER: readonly HiveLadderTier[] = [
   { name: 'Seed', pct: 0 },
-  { name: 'Sprout', pct: 2 },
-  { name: 'Bud', pct: 5 },
-  { name: 'Shoot', pct: 8 },
-  { name: 'Leaf', pct: 15 },
+  { name: 'Sprout', pct: 1 },
+  { name: 'Bud', pct: 3 },
+  { name: 'Shoot', pct: 5 },
+  { name: 'Leaf', pct: 12 },
   { name: 'Blossom', pct: 25 },
   { name: 'Bower', pct: 40 },
   { name: 'Garden', pct: 50 },

@@ -1613,6 +1613,45 @@
           "text": "She catches you looking, winks, and goes on humming. The doorknob has never been brighter."
         }
       ]
+    },
+    {
+      "id": "bramble.arc.testimony",
+      "trigger": "morning",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "met.bramble"
+        },
+        {
+          "kind": "fragmentCount",
+          "gte": 5
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "concerned",
+          "text": "Before you go rattling doorknobs, pet — sit a moment. There's a thing I've dusted around for years and never once said out loud."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "Six candles at his desk, always six. Near the end he let one gutter out each night — and I never dared relight them. Some housekeeping isn't yours to do."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Put it in your journal, love. It's evidence, even if saying it still feels like tidying his grave."
+        }
+      ],
+      "effects": {
+        "grantsFragmentIds": [
+          "v1-t2"
+        ]
+      },
+      "summary": "Mrs. Bramble's testimony: six candles, let out one by one."
     }
   ]
 }

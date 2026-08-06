@@ -71,7 +71,15 @@ const catPuzzle: CategoryPuzzle = {
   id: 'cat-fixture',
   difficulty: 'easy',
   label: 'Herbs on the rack',
-  accepted: ['BASIL', 'THYME', 'SAGE', 'MINT', 'DILL'],
+  accepted: [
+    { word: 'BASIL', lemma: 'BASIL' },
+    { word: 'THYME', lemma: 'THYME' },
+    { word: 'SAGE', lemma: 'SAGE' },
+    { word: 'SAGES', lemma: 'SAGE' },
+    { word: 'MINT', lemma: 'MINT' },
+    { word: 'MINTS', lemma: 'MINT' },
+    { word: 'DILL', lemma: 'DILL' },
+  ],
   traps: [{ word: 'GINGER', note: 'A root, and it knows it.' }],
   target: 3,
   parTicks: 4,
@@ -357,14 +365,39 @@ describe('category pool', () => {
 
   it('categories are honest: traps disjoint from accepted, targets coverable, par sane', () => {
     for (const p of CATEGORY_POOL) {
-      expect(p.accepted.length, p.id).toBeGreaterThanOrEqual(p.target + 4);
+      const words = p.accepted.map((e) => e.word);
+      // Target must be coverable in distinct ANSWERS (lemmas), not spellings.
+      const lemmas = new Set(p.accepted.map((e) => e.lemma));
+      expect(lemmas.size, p.id).toBeGreaterThanOrEqual(p.target + 4);
       for (const t of p.traps) {
-        expect(p.accepted, `${p.id} trap ${t.word}`).not.toContain(t.word);
+        expect(words, `${p.id} trap ${t.word}`).not.toContain(t.word);
         expect(t.note.length, `${p.id} trap note`).toBeGreaterThan(0);
       }
       expect(p.parTicks).toBeGreaterThanOrEqual(p.target);
       expect(p.maxCostedTicks).toBeGreaterThan(0);
     }
+  });
+
+  it('plural inflation is dead: a plural of a shelved word is already-found, pool-wide', () => {
+    // Every shipped category: pick any two spellings sharing a lemma and
+    // verify the second scores nothing (3.5; BENCHMARKS §1 "editor bans S").
+    let pairsChecked = 0;
+    for (const p of CATEGORY_POOL) {
+      const byLemma = new Map<string, string[]>();
+      for (const e of p.accepted) {
+        byLemma.set(e.lemma, [...(byLemma.get(e.lemma) ?? []), e.word]);
+      }
+      for (const forms of byLemma.values()) {
+        if (forms.length < 2) continue;
+        let out = submitCategory(p, startCategory(p), forms[0]!);
+        expect(out.result.kind, `${p.id} ${forms[0]}`).toBe('found');
+        out = submitCategory(p, out.state, forms[1]!);
+        expect(out.result.kind, `${p.id} ${forms[1]}`).toBe('already-found');
+        expect(out.state.found, p.id).toHaveLength(1);
+        pairsChecked++;
+      }
+    }
+    expect(pairsChecked).toBeGreaterThan(20); // the expansion really ships pairs
   });
 });
 

@@ -7,11 +7,14 @@
  */
 
 import type { VolumeContent } from '../../engine/volume';
-import volume1 from '../../../content/authored/volumes/volume-1.json';
+import { getPools, lazyContent } from '../pools';
 
 /** In play order. Volume 1 is hand-authored end-to-end; later volumes come
- *  from content/generate-volume.ts + hand-authored definition poems. */
-const VOLUMES: VolumeContent[] = [volume1 as unknown as VolumeContent];
+ *  from content/generate-volume.ts + hand-authored definition poems.
+ *  Lazy view over the pools registry (AAA 9.6). */
+const VOLUMES: VolumeContent[] = lazyContent<VolumeContent[]>(
+  () => getPools().volumes as unknown as VolumeContent[],
+);
 
 export function getVolumeContent(volumeId: string): VolumeContent | null {
   return VOLUMES.find((v) => v.id === volumeId) ?? null;

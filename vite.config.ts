@@ -1,8 +1,13 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    // Resolve the lazy content-pool registry (app/pools.ts) before any test
+    // touches a pool-backed const — mirrors the app's App-level await.
+    setupFiles: ['tests/setup-pools.ts'],
+  },
   // Absolute base so service-worker scope resolution works (a relative './'
   // base breaks SW registration — ARCHITECTURE §9). GitHub Pages deploys under
   // /LexiconManor/; CI may override via MANOR_BASE. AAA 7.5 hard-checks the
