@@ -1,19 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import {
-  climbStepCost, deckMixAt, median, medianOf, microShareAt, quantile, quantileOf, share,
+  campaignProfileForDay, climbStepCost, deckMixAt, keyLuckFor, measuredKeyRate, median, medianOf,
+  microShareAt, quantile, quantileOf, share,
   reserveToTop, simulateDay, simulateDays, simulateCampaigns,
   MOVEMENT, SANCTUM_ROW, TIME_TABLE,
   PROFILE_DECENT, PROFILE_GREAT, PROFILE_SKILLED, PROFILE_SKIPPER,
 } from '../src/engine/economy/simulate';
 import {
-  doorLockedAt, fernMorningKeys, ledgerTotal, BASE_DAY_BUDGET, DOOR_LOCKS, KEY_SUPPLY,
-  MOVE_COST_BY_ROW, TEA_BY_RANK,
+  doorLockedAt, fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, ledgerTotal,
+  teaArcPoints, BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, KEY_SUPPLY,
+  MOVE_COST_BY_ROW, TEA_ARC, TEA_BY_RANK,
 } from '../src/engine/economy/steps';
 import { createRng } from '../src/engine/rng';
-import { BASE_DECK, deckFor, UTILITY_EFFECTS } from '../src/engine/manor/deck';
+import {
+  BASE_DECK, carryOverFrom, deckFor, CARRY_OVER_EFFECTS, UTILITY_EFFECTS,
+} from '../src/engine/manor/deck';
 import { rollCards } from '../src/engine/manor/drafting';
 import { createManor } from '../src/engine/manor/grid';
 import { getRoomAdapter, registeredRoomKinds } from '../src/engine/rooms/registry';
+import brambleDialogue from '../content/authored/dialogue/bramble.json';
+import fernDialogue from '../content/authored/dialogue/fern.json';
 
 /**
  * A2 — AAA 4.10, rewritten for the 2026-08 OWNER PLAYTEST directive:
@@ -32,6 +38,35 @@ import { getRoomAdapter, registeredRoomKinds } from '../src/engine/rooms/registr
  *
  * Rows are 1-based here (entrance 1 … Sanctum 7), matching the docs.
  */
+
+/**
+ * The affinity a player can actually reach in a character's AUTHORED file:
+ * every node effect, plus the best single choice per node (she takes one).
+ * This is the budget the campaign model is now held against — round-5 audit:
+ * the published curve used to be verified against warmth the live game could
+ * not draw.
+ */
+interface DialogueFile {
+  nodes: Array<{
+    effects?: { affinity?: Record<string, number> };
+    choices?: Array<{ effects?: { affinity?: Record<string, number> } }>;
+  }>;
+}
+
+function authoredAffinity(file: DialogueFile, character: string): number {
+  let total = 0;
+  for (const node of file.nodes) {
+    total += node.effects?.affinity?.[character] ?? 0;
+    const best = (node.choices ?? [])
+      .map((c) => c.effects?.affinity?.[character] ?? 0)
+      .reduce((a, b) => Math.max(a, b), 0);
+    total += best;
+  }
+  return total;
+}
+
+const AUTHORED_BRAMBLE = authoredAffinity(brambleDialogue as DialogueFile, 'bramble');
+const AUTHORED_FERN = authoredAffinity(fernDialogue as DialogueFile, 'fern');
 
 const DAYS = 3000;
 const CAMPAIGNS = 400;
@@ -416,10 +451,155 @@ describe('the padlock is LIVE, and the live key supply can pay for it', () => {
 
   it("Fern's morning key is an arc, not a bypass", () => {
     expect(fernMorningKeys(0)).toBe(0);                      // day 1 is the gate
-    const mature = fernMorningKeys(KEY_SUPPLY.fernMorningKeys.length);
-    expect(mature).toBeGreaterThan(0);
-    // One gate shortened; the ascent still crosses roughly 1.7 of them.
-    expect(mature).toBeLessThan(
+    // What her AUTHORED friendship can reach: one gate shortened, while the
+    // ascent still crosses roughly 1.7 of them.
+    const authored = fernMorningKeys(FERN_ARC.meetPoints + FERN_ARC.questPoints);
+    expect(authored).toBeGreaterThan(0);
+    expect(authored).toBeLessThan(
       [4, 5, 6].reduce((s, row) => s + DOOR_LOCKS.chanceByRow[row]! * DOOR_LOCKS.keyCost, 0));
+    // Weeks of bookmarks past it can add a second, never a third.
+    expect(Math.max(...KEY_SUPPLY.fernMorningKeys)).toBeLessThan(3);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND-5 AUDIT — the arcs must exist in the LIVE game, not only in this model
+// ---------------------------------------------------------------------------
+
+describe('4.10d — the meta arcs are driven by live code, not by free constants', () => {
+  it("never assumes more of Fern's friendship than her authored file can give", () => {
+    // The model's whole Fern budget must fit inside what the dialogue grants;
+    // if A6 rewrites her file downward, THIS breaks, not the owner's campaign.
+    expect(FERN_ARC.meetPoints + FERN_ARC.questPoints).toBeLessThanOrEqual(AUTHORED_FERN);
+    expect(AUTHORED_FERN).toBeGreaterThan(0);
+    // …and the first dawn key opens inside that budget. (Before the audit the
+    // table opened at 4 points and her whole lifetime granted 3: a wall.)
+    expect(fernMorningKeys(AUTHORED_FERN)).toBeGreaterThan(0);
+  });
+
+  it("drives Bramble's tea from the LIVE morning arc, inside her live ceiling", () => {
+    for (const day of [1, 2, 3, 6, 10, 14, 21, 30, 45]) {
+      const modelled = campaignProfileForDay(PROFILE_SKILLED, day).brambleAffinity;
+      // Exactly the function app/slices/day.ts applies each morning…
+      expect(modelled).toBe(teaArcPoints(day));
+      // …and never more than the live game can actually hold (the morning arc
+      // is a FLOOR, so her authored points and gifts only ever add to it).
+      expect(modelled).toBeLessThanOrEqual(teaArcPoints(day) + AUTHORED_BRAMBLE);
+      expect(modelled).toBeLessThanOrEqual(TEA_ARC.maxPoints);
+    }
+    // Day 1 is still a plain, kind cup — the arc has to be earned.
+    expect(campaignProfileForDay(PROFILE_SKILLED, 1).brambleAffinity).toBe(0);
+  });
+
+  it('drives keyLuck from the MEASURED live per-offer key rate', () => {
+    for (const day of [1, 2, 6, 10, 30]) {
+      const p = campaignProfileForDay(PROFILE_SKILLED, day);
+      expect(p.keyLuck).toBe(keyLuckFor(fernPointsOnDay(day)));
+    }
+  });
+
+  it('makes key frequency a RAMP: day 1 and day 30 are no longer identical', () => {
+    // The finding in one assertion. Measured live before the audit: 0.24 per
+    // ground-floor offer on day 1 and 0.24 on day 30, because the draft
+    // weights carried no day or affinity term at all.
+    const cold = measuredKeyRate(keyAccessFor(fernPointsOnDay(1)));
+    const warm = measuredKeyRate(keyAccessFor(fernPointsOnDay(30)));
+    expect(cold).toBeGreaterThan(0.1);          // it was never zero, just flat
+    expect(warm).toBeGreaterThan(cold * 1.5);
+    expect(warm).toBeLessThan(0.85);            // still a supply, not a giveaway
+    // …and it is monotone in the friendship, so there is no cliff to game.
+    let prev = 0;
+    for (const points of [0, 1, 2, 3]) {
+      const rate = measuredKeyRate(keyAccessFor(points));
+      expect(rate).toBeGreaterThanOrEqual(prev);
+      prev = rate;
+    }
+  });
+
+  it('leaves the deck MIX (and therefore the 4.10b clock) untouched', () => {
+    // The key-access term multiplies individual card weights, never category
+    // or rarity weights — `deckMixAt` is derived from those, so the clock this
+    // whole file calibrates against cannot drift because Fern made a friend.
+    for (const row of [0, 2, 4, 6]) {
+      const mix = deckMixAt(row);
+      expect(Object.values(mix).reduce((a, b) => a + b, 0)).toBeCloseTo(1, 6);
+    }
+    // Same deck, same rows, two access levels: the KEY rate moves, the shape
+    // of what a green card can be does not.
+    expect(measuredKeyRate(0)).not.toBe(measuredKeyRate(1));
+  });
+});
+
+describe('4.10b — the FIRST evenings land inside 10–15 minutes too', () => {
+  // The audit's finding: PROFILE_DECENT shipped `brambleAffinity: 2`, a pot the
+  // live game cannot pour until day 3 — and no test ever exercised a day-1
+  // profile. Measured at the live values, day 1 came in at 9.0 minutes: under
+  // the promised floor, on the evening that decides whether she comes back.
+  for (const day of [1, 2, 3]) {
+    it(`holds the window on day ${day}, at the affinity the live game can reach`, () => {
+      const profile = campaignProfileForDay(PROFILE_DECENT, day);
+      expect(profile.brambleAffinity).toBe(teaArcPoints(day));
+      expect(profile.dawnSteps).toBe(firstMorningPot(day));
+      for (const seed of [0xbeef, 0x1111, 0x7777]) {
+        const days = simulateDays(profile, 1500, seed + day);
+        const m = median(days, (r) => r.minutes);
+        expect(m).toBeGreaterThanOrEqual(10);
+        expect(m).toBeLessThanOrEqual(15);
+        expect(quantile(days, 0.9, (r) => r.minutes)).toBeLessThanOrEqual(23);
+      }
+    });
+  }
+
+  it('is the scripted pot doing it, not a fatter base budget', () => {
+    // Raising BASE_DAY_BUDGET to 20 would equal the bare ascent cost and break
+    // the headline invariant, so the fix had to be a refill (AAA 4.10d).
+    expect(BASE_DAY_BUDGET).toBe(18);
+    expect(reserveToTop(1, { walkbackPerRow: 0 })).toBeGreaterThan(BASE_DAY_BUDGET);
+    // Without the pot, day 1 falls out of the window — which is the finding.
+    const bare = simulateDays(
+      { ...PROFILE_DECENT, brambleAffinity: 0, dawnSteps: 0, dawnKeys: 0 }, 2000, 0xbeef);
+    expect(median(bare, (r) => r.minutes)).toBeLessThan(10);
+  });
+});
+
+describe('4.11 — something the player buys today pays out tomorrow', () => {
+  it('ships at least one cross-day investment, on cards that already exist', () => {
+    const ids = Object.keys(CARRY_OVER_EFFECTS);
+    expect(ids.length).toBeGreaterThan(0);
+    for (const id of ids) {
+      // On an EXISTING deck card, so deck composition — and the 4.10b clock
+      // calibrated against it — is untouched by the new mechanic.
+      expect(BASE_DECK.map((c) => c.id)).toContain(id);
+      const effect = CARRY_OVER_EFFECTS[id]!;
+      expect((effect.steps ?? 0) + (effect.keys ?? 0)).toBeGreaterThan(0);
+      expect(effect.promise.length).toBeGreaterThan(0);
+      expect(effect.dawnLine.length).toBeGreaterThan(0);
+    }
+    // At least one pays the padlock arc (a key), which is what gives a deep
+    // push the prepared feel the design keeps promising.
+    expect(ids.some((id) => (CARRY_OVER_EFFECTS[id]!.keys ?? 0) > 0)).toBe(true);
+    // …and at least one pays steps, the currency the whole day is spent in.
+    expect(ids.some((id) => (CARRY_OVER_EFFECTS[id]!.steps ?? 0) > 0)).toBe(true);
+  });
+
+  it('sums only what was actually drafted yesterday', () => {
+    expect(carryOverFrom([])).toEqual({ steps: 0, keys: 0, lines: [] });
+    expect(carryOverFrom(['library', 'gallery']).steps).toBe(0);
+    const both = carryOverFrom(Object.keys(CARRY_OVER_EFFECTS));
+    expect(both.steps + both.keys).toBeGreaterThan(0);
+    expect(both.lines.length).toBe(Object.keys(CARRY_OVER_EFFECTS).length);
+  });
+
+  it('does NOT move the 10–15 minute median (4.10f: sessions never inflate)', () => {
+    const carried = carryOverFrom(Object.keys(CARRY_OVER_EFFECTS));
+    const withInvestment = simulateDays(
+      { ...PROFILE_DECENT, dawnSteps: carried.steps, dawnKeys: carried.keys }, DAYS, 0xbeef);
+    const m = median(withInvestment, (r) => r.minutes);
+    expect(m).toBeGreaterThanOrEqual(10);
+    expect(m).toBeLessThanOrEqual(15);
+    expect(quantile(withInvestment, 0.9, (r) => r.minutes)).toBeLessThanOrEqual(23);
+    // It buys CLIMB, which is what a prepared ascent is supposed to buy.
+    expect(median(withInvestment, (r) => r.maxRow))
+      .toBeGreaterThanOrEqual(median(decent, (r) => r.maxRow));
   });
 });

@@ -6,8 +6,12 @@
  * — free, no events. DEVELOPING the print is the claim: a murky develop
  * costs weight 1 but always reports "N of M letters ring true" (every wrong
  * guess yields information, AAA 2.10's principle). Developing with blanks is
- * malformed → weight 0. Reveals are step-priced hints (`hint` weight 1).
- * Penciled letters persist and locked letters never regress (AAA 3.3).
+ * malformed → weight 0. Re-developing an IDENTICAL mapping is also weight 0 —
+ * the same claim answered twice is zero new information, so it is zero cost
+ * (round 5; AAA 3.2, and the rule the Linen Closet already shipped). Reveals
+ * are step-priced hints (`hint` weight 1). Penciled letters persist, locked
+ * letters never regress, and every paid print stays on the paper in
+ * `engine.prints` rather than in a 2s toast (AAA 3.3).
  */
 
 import type { Tier } from '../types';
@@ -32,7 +36,7 @@ export const CIPHER_POOL = lazyContent<CipherPuzzleEx[]>(() => getPools().cipher
 
 export type CipherFeedback =
   | { kind: 'developed' }
-  | { kind: 'murky'; correct: number; total: number }
+  | { kind: 'murky'; correct: number; total: number; charged: boolean }
   | { kind: 'incomplete'; missing: number }
   | { kind: 'letter-developed'; letter: string };
 
@@ -120,10 +124,15 @@ export const cipherAdapter: RoomPuzzleAdapter<CipherPuzzleEx, CipherRoomState, C
       case 'murky': {
         next = {
           ...next,
-          costedMistakes: next.costedMistakes + 1,
-          lastFeedback: { kind: 'murky', correct: result.correct, total: result.total },
+          costedMistakes: result.charged ? next.costedMistakes + 1 : next.costedMistakes,
+          lastFeedback: {
+            kind: 'murky', correct: result.correct, total: result.total, charged: result.charged,
+          },
         };
-        events.push({ type: 'mistake', weight: 1 });   // a full mapping is a claim
+        // A full mapping is a claim (weight 1) — but the SAME mapping is the
+        // same claim, and answering it twice yields nothing new, so it is
+        // free (AAA 3.2; the Linen Closet's re-check rule).
+        events.push({ type: 'mistake', weight: result.charged ? 1 : 0 });
         return { state: next, events, outcome: outcomeOf(next) };
       }
     }

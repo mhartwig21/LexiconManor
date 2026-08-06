@@ -273,6 +273,21 @@
   padding: 0.3rem 0.4rem 0;
 }
 
+/* Ellery's pencilled marginal note: signed, so the journal never speaks in a
+   voice nobody owns. Right-aligned and softer than the filed ink. */
+.jrn-nudge--margin {
+  text-align: right;
+  padding-right: 0.6rem;
+  color: var(--ink-faint);
+}
+.jrn-nudge__text { display: inline; }
+.jrn-nudge__sign {
+  display: block;
+  font-style: normal;
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+}
+
 /* --- Cards (engravings, testimony) ----------------------------------------- */
 .jrn-card {
   background: var(--paper);

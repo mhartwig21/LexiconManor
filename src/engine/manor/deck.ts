@@ -173,12 +173,12 @@ export const CARD_PREVIEWS: Record<string, string> = {
   'counting-house': 'Nine figures, nine columns, one ledger',
   'strong-room': 'The ledger the auditors gave up on',
   'kitchen': '+6 steps · +2 per green room drafted after',
-  'larder': '+5 steps',
+  'larder': '+5 steps · dough set to rise: +2 tomorrow',
   'boot-room': `+3 steps · +${KEY_SUPPLY.bootRoomKeys} key`,
   'gem-vault': '+2 gems',
   'key-cabinet': `+${KEY_SUPPLY.cabinetKeys} keys · for the padlocks upstairs`,
   'dumbwaiter': '+1 step per room drafted after it',
-  'still-room': '+1 gem · +2 steps',
+  'still-room': '+1 gem · +2 steps · a key on the sill tomorrow',
   'reading-nook': 'Ellery keeps the lamps low',
   'post-room': 'Posy sorts the morning letters',
   'greenhouse': 'Fern tends something for you',
@@ -229,7 +229,8 @@ export interface UtilityEffect {
 export const UTILITY_EFFECTS: Record<string, UtilityEffect> = {
   'kitchen': { steps: 6, compounding: 'utility', compoundSteps: 2,
     toast: 'Something warm from the oven. +6 steps' },
-  'larder': { steps: 5, toast: 'Bread, cheese, and a stolen minute. +5 steps' },
+  'larder': { steps: 5,
+    toast: 'Bread, cheese, and a stolen minute. +5 steps — dough left to rise' },
   'boot-room': { steps: 3, keys: KEY_SUPPLY.bootRoomKeys,
     toast: 'Dry socks, and a spare key on the hook. +3 steps' },
   'gem-vault': { gems: 2, toast: 'Two gems, cold and bright' },
@@ -237,8 +238,88 @@ export const UTILITY_EFFECTS: Record<string, UtilityEffect> = {
     toast: 'Keys, filed under someday. Two of them look upward' },
   'dumbwaiter': { compounding: 'any', compoundSteps: 1,
     toast: 'It rattles helpfully at every new room' },
-  'still-room': { gems: 1, steps: 2, toast: 'Cordial and a gem. +2 steps' },
+  'still-room': { gems: 1, steps: 2,
+    toast: 'Cordial and a gem. +2 steps — and a batch set to steep for tomorrow' },
 };
+
+/** Cards whose face promises a key — the padlock arc's supply (AAA 4.10d). */
+export const KEY_BEARING_CARD_IDS: readonly string[] = Object.entries(UTILITY_EFFECTS)
+  .filter(([, e]) => (e.keys ?? 0) > 0)
+  .map(([id]) => id);
+
+export function isKeyBearing(cardId: string): boolean {
+  return (UTILITY_EFFECTS[cardId]?.keys ?? 0) > 0;
+}
+
+// ---------------------------------------------------------------------------
+// Cross-day investment (AAA 4.11: "at least one cross-day investment exists")
+// ---------------------------------------------------------------------------
+
+/**
+ * THE THINGS THAT KEEP OVERNIGHT — Blue Prince's Sauna pattern, cozy scale.
+ *
+ * Round-5 audit: nothing in the game paid into tomorrow. `endDay` wipes gems,
+ * keys and the whole manor, and every UTILITY_EFFECT was same-day, so a deep
+ * push could never be *prepared* across a night — every ascent was
+ * re-improvised from scratch and the campaign's only carry-over was affinity.
+ *
+ * Two existing green cards now keep something overnight. Deliberately EXISTING
+ * cards, not new ones: adding a card would move `deckMixAt` and silently
+ * recalibrate the 4.10b clock, whereas a new effect on the Larder and the
+ * Still Room changes what those rooms MEAN without touching deck composition
+ * at all.
+ *
+ *   - The Larder: dough set to rise → +2 steps at tomorrow's dawn, ledgered as
+ *     a 'tea'-class entry through the audited path (app/slices/day.ts).
+ *   - The Still Room: cordial set to steep → +1 key on the sill at dawn,
+ *     granted beside Fern's morning key when the manor is built
+ *     (app/slices/manor.ts). This is the one that gives the padlock arc its
+ *     prepared-ascent feel: a green room drafted on a quiet Tuesday is what
+ *     opens the third landing on Wednesday.
+ *
+ * Read from the audited event spine (yesterday's `room-drafted` events), so
+ * there is no new save field and no new place for the promise to be lost.
+ */
+export interface CarryOverEffect {
+  steps?: number;
+  keys?: number;
+  /** Named on the card face, so the investment is legible before she buys it. */
+  promise: string;
+  /** Read back at dawn, as prose. */
+  dawnLine: string;
+}
+
+export const CARRY_OVER_EFFECTS: Record<string, CarryOverEffect> = {
+  'larder': {
+    steps: 2,
+    promise: 'dough set to rise · +2 steps tomorrow',
+    dawnLine: 'The Larder’s dough rose overnight.',
+  },
+  'still-room': {
+    keys: 1,
+    promise: 'cordial set to steep · a key tomorrow',
+    dawnLine: 'The Still Room left a key on the sill.',
+  },
+};
+
+/** What yesterday's drafted cards pay into this morning. */
+export function carryOverFrom(cardIds: readonly string[]): {
+  steps: number;
+  keys: number;
+  lines: string[];
+} {
+  let steps = 0;
+  let keys = 0;
+  const lines: string[] = [];
+  for (const id of cardIds) {
+    const effect = CARRY_OVER_EFFECTS[id];
+    if (!effect) continue;
+    steps += effect.steps ?? 0;
+    keys += effect.keys ?? 0;
+    if (!lines.includes(effect.dawnLine)) lines.push(effect.dawnLine);
+  }
+  return { steps, keys, lines };
+}
 
 /** Day 1, draft #1 — tutorial disguised as RNG (AAA 4.5, slot 1 playable now). */
 export const SCRIPTED_FIRST_DRAFT: readonly string[] = ['library', 'kitchen', 'darkroom'];

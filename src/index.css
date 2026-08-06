@@ -146,12 +146,9 @@ body::after {
   opacity: var(--grain-opacity);
 }
 
-/* The blueprint's local vignette is superseded by the global one above —
-   neutralized here rather than edited in blueprint.css (module in another
-   agent's hands this round); together they would exceed the 8% ink budget. */
-div.bp-page::before {
-  background: none;
-}
+/* (The blueprint's local vignette used to be neutralized here; round 5 deleted
+   the `.bp-page::before` rule from blueprint.css outright, so the override is
+   gone with it. The global vignette above is the only one.) */
 
 /* 1px deckle edge on flat sheet cards (lifted sheets get their lip from the
    inset line inside --shadow-lift). Curated to cards that declare no
@@ -174,15 +171,14 @@ div.bp-page::before {
    retires the seven costumes: wax seals on the blueprint/front step, and the
    green/slate/gilt/purple/sage/tan accent pills inside rooms — room accents
    are for state only (center cell, caret, progress, verdicts), never verbs.
-   :root prefix out-specifies module declarations regardless of import order.
+   Round 5: the five in-module verbs (.bp-btn--seal, .anch-btn--primary,
+   .mic-btn--primary, .m2-btn--primary, .snc-btn--primary) now declare this
+   treatment in their own module files and inherit the 999px radius from their
+   base class, so the fork is retired. Only `.btn--primary` — the fallback
+   screens, which have no module of their own — is still driven from here.
    ========================================================================== */
 
-:root .btn--primary,
-:root button.bp-btn--seal,
-:root button.anch-btn--primary,
-:root button.mic-btn--primary,
-:root button.m2-btn--primary,
-:root button.snc-btn--primary {
+:root .btn--primary {
   background: var(--commit-bg);
   border-color: var(--commit-bg);
   color: var(--commit-ink);

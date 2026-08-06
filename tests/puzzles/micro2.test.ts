@@ -84,6 +84,22 @@ describe('selection', () => {
 // ---------------------------------------------------------------------------
 
 describe('crossword pool', () => {
+  /**
+   * ROUND 5 LAYOUT GUARD. `.lc-clues` no longer caps its height — every clue
+   * in the closet is on the paper at once, because a clue you cannot see while
+   * typing is a memory TEST, not a memory prosthetic (AAA 3.3). That only
+   * holds while the pool stays inside the panel the deck can afford: five
+   * rows ≈ 150px. The 40dvh backstop in a5micro.css exists for a pool that
+   * breaks this; this test makes a content edit fail here instead of in her
+   * evening.
+   */
+  it('never ships more clues than the (uncapped) clue panel can show: <= 5', () => {
+    for (const p of CROSSWORD_POOL) {
+      expect(p.entries.length, p.id).toBeGreaterThanOrEqual(3);
+      expect(p.entries.length, p.id).toBeLessThanOrEqual(5);
+    }
+  });
+
   it('ships puzzles for every manor tier', () => {
     for (const tier of [1, 2, 3] as const) {
       expect(CROSSWORD_POOL.filter((p) => (p.tier ?? 1) === tier).length, `tier ${tier}`)

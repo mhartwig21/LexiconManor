@@ -3,7 +3,19 @@
  * Spelling Bee per AAA §1: tap-first hive in the thumb zone, live entry
  * coloring, the 5-message invalid taxonomy with auto-clear, free unlimited
  * shuffle with a fixed center, garden rank ladder with points-to-next always
- * visible, silhouettes (never spoilers) at Full Bloom.
+ * visible, an SB-Forum-style silhouette GRID (never spoilers) at Full Bloom.
+ *
+ * ROUND 5 fixes:
+ *  - 1.8/1.7  the pangram burst no longer paints accent-on-accent over the
+ *             centre hex and no longer swallows taps: the glow is a pure
+ *             pointer-transparent radial, and the NAMING lives once, in the
+ *             reserved toast slot.
+ *  - 1.12/1.11 Full Bloom is a landing, not an ejection. The hive stays on the
+ *             table, Every Petal (and its gem) is reachable, and the
+ *             silhouettes are a view she opens, not a door slammed on her.
+ *  - 1.15/1.17 Fern speaks (engine/rooms/fern-lines.ts) and the payout is named.
+ *  - 3.2/7.2  the mechanical rule survives the SE-class breakpoint
+ *             (`.anch__rule` is never hidden; only `.anch__flavour` is).
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -13,6 +25,8 @@ import {
   HIVE_LADDER, ladderThreshold,
   type HiveAction, type HiveRoomState,
 } from '../../../engine/rooms/adapters/hive';
+import { fernLine } from '../../../engine/rooms/fern-lines';
+import { STEP_TABLE } from '../../../engine/economy/steps';
 import { createRng, shuffle } from '../../../engine/rng';
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
@@ -20,9 +34,10 @@ import './anchor.css';
 
 /**
  * 1.16 milestone art: hand-drawn conservatory-in-bloom vignette, played once
- * on the Full Bloom crossing (≤2s, tap-skippable), then the view settles into
- * the silhouette panel. Stroke ladder per §6.9: 3.0 contour / 2.0 features /
- * 1.2 hatch, all `currentColor`/accent, animated with transform+opacity only.
+ * on the Full Bloom crossing (≤2s, tap-skippable), then the view settles BACK
+ * INTO THE HIVE (AAA 1.12 — the room is hers to keep gathering in). Stroke
+ * ladder per §6.9: 3.0 contour / 2.0 features / 1.2 hatch, all
+ * `currentColor`/accent, animated with transform+opacity only.
  */
 function BloomVignette({ onDone }: { onDone: () => void }) {
   return (
@@ -72,17 +87,65 @@ function BloomVignette({ onDone }: { onDone: () => void }) {
   );
 }
 
-type Toast = { kind: 'good' | 'bad' | 'info' | 'big'; text: string } | null;
+type Toast = { kind: 'good' | 'bad' | 'info' | 'big'; text: string; fern?: string } | null;
 
-/** In-world praise, escalating with the find (AAA 1.7 / 1.15). */
-function praiseFor(points: number): string {
-  if (points >= 11) return 'Radiant!';
-  if (points >= 7) return 'Splendid!';
-  if (points >= 5) return 'Lovely.';
-  return 'A petal unfurls.';
+/**
+ * AAA 1.12 [COZY] — the shape of the unfound space, SB-Forum style: counts by
+ * first letter × word length across ALL remaining words. No word is ever
+ * singled out, nothing is spoiled, and (unlike an alphabetical prefix of
+ * chips) it covers 100% of what is left instead of stopping at D.
+ */
+function RestGrid({ unfound }: { unfound: readonly string[] }) {
+  const { letters, lengths, cell, rowTotal, colTotal } = useMemo(() => {
+    const byLetter = new Map<string, Map<number, number>>();
+    for (const w of unfound) {
+      const l = w[0]!;
+      let row = byLetter.get(l);
+      if (!row) byLetter.set(l, (row = new Map()));
+      row.set(w.length, (row.get(w.length) ?? 0) + 1);
+    }
+    const letters = [...byLetter.keys()].sort();
+    const lengths = [...new Set(unfound.map((w) => w.length))].sort((a, b) => a - b);
+    const cell = (l: string, n: number) => byLetter.get(l)?.get(n) ?? 0;
+    const rowTotal = (l: string) => lengths.reduce((a, n) => a + cell(l, n), 0);
+    const colTotal = (n: number) => letters.reduce((a, l) => a + cell(l, n), 0);
+    return { letters, lengths, cell, rowTotal, colTotal };
+  }, [unfound]);
+
+  if (unfound.length === 0) return null;
+
+  return (
+    <table className="hv-grid tabular-nums">
+      <caption className="hv-grid__cap">Still folded in the beds — by first letter and length</caption>
+      <thead>
+        <tr>
+          <th scope="col" aria-label="first letter" />
+          {lengths.map((n) => <th key={n} scope="col">{n}</th>)}
+          <th scope="col">Σ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {letters.map((l) => (
+          <tr key={l}>
+            <th scope="row">{l}</th>
+            {lengths.map((n) => {
+              const c = cell(l, n);
+              return <td key={n} className={c === 0 ? 'hv-grid__zero' : undefined}>{c === 0 ? '·' : c}</td>;
+            })}
+            <td className="hv-grid__tot">{rowTotal(l)}</td>
+          </tr>
+        ))}
+        <tr className="hv-grid__foot">
+          <th scope="row">Σ</th>
+          {lengths.map((n) => <td key={n}>{colTotal(n)}</td>)}
+          <td className="hv-grid__tot">{unfound.length}</td>
+        </tr>
+      </tbody>
+    </table>
+  );
 }
 
-export default function HiveView({ puzzle, state, dispatch }: RoomViewProps<HivePuzzle, HiveRoomState, HiveAction>) {
+export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProps<HivePuzzle, HiveRoomState, HiveAction>) {
   const [typed, setTyped] = useState('');
   const [petals, setPetals] = useState<string[]>(puzzle.outer);
   const [shuffling, setShuffling] = useState(false);
@@ -90,10 +153,13 @@ export default function HiveView({ puzzle, state, dispatch }: RoomViewProps<Hive
   const [toast, setToast] = useState<Toast>(null);
   const [burst, setBurst] = useState(false);
   const [showFound, setShowFound] = useState(false);
+  const [showRest, setShowRest] = useState(false);
   const [bloom, setBloom] = useState(false);
+  const [rungBeat, setRungBeat] = useState(0);
 
   const handledAttempt = useRef(0);
   const shuffleCount = useRef(0);
+  const bloomShown = useRef(false);
   const timers = useRef<number[]>([]);
   const later = (fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms));
@@ -102,11 +168,14 @@ export default function HiveView({ puzzle, state, dispatch }: RoomViewProps<Hive
 
   const allowed = useMemo(() => new Set([puzzle.center, ...puzzle.outer]), [puzzle]);
   const solveAt = ladderThreshold(state.maxScore, 70);
-  const solved = state.hive.score >= solveAt;
+  // AAA 1.12: Full Bloom SOLVES and PAYS the room; it does not close it. Only
+  // Every Petal (the hidden 100% tier) ends the session.
+  const fullBloom = state.fullBloom;
+  const everyPetal = state.everyPetal;
 
   const submit = () => {
     const word = typed.trim();
-    if (!word || solved) return;
+    if (!word || everyPetal) return;
     dispatch({ type: 'submit', word });
   };
 
@@ -119,19 +188,47 @@ export default function HiveView({ puzzle, state, dispatch }: RoomViewProps<Hive
 
     if (fb.kind === 'valid') {
       setTyped('');
+      const firstWord = state.hive.foundWords.length === 1;
       if (fb.isPangram) {
+        // 1.8: the glow is the celebration; the NAMING lives once, in the
+        // reserved (layout-stable) toast slot, where it is actually legible.
         sfx.flourish();
         setBurst(true);
-        later(() => setBurst(false), 1350);
-        setToast({ kind: 'big', text: `Pangram! ${fb.word} +${fb.points}` });
+        later(() => setBurst(false), 950);
+        setToast({
+          kind: 'big',
+          text: `Pangram! ${fb.word} +${fb.points}`,
+          fern: fernLine('pangram', puzzle.id),
+        });
+        later(() => setToast(null), 1800);
       } else if (fb.tierUps.length > 0) {
-        sfx.correct();
-        setToast({ kind: 'good', text: `${fb.word} +${fb.points} — you've reached ${fb.tierUps[fb.tierUps.length - 1]}` });
+        // 1.15/1.17: a rung is its own beat — its own sound, its own pop on
+        // the ladder name, and Fern names the rung in character.
+        const rung = fb.tierUps[fb.tierUps.length - 1]!;
+        sfx.correct(fb.word.length);
+        later(() => sfx.glyph(), 140);
+        setRungBeat((n) => n + 1);
+        setToast({
+          kind: 'good',
+          text: `${fb.word} +${fb.points} — you've reached ${rung}`,
+          fern: fernLine(`tier-up:${rung}`, puzzle.id),
+        });
+        later(() => setToast(null), 1600);
       } else {
-        sfx.correct();
-        setToast({ kind: 'good', text: `${praiseFor(fb.points)} ${fb.word} +${fb.points}` });
+        sfx.correct(fb.word.length);
+        // The top two praise bands are Fern's, not a disembodied adjective
+        // (AAA 1.15 [BEAT] — the SB failure mode we exist to beat).
+        setToast({
+          kind: 'good',
+          text: `${fb.word} +${fb.points}`,
+          fern: firstWord
+            ? fernLine('first-word', puzzle.id)
+            : fb.points >= 7
+              ? fernLine('good-word', puzzle.id)
+              : undefined,
+        });
+        later(() => setToast(null), 1400);
       }
-      later(() => setToast(null), 1400);
     } else {
       // AAA 1.6: shake ≤350ms, terse reason, auto-clear — she never deletes it.
       if (fb.costed) sfx.wrong();
@@ -154,18 +251,27 @@ export default function HiveView({ puzzle, state, dispatch }: RoomViewProps<Hive
   }, [state.attempts]);
 
   // Full Bloom crossing: victory sting + the 1.16 hand-drawn vignette
-  // (≤2s, tap-skippable), settling into the silhouette panel.
+  // (≤2s, tap-skippable) — and then straight back to the hive.
   useEffect(() => {
-    if (!solved) return;
+    if (!fullBloom || bloomShown.current) return;
+    bloomShown.current = true;
     sfx.victory();
     setBloom(true);
     later(() => setBloom(false), 2000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solved]);
+  }, [fullBloom]);
+
+  // Every Petal: the hidden 100% tier actually lands now (it used to be dead
+  // code behind the old forced solve at 70%).
+  useEffect(() => {
+    if (!everyPetal) return;
+    sfx.levelUp();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [everyPetal]);
 
   // Physical keyboard support (desktop / iPad keyboards).
   useEffect(() => {
-    if (solved) return;
+    if (everyPetal) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (/^[a-zA-Z]$/.test(e.key)) setTyped((t) => (t + e.key.toUpperCase()).slice(0, 24));
@@ -175,10 +281,10 @@ export default function HiveView({ puzzle, state, dispatch }: RoomViewProps<Hive
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solved, typed]);
+  }, [everyPetal, typed]);
 
   const tapLetter = (letter: string) => {
-    if (solved) return;
+    if (everyPetal) return;
     sfx.tap();
     setTyped((t) => (t + letter).slice(0, 24));
   };
@@ -213,31 +319,41 @@ export default function HiveView({ puzzle, state, dispatch }: RoomViewProps<Hive
   const toNext = nextTier ? ladderThreshold(state.maxScore, nextTier.pct) - state.hive.score : 0;
   const fillPct = Math.min(100, (state.hive.score / solveAt) * 100);
 
-  // Silhouettes on exit: lengths + first letters, never the words (AAA 1.12).
-  const silhouettes = useMemo(() => {
-    if (!solved) return [];
-    return puzzle.validWords
-      .filter((w) => !state.hive.foundWords.includes(w))
-      .map((w) => `${w[0]}${' ·'.repeat(w.length - 1)}`)
-      .slice(0, 18);
-  }, [solved, puzzle, state.hive.foundWords]);
-  const silhouetteOverflow = solved
-    ? Math.max(0, puzzle.validWords.length - state.hive.foundWords.length - 18)
-    : 0;
+  const unfound = useMemo(
+    () => puzzle.validWords.filter((w) => !state.hive.foundWords.includes(w)),
+    [puzzle, state.hive.foundWords],
+  );
+
+  // AAA 1.17 [BEAT]: the payout is named in the room, in steps she can see on
+  // the chrome meter — sourced from the same table the room slice pays from.
+  const payoutLine = useMemo(() => {
+    const solve = STEP_TABLE.solve('anchor', tier);
+    const clean = state.costedMistakes === 0;
+    return `+${solve} steps for the flowering${clean ? ` · +${STEP_TABLE.perfect} for a bed without a bent stem` : ''}`;
+  }, [tier, state.costedMistakes]);
 
   const found = [...state.hive.foundWords].reverse();
+  // AAA 1.5 — every state that swaps the tall play cluster out for a short
+  // panel pins the column to the top instead of letting the stage re-centre
+  // it; otherwise the header slides 300px on the vignette, slides back 2s
+  // later, and does it again on the found drawer.
+  const verdict = everyPetal || showRest || bloom || showFound;
 
   return (
-    <div className="anch anch--conservatory">
+    <div className={`anch anch--conservatory${verdict ? ' anch--verdict' : ''}`}>
       <header className="anch__head">
         <h2 className="anch__title">The Conservatory</h2>
-        <p className="anch__sub">
-          Grow words from the hive — every one must hold <strong style={{ color: 'var(--room-accent)' }}>{puzzle.center}</strong>.
+        {/* 3.2/7.2: the FLAVOUR is what an SE-class screen gives up; the RULE
+            is load-bearing (a word without the centre letter costs a step) and
+            is never hidden. */}
+        <p className="anch__flavour">Grow words from the hive.</p>
+        <p className="anch__rule">
+          Every word must hold <strong style={{ color: 'var(--room-accent)' }}>{puzzle.center}</strong>.
         </p>
       </header>
 
       <div className="hv-ladder">
-        <span className="hv-ladder__name">{tierName}</span>
+        <span key={rungBeat} className="hv-ladder__name anch-pop">{tierName}</span>
         <div className="hv-bar" role="progressbar" aria-valuenow={state.hive.score} aria-valuemax={solveAt}>
           <div className="hv-bar__fill" style={{ width: `${fillPct}%` }} />
           {HIVE_LADDER.map((t) => (
@@ -271,30 +387,39 @@ export default function HiveView({ puzzle, state, dispatch }: RoomViewProps<Hive
           {found.map((w) => (
             <span key={w} className={`anch-chip${puzzle.pangrams.includes(w) ? ' anch-chip--accent' : ''}`}>{w}</span>
           ))}
-          {found.length === 0 && <span className="anch__sub">Nothing gathered yet — tap to close.</span>}
+          {found.length === 0 && <span className="anch__flavour">Nothing gathered yet — tap to close.</span>}
         </div>
-      ) : solved && bloom ? (
+      ) : bloom ? (
         <BloomVignette onDone={() => setBloom(false)} />
-      ) : solved ? (
+      ) : everyPetal ? (
+        // The hidden tier finally lands: nothing folded, a gem in the trug.
         <div className="anch-done">
-          <div className="anch-done__title">Full Bloom!</div>
-          <p className="anch-done__line">
-            The conservatory stands in flower{state.costedMistakes === 0 ? ' — not a stem bent' : ''}.
-          </p>
-          {silhouettes.length > 0 && (
-            <>
-              <p className="anch-done__line">Still folded in the beds:</p>
-              <div className="hv-sil">
-                {silhouettes.map((s, i) => (
-                  <span key={i} className="anch-chip anch-chip--muted" style={{ textDecoration: 'none' }}>{s}</span>
-                ))}
-                {silhouetteOverflow > 0 && <span className="anch-chip anch-chip--muted" style={{ textDecoration: 'none' }}>+{silhouetteOverflow} more</span>}
-              </div>
-            </>
-          )}
+          <div className="anch-done__title">Every Petal</div>
+          <p className="anch-done__fern">{fernLine('every-petal', puzzle.id)}</p>
+          <p className="anch-done__line">{payoutLine} · +1 gem</p>
+        </div>
+      ) : showRest ? (
+        // AAA 1.12: what remains, as shape rather than words — opened by her,
+        // covering 100% of the unfound space, and never a list to feel bad about.
+        <div className="anch-done">
+          <div className="anch-done__title">Full Bloom</div>
+          <p className="anch-done__fern">{fernLine('full-bloom', puzzle.id)}</p>
+          <p className="anch-done__line">{payoutLine}</p>
+          <RestGrid unfound={unfound} />
+          <div className="anch-row" style={{ marginTop: '0.7rem' }}>
+            <button className="anch-btn" {...pressProps<HTMLButtonElement>()} onClick={() => setShowRest(false)}>
+              Back to the hive
+            </button>
+          </div>
         </div>
       ) : (
         <>
+          {fullBloom && (
+            <div className="hv-note">
+              <span>The room is yours — gather on, or step out.</span>
+              <button className="hv-found__toggle" onClick={() => setShowRest(true)}>Still folded ▾</button>
+            </div>
+          )}
           {/* Flexible slack sits ABOVE the play cluster so entry/hive/controls
               pin to the bottom safe-area — SB's hive-low, thumb-zone
               composition (AAA 1.1), not a mid-screen float. */}
@@ -318,7 +443,12 @@ export default function HiveView({ puzzle, state, dispatch }: RoomViewProps<Hive
           </div>
 
           <div className="anch-toastslot" aria-live="polite">
-            {toast && <span className={`anch-toast anch-toast--${toast.kind}`}>{toast.text}</span>}
+            {toast && (
+              <span className={`anch-toast anch-toast--${toast.kind}`}>
+                {toast.text}
+                {toast.fern && <span className="anch-toast__fern">{toast.fern}</span>}
+              </span>
+            )}
           </div>
 
           <div className={`hv-board${shuffling ? ' hv-board--shuffling' : ''}`}>
@@ -337,11 +467,10 @@ export default function HiveView({ puzzle, state, dispatch }: RoomViewProps<Hive
                 <span className="hv-cell__g">{letter}</span>
               </button>
             ))}
-            {burst && (
-              <div className="hv-burst" onPointerDown={() => setBurst(false)}>
-                <span className="hv-burst__text">Pangram!</span>
-              </div>
-            )}
+            {/* Pure glow. No text over the hive, no tap-catcher: the one moment
+                she most wants to keep typing is not the moment the hive stops
+                listening (AAA 1.7 [PARITY]). */}
+            {burst && <div className="hv-burst" aria-hidden="true" />}
           </div>
 
           <div className="anch-row">

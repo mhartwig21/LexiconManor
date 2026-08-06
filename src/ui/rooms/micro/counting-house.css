@@ -17,15 +17,24 @@
    touching a cell — selection is free and re-selectable, and every costed
    action happens on a >=44px pad key. A fat-fingered cell tap costs nothing.
 
-   GRAYSCALE (AAA 6.3): every cell state is double-encoded by shape/weight,
-   never by hue alone —
-     given      = bold + shaded backing
-     inked      = regular weight on plain paper
-     consulted  = italic + a corner tick (a bought figure stays honest)
+   GRAYSCALE (AAA 6.3): THREE separate channels — weight, hue, backing — so
+   nothing collides and a grayscale screenshot still separates every state.
+   Round 5 fixed a real collision: `--given` (paper-shade 85%), `--peer`
+   (62%) and given+peer (100%) all rode the SAME shade token, so a shaded cell
+   was genuinely ambiguous between "the ledger printed this, it is immutable"
+   and "this merely touches my cursor" — the single most load-bearing
+   distinction in sudoku — and the peer shade moved under the cursor on every
+   tap, so the given map appeared to change. The backing token is now the
+   peer highlight's alone.
+     given      = BOLD ink-black on plain paper (the ledger's own hand)
+     inked      = regular weight in the room accent (her hand — NYT's own
+                  black-given / blue-entered convention)
+     consulted  = italic gilt + a corner tick (a bought figure stays honest)
      selected   = 2px inset ring
-     peer       = faint shade block
+     peer       = the ONLY user of the shade backing
      same figure= dotted underline
-     refused    = wax + wobble, and the figure never lands
+     clash      = wax ring on the peer that already holds the figure
+     refused    = wax ghost + wobble, and the figure never lands
    ========================================================================== */
 
 .ch {
@@ -73,8 +82,23 @@
    The ledger leaf
    -------------------------------------------------------------------------- */
 
+/* The leaf is capped on BOTH axes. `width: 100%` alone demanded 360px of a
+   375x667 viewport that has ~324px left after chrome, title, meta, toast slot,
+   tools, pad and footer — so the bottom rank ran under the sticky deck and the
+   room's only verb (scan a column or a quarter for a missing figure) stopped
+   working, on the very tiers whose techniques (X-wing, swordfish, colouring)
+   literally span the grid. Height-capping costs a few px of cell and buys a
+   board that is WHOLLY VISIBLE AT REST (AAA 3.3 / 7.7 / §0.1). */
 .ch-leaf {
   width: 100%;
+  /* Two bands, because the chrome above and below the leaf is not the same
+     height in both: on a tall glass the deck carries two tool rows and 52px
+     pad keys (−32rem); on a short one the verbs collapse to a single row and
+     the room's subtitle is gone (−23rem, below). Both were measured, not
+     guessed — scripts/round5-capture.mjs re-measures them on every tour. */
+  max-width: min(100%, calc(100dvh - 32rem));
+  margin-inline: auto;
+  flex: 0 0 auto;
   aspect-ratio: 1;
   display: grid;
   grid-template-columns: repeat(9, 1fr);
@@ -119,19 +143,32 @@
 .ch-cell--edgeb { border-bottom: 0; }
 
 /* Peer of the selection (same row / column / quarter) — the standard expert
-   prosthetic, kept at a whisper so it never competes with the figures. */
-.ch-cell--peer { background: color-mix(in srgb, var(--paper-shade) 62%, transparent); }
+   prosthetic. It is now the SOLE user of the shade backing, so a shaded cell
+   means exactly one thing: "this touches my cursor". */
+.ch-cell--peer { background: color-mix(in srgb, var(--paper-shade) 66%, transparent); }
 
-/* Givens: the ledger's own hand. Bold + shaded backing (shape, not hue). */
+/* Givens: the ledger's own hand — heavy ink on plain paper. It declares NO
+   backing at all (not even `transparent`, which would out-cascade the peer
+   rule above), so the shade token stays the peer highlight's alone and a given
+   inside the cursor's unit still lights like every other peer. */
 .ch-cell--given {
   font-weight: 700;
-  background: color-mix(in srgb, var(--paper-shade) 85%, transparent);
   cursor: default;
 }
-.ch-cell--given.ch-cell--peer { background: var(--paper-shade); }
 
-/* Figures the player inked: lighter weight, plain paper. */
-.ch-cell--inked { font-weight: 400; }
+/* Figures the player inked: her hand, in the room's one accent, at regular
+   weight — NYT's black-given / blue-entered convention, and the second of the
+   three grayscale channels (weight + hue + backing). Unsettled by definition:
+   the leaf does not vet it, "Balance the books" does. */
+.ch-cell--inked { font-weight: 400; color: var(--room-accent); }
+
+/* The peer that already holds the figure she just tried to ink: a wax ring for
+   the 340ms of the refusal, so the reason is on the BOARD and not only in the
+   toast (AAA 3.2 — shake plus reason). */
+.ch-cell--clash {
+  box-shadow: inset 0 0 0 2px var(--wax);
+  z-index: 1;
+}
 
 /* Bought from the ledger (a purchased reveal): italic + a corner tick, so a
    consulted figure never passes itself off as one she found. */
@@ -189,6 +226,11 @@
    Thumb zone: the figure pad + the room's verbs (all >=44px)
    -------------------------------------------------------------------------- */
 
+/* Two bands: what is free on top, what costs underneath. On a short screen
+   they collapse into one row (`display: contents` promotes the five buttons to
+   direct children of the toolbar) — that alone gives the ledger leaf back
+   ~50px of height on a 375x667 glass, which is worth more than the roominess. */
+.ch-toolbar { display: flex; flex-direction: column; gap: 0.4rem; }
 .ch-tools { display: flex; gap: 0.4rem; }
 
 .ch-tool {
@@ -254,7 +296,9 @@
 }
 .ch-key--wide { font-family: var(--font-body); font-size: 0.85rem; }
 
-/* Reserved feedback slot — two lines at 390px, zero layout shift. */
+/* ONE reserved chrome line — the tier + figures-left at rest, the toast when
+   there is one. Two lines tall at 390px so a wrapping refusal never shifts the
+   board or the pad (zero layout shift, AAA 1.5's principle). */
 .ch-toastslot {
   min-height: 2.6rem;
   display: flex;
@@ -262,6 +306,9 @@
   justify-content: center;
   text-align: center;
 }
+/* The live region is a plain block (never `display: contents` — that has a
+   history of dropping elements out of the accessibility tree). */
+.ch-toast-live { display: block; max-width: 100%; }
 .ch-toast { font-size: var(--text-sm); animation: ch-rise 220ms var(--ease-settle); }
 .ch-toast--good { color: var(--moss); }
 .ch-toast--bad  { color: var(--wax); }
@@ -271,7 +318,7 @@
    Balanced (the win) — a celebration distinct from any in-play juice (AAA 3.4)
    -------------------------------------------------------------------------- */
 
-.ch-done { text-align: center; animation: ch-pop 260ms var(--ease-settle); }
+.ch-done { text-align: center; animation: ch-pop 260ms var(--ease-settle); cursor: pointer; }
 .ch-done__title {
   margin: 0.2rem 0;
   font-family: var(--font-display);
@@ -280,8 +327,16 @@
 }
 .ch-done__line { margin: 0.25rem 0; color: var(--ink-soft); }
 .ch-done__note { margin: 0.5rem 0 0; font-size: var(--text-sm); color: var(--ink-faint); }
+/* AAA 3.1: a verdict over ≥3 elements reveals SEQUENTIALLY, never as an
+   instant repaint. 81 cells firing at once was the flattest win in the game
+   (both siblings already stagger: CrosswordView 60ms/cell, CipherView 36ms/
+   char). The per-cell delay is set inline by SudokuView as (row + col) * 14ms
+   — a diagonal wipe with a 224ms head and ~740ms total, inside the ≤2s
+   celebration ceiling — and tapping the panel adds `--skip`, which drops every
+   delay and the animation with it (AAA 3.4 / U.2, the CipherView contract). */
 .ch-leaf--won { border-color: var(--moss); }
 .ch-leaf--won .ch-cell__fig { animation: ch-settle 520ms var(--ease-settle) both; }
+.ch-leaf--skip .ch-cell__fig { animation: none; animation-delay: 0ms; }
 
 .ch-shake { animation: ch-shake 320ms ease-in-out; }
 
@@ -309,12 +364,28 @@
   to   { transform: translateY(0); opacity: 1; }
 }
 
-/* Short screens: trim the chrome, never the ledger. */
-@media (max-height: 700px) {
-  .ch { gap: 0.35rem; }
+/* Short screens: trim the chrome, never the ledger.
+   Threshold 760 (not 700): an iPhone SE is 667 tall, but so is any 12-class
+   phone in a compact standalone frame, and the ledger is the one board in the
+   game that must be whole at rest. */
+@media (max-height: 760px) {
+  .ch { gap: 0.35rem; padding-top: 0.35rem; }
   .ch__sub { display: none; }
   .ch-key { min-height: 46px; font-size: 1.3rem; }
   .ch-toastslot { min-height: 2.1rem; }
+  /* The five verbs share ONE row: `display: contents` lifts the buttons out of
+     their bands and lets the toolbar lay them out directly. */
+  .ch-toolbar { flex-direction: row; gap: 0.3rem; }
+  .ch-tools { display: contents; }
+  .ch-tool {
+    padding: 0.2rem 0.15rem;
+    font-size: 0.72rem;
+    line-height: 1.1;
+  }
+  /* 667 − 23rem = 299px ≈ 33px cells, and the whole leaf clears the deck with
+     room for a three-line verb label. Measured for real by the bounding-box
+     assertion in scripts/round5-capture.mjs. */
+  .ch-leaf { max-width: min(100%, calc(100dvh - 23rem)); }
 }
 
 /* Juice goes quiet; every state stays legible (AAA U.3). */
@@ -324,6 +395,7 @@
   .ch-leaf--won .ch-cell__fig,
   .ch-cell--wrong .ch-cell__ghost {
     animation: none;
+    animation-delay: 0ms;
   }
   .ch-cell--wrong .ch-cell__ghost { display: none; }
   .ch-key:active, .ch-tool:active { transform: none; }

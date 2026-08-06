@@ -32,8 +32,10 @@ const DISMISS = [
   '[data-testid="Cookie-Banner"] button', '#pz-gdpr-btn-accept-all',
 ];
 const START = [
+  // the full-page house ad NYT drops in front of every game
+  'text=/^Continue to /', 'button:has-text("Continue to")', '[aria-label^="Continue to"]',
   'button:has-text("Play")', 'button:has-text("Play Today")', "button:has-text(\"Let's Play\")",
-  'button:has-text("Continue")', 'button:has-text("Start")', 'button:has-text("Got it")',
+  'button:has-text("Start")', 'button:has-text("Got it")', 'button:has-text("Continue")',
   'button:has-text("Back to puzzle")', 'button[aria-label="Close"]', 'button:has-text("Skip")',
   'button:has-text("Resume")', 'button:has-text("No thanks")',
 ];
@@ -57,14 +59,18 @@ const sleep = (ms) => page.waitForTimeout(ms);
 async function clickAny(selectors, label) {
   for (const frame of page.frames()) {
     for (const sel of selectors) {
-      const el = await frame.$(sel).catch(() => null);
-      if (!el) continue;
-      const visible = await el.isVisible().catch(() => false);
-      if (!visible) continue;
-      await el.click({ timeout: 3000 }).catch(() => {});
-      log(`  ${label}: clicked ${sel}${frame === page.mainFrame() ? '' : ' (iframe)'}`);
-      await sleep(1400);
-      return true;
+      // NB: a selector can match a hidden duplicate first (fides ships both a
+      // banner and a modal copy of "Accept all") — walk every match.
+      const els = await frame.$$(sel).catch(() => []);
+      for (const el of els) {
+        const visible = await el.isVisible().catch(() => false);
+        if (!visible) continue;
+        const ok = await el.click({ timeout: 4000 }).then(() => true).catch(() => false);
+        if (!ok) continue;
+        log(`  ${label}: clicked ${sel}${frame === page.mainFrame() ? '' : ' (iframe)'}`);
+        await sleep(1500);
+        return true;
+      }
     }
   }
   return false;
@@ -80,7 +86,13 @@ try {
     await shot(`${t.slug}-a-landing`);
 
     for (let i = 0; i < 3; i++) if (!(await clickAny(DISMISS, 'consent'))) break;
-    for (let i = 0; i < 4; i++) if (!(await clickAny(START, 'start'))) break;
+    // Consent → house ad → onboarding modal → board; each gate re-renders the
+    // page, so keep knocking until nothing is left to dismiss.
+    for (let i = 0; i < 8; i++) {
+      const hit = await clickAny(START, 'start');
+      await sleep(1500);
+      if (!hit) break;
+    }
     await sleep(2500);
     await shot(`${t.slug}-b-board`);
 
@@ -94,8 +106,26 @@ try {
         await sleep(600);
         await shot(`${t.slug}-c-typed`);
       } else if (t.name === 'Connections') {
-        const tiles = await page.$$('[data-testid^="card-"], .item, [class*="Card-module_card"]');
-        for (const tile of tiles.slice(0, 4)) { await tile.click().catch(() => {}); await sleep(220); }
+        // The badges tooltip sits over the top row — close it before playing.
+        for (let i = 0; i < 3; i++) if (!(await clickAny(['button[aria-label="Close"]', '[data-testid="tooltip-close"]'], 'tooltip'))) break;
+        const tiles = await page.$$(
+          '[data-testid^="card-"], label[class*="Card"], div[class*="Card-module_card"], ' +
+          'button[class*="card"], li[class*="card"] button, [class*="item-module_item"]',
+        );
+        // Duplicate matches and a stubborn badges tooltip over the top row:
+        // keep only distinct tiles that sit clear of it.
+        const seen = new Set();
+        const clear = [];
+        for (const tile of tiles) {
+          const box = await tile.boundingBox().catch(() => null);
+          if (!box || box.y < 200 || box.width < 40) continue;
+          const k = `${Math.round(box.x)},${Math.round(box.y)}`;
+          if (seen.has(k)) continue;
+          seen.add(k);
+          clear.push(tile);
+        }
+        log(`  connections tiles found: ${tiles.length}, clear of the tooltip: ${clear.length}`);
+        for (const tile of clear.slice(0, 4)) { await tile.click({ timeout: 3000 }).catch(() => {}); await sleep(260); }
         await sleep(500);
         await shot(`${t.slug}-c-selected`);
       } else if (t.name === 'Spelling Bee') {

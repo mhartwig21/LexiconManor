@@ -19,7 +19,9 @@ import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = resolve(root, 'docs/shots/round5');
+// `R5_OUT=docs/shots/round5/after node scripts/round5-capture.mjs` to re-shoot
+// into a comparison directory without clobbering the round's baseline.
+const OUT = resolve(root, process.env.R5_OUT || 'docs/shots/round5');
 const BASE = 'http://localhost:4173/LexiconManor/';
 
 const pools = {
@@ -60,6 +62,31 @@ async function run(page, dir) {
   mkdirSync(dir, { recursive: true });
   const shot = (name) => page.screenshot({ path: join(dir, name + '.png') });
   const sleep = (ms) => page.waitForTimeout(ms);
+
+  /**
+   * Scroll the panel that actually scrolls, and report whether it moved.
+   *
+   * Every panel in this game scrolls INTERNALLY (AAA 7.12) — the page body
+   * never does — so a hard-coded selector that misses silently produces a
+   * screenshot identical to the one before it. Round 5 shipped two such
+   * duplicates (15-journal-scrolled, 41-chronicles-settings). This finds the
+   * largest genuinely-overflowing descendant and returns false if nothing
+   * moved, so a dud shot is a warning instead of a lie.
+   */
+  const scrollPanel = async (rootSel, frac = 1) => {
+    const moved = await page.evaluate(([sel, f]) => {
+      const host = document.querySelector(sel) ?? document.body;
+      const all = [host, ...host.querySelectorAll('*')].filter(
+        (e) => e.scrollHeight - e.clientHeight > 24,
+      );
+      if (!all.length) return false;
+      const el = all.sort((a, b) => (b.scrollHeight - b.clientHeight) - (a.scrollHeight - a.clientHeight))[0];
+      const before = el.scrollTop;
+      el.scrollTop = (el.scrollHeight - el.clientHeight) * f;
+      return el.scrollTop !== before;
+    }, [rootSel, frac]);
+    return moved;
+  };
   const store = () => page.evaluate(() => {
     const s = window.__manorStore.getState();
     return {
@@ -101,6 +128,35 @@ async function run(page, dir) {
   }
 
   /** Walk the day forward through dusk/night into the next morning. */
+  /**
+   * A click we are not sure is available: never pay the default timeout for it.
+   *
+   * Playwright waits for actionability, so `page.click(sel).catch(() => {})` on
+   * a DISABLED button burns the full default timeout (15s here) and then
+   * swallows the error — invisibly. The room verbs are disabled most of the
+   * time by design (`.anch-btn--primary` is disabled whenever the entry is
+   * shorter than the minimum word), so a solve loop over ~70 words could sit
+   * for twenty minutes looking like a hang. Two seconds is generous for a
+   * button that is either there or not.
+   */
+  const softClick = async (sel, timeout = 2000) =>
+    page.click(sel, { timeout }).then(() => true).catch(() => false);
+
+  /**
+   * Wait until `manor` exists on the store.
+   *
+   * `ensureManor` builds it when the day reaches `exploring`, so anything that
+   * writes rooms directly must wait — and must wait EVERY time, not once:
+   * rolling the day can null it again mid-tour. Round 5's tour skipped this
+   * and died on `st.manor.rooms` of null, losing every shot after 09.
+   */
+  async function waitForManor(timeout = 15000) {
+    return page
+      .waitForFunction(() => !!window.__manorStore?.getState().manor, { timeout })
+      .then(() => true)
+      .catch(() => false);
+  }
+
   async function rollToMorning() {
     for (let i = 0; i < 30; i++) {
       const s = await store();
@@ -144,9 +200,11 @@ async function run(page, dir) {
     let s = await store();
     if (s.phase !== 'exploring') { await rollToMorning(); s = await store(); }
     if (s.phase !== 'exploring') { warn(`could not reach an exploring phase for ${cardId}`); return false; }
+    if (!(await waitForManor())) { warn(`no manor to open ${cardId} into`); return false; }
     const kind = ROOM_KIND[cardId];
-    await page.evaluate(({ cardId, cell, kind }) => {
+    const seeded = await page.evaluate(({ cardId, cell, kind }) => {
       const st = window.__manorStore.getState();
+      if (!st.manor) return false;
       const key = `${cell.col},${cell.row}`;
       window.__manorStore.setState({
         manor: {
@@ -159,7 +217,9 @@ async function run(page, dir) {
         },
       });
       window.__manorStore.getState().enterRoom(key);
+      return true;
     }, { cardId, cell, kind });
+    if (!seeded) { warn(`manor vanished while opening ${cardId}`); return false; }
     const root = ROOM_ROOT[kind];
     const ok = await page.waitForSelector(root, { timeout: 10000 }).catch(() => null);
     if (!ok) { warn(`${cardId}: view ${root} never mounted`); return false; }
@@ -172,6 +232,33 @@ async function run(page, dir) {
     if (back) { await back.click(); await sleep(500); }
     await page.evaluate(() => window.__manorStore.getState().leaveRoom());
     await sleep(300);
+  }
+
+  /**
+   * ROUND 5 FIT ASSERTION — "the board is wholly visible at rest".
+   *
+   * Round-5 shots 32/33 (Darkroom) and 375x667/38 (Counting House) both showed
+   * the bottom of the play surface sliced by the sticky, opaque `.room-deck`.
+   * A cryptogram is attacked across the WHOLE phrase and a sudoku is scanned
+   * across the WHOLE grid, so an occluded last rank removes the room's primary
+   * verb (AAA 3.3 / 7.7 / §0.1). This measures the real bounding boxes, so a
+   * future chrome or content edit fails the tour rather than the owner's
+   * evening.
+   */
+  async function assertClearsDeck(label, boardSel) {
+    const box = await page.locator(boardSel).first().boundingBox().catch(() => null);
+    const deck = await page.locator('.room-deck').first().boundingBox().catch(() => null);
+    const vh = page.viewportSize().height;
+    if (!box) { warn(`${label}: ${boardSel} has no bounding box to measure`); return; }
+    const floor = deck ? Math.min(deck.y, vh) : vh;
+    const overrun = Math.round(box.y + box.height - floor);
+    if (overrun > 0) {
+      warn(`${label}: ${boardSel} runs ${overrun}px under the deck `
+        + `(board bottom ${Math.round(box.y + box.height)}, deck top ${Math.round(floor)})`);
+    } else {
+      log(`${label}: ${boardSel} clears the deck by ${-overrun}px`);
+    }
+    if (box.y < 0) warn(`${label}: ${boardSel} starts ${Math.round(-box.y)}px above the glass`);
   }
 
   // =========================================================================
@@ -269,6 +356,12 @@ async function run(page, dir) {
   await page.waitForSelector('.bp-sheet', { timeout: 8000 }).catch(() => null);
   await sleep(400);
 
+  if (!(await waitForManor())) {
+    const s2 = await store();
+    warn(`manor never built (phase ${s2.phase}, day ${s2.day}) — seeded pass skipped`);
+    return;
+  }
+
   // =========================================================================
   // PASS 2 — SEEDED FOR REACH (step budget still real)
   // =========================================================================
@@ -277,8 +370,13 @@ async function run(page, dir) {
   // Rooms are written onto rows 3–5 so the upper landings become legible and
   // their padlocks are drawn. No steps are added or removed by this.
   const seedUpper = async (keys) => {
-    await page.evaluate(({ keys }) => {
+    // The null-check lives INSIDE the evaluate. A wait-then-evaluate pair is
+    // two round trips, and the day machine can null the manor between them —
+    // which is exactly the race that kept killing this tour.
+    for (let attempt = 0; attempt < 12; attempt++) {
+      const done = await page.evaluate(({ keys }) => {
       const st = window.__manorStore.getState();
+      if (!st.manor) return false;
       const mk = (cardId, kind, col, row) => [`${col},${row}`, {
         cardId, kind, cell: { col, row }, doors: ['N', 'S', 'E', 'W'], solved: false, puzzleId: undefined,
       }];
@@ -292,8 +390,16 @@ async function run(page, dir) {
         manor: { ...st.manor, rooms, playerCell: { col: 2, row: 4 } },
         currencies: { ...st.currencies, keys, gems: 6 },
       });
-    }, { keys });
-    await sleep(500);
+      return true;
+      }, { keys });
+      if (done) { await sleep(500); return; }
+      // Cheap waits first — the manor is usually a frame away. Only pay for a
+      // full day-roll if it is genuinely absent rather than mid-build.
+      if (attempt < 8) { await sleep(300); continue; }
+      await rollToMorning();
+      await sleep(400);
+    }
+    warn('seedUpper: manor never stayed built long enough to seed');
   };
 
   await seedUpper(0);
@@ -302,7 +408,10 @@ async function run(page, dir) {
   await shot('11-padlocks-key-in-pocket');
 
   // ---- A draft on a padlocked upper-row door ----------------------------
-  {
+  // Isolated: this is the most state-dependent block in the tour (it hunts for
+  // a specific kind of offer behind a specific kind of door) and it sits
+  // upstream of every room shot. It must never be able to take them with it.
+  try {
     let best = null;
     for (let attempt = 0; attempt < 12; attempt++) {
       const st = await store();
@@ -314,6 +423,7 @@ async function run(page, dir) {
       if (lockedGhost) { await lockedGhost.click(); opened = 'locked-ghost'; }
       if (!opened) opened = await page.evaluate(() => {
         const s = window.__manorStore.getState();
+        if (!s.manor) return null;
         const cell = s.manor.playerCell;
         const dirs = ['N', 'E', 'W', 'S'];
         for (const d of dirs) {
@@ -353,6 +463,7 @@ async function run(page, dir) {
       // Nudge the player to a different upper cell so the next offer differs.
       await page.evaluate((i) => {
         const s = window.__manorStore.getState();
+        if (!s.manor) return;
         const cols = [1, 3, 0, 4, 2];
         const col = cols[i % cols.length];
         const row = 4 + (i % 2);
@@ -378,13 +489,16 @@ async function run(page, dir) {
         warn('12-draft-upper-row: no upper-row draft could be opened');
       }
     }
+  } catch (e) {
+    warn(`12-draft-upper-row threw: ${e.message}`);
   }
 
   // ---- Parlor dialogue with choices --------------------------------------
-  {
+  try {
     await rollToMorning();
     await page.evaluate(() => {
       const s = window.__manorStore.getState();
+      if (!s.manor) return;
       const cell = { col: 2, row: 1 };
       window.__manorStore.setState({
         manor: {
@@ -406,6 +520,8 @@ async function run(page, dir) {
       warn('13-parlor-dialogue: no "Call on" button appeared in the parlor');
     }
     await sleep(300);
+  } catch (e) {
+    warn(`13-parlor-dialogue threw: ${e.message}`);
   }
 
   // ---- Journal with fragments -------------------------------------------
@@ -419,11 +535,11 @@ async function run(page, dir) {
     await page.evaluate(() => { location.hash = '#/journal'; });
     await sleep(900);
     await shot('14-journal-fragments');
-    // A second look further down the journal.
-    await page.evaluate(() => {
-      const el = document.querySelector('.panel-scroll, .jrn__body, .jrn');
-      if (el) el.scrollTop = el.scrollHeight;
-    });
+    // A second look further down the journal — the cross-reference chips and
+    // Ellery's interpretation offer live below the fold.
+    if (!(await scrollPanel('.jrn', 1))) {
+      warn('15-journal-scrolled: nothing scrolled — shot duplicates 14');
+    }
     await sleep(500);
     await shot('15-journal-scrolled');
   }
@@ -461,23 +577,31 @@ async function run(page, dir) {
   // =========================================================================
   await rollToMorning();
 
-  await theLibrary();
-  await theConservatory();
-  await theGallery();
-  await theStudy();
-  await theDarkroom();
-  await theLinenCloset();
-  await theCountingHouse();
+  // Each room is isolated: one room throwing must not cost the evidence for
+  // the other six. Before this, a single bad selector anywhere in the tour
+  // took every shot after it with it — which is how a round can end up
+  // "passing" on screens nobody ever saw.
+  for (const [name, fn] of [
+    ['library', theLibrary], ['conservatory', theConservatory], ['gallery', theGallery],
+    ['study', theStudy], ['darkroom', theDarkroom], ['linen-closet', theLinenCloset],
+    ['counting-house', theCountingHouse],
+  ]) {
+    try {
+      await fn();
+    } catch (e) {
+      warn(`${name} threw: ${e.message}`);
+      await leaveRoom().catch(() => {});
+    }
+  }
 
   // ---- Chronicles --------------------------------------------------------
   await page.evaluate(() => { location.hash = '#/chronicles'; });
   await page.waitForSelector('.chron', { timeout: 8000 }).catch(() => null);
   await sleep(700);
   await shot('40-chronicles');
-  await page.evaluate(() => {
-    const el = document.querySelector('.chron__ledger');
-    if (el) el.scrollTop = el.scrollHeight * 0.45;
-  });
+  if (!(await scrollPanel('.chron', 0.55))) {
+    warn('41-chronicles-settings: nothing scrolled — shot duplicates 40');
+  }
   await sleep(400);
   await shot('41-chronicles-settings');
   await page.evaluate(() => { location.hash = '#/'; });
@@ -513,7 +637,7 @@ async function run(page, dir) {
     await shot('20-library-play');
 
     // 21 — mistake: four words that do not belong together.
-    await page.click('.anch-btn:has-text("Clear")').catch(() => {});
+    await softClick('.anch-btn:has-text("Clear")');
     await sleep(200);
     await clickWords([
       puz.groups[1].words[0], puz.groups[2].words[0],
@@ -526,7 +650,7 @@ async function run(page, dir) {
 
     // 22 — solved.
     for (let g = 1; g < puz.groups.length; g++) {
-      await page.click('.anch-btn:has-text("Clear")').catch(() => {});
+      await softClick('.anch-btn:has-text("Clear")');
       await sleep(150);
       await clickWords(puz.groups[g].words);
       const weave = await page.$('.anch-btn--primary');
@@ -570,10 +694,18 @@ async function run(page, dir) {
       }
       await sleep(60);
     };
+    // Submit only when the verb is actually live. A blind `page.click` here
+    // costs the FULL default timeout every time the button is disabled — and
+    // it is disabled whenever `typed.length < 4`, which includes the whole
+    // time the Full Bloom vignette has replaced the hive. At ~70 words per
+    // board that turned the solve into a twenty-minute stall.
     const type = async (w) => {
       await tapWord(w);
-      await page.click('.anch-btn--primary').catch(() => {});
-      await sleep(240);
+      const btn = page.locator('.anch-btn--primary');
+      if (await btn.isEnabled({ timeout: 1000 }).catch(() => false)) {
+        await btn.click({ timeout: 2000 }).catch(() => {});
+        await sleep(240);
+      }
     };
     const byLen = [...puz.validWords].sort((a, b) => b.length - a.length);
     for (const w of byLen.slice(0, 3)) await type(w);
@@ -589,7 +721,7 @@ async function run(page, dir) {
     }
     if (bogus) {
       await tapWord(bogus);
-      await page.click('.anch-btn--primary').catch(() => {});
+      await softClick('.anch-btn--primary');
       await sleep(300);
       await shot('24-conservatory-mistake');
       await sleep(1000);
@@ -597,14 +729,34 @@ async function run(page, dir) {
       warn('conservatory: could not construct a legal-letters non-word');
     }
 
-    // Solve: keep gathering until Full Bloom.
+    // FULL BLOOM (70%) — a LANDING, not an ejection (round-5 F2). The room
+    // stays on the table: the ladder reads "Full Bloom", a note invites her to
+    // gather on or step out, and the FOOTER flips to the primary "Step back
+    // out" because the room has already paid. The verdict panel deliberately
+    // does NOT render here — it waits for Every Petal — so testing for
+    // `.anch-done` at this point (as this script used to) reported a phantom
+    // failure on correct behaviour.
     for (const w of byLen) {
       if (await solvedNow()) break;
       await type(w);
     }
     await sleep(2400);
-    if (!(await page.$('.anch-done'))) await sleep(1600);
-    if (!(await page.$('.anch-done'))) warn(`conservatory never reached Full Bloom (solved=${await solvedNow()})`);
+    if (!(await solvedNow())) warn(`conservatory never reached Full Bloom`);
+    else if (await page.$('.anch-done')) {
+      warn('Full Bloom rendered the verdict panel — it should wait for Every Petal');
+    }
+    await shot('25-conservatory-fullbloom');
+
+    // EVERY PETAL (100%) — now the verdict panel is the correct expectation.
+    // Wait out the bloom vignette first: while it is up it REPLACES the hive,
+    // so there are no cells to tap and nothing would be gathered.
+    await page.waitForSelector('.hv-bloom', { state: 'detached', timeout: 8000 }).catch(() => {});
+    for (const w of byLen) {
+      if (await page.$('.anch-done')) break;
+      await type(w);
+    }
+    await sleep(2000);
+    if (!(await page.$('.anch-done'))) warn('conservatory never reached Every Petal (no verdict panel)');
     await shot('25-conservatory-solved');
     await leaveRoom();
   }
@@ -662,7 +814,7 @@ async function run(page, dir) {
     // In play: two works hung, a third being traced.
     for (const { w, p } of traceable.slice(0, 2)) {
       await tapPath(p);
-      await page.click('.anch-btn--primary').catch(() => {});
+      await softClick('.anch-btn--primary');
       await sleep(700);
       log('  traced', w);
     }
@@ -671,7 +823,7 @@ async function run(page, dir) {
     await shot('26-gallery-play');
 
     // Mistake: a legal trace that is not a word.
-    await page.click('.anch-btn:has-text("Clear")').catch(() => {});
+    await softClick('.anch-btn:has-text("Clear")');
     await sleep(200);
     const minLen = puz.rules.minLength ?? 4;
     let bogusPath = null;
@@ -695,7 +847,7 @@ async function run(page, dir) {
     }
     if (bogusPath) {
       await tapPath(bogusPath);
-      await page.click('.anch-btn--primary').catch(() => {});
+      await softClick('.anch-btn--primary');
       await sleep(320);
       await shot('27-gallery-mistake');
       await sleep(1200);
@@ -706,11 +858,12 @@ async function run(page, dir) {
     // Solve.
     for (const { p } of traceable) {
       if (await page.$('.anch-done')) break;
-      await page.click('.anch-btn:has-text("Clear")').catch(() => {});
+      await softClick('.anch-btn:has-text("Clear")');
       await sleep(120);
       await tapPath(p);
-      const claim = await page.$('.anch-btn--primary');
-      if (claim) await claim.click();
+      // `$` finds the button even when it is disabled, so a bare .click() here
+      // still waited the full default timeout on every un-claimable trace.
+      await softClick('.anch-btn--primary');
       await sleep(700);
     }
     await page.waitForSelector('.anch-done', { timeout: 6000 }).catch(() => warn('gallery never hung'));
@@ -780,6 +933,9 @@ async function run(page, dir) {
     for (const c of letters.slice(0, Math.ceil(letters.length / 2))) await pencil(c, truth[c]);
     await sleep(300);
     await shot('32-darkroom-play');
+    // The whole print must clear the sticky deck — see assertClearsDeck. The
+    // pool's worst case is checked deterministically in tests/puzzles/micro.
+    await assertClearsDeck(`darkroom ${puz.id} (${puz.plaintext.replace(/[^A-Z]/g, '').length} letters)`, '.dk-sheet');
 
     // Mistake: a full print developed with one letter wrong — "still murky".
     const rest = letters.slice(Math.ceil(letters.length / 2));
@@ -870,14 +1026,19 @@ async function run(page, dir) {
       await pressFig(Number(board.solution[i]));
     }
     await selectCell(blanks[6]);
-    await page.click('.ch-tool');
+    const pencilToggle = '.ch-tools--free .ch-tool:first-child';
+    await page.click(pencilToggle);
     await pressFig(Number(board.solution[blanks[6]]));
     await pressFig(((Number(board.solution[blanks[6]])) % 9) + 1);
-    await page.click('.ch-tool');
+    await page.click(pencilToggle);
     await sleep(350);
     await shot('38-counting-house-play');
+    await assertClearsDeck(`counting house ${board.id}`, '.ch-leaf');
 
-    // Mistake: ink a guaranteed contradiction — it is refused and it costs.
+    // Round 5: a figure already standing in a peer is a MALFORMED ink — the
+    // leaf showed her the clash before she pressed, so it shakes, says why,
+    // and costs nothing. (A board-legal but solution-wrong figure now LANDS
+    // and costs nothing either; the priced claim is "Balance the books".)
     const target = blanks[7];
     const br = Math.floor(target / 9), bc = target % 9;
     const answer = Number(board.solution[target]);
@@ -895,13 +1056,52 @@ async function run(page, dir) {
       await pressFig(wrong);
       await sleep(400);
       await shot('39-counting-house-mistake');
-      await sleep(900);
+      await sleep(2000);
       await selectCell(target);
       await pressFig(answer);
       await sleep(300);
     } else {
-      warn('counting house: no guaranteed contradiction available on this leaf');
+      warn('counting house: no visible clash available on this leaf');
     }
+
+    // The room's ONE priced claim: how many of her own figures are astray,
+    // never which. Ink a board-legal but solution-wrong figure first so the
+    // report has something to say, then lift it again.
+    const astrayAt = blanks[8];
+    const seen = new Set();
+    for (let i = 0; i < 81; i++) {
+      const r = Math.floor(i / 9), c = i % 9;
+      const ar = Math.floor(astrayAt / 9), ac = astrayAt % 9;
+      const sameBox = Math.floor(r / 3) === Math.floor(ar / 3) && Math.floor(c / 3) === Math.floor(ac / 3);
+      if (i !== astrayAt && (r === ar || c === ac || sameBox) && board.givens[i] !== '.') seen.add(Number(board.givens[i]));
+    }
+    const legalWrong = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      .find((d) => d !== Number(board.solution[astrayAt]) && !seen.has(d));
+    if (legalWrong) {
+      await selectCell(astrayAt);
+      await pressFig(legalWrong);
+      await sleep(200);
+      await page.click('.ch-tools--priced .ch-tool:nth-child(1)');   // Balance the books
+      await sleep(500);
+      await shot('39a-counting-house-balance');
+      await sleep(1900);
+      await selectCell(astrayAt);
+      // Erase disables itself when the selected cell holds nothing to lift —
+      // a legitimate state, not a failure, so never block the tour on it.
+      const erase = await page.$('.ch-key--wide:not([disabled])');
+      if (erase) await erase.click();
+      else log('counting house: Erase is disabled (nothing to lift) — skipped');
+      await sleep(250);
+    } else {
+      warn('counting house: no board-legal wrong figure available on this leaf');
+    }
+
+    // The clerk's technique nudge — priced help that teaches, and the reason
+    // an expert has a usable way out of a stall (AAA 3.2 / 3.8).
+    await page.click('.ch-tools--priced .ch-tool:nth-child(2)');
+    await sleep(500);
+    await shot('39c-counting-house-nudge');
+    await sleep(2600);
 
     // Solved — the ledger balances. (Filling 60+ cells takes a moment.)
     for (const i of blanks) {

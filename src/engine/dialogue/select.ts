@@ -82,6 +82,22 @@ export function selectDialogue(file: DialogueFile, query: DialogueQuery): Dialog
   return undefined;
 }
 
+/**
+ * Highest-priority eligible node whose id starts with `prefix` — for surfaces
+ * that RENDER an authored line in place rather than playing a scene (the
+ * Sanctum door's insufficient-info nudge, AAA 4.16). No pacing valve, no
+ * never-silence fallback, no seen-marking: the caller is quoting the
+ * character, not spending a conversation with him. Keeps that copy in the
+ * authored JSON where a new nudge is one entry and zero code (AAA 5.13).
+ */
+export function selectTaggedLine(
+  file: DialogueFile,
+  query: DialogueQuery,
+  prefix: string,
+): DialogueNode | undefined {
+  return pick(file.nodes.filter((n) => n.id.startsWith(prefix)), query);
+}
+
 /** Find a node by id (goto resolution). */
 export function findNode(file: DialogueFile, id: string): DialogueNode | undefined {
   return file.nodes.find((n) => n.id === id);

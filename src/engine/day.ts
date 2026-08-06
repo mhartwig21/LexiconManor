@@ -16,7 +16,24 @@
 import type { DayPhase, DayRecord, DayState, DraftOffer, StepLedger } from './types';
 import type { DayEndCause, RecordedEvent } from './events';
 import { createRng } from './rng';
-import { createLedger, ledgerTotal, stepsSpent, teaBonus, STEP_TABLE } from './economy/steps';
+import {
+  createLedger, firstMorningPot, highestRowVisited, ledgerTotal, rowName, stepsRefunded,
+  stepsSpent, teaBonus, STEP_TABLE,
+} from './economy/steps';
+
+/**
+ * ── THE DAY'S STORY, WRITTEN DOWN (AAA 4.10 / R.3, round-5 audit) ──────────
+ *
+ * The economy was rebuilt around climbing, and the climb was never recorded:
+ * `DayRecord` carried rooms/steps-spent/fragments only, and `stepsRefunded()`
+ * — documented "for the night digest" — had no callers anywhere. So the first
+ * night of the game closed on a scoreboard of zeros and hid the one number
+ * that makes the retune legible: how much the manor gave back.
+ *
+ * `stepsRefunded` and `highestRow` now live on `DayRecord` in
+ * `engine/types.ts` (folded in round 5). Both are optional, so every
+ * already-banked record still type-checks and old saves read fine.
+ */
 
 /** Dusk fade budget — chrome must complete (or be tap-skipped) within this. */
 export const DUSK_FADE_MS = 4000;
@@ -44,6 +61,14 @@ export interface BeginDayResult {
   ledger: StepLedger;
   /** Bramble's tea, to be applied as a 'tea' entry through the audited path. */
   teaSteps: number;
+  /**
+   * The scripted first-morning pot (`FIRST_MORNING_POT`), day 1 only. Day 1
+   * starts at 0 affinity, so without it the very first evening ran on the bare
+   * 18 and measured ~9 minutes — under the 10–15 floor AAA 4.10b promises for
+   * the median day (round-5 audit). The economy's twin of the scripted first
+   * draft; ledgered as 'tea' through the same audited path.
+   */
+  potSteps: number;
 }
 
 /**
@@ -72,6 +97,7 @@ export function beginDay(
     },
     ledger: createLedger(STEP_TABLE.dayStart),
     teaSteps: teaBonus(opts.brambleAffinity),
+    potSteps: firstMorningPot(dayNumber),
   };
 }
 
@@ -128,7 +154,24 @@ export function buildDayRecord(
     roomsSolved: count('room-solved'),
     stepsSpent: stepsSpent(ledger),
     fragmentsFound: count('fragment-found'),
+    // The climb, written down (see the augmentation at the top of this file):
+    // what the manor gave back, and how high she got. The night digest reads
+    // both back as prose and prints neither when it is zero.
+    stepsRefunded: stepsRefunded(ledger),
+    highestRow: highestRowVisited(ledger),
   };
+}
+
+/** "You reached the second landing" — the digest's prose, or null on the ground. */
+export function highestRowLine(record: DayRecord): string | null {
+  const row = record.highestRow ?? 0;
+  return row > 0 ? `You reached ${rowName(row)}.` : null;
+}
+
+/** "The manor gave back +14" — or null on a day that earned nothing. */
+export function refundLine(record: DayRecord): string | null {
+  const given = record.stepsRefunded ?? 0;
+  return given > 0 ? `The manor gave back +${given}.` : null;
 }
 
 /**

@@ -14,6 +14,15 @@
  *   - tap the room you stand in       → onEnterRoom  (unsolved puzzle rooms)
  *   - tap the Sanctum from its landing→ onSanctum
  *
+ * PRICES (AAA 4.6 / 4.9 / 4.10): movement is priced per row (−1 on the ground
+ * floor rising to −5 up top) and that is the whole push-your-luck decision, so
+ * the sheet says so BEFORE the tap, never only after the charge. The left
+ * margin carries a rate card — one −N per row beside the tier pips — and every
+ * walk/ghost target onto a differently-priced storey wears its own −N and
+ * names it in its accessible label ("Walk to the second landing — 3 steps").
+ * All of it is read from `moveAt` via ./pricing.ts, so the ink and the ledger
+ * cannot drift apart.
+ *
  * PADLOCKS (AAA 4.6 / 4.10d): doors into the upper storeys can be locked
  * (engine/manor/locks.ts). The sheet draws a small brass padlock on every gate
  * she can already see — the frontier and any storey already open to her — so
@@ -37,9 +46,12 @@ import {
 import { isDoorLocked, visibleLocks, KEY_COST } from '../../engine/manor/locks';
 import { useManorStore } from '../../app/store';
 import { ROOM_KIND_GLYPH_PATHS } from './CategoryGlyph';
+import {
+  draftLabel, draftStamp, lockedDraftLabel, priceStamp, stampsDraftPrice, stampsPrice, walkLabel,
+} from './pricing';
 
 const CELL = 64;
-const MX = 26;          // left margin: rank-pressure pips live here
+const MX = 40;          // left margin: the per-row step price + rank-pressure pips
 const MT = 34;          // top margin: plot border + Fell-caps title block
 const MB = 22;          // bottom margin: plot border + scale mark
 const VIEW_W = MX + MANOR_COLS * CELL + 12;
@@ -327,11 +339,23 @@ export default function BlueprintSheet({
           <g key={n} className="bp-tierpips">
             {Array.from({ length: n }, (_, i) => {
               const dy = cy + (i - (n - 1) / 2) * 11;
-              return <path key={i} d={`M${MX - 14} ${dy - 3.4}l3.4 3.4-3.4 3.4-3.4-3.4Z`} />;
+              return <path key={i} d={`M${MX - 12} ${dy - 3.4}l3.4 3.4-3.4 3.4-3.4-3.4Z`} />;
             })}
           </g>
         );
       })}
+
+      {/* THE PRICE OF THE STOREY (AAA 4.6/4.10). The tier pips say "graver";
+          these say what graver COSTS. One −N per row, read straight from
+          `moveAt(row)` so the margin and the ledger cannot drift apart — the
+          surveyor's rate card, in the surveyor's margin. */}
+      <g className="bp-rowprice" aria-hidden="true">
+        {Array.from({ length: MANOR_ROWS }, (_, row) => (
+          <text key={row} className="bp-rowprice__n" x={MX - 22} y={py(row) + CELL / 2 + 3.4}>
+            {priceStamp(row)}
+          </text>
+        ))}
+      </g>
 
       {/* porch steps beneath the Entrance Hall */}
       <path
@@ -356,10 +380,8 @@ export default function BlueprintSheet({
             aria-disabled={canPay ? undefined : true}
             aria-label={
               locked
-                ? (canPay
-                  ? `Unlock this door and draft a room here — ${KEY_COST} key`
-                  : `Padlocked door — you will want ${KEY_COST} key`)
-                : 'Draft a room here'
+                ? lockedDraftLabel(player.row, cell.row, KEY_COST, canPay)
+                : draftLabel(player.row, cell.row)
             }
             {...pressProps}
             onClick={() => (canPay ? onOpenDraft(dir) : refuse(key))}
@@ -372,6 +394,14 @@ export default function BlueprintSheet({
             {/* the gilt handle is the "this opens" promise — never drawn on a
                 door she cannot open today (no false affordance, AAA 6.5) */}
             {canPay && <circle className="bp-ghost__handle" cx={from.x} cy={from.y} r={3.6} />}
+            {/* what stepping through this door costs IN ALL, stamped before
+                the tap — drawn only when it differs from the floor she is on,
+                because a price stamped on everything stops being read. */}
+            {stampsDraftPrice(player.row, cell.row) && (
+              <text className="bp-price bp-price--ghost" x={x + CELL - 9} y={y + CELL - 8}>
+                {draftStamp(player.row, cell.row)}
+              </text>
+            )}
           </g>
         );
       })}
@@ -386,12 +416,17 @@ export default function BlueprintSheet({
             key={`walk-${cellKey(cell)}`}
             className="bp-hit bp-walk"
             role="button"
-            aria-label={`Walk ${cellKey(cell)}`}
+            aria-label={walkLabel(cell.row)}
             {...pressProps}
             onClick={() => onMove(cell)}
           >
             <rect className="bp-hit__zone" x={x} y={y} width={CELL} height={CELL} />
             <rect className="bp-walk__wash" x={x + INSET + 1} y={y + INSET + 1} width={CELL - 2 * INSET - 2} height={CELL - 2 * INSET - 2} rx={2} />
+            {stampsPrice(player.row, cell.row) && (
+              <text className="bp-price bp-price--walk" x={x + CELL - 9} y={y + CELL - 8}>
+                {priceStamp(cell.row)}
+              </text>
+            )}
           </g>
         );
       })}

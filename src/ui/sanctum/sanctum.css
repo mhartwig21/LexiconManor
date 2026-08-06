@@ -202,6 +202,25 @@
   cursor: pointer;
 }
 
+/* The landing audience — the Portrait's haunt (MANOR_DESIGN §8). Quieter than
+   the door's commit button: talking to him is never the urgent action here. */
+.snc-audience {
+  min-height: var(--tap-target);
+  align-self: center;
+  padding: 0.45rem 1.1rem;
+  border: 1px solid var(--paper-edge);
+  border-radius: 999px;
+  background: var(--paper-raised);
+  color: var(--ink-soft);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform var(--dur-press);
+}
+.snc-audience:active,
+.snc-audience.is-pressed { transform: translateY(1px); }
+
 /* --- The win: the word comes home ------------------------------------------ */
 .snc-won {
   display: flex;

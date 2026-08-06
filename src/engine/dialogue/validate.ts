@@ -19,9 +19,11 @@
  *  - Dewey: zero spoken lines forever — narration only, no choices, no flags
  *  - authoring floors per character at the AAA 5.6 shipping numbers
  *    (nodes / event-reactions / idle / total lines)
- *  - trigger mounts: every trigger used by authored nodes must be registered
- *    in TRIGGER_MOUNTS with a real mount site — unmounted trigger = dead
- *    content = build failure (AAA 5.5)
+ *  - trigger mounts: every (character, trigger) pair used by authored nodes
+ *    must be registered in TRIGGER_MOUNTS with a real mount site — an
+ *    unmounted pair = dead content = build failure (AAA 5.5)
+ *  - priority starvation: a `once` node that can never outrank a repeatable
+ *    node on the same trigger is content that will never be seen (AAA 5.5)
  */
 
 import type { CharacterId } from '../types';
@@ -40,27 +42,68 @@ export const FLAG_REGEX = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,2}$/;
 
 const NODE_ID_REGEX = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)+$/;
 
-const TRIGGERS = ['morning', 'parlor', 'idle', 'sanctum-after-guess', 'letter', 'night'] as const;
+const TRIGGERS = [
+  'morning', 'parlor', 'idle', 'sanctum-idle', 'sanctum-after-guess', 'letter', 'night',
+] as const;
+type Trigger = (typeof TRIGGERS)[number];
 
 /**
- * Trigger mount manifest (AAA 4.17 / 5.5): a trigger is only real content if
- * some screen actually mounts <DialogueScene slot={trigger}>. Every trigger
- * used by an authored node MUST have an entry here, and every entry must name
- * its mount site — otherwise the content is dead-on-arrival (the Portrait's
- * entire Sanctum reaction set shipped unreachable this way once; never again).
- * Adding a trigger without a mount is a build failure, not a code review note.
+ * Trigger mount manifest (AAA 4.17 / 5.5), keyed PER CHARACTER.
+ *
+ * A trigger is only real content for a given character if some screen
+ * actually mounts <DialogueScene character={c} slot={trigger}>. The old
+ * manifest was keyed by trigger alone, which is why the Portrait shipped
+ * twice with dead content: `parlor` was "mounted" (ManorPage mounts it for
+ * Ellery/Posy/Fern) and `idle` was "mounted" (the selector retargets it), yet
+ * NOTHING anywhere ever mounted a scene for `portrait` — so his entire
+ * first-meeting chain, both arc beats and his testimony sat on the floor and
+ * the validator waved them through. Every (character, trigger) pair used by
+ * an authored node MUST have an entry here naming its mount site.
+ *
+ * `idle` is never mounted directly: the selector reaches it by pacing-valve
+ * retarget and the never-silence fallback from a *valved* slot. So an `idle`
+ * registration is only honest if that character also has a `morning` or
+ * `parlor` mount — checked below, not trusted.
  */
-export const TRIGGER_MOUNTS: Readonly<Partial<Record<(typeof TRIGGERS)[number], string>>> = {
-  morning: 'src/ui/chrome/DayTransitions.tsx (MorningCard → slot="morning")',
-  parlor: 'src/pages/ManorPage.tsx (parlor visits → slot="parlor")',
-  idle: 'engine/dialogue/select.ts (pacing-valve retarget + never-silence fallback)',
-  'sanctum-after-guess':
-    'src/ui/sanctum/SanctumView.tsx (wrong/won-portrait phases → slot="sanctum-after-guess"; A6 shared-file request to A7)',
-  letter:
-    'src/ui/journal/JournalView.tsx (after letter-opened → slot="letter"; A6 shared-file request to A7)',
-  // 'night' has no mount yet — authoring a night node fails the build until
-  // a screen mounts it and registers here.
+export const TRIGGER_MOUNTS: Readonly<Record<CharacterId, Partial<Record<Trigger, string>>>> = {
+  bramble: {
+    morning: 'src/ui/chrome/DayTransitions.tsx (MorningCard → slot="morning")',
+    idle: 'engine/dialogue/select.ts (valve retarget / fallback off the morning scene)',
+  },
+  ellery: {
+    parlor: 'src/pages/ManorPage.tsx (PARLOR_CHARACTERS: reading-nook, drawing-room → slot="parlor")',
+    idle: 'engine/dialogue/select.ts (valve retarget / fallback off the parlor visit)',
+  },
+  posy: {
+    parlor: 'src/pages/ManorPage.tsx (PARLOR_CHARACTERS: post-room → slot="parlor")',
+    idle: 'engine/dialogue/select.ts (valve retarget / fallback off the parlor visit)',
+    letter:
+      'src/ui/journal/JournalView.tsx (after letter-opened → slot="letter"; A6 shared-file request to A7)',
+  },
+  fern: {
+    parlor: 'src/pages/ManorPage.tsx (PARLOR_CHARACTERS: greenhouse → slot="parlor")',
+    idle: 'engine/dialogue/select.ts (valve retarget / fallback off the parlor visit)',
+  },
+  dewey: {
+    parlor: 'src/pages/ManorPage.tsx (Dewey seam → slot="parlor")',
+    idle: 'engine/dialogue/select.ts (valve retarget / fallback off the Dewey seam)',
+  },
+  portrait: {
+    parlor:
+      'src/ui/sanctum/SanctumView.tsx (idle phase → "Speak with the Portrait" → slot="parlor")',
+    idle:
+      'engine/dialogue/select.ts (valve retarget off the Sanctum audience)',
+    'sanctum-idle':
+      'src/ui/sanctum/SanctumView.tsx (door-screen insufficient-info nudge, AAA 4.16 — RENDERED via selectTaggedLine, never played: no valve spent, nothing marked seen)',
+    'sanctum-after-guess':
+      'src/ui/sanctum/SanctumView.tsx (wrong/won-portrait phases → slot="sanctum-after-guess")',
+  },
+  // 'night' has no mount for anyone yet — authoring a night node fails the
+  // build until a screen mounts it and registers here.
 };
+
+/** Slots a screen can mount directly; `idle` is only ever reached from one. */
+const VALVED_TRIGGERS: readonly Trigger[] = ['morning', 'parlor'];
 
 const EVENT_TYPES: readonly GameEventType[] = [
   'day-started', 'day-ended', 'room-drafted', 'room-solved', 'room-abandoned',
@@ -155,8 +198,8 @@ export function validateDialogueFile(file: DialogueFile): ValidationIssue[] {
 
     if (!(TRIGGERS as readonly string[]).includes(node.trigger)) {
       err(`unknown trigger "${node.trigger}"`, id);
-    } else if (!(node.trigger in TRIGGER_MOUNTS)) {
-      err(`trigger "${node.trigger}" has no registered mount — dead content (AAA 5.5); register the mount site in TRIGGER_MOUNTS`, id);
+    } else if (!TRIGGER_MOUNTS[c]?.[node.trigger]) {
+      err(`no screen mounts <DialogueScene character="${c}" slot="${node.trigger}"> — dead content (AAA 5.5); mount it and register the site in TRIGGER_MOUNTS.${c}`, id);
     }
     if (typeof node.priority !== 'number' || node.priority < 0) {
       err(`priority must be a number >= 0`, id);
@@ -265,7 +308,150 @@ export function validateDialogueFile(file: DialogueFile): ValidationIssue[] {
   };
   for (const node of file.nodes) dfs(node.id);
 
+  // An `idle` registration is only honest if the character also has a valved
+  // mount — the selector never reaches idle except by retargeting one.
+  const mounts = TRIGGER_MOUNTS[c] ?? {};
+  if (mounts.idle && !VALVED_TRIGGERS.some((t) => mounts[t])) {
+    err(`TRIGGER_MOUNTS.${c} registers "idle" but ${c} has no morning/parlor mount to retarget from — idle is unreachable`);
+  }
+
+  // Priority starvation (AAA 5.5): a once-only node that some repeatable node
+  // on the same trigger always outranks is content that will never be seen.
+  // This is what buried portrait.guess.thaw/thaw-2 — the whole failure-as-
+  // content arc — under four rotating closeness lines for a whole volume.
+  const selectable = file.nodes.filter((n) => !n.chainOnly);
+  for (const n of selectable) {
+    if (!n.once) continue;
+    for (const r of selectable) {
+      if (r.once || r.trigger !== n.trigger || r.priority <= n.priority) continue;
+      if (provablyDisjoint(n.conditions, r.conditions)) continue;
+      // A repeatable gated on an event N does not itself require is only
+      // *episodically* eligible (the Portrait's gift thank-you outranks his
+      // testimony beat, but only on a day you gifted him — the next quiet day
+      // it plays). Only a rival that rides the same event gates as N — or no
+      // gate at all — can starve it for the whole volume.
+      if (requiresExtraEvent(r, n)) continue;
+      err(`starved by repeatable "${r.id}" (priority ${r.priority} > ${n.priority}, same trigger, conditions overlap) — a once-only node that can never win is unseeable content (AAA 5.5)`, n.id);
+    }
+  }
+
   return issues;
+}
+
+// ---------------------------------------------------------------------------
+// Condition disjointness — deliberately conservative
+// ---------------------------------------------------------------------------
+
+interface Atom { cond: Exclude<DialogueCondition, { kind: 'not' }>; negated: boolean }
+
+/** Event types a node positively requires on the recent stream. */
+function requiredEvents(node: DialogueNode): Set<GameEventType> {
+  const out = new Set<GameEventType>();
+  for (const a of atoms(node.conditions)) {
+    if (!a.negated && a.cond.kind === 'event') out.add(a.cond.event);
+  }
+  return out;
+}
+
+/** Does `rival` ride an event gate that `node` does not also require? */
+function requiresExtraEvent(rival: DialogueNode, node: DialogueNode): boolean {
+  const mine = requiredEvents(node);
+  for (const e of requiredEvents(rival)) if (!mine.has(e)) return true;
+  return false;
+}
+
+function atoms(conds: DialogueCondition[] | undefined): Atom[] {
+  const out: Atom[] = [];
+  for (const c of conds ?? []) {
+    if (c.kind === 'not') {
+      if (c.cond.kind !== 'not') out.push({ cond: c.cond, negated: true });
+    } else {
+      out.push({ cond: c, negated: false });
+    }
+  }
+  return out;
+}
+
+/** Band-condition subject key, or null if this atom is not a band. */
+function bandKey(c: Atom['cond']): string | null {
+  switch (c.kind) {
+    case 'fragmentCount': return 'fragmentCount';
+    case 'day': return 'day';
+    case 'affinity': return `affinity:${c.character}`;
+    case 'counter': return `counter:${c.event}`;
+    default: return null;
+  }
+}
+
+function bandsExclusive(
+  a: { gte?: number; lte?: number },
+  b: { gte?: number; lte?: number },
+): boolean {
+  if (a.gte !== undefined && b.lte !== undefined && a.gte > b.lte) return true;
+  if (b.gte !== undefined && a.lte !== undefined && b.gte > a.lte) return true;
+  return false;
+}
+
+function sameShape(x: unknown, y: unknown): boolean {
+  return JSON.stringify(x ?? null) === JSON.stringify(y ?? null);
+}
+
+/** True only when the two atoms demonstrably cannot both hold at once. */
+function atomsContradict(a: Atom, b: Atom): boolean {
+  const ac = a.cond;
+  const bc = b.cond;
+  if (ac.kind !== bc.kind) return false;
+
+  // X vs not-X on the same subject.
+  if (a.negated !== b.negated) {
+    if (ac.kind === 'flag' && bc.kind === 'flag') return ac.flag === bc.flag;
+    if (ac.kind === 'seen' && bc.kind === 'seen') return ac.node === bc.node;
+    if (ac.kind === 'volume' && bc.kind === 'volume') return ac.id === bc.id;
+    if (ac.kind === 'event' && bc.kind === 'event') {
+      return ac.event === bc.event && sameShape(ac.where, bc.where) && sameShape(ac.whereGte, bc.whereGte);
+    }
+    return false;
+  }
+  if (a.negated) return false;   // two negations can always both hold
+
+  // Two different volumes can never be current at once.
+  if (ac.kind === 'volume' && bc.kind === 'volume') return ac.id !== bc.id;
+
+  // Non-overlapping numeric bands on the same subject.
+  const key = bandKey(ac);
+  if (key !== null && key === bandKey(bc)) {
+    return bandsExclusive(
+      ac as { gte?: number; lte?: number },
+      bc as { gte?: number; lte?: number },
+    );
+  }
+
+  // Same event type, `where` clauses that disagree on a shared path. (One
+  // wrong guess a day, one gift per character per day — the payload of the
+  // matching event cannot be two values at once.)
+  if (ac.kind === 'event' && bc.kind === 'event' && ac.event === bc.event) {
+    for (const [path, want] of Object.entries(ac.where ?? {})) {
+      const other = bc.where?.[path];
+      if (other !== undefined && other !== want) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Can these two condition sets be proven never to hold in the same query?
+ * Conservative by design: "not provably disjoint" is the failing side of the
+ * starvation guard, so a missed contradiction costs an author one explicit
+ * priority bump, while a wrongly-claimed one would let dead content ship.
+ */
+export function provablyDisjoint(
+  a: DialogueCondition[] | undefined,
+  b: DialogueCondition[] | undefined,
+): boolean {
+  const as = atoms(a);
+  const bs = atoms(b);
+  for (const x of as) for (const y of bs) if (atomsContradict(x, y)) return true;
+  return false;
 }
 
 /** Cross-file checks: global id uniqueness, flag orphans, seen refs, floors. */

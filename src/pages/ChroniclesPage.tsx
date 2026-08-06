@@ -19,6 +19,7 @@ import { selectSave } from '../app/store';
 import { getStorageDebugInfo, type StorageDebugInfo } from '../app/platform/persistence';
 import { applyAudioSessionPolicy } from '../app/music/context';
 import { ACHIEVEMENTS } from '../engine/effects';
+import { rowName } from '../engine/economy/steps';
 import type { DayRecord } from '../engine/types';
 import BackLink from '../ui/chrome/BackLink';
 import './chronicles.css';
@@ -35,6 +36,8 @@ function DayRow({ r }: { r: DayRecord }) {
       <span className="chron__day-name">Day {r.day}</span>
       <span className="chron__day-detail">
         {CAUSE_COPY[r.cause] ?? r.cause} · {r.roomsSolved}/{r.roomsDrafted} rooms · {r.stepsSpent} steps
+        {r.stepsRefunded ? ` · +${r.stepsRefunded} back` : ''}
+        {r.highestRow ? ` · ${rowName(r.highestRow)}` : ''}
         {r.fragmentsFound > 0 ? ` · ${r.fragmentsFound} fragment${r.fragmentsFound === 1 ? '' : 's'}` : ''}
       </span>
     </div>

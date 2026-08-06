@@ -271,6 +271,17 @@
 }
 
 /* Night digest stat rows */
+/* The day's story, ahead of its numbers (AAA 4.10 / R.3): how high she got and
+   what the manor gave back, in prose. Zero rows are never printed at all — a
+   quiet evening reads as quiet, never as a scoreboard of noughts. */
+.chr-digest__prose {
+  margin: 2px 0 6px;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--ink);
+  text-wrap: balance;
+}
+
 .chr-digest {
   display: grid;
   grid-template-columns: auto auto;

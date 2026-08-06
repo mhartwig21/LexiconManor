@@ -19,7 +19,10 @@ import type { SaveV2 } from '../save';
 import {
   beginDay, buildDayRecord, canAdvancePhase, canEndDay, pruneEventsAtDusk, shouldTriggerDusk,
 } from '../../engine/day';
-import { appendEntry, stepsRemaining as remaining, STEP_TABLE } from '../../engine/economy/steps';
+import {
+  appendEntry, stepsRemaining as remaining, teaArcPoints, STEP_TABLE,
+} from '../../engine/economy/steps';
+import { carryOverFrom } from '../../engine/manor/deck';
 
 export interface DaySlice {
   day: DayState | null;
@@ -90,16 +93,58 @@ export const createDaySlice =
     counters: initial.events.counters,
 
     startDay: () => {
-      const begun = beginDay(get().day, {
-        brambleAffinity: get().affinities.bramble,
+      const prevDay = get().day;
+      if (prevDay && prevDay.phase !== 'night') return; // a day is already underway
+      const dayNumber = (prevDay?.day ?? 0) + 1;
+
+      // ── THE LIVE TEA ARC (AAA 4.10d, round-5 audit). ────────────────────
+      // Bramble's authored file grants 2 affinity points in its entire
+      // lifetime, and TEA_BY_RANK's full pot wants 6 — so the published day
+      // 6–10 curve was verified against warmth the live game could not reach.
+      // The arc lives where the arc actually happens: sitting down to tea with
+      // her IS the one substantive conversation AAA 5.9 allows per day, and
+      // every second morning warms her by a point (`teaArcPoints`), to a
+      // ceiling. Applied as a FLOOR, before the pot is poured, so it never
+      // eats the scarce gift currency, never overwrites points she earned by
+      // gifting, never double-counts on a resumed day, and cannot be lost to a
+      // dialogue choice (AAA 5.13).
+      const known = get().affinities.bramble ?? 0;
+      const warmed = Math.max(known, teaArcPoints(dayNumber));
+
+      const begun = beginDay(prevDay, {
+        brambleAffinity: warmed,
         entropy: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) | 0,
       });
       if (!begun) return; // mid-day: a day is already underway
+
+      // What yesterday left steeping (AAA 4.11 cross-day investment). Read off
+      // the audited event spine — pruneEventsAtDusk keeps the closing day's
+      // events, so yesterday's drafts are still here at dawn — which is why
+      // this needs no new save field to lose. Keys are granted by the manor
+      // slice when the grid is built; the steps are ledgered here.
+      const carried = carryOverFrom(
+        get().recentEvents
+          .filter((e) => e.day === (prevDay?.day ?? 0) && e.event.type === 'room-drafted')
+          .map((e) => (e.event as { cardId: string }).cardId),
+      );
+
       set({ day: begun.day, ledger: begun.ledger });
       get().recordEvent({ type: 'day-started', day: begun.day.day });
+      // Banked after the day rolls, so a rank-up event is stamped with THIS
+      // morning (the one she shared), not with yesterday.
+      if (warmed > known) get().adjustAffinity('bramble', warmed - known);
+      // Through the audited path so each morning gift renders as a floating +N
+      // (AAA 4.9). Three separate entries, because they are three different
+      // stories: her tea, the welcome pot, and what you set up yesterday.
+      const at = Date.now();
       if (begun.teaSteps > 0) {
-        // Through the audited path so the morning tea renders as a floating +N.
-        get().applyStepEntry({ reason: 'tea', delta: begun.teaSteps, at: Date.now() });
+        get().applyStepEntry({ reason: 'tea', delta: begun.teaSteps, at });
+      }
+      if (begun.potSteps > 0) {
+        get().applyStepEntry({ reason: 'tea', delta: begun.potSteps, at });
+      }
+      if (carried.steps > 0) {
+        get().applyStepEntry({ reason: 'tea', delta: carried.steps, at });
       }
       // The manor grid itself is rebuilt by A1 (manor slice) when it observes
       // manor === null with a fresh day.daySeed — see integration notes.

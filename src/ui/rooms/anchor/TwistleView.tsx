@@ -32,6 +32,8 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
   const [path, setPath] = useState<number[]>([]);
   const [shaking, setShaking] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
+  /** AAA 3.4: the gilt frame is skippable at any point in its ≤1.2s draw. */
+  const [frameSkipped, setFrameSkipped] = useState(false);
 
   const handledAttempt = useRef(0);
   const gesture = useRef<{ active: boolean; startIdx: number; didDrag: boolean; prevPath: number[] }>({
@@ -159,27 +161,42 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
   };
 
   return (
-    <div className="anch anch--gallery">
+    <div className={`anch anch--gallery${won ? ' anch--verdict' : ''}`}>
       <header className="anch__head">
         <h2 className="anch__title">The Gallery</h2>
-        <p className="anch__sub">
-          Trace {puzzle.targetCount} words through touching tiles.
-          {puzzle.rules.centerRequired && ' Every word must cross the marked tile.'}
+        {/* 3.2/7.2: the mechanical clause is NEVER the thing a short screen
+            drops — at tier 3 the marked-tile rule is what a −3-step mistake
+            hangs on, and this line is its only statement in words. */}
+        <p className="anch__flavour">Trace words through touching tiles.</p>
+        <p className="anch__rule">
+          {puzzle.targetCount} words
+          {puzzle.rules.centerRequired && ' · every word crosses the marked tile'}
         </p>
       </header>
 
       {won ? (
-        <div className="anch-done">
+        // AAA 3.4: a celebration that is NOT the in-play chip arrival replayed.
+        // A gilt frame draws itself around the block, edge by edge (≤1.2s),
+        // matching the room's own "hung" metaphor. Transform-only: each edge is
+        // a hairline scaled from its far end, so nothing paints or reflows.
+        <div
+          className={`anch-done tw-hung${frameSkipped ? ' tw-hung--done' : ''}`}
+          onPointerDown={() => setFrameSkipped(true)}
+        >
+          <div className="tw-frame" aria-hidden="true">
+            <i className="tw-frame__seg tw-frame__seg--t" />
+            <i className="tw-frame__seg tw-frame__seg--r" />
+            <i className="tw-frame__seg tw-frame__seg--b" />
+            <i className="tw-frame__seg tw-frame__seg--l" />
+          </div>
           <div className="anch-done__title">The gallery is hung.</div>
           <p className="anch-done__line">
             {state.twistle.foundWords.length} works on display
             {state.costedMistakes === 0 ? ' — hung without a single crooked frame' : ''}.
           </p>
           <div className="tw-lists">
-            {state.twistle.foundWords.map((w, i) => (
-              <span key={w} className="anch-chip anch-chip--accent anch-pop" style={{ animationDelay: `${i * 90}ms` }}>
-                {w}
-              </span>
+            {state.twistle.foundWords.map((w) => (
+              <span key={w} className="anch-chip anch-chip--accent">{w}</span>
             ))}
           </div>
         </div>

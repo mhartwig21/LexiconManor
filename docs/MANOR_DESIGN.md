@@ -216,7 +216,10 @@ micro-room engine modules + generators.
    no — 40 steps ran long and made the manor trivially climbable. The budget is now 18
    with per-row movement pricing; measured median 11.2 min, p90 21.5 (AAA 4.10b).
 2. Mistake cost: is −2 felt-but-fair in each mode? (Hive invalid words may need −1.)
-3. Volume 1 mystery difficulty: target "solved in roughly 2–4 evenings of play,"
-   solvable-in-principle much sooner.
+3. ~~Volume 1 mystery difficulty: target "solved in roughly 2–4 evenings of play."~~
+   **Answered (round 6):** the 2–4 evening target was a pre-overhaul number that
+   contradicted the retuned campaign arc; AAA 4.10e owns the horizon (14–28 days median,
+   <2% inside week one) and AAA 4.18 now owns only solvable-in-principle-from-day-1.
+   The drip is measured against 4.10e by `tests/volume-pacing.test.ts`.
 4. Dialogue volume: how many lines per character before Volume 1 needs a refresh?
 5. Do glyphs/perks return, and in what form?

@@ -171,10 +171,47 @@ export function letterBoxes(facts: AlphabetFacts): (string | null)[] | null {
 // Guess history — the player's own elimination record
 // ---------------------------------------------------------------------------
 
+/**
+ * The verdict the Portrait actually delivered on a refused word.
+ *
+ * The journal is a memory prosthetic, not an oracle (MANOR_DESIGN §7, AAA
+ * 3.3): it re-presents what she was TOLD, never a sharper fact than anyone
+ * spoke. It used to print `${sharedLetters} letters shared`, an exact
+ * distinct-letter intersection count, free, once a day, forever — a
+ * Mastermind channel that solves the letter set right past the engraving
+ * economy. Nobody in the fiction ever says a number; the Portrait speaks in
+ * these five shades, so these five shades are what gets filed.
+ *
+ * The order below IS the authored priority order of his
+ * `portrait.guess.*` variants (repeat 720 > right-length 715 >
+ * warm-letters 710 > one-letter 705 > cold 700) — tests/journal.test.ts pins
+ * the two together so a content edit can never leave the journal quoting a
+ * line he did not say.
+ */
+export type GuessVerdict = 'repeat' | 'right-shape' | 'circling' | 'one-letter' | 'cold';
+
+export function guessVerdict(c: GuessCloseness): GuessVerdict {
+  if (c.repeat) return 'repeat';
+  if (c.rightLength) return 'right-shape';
+  if (c.sharedLetters >= 2) return 'circling';
+  if (c.sharedLetters >= 1) return 'one-letter';
+  return 'cold';
+}
+
+/** Marginal shorthand for each verdict — his words, shortened, not a metric. */
+export const VERDICT_TOKENS: Readonly<Record<GuessVerdict, string>> = {
+  repeat: 'the door had heard it',
+  'right-shape': 'the right shape',
+  circling: 'the hinges shifted',
+  'one-letter': 'one letter true',
+  cold: 'not a letter of it',
+};
+
 export interface GuessRecord {
   day: number;
   guess: string;
-  closeness: GuessCloseness;
+  /** What the Portrait said of it, in his taxonomy — never a letter count. */
+  verdict: GuessVerdict;
   /** It turned out to be the word. */
   wasAnswer: boolean;
 }
@@ -184,7 +221,9 @@ export function guessHistory(content: VolumeContent, state: VolumeState): GuessR
   return state.guesses.map((g, i) => ({
     day: g.day,
     guess: g.guess,
-    closeness: computeCloseness(content.answer, g.guess, state.guesses.slice(0, i)),
+    // computeCloseness stays the dialogue selector's input; only its coarse
+    // verdict is ever shown to the player.
+    verdict: guessVerdict(computeCloseness(content.answer, g.guess, state.guesses.slice(0, i))),
     wasAnswer:
       g.guess === answerNorm ||
       content.accepted.some((a) => a.toUpperCase().replace(/[^A-Z]/g, '') === g.guess),
@@ -200,42 +239,49 @@ export interface SanctumReadiness {
   total: number;
   /** Enough on the desk that a guess is an act of deduction, not a dart throw. */
   enough: boolean;
-  /** Sympathetic pre-guess line when the case file is thin. */
-  nudge: string | null;
 }
 
-/** Below this many filed fragments the Portrait gently notes the thin file.
- *  A nudge only — never a gate (AAA 4.18: solvable from day one). */
+/**
+ * Below this many filed fragments the Portrait gently notes the thin file.
+ * A nudge only — never a gate (AAA 4.18: solvable from day one).
+ *
+ * The nudge COPY is not here. It used to be: two strings in this module, in
+ * the housekeeper's voice ("The journal is still empty, dear…"), painted
+ * unattributed on the Sanctum screen directly beneath the Portrait's line —
+ * who says "dear" exactly zero times across his authored lines. It now lives
+ * where every other character reaction lives, as authored JSON
+ * (`portrait.gate.empty-journal` / `portrait.gate.thin-file`, AAA 5.13);
+ * their `fragmentCount` conditions mirror this constant and
+ * tests/journal.test.ts pins them together.
+ */
 export const THIN_FILE_THRESHOLD = 4;
 
 export function sanctumReadiness(content: VolumeContent, state: VolumeState): SanctumReadiness {
   const found = state.foundFragmentIds.length;
-  const total = content.fragments.length;
-  const enough = found >= THIN_FILE_THRESHOLD;
   return {
     found,
-    total,
-    enough,
-    nudge: enough
-      ? null
-      : found === 0
-        ? 'The journal is still empty, dear. The manor hides its definition in engravings, memories, and the post — though the door will hear any word you bring it.'
-        : `Only ${found} fragment${found === 1 ? '' : 's'} filed so far. The rooms above hold more of the definition — though the door will hear any word you bring it.`,
+    total: content.fragments.length,
+    enough: found >= THIN_FILE_THRESHOLD,
   };
 }
 
-/** The journal's own gentle next-thing pointer, shown under the case file. */
+/**
+ * The journal's own gentle next-thing pointer, shown under the case file.
+ * Rendered by the UI as a pencilled marginal note signed "— E.": Ellery reads
+ * the journal over the player's shoulder, so the ghost librarian owns the
+ * "dear" and the pointer is somebody's voice rather than the furniture's.
+ */
 export function journalNudge(content: VolumeContent, state: VolumeState): string | null {
   if (state.status === 'solved') return null;
   const found = state.foundFragmentIds.length;
-  if (found === 0) return 'Draft toward the violet rooms — the manor files what it finds, all by itself.';
+  if (found === 0) return 'Draft toward the violet rooms, dear — the manor files what it finds, all by itself.';
   const uninterpreted = nextUninterpreted(content, state);
   const facts = alphabetFacts(content, state);
   if (facts.sources === 0) {
     return 'No engravings yet. They are cut into lintels and inkstands about the house — the alphabet plate is waiting for them.';
   }
   if (uninterpreted && found >= 3) {
-    return 'Ellery could make more of one of these, if you brought her a cup of something warm.';
+    return 'Bring me one of these over something warm and I will read it again, more slowly.';
   }
   if (found < content.fragments.length) {
     return 'You might reread what the engravings say, dear — side by side, they narrow wonderfully.';

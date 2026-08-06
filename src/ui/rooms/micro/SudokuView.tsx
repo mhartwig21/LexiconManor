@@ -7,17 +7,23 @@
  * (>=44px keys, AAA 6.19). Nothing on the board commits anything: tapping a
  * cell only moves the cursor, so a fat-fingered tap on a 42px cell is free.
  *
- * Play model (owner directive, playtest round — the dictionary-style free
- * refusal does NOT apply here): PENCIL MARKS ARE FREE, so exploration costs
- * nothing; INKING is the claim, and a figure that contradicts the ledger is
- * refused (it never lands — a known-false digit is anti-information, AAA 3.3)
- * and costs one mistake. Consulting the ledger is a step-priced hint.
+ * ═══ PLAY MODEL (round 5 rewrite) ═══
+ * The leaf no longer marks her work as she goes. Pencil marks are free and
+ * "Pencil what fits" fills them all in one tap (NYT's Auto Candidate Mode —
+ * the tier-2/3 techniques are unreachable without complete marks). Inking is
+ * free too: a figure that duplicates a visible peer is a dead letter (shake +
+ * reason, nothing lands, nothing charged), and anything else LANDS as her own
+ * unsettled ink, right or wrong, and lifts off again with Erase. The priced
+ * verbs are the CLAIM — "Balance the books", which reports how many of her
+ * figures are astray without naming them — and two grades of help: the clerk's
+ * technique nudge (cheap, teaches, keeps `perfect`) and consulting an actual
+ * figure (dear, and it costs the bonus).
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { RoomViewProps } from '../registry';
 import {
-  PEERS, TECHNIQUE_LEVEL, TECHNIQUE_NAMES, blanksRemaining, digitCount, isGiven,
+  PEERS, TECHNIQUE_LEVEL, TECHNIQUE_NAMES, blanksRemaining, digitCount, isGiven, unitName,
   type SudokuPuzzle, type TechniqueId,
 } from '../../../engine/puzzles/sudoku';
 import type { SudokuAction, SudokuRoomState } from '../../../engine/puzzles/sudoku-adapter';
@@ -26,10 +32,19 @@ import './counting-house.css';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
 
-/** Player-facing difficulty names for the three technique tiers. */
+/**
+ * Player-facing difficulty names for the three technique tiers.
+ *
+ * ROUND 5 CORRECTION (AAA §0.1 honesty-over-vibes): tier 1 used to print
+ * "Expert". The engine is honest — 39/40 tier-1 boards peak at locked
+ * candidates and the rest at a naked/hidden pair — but that ceiling is NYT
+ * *Hard*, and an expert who reads "Expert leaf — it turned on a naked pair"
+ * stops trusting every other number the room prints. The ladder now says what
+ * the boards demand, and still escalates in three distinct in-world words.
+ */
 const TIER_NAME: Record<1 | 2 | 3, string> = {
-  1: 'Expert',
-  2: 'Fiendish',
+  1: 'Tough',
+  2: 'Expert',
   3: 'Diabolical',
 };
 
@@ -41,6 +56,26 @@ const colOf = (cell: number) => cell % 9;
 function article(word: string): string {
   return /^[aeioux]/i.test(word) ? 'an' : 'a';
 }
+
+/**
+ * The clerk's phrasing for each technique — an article and a number the copy
+ * can agree with, so the nudge reads as a sentence a person wrote ("locked
+ * candidates SIT in the eighth quarter", not "a locked candidates sits").
+ */
+const NUDGE_PHRASE: Record<TechniqueId, { it: string; plural?: true }> = {
+  'naked-single': { it: 'a forced figure' },
+  'hidden-single': { it: 'a hidden single' },
+  'locked-candidates': { it: 'locked candidates', plural: true },
+  'naked-pair': { it: 'a naked pair' },
+  'hidden-pair': { it: 'a hidden pair' },
+  'naked-triple': { it: 'a naked triple' },
+  'hidden-triple': { it: 'a hidden triple' },
+  'x-wing': { it: 'an X-wing' },
+  'xy-wing': { it: 'an XY-wing' },
+  'swordfish': { it: 'a swordfish' },
+  'xyz-wing': { it: 'an XYZ-wing' },
+  'simple-colouring': { it: 'a colouring chain' },
+};
 
 /** The hardest technique the board actually required (for the post-solve note). */
 function peakTechnique(techniques: readonly TechniqueId[]): TechniqueId | null {
@@ -56,7 +91,8 @@ export default function SudokuView({
 }: RoomViewProps<SudokuPuzzle, SudokuRoomState, SudokuAction>) {
   const engine = state.engine;
   const won = engine.status === 'won';
-  const hintCost = tier === 3 ? 3 : 2;
+  const claimCost = tier === 3 ? 3 : 2;      // balance / nudge — weight 1
+  const figureCost = claimCost * 2;          // consult a figure — weight 2
 
   const firstBlank = useMemo(
     () => {
@@ -71,8 +107,10 @@ export default function SudokuView({
   const [sel, setSel] = useState<number | null>(firstBlank);
   const [pencilMode, setPencilMode] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
-  const [refused, setRefused] = useState<{ cell: number; digit: number } | null>(null);
+  const [refused, setRefused] = useState<{ cell: number; digit: number; conflict: number } | null>(null);
+  const [shaking, setShaking] = useState(false);
   const [pop, setPop] = useState<number | null>(null);
+  const [skipReveal, setSkipReveal] = useState(false);
 
   const handledAttempt = useRef(0);
   const prevValues = useRef<number[] | null>(null);
@@ -86,7 +124,9 @@ export default function SudokuView({
     setPencilMode(false);
     setToast(null);
     setRefused(null);
+    setShaking(false);
     setPop(null);
+    setSkipReveal(false);
     // Drop the previous leaf's board, or the first render of the new one
     // reads as 81 figures changing at once (a phantom pop + chime).
     prevValues.current = null;
@@ -101,7 +141,7 @@ export default function SudokuView({
     const prev = prevValues.current;
     prevValues.current = engine.values;
     if (!prev) return;
-    const cell = engine.values.findIndex((v, i) => v !== prev[i]);
+    const cell = engine.values.findIndex((v, i) => v !== prev[i] && v !== 0);
     if (cell === -1) return;
     setPop(cell);
     later(() => setPop(null), 220);
@@ -115,17 +155,80 @@ export default function SudokuView({
     const fb = state.lastFeedback;
     if (!fb) return;
     switch (fb.kind) {
-      case 'contradiction':
+      case 'malformed': {
+        // The leaf already showed the clash — a dead letter, not a debt.
         sfx.wrong();
-        setRefused({ cell: fb.cell, digit: fb.digit });
+        setRefused({ cell: fb.cell, digit: fb.digit, conflict: fb.conflict });
         later(() => setRefused(null), 360);
-        setToast({ kind: 'bad', text: `The ledger will not hold a ${fb.digit} there · −${hintCost} steps` });
+        setShaking(true);
+        later(() => setShaking(false), 340);
+        const where = fb.conflict >= 0
+          ? `row ${rowOf(fb.conflict) + 1}, column ${colOf(fb.conflict) + 1}`
+          : 'this row, column or quarter';
+        setToast({ kind: 'info', text: `A ${fb.digit} already stands at ${where} — no charge.` });
         later(() => setToast(null), 1900);
+        break;
+      }
+      case 'balanced': {
+        if (fb.settled === 0) {
+          setToast({ kind: 'info', text: 'Nothing of yours to weigh yet — ink freely, it costs nothing.' });
+          later(() => setToast(null), 1700);
+          break;
+        }
+        const mine = fb.settled === 1 ? 'your one figure sits true' : `all ${fb.settled} of your figures sit true`;
+        if (fb.astray === 0) {
+          sfx.glyph();
+          setToast({
+            kind: 'good',
+            text: fb.charged
+              ? `The books balance — ${mine} · −${claimCost} steps`
+              : `The books balance — ${mine}. No charge for weighing twice.`,
+          });
+          later(() => setToast(null), 2000);
+          break;
+        }
+        sfx.wrong();
+        setShaking(true);
+        later(() => setShaking(false), 340);
+        // "N of M figures are astray" — never WHICH. The claim grammar the
+        // Darkroom and the Linen Closet already speak.
+        const tally = `${fb.astray} of your ${fb.settled} `
+          + `${fb.settled === 1 ? 'figure is' : 'figures are'} astray`;
+        setToast({
+          kind: fb.charged ? 'bad' : 'info',
+          text: fb.charged
+            ? `${tally} · −${claimCost} steps`
+            : `${tally} — no charge for weighing twice.`,
+        });
+        later(() => setToast(null), 2200);
+        break;
+      }
+      case 'nudge': {
+        sfx.glyph();
+        const phrase = NUDGE_PHRASE[fb.technique];
+        const verb = phrase.plural ? 'sit' : 'sits';
+        const place = fb.unit === null ? 'across the whole leaf' : `in ${unitName(fb.unit)}`;
+        const lead = fb.singlesPending > 0
+          ? `${fb.singlesPending} ${fb.singlesPending === 1 ? 'figure is' : 'figures are'} already forced; after them, `
+          : '';
+        setToast({
+          kind: 'good',
+          text: `${lead}${phrase.it} ${verb} ${place} · −${claimCost} steps`,
+        });
+        later(() => setToast(null), 3400);
+        break;
+      }
+      case 'no-nudge':
+        setToast({
+          kind: 'info',
+          text: 'The clerk finds no next step on this leaf — lift a figure and ask again. No charge.',
+        });
+        later(() => setToast(null), 2400);
         break;
       case 'revealed':
         sfx.glyph();
-        setToast({ kind: 'info', text: `The old ledger supplies one figure · −${hintCost} steps` });
-        later(() => setToast(null), 1700);
+        setToast({ kind: 'info', text: `The old ledger supplies one figure · −${figureCost} steps` });
+        later(() => setToast(null), 1900);
         break;
       case 'solved':
         sfx.victory();
@@ -145,10 +248,15 @@ export default function SudokuView({
     setSel(cell);
   };
 
+  const canLift = sel !== null
+    && engine.values[sel] !== 0
+    && !isGiven(puzzle, sel)
+    && !engine.revealed.includes(sel);
+
   const pressFigure = (digit: number) => {
     if (won || sel === null) return;
-    if (engine.values[sel] !== 0) return;   // filled: nothing to write, nothing costed
     if (pencilMode) {
+      if (engine.values[sel] !== 0) return;   // no marks on a filled cell
       sfx.tap();
       dispatch({ type: 'pencil', cell: sel, digit });
       return;
@@ -156,10 +264,13 @@ export default function SudokuView({
     dispatch({ type: 'ink', cell: sel, digit });
   };
 
+  // One eraser, two jobs, in the order she means them: lift her own figure if
+  // one is standing here, otherwise sweep the cell's pencil marks. Both free.
   const erase = () => {
     if (won || sel === null) return;
     sfx.tap();
-    dispatch({ type: 'clear-pencil', cell: sel });
+    if (canLift) dispatch({ type: 'unink', cell: sel });
+    else dispatch({ type: 'clear-pencil', cell: sel });
   };
 
   const consult = () => {
@@ -167,18 +278,23 @@ export default function SudokuView({
     dispatch({ type: 'reveal-cell', cell: sel !== null && engine.values[sel] === 0 ? sel : undefined });
   };
 
-  const canErase = sel !== null && engine.pencil[sel]! !== 0;
+  const canErase = canLift || (sel !== null && engine.pencil[sel]! !== 0);
 
   return (
     <div className="ch">
       <header className="ch__head">
         <h2 className="ch__title">The Counting House</h2>
         <p className="ch__sub">
-          Every row, column, and quarter carries all nine figures once. Pencil freely — ink only when sure.
+          Every row, column, and quarter carries all nine figures once. Ink freely — the ledger only
+          answers when you ask it to balance.
         </p>
       </header>
 
-      <div className={`ch-leaf${won ? ' ch-leaf--won' : ''}`} role="group" aria-label="Ledger leaf">
+      <div
+        className={`ch-leaf${won ? ' ch-leaf--won' : ''}${won && skipReveal ? ' ch-leaf--skip' : ''}${shaking ? ' ch-shake' : ''}`}
+        role="group"
+        aria-label="Ledger leaf"
+      >
         {engine.values.map((value, cell) => {
           const r = rowOf(cell);
           const c = colOf(cell);
@@ -194,6 +310,7 @@ export default function SudokuView({
             given ? 'ch-cell--given' : value !== 0 ? 'ch-cell--inked' : '',
             consulted ? 'ch-cell--consulted' : '',
             cursorFigure !== 0 && value === cursorFigure && sel !== cell ? 'ch-cell--samefig' : '',
+            refused?.conflict === cell ? 'ch-cell--clash' : '',
             isRefused ? 'ch-cell--wrong' : '',
             pop === cell ? 'ch-cell--pop' : '',
           ].filter(Boolean).join(' ');
@@ -213,7 +330,16 @@ export default function SudokuView({
               }
             >
               {value !== 0 ? (
-                <span className="ch-cell__fig">{value}</span>
+                <span
+                  className="ch-cell__fig"
+                  // AAA 3.1: the win is a sequential reveal, never an instant
+                  // repaint. A diagonal wipe — 14ms per (row + col) step, a
+                  // 224ms head and ~740ms total, inside the 2s ceiling — and
+                  // tapping the panel drops every delay (AAA 3.4 / U.2).
+                  style={won ? { animationDelay: `${(r + c) * 14}ms` } : undefined}
+                >
+                  {value}
+                </span>
               ) : marks !== 0 ? (
                 <span className="ch-pencil" aria-hidden="true">
                   {FIGURES.map((d) => (
@@ -230,7 +356,7 @@ export default function SudokuView({
       </div>
 
       {won ? (
-        <div className="ch-done">
+        <div className="ch-done" onPointerDown={() => setSkipReveal(true)}>
           <p className="ch-done__title">The ledger balances</p>
           <p className="ch-done__line">
             {state.costedMistakes === 0 && state.hintsBought === 0
@@ -245,28 +371,63 @@ export default function SudokuView({
         </div>
       ) : (
         <>
-          <div className="ch__meta tabular-nums">
-            <span>{TIER_NAME[puzzle.tier]} leaf</span>
-            <span>{left} {left === 1 ? 'figure' : 'figures'} left</span>
+          {/* ONE reserved line of chrome, not two: the tier + figures-left sit
+              here at rest and the toast takes the slot when there is one. The
+              ~27px that used to be a second row went to the ledger leaf, which
+              is the thing that has to be whole (AAA 3.3 / 7.7). Fixed height,
+              so nothing shifts either way (AAA 1.5's principle). The meta sits
+              OUTSIDE the live region — a screen reader should hear refusals
+              and reports, not a figure count re-read on every ink. */}
+          <div className="ch-toastslot">
+            {!toast && (
+              <span className="ch__meta tabular-nums">
+                <span>{TIER_NAME[puzzle.tier]} leaf</span>
+                <span>{left} {left === 1 ? 'figure' : 'figures'} left</span>
+              </span>
+            )}
+            <span className="ch-toast-live" aria-live="polite">
+              {toast && <span className={`ch-toast ch-toast--${toast.kind}`}>{toast.text}</span>}
+            </span>
           </div>
 
-          <div className="ch-toastslot" aria-live="polite">
-            {toast && <span className={`ch-toast ch-toast--${toast.kind}`}>{toast.text}</span>}
-          </div>
-
-          {/* Thumb zone: sticky, always reachable, board scrolls behind it. */}
+          {/* Thumb zone: sticky, always reachable, board scrolls behind it.
+              Two bands — what is free on top, what costs underneath — so the
+              price of a verb is never a surprise (AAA 4.6's principle). On a
+              667-tall screen the bands collapse into one row (CSS) to give the
+              leaf back its height. */}
           <div className="room-deck">
-            <div className="ch-tools">
-              <button
-                className={`ch-tool${pencilMode ? ' ch-tool--on' : ''}`}
-                aria-pressed={pencilMode}
-                onClick={() => { sfx.tap(); setPencilMode((p) => !p); }}
-              >
-                {pencilMode ? '✎ Pencil — on' : '✎ Pencil — off'}
-              </button>
-              <button className="ch-tool" onClick={consult}>
-                Consult the ledger · −{hintCost}
-              </button>
+            <div className="ch-toolbar">
+              <div className="ch-tools ch-tools--free">
+                <button
+                  className={`ch-tool${pencilMode ? ' ch-tool--on' : ''}`}
+                  aria-pressed={pencilMode}
+                  onClick={() => { sfx.tap(); setPencilMode((p) => !p); }}
+                >
+                  {pencilMode ? '✎ Pencil — on' : '✎ Pencil — off'}
+                </button>
+                <button
+                  className="ch-tool"
+                  onClick={() => { sfx.tap(); dispatch({ type: 'fill-pencil' }); }}
+                  aria-label="Pencil every figure that still fits in each blank cell — free"
+                >
+                  Pencil what fits
+                </button>
+              </div>
+              <div className="ch-tools ch-tools--priced">
+                <button className="ch-tool" onClick={() => dispatch({ type: 'balance' })}>
+                  Balance the books · −{claimCost}
+                </button>
+                <button
+                  className="ch-tool"
+                  onClick={() => dispatch({ type: 'nudge' })}
+                  aria-label={`A word from the clerk: name the next deduction on this leaf, minus ${claimCost} steps`}
+                >
+                  Ask the clerk · −{claimCost}
+                </button>
+                <button className="ch-tool" onClick={consult}>
+                  Consult a figure · −{figureCost}
+                </button>
+              </div>
             </div>
 
             <div className={`ch-pad${pencilMode ? ' ch-pad--pencil' : ''}`}>
@@ -294,9 +455,9 @@ export default function SudokuView({
                 className="ch-key ch-key--wide"
                 onClick={erase}
                 disabled={!canErase}
-                aria-label="Erase the pencil marks in this cell"
+                aria-label={canLift ? 'Lift this figure back off the leaf' : 'Erase the pencil marks in this cell'}
               >
-                Erase
+                {canLift ? 'Lift' : 'Erase'}
               </button>
             </div>
           </div>

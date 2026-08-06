@@ -19,18 +19,27 @@
  * variants, the once-only thaw arc, portrait.react.victory — Hades' "failure
  * as content", AAA 4.17/5.1/5.10). The old hardcoded strings survive only as
  * the null-selection fallback so the door is never silent.
+ *
+ * THE LANDING IS ALSO HIS HAUNT (MANOR_DESIGN §8: "The Portrait — Landing
+ * outside the Sanctum"). Nothing else in the manor ever mounted a scene for
+ * him, so his entire 'parlor' set — the first-meeting chain, both arc beats,
+ * the general pool — and, through the pacing valve that retargets it, his
+ * whole 'idle' pool including the testimony that files v1-t5, were dead
+ * content in the shipped build. The audience button below is that mount; the
+ * per-(character, trigger) manifest in engine/dialogue/validate.ts now fails
+ * the build rather than letting it happen a fourth time.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useManorStore } from '../../app/store';
 import { getVolumeContent } from '../../app/content/volumes';
-import { definitionSlots, sanctumReadiness } from '../../engine/journal';
+import { definitionSlots, guessVerdict, sanctumReadiness } from '../../engine/journal';
 import { applyGuess, hasGuessedOnDay } from '../../engine/volume';
 import type { GuessCloseness } from '../../engine/events';
 import type { PortraitExpression } from '../../engine/dialogue/schema';
 import { getDialogueFile } from '../../engine/dialogue/content';
-import { selectDialogue } from '../../engine/dialogue/select';
+import { selectDialogue, selectTaggedLine } from '../../engine/dialogue/select';
 import DialogueScene from '../dialogue/DialogueScene';
 import BackLink from '../chrome/BackLink';
 import { sfx } from '../../app/sound';
@@ -47,16 +56,19 @@ type Phase =
   | 'epilogue';     // the volume closes
 
 /** Fallback sigh when dialogue selection has nothing for the slot (authoring
- *  floor) — the authored portrait.guess.* variants normally play instead. */
+ *  floor) — the authored portrait.guess.* variants normally play instead.
+ *  Keyed off the SAME five-shade taxonomy the journal files and his authored
+ *  variants are prioritised by, so the fallback can never contradict them. */
+const FALLBACK_SIGHS: Readonly<Record<ReturnType<typeof guessVerdict>, string>> = {
+  repeat: 'That word again. The door has heard it once, and once was its full measure.',
+  'right-shape': 'The right length of silence. The wrong silence.',
+  circling: 'No. Though some of those letters do belong to it. I shall say no more.',
+  'one-letter': 'One letter of it, and one letter is not a word. Strike it through.',
+  cold: 'Not one of its letters, I am afraid. Strike it through; the list grows more honest as it shortens.',
+};
+
 function sighFor(c: GuessCloseness): string {
-  if (c.repeat) return 'That word again. The door has heard it once, and once was its full measure.';
-  if (c.rightLength && c.sharedLetters >= 4)
-    return '…No. And yet the door held its breath a moment, I think. The shape of it is not wrong.';
-  if (c.sharedLetters >= 3) return 'No. Though some of those letters do belong to it. I shall say no more.';
-  if (c.rightLength) return 'The right length of silence. The wrong silence.';
-  if (c.sharedLetters === 0)
-    return 'Not one of its letters, I am afraid. Strike it through; the list grows more honest as it shortens.';
-  return 'No. But the house is warmer for hearing you try.';
+  return FALLBACK_SIGHS[guessVerdict(c)];
 }
 
 /** Fallback closing beats when portrait.react.victory cannot be selected
@@ -89,6 +101,8 @@ export default function SanctumView() {
   // the scene runs, so it must not be re-derived per render).
   const [wrongScene, setWrongScene] = useState(false);
   const [victoryScene, setVictoryScene] = useState(false);
+  /** The landing audience — his 'parlor' haunt (see the module header). */
+  const [audience, setAudience] = useState(false);
   const [sceneExpression, setSceneExpression] = useState<PortraitExpression | null>(null);
 
   /** Would the 'sanctum-after-guess' slot actually select an authored node
@@ -127,6 +141,41 @@ export default function SanctumView() {
     (g) => !content.accepted.some((a) => a.toUpperCase().replace(/[^A-Z]/g, '') === g.guess),
   );
   const answer = content.answer.toUpperCase();
+
+  /**
+   * The landing audience (MANOR_DESIGN §8). Mounts his 'parlor' pool; the
+   * 5.9 valve retargets a second visit the same day to his idle pool, which
+   * is where the keepsake scene and the testimony that files v1-t5 live.
+   * Available after the volume closes too — portrait.gen.after is gated on
+   * the solved flag and has nowhere else to play.
+   */
+  const audienceButton = (
+    <button type="button" className="snc-audience" onClick={() => { sfx.tap(); setAudience(true); }}>
+      Speak with the Portrait
+    </button>
+  );
+  const audienceScene = audience ? (
+    <DialogueScene character="portrait" slot="parlor" onClose={() => setAudience(false)} />
+  ) : null;
+
+  /**
+   * The insufficient-info nudge (AAA 4.16) is HIS line, quoted from the
+   * authored JSON (portrait.gate.*) — not engine prose in the housekeeper's
+   * voice. Rendered, not played: no valve spent, nothing marked seen.
+   *
+   * These ride their own `sanctum-idle` trigger rather than `idle`. On `idle`
+   * they were eligible in his ordinary rotation, so a parlor visit could serve
+   * "your journal is empty" as small talk; the door screen is the only place
+   * that sentence means anything.
+   */
+  const gateNode =
+    readiness.enough || guessedToday || volume.status === 'solved'
+      ? undefined
+      : selectTaggedLine(
+          getDialogueFile('portrait'),
+          buildDialogueQuery('portrait', 'sanctum-idle'),
+          'portrait.gate.',
+        );
 
   const speak = () => {
     if (phase !== 'idle' || guessedToday || !guess.trim()) return;
@@ -270,11 +319,15 @@ export default function SanctumView() {
           {phase === 'epilogue' ? (
             <button className="snc-btn snc-btn--primary" onClick={closeVolume}>Let the house sleep</button>
           ) : (
-            <p className="snc-line--nudge snc-line">
-              The door stands open now. The journal keeps the whole of it, should you want to reread him.
-            </p>
+            <>
+              <p className="snc-line--nudge snc-line">
+                The door stands open now. The journal keeps the whole of it, should you want to reread him.
+              </p>
+              {audienceButton}
+            </>
           )}
         </div>
+        {audienceScene}
       </div>
     );
   }
@@ -303,8 +356,8 @@ export default function SanctumView() {
           <p className="snc-line" key={portraitLine ?? ''}>{portraitLine}</p>
         )}
 
-        {readiness.nudge && phase === 'idle' && !guessedToday && (
-          <p className="snc-line snc-line--nudge">{readiness.nudge}</p>
+        {gateNode && phase === 'idle' && (
+          <p className="snc-line snc-line--nudge">{gateNode.lines[0]!.text}</p>
         )}
 
         <div className={`snc-door${shaking ? ' snc-shake' : ''}`}>
@@ -343,10 +396,14 @@ export default function SanctumView() {
           )}
         </div>
 
+        {phase === 'idle' && audienceButton}
+
         <button className="snc-journal-link" onClick={() => navigate('/journal')}>
           Consult the journal ({readiness.found} of {readiness.total} fragments filed)
         </button>
       </div>
+
+      {audienceScene}
 
       {/* The Portrait's authored sigh — mounted after the 360ms door shake so
           the refusal lands first, then the sympathy (AAA 4.17). Marks the

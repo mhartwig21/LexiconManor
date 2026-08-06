@@ -41,14 +41,15 @@
  */
 
 import { createRng } from '../rng';
-import type { RoomCard, Tier } from '../types';
-import { BASE_DECK } from '../manor/deck';
-import { categoryWeight, RARITY_WEIGHTS } from '../manor/drafting';
-import { rowTier } from '../manor/grid';
+import type { Cell, RoomCard, Tier } from '../types';
+import { BASE_DECK, deckFor, isKeyBearing } from '../manor/deck';
+import { categoryWeight, rollCards, RARITY_WEIGHTS } from '../manor/drafting';
+import { createManor, rowTier } from '../manor/grid';
 import { getRoomAdapter } from '../rooms/registry';
 import {
   appendEntry, createLedger, ledgerTotal, stepsRemaining, stepsRefunded, stepsSpent,
-  moveAt, teaBonus, DOOR_LOCKS, STEP_TABLE,
+  fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, moveAt, teaArcPoints,
+  teaBonus, DOOR_LOCKS, STEP_TABLE,
 } from './steps';
 import type { StepLedger } from '../types';
 
@@ -122,6 +123,53 @@ export function microShareAt(row0: number, deck: readonly RoomCard[] = BASE_DECK
   const mix = deckMixAt(row0, deck);
   const puzzle = mix.micro + mix.anchor;
   return puzzle > 0 ? mix.micro / puzzle : 0;
+}
+
+/**
+ * THE MEASURED LIVE KEY RATE — not a hand-tuned `keyLuck` constant.
+ *
+ * Round-5 audit: `SimProfile.keyLuck` ramped 0.32 → 0.82 across a campaign
+ * with NO live counterpart at all — `categoryWeight`/`RARITY_WEIGHTS` carried
+ * no day or affinity term, so key-card frequency was identical on day 1 and
+ * day 30. Now that Fern's arc raises key-bearing cards' draft weight
+ * (`keyAccessFor` → `DraftRollCtx.keyAccess`), the simulation can simply
+ * MEASURE the thing the live game does: roll real offers through `rollCards`
+ * on the storeys she banks on, and count how often one carries a key.
+ *
+ * Memoised per access level: the campaign model calls this once per day and
+ * there are only a handful of distinct levels.
+ */
+const keyRateCache = new Map<string, number>();
+
+export function measuredKeyRate(
+  keyAccess: number,
+  opts: { rows?: readonly number[]; samples?: number } = {},
+): number {
+  const rows = opts.rows ?? [0, 1, 2];
+  const samples = opts.samples ?? 900;
+  const cacheKey = `${keyAccess.toFixed(3)}|${rows.join('-')}|${samples}`;
+  const hit = keyRateCache.get(cacheKey);
+  if (hit !== undefined) return hit;
+  const deck = deckFor([]);
+  let offers = 0;
+  let withKey = 0;
+  for (const row of rows) {
+    for (let seed = 0; seed < samples; seed++) {
+      const cards = rollCards(deck, createManor(seed), { col: (seed % 5) as Cell['col'], row }, {
+        gems: 2, declinedLastDraft: [], drawIndex: 0, keyAccess,
+      });
+      offers += 1;
+      if (cards.some((c) => isKeyBearing(c.id))) withKey += 1;
+    }
+  }
+  const rate = offers > 0 ? withKey / offers : 0;
+  keyRateCache.set(cacheKey, rate);
+  return rate;
+}
+
+/** The live key rate for a player with `fernAffinity` points of friendship. */
+export function keyLuckFor(fernAffinity: number): number {
+  return measuredKeyRate(keyAccessFor(fernAffinity));
 }
 
 function drawKind(rng: () => number, mix: Record<SimRoomKind, number>): SimRoomKind {
@@ -218,6 +266,19 @@ export interface SimProfile {
   puzzlePull: number;
   /** Bramble's tea rank for this day (start-of-day refill via teaBonus). */
   brambleAffinity: number;
+  /**
+   * Steps on the table at dawn BEYOND Bramble's tea: the scripted day-1
+   * welcome pot (`firstMorningPot`) and any cross-day investment that paid a
+   * step-class grant overnight (the Larder's risen dough — AAA 4.11).
+   * Ledgered as a 'tea' entry, exactly as the live day slice does.
+   */
+  dawnSteps?: number;
+  /**
+   * Keys on the sill at dawn: Fern's arc (`fernMorningKeys`) plus the Still
+   * Room's overnight cordial (AAA 4.11). Keys still reset nightly — this is
+   * ACCESS bought by yesterday, never a stockpile.
+   */
+  dawnKeys?: number;
 }
 
 /** No refunds at all: walks the manor and never touches a puzzle (4.10a). */
@@ -387,12 +448,16 @@ export function simulateDay(
   let ledger = createLedger(STEP_TABLE.dayStart);
   const tea = teaBonus(profile.brambleAffinity);
   if (tea > 0) ledger = appendEntry(ledger, { reason: 'tea', delta: tea, at: 0 });
+  // The welcome pot / yesterday's risen dough — through the same audited path
+  // and the same 'tea' reason the live day slice uses (AAA 4.9).
+  const dawnSteps = profile.dawnSteps ?? 0;
+  if (dawnSteps > 0) ledger = appendEntry(ledger, { reason: 'tea', delta: dawnSteps, at: 0 });
 
   let rooms = 0;
   let roomsSolved = 0;
   let fragmentsFound = 0;
   let keysFound = 0;
-  let keys = 0;
+  let keys = profile.dawnKeys ?? 0;
   let lockedOut = 0;
   let row = 1;              // 1-based; the entrance
   let maxRow = 1;
@@ -597,43 +662,46 @@ export function simulateDays(profile: SimProfile, days: number, seed: number): S
  * This is the arc the owner playtest found missing.
  */
 export const CAMPAIGN_ARC = {
-  /** Bramble warms one rank per this many days of morning tea (AAA 5.9 valve). */
-  daysPerTeaRank: 2,
-  /** Tea rank ceiling (TEA_BY_RANK caps at +10 anyway). */
-  maxTeaRank: 6,
   /** Learning the manor: pushBias gained per day, and its ceiling. */
   pushBiasPerDay: 0.015,
   pushBiasGainMax: 0.1,
   /** Learning the manor: walk-back shaved per day, and its floor. */
   walkbackPerDay: 0.045,
   walkbackShaveMax: 0.35,
-  /**
-   * Fern's arc: key access earned per day of trading, and its ceiling. The
-   * padlocks on rows 5–7 are the hard gate on a Sanctum run, and this is the
-   * only thing that erodes them — which is why an expert's FIRST reach still
-   * lands around day 6–10 however well she plays day 1.
-   */
-  keyLuckPerDay: 0.075,
-  keyLuckGainMax: 0.5,
 } as const;
 
-/** The player on day `day` (1-based): same hands, warmer house. */
+/**
+ * The player on day `day` (1-based): same hands, warmer house.
+ *
+ * ROUND-5 AUDIT — the two meta arcs are now DERIVED FROM LIVE CODE, not from
+ * hard-coded constants with nothing behind them:
+ *
+ *   - the step arc reads `teaArcPoints(day)`, the same function
+ *     `app/slices/day.ts` uses to warm Bramble every second morning, plus the
+ *     scripted first-morning pot `firstMorningPot(day)`;
+ *   - the padlock arc reads `fernPointsOnDay(day)` — a schedule whose point
+ *     budget is asserted against her authored dialogue file — through
+ *     `fernMorningKeys` (the key on the sill) and `keyLuckFor` (the MEASURED
+ *     live per-offer key rate, rolled through the real `rollCards`).
+ *
+ * Only the familiarity terms below are still modelled by hand, and those are
+ * about the player's head, not the economy's numbers.
+ */
 export function campaignProfileForDay(base: SimProfile, day: number): SimProfile {
   const d = Math.max(0, day - 1);
+  const fern = fernPointsOnDay(day);
   return {
     ...base,
-    brambleAffinity: Math.min(
-      CAMPAIGN_ARC.maxTeaRank, Math.floor(day / CAMPAIGN_ARC.daysPerTeaRank),
-    ),
+    brambleAffinity: teaArcPoints(day),
+    dawnSteps: (base.dawnSteps ?? 0) + firstMorningPot(day),
+    dawnKeys: (base.dawnKeys ?? 0) + fernMorningKeys(fern),
     pushBias: Math.min(
       0.85, base.pushBias + Math.min(CAMPAIGN_ARC.pushBiasGainMax, CAMPAIGN_ARC.pushBiasPerDay * d),
     ),
     walkbackPerRow: Math.max(
       0.3, base.walkbackPerRow - Math.min(CAMPAIGN_ARC.walkbackShaveMax, CAMPAIGN_ARC.walkbackPerDay * d),
     ),
-    keyLuck: Math.min(
-      0.9, base.keyLuck + Math.min(CAMPAIGN_ARC.keyLuckGainMax, CAMPAIGN_ARC.keyLuckPerDay * d),
-    ),
+    keyLuck: keyLuckFor(fern),
   };
 }
 

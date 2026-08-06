@@ -22,8 +22,9 @@
     "content:validate-dialogue": "tsx content/validate-dialogue.ts",
     "content:verify": "npm run content:validate-dialogue && tsx content/generate-volume.ts --check content/authored/volumes/volume-1.json",
     "content:all": "npm run content:dictionary && npm run content:hive && npm run content:twistle && npm run content:cipher && npm run content:crossword && npm run content:wordweb && npm run content:forgotten-word && npm run content:sudoku && npm run content:verify",
-    "build:pages": "npm run content:verify && tsc --noEmit && vite build && tsx scripts/build-sw-precache.ts",
-    "assets:pwa": "tsx scripts/gen-pwa-assets.ts"
+    "build:pages": "node scripts/gen-grain.mjs --check && npm run content:verify && tsc --noEmit && vite build && tsx scripts/build-sw-precache.ts",
+    "assets:pwa": "tsx scripts/gen-pwa-assets.ts",
+    "assets:grain": "node scripts/gen-grain.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

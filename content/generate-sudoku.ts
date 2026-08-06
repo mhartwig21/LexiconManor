@@ -17,9 +17,16 @@ import {
  * by given count (given count is a famously bad proxy — a 30-given board can
  * need an X-wing and a 22-given board can fall to singles):
  *
- *   tier 1  locked candidates / naked+hidden pairs   ≈ NYT hard–expert
- *   tier 2  naked+hidden triples / X-wing
- *   tier 3  swordfish / XY-wing                      ≈ diabolical
+ *   tier 1  locked candidates / naked+hidden pairs      ≈ NYT hard  ("Tough")
+ *   tier 2  naked+hidden triples / X-wing / XY-wing     ≈ NYT expert ("Expert")
+ *   tier 3  swordfish / XYZ-wing / simple colouring     ≈ "Diabolical"
+ *
+ * (Round 5 correction: this comment had drifted — it still binned XY-wing at
+ * tier 3, while `TECHNIQUE_LEVEL` has had it at 2 since the band boundaries
+ * were reset from the measured ceiling distribution. The code was right; the
+ * comment was not. The player-facing labels in SudokuView now match this row
+ * exactly, so nothing in the room claims a difficulty its boards do not
+ * demand.)
  *
  * A shipped tier-N board must (a) solve completely with the full technique
  * ladder and (b) STALL when the ladder is capped one level below N — so the

@@ -22,7 +22,8 @@ import type { Cell, Dir, DraftOffer, ManorState, RoomCard, RoomCategory, Tier } 
 import { MANOR_COLS } from '../types';
 import { createRng, pickWeighted, type Rng } from '../rng';
 import { cellKey, deweyCell, hashSeed, roomAt, rowTier } from './grid';
-import { cardById, SCRIPTED_FIRST_DRAFT } from './deck';
+import { cardById, isKeyBearing, SCRIPTED_FIRST_DRAFT } from './deck';
+import { keyCardWeightMultiplier } from '../economy/steps';
 
 /** Mutable-state snapshot the slice passes into every roll. */
 export interface DraftRollCtx {
@@ -33,6 +34,15 @@ export interface DraftRollCtx {
   drawIndex: number;
   /** Day 1, draft #1 — hand-authored offer (AAA 4.5). */
   scripted?: boolean;
+  /**
+   * 0..1 — Fern's key access (engine/economy/steps.ts `keyAccessFor`). The
+   * padlock arc's supply side: a friend of the groundskeeper knows where the
+   * spare keys are kept, so key-bearing cards surface more often as her
+   * friendship warms (AAA 4.10d, "the gate must be meta"). Omitted/0 leaves
+   * every weight exactly as it was, which is why `deckMixAt` — and the 4.10b
+   * clock calibrated against it — is untouched by this term.
+   */
+  keyAccess?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -84,6 +94,9 @@ export function affordabilityMultiplier(card: RoomCard, gems: number, row: numbe
 export function cardWeight(card: RoomCard, row: number, ctx: DraftRollCtx): number {
   let w = categoryWeight(card.category, row) * RARITY_WEIGHTS[rowTier(row)][card.rarity];
   w *= affordabilityMultiplier(card, ctx.gems, row);
+  // The padlock arc's supply side (AAA 4.10d): key-bearing cards surface more
+  // often as Fern's friendship warms. Neutral (×1) at keyAccess 0.
+  if (ctx.keyAccess && isKeyBearing(card.id)) w *= keyCardWeightMultiplier(ctx.keyAccess);
   if (ctx.declinedLastDraft.includes(card.id)) w *= 1 - ANTI_REPEAT_SUPPRESSION[card.rarity];
   return Math.max(w, 1e-6);
 }
@@ -172,6 +185,8 @@ export function deweyProphecy(
     gems: number;
     declinedLastDraft: readonly string[];
     drawIndexFor: (cellKey: string) => number;
+    /** Same key-access term the live drafts use, so the prophecy stays honest. */
+    keyAccess?: number;
   },
 ): boolean {
   const row = deweyCell(manor.daySeed).row;
@@ -185,6 +200,7 @@ export function deweyProphecy(
       gems: opts.gems,
       declinedLastDraft: opts.declinedLastDraft,
       drawIndex: opts.drawIndexFor(cellKey(cell)),
+      keyAccess: opts.keyAccess,
     });
     if (cards.some((c) => c.category === 'mystery')) return true;
   }

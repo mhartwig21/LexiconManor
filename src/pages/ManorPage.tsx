@@ -14,7 +14,9 @@ import { useLocation } from 'wouter';
 import { useManorStore } from '../app/store';
 import { deweyAnswer, deweyPettedToday, ensureManor } from '../app/slices/manor';
 import { cardById } from '../engine/manor/deck';
-import { cellKey, deweyCell, roomAt, rowTier, sameCell } from '../engine/manor/grid';
+import { cellKey, deweyCell, neighbor, roomAt, rowTier, sameCell } from '../engine/manor/grid';
+import { isDoorLocked, KEY_COST } from '../engine/manor/locks';
+import { parlorHostFor } from '../engine/manor/parlor';
 import type { CharacterId } from '../engine/types';
 import BlueprintSheet from '../ui/blueprint/BlueprintSheet';
 import CabinetSheet from '../ui/blueprint/CabinetSheet';
@@ -23,15 +25,6 @@ import DialogueScene from '../ui/dialogue/DialogueScene';
 import '../ui/blueprint/blueprint.css';
 
 const ROMAN = ['', 'I', 'II', 'III'];
-
-/** Which of the cast keeps each parlor room (MANOR_DESIGN §8 haunts). */
-const PARLOR_CHARACTERS: Record<string, CharacterId> = {
-  'reading-nook': 'ellery',   // Ellery haunts the reading rooms
-  'drawing-room': 'ellery',
-  'post-room': 'posy',        // the postmistress
-  'greenhouse': 'fern',       // the groundskeeper
-  'morning-room': 'bramble',  // tea, of course
-};
 
 /** A quiet, self-clearing note above the footer (fragment found, etc.). */
 function useFragmentNote(): string | null {
@@ -112,11 +105,18 @@ export default function ManorPage() {
     playerRoom.kind !== 'mystery' && !playerRoom.solved,
   );
   const parlorHost: CharacterId | null =
-    playerRoom?.kind === 'parlor' ? PARLOR_CHARACTERS[playerRoom.cardId] ?? 'bramble' : null;
+    playerRoom?.kind === 'parlor' ? parlorHostFor(playerRoom.cardId) : null;
   const atDewey = Boolean(
     manor && playerRoom && sameCell(manor.playerCell, deweyCell(manor.daySeed)),
   );
   const prophecy = petted && manor ? deweyAnswer({ manor, currencies, cabinet }) : null;
+
+  /** Was the door this offer stands at padlocked? Drives the modal's key line. */
+  const draftTargetLocked = (() => {
+    if (!manor || !draftOffer) return false;
+    const target = neighbor(draftOffer.from, draftOffer.atDoor);
+    return target ? isDoorLocked(manor, target) : false;
+  })();
 
   const onPetDewey = () => {
     petDewey();
@@ -131,6 +131,7 @@ export default function ManorPage() {
             manor={manor}
             canEnterCurrent={exploring && isPuzzleHere}
             interactive={exploring && !draftOffer && !visiting && !cabinetOpen}
+            keys={currencies.keys}
             onMove={moveTo}
             onOpenDraft={openDraft}
             onEnterRoom={() => manor && enterRoom(cellKey(manor.playerCell))}
@@ -200,6 +201,7 @@ export default function ManorPage() {
         <DraftModal
           offer={draftOffer}
           gems={currencies.gems}
+          keyCost={draftTargetLocked ? KEY_COST : 0}
           onChoose={chooseDraftCard}
           onReroll={rerollDraft}
           onCancel={cancelDraft}

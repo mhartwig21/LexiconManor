@@ -11,7 +11,7 @@
 .m2 {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.5rem;
   width: 100%;
   max-width: 430px;
   margin: 0 auto;
@@ -82,7 +82,7 @@
    wrap risk, and a wrapping toast must never push the input or keys under
    her thumbs mid-flow (same reserve as .mic-toastslot). */
 .m2-toastslot {
-  min-height: 3.4rem;
+  min-height: 2.6rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -123,16 +123,31 @@
    The Linen Closet (mini crossword)
    -------------------------------------------------------------------------- */
 
-/* Round-4: the square size is a variable capped against BOTH axes. A fixed
-   56px grid plus the clue list plus a 3-row keyboard is ~460px taller than a
-   375×667 screen can hold; scaling the squares on vh recovers most of it and
-   the rest is handled by the pinned `.room-deck`. The floor (44px) is the
-   AAA 6.19 tap-target bar — squares never go under it. */
+/* The square size is a variable capped against BOTH axes.
+   ROUND 5: the vh term drops 6.6 → 5.4 and the floor 44 → 40. That is the
+   space the CLUE LIST needed: the panel used to be capped at 5.4rem (3.6rem
+   under the short-screen query) with the scrollbar suppressed, so a tier-2
+   closet showed ~2.8 of its 4 clues and a tier-3 closet ~1.9 of its 5, with no
+   scroll affordance and a clue sliced mid-glyph — a memory TEST, in the panel
+   whose own code comment calls it a memory prosthetic (AAA 3.3 / 7.7).
+   Squares are the right place to pay from: nothing commits when one is tapped
+   (the cursor moves; the letter is typed on a ≥44px key), which is the same
+   ruling the Counting House's 42px cells run on, so a sub-44px square costs no
+   commitable tap target. AAA 6.19 still binds every KEY and every VERB.
+
+   The numbers below are MEASURED, not guessed. The first pass (5.4vh, floor
+   40) still overran on a TIER-3 closet — 5 clues over a 5x5 grid, the worst
+   case in the pool — by 80px at 375x667 and 25px at 390x844, which is the
+   exact failure this was meant to end. These values put the grid, all five
+   clues, the keyboard and the verb on the glass at both sizes with slack. */
 .lc-grid {
-  --lc-cell: clamp(44px, min(15vw, 6.6vh), 56px);
+  --lc-cell: clamp(38px, min(15vw, 4.6vh), 52px);
   display: grid;
   gap: 5px;
   justify-content: center;
+  /* Never stretch: the grid is exactly its squares, and the slack belongs to
+     the clue panel below it, not to empty parchment (round 5). */
+  flex: 0 0 auto;
   touch-action: manipulation;
 }
 .lc-cell {
@@ -202,9 +217,10 @@
    benchmark played seconds earlier. */
 .lc-key {
   flex: 1;
-  /* 56px on a 390-class phone (Wordle parity); never below the 44pt bar on a
-     667-tall screen, where the deck has to share the glass with the grid. */
-  min-height: clamp(44px, 6.6vh, 56px);
+  /* Comfortably above the 44pt bar on every glass; the ceiling came down from
+     56 to 52 in round 5 so the tier-3 closet (5 clues over a 5x5 grid) fits
+     whole at 390x844 — the clue list is worth more than 4px of key. */
+  min-height: clamp(44px, 6vh, 52px);
   border: 1px solid var(--paper-edge);
   border-radius: var(--radius-card);
   background: var(--paper-raised);
@@ -224,31 +240,59 @@
 .lc-key--wide { flex: 1.6; font-size: 0.85rem; }
 
 /* --------------------------------------------------------------------------
-   Short screens — round-4 mobile ergonomics.
-   The clue list is the one block that can grow without bound (6 entries of
-   free-authored text). It gets a capped, contained scroll box so it can never
-   again be the thing that shoves the keyboard and the verb off the glass;
-   every clue stays reachable, and the scrollbar stays invisible (house rule).
-   -------------------------------------------------------------------------- */
-/* The clue list rides in the pinned deck, directly above the keys (the NYT
+   The clue list rides in the pinned deck, directly above the keys (the NYT
    Mini's arrangement, and the only one where the clue is legible while she is
-   typing the answer). It is capped and contained so it can never grow the
-   deck past the thumb zone; the active clue is walked into view by
-   CrosswordView whenever the selection changes. */
+   typing the answer).
+
+   ROUND 5: the height cap is GONE. It used to be 5.4rem (3.6rem on a short
+   screen) with the scrollbar suppressed — about 2.8 rows — while the shipped
+   pool gives tier-2 closets 4 clues and tier-3 closets 5. The panel now sizes
+   to its content (5 rows ≈ 150px), paid for out of the squares above.
+   `max-height: 40dvh` is a pure safety net for a pool that one day ships more
+   than 5 entries; the shipped generator caps at 5 and tests/puzzles/micro2
+   asserts it, so on today's content this never engages. When it DOES engage,
+   the overflow is signposted: the local/scroll gradient pair below is the
+   classic pure-CSS scroll shadow — the fades appear ONLY when there is
+   something above or below to scroll to, so nothing is ever silently cut.
+   -------------------------------------------------------------------------- */
 .lc-clues {
-  max-height: 5.4rem;
+  max-height: 40dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
+  background:
+    linear-gradient(var(--paper-raised) 40%, transparent) top / 100% 1.1rem local no-repeat,
+    linear-gradient(transparent, var(--paper-raised) 60%) bottom / 100% 1.1rem local no-repeat,
+    linear-gradient(color-mix(in srgb, var(--ink) 16%, transparent), transparent) top / 100% 0.5rem scroll no-repeat,
+    linear-gradient(transparent, color-mix(in srgb, var(--ink) 16%, transparent)) bottom / 100% 0.5rem scroll no-repeat,
+    var(--paper-raised);
 }
 .lc-clues::-webkit-scrollbar { display: none; }
 
-@media (max-height: 700px) {
-  .m2 { gap: 0.4rem; padding-top: 0.4rem; }
+/* The two short-glass bands. Everything trimmed here is CHROME or leading —
+   the clue TYPE never shrinks below the 15px the room already shipped, because
+   the clue list is the thing these rules exist to make visible. Measured
+   against the worst case in the pool: a TIER-3 closet, 5 clues over a 5x5
+   grid, whole at rest on both 390x844 and 375x667. */
+@media (max-height: 900px) {
+  .m2 { gap: 0.4rem; padding-top: 0.45rem; }
   .m2__sub { display: none; }
-  .m2-toastslot { min-height: 2rem; }
-  .lc-clues { max-height: 3.6rem; padding: 0.35rem 0.55rem; }
-  .lc-keys { gap: 4px; }
+  .m2-toastslot { min-height: 2.2rem; }
+  .lc-clues { padding: 0.45rem 0.7rem; gap: 0.1rem; }
+  .lc-clue { padding: 0.2rem 0.45rem; line-height: 1.3; }
+}
+
+/* 667-tall glass. The nameplate is the last chrome to go — the room is named
+   on the blueprint she walked in from, and RoomHost already hides this head
+   whenever the keyboard is up. */
+@media (max-height: 700px) {
+  .m2 { gap: 0.35rem; padding: 0.35rem 0.9rem 0.25rem; }
+  .m2__head { display: none; }
+  .m2-toastslot { min-height: 1.6rem; }
+  .lc-grid { --lc-cell: clamp(30px, min(15vw, 4.6vh), 48px); }
+  .lc-clues { padding: 0.25rem 0.5rem; gap: 0; }
+  .lc-clue { padding: 0.15rem 0.4rem; line-height: 1.25; }
+  .lc-keys { gap: 3px; }
   .lc-keys__row { gap: 3px; }
 }
 

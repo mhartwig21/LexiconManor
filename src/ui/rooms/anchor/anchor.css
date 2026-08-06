@@ -43,10 +43,24 @@
   font-weight: 400;
   letter-spacing: 0.02em;
 }
-.anch__sub {
+/* AAA 3.2 / 7.2 — THE SUBTITLE IS TWO DIFFERENT THINGS.
+   One line used to carry both the room's poetry AND its only statement of the
+   mechanical rule, and the short-screen breakpoint below deleted the lot. On
+   every SE-class phone the Gallery therefore charged −3 steps for breaking a
+   rule the game had erased, and the Conservatory's "must hold T" survived only
+   as "the middle hex is green". They are separated now:
+     .anch__flavour  decorative. First thing a short screen gives up.
+     .anch__rule     load-bearing. NEVER hidden, in any viewport, ever. */
+.anch__sub,
+.anch__flavour {
   margin: 0.15rem 0 0;
   font-size: var(--text-sm);
   color: var(--ink-soft);
+}
+.anch__rule {
+  margin: 0.1rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink);
 }
 
 /* Reserved toast slot — zero layout shift (AAA 1.5). */
@@ -65,6 +79,20 @@
 .anch-toast--bad  { color: var(--wax); }
 .anch-toast--info { color: var(--ink-soft); }
 .anch-toast--big  { font-family: var(--font-display); font-size: var(--text-display-sm); color: var(--room-accent); }
+/* Fern's voice rides in the SAME reserved slot as the mechanical text, so the
+   in-character line (AAA 1.15 [BEAT]) costs zero layout shift. The slot is
+   sized for two lines in the Conservatory whether or not one is present. */
+.anch-toast__fern {
+  display: block;
+  margin-top: 0.05rem;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink-soft);
+  line-height: 1.25;
+}
+.anch--conservatory .anch-toastslot { min-height: 3.3rem; }
 
 .anch-row { display: flex; gap: 0.6rem; justify-content: center; align-items: center; flex-wrap: wrap; }
 
@@ -119,8 +147,25 @@
   padding: 0.8rem 0.95rem;
 }
 
-/* End-of-room celebration panel (AAA 3.4 — distinct from reveal juice). */
-.anch-done { text-align: center; animation: anch-pop 260ms var(--ease-settle); }
+/* End-of-room celebration panel (AAA 3.4 — distinct from reveal juice).
+
+   AAA 1.5 / 3.1 — ZERO LAYOUT SHIFT AT THE VERDICT. RoomHost's stage centres
+   the room column (`justify-content: center` on `.room-host__stage > *`), so
+   swapping a ~700px play surface for a ~250px verdict panel slid the whole
+   column 300–380px down at the exact moment of victory — measured 312px in the
+   Conservatory, 376px in the Gallery. The views stamp `.anch--verdict` on the
+   column when the panel is up; it pins to the top and the panel takes a
+   leading spacer instead, so the headline lands roughly where the board's top
+   edge was. Four classes because room-host.css's rule is a three-class
+   selector and CSS import order between two per-module files is not a contract
+   we want to depend on. */
+.anch.anch--verdict.anch--verdict.anch--verdict { justify-content: flex-start; }
+.anch-done {
+  position: relative;
+  margin-top: clamp(1rem, 12vh, 6rem);
+  text-align: center;
+  animation: anch-pop 260ms var(--ease-settle);
+}
 .anch-done__title {
   margin: 0.2rem 0;
   font-family: var(--font-display);
@@ -128,6 +173,14 @@
   color: var(--room-accent);
 }
 .anch-done__line { margin: 0.2rem 0; color: var(--ink-soft); }
+/* AAA 1.15 [BEAT]: the room says goodbye in somebody's voice, not the game's. */
+.anch-done__fern {
+  margin: 0.35rem auto 0.15rem;
+  max-width: 30ch;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--ink);
+}
 
 .anch-shake { animation: anch-shake 320ms ease-in-out; }
 .anch-pop   { animation: anch-pop 220ms var(--ease-settle); }
@@ -281,32 +334,71 @@
 .hv-cell__g { transition: opacity 180ms ease; }
 .hv-board--shuffling .hv-cell:not(.hv-cell--center) .hv-cell__g { opacity: 0; }
 
-/* Pangram burst — deliberately disproportionate (AAA 1.8), tap-skippable. */
+/* Pangram burst — deliberately disproportionate (AAA 1.8).
+   IT IS A GLOW AND NOTHING ELSE. It used to flex-centre `.hv-burst__text` in
+   `--room-accent` directly over `.hv-cell--center`, which is *filled* with
+   `--room-accent` — so every pangram on every board lost the middle of the
+   word, and the centre letter vanished under the tint. The naming ("Pangram!
+   WORD +N") lives once, in the reserved toast slot, where it is legible and
+   costs no layout. `pointer-events: none` because the old full-board overlay
+   also swallowed every hex tap for the animation's whole length — the one
+   moment she most wants to keep typing (AAA 1.7 [PARITY]). */
 .hv-burst {
   position: absolute;
   inset: -6%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--room-accent) 38%, transparent) 0%, transparent 68%);
-  animation: hv-burst 1.25s ease-out both;
-  cursor: pointer;
-}
-.hv-burst__text {
-  font-family: var(--font-display);
-  font-size: var(--text-display-lg);
-  color: var(--room-accent);
-  animation: anch-pop 300ms var(--ease-settle);
+  pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--room-accent) 30%, transparent) 0%, transparent 68%);
+  animation: hv-burst 900ms ease-out both;
 }
 @keyframes hv-burst {
   0%   { transform: scale(0.5); opacity: 0; }
   18%  { transform: scale(1);   opacity: 1; }
-  80%  { opacity: 1; }
+  74%  { opacity: 1; }
   100% { transform: scale(1.06); opacity: 0; }
 }
 
-.hv-sil { display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: center; }
+/* Full Bloom is a landing, not a door: the room says so and offers the
+   silhouette view without taking the hive away (AAA 1.12 [COZY]). */
+.hv-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--ink-soft);
+  animation: anch-rise 260ms var(--ease-settle);
+}
+
+/* AAA 1.12 — SB-Forum-style silhouette GRID: counts by first letter × word
+   length over the WHOLE unfound space. Strictly less spoilery than naming
+   eighteen alphabetically-first words, and it never singles anybody out. */
+.hv-grid {
+  margin: 0.6rem auto 0;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+.hv-grid__cap {
+  caption-side: top;
+  padding-bottom: 0.35rem;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+.hv-grid th,
+.hv-grid td {
+  min-width: 1.9rem;
+  padding: 0.1rem 0.3rem;
+  text-align: center;
+  font-weight: 400;
+}
+.hv-grid thead th,
+.hv-grid tbody th { color: var(--room-accent); font-weight: 600; }
+.hv-grid__zero { color: var(--ink-faint); }
+.hv-grid__tot  { color: var(--ink-soft); border-left: var(--rule); }
+.hv-grid__foot td,
+.hv-grid__foot th { border-top: var(--rule); color: var(--ink-soft); }
 
 /* AAA 1.1: slack accumulates ABOVE the entry/hive/controls cluster so the
    hive sits in the bottom-half thumb zone, matching SB's hive-low frame. */
@@ -319,6 +411,9 @@
   flex-direction: column;
   align-items: center;
   gap: 0.4rem;
+  /* Sits roughly where the hive was, so the crossing is a bloom and not a
+     page-wide slide (AAA 1.5, same fix as .anch-done). */
+  margin-top: clamp(0.5rem, 8vh, 4rem);
   padding: 0.6rem 0;
   color: var(--ink);
   cursor: pointer;
@@ -373,7 +468,46 @@
   font-size: 1.05rem;
   letter-spacing: 0.03em;
 }
-.ww-banner--in .ww-banner__theme { animation: anch-pop 240ms var(--ease-settle) 430ms both; }
+/* AAA 2.3: the name stamps AFTER the tiles land. The merge travel is 700ms
+   (see .ww-flip), so the stamp waits that long — it used to fire at 430ms,
+   which was "after nothing" back when the tiles simply vanished. */
+.ww-banner--in .ww-banner__theme { animation: anch-pop 240ms var(--ease-settle) 700ms both; }
+/* 3.4: every win dances; PERFECT earns the extra staggered flourish across the
+   thread names (delay set per-banner inline). */
+.ww-banner--perfect .ww-banner__theme { animation: ww-flash 460ms ease-in-out both; }
+@keyframes ww-flash {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  45%      { transform: scale(1.09); opacity: 0.75; }
+}
+
+/* AAA 2.3 — the slide/merge. A fixed, pointer-transparent stage that the FLIP
+   clones live in for 700ms; it never participates in the room's layout. */
+.ww-fliplayer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+.ww-flip {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-card);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-transform: uppercase;
+  padding: 2px;
+  overflow-wrap: anywhere;
+  will-change: transform, opacity;
+  /* Travel the whole 700ms at full ink, then fuse: the fade is the last 260ms,
+     so the tiles arrive rather than dissolving on the way. */
+  transition: transform 700ms var(--ease-settle), opacity 260ms ease 440ms;
+}
 .ww-banner__words { font-size: var(--text-sm); }
 .ww-banner__dots { font-size: 0.65rem; letter-spacing: 0.18em; opacity: 0.75; }
 @keyframes ww-land {
@@ -474,18 +608,52 @@
 .tw-cell.is-pressed { transform: scale(0.92); }
 .tw-cell--traced { background: var(--room-accent); color: var(--paper); border-color: var(--room-accent); }
 .tw-cell--head { transform: scale(1.06); box-shadow: var(--shadow-lift); }
-.tw-cell--far { opacity: 0.5; }
+/* AAA 6.2 [PARITY] — "cannot extend this trace" is NOT a legibility state.
+   `opacity: 0.5` composited ink #2B2118 over parchment to ≈#8E8779 ≈2.9:1,
+   under the 4.5:1 body bar (the tier-3 glyph is 16px, so the large-glyph
+   exemption does not apply) — and it dimmed the whole board at exactly the
+   moment she needs to scan it for her next word. SB never dims the hive; it
+   dims letters in the entry line only. The glyph stays at full ink; the
+   recessed fill and softened border carry the state instead. */
+.tw-cell--far {
+  background: var(--paper);
+  border-color: color-mix(in srgb, var(--paper-edge) 45%, transparent);
+}
+/* The centre tile gates a −3-step rule at tier 3 (`breaks-rule`), so it is
+   marked like a rule and not like a decoration: a full accent ring on the
+   cell, not a 7px dot in the corner. */
 .tw-cell--center::after {
   content: '';
   position: absolute;
-  right: 4px;
-  bottom: 4px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  border: 1.5px solid var(--room-accent);
+  inset: 5px;
+  border-radius: 3px;
+  border: 2px solid var(--room-accent);
+  pointer-events: none;
 }
 .tw-cell--traced.tw-cell--center::after { border-color: var(--paper); }
+.tw-cell--far.tw-cell--center::after { border-color: var(--room-accent); }
+
+/* AAA 3.4 — the Gallery's celebration: a gilt frame draws itself around the
+   verdict block, edge by edge, ≤1.2s, tap-skippable. It is deliberately NOT
+   `anch-pop` on the chips: that is the in-play arrival animation, and replaying
+   it made the finish read as the feedback she had already seen 5 times.
+   Each edge is a hairline scaled from its far end — transform only (U.3/9.5),
+   so there is no stroke-dash repaint and no SVG aspect distortion. */
+.tw-hung { padding: 1.1rem 1rem; }
+.tw-frame { position: absolute; inset: 0; pointer-events: none; }
+.tw-frame__seg {
+  position: absolute;
+  background: var(--gilt);
+  animation: tw-draw 300ms var(--ease-settle) both;
+}
+.tw-frame__seg--t { top: 0; left: 0; right: 0; height: 2px; transform-origin: left center; animation-name: tw-draw-x; }
+.tw-frame__seg--r { top: 0; right: 0; bottom: 0; width: 2px; transform-origin: center top; animation-name: tw-draw-y; animation-delay: 280ms; }
+.tw-frame__seg--b { bottom: 0; left: 0; right: 0; height: 2px; transform-origin: right center; animation-name: tw-draw-x; animation-delay: 560ms; }
+.tw-frame__seg--l { top: 0; left: 0; bottom: 0; width: 2px; transform-origin: center bottom; animation-name: tw-draw-y; animation-delay: 840ms; }
+@keyframes tw-draw-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes tw-draw-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+/* Tap anywhere on the panel: the frame snaps complete. */
+.tw-hung--done .tw-frame__seg { animation: none; transform: none; }
 .tw-cell__order {
   position: absolute;
   top: 2px;
@@ -528,6 +696,39 @@
   line-height: 1.4;
 }
 .fw-def__meta { font-size: var(--text-sm); color: var(--ink-soft); }
+
+/* AAA 3.4 — the Study's celebration, distinct from the reveal it follows.
+   The reveal is `fw-reveal`/`fw-turn` (the answer arriving letter by letter).
+   THIS is the second beat: the quotation marks close on the entry and the
+   headword inks itself into the card in the room accent. ≤900ms end to end,
+   and a tap on the verdict panel jumps straight to it. */
+.fw-def__q { display: inline-block; color: var(--ink-soft); }
+.fw-def--inked { animation: anch-pop 260ms var(--ease-settle) 120ms both; }
+.fw-def--inked .fw-def__q--open  { animation: fw-close-l 380ms var(--ease-settle) both; }
+.fw-def--inked .fw-def__q--close { animation: fw-close-r 380ms var(--ease-settle) both; }
+@keyframes fw-close-l {
+  from { transform: translateX(-0.35em); opacity: 0.5; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes fw-close-r {
+  from { transform: translateX(0.35em); opacity: 0.5; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+.fw-def__word {
+  margin-top: 0.35rem;
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--room-accent);
+  animation: fw-ink 520ms var(--ease-settle) 180ms both;
+}
+@keyframes fw-ink {
+  from { transform: scale(0.94); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+/* Skip: the staggered reveal snaps complete when she taps the panel. */
+.anch-done--settled .fw-reveal__ch { animation: none; }
 
 .fw-clue { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; }
 .fw-clue__label { font-family: var(--font-display); font-size: 1rem; color: var(--room-accent); }
@@ -581,8 +782,18 @@
    -------------------------------------------------------------------------- */
 @media (max-height: 700px) {
   .anch { gap: 0.45rem; padding-top: 0.4rem; }
-  .anch__sub { display: none; }
+  /* The FLAVOUR is the decorative reserve that gives way — never the RULE.
+     (This line used to be `.anch__sub { display: none }`, which erased the
+     Gallery's marked-tile rule, the Conservatory's centre-letter rule and the
+     Library's "four threads of four" on every SE-class phone while the
+     mistakes those rules gate kept charging steps. AAA 3.2.) */
+  .anch__flavour { display: none; }
+  .anch__rule { font-size: 0.8rem; margin-top: 0.1rem; }
   .anch-toastslot { min-height: 1.2rem; }
+  .anch--conservatory .anch-toastslot { min-height: 2.5rem; }
+  .anch-done { margin-top: clamp(0.5rem, 7vh, 3rem); }
+  .hv-grid { font-size: 0.8rem; }
+  .hv-grid th, .hv-grid td { min-width: 1.6rem; padding: 0.05rem 0.22rem; }
   .hv-found { min-height: 1.3rem; }
   .hv-ladder { gap: 0.4rem; }
   .hv-entry { min-height: 2rem; font-size: 1.3rem; }
@@ -613,12 +824,20 @@ html.kb-open .anch .fw-def__text {
    Reduced motion: states stay legible, juice goes quiet (AAA U.3).
    -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
-  .anch-shake, .anch-pop, .anch-toast, .anch-done,
+  .anch-shake, .anch-pop, .anch-toast, .anch-done, .hv-note,
   .ww-tile--hop, .ww-banner--in, .ww-banner--dance, .ww-banner--in .ww-banner__theme,
-  .hv-burst, .hv-burst__text, .fw-reveal__ch,
+  .ww-banner--perfect .ww-banner__theme,
+  .hv-burst, .fw-reveal__ch,
+  .fw-def--inked, .fw-def--inked .fw-def__q--open, .fw-def--inked .fw-def__q--close,
+  .fw-def__word, .tw-frame__seg,
   .hv-bloom, .hv-bloom__title, .hv-bloom__petal, .hv-bloom__heart, .hv-bloom__stem path {
     animation: none;
   }
+  /* The frame is a STATE (the work is hung), so it stays drawn — only the
+     drawing goes quiet. Same for the merge clones: `runMerge()` bails out
+     entirely under reduced motion, so nothing ever travels. */
+  .tw-frame__seg { transform: none; }
+  .ww-flip { transition: none; }
   .hv-caret { animation: none; opacity: 1; }
   .hv-cell:active, .hv-cell.is-pressed,
   .ww-tile:active, .ww-tile.is-pressed,

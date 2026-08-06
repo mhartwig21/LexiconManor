@@ -12,7 +12,7 @@ import { useManorStore } from '../../app/store';
 import { getVolumeContent } from '../../app/content/volumes';
 import {
   alphabetFacts, ALPHABET, crossRefs, definitionSlots, filedToday, foundByKind,
-  guessHistory, isInterpreted, journalNudge, letterBoxes, sanctumReadiness,
+  guessHistory, isInterpreted, journalNudge, letterBoxes, sanctumReadiness, VERDICT_TOKENS,
 } from '../../engine/journal';
 import {
   arrivedLetters, fragmentDroughtDays, openedLetterIds, type FragmentContent,
@@ -260,11 +260,15 @@ export default function JournalView() {
                   <span className={`jrn-guess__word${g.wasAnswer ? ' jrn-guess__word--answer' : ''}`}>
                     {g.guess}
                   </span>
+                  {/* The Portrait's own verdict, filed verbatim-in-spirit —
+                      never a letter count. An exact distinct-letter
+                      intersection, free and permanent, is a Mastermind
+                      channel that solves the word past the engraving economy,
+                      and no one in the fiction ever speaks a number
+                      (AAA 3.3 / 4.15: re-present what she was told). */}
                   <span className="jrn-guess__meta">
                     day {g.day}
-                    {g.wasAnswer
-                      ? ' · the word itself'
-                      : ` · ${g.closeness.sharedLetters} letter${g.closeness.sharedLetters === 1 ? '' : 's'} shared${g.closeness.rightLength ? ' · right length' : ''}`}
+                    {g.wasAnswer ? ' · the word itself' : ` · ${VERDICT_TOKENS[g.verdict]}`}
                   </span>
                 </div>
               ))}
@@ -272,7 +276,15 @@ export default function JournalView() {
           </>
         )}
 
-        {nudge && <div className="jrn-nudge">{nudge}</div>}
+        {/* The pointer is somebody's voice, not the furniture's: Ellery reads
+            over your shoulder, so the pencilled margin is hers and signed.
+            (It carries the "dear" the Portrait never says — AAA 5.13.) */}
+        {nudge && (
+          <div className="jrn-nudge jrn-nudge--margin">
+            <span className="jrn-nudge__text">{nudge}</span>
+            <span className="jrn-nudge__sign" aria-label="a pencilled note from Ellery">— E.</span>
+          </div>
+        )}
         {!solved && readiness.enough && (
           <div className="jrn-nudge">
             <button className="jrn-nudge__link" onClick={() => navigate('/sanctum')}>

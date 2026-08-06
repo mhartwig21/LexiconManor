@@ -13,10 +13,12 @@
  * A run ending is "the day is over," never anything else (MANOR_DESIGN §1).
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useManorStore } from '../../app/store';
 import { sfx } from '../../app/sound';
 import type { DayRecord } from '../../engine/types';
+import { highestRowLine, refundLine } from '../../engine/day';
+import { dawnCarryOverLines } from '../../app/slices/manor';
 import DialogueScene from '../dialogue/DialogueScene';
 
 const MORNING_LINES = [
@@ -37,6 +39,10 @@ const NIGHT_LINES: Record<string, string> = {
 export function MorningCard() {
   const day = useManorStore((s) => s.day);
   const advance = useManorStore((s) => s.advanceDayPhase);
+  // What yesterday left steeping (AAA 4.11 cross-day investment): the Larder's
+  // risen dough, the Still Room's key on the sill. Read at dawn, so a green
+  // room drafted on a quiet Tuesday visibly pays for Wednesday's climb.
+  const recentEvents = useManorStore((s) => s.recentEvents);
   // Integration (A6 seam): the morning beat IS Mrs. Bramble — tea in the
   // Entrance Hall (MANOR_DESIGN §2). The card frames the day; tapping into
   // it plays her contextual morning scene (recaps react to yesterday's
@@ -47,11 +53,15 @@ export function MorningCard() {
   if (greeting) {
     return <DialogueScene character="bramble" slot="morning" onClose={advance} />;
   }
+  const kept = dawnCarryOverLines({ day, recentEvents });
   return (
     <section className="chr-scene chr-scene--enter" aria-label={`Morning of day ${day.day}`}>
       <h1 className="chr-scene__title">Day {day.day}</h1>
       <hr className="chr-scene__rule" />
       <p className="chr-scene__line">{line}</p>
+      {kept.length > 0 && (
+        <p className="chr-digest__prose">{kept.join(' ')}</p>
+      )}
       <button className="chr-scene__btn" onClick={() => setGreeting(true)}>
         Begin the day
       </button>
@@ -86,6 +96,50 @@ export function DuskVeil() {
   );
 }
 
+/**
+ * The day read back — as a story, not a report card.
+ *
+ * Round-5 audit: the first night of the game closed on four rows of zeros
+ * ("Rooms solved 0 · Steps spent 18 · Fragments found 0"), and the two numbers
+ * that make the retune legible — how high she got, and how much the manor gave
+ * back — were not recorded at all. Now they are (engine/day.ts
+ * `buildDayRecord`), they lead, they are prose, and **every zero row is
+ * suppressed rather than printed**: a quiet day says less, it never says you
+ * scored nothing.
+ */
+function NightLedger({ record }: { record: DayRecord }) {
+  const climb = highestRowLine(record);
+  const gave = refundLine(record);
+  const rows: Array<[string, number]> = [
+    ['Rooms drafted', record.roomsDrafted],
+    ['Rooms solved', record.roomsSolved],
+    ['Steps spent', record.stepsSpent],
+    ['Fragments found', record.fragmentsFound],
+  ];
+  const kept = rows.filter(([, n]) => n > 0);
+  return (
+    <>
+      {(climb || gave) && (
+        <p className="chr-digest__prose">
+          {climb}
+          {climb && gave ? ' ' : null}
+          {gave}
+        </p>
+      )}
+      {kept.length > 0 ? (
+        <dl className="chr-digest">
+          {kept.map(([label, n]) => (
+            <Fragment key={label}>
+              <dt>{label}</dt>
+              <dd className="tabular-nums">{n}</dd>
+            </Fragment>
+          ))}
+        </dl>
+      ) : null}
+    </>
+  );
+}
+
 export function NightDigest() {
   const day = useManorStore((s) => s.day);
   const records = useManorStore((s) => s.chronicles.dayRecords);
@@ -112,18 +166,7 @@ export function NightDigest() {
       <h1 className="chr-scene__title">Night</h1>
       <hr className="chr-scene__rule" />
       <p className="chr-scene__line">{line}</p>
-      {record ? (
-        <dl className="chr-digest">
-          <dt>Rooms drafted</dt>
-          <dd className="tabular-nums">{record.roomsDrafted}</dd>
-          <dt>Rooms solved</dt>
-          <dd className="tabular-nums">{record.roomsSolved}</dd>
-          <dt>Steps spent</dt>
-          <dd className="tabular-nums">{record.stepsSpent}</dd>
-          <dt>Fragments found</dt>
-          <dd className="tabular-nums">{record.fragmentsFound}</dd>
-        </dl>
-      ) : null}
+      {record ? <NightLedger record={record} /> : null}
       <button className="chr-scene__btn" onClick={onTomorrow}>
         To tomorrow
       </button>

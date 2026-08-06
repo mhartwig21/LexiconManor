@@ -25,6 +25,14 @@ interface Session {
   puzzle: unknown;
   state: unknown;
   done: boolean;
+  /**
+   * A `solved` event has been applied at least once this session, even though
+   * the adapter may still be running (the Conservatory keeps the hive on the
+   * table after Full Bloom — AAA 1.12). The footer's PRIMARY "step back out"
+   * hangs off this, not off `done`: once the room has paid, leaving is the
+   * finished action, not an abandonment.
+   */
+  solvedOnce: boolean;
 }
 
 export default function RoomHost() {
@@ -51,7 +59,7 @@ export default function RoomHost() {
     const seed = roomSeed(daySeed, activeRoom.cellKey);
     const puzzle = adapter.select({ tier: activeRoom.tier, seed, seenIds: seenIds ?? [] });
     const state = adapter.start(puzzle, { tier: activeRoom.tier, seed, volumeId });
-    setSession({ puzzle, state, done: false });
+    setSession({ puzzle, state, done: false, solvedOnce: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- session restarts per cell entry only
   }, [cellKey]);
 
@@ -59,7 +67,12 @@ export default function RoomHost() {
     () => (action: unknown) => {
       if (!adapter || !session || session.done) return;
       const { state, events, outcome } = adapter.reduce(session.puzzle, session.state, action);
-      setSession({ puzzle: session.puzzle, state, done: outcome.status !== 'active' });
+      setSession({
+        puzzle: session.puzzle,
+        state,
+        done: outcome.status !== 'active',
+        solvedOnce: session.solvedOnce || events.some((e) => e.type === 'solved'),
+      });
       applyRoomEvents(events, outcome);
     },
     [adapter, session, applyRoomEvents],
@@ -87,7 +100,7 @@ export default function RoomHost() {
         <View puzzle={session.puzzle} state={session.state} tier={activeRoom.tier} dispatch={dispatch} />
       </div>
       <div className="room-host__footer">
-        {session.done ? (
+        {session.done || session.solvedOnce ? (
           <button className="btn btn--primary" onClick={leaveRoom}>Step back out</button>
         ) : (
           <button className="btn" onClick={abandonRoom}>Leave it for tomorrow</button>

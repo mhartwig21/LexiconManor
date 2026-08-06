@@ -24,11 +24,33 @@
  * boards — the ones that stall every subset and wing — into a verifiable
  * tier 3 instead of the discard pile.
  *
- * Play model (economy semantics live in sudoku-adapter.ts): pencil marks are
- * thinking — free, unlimited. INKING a figure is the claim; a figure that
- * contradicts the (unique) solution is a costed mistake and never lands on
- * the leaf — the ledger refuses to hold a false entry (AAA 3.3: earned
- * information persists; a known-wrong digit is anti-information).
+ * ═══ PLAY MODEL (round 5 rewrite — economy semantics in sudoku-adapter.ts) ═══
+ * The previous model checked every ink against `puzzle.solution` and refused
+ * anything that disagreed. That made an ink a *paid correctness oracle*: at a
+ * bivalue cell a refusal fully resolved the cell for the price of the
+ * sanctioned hint, so XY-wing, XYZ-wing and colouring — every level-2/3
+ * technique the tier system is built on — could be bisected instead of
+ * deduced, and the Diabolical band was unenforceable in play. Beside NYT Hard,
+ * where you may enter a wrong digit and live with it, an expert noticed in ten
+ * seconds that the board would not let her be wrong.
+ *
+ * The refusal is now SPLIT (AAA 3.2 / R.1's principle):
+ *   - pencil marks are thinking: free, unlimited;
+ *   - a figure that DUPLICATES A VISIBLE PEER is MALFORMED — the board already
+ *     showed her the clash, so it is a dead letter: free shake + reason toast,
+ *     no ledger entry, nothing lands;
+ *   - a board-legal figure LANDS, unsettled, and costs NOTHING at placement.
+ *     It is a hypothesis, and hypotheses are what sudoku is made of. It can be
+ *     lifted again with `uninkCell` — earned information persists (AAA 3.3),
+ *     and so does earned error;
+ *   - the one priced claim is BALANCING THE BOOKS: "N of M figures are astray"
+ *     without naming them — the same claim grammar as the Darkroom's "N of M
+ *     letters ring true" and the Linen Closet's full-grid check. An identical
+ *     re-balance is free (never charge twice for the same claim).
+ *
+ * Because a malformed ink never lands, a leaf with all 81 cells filled has no
+ * duplicate in any unit; with a generator-verified UNIQUE solution that grid
+ * IS the solution. "Full" and "won" are therefore the same event, honestly.
  *
  * Board encoding: 81-char strings, row-major, '1'..'9' or '.' for blank.
  */
@@ -98,10 +120,31 @@ export interface SudokuEngineState {
   pencil: number[];
   /** Cells filled via a purchased reveal (view styles them as 'developed'). */
   revealed: number[];
+  /**
+   * Board signatures already balanced — an identical re-balance is free, so
+   * the room never charges twice for the same claim (the Linen Closet's
+   * `checkedSignatures` rule, AAA 3.2).
+   */
+  balancedSignatures: string[];
   status: 'playing' | 'won';
 }
 
-export type InkResult = 'placed' | 'won' | 'contradiction' | 'ignored';
+/**
+ * `malformed` = duplicates a visible peer; the board warned her, so it is a
+ * free dead letter (AAA 3.2). `placed` = a board-legal figure landed; it may
+ * still be astray, and that is the player's business, not the ledger's.
+ */
+export type InkResult = 'placed' | 'won' | 'malformed' | 'ignored';
+
+/** Report from `balanceBooks` — the room's one priced claim. */
+export interface BalanceReport {
+  /** Player-set figures that disagree with the ledger's own solution. */
+  astray: number;
+  /** Player-set figures on the leaf (givens and bought figures excluded). */
+  settled: number;
+  /** False when there was nothing to weigh, or this exact leaf was weighed before. */
+  charged: boolean;
+}
 
 // ---------------------------------------------------------------------------
 // Grid geometry (precomputed once)
@@ -136,6 +179,26 @@ export const PEERS: readonly (readonly number[])[] = (() => {
 })();
 
 const ALL = 0x1ff; // 9 candidate bits
+
+/** UNITS index of the 3x3 quarter a cell sits in. */
+export const boxUnitOf = (cell: number): number =>
+  18 + Math.floor(Math.floor(cell / 9) / 3) * 3 + Math.floor((cell % 9) / 3);
+
+const ORDINALS = [
+  'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth',
+] as const;
+
+/**
+ * In-world name for a UNITS index — "the fourth row", "the second column",
+ * "the third quarter". The clerk's nudge (see `nextTechniqueNudge`) names a
+ * place, never a figure.
+ */
+export function unitName(unit: number): string {
+  if (unit < 0 || unit > 26) return 'the leaf';
+  if (unit < 9) return `the ${ORDINALS[unit]} row`;
+  if (unit < 18) return `the ${ORDINALS[unit - 9]} column`;
+  return `the ${ORDINALS[unit - 18]} quarter`;
+}
 
 export function parseGrid(s: string): number[] {
   if (s.length !== 81) throw new Error(`grid string must be 81 chars, got ${s.length}`);
@@ -283,8 +346,15 @@ export function solveOne(givens: string, rng?: Rng): string | null {
 // Human-technique solver — the difficulty rater
 // ---------------------------------------------------------------------------
 
-/** One technique application: mutates the board, returns true if it changed anything. */
-type Technique = (b: Board) => boolean;
+/**
+ * One technique application: mutates the board and reports WHERE it fired, or
+ * null when it found nothing. The locus is what makes a bought nudge worth its
+ * price — the clerk names a place and a method, never a figure (AAA 3.2/3.8:
+ * priced help teaches, it does not solve). `unit` is a UNITS index, or null
+ * for the techniques that genuinely span the leaf (fish, colouring chains).
+ */
+interface TechniqueHit { unit: number | null }
+type Technique = (b: Board) => TechniqueHit | null;
 
 function assign(b: Board, cell: number, d: number): void {
   b.values[cell] = d;
@@ -297,14 +367,15 @@ const nakedSingle: Technique = (b) => {
   for (let i = 0; i < 81; i++) {
     if (b.values[i] === 0 && popcount(b.cands[i]!) === 1) {
       assign(b, i, bitDigits(b.cands[i]!)[0]!);
-      return true;
+      return { unit: boxUnitOf(i) };
     }
   }
-  return false;
+  return null;
 };
 
 const hiddenSingle: Technique = (b) => {
-  for (const unit of UNITS) {
+  for (let u = 0; u < UNITS.length; u++) {
+    const unit = UNITS[u]!;
     for (let d = 1; d <= 9; d++) {
       const bit = 1 << (d - 1);
       let spot = -1;
@@ -316,11 +387,11 @@ const hiddenSingle: Technique = (b) => {
       }
       if (!placed && n === 1) {
         assign(b, spot, d);
-        return true;
+        return { unit: u };
       }
     }
   }
-  return false;
+  return null;
 };
 
 /** Pointing (box→line) and claiming (line→box). */
@@ -333,25 +404,26 @@ const lockedCandidates: Technique = (b) => {
       if (spots.length < 2) continue;
       const rows = new Set(spots.map((c) => Math.floor(c / 9)));
       const cols = new Set(spots.map((c) => c % 9));
-      const lines: number[][] = [];
-      if (rows.size === 1) lines.push(UNITS[[...rows][0]!]! as number[]);
-      if (cols.size === 1) lines.push(UNITS[9 + [...cols][0]!]! as number[]);
-      for (const line of lines) {
+      const lines: number[] = [];
+      if (rows.size === 1) lines.push([...rows][0]!);
+      if (cols.size === 1) lines.push(9 + [...cols][0]!);
+      for (const lineUnit of lines) {
         let changed = false;
-        for (const c of line) {
+        for (const c of UNITS[lineUnit]!) {
           if (!UNITS[u]!.includes(c) && b.values[c] === 0 && (b.cands[c]! & bit)) {
             b.cands[c] = b.cands[c]! & ~bit;
             changed = true;
           }
         }
-        if (changed) return true;
+        // The deduction lives in the BOX (that is where the digit is locked).
+        if (changed) return { unit: u };
       }
     }
     // Claiming: within a row/col, candidates for d confined to one box.
     for (let u = 0; u < 18; u++) {
       const spots = UNITS[u]!.filter((c) => b.values[c] === 0 && (b.cands[c]! & bit));
       if (spots.length < 2) continue;
-      const boxes = new Set(spots.map((c) => 18 + Math.floor(Math.floor(c / 9) / 3) * 3 + Math.floor((c % 9) / 3)));
+      const boxes = new Set(spots.map((c) => boxUnitOf(c)));
       if (boxes.size !== 1) continue;
       const box = UNITS[[...boxes][0]!]!;
       let changed = false;
@@ -361,16 +433,17 @@ const lockedCandidates: Technique = (b) => {
           changed = true;
         }
       }
-      if (changed) return true;
+      if (changed) return { unit: u };
     }
   }
-  return false;
+  return null;
 };
 
 /** Naked subsets of size n (pair/triple): n cells whose candidate union has n digits. */
 function nakedSubset(n: 2 | 3): Technique {
   return (b) => {
-    for (const unit of UNITS) {
+    for (let u = 0; u < UNITS.length; u++) {
+      const unit = UNITS[u]!;
       const blanks = unit.filter((c) => b.values[c] === 0 && popcount(b.cands[c]!) <= n && popcount(b.cands[c]!) >= 2);
       const combos = kCombinations(blanks, n);
       for (const combo of combos) {
@@ -385,17 +458,18 @@ function nakedSubset(n: 2 | 3): Technique {
             changed = true;
           }
         }
-        if (changed) return true;
+        if (changed) return { unit: u };
       }
     }
-    return false;
+    return null;
   };
 }
 
 /** Hidden subsets of size n: n digits confined to the same n cells of a unit. */
 function hiddenSubset(n: 2 | 3): Technique {
   return (b) => {
-    for (const unit of UNITS) {
+    for (let u = 0; u < UNITS.length; u++) {
+      const unit = UNITS[u]!;
       const spotsOf: number[][] = [];
       const digits: number[] = [];
       for (let d = 1; d <= 9; d++) {
@@ -418,10 +492,10 @@ function hiddenSubset(n: 2 | 3): Technique {
             changed = true;
           }
         }
-        if (changed) return true;
+        if (changed) return { unit: u };
       }
     }
-    return false;
+    return null;
   };
 }
 
@@ -463,11 +537,12 @@ function fish(n: 2 | 3): Technique {
               }
             }
           }
-          if (changed) return true;
+          // A fish spans the leaf — there is no one unit to point at.
+          if (changed) return { unit: null };
         }
       }
     }
-    return false;
+    return null;
   };
 }
 
@@ -501,11 +576,12 @@ const xyWing: Technique = (b) => {
             changed = true;
           }
         }
-        if (changed) return true;
+        // The pivot is where she should start looking.
+        if (changed) return { unit: boxUnitOf(pivot) };
       }
     }
   }
-  return false;
+  return null;
 };
 
 /** XYZ-wing: pivot {x,y,z} (three candidates) with bivalue pincers {x,z} and
@@ -536,11 +612,11 @@ const xyzWing: Technique = (b) => {
             changed = true;
           }
         }
-        if (changed) return true;
+        if (changed) return { unit: boxUnitOf(pivot) };
       }
     }
   }
-  return false;
+  return null;
 };
 
 /**
@@ -601,7 +677,8 @@ const simpleColouring: Technique = (b) => {
         for (const c of cells) {
           if (b.cands[c]! & bit) { b.cands[c] = b.cands[c]! & ~bit; changed = true; }
         }
-        if (changed) return true;
+        // A colouring chain is a whole-leaf argument.
+        if (changed) return { unit: null };
       }
 
       // Rule 4: an outside cell seeing both colours loses the digit.
@@ -616,10 +693,10 @@ const simpleColouring: Technique = (b) => {
           changed = true;
         }
       }
-      if (changed) return true;
+      if (changed) return { unit: null };
     }
   }
-  return false;
+  return null;
 };
 
 function kCombinations(items: readonly number[], k: number): number[][] {
@@ -773,6 +850,7 @@ export function startSudoku(puzzle: SudokuPuzzle): SudokuEngineState {
     values: parseGrid(puzzle.givens),
     pencil: Array.from({ length: 81 }, () => 0),
     revealed: [],
+    balancedSignatures: [],
     status: 'playing',
   };
 }
@@ -798,22 +876,72 @@ export function clearPencil(state: SudokuEngineState, cell: number): SudokuEngin
   return { ...state, pencil };
 }
 
+/** Candidate bitmask for a cell from the figures currently standing on the leaf. */
+function visibleMask(values: readonly number[], cell: number): number {
+  let mask = ALL;
+  for (const p of PEERS[cell]!) {
+    const v = values[p]!;
+    if (v !== 0) mask &= ~(1 << (v - 1));
+  }
+  return mask;
+}
+
 /**
- * Ink a figure — the claim. Correct: it lands, and the same figure is swept
- * from peers' pencil marks (the ledger tidies itself). A contradiction of the
- * unique solution NEVER lands (a known-false entry is anti-information,
- * AAA 3.3) — the adapter prices it as a weight-1 mistake.
+ * "Pencil what fits" — set every blank cell's marks to the figures its placed
+ * peers still allow. NYT ships this as Auto Candidate Mode directly under the
+ * pad, and the tier-2/3 bins are DEFINED by techniques (naked triple, X-wing,
+ * swordfish, colouring) that are unreachable without complete candidate marks
+ * — so hand-pencilling ~250 taps is not difficulty, it is a toll gate in front
+ * of the puzzle's own design. Free, idempotent, and reversible with the eraser:
+ * it derives nothing the player could not read straight off the grid, so it is
+ * a mode-neutral tool, never a hint, and never touches `perfect`.
+ */
+export function fillPencil(state: SudokuEngineState): SudokuEngineState {
+  if (state.status !== 'playing') return state;
+  const pencil = [...state.pencil];
+  let changed = false;
+  for (let i = 0; i < 81; i++) {
+    if (state.values[i] !== 0) continue;
+    const mask = visibleMask(state.values, i);
+    if (pencil[i] !== mask) { pencil[i] = mask; changed = true; }
+  }
+  return changed ? { ...state, pencil } : state;
+}
+
+/** True while the figure standing in `cell` is the player's own unsettled ink. */
+export function isUnsettled(puzzle: SudokuPuzzle, state: SudokuEngineState, cell: number): boolean {
+  return state.values[cell] !== 0 && !isGiven(puzzle, cell) && !state.revealed.includes(cell);
+}
+
+/**
+ * Ink a figure — a CLAIM, not a question put to the ledger.
+ *
+ * A figure that duplicates a visible peer is MALFORMED: the leaf already
+ * showed her the clash, so it is a dead letter — free shake, free reason
+ * toast, nothing lands, no ledger entry (AAA 3.2, the hive dead-letter rule).
+ * Anything else LANDS, free, and stays as her own unsettled ink even when it
+ * disagrees with the solution; `uninkCell` lifts it again. The same figure is
+ * swept from peers' pencil marks (the ledger tidies itself).
+ *
+ * Re-inking over her own unsettled figure is an edit, not a new claim, and is
+ * likewise free.
  */
 export function inkCell(
   puzzle: SudokuPuzzle,
   state: SudokuEngineState,
   cell: number,
   digit: number,
-): { state: SudokuEngineState; result: InkResult } {
+): { state: SudokuEngineState; result: InkResult; conflict?: number } {
   if (state.status !== 'playing' || digit < 1 || digit > 9) return { state, result: 'ignored' };
-  if (state.values[cell] !== 0) return { state, result: 'ignored' };
-  const truth = puzzle.solution.charCodeAt(cell) - 48;
-  if (digit !== truth) return { state, result: 'contradiction' };
+  if (cell < 0 || cell > 80) return { state, result: 'ignored' };
+  // The ledger's own hand and bought figures are immutable.
+  if (state.values[cell] !== 0 && !isUnsettled(puzzle, state, cell)) {
+    return { state, result: 'ignored' };
+  }
+  if (state.values[cell] === digit) return { state, result: 'ignored' };
+
+  const conflict = PEERS[cell]!.find((p) => state.values[p] === digit);
+  if (conflict !== undefined) return { state, result: 'malformed', conflict };
 
   const values = [...state.values];
   values[cell] = digit;
@@ -822,6 +950,8 @@ export function inkCell(
   const bit = 1 << (digit - 1);
   for (const p of PEERS[cell]!) pencil[p] = pencil[p]! & ~bit;
 
+  // A full leaf with no duplicate in any unit is a valid grid; the board's
+  // solution is generator-verified UNIQUE, so a full leaf IS that solution.
   const won = values.every((v) => v !== 0);
   return {
     state: { ...state, values, pencil, status: won ? 'won' : 'playing' },
@@ -829,10 +959,107 @@ export function inkCell(
   };
 }
 
+/** Lift her own unsettled figure back off the leaf. Free — it was never a debt. */
+export function uninkCell(
+  puzzle: SudokuPuzzle,
+  state: SudokuEngineState,
+  cell: number,
+): SudokuEngineState {
+  if (state.status !== 'playing' || !isUnsettled(puzzle, state, cell)) return state;
+  const values = [...state.values];
+  values[cell] = 0;
+  return { ...state, values };
+}
+
+/** Her own figures currently standing on the leaf (givens and bought ones excluded). */
+export function unsettledCells(puzzle: SudokuPuzzle, state: SudokuEngineState): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < 81; i++) if (isUnsettled(puzzle, state, i)) out.push(i);
+  return out;
+}
+
 /**
- * Reveal the correct figure in a cell (priced by the adapter as a hint).
- * Prefers the given cell; falls back to the most-constrained blank —
- * highest information per step spent.
+ * BALANCE THE BOOKS — the room's one priced claim, and the only correctness
+ * oracle it sells. Reports how many of her own figures are astray WITHOUT
+ * naming them: the same claim grammar as the Darkroom's "N of M letters ring
+ * true" and the Linen Closet's full-grid check, so all three micro-rooms
+ * finally agree.
+ *
+ * Weighing an empty leaf, or weighing the identical leaf twice, is free: the
+ * room never charges for zero information (AAA 3.2).
+ */
+export function balanceBooks(
+  puzzle: SudokuPuzzle,
+  state: SudokuEngineState,
+): { state: SudokuEngineState; report: BalanceReport } {
+  const mine = unsettledCells(puzzle, state);
+  if (state.status !== 'playing' || mine.length === 0) {
+    return { state, report: { astray: 0, settled: mine.length, charged: false } };
+  }
+  const astray = mine.filter((c) => state.values[c] !== puzzle.solution.charCodeAt(c) - 48).length;
+  const sig = gridToString(state.values);
+  const charged = !state.balancedSignatures.includes(sig);
+  return {
+    state: charged ? { ...state, balancedSignatures: [...state.balancedSignatures, sig] } : state,
+    report: { astray, settled: mine.length, charged },
+  };
+}
+
+/**
+ * A WORD FROM THE CLERK — the technique nudge (AAA 3.2: priced help must be
+ * worth its price; 3.8: a knob that teaches rather than one that solves).
+ *
+ * Buying a single figure out of ~55 blanks was 1.8% of the board for the same
+ * price as a mistake, so no rational player ever bought it and the longest
+ * room in the game shipped with no usable way out. This names the NEXT REAL
+ * DEDUCTION on her live leaf — method and place, never a figure — which is
+ * worth several cells of progress and teaches the ladder the tiers are built
+ * on. Computed from `state.values`, so it tracks her actual board, wrong ink
+ * and all.
+ *
+ * Returns null when the leaf yields nothing (including when her own figures
+ * have made it insoluble) — the adapter charges nothing for that.
+ */
+export interface TechniqueNudge {
+  id: TechniqueId;
+  /** UNITS index to point at, or null for a whole-leaf argument. */
+  unit: number | null;
+  /** Forced figures still waiting on the leaf before this step applies. */
+  singlesPending: number;
+}
+
+export function nextTechniqueNudge(values: readonly number[]): TechniqueNudge | null {
+  const board = boardFrom(values);
+  if (!board) return null;
+  let singlesPending = 0;
+  let firstSingle: TechniqueNudge | null = null;
+
+  for (let guard = 0; guard < 100; guard++) {
+    if (board.values.every((v) => v !== 0)) break;
+    let fired: { id: TechniqueId; hit: TechniqueHit } | null = null;
+    for (const t of LADDER) {
+      const hit = t.apply(board);
+      if (hit) { fired = { id: t.id, hit }; break; }
+    }
+    if (!fired) break;
+    if (TECHNIQUE_LEVEL[fired.id] >= 1) {
+      return { id: fired.id, unit: fired.hit.unit, singlesPending };
+    }
+    // Singles are figures the paper already forces; take them on the copy and
+    // keep looking for a step that is actually worth two steps of her day.
+    if (!firstSingle) firstSingle = { id: fired.id, unit: fired.hit.unit, singlesPending: 0 };
+    singlesPending++;
+  }
+  return firstSingle;
+}
+
+/**
+ * Reveal the correct figure in a cell — the expensive second button, for a
+ * genuine dead end (the adapter prices it as a weight-2 hint, strictly dearer
+ * than the nudge). Prefers the selected cell; with none selected it falls back
+ * to the blank with the MOST candidates — the cell she is least likely to
+ * crack unaided. (It used to pick the most-constrained blank, i.e. a naked
+ * single: the cell she was about to fill anyway.)
  */
 export function revealCell(
   puzzle: SudokuPuzzle,
@@ -842,22 +1069,25 @@ export function revealCell(
   if (state.status !== 'playing') return { state, cell: null };
   let cell = preferred !== undefined && state.values[preferred] === 0 ? preferred : -1;
   if (cell === -1) {
-    // Most-constrained blank: fewest possible figures given current entries.
-    let bestCount = 10;
+    let bestCount = -1;
     for (let i = 0; i < 81; i++) {
       if (state.values[i] !== 0) continue;
-      let mask = ALL;
-      for (const p of PEERS[i]!) {
-        const v = state.values[p]!;
-        if (v !== 0) mask &= ~(1 << (v - 1));
-      }
-      const n = popcount(mask);
-      if (n < bestCount) { bestCount = n; cell = i; }
+      const n = popcount(visibleMask(state.values, i));
+      if (n > bestCount) { bestCount = n; cell = i; }
     }
   }
   if (cell === -1) return { state, cell: null };
   const digit = puzzle.solution.charCodeAt(cell) - 48;
-  const { state: next } = inkCell(puzzle, state, cell, digit);
+  // Her own wrong ink can be standing where the true figure needs to go. A
+  // given or a bought figure can never conflict with the truth, so any peer
+  // holding this digit is unsettled — lift it, then set the true figure. The
+  // ledger says what belongs here; it does not say which of hers was wrong.
+  let base = state;
+  for (const p of PEERS[cell]!) {
+    if (base.values[p] === digit) base = uninkCell(puzzle, base, p);
+  }
+  const { state: next } = inkCell(puzzle, base, cell, digit);
+  // A bought figure is immutable: it must never be lifted back off by accident.
   return { state: { ...next, revealed: [...next.revealed, cell] }, cell };
 }
 

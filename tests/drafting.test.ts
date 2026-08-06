@@ -6,7 +6,8 @@ import {
   type DraftRollCtx,
 } from '../src/engine/manor/drafting';
 import {
-  BASE_DECK, cardById, deckFor, CARD_PREVIEWS, SCRIPTED_FIRST_DRAFT, UTILITY_EFFECTS,
+  BASE_DECK, cardById, deckFor, isKeyBearing, CARD_PREVIEWS, SCRIPTED_FIRST_DRAFT,
+  UTILITY_EFFECTS,
 } from '../src/engine/manor/deck';
 import { isDoorLocked, KEY_COST } from '../src/engine/manor/locks';
 import { KEY_SUPPLY, moveAt } from '../src/engine/economy/steps';
@@ -397,7 +398,9 @@ describe('a padlocked door spends EXACTLY ONE key — on placement', () => {
     expect(s.currencies.keys).toBe(1);                   // looking is free
     const moves = s.ledger.entries.filter((e) => e.reason === 'move');
     expect(moves).toHaveLength(1);
-    expect(moves[0]!.delta).toBe(moveAt(4));             // priced by the row
+    // Round-5 audit (AAA 4.6): the look is a walk across the floor she is
+    // ALREADY standing on — priced at HER row (3), not the row above.
+    expect(moves[0]!.delta).toBe(moveAt(3));
   });
 
   it('backing out keeps the key — only the step already spent is gone (AAA 4.6)', () => {
@@ -471,5 +474,55 @@ describe('the key supply the padlocks assume actually exists in the deck', () =>
       }
       expect(withKey / N).toBeGreaterThan(0.12);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND-5 AUDIT — key frequency must be an ARC, not a flat line (AAA 4.10d)
+// ---------------------------------------------------------------------------
+
+describe("Fern's friendship is the padlock arc's supply side", () => {
+  const keyRate = (row: number, keyAccess: number) => {
+    const deck = deckFor([]);
+    let hits = 0;
+    const N = 1200;
+    for (let seed = 0; seed < N; seed++) {
+      const cards = rollCards(deck, createManor(seed), { col: (seed % 5) as Cell['col'], row },
+        { gems: 2, declinedLastDraft: [], drawIndex: 0, keyAccess });
+      if (cards.some((c) => isKeyBearing(c.id))) hits += 1;
+    }
+    return hits / N;
+  };
+
+  it('is exactly neutral with no friendship — drafting is unchanged by this term', () => {
+    const deck = deckFor([]);
+    for (const row of [0, 3, 6]) {
+      const ctx = { gems: 2, declinedLastDraft: [], drawIndex: 0 };
+      const before = rollCards(deck, createManor(77), { col: 2, row }, ctx).map((c) => c.id);
+      const after = rollCards(deck, createManor(77), { col: 2, row },
+        { ...ctx, keyAccess: 0 }).map((c) => c.id);
+      expect(after).toEqual(before);
+    }
+  });
+
+  it('raises key-bearing cards as the friendship warms, and nothing else', () => {
+    // The finding: `categoryWeight`/`RARITY_WEIGHTS` carried no day or affinity
+    // term, so a key card was exactly as likely on day 30 as on day 1.
+    const cold = keyRate(0, 0);
+    const warm = keyRate(0, 1);
+    expect(warm).toBeGreaterThan(cold * 1.5);
+    expect(warm).toBeLessThan(0.85);            // a supply, never a giveaway
+    // The category shape she is choosing between is untouched: only WHICH
+    // green card shows up moves, which is what keeps deckMixAt (and the 4.10b
+    // clock calibrated against it) honest.
+    expect(cardWeight(cardById('library')!, 0, {
+      gems: 0, declinedLastDraft: [], drawIndex: 0, keyAccess: 1,
+    })).toBe(cardWeight(cardById('library')!, 0, {
+      gems: 0, declinedLastDraft: [], drawIndex: 0,
+    }));
+  });
+
+  it('still leaves the upper storeys lean — preparation happens downstairs', () => {
+    expect(keyRate(5, 1)).toBeLessThan(keyRate(0, 1));
   });
 });

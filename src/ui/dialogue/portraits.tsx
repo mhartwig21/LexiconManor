@@ -170,11 +170,26 @@ function PortraitPortrait({ expression = 'neutral' }: PortraitProps) {
       <path d="M 56 276 Q 62 226 94 212 L 120 204 L 146 212 Q 178 226 184 276" />
       <path d="M 104 212 Q 120 228 136 212 M 112 224 L 120 240 L 128 224" strokeWidth={THIN} />
       <Hatch d="M 70 250 q 8 -12 18 -18 M 170 246 q 6 10 10 24" />
-      {/* gaunt head, swept-back hair, side whiskers */}
+      {/* Gaunt head. The hair used to be a full swept-back cap crowning at
+          y=62 — above the skull, and at 48px indistinguishable from Bramble's
+          hair mass. The Sanctum frame draws him RECEDING, a little wild at the
+          temples (PortraitFrame.tsx:56-57); this now says the same thing, so
+          the bare high brow is his silhouette cue at cameo size (AAA 6.12). */}
       <ellipse cx={120} cy={136} rx={48} ry={58} />
-      <path d="M 74 120 Q 74 66 120 62 Q 166 66 166 120 Q 156 92 120 90 Q 84 92 74 120" />
+      <path d="M 78 122 Q 84 94 104 86 Q 120 81 136 86 Q 156 94 162 122" />
+      <path d="M 74 120 Q 66 108 70 96 M 166 120 Q 174 108 170 96" strokeWidth={THIN} />
+      {/* side whiskers */}
       <path d="M 76 140 Q 70 168 82 186 M 164 140 Q 170 168 158 186" strokeWidth={THIN} />
-      <Hatch d="M 84 176 q 6 6 12 8 M 156 176 q -6 6 -12 8 M 100 74 q 18 -8 40 0" />
+      <Hatch d="M 84 176 q 6 6 12 8 M 156 176 q -6 6 -12 8" />
+      {/* Spectacles — ported from ui/sanctum/PortraitFrame.tsx, "his one glint
+          of light", scaled to this face (cx 120, cy 138, scale 0.92). Two
+          drawings of the Lexicographer existed and only the oval one wore
+          glasses: the 48px cameo under every line he speaks read as a generic
+          soft face while the frame 900px above it wore round lenses (AAA 6.12).
+          The eye centres here are Face's ±22 × 0.92 = ±20.2 from cx. */}
+      <circle cx={100} cy={138} r={12} strokeWidth={THIN} />
+      <circle cx={140} cy={138} r={12} strokeWidth={THIN} />
+      <path d="M 112 138 H 128 M 88 134 L 76 128 M 152 134 L 164 128" strokeWidth={THIN} />
       <Face cx={120} cy={138} expr={expression} scale={0.92} />
     </g>
   );

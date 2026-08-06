@@ -4,6 +4,20 @@
  * banners with the name stamped after landing, wrong-guess shake that never
  * clears the selection, acknowledged herrings, a priced intruder nudge, free
  * unlimited shuffle, warm graded endscreen copy.
+ *
+ * ROUND 5 — the verdict choreography (AAA 2.2 / 2.3 [PARITY]):
+ *   (a) THE MERGE. The four tiles used to simply unmount when the adapter
+ *       dropped them from `remainingWords` — they evaporated in one frame and
+ *       the banner popped in at its final position. Connections *travels* the
+ *       tiles into the banner, and that fusion is the room's signature moment.
+ *       `runMerge()` is a FLIP: measure the four resting tile rects just before
+ *       dispatch, clone them as fixed-position elements in `.ww-fliplayer`, and
+ *       transform them into the banner's rect over 700ms while `ww-land` fades
+ *       the banner in beneath. Transform/opacity only (U.3), skipped wholesale
+ *       under `prefers-reduced-motion`.
+ *   (b) THE HOLD. The last tile settles at 600ms (300ms hop, 100ms stagger);
+ *       the verdict used to fire at 760ms — a 160ms suspense hold against the
+ *       required 300–400ms. It fires at 950ms now.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -24,6 +38,11 @@ function hashStr(s: string): number {
 
 const TIER_DOTS: Record<string, string> = { yellow: '●', green: '●●', blue: '●●●', purple: '●●●●' };
 
+/** The merge travel, and the input lock that covers it (AAA 2.3). */
+const HOLD_MS = 950;      // hop (600) + 350ms suspense hold → verdict
+const MERGE_MS = 700;     // tiles travel into the banner (2.3: 600ms–1s)
+const RELEASE_MS = 620;   // input unlocks; total ceremony stays under ~1.6s
+
 /** Warm, never shame-adjacent (AAA 2.14). */
 function endCopy(mistakes: number): string {
   if (mistakes === 0) return 'Perfect! Every thread true.';
@@ -31,6 +50,11 @@ function endCopy(mistakes: number): string {
   if (mistakes === 2) return 'Well pieced-together.';
   return 'Got there — the web holds.';
 }
+
+const reducedMotion = () =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewProps<WordWebPuzzleEx, WordWebRoomState, WordWebAction>) {
   const [selection, setSelection] = useState<string[]>([]);
@@ -56,6 +80,13 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
   };
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
+  // --- FLIP plumbing for the merge -----------------------------------------
+  const tileEls = useRef(new Map<string, HTMLButtonElement>());
+  const flipLayer = useRef<HTMLDivElement | null>(null);
+  const bannerEl = useRef<HTMLDivElement | null>(null);
+  const nameCardEl = useRef<HTMLDivElement | null>(null);
+  const pendingMerge = useRef<{ word: string; rect: DOMRect }[]>([]);
+
   const naming = state.pendingNaming;
   const won = state.web.status === 'won' && !naming;
   const stepCost = tier === 3 ? 3 : 2;
@@ -78,15 +109,62 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
     );
   };
 
-  // Submit → sequential hop → suspense hold → verdict. Total <1.5s (AAA 2.2).
+  /**
+   * AAA 2.3 — the four tiles TRAVEL into the banner instead of vanishing.
+   * Called from the verdict handler, one frame after the banner has mounted so
+   * its rect is real; the clones are pointer-transparent, so nothing about the
+   * board's input is blocked while they fly.
+   */
+  const runMerge = () => {
+    const sources = pendingMerge.current;
+    pendingMerge.current = [];
+    if (sources.length === 0 || reducedMotion()) return;
+    requestAnimationFrame(() => {
+      const layer = flipLayer.current;
+      const targetEl = nameCardEl.current ?? bannerEl.current;
+      const target = targetEl?.getBoundingClientRect();
+      if (!layer || !target || target.height === 0) return;
+      const clones = sources.map(({ word, rect }) => {
+        const el = document.createElement('div');
+        el.className = 'ww-flip';
+        el.textContent = word;
+        el.style.left = `${rect.left}px`;
+        el.style.top = `${rect.top}px`;
+        el.style.width = `${rect.width}px`;
+        el.style.height = `${rect.height}px`;
+        layer.appendChild(el);
+        return el;
+      });
+      requestAnimationFrame(() => {
+        sources.forEach(({ rect }, i) => {
+          const dx = target.left + target.width / 2 - (rect.left + rect.width / 2);
+          const dy = target.top + target.height / 2 - (rect.top + rect.height / 2);
+          const scale = Math.max(0.3, Math.min(1, target.height / Math.max(1, rect.height)));
+          const c = clones[i]!;
+          c.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+          c.style.opacity = '0';
+        });
+      });
+      later(() => clones.forEach((c) => c.remove()), MERGE_MS + 90);
+    });
+  };
+
+  // Submit → sequential hop → 350ms suspense hold → verdict → merge (AAA 2.2).
   const submit = () => {
     if (busy || won || selection.length !== 4) return;
+    const chosen = [...selection];
     setBusy(true);
-    setHopping([...selection]);
+    setHopping(chosen);
     later(() => {
-      dispatch({ type: 'submit', selection });
+      // Measured at rest: `ww-hop` ends on translateY(0) with fill `both`, so
+      // these are the tiles' true resting rects — the FLIP's "First".
+      pendingMerge.current = chosen.flatMap((w) => {
+        const el = tileEls.current.get(w);
+        return el ? [{ word: w, rect: el.getBoundingClientRect() }] : [];
+      });
+      dispatch({ type: 'submit', selection: chosen });
       setHopping([]);
-    }, 760);
+    }, HOLD_MS);
   };
 
   useEffect(() => {
@@ -99,16 +177,20 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
       case 'group-solved':
         sfx.correct();
         setSelection([]);
+        runMerge();
         if (fb.won) later(() => sfx.victory(), 650);
-        later(() => setBusy(false), 700);          // input locked while tiles land (AAA 2.3)
+        later(() => setBusy(false), RELEASE_MS);   // input locked while tiles land (AAA 2.3)
         break;
       case 'name-final':
         // Last four fall together — hold the win until the thread is named.
+        // They merge into the naming card, which is where the question lives.
         sfx.correct();
         setSelection([]);
-        later(() => setBusy(false), 700);
+        runMerge();
+        later(() => setBusy(false), RELEASE_MS);
         break;
       case 'one-away':
+        pendingMerge.current = [];
         sfx.wrong();
         setToast({ kind: 'bad', text: `One away… · −${stepCost} steps` });
         setShaking(true);
@@ -116,6 +198,7 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
         later(() => setBusy(false), 430);
         break;
       case 'wrong':
+        pendingMerge.current = [];
         sfx.wrong();
         setToast(
           fb.herring.length > 0
@@ -131,6 +214,7 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
         setToast({ kind: 'good', text: `${fb.intruder} stands apart from the rest.` });
         break;
       case 'invalid':
+        pendingMerge.current = [];
         setBusy(false);
         break;
     }
@@ -148,31 +232,54 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
   const perfect =
     won && state.costedMistakes === 0 && state.hintsBought === 0 && state.namedCorrectly !== false;
 
+  // AAA 1.5: `naming` swaps the 16-tile grid for a short card, so it pins the
+  // column top-side too — the act of naming should not begin with a 300px slide.
+  const verdict = won || naming !== null;
+
   return (
-    <div className="anch anch--library">
+    <div className={`anch anch--library${verdict ? ' anch--verdict' : ''}`}>
+      {/* Fixed, pointer-transparent stage for the merge clones. */}
+      <div className="ww-fliplayer" ref={flipLayer} aria-hidden="true" />
+
       <header className="anch__head">
         <h2 className="anch__title">The Library</h2>
-        <p className="anch__sub">Weave the sixteen words into four threads of four.</p>
+        <p className="anch__flavour">Weave the sixteen words.</p>
+        <p className="anch__rule">Four threads of four.</p>
       </header>
 
       <div className="ww-banners">
-        {shownGroups.map((g, i) => (
-          <div
-            key={g.tier}
-            className={`ww-banner ww-banner--${g.tier} ${perfect ? 'ww-banner--dance' : i === shownGroups.length - 1 ? 'ww-banner--in' : ''}`}
-            style={perfect ? { animationDelay: `${i * 100}ms` } : undefined}
-          >
-            <div className="ww-banner__theme">{g.theme}</div>
-            <div className="ww-banner__words">{g.words.join(' · ')}</div>
-            <div className="ww-banner__dots">{TIER_DOTS[g.tier]}</div>
-          </div>
-        ))}
+        {shownGroups.map((g, i) => {
+          const isLast = i === shownGroups.length - 1;
+          return (
+            <div
+              key={g.tier}
+              ref={isLast ? bannerEl : undefined}
+              className={[
+                'ww-banner', `ww-banner--${g.tier}`,
+                // 3.4: EVERY win dances, not only the perfect one; `perfect`
+                // earns the extra staggered flourish on the thread names.
+                won ? 'ww-banner--dance' : (!naming && isLast ? 'ww-banner--in' : ''),
+                won && perfect ? 'ww-banner--perfect' : '',
+              ].filter(Boolean).join(' ')}
+              style={won ? { animationDelay: `${i * 100}ms` } : undefined}
+            >
+              <div
+                className="ww-banner__theme"
+                style={won && perfect ? { animationDelay: `${i * 100 + 160}ms` } : undefined}
+              >
+                {g.theme}
+              </div>
+              <div className="ww-banner__words">{g.words.join(' · ')}</div>
+              <div className="ww-banner__dots">{TIER_DOTS[g.tier]}</div>
+            </div>
+          );
+        })}
       </div>
 
       {naming ? (
         // AAA 2.11 — the act of naming: the last four fell together, but the
         // room only solves (and 'Perfect!' only lands) once the thread is named.
-        <div className="anch-card ww-name anch-pop">
+        <div className="anch-card ww-name anch-pop" ref={nameCardEl}>
           <div className="ww-name__eyebrow">The last four fall together</div>
           <div className="ww-name__words">{naming.words.join(' · ')}</div>
           <p className="ww-name__ask">What thread binds them?</p>
@@ -206,6 +313,10 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
               return (
                 <button
                   key={word}
+                  ref={(el) => {
+                    if (el) tileEls.current.set(word, el);
+                    else tileEls.current.delete(word);
+                  }}
                   className={[
                     'ww-tile',
                     selection.includes(word) ? 'ww-tile--selected' : '',

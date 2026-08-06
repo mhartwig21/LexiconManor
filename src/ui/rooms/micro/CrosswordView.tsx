@@ -58,9 +58,10 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
 
   const handledAttempt = useRef(0);
   const timers = useRef<number[]>([]);
-  // Round-4: on a 667-tall screen the clue list is a capped, contained scroll
-  // box (a5micro.css) so it can never push the keyboard off the glass — which
-  // means the active clue has to be walked into view when it changes.
+  // Round 5: the clue panel is no longer height-capped — all 3–5 clues are on
+  // the paper at once, which is what "memory prosthetic" means (AAA 3.3). The
+  // walk-into-view below is now only the safety net for the 40dvh backstop
+  // (a5micro.css) and is a no-op whenever the whole list is visible.
   const activeClueRef = useRef<HTMLButtonElement | null>(null);
   const activeCellRef = useRef<HTMLButtonElement | null>(null);
   const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)); };

@@ -29,10 +29,12 @@ import {
   canMoveTo, cellKey, createManor, deweyCell, draftTargets, hashSeed, neighbor,
   resolveDoors, roomAt, roomSeed, rowTier, sameCell,
 } from '../../engine/manor/grid';
-import { deckFor, UTILITY_EFFECTS } from '../../engine/manor/deck';
+import { carryOverFrom, deckFor, UTILITY_EFFECTS } from '../../engine/manor/deck';
 import { deweyProphecy, rollOffer } from '../../engine/manor/drafting';
 import { isDoorLocked, KEY_COST } from '../../engine/manor/locks';
-import { fernMorningKeys, STEP_TABLE } from '../../engine/economy/steps';
+import {
+  climbKey, fernMorningKeys, keyAccessFor, moveAt, STEP_TABLE,
+} from '../../engine/economy/steps';
 import { getRoomAdapter } from '../../engine/rooms/registry';
 import { createRng } from '../../engine/rng';
 
@@ -105,13 +107,36 @@ export function ensureManor(): void {
   // its way up (MANOR_DESIGN §9). Applied here because the manor slice owns
   // `currencies`, and this is the one moment a fresh manor is built.
   const morning = fernMorningKeys(s.affinities?.fern ?? 0);
+  // …and what yesterday left steeping (AAA 4.11 cross-day investment): the
+  // Still Room's key on the sill. Read off the audited event spine — dusk
+  // keeps the closing day's events, so yesterday's drafts are still legible at
+  // dawn — so preparation crosses a night with no new save field to lose.
+  const carried = carryOverFrom(
+    s.recentEvents
+      .filter((e) => e.day === day.day - 1 && e.event.type === 'room-drafted')
+      .map((e) => (e.event as { cardId: string }).cardId),
+  );
+  const dawnKeys = morning + carried.keys;
   storeSet((prev) => ({
     manor: createManor(day.daySeed),
     draftOffer: null,
-    currencies: morning > 0
-      ? { ...prev.currencies, keys: prev.currencies.keys + morning }
+    currencies: dawnKeys > 0
+      ? { ...prev.currencies, keys: prev.currencies.keys + dawnKeys }
       : prev.currencies,
   }));
+}
+
+/** Prose for the morning: what the manor left out for her overnight. */
+export function dawnCarryOverLines(
+  s: Pick<ManorStore, 'day' | 'recentEvents'>,
+): string[] {
+  const today = s.day?.day;
+  if (today === undefined) return [];
+  return carryOverFrom(
+    s.recentEvents
+      .filter((e) => e.day === today - 1 && e.event.type === 'room-drafted')
+      .map((e) => (e.event as { cardId: string }).cardId),
+  ).lines;
 }
 
 /** Has Dewey been petted today? (Derives his reveal state — no extra save shape.) */
@@ -122,7 +147,12 @@ export function deweyPettedToday(s: Pick<ManorStore, 'day' | 'recentEvents'>): b
 }
 
 /** Dewey's answer, shown by the UI once petted today (deterministic). */
-export function deweyAnswer(s: Pick<ManorStore, 'manor' | 'currencies' | 'cabinet'>): boolean {
+export function deweyAnswer(
+  // `affinities` is optional so callers that predate the key-access term keep
+  // compiling; without it the prophecy simply reads the un-warmed weights.
+  s: Pick<ManorStore, 'manor' | 'currencies' | 'cabinet'> &
+    Partial<Pick<ManorStore, 'affinities'>>,
+): boolean {
   const manor = s.manor;
   if (!manor) return false;
   const sess = sessionFor(manor.daySeed);
@@ -130,6 +160,7 @@ export function deweyAnswer(s: Pick<ManorStore, 'manor' | 'currencies' | 'cabine
     gems: s.currencies.gems,
     declinedLastDraft: sess.declined,
     drawIndexFor: (key) => sess.drawIndex[key] ?? 0,
+    keyAccess: keyAccessFor(s.affinities?.fern ?? 0),
   });
 }
 
@@ -227,12 +258,26 @@ export const createManorSlice =
             declinedLastDraft: sess.declined,
             drawIndex: sess.drawIndex[key] ?? 0,
             scripted,
+            // Fern's arc, supply side (AAA 4.10d): key-bearing cards surface
+            // more often as her friendship warms. 0 → weights unchanged.
+            keyAccess: keyAccessFor(get().affinities?.fern ?? 0),
           },
         );
-        // The step to the door is spent on opening (AAA 4.6: cancelling costs
-        // only this). Even if it was her last, the offer still opens — dusk is
+        // ── THE WALK TO THE DOOR, PRICED AT *HER* ROW (AAA 4.6). ──────────
+        // She has not climbed anywhere yet: she is crossing the floor she is
+        // already standing on to look at three cards. So the door-step is
+        // ledgered at HER row, not the target's. The climb differential is
+        // charged in `chooseDraftCard`, when she actually steps through — so
+        // the total for a completed climb is unchanged, while a declined look
+        // costs the local rate instead of a whole storey. (Before this,
+        // opening and cancelling at an upper-storey door burned 5 of an
+        // 18-step budget and the modal's "Step back" promised the opposite.)
+        // Even if it was her last step, the offer still opens — dusk is
         // deferred by the day slice until the offer resolves (AAA 4.12/R.3).
-        get().applyStepEntry({ reason: 'move', delta: STEP_TABLE.move, at: Date.now(), roomKey: key });
+        get().applyStepEntry({
+          reason: 'move', delta: STEP_TABLE.move, at: Date.now(),
+          roomKey: cellKey(manor.playerCell),
+        });
         set({ draftOffer: offer });
       },
 
@@ -281,6 +326,21 @@ export const createManorSlice =
         const sess = sessionFor(manor.daySeed);
         sess.declined = draftOffer.cards.filter((c) => c.id !== card.id).map((c) => c.id);
         set({ manor: nextManor, draftOffer: null });
+        // ── THE CLIMB, CHARGED ON THE STEP THROUGH (AAA 4.6 / 4.10). ───────
+        // `openDraft` paid the local rate for the walk to the door; this is
+        // the difference between her old storey and her new one, keyed
+        // "from>to" so the audited `priceEntry` computes it (never the call
+        // site). Sum over both entries = moveAt(target row), so a completed
+        // climb costs exactly what it always did — only the DECLINED look got
+        // cheaper. Lateral and downward moves add nothing (the differential
+        // floors at 0 and a zero entry is not a story worth telling).
+        const climb = Math.min(0, moveAt(target.row) - moveAt(draftOffer.from.row));
+        if (climb < 0) {
+          get().applyStepEntry({
+            reason: 'move', delta: climb, at: Date.now(),
+            roomKey: climbKey(cellKey(draftOffer.from), key),
+          });
+        }
         get().recordEvent({ type: 'room-drafted', cellKey: key, cardId: card.id, category: card.category });
         applyDraftEffects(placed, manor);
         // Mystery rooms yield their clue the moment she steps in: the volume's
@@ -309,7 +369,10 @@ export const createManorSlice =
           draftOffer: rollOffer(
             deckFor(get().cabinet.unlockedCardIds), manor,
             draftOffer.from, draftOffer.atDoor, target,
-            { gems: get().currencies.gems, declinedLastDraft: sess.declined, drawIndex },
+            {
+              gems: get().currencies.gems, declinedLastDraft: sess.declined, drawIndex,
+              keyAccess: keyAccessFor(get().affinities?.fern ?? 0),
+            },
           ),
         });
       },

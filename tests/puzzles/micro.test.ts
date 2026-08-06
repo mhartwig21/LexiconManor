@@ -131,6 +131,36 @@ describe('cipher engine', () => {
     expect(done.state.status).toBe('won');
   });
 
+  /**
+   * ROUND 5. The Darkroom used to charge twice for the same answer and then
+   * forget it: `developCipher` had no memory, so a double-tap on "Develop the
+   * print" cost another −2 (−3 at tier 3) for literally zero new information,
+   * and the datum she DID pay for lived only in a 2s toast. The sibling room
+   * already shipped both fixes (`checkedSignatures`, persistent wrong marks).
+   */
+  it('re-developing an IDENTICAL mapping is free, and every paid print persists', () => {
+    let s = startCipher(cipherFixture);
+    for (const [c, p] of [['I', 'H'], ['F', 'E'], ['D', 'C'], ['B', 'A'], ['T', 'Z']] as const) {
+      s = assignCipher(s, c, p);
+    }
+    const first = developCipher(cipherFixture, s);
+    expect(first.result).toMatchObject({ kind: 'murky', correct: 5, total: 6, charged: true });
+    expect(first.state.prints).toEqual([{ correct: 5, total: 6 }]);
+
+    // The same mapping again: same answer, no charge, no duplicate print.
+    const again = developCipher(cipherFixture, first.state);
+    expect(again.result).toMatchObject({ kind: 'murky', correct: 5, total: 6, charged: false });
+    expect(again.state.prints).toEqual([{ correct: 5, total: 6 }]);
+
+    // A different mapping is a new claim, and it joins the tray.
+    const moved = assignCipher(again.state, 'T', 'Q');
+    const third = developCipher(cipherFixture, moved);
+    expect(third.result).toMatchObject({ charged: true });
+    expect(third.state.prints).toHaveLength(2);
+    // The run of counts is itself the memory prosthetic (AAA 3.3).
+    expect(third.state.prints.map((p) => p.correct)).toEqual([5, 5]);
+  });
+
   it('reveal fixes the most frequent blank-or-wrong letter and locks it', () => {
     const s = startCipher(cipherFixture);
     // Frequencies in "UIF DBU TBU": U=3, B=2, I=1, F=1, D=1, T=2 — U locked, so B or T (T first-appearance later; freq tie broken by frequency only → B=2, T=2, order stable by cipherLettersOf order: B before T? cipherLettersOf = U,I,F,D,B,T → stable sort keeps B first)
@@ -158,6 +188,22 @@ describe('cipher adapter', () => {
     const { events, outcome } = cipherAdapter.reduce(cipherFixture, s0, { type: 'develop' });
     expect(ofType(events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
     expect(outcome.perfect).toBe(true);
+  });
+
+  it('an identical re-develop is weight 0 — never charge twice for one claim', () => {
+    let s = cipherAdapter.start(cipherFixture, ctx(3)) as CipherRoomState;
+    for (const [c, p] of [['I', 'H'], ['F', 'E'], ['D', 'C'], ['B', 'A'], ['T', 'Z']] as const) {
+      s = cipherAdapter.reduce(cipherFixture, s, { type: 'pencil', cipherLetter: c, plain: p }).state as CipherRoomState;
+    }
+    const first = cipherAdapter.reduce(cipherFixture, s, { type: 'develop' });
+    expect(ofType(first.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
+    expect((first.state as CipherRoomState).costedMistakes).toBe(1);
+
+    const again = cipherAdapter.reduce(cipherFixture, first.state, { type: 'develop' });
+    expect(ofType(again.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+    expect((again.state as CipherRoomState).costedMistakes).toBe(1);
+    expect((again.state as CipherRoomState).lastFeedback)
+      .toMatchObject({ kind: 'murky', correct: 5, total: 6, charged: false });
   });
 
   it('a murky develop is a claim: weight 1, information kept, perfect forfeited', () => {
@@ -205,6 +251,82 @@ describe('shipped pools', () => {
       const distinct = cipherLettersOf(p);
       for (const r of p.reveals) expect(distinct, p.id).toContain(r);
     }
+  });
+
+  /**
+   * ROUND 5 LAYOUT GUARD — "the tray must fit the glass".
+   *
+   * Shots 32/33 showed the final rank of cipher cells sliced in half by the
+   * sticky `.room-deck` on a 33-letter phrase, and the pool runs to 41 letters
+   * / 48 characters. A cryptogram is attacked by word shape and letter
+   * frequency across the WHOLE phrase, so a hidden last word removes the
+   * primary solving channel — and the occlusion was worst at tier 3, the long,
+   * no-crib tier.
+   *
+   * This is a MODEL of the shipped geometry (ui/rooms/micro/micro.css +
+   * room-host.css) at the smallest supported glass, 375x667. It is not a
+   * browser measurement — scripts/round5-capture.mjs asserts the real bounding
+   * boxes — but it is deterministic, it runs on every commit, and it makes a
+   * CONTENT edit (a longer phrase) fail here rather than in her evening.
+   */
+  describe('the developing tray fits the glass (375x667)', () => {
+    // --- the shipped CSS, transcribed -------------------------------------
+    const VW = 375;
+    const VH = 667;
+    const CHROME = 50;            // tokens.css --chrome-h at max-height:700
+    const FOOTER = 55;            // .room-host__footer: 44px btn + 0.65rem pad
+    const MIC_PAD_X = 0.9 * 16;   // .mic padding-inline
+    const MIC_PAD_TOP = 0.4 * 16; // .mic padding-top at max-height:900
+    const MIC_GAP = 0.45 * 16;    // .mic gap at max-height:900
+    const HEAD = 0;               // .mic__head hidden at max-height:700
+    const DECK_PAD_TOP = 0.3 * 16;
+    const DECK_GAP = 0.35 * 16;   // .room-deck gap at max-height:700
+    const STATUS = 2.2 * 16;      // .mic-toastslot at max-height:900
+    const KEYS = 3 * 44 + 2 * 4;  // .mic-keys: QWERTY rows at max-height:700
+    const VERBS = 44;             // .mic-row
+    const PRINTS = 20;            // .dk-prints — one compact line, worst case
+    const SHEET_PAD_Y = 2 * 0.5 * 16;   // .dk-sheet padding at max-height:900
+    const SHEET_PAD_X = 2 * 0.4 * 16;
+    const WORD_GAP = 0.5 * 16;    // .dk-sheet column gap (dense, max-height:700)
+    const LETTER_GAP = 6;         // .dk-word gap
+    const clamp = (lo: number, v: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+    const deck = DECK_PAD_TOP + STATUS + DECK_GAP + KEYS + DECK_GAP + VERBS;
+    const stage = VH - CHROME - FOOTER;
+    // Worst case: the head gone, the prints line present, three .mic gaps.
+    const sheetBudget = stage - MIC_PAD_TOP - HEAD - 3 * MIC_GAP - PRINTS - deck;
+    const sheetInner = VW - MIC_PAD_X - SHEET_PAD_X;
+
+    /** Rows the flex-wrap tray takes for one phrase, at one cell width. */
+    const rowsFor = (ciphertext: string, cellW: number) => {
+      const widths = ciphertext.split(' ')
+        .map((w) => [...w].filter((c) => /[A-Z]/i.test(c)).length)
+        .filter((n) => n > 0)
+        .map((n) => n * cellW + (n - 1) * LETTER_GAP);
+      let rows = 1;
+      let used = -1;
+      for (const w of widths) {
+        const next = used < 0 ? w : used + WORD_GAP + w;
+        if (used >= 0 && next > sheetInner) { rows++; used = w; } else { used = next; }
+      }
+      return rows;
+    };
+
+    it('every shipped phrase clears the sticky deck at its shipped density', () => {
+      expect(sheetBudget).toBeGreaterThan(0);
+      for (const p of CIPHER_POOL) {
+        const glyphs = [...p.ciphertext].filter((c) => /[A-Z]/i.test(c)).length;
+        // CipherView adds `--dense` above 30 glyphs; micro.css sizes both.
+        const dense = glyphs > 30;
+        const cellW = dense ? clamp(24, 0.07 * VW, 32) : clamp(26, 0.08 * VW, 38);
+        const cellH = dense ? clamp(30, 0.046 * VH, 42) : clamp(38, 0.056 * VH, 52);
+        const rowGap = (dense ? 0.3 : 0.4) * 16;
+        const rows = rowsFor(p.ciphertext, cellW);
+        const height = rows * cellH + (rows - 1) * rowGap + SHEET_PAD_Y;
+        expect(height, `${p.id} (${glyphs} glyphs, ${rows} rows) overruns the deck`)
+          .toBeLessThanOrEqual(sheetBudget);
+      }
+    });
   });
 
   it('tier coverage: all three manor tiers shipped', () => {

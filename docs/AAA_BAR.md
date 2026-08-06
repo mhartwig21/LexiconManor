@@ -296,7 +296,9 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     (median row 3–5, never the Sanctum row) and is over in **2–5 minutes**. Refunds are
     what buy a real day.
   - **4.10b — the decent day is 10–15 MINUTES at the median, p90 ≤ 23.** Not 20 (the
-    pre-overhaul measurement) and not 29 at p90; measured median ~11.2, p90 ~21.5. That is **5–8 rooms** with 2–4 puzzles
+    pre-overhaul measurement) and not 29 at p90; measured median ~11.6, p90 ~21.5
+    (round 5: the day-1 pot and the lifted low tea ranks moved the median up from
+    ~11.2). That is **5–8 rooms** with 2–4 puzzles
     actually solved — the post-cull deck is anchor-heavy, so fewer rooms *is* the same
     amount of game. The simulation's clock must be calibrated against the **live deck
     mix** (`deckMixAt` derives category and micro/anchor shares from `BASE_DECK` ×
@@ -328,7 +330,10 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     across the friendship).
 - 4.11 At least two rooms/services implement *compounding* refunds (BP's Nursery
   pattern: "+N per future X") and at least one cross-day investment exists (Fern's
-  seeds; a tea variant).
+  seeds; a tea variant). **Round 5: satisfied** — `CARRY_OVER_EFFECTS`
+  (engine/manor/deck.ts) banks the Larder's +2 steps and the Still Room's +1 key
+  into the following dawn, read off the audited event spine with no save-schema
+  change.
 - 4.12 0 steps triggers a dusk fade ≤4s with walk-but-no-interact grace. Hitting 0
   mid-puzzle lets the puzzle finish; dusk fires on exit. String-table lint: zero
   occurrences of fail/lose/death/damage/defeat in shipped copy. **[COZY]**

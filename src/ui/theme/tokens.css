@@ -110,11 +110,11 @@
     --cat-parlor: #c9ab55;
     --cat-utility: #85ab8f;
     --cat-mystery: #a68cc0;
-    --shadow-lift: 0 4px 10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(231, 220, 198, 0.06);
-    --deckle: inset 0 1px 0 rgba(231, 220, 198, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+    --shadow-lift: 0 4px 10px rgba(14, 10, 6, 0.45), inset 0 1px 0 rgba(231, 220, 198, 0.06);
+    --deckle: inset 0 1px 0 rgba(231, 220, 198, 0.06), inset 0 -1px 0 rgba(14, 10, 6, 0.3);
     --grain-blend: screen;
     --grain-opacity: 0.05;
-    --vignette-ink: rgba(0, 0, 0, 0.2);
+    --vignette-ink: rgba(14, 10, 6, 0.2);
   }
 }
 
@@ -133,9 +133,9 @@
   --ink: #e7dcc6; --ink-soft: #c2b394; --ink-faint: #8f8168;
   --wax: #b04a41; --moss: #7d9a6e; --gilt: #c9a13f;
   --cat-puzzle: #7fa3c4; --cat-parlor: #c9ab55; --cat-utility: #85ab8f; --cat-mystery: #a68cc0;
-  --shadow-lift: 0 4px 10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(231, 220, 198, 0.06);
-  --deckle: inset 0 1px 0 rgba(231, 220, 198, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
-  --grain-blend: screen; --grain-opacity: 0.05; --vignette-ink: rgba(0, 0, 0, 0.2);
+  --shadow-lift: 0 4px 10px rgba(14, 10, 6, 0.45), inset 0 1px 0 rgba(231, 220, 198, 0.06);
+  --deckle: inset 0 1px 0 rgba(231, 220, 198, 0.06), inset 0 -1px 0 rgba(14, 10, 6, 0.3);
+  --grain-blend: screen; --grain-opacity: 0.05; --vignette-ink: rgba(14, 10, 6, 0.2);
 }
 
 /* Short screens (iPhone SE/8 at 375x667 and any compact standalone frame):

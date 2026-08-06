@@ -17,6 +17,7 @@ import { CARD_PREVIEWS } from '../../engine/manor/deck';
 import { draftCardStake } from '../../engine/economy/preview';
 import { useManorStore } from '../../app/store';
 import { RoomGlyph } from './CategoryGlyph';
+import { draftPriceWords, priceWords } from './pricing';
 
 const TIER_LABELS = ['', 'the ground floors', 'the middle landings', 'the high floors'];
 const ROMAN = ['', 'I', 'II', 'III'];
@@ -74,6 +75,17 @@ export default function DraftModal({
           <p className="bp-modal__sub">
             Three floorplans for {TIER_LABELS[tier]} · tier {ROMAN[tier]}
           </p>
+          {/* THE TWO PRICES, SAID OUT LOUD (AAA 4.6, round-5 audit). The look
+              was being charged at the TARGET storey's rate before the offer
+              opened, so a declined look upstairs cost a whole storey while
+              this footer promised "step back". Now the door-step is local, the
+              climb is charged on the way through, and both numbers are named
+              here as well as on the sheet. */}
+          {target && (
+            <p className="bp-modal__price">
+              {draftPriceWords(offer.from.row, target.row)}
+            </p>
+          )}
           {keyCost > 0 && (
             <p className="bp-modal__lock">
               <svg viewBox="0 0 14 16" width={12} height={14} aria-hidden="true">
@@ -151,7 +163,7 @@ export default function DraftModal({
             {offer.rerolled ? 'Rerolled' : 'Reroll · 1 gem'}
           </button>
           <button className="bp-btn bp-btn--quiet" {...pressProps} onClick={onCancel}>
-            Step back
+            Step back · {priceWords(offer.from.row)}
           </button>
         </footer>
       </div>

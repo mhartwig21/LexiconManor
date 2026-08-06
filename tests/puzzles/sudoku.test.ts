@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { RoomContext, RoomEvent } from '../../src/engine/rooms/room-puzzle';
 import { getRoomAdapter } from '../../src/engine/rooms/registry';
 import {
-  PEERS, TECHNIQUE_LEVEL, UNITS, blanksRemaining, clearPencil, countSolutions, digitCount,
-  gridToString, inkCell, isGiven, parseGrid, rateSudoku, revealCell, solveOne, solveWithTechniques,
-  startSudoku, togglePencil,
+  PEERS, TECHNIQUE_LEVEL, UNITS, balanceBooks, blanksRemaining, boxUnitOf, clearPencil,
+  countSolutions, digitCount, fillPencil, gridToString, inkCell, isGiven, nextTechniqueNudge,
+  parseGrid, rateSudoku, revealCell, solveOne, solveWithTechniques, startSudoku, togglePencil,
+  uninkCell, unitName, unsettledCells,
   type SudokuPuzzle, type SudokuTier, type TechniqueLevel,
 } from '../../src/engine/puzzles/sudoku';
 import {
@@ -23,10 +24,18 @@ import sudokuData from '../../content/generated/sudoku.json';
  * re-derived from the `givens` string, so the JSON's own tier/solution fields
  * are treated as claims to check, never as inputs to trust.
  *
- * Economy mapping is a review checkpoint against AAA §0.3: pencil marks are
- * free (exploration is thinking), inking is the claim (a contradiction is a
- * weight-1 mistake and never lands), consulting is a `hint`, and malformed
- * input costs nothing (AAA 3.2).
+ * Economy mapping is a review checkpoint against AAA §0.3. ROUND 5 REWRITE —
+ * the claim moved OFF the ink and onto a verb, because checking every ink
+ * against `puzzle.solution` sold a correctness oracle at the price of the
+ * sanctioned hint and let every level-2/3 technique be bisected instead of
+ * deduced. The contract this suite now pins:
+ *   - pencil marks, "pencil what fits" and lifting a figure: free, no events;
+ *   - an ink that duplicates a visible peer: MALFORMED — weight 0, no landing;
+ *   - any other ink: FREE, and it LANDS, right or wrong;
+ *   - "Balance the books": weight-1 `mistake`, reports N of M astray, and an
+ *     identical re-balance is free;
+ *   - the technique nudge: weight-1 `hint`, and it keeps `perfect`;
+ *   - consulting a figure: weight-2 `hint`, and it forfeits `perfect`.
  */
 
 const POOL = sudokuData as SudokuPuzzle[];
@@ -229,10 +238,9 @@ describe('play state', () => {
     expect(clearPencil(s, blank)).toBe(s);
   });
 
-  it('inks a true figure, sweeps it from peers, and refuses a false one', () => {
+  it('inks a true figure and sweeps it from peers', () => {
     const blank = [...fixture.givens].findIndex((c) => c === '.');
     const truth = Number(fixture.solution[blank]);
-    const wrong = truth === 9 ? 1 : truth + 1;
     let s = startSudoku(fixture);
 
     // Pencil the figure into a peer so the sweep has something to tidy.
@@ -240,20 +248,139 @@ describe('play state', () => {
     s = togglePencil(s, peer, truth);
     expect(s.pencil[peer]! & (1 << (truth - 1))).not.toBe(0);
 
-    const refused = inkCell(fixture, s, blank, wrong);
-    expect(refused.result).toBe('contradiction');
-    expect(refused.state).toBe(s);                    // the false figure never lands
-    expect(refused.state.values[blank]).toBe(0);
-
     const placed = inkCell(fixture, s, blank, truth);
     expect(placed.result).toBe('placed');
     expect(placed.state.values[blank]).toBe(truth);
     expect(placed.state.pencil[peer]! & (1 << (truth - 1))).toBe(0);
     expect(digitCount(placed.state, truth)).toBe(digitCount(s, truth) + 1);
 
-    // Malformed input is ignored, never a contradiction (AAA 3.2).
-    expect(inkCell(fixture, placed.state, blank, 5).result).toBe('ignored');
+    // A given is immutable; out-of-range keys are nothing at all (AAA 3.2).
+    const given = [...fixture.givens].findIndex((c) => c !== '.');
+    expect(inkCell(fixture, placed.state, given, 5).result).toBe('ignored');
     expect(inkCell(fixture, s, blank, 0).result).toBe('ignored');
+    expect(inkCell(fixture, s, blank, 10).result).toBe('ignored');
+  });
+
+  /**
+   * THE ROUND-5 LOAD-BEARING CASE. The leaf must let her be wrong: only a
+   * clash the board already showed her is refused, and a solution-wrong but
+   * board-legal figure lands and stays. If this ever regresses, an ink is a
+   * paid correctness oracle again and the Diabolical band is unenforceable.
+   */
+  it('refuses only a VISIBLE clash; a board-legal wrong figure lands and lifts', () => {
+    const s = startSudoku(fixture);
+    const blank = [...fixture.givens].findIndex((c) => c === '.');
+    const truth = Number(fixture.solution[blank]);
+
+    // (a) A figure already standing in a peer: malformed, free, never lands.
+    const clashPeer = PEERS[blank]!.find((p) => s.values[p] !== 0)!;
+    const clashDigit = s.values[clashPeer]!;
+    const clash = inkCell(fixture, s, blank, clashDigit);
+    expect(clash.result).toBe('malformed');
+    expect(clash.conflict).toBe(clashPeer);
+    expect(clash.state).toBe(s);
+
+    // (b) A board-legal figure that is NOT the solution's: it lands, unsettled.
+    const visible = new Set(PEERS[blank]!.map((p) => s.values[p]!).filter((v) => v !== 0));
+    const legalWrong = [1, 2, 3, 4, 5, 6, 7, 8, 9].find((d) => d !== truth && !visible.has(d));
+    expect(legalWrong, 'the fixture must admit a board-legal wrong figure').toBeDefined();
+    const landed = inkCell(fixture, s, blank, legalWrong!);
+    expect(landed.result).toBe('placed');
+    expect(landed.state.values[blank]).toBe(legalWrong);
+    expect(unsettledCells(fixture, landed.state)).toEqual([blank]);
+
+    // (c) Her own figure lifts back off, free; a given never does.
+    const lifted = uninkCell(fixture, landed.state, blank);
+    expect(lifted.values[blank]).toBe(0);
+    const given = [...fixture.givens].findIndex((c) => c !== '.');
+    expect(uninkCell(fixture, landed.state, given)).toBe(landed.state);
+
+    // (d) Re-inking over her own figure is an edit, not a new claim.
+    const edited = inkCell(fixture, landed.state, blank, truth);
+    expect(edited.result).toBe('placed');
+    expect(edited.state.values[blank]).toBe(truth);
+  });
+
+  it('balances the books: N of M astray, never named, and free to repeat', () => {
+    const s0 = startSudoku(fixture);
+    // Nothing set yet → nothing to weigh, and nothing to pay.
+    expect(balanceBooks(fixture, s0).report).toEqual({ astray: 0, settled: 0, charged: false });
+
+    const blanks = [...fixture.givens].flatMap((c, i) => (c === '.' ? [i] : []));
+    const right = blanks[0]!;
+    const wrongAt = blanks.find((i) => {
+      if (i === right) return false;
+      const visible = new Set(PEERS[i]!.map((p) => s0.values[p]!).filter((v) => v !== 0));
+      const t = Number(fixture.solution[i]);
+      return [1, 2, 3, 4, 5, 6, 7, 8, 9].some((d) => d !== t && !visible.has(d));
+    })!;
+    let s = inkCell(fixture, s0, right, Number(fixture.solution[right])).state;
+    const visible = new Set(PEERS[wrongAt]!.map((p) => s.values[p]!).filter((v) => v !== 0));
+    const t = Number(fixture.solution[wrongAt]);
+    const bad = [1, 2, 3, 4, 5, 6, 7, 8, 9].find((d) => d !== t && !visible.has(d))!;
+    s = inkCell(fixture, s, wrongAt, bad).state;
+
+    const first = balanceBooks(fixture, s);
+    expect(first.report).toEqual({ astray: 1, settled: 2, charged: true });
+    // The report never names the cell — only the counts come back.
+    expect(Object.keys(first.report)).toEqual(['astray', 'settled', 'charged']);
+    // The identical leaf weighed twice is the same claim: free.
+    expect(balanceBooks(fixture, first.state).report.charged).toBe(false);
+    // Change the leaf and it is a new claim again.
+    const moved = uninkCell(fixture, first.state, wrongAt);
+    expect(balanceBooks(fixture, moved).report).toEqual({ astray: 0, settled: 1, charged: true });
+  });
+
+  it('pencils what fits: free, idempotent, derived only from placed figures', () => {
+    const s = startSudoku(fixture);
+    const filled = fillPencil(s);
+    expect(fillPencil(filled)).toBe(filled);            // idempotent
+    for (let i = 0; i < 81; i++) {
+      if (s.values[i] !== 0) { expect(filled.pencil[i]).toBe(0); continue; }
+      let mask = 0x1ff;
+      for (const p of PEERS[i]!) {
+        const v = s.values[p]!;
+        if (v !== 0) mask &= ~(1 << (v - 1));
+      }
+      expect(filled.pencil[i], `cell ${i}`).toBe(mask);
+      // It never leaks the answer: the true figure survives, and so do others.
+      expect(filled.pencil[i]! & (1 << (Number(fixture.solution[i]) - 1))).not.toBe(0);
+    }
+    // The eraser undoes it cell by cell.
+    const blank = [...fixture.givens].findIndex((c) => c === '.');
+    expect(clearPencil(filled, blank).pencil[blank]).toBe(0);
+  });
+
+  it('the clerk names a real next step, and its unit, without naming a figure', () => {
+    const s = startSudoku(fixture);
+    const nudge = nextTechniqueNudge(s.values);
+    expect(nudge, 'a fresh shipped board must yield a next step').not.toBeNull();
+    expect(TECHNIQUE_LEVEL[nudge!.id]).toBeGreaterThanOrEqual(0);
+    if (nudge!.unit !== null) {
+      expect(nudge!.unit).toBeGreaterThanOrEqual(0);
+      expect(nudge!.unit).toBeLessThan(27);
+      expect(unitName(nudge!.unit)).toMatch(/^the \w+ (row|column|quarter)$/);
+    }
+    // Every shipped board's peak technique is reachable from its own start.
+    for (const p of SUDOKU_POOL.slice(0, 12)) {
+      expect(nextTechniqueNudge(parseGrid(p.givens)), p.id).not.toBeNull();
+    }
+    // A leaf the ladder cannot read at all buys nothing (the adapter charges
+    // nothing for it — no cost for zero information, AAA 3.2).
+    const broken = parseGrid(fixture.givens);
+    const a = broken.findIndex((v) => v === 0);
+    const b = PEERS[a]!.find((p) => broken[p] === 0)!;
+    broken[a] = 5;
+    broken[b] = 5;                                       // two peers, one figure
+    expect(nextTechniqueNudge(broken)).toBeNull();
+  });
+
+  it('names units in-world', () => {
+    expect(unitName(0)).toBe('the first row');
+    expect(unitName(9)).toBe('the first column');
+    expect(unitName(26)).toBe('the ninth quarter');
+    expect(boxUnitOf(0)).toBe(18);
+    expect(boxUnitOf(80)).toBe(26);
   });
 
   it('reaches won only when the last figure lands', () => {
@@ -331,8 +458,18 @@ describe('adapter selection', () => {
 describe('adapter economy mapping (AAA §0.3)', () => {
   const blank = [...fixture.givens].findIndex((c) => c === '.');
   const truth = Number(fixture.solution[blank]);
-  const wrong = truth === 9 ? 1 : truth + 1;
   const start = () => sudokuAdapter.start(fixture, ctx(2)) as SudokuRoomState;
+  /** A figure standing in one of `blank`'s peers — the one refusal that remains. */
+  const clashDigit = (() => {
+    const s = startSudoku(fixture);
+    return s.values[PEERS[blank]!.find((p) => s.values[p] !== 0)!]!;
+  })();
+  /** A figure no visible peer holds, and not the solution's — legal but astray. */
+  const legalWrong = (() => {
+    const s = startSudoku(fixture);
+    const visible = new Set(PEERS[blank]!.map((p) => s.values[p]!).filter((v) => v !== 0));
+    return [1, 2, 3, 4, 5, 6, 7, 8, 9].find((d) => d !== truth && !visible.has(d))!;
+  })();
 
   it('pencil marks are free: no events, no cost, unlimited', () => {
     let s = start();
@@ -348,23 +485,45 @@ describe('adapter economy mapping (AAA §0.3)', () => {
     expect(cleared.state.costedMistakes).toBe(0);
   });
 
-  it('a contradiction costs one weight-1 mistake and never lands', () => {
-    const out = sudokuAdapter.reduce(fixture, start(), { type: 'ink', cell: blank, digit: wrong });
-    expect(ofType(out.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
-    expect(out.events).toHaveLength(1);
-    expect(out.state.engine.values[blank]).toBe(0);
-    expect(out.state.costedMistakes).toBe(1);
-    expect(out.state.lastFeedback).toEqual({ kind: 'contradiction', cell: blank, digit: wrong });
-    expect(out.outcome).toEqual({ status: 'active', perfect: false });
+  it('"pencil what fits" is a free tool, not a hint: no events, keeps perfect', () => {
+    const out = sudokuAdapter.reduce(fixture, start(), { type: 'fill-pencil' });
+    expect(out.events).toEqual([]);
+    expect(out.outcome).toEqual({ status: 'active', perfect: true });
+    expect(out.state.engine.pencil.some((m) => m !== 0)).toBe(true);
+    expect(out.state.costedMistakes + out.state.hintsBought + out.state.nudgesBought).toBe(0);
   });
 
-  it('malformed input is free (AAA 3.2)', () => {
+  it('a VISIBLE clash is a free dead letter: weight 0, nothing lands', () => {
+    const out = sudokuAdapter.reduce(fixture, start(), { type: 'ink', cell: blank, digit: clashDigit });
+    expect(ofType(out.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+    expect(out.state.engine.values[blank]).toBe(0);
+    expect(out.state.costedMistakes).toBe(0);
+    expect(out.state.lastFeedback).toMatchObject({ kind: 'malformed', cell: blank, digit: clashDigit });
+    expect(out.outcome).toEqual({ status: 'active', perfect: true });
+  });
+
+  it('a board-legal WRONG figure is free and lands — the leaf lets her be wrong', () => {
+    const out = sudokuAdapter.reduce(fixture, start(), { type: 'ink', cell: blank, digit: legalWrong });
+    expect(ofType(out.events, 'mistake')).toEqual([]);
+    expect(ofType(out.events, 'hint')).toEqual([]);
+    expect(out.state.engine.values[blank]).toBe(legalWrong);
+    expect(out.state.costedMistakes).toBe(0);
+    expect(out.outcome).toEqual({ status: 'active', perfect: true });
+
+    // ...and lifting it back off is free too.
+    const lifted = sudokuAdapter.reduce(fixture, out.state, { type: 'unink', cell: blank });
+    expect(lifted.events).toEqual([]);
+    expect(lifted.state.engine.values[blank]).toBe(0);
+  });
+
+  it('nothing-to-do input is silent (AAA 3.2)', () => {
     const s = start();
     const given = [...fixture.givens].findIndex((c) => c !== '.');
     for (const action of [
       { type: 'ink', cell: given, digit: 5 },
       { type: 'ink', cell: blank, digit: 0 },
       { type: 'ink', cell: blank, digit: 10 },
+      { type: 'unink', cell: given },
     ] as const) {
       const out = sudokuAdapter.reduce(fixture, s, action);
       expect(out.events).toEqual([]);
@@ -380,20 +539,70 @@ describe('adapter economy mapping (AAA §0.3)', () => {
     expect(out.outcome.perfect).toBe(true);
   });
 
-  it('consulting the ledger is a step-priced hint that forfeits perfect', () => {
-    const out = sudokuAdapter.reduce(fixture, start(), { type: 'reveal-cell', cell: blank });
+  it('balancing the books is the ONE priced claim, and free to repeat', () => {
+    let s = start();
+    // Nothing set yet: zero information, therefore zero cost.
+    const empty = sudokuAdapter.reduce(fixture, s, { type: 'balance' });
+    expect(ofType(empty.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+    expect(empty.outcome.perfect).toBe(true);
+
+    s = sudokuAdapter.reduce(fixture, s, { type: 'ink', cell: blank, digit: legalWrong }).state;
+    const first = sudokuAdapter.reduce(fixture, s, { type: 'balance' });
+    expect(ofType(first.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
+    expect(first.state.lastFeedback).toEqual({
+      kind: 'balanced', astray: 1, settled: 1, charged: true,
+    });
+    expect(first.state.costedMistakes).toBe(1);
+    expect(first.outcome.perfect).toBe(false);
+
+    // The identical leaf is the identical claim: free the second time.
+    const again = sudokuAdapter.reduce(fixture, first.state, { type: 'balance' });
+    expect(ofType(again.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+    expect(again.state.costedMistakes).toBe(1);
+  });
+
+  it('the clerk\'s nudge is a weight-1 hint that KEEPS perfect (it teaches)', () => {
+    const out = sudokuAdapter.reduce(fixture, start(), { type: 'nudge' });
     expect(ofType(out.events, 'hint')).toEqual([{ type: 'hint', weight: 1 }]);
+    expect(out.state.nudgesBought).toBe(1);
+    expect(out.state.hintsBought).toBe(0);
+    expect(out.state.lastFeedback).toMatchObject({ kind: 'nudge' });
+    expect(out.outcome.perfect).toBe(true);
+  });
+
+  it('consulting a FIGURE is dearer than the nudge and forfeits perfect', () => {
+    const out = sudokuAdapter.reduce(fixture, start(), { type: 'reveal-cell', cell: blank });
+    expect(ofType(out.events, 'hint')).toEqual([{ type: 'hint', weight: 2 }]);
     expect(ofType(out.events, 'mistake')).toEqual([]);
     expect(out.state.hintsBought).toBe(1);
     expect(out.state.engine.revealed).toEqual([blank]);
+    expect(out.state.engine.values[blank]).toBe(truth);
     expect(out.outcome.perfect).toBe(false);
   });
 
-  it('solves clean → perfect; solves after a refusal → not perfect', () => {
+  it('a bought figure displaces her own wrong ink standing in its way', () => {
+    let s = start();
+    const target = PEERS[blank]!.find((p) => s.engine.values[p] === 0)!;
+    // Put the target's true figure in one of ITS peers, legally.
+    const targetTruth = Number(fixture.solution[target]);
+    const host = PEERS[target]!.find((p) => {
+      if (s.engine.values[p] !== 0) return false;
+      return !PEERS[p]!.some((q) => s.engine.values[q] === targetTruth);
+    });
+    if (host === undefined) return;                    // fixture-dependent; skip
+    s = sudokuAdapter.reduce(fixture, s, { type: 'ink', cell: host, digit: targetTruth }).state;
+    const out = sudokuAdapter.reduce(fixture, s, { type: 'reveal-cell', cell: target });
+    expect(out.state.engine.values[target]).toBe(targetTruth);
+    expect(out.state.engine.values[host]).toBe(0);      // hers was lifted, not hers named
+  });
+
+  it('solves clean → perfect; solves after a charged balance → not perfect', () => {
     for (const stumble of [false, true]) {
       let s = start();
       if (stumble) {
-        s = sudokuAdapter.reduce(fixture, s, { type: 'ink', cell: blank, digit: wrong }).state;
+        s = sudokuAdapter.reduce(fixture, s, { type: 'ink', cell: blank, digit: legalWrong }).state;
+        s = sudokuAdapter.reduce(fixture, s, { type: 'balance' }).state;
+        s = sudokuAdapter.reduce(fixture, s, { type: 'unink', cell: blank }).state;
       }
       let events: RoomEvent[] = [];
       let outcome = sudokuAdapter.reduce(fixture, s, { type: 'pencil', cell: blank, digit: 1 }).outcome;
@@ -409,6 +618,25 @@ describe('adapter economy mapping (AAA §0.3)', () => {
       expect(ofType(events, 'solved')).toEqual([{ type: 'solved', perfect: !stumble }]);
       expect(outcome).toEqual({ status: 'solved', perfect: !stumble });
       expect(s.engine.status).toBe('won');
+    }
+  });
+
+  /**
+   * The honesty this whole rewrite rests on: because a visible clash never
+   * lands, a FULL leaf has no duplicate in any unit, and the board's solution
+   * is generator-verified unique — so "full" and "correct" are the same event
+   * and `won` never fires on a wrong grid.
+   */
+  it('a full leaf is always the solution — win cannot fire on a wrong grid', () => {
+    for (const p of SUDOKU_POOL.slice(0, 8)) {
+      let s = startSudoku(p);
+      for (let cell = 0; cell < 81; cell++) {
+        if (s.values[cell] !== 0) continue;
+        s = inkCell(p, s, cell, Number(p.solution[cell])).state;
+      }
+      expect(s.status, p.id).toBe('won');
+      expect(gridToString(s.values), p.id).toBe(p.solution);
+      expect(balanceBooks(p, s).report.astray, p.id).toBe(0);
     }
   });
 });

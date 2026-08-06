@@ -26,15 +26,6 @@ import type { DayEndCause } from './events';
 
 export type GameMode = 'word-web' | 'hive' | 'twistle' | 'forgotten-word';
 
-/**
- * @deprecated Display alias only. Since round 4 the authoritative field on every
- * shipped puzzle is `tier` (1|2|3 → rows 0–2 / 3–4 / 5–6); `difficulty` maps 1:1
- * onto it (1→easy, 2→medium, 3→hard) and `'expert'` is retired from generated
- * content. Selectors MUST read `tier` — reaching for a difficulty *band* is what
- * let a tier-3 room serve a tier-2 puzzle. See rooms/adapters/tier-select.ts.
- */
-export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
-
 // ---------------------------------------------------------------------------
 // Puzzle content (produced offline by the content pipeline, shipped as JSON)
 // ---------------------------------------------------------------------------
@@ -42,7 +33,6 @@ export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
 /** NYT Connections-style: 16 words, 4 groups of 4. */
 export interface WordWebPuzzle {
   id: string;
-  difficulty: Difficulty;
   /** Authoritative row band (round 4): 1|2|3 → rows 0–2 / 3–4 / 5–6. */
   tier: Tier;
   groups: WordWebGroup[]; // exactly 4
@@ -60,7 +50,6 @@ export interface WordWebGroup {
 /** Spelling Bee-style: 7 letters, center required. */
 export interface HivePuzzle {
   id: string;
-  difficulty: Difficulty;
   /** Authoritative row band (round 4): 1|2|3 → rows 0–2 / 3–4 / 5–6. */
   tier: Tier;
   center: string; // single uppercase letter
@@ -77,7 +66,6 @@ export interface HivePuzzle {
 /** n×n grid word search (n defaults to 5). Words trace king-move-adjacent paths. */
 export interface TwistlePuzzle {
   id: string;
-  difficulty: Difficulty;
   /** Authoritative row band (round 4): 1|2|3 → rows 0–2 / 3–4 / 5–6. */
   tier: Tier;
   /**
@@ -98,7 +86,11 @@ export interface TwistlePuzzle {
 
 export interface TwistleRules {
   minLength: number; // usually 4
-  /** If true, every submitted word's path must pass through the center tile (index 12). */
+  /**
+   * If true, every submitted word's path must pass through the board's centre
+   * tile — `centerIndex(size)` in engine/twistle.ts, which is 12 on a 5×5 and
+   * 14 on the tier-3 6×6. Never hard-code the index.
+   */
   centerRequired: boolean;
 }
 
@@ -415,4 +407,8 @@ export interface DayRecord {
   roomsSolved: number;
   stepsSpent: number;
   fragmentsFound: number;
+  /** Everything the manor gave back today: solves, perfects, tea, snacks. */
+  stepsRefunded?: number;
+  /** Highest 0-based row she stood on (see `rowName` in economy/steps for prose). */
+  highestRow?: number;
 }

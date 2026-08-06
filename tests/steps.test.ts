@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  appendEntry, createLedger, dayStartTotal, doorLockedAt, fernMorningKeys, ledgerTotal, moveAt,
-  priceEntry, stepsRefunded, stepsRemaining, stepsSpent, teaBonus,
-  BASE_DAY_BUDGET, DOOR_LOCKS, KEY_SUPPLY, MOVE_COST_BY_ROW, SANCTUM_GUESS_COST, STEP_TABLE,
-  TEA_BY_RANK,
+  appendEntry, climbKey, createLedger, dayStartTotal, doorLockedAt, fernMorningKeys,
+  firstMorningPot, highestRowVisited, keyAccessFor, keyCardWeightMultiplier, ledgerTotal,
+  moveAt, moveRowOf, priceEntry, rowName, stepsRefunded, stepsRemaining, stepsSpent,
+  teaArcPoints, teaBonus,
+  BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, FIRST_MORNING_POT, KEY_SUPPLY, MOVE_COST_BY_ROW,
+  SANCTUM_GUESS_COST, STEP_TABLE, TEA_ARC, TEA_BY_RANK,
 } from '../src/engine/economy/steps';
 import { draftCardStake } from '../src/engine/economy/preview';
 import type { StepEntry, StepLedger } from '../src/engine/types';
@@ -286,17 +288,169 @@ describe('the key supply — the padlock arc (AAA 4.10d)', () => {
     expect(fernMorningKeys(Number.NaN)).toBe(0);
   });
 
+  it('opens at an affinity she can actually reach (the round-5 audit)', () => {
+    // A gate whose key is unreachable is a wall. The table used to open at 4
+    // points and Fern's whole authored dialogue grants 3 (FERN_ARC, asserted
+    // against her JSON in tests/economy-simulation.test.ts) — so the first
+    // dawn key now lands inside that budget.
+    const authoredCeiling = FERN_ARC.meetPoints + FERN_ARC.questPoints;
+    expect(fernMorningKeys(authoredCeiling)).toBeGreaterThan(0);
+    expect(fernMorningKeys(2)).toBe(1);
+  });
+
   it('shortens the climb and never buys it: dawn keys open fewer gates than an ascent needs', () => {
     // A straight ascent drafts into rows 4, 5 and 6 once each, so it needs
-    // 0.35 + 0.55 + 0.8 ≈ 1.7 keys on average. Fern must never cover that on
-    // her own, or the padlock stops being a gate the day she warms up.
+    // 0.35 + 0.55 + 0.8 ≈ 1.7 keys on average. What her AUTHORED friendship
+    // can reach must never cover that, or the padlock stops being a gate the
+    // day she warms up.
     const expectedGates = [4, 5, 6]
       .reduce((sum, row) => sum + DOOR_LOCKS.chanceByRow[row]! * DOOR_LOCKS.keyCost, 0);
-    expect(Math.max(...KEY_SUPPLY.fernMorningKeys)).toBeLessThan(expectedGates);
+    const authoredCeiling = FERN_ARC.meetPoints + FERN_ARC.questPoints;
+    expect(fernMorningKeys(authoredCeiling)).toBeLessThan(expectedGates);
+    // Past it — weeks of bookmarks, deep into a campaign — the sill can hold a
+    // second key, and even then never more than the ascent has locked storeys.
+    const lockedStoreys = [4, 5, 6].filter((r) => DOOR_LOCKS.chanceByRow[r]! > 0).length;
+    expect(Math.max(...KEY_SUPPLY.fernMorningKeys)).toBeLessThan(lockedStoreys);
   });
 
   it('keeps the gate real on day one: no key arrives before the friendship does', () => {
     expect(fernMorningKeys(0)).toBe(0);
     expect(teaBonus(0)).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND-5 AUDIT — the four economy findings, pinned at the ledger level.
+// ---------------------------------------------------------------------------
+
+describe('the two-part walk: a declined look costs the LOCAL rate (AAA 4.6)', () => {
+  it('prices the walk to a door at the row she is standing on', () => {
+    // Before the audit, `openDraft` ledgered the move at the TARGET cell's
+    // rate before the offer even opened, so backing out of a look at an upper
+    // door burned a whole storey — 28% of the base budget — while the modal
+    // promised "step back". The door-step is now local, always.
+    for (let row = 0; row < MOVE_COST_BY_ROW.length; row++) {
+      const priced = priceEntry({ reason: 'move', delta: -1, at: 0, roomKey: `2,${row}` });
+      expect(priced.delta).toBe(moveAt(row));
+    }
+  });
+
+  it('charges the climb as a differential, so a completed climb costs the same', () => {
+    for (let from = 0; from < MOVE_COST_BY_ROW.length - 1; from++) {
+      const to = from + 1;
+      const door = priceEntry({ reason: 'move', delta: 0, at: 0, roomKey: `2,${from}` });
+      const climb = priceEntry({
+        reason: 'move', delta: 0, at: 0, roomKey: climbKey(`2,${from}`, `2,${to}`),
+      });
+      // The invariant the retune's pinned simulation targets depend on: the
+      // two entries together are exactly what one move into `to` always cost.
+      expect(door.delta + climb.delta).toBe(moveAt(to));
+      // …and the look on its own is only ever the local rate.
+      expect(door.delta).toBe(moveAt(from));
+    }
+  });
+
+  it('never pays her to walk downstairs', () => {
+    const down = priceEntry({
+      reason: 'move', delta: 0, at: 0, roomKey: climbKey('2,5', '2,2'),
+    });
+    expect(down.delta).toBe(0);
+  });
+
+  it('reads the destination row back out of either key shape', () => {
+    expect(moveRowOf('2,4')).toBe(4);
+    expect(moveRowOf(climbKey('2,3', '2,4'))).toBe(4);
+    expect(moveRowOf(undefined)).toBeNull();
+    expect(moveRowOf('sim-7')).toBeNull();
+  });
+});
+
+describe("the night digest's two missing numbers (AAA 4.10 / R.3)", () => {
+  it('derives the highest storey she stood on from the move entries', () => {
+    let l = createLedger();
+    expect(highestRowVisited(l)).toBe(0);
+    l = appendEntry(l, { reason: 'move', delta: 0, at: 0, roomKey: '2,1' });
+    l = appendEntry(l, { reason: 'move', delta: 0, at: 0, roomKey: climbKey('2,1', '2,2') });
+    l = appendEntry(l, { reason: 'solve', delta: 6, at: 0, roomKey: '2,2' });
+    l = appendEntry(l, { reason: 'move', delta: 0, at: 0, roomKey: '2,1' });  // walked back
+    expect(highestRowVisited(l)).toBe(2);
+  });
+
+  it('names every storey, so the digest never speaks in grid coordinates', () => {
+    for (let row = 0; row < MOVE_COST_BY_ROW.length; row++) {
+      expect(rowName(row)).toMatch(/[a-z]/);
+      expect(rowName(row)).not.toMatch(/\d/);
+    }
+    expect(new Set(MOVE_COST_BY_ROW.map((_, r) => rowName(r))).size)
+      .toBe(MOVE_COST_BY_ROW.length);
+  });
+
+  it('counts everything the manor gave back', () => {
+    let l = createLedger();
+    l = appendEntry(l, { reason: 'tea', delta: 5, at: 0 });
+    l = appendEntry(l, { reason: 'move', delta: -3, at: 0, roomKey: '2,3' });
+    l = appendEntry(l, { reason: 'solve', delta: 6, at: 0 });
+    l = appendEntry(l, { reason: 'perfect', delta: 2, at: 0 });
+    expect(stepsRefunded(l)).toBe(13);
+  });
+});
+
+describe('the tea arc has a LIVE source (AAA 4.10d, round-5 audit)', () => {
+  it('warms one point every other morning, to a ceiling TEA_BY_RANK can use', () => {
+    expect(teaArcPoints(1)).toBe(0);                 // day 1: they have just met
+    expect(teaArcPoints(2)).toBe(1);
+    expect(teaArcPoints(TEA_ARC.morningsPerPoint * TEA_ARC.maxPoints)).toBe(TEA_ARC.maxPoints);
+    expect(teaArcPoints(999)).toBe(TEA_ARC.maxPoints);
+    expect(teaArcPoints(0)).toBe(0);
+    expect(teaArcPoints(-4)).toBe(0);
+    for (let day = 1; day < 40; day++) {
+      expect(teaArcPoints(day + 1)).toBeGreaterThanOrEqual(teaArcPoints(day));
+    }
+  });
+
+  it('reaches the full pot — which raw affinity points never could', () => {
+    // TEA_BY_RANK's top rank needs `maxPoints`; Bramble's authored file grants
+    // 2 in its entire lifetime, so before this the published campaign curve was
+    // measured against warmth the live game could not draw.
+    expect(TEA_ARC.maxPoints).toBe(TEA_BY_RANK.length - 1);
+    expect(teaBonus(teaArcPoints(TEA_ARC.morningsPerPoint * TEA_ARC.maxPoints)))
+      .toBe(TEA_BY_RANK.at(-1));
+  });
+
+  it('lifts the FIRST evening without touching the base budget', () => {
+    // AAA 4.10b: day 1 starts at 0 affinity, so the very first evening ran on
+    // the bare 18 and measured under the 10–15 floor. A scripted welcome pot
+    // fixes it; raising BASE_DAY_BUDGET to 20 would equal the bare ascent cost
+    // and break the headline invariant, so it stays at 18.
+    expect(firstMorningPot(1)).toBe(FIRST_MORNING_POT);
+    expect(firstMorningPot(2)).toBe(0);
+    expect(firstMorningPot(30)).toBe(0);
+    expect(BASE_DAY_BUDGET).toBe(18);
+    // The pot is a REFILL, ledgered like tea — the headline invariant is about
+    // the base budget, and the base budget is untouched. A bare, perfectly
+    // efficient ascent (rows 1…6) still costs more than a day's budget.
+    const bareAscent = [1, 2, 3, 4, 5, 6].reduce((sum, row) => sum - moveAt(row), 0);
+    expect(bareAscent).toBeGreaterThan(BASE_DAY_BUDGET);
+    // …and the welcome pot must not, on its own, turn day 1 into a Sanctum run:
+    // it lifts the first evening's LENGTH, not its ceiling. (The campaign
+    // consequence — under 8% of day 1s reach the top — is pinned in
+    // tests/economy-simulation.test.ts.)
+    expect(FIRST_MORNING_POT).toBeLessThan(teaBonus(TEA_ARC.maxPoints));
+  });
+});
+
+describe('key ACCESS is a live ramp, not a flat line (AAA 4.10d)', () => {
+  it('is neutral before the friendship and multiplies after it', () => {
+    expect(keyAccessFor(0)).toBe(0);
+    expect(keyAccessFor(-2)).toBe(0);
+    expect(keyCardWeightMultiplier(0)).toBe(1);
+    expect(keyCardWeightMultiplier(keyAccessFor(FERN_ARC.meetPoints + FERN_ARC.questPoints)))
+      .toBeGreaterThan(1);
+    expect(keyAccessFor(99)).toBe(1);                 // clamped
+    expect(keyCardWeightMultiplier(5)).toBe(keyCardWeightMultiplier(1));
+  });
+
+  it('is fully warmed by the points her authored dialogue can actually reach', () => {
+    expect(keyAccessFor(FERN_ARC.meetPoints + FERN_ARC.questPoints)).toBe(1);
   });
 });

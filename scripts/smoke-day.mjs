@@ -11,9 +11,13 @@
  *     budget, so a bare ascent costs more than the whole day. Day 1 must
  *     therefore NOT reach the Sanctum row (row 6); we track the high-water
  *     row across the entire day and fail if it touches the top.
- *   - The Counting House (sudoku) is entered and played: pencil marks are
- *     free and silent, an inked contradiction is a costed claim that never
- *     lands on the leaf, and consulting the ledger is a hint.
+ *   - The Counting House (sudoku) is entered and played.
+ *
+ * ROUND 5: the Counting House pass follows the rewritten play model — pencil
+ * marks are free, a VISIBLE clash is refused but free, a board-legal figure
+ * lands free (right or wrong), "Balance the books" is the one priced claim and
+ * is free to repeat on an unchanged leaf, and consulting a FIGURE is strictly
+ * dearer than the claim (or guessing would be the cheap oracle again).
  *
  * Uses system Edge (channel 'msedge') — NEVER downloads playwright browsers.
  * Exactly ONE browser instance.
@@ -353,8 +357,8 @@ try {
     if (i !== blank && (r === br || c === bc || sameBox)) peers.push(i);
   }
   const wrong = Number(peers.map((i) => board.givens[i]).find((ch) => ch !== '.' && Number(ch) !== answer));
-  if (!wrong) { fail('no guaranteed-contradiction figure available on this leaf'); throw new Error('stop'); }
-  log(`cell ${blank}: true figure ${answer}, guaranteed contradiction ${wrong}`);
+  if (!wrong) { fail("no visible-clash figure available on this leaf"); throw new Error("stop"); }
+  log(`cell ${blank}: true figure ${answer}, visible clash ${wrong}`);
 
   const selectCell = async (i) => {
     await page.locator('.ch-cell').nth(i).dispatchEvent('pointerdown');
@@ -366,10 +370,21 @@ try {
   };
   const stepsNow = async () => (await store()).steps;
 
-  // 9a. Pencil marks are unlimited, silent and FREE (owner directive: all
-  //     exploration is free; only a claim costs).
+  // ═══ ROUND 5 CONTRACT ═══ The claim moved OFF the ink and onto a verb.
+  // Checking every ink against the solution sold a correctness oracle at the
+  // price of the sanctioned hint, and at a bivalue cell it resolved the cell
+  // outright — so every level-2/3 technique the tier ladder is built on could
+  // be bisected instead of deduced. What this smoke pass now pins:
+  //   9a pencil marks are free · 9b a VISIBLE clash is refused but FREE ·
+  //   9c a board-legal figure lands free, right or wrong · 9d "Balance the
+  //   books" is the one priced claim · 9e consulting a FIGURE is the dear one.
+  const PENCIL_TOGGLE = '.ch-tools--free .ch-tool:first-child';
+  const BALANCE = '.ch-tools--priced .ch-tool:nth-child(1)';
+  const CONSULT = '.ch-tools--priced .ch-tool:nth-child(3)';
+
+  // 9a. Pencil marks are unlimited, silent and FREE.
   await selectCell(blank);
-  await page.click('.ch-tool');                      // Pencil — on
+  await page.click(PENCIL_TOGGLE);                   // Pencil — on
   const prePencil = await stepsNow();
   await pressKey(answer);
   await pressKey(wrong);
@@ -380,23 +395,24 @@ try {
   else ok('pencil marks are free and silent — thinking costs nothing');
   await shot('14-counting-house-pencil');
 
-  // 9b. Ink a contradiction: a deliberate claim. It costs, and the false
-  //     figure never lands on the leaf (AAA R.3 — costs read as spending).
-  await page.click('.ch-tool');                      // Pencil — off
+  // 9b. Ink a VISIBLE clash: the leaf already showed her that figure standing
+  //     in a peer, so it is a dead letter — shake + reason, nothing lands, and
+  //     NOTHING is charged (AAA 3.2 / R.1).
+  await page.click(PENCIL_TOGGLE);                   // Pencil — off
   await selectCell(blank);
-  const preWrong = await stepsNow();
+  const preClash = await stepsNow();
   await pressKey(wrong);
   await page.waitForTimeout(400);
-  const postWrong = await stepsNow();
+  const postClash = await stepsNow();
   const landed = await page.locator('.ch-cell').nth(blank).locator('.ch-cell__fig').count();
-  log(`inked a contradiction (${wrong}): steps ${preWrong} -> ${postWrong}, figure landed: ${landed > 0}`);
-  if (postWrong >= preWrong) fail('an inked contradiction must cost steps');
-  else ok(`contradiction costs ${preWrong - postWrong} steps`);
+  log(`inked a visible clash (${wrong}): steps ${preClash} -> ${postClash}, figure landed: ${landed > 0}`);
+  if (postClash !== preClash) fail(`a pre-warned clash must be free, saw ${preClash} -> ${postClash}`);
+  else ok('a visible clash is a free dead letter — the board warned her first');
   if (landed > 0) fail('the refused figure landed on the leaf');
   else ok('the refused figure never reached the ledger');
   await shot('15-counting-house-refused');
 
-  // 9c. Ink the true figure: a correct claim is free and stays.
+  // 9c. Ink the true figure: it is free and it stays.
   await selectCell(blank);
   const preRight = await stepsNow();
   await pressKey(answer);
@@ -406,24 +422,163 @@ try {
   log(`inked the true figure (${answer}): steps ${preRight} -> ${postRight}, cell now "${inked}"`);
   if (String(inked) !== String(answer)) fail(`true figure did not land (saw "${inked}")`);
   else ok('the true figure inks and stays');
-  if (postRight !== preRight) fail(`a correct claim must be free, saw ${preRight} -> ${postRight}`);
-  else ok('a correct claim is free');
+  if (postRight !== preRight) fail(`inking must be free, saw ${preRight} -> ${postRight}`);
+  else ok('inking is free — the claim is a verb, not a figure');
 
-  // 9d. Consulting the ledger is a hint — costed, and it fills a cell.
+  // 9d. "Balance the books" is the room's ONE priced claim, and weighing the
+  //     identical leaf twice is free (never charge twice for one claim).
+  const preBalance = await stepsNow();
+  await page.click(BALANCE);
+  await page.waitForTimeout(400);
+  const postBalance = await stepsNow();
+  log(`balanced the books: steps ${preBalance} -> ${postBalance}`);
+  if (postBalance >= preBalance) fail('balancing the books must cost a claim');
+  else ok(`balancing the books costs ${preBalance - postBalance} steps`);
+  await shot('16a-counting-house-balance');
+  await page.click(BALANCE);
+  await page.waitForTimeout(400);
+  const postRebalance = await stepsNow();
+  if (postRebalance !== postBalance) fail('an identical re-balance must be free');
+  else ok('weighing the identical leaf twice is free');
+
+  // 9e. Consulting a FIGURE is the dead-end button — dearer than the claim.
   const preHint = await stepsNow();
-  await page.click('.ch-tools .ch-tool:nth-child(2)');
+  await page.click(CONSULT);
   await page.waitForTimeout(400);
   const postHint = await stepsNow();
-  log(`consulted the ledger: steps ${preHint} -> ${postHint}`);
-  if (postHint >= preHint) fail('consulting the ledger must cost a hint');
-  else ok(`consult costs ${preHint - postHint} steps`);
+  log(`consulted a figure: steps ${preHint} -> ${postHint}`);
+  if (postHint >= preHint) fail('consulting a figure must cost a hint');
+  else if (preHint - postHint <= preBalance - postBalance) {
+    fail(`consulting a figure (${preHint - postHint}) must cost MORE than a claim `
+      + `(${preBalance - postBalance}) — otherwise the oracle is the cheap option`);
+  } else ok(`consult costs ${preHint - postHint} steps, dearer than the claim`);
   await shot('16-counting-house-consult');
 
   await page.waitForTimeout(200);
   await shot('17-counting-house-played');
 
+  // -------------------------------------------------------------------------
+  // 10. THE PADLOCK (AAA 4.6 / round 5). The economy's hardest gate must
+  //     refuse for FREE: no key → no offer, no ledger entry, no step. This is
+  //     the rule that stops a player paying to walk up to a door she cannot
+  //     read, so it is asserted at the ledger, not just at the step meter.
+  //
+  //     Locks only bite on rows 4–6 and only on DRAFT targets (a placed room
+  //     is always walkable), so we plant a room high in the house, stand in
+  //     it, and empty her pockets — then look for a padlocked door she cannot
+  //     pay for. We scan candidate cells because the roll is seeded: any given
+  //     cell may legitimately be unlocked.
+  // -------------------------------------------------------------------------
+  await page.click('.room-host__footer .btn').catch(() => {});
+  await page.waitForTimeout(400);
+  await page.waitForSelector('.bp-sheet');
+
+  const planted = await page.evaluate(() => {
+    const st = window.__manorStore.getState();
+    // Rows 5 then 4: row 6 doors lock at 80%, row 5 at 55%.
+    for (const row of [5, 4]) {
+      for (let col = 0; col < 5; col++) {
+        const cell = { col, row };
+        const key = `${col},${row}`;
+        window.__manorStore.setState({
+          currencies: { ...st.currencies, keys: 0 },
+          manor: {
+            ...st.manor,
+            playerCell: cell,
+            rooms: {
+              ...st.manor.rooms,
+              [key]: {
+                cardId: 'reading-nook', cell, doors: ['N', 'S', 'E', 'W'],
+                solved: true, kind: 'parlor', puzzleId: undefined,
+              },
+            },
+          },
+        });
+        return key; // one plant is enough; the DOM tells us if it locked
+      }
+    }
+    return null;
+  });
+  await page.waitForTimeout(300);
+
+  // Find a padlocked door she cannot pay for. If this plant did not roll a
+  // lock, walk the other candidate cells until one does.
+  let lockedGhost = await page.$('.bp-ghost--locked.bp-ghost--shut');
+  if (!lockedGhost) {
+    for (const [col, row] of [[1, 5], [2, 5], [3, 5], [4, 5], [0, 4], [1, 4], [2, 4], [3, 4], [4, 4]]) {
+      await page.evaluate(([c, r]) => {
+        const st = window.__manorStore.getState();
+        const cell = { col: c, row: r };
+        window.__manorStore.setState({
+          currencies: { ...st.currencies, keys: 0 },
+          manor: {
+            ...st.manor,
+            playerCell: cell,
+            rooms: {
+              ...st.manor.rooms,
+              [`${c},${r}`]: {
+                cardId: 'reading-nook', cell, doors: ['N', 'S', 'E', 'W'],
+                solved: true, kind: 'parlor', puzzleId: undefined,
+              },
+            },
+          },
+        });
+      }, [col, row]);
+      await page.waitForTimeout(200);
+      lockedGhost = await page.$('.bp-ghost--locked.bp-ghost--shut');
+      if (lockedGhost) break;
+    }
+  }
+
+  if (!lockedGhost) {
+    fail('no padlocked door found anywhere on rows 4–5 — the padlock is not reachable');
+  } else {
+    const before = await page.evaluate(() => {
+      const s = window.__manorStore.getState();
+      return { steps: s.stepsRemaining(), ledger: s.ledger.entries.length, keys: s.currencies.keys };
+    });
+    log(`padlock: standing at ${planted} with ${before.keys} keys, ${before.steps} steps, `
+      + `${before.ledger} ledger entries`);
+
+    // The ghost carries aria-disabled="true" (there is nothing to buy), which
+    // Playwright's actionability check reads as "not enabled". A real finger
+    // still lands on it and still gets the shrug, so dispatch the event rather
+    // than asserting through the a11y gate.
+    await lockedGhost.dispatchEvent('click');
+    await page.waitForTimeout(150);
+    const shrugged = await page.$('.bp-padlock-slot--refused');
+    await shot('18-padlock-refused');
+    await page.waitForTimeout(500);
+
+    const after = await page.evaluate(() => {
+      const s = window.__manorStore.getState();
+      return {
+        steps: s.stepsRemaining(),
+        ledger: s.ledger.entries.length,
+        offer: s.draftOffer ? 1 : 0,
+      };
+    });
+    log(`padlock: after tapping — steps ${after.steps}, ledger ${after.ledger}, offer ${after.offer}`);
+
+    if (after.steps !== before.steps) {
+      fail(`a padlocked door charged ${before.steps - after.steps} steps — refusal must be free`);
+    } else ok('a padlocked door refuses without charging a step');
+
+    if (after.ledger !== before.ledger) {
+      fail(`a padlocked door wrote ${after.ledger - before.ledger} ledger entries — refusal must not be ledgered`);
+    } else ok('a padlocked door writes nothing to the ledger');
+
+    if (after.offer) fail('a padlocked door opened a draft offer with no key in her pocket');
+    else ok('a padlocked door opens no offer without a key');
+
+    if (!shrugged) fail('the padlock refused silently — no shrug, no signal (AAA 3.2)');
+    else ok('the padlock shrugs, so the refusal is visible');
+  }
+
   if (errors.length) fail('console/page errors: ' + errors.slice(0, 5).join(' | '));
-  log(process.exitCode ? 'DONE WITH FAILURES' : 'DONE — full day played into day 2, and the Counting House played through');
+  log(process.exitCode
+    ? 'DONE WITH FAILURES'
+    : 'DONE — full day played into day 2, the Counting House played through, and the padlock refused for free');
 } catch (e) {
   fail(e.message);
   await shot('99-failure').catch(() => {});

@@ -28,13 +28,26 @@ export interface CipherEngineState {
   locked: string[];
   /** Develop attempts (claims), for feedback copy. */
   attempts: number;
+  /**
+   * Mapping signatures already developed. Re-developing an IDENTICAL mapping
+   * yields zero new information, so it costs zero (AAA 3.2) — the same rule
+   * the Linen Closet's `checkedSignatures` already ships.
+   */
+  developedSignatures: string[];
+  /**
+   * Every distinct print she has paid for, oldest first — the datum used to
+   * live only in a 2s toast, so after three prints she had spent 6–9 steps and
+   * could see none of what she bought. Earned information persists (AAA 3.3).
+   */
+  prints: { correct: number; total: number }[];
   status: 'playing' | 'won';
 }
 
 export type DevelopResult =
   | { kind: 'developed' }
   | { kind: 'incomplete'; missing: number }
-  | { kind: 'murky'; correct: number; total: number };
+  /** charged=false when this exact mapping was already developed. */
+  | { kind: 'murky'; correct: number; total: number; charged: boolean };
 
 const LETTER = /[A-Z]/;
 
@@ -70,7 +83,12 @@ export function startCipher(puzzle: CipherPuzzle): CipherEngineState {
       locked.push(upper);
     }
   }
-  return { guesses, locked, attempts: 0, status: 'playing' };
+  return { guesses, locked, attempts: 0, developedSignatures: [], prints: [], status: 'playing' };
+}
+
+/** The claim, as a comparable string: sorted cipher→plain pairs. */
+export function mappingSignature(state: CipherEngineState): string {
+  return Object.keys(state.guesses).sort().map((c) => `${c}${state.guesses[c]}`).join('');
 }
 
 /** Pencil in (or erase, plain = null) a guess. Free; locked cells ignore it. */
@@ -109,9 +127,20 @@ export function developCipher(
       result: { kind: 'developed' },
     };
   }
+  // A double-tap on "Develop the print" used to cost another −2 (−3 at tier 3)
+  // for literally zero new information: 6 steps of an 18-step day. The same
+  // mapping is the same claim, so it is answered again for free, and the
+  // answer she paid for goes on the paper (`prints`), not into a 2s toast.
+  const sig = mappingSignature(state);
+  const charged = !state.developedSignatures.includes(sig);
   return {
-    state: { ...state, attempts: state.attempts + 1 },
-    result: { kind: 'murky', correct, total: letters.length },
+    state: {
+      ...state,
+      attempts: state.attempts + 1,
+      developedSignatures: charged ? [...state.developedSignatures, sig] : state.developedSignatures,
+      prints: charged ? [...state.prints, { correct, total: letters.length }] : state.prints,
+    },
+    result: { kind: 'murky', correct, total: letters.length, charged },
   };
 }
 

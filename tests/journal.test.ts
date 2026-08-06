@@ -12,8 +12,10 @@ import type { VolumeState } from '../src/engine/types';
 import { freshVolumeState, openedLetterFlag, solvedFlag, type VolumeContent } from '../src/engine/volume';
 import {
   alphabetFacts, crossRefs, definitionSlots, filedToday, foundByKind, guessHistory,
-  journalNudge, letterBoxes, nextUninterpreted, sanctumReadiness, THIN_FILE_THRESHOLD,
+  guessVerdict, journalNudge, letterBoxes, nextUninterpreted, sanctumReadiness,
+  THIN_FILE_THRESHOLD, VERDICT_TOKENS, type GuessVerdict,
 } from '../src/engine/journal';
+import { getDialogueFile } from '../src/engine/dialogue/content';
 import { useManorStore } from '../src/app/store';
 
 const volume = JSON.parse(
@@ -83,7 +85,7 @@ describe('alphabet plate — engravings rendered against the letters', () => {
 });
 
 describe('guess history — her own elimination record (AAA 4.17)', () => {
-  it('recomputes closeness per guess and marks the winning word', () => {
+  it('files the verdict per guess and marks the winning word', () => {
     const s: VolumeState = {
       ...fresh(),
       guesses: [
@@ -94,25 +96,112 @@ describe('guess history — her own elimination record (AAA 4.17)', () => {
       status: 'solved',
     };
     const h = guessHistory(volume, s);
-    expect(h[0]!.closeness.repeat).toBe(false);
-    expect(h[1]!.closeness.repeat).toBe(true);
+    expect(h[0]!.verdict).not.toBe('repeat');
+    expect(h[1]!.verdict).toBe('repeat');
     expect(h[2]!.wasAnswer).toBe(true);
     expect(h[0]!.wasAnswer).toBe(false);
+  });
+
+  // The journal is a memory prosthetic, not an oracle (AAA 3.3 / 4.15): it
+  // may only re-present what a character actually said. An exact shared-letter
+  // COUNT — which the record used to publish, free, once a day, forever — is
+  // a Mastermind channel that solves the letter set independently of the whole
+  // engraving economy, and nobody in the fiction ever speaks a number.
+  it('never exposes a numeric closeness anywhere in the record', () => {
+    const s: VolumeState = { ...fresh(), guesses: [{ day: 2, guess: 'CANDLE' }] };
+    const rec = guessHistory(volume, s)[0]!;
+    expect(rec).not.toHaveProperty('closeness');
+    for (const value of Object.values(rec)) {
+      if (typeof value === 'object' && value !== null) {
+        expect(Object.keys(value)).not.toContain('sharedLetters');
+      }
+    }
+    expect(VERDICT_TOKENS[rec.verdict]).not.toMatch(/\d/);
+  });
+
+  // The five shades ARE the Portrait's authored variants, in his priority
+  // order (repeat 720 > right-length 715 > warm-letters 710 > one-letter 705
+  // > cold 700). Pinning them together stops the journal quoting a line he
+  // does not have.
+  it('the verdict taxonomy matches the Portrait\'s authored variants', () => {
+    const nodeFor: Record<GuessVerdict, string> = {
+      repeat: 'portrait.guess.repeat',
+      'right-shape': 'portrait.guess.right-length',
+      circling: 'portrait.guess.warm-letters',
+      'one-letter': 'portrait.guess.one-letter',
+      cold: 'portrait.guess.cold',
+    };
+    const portrait = getDialogueFile('portrait');
+    const priority = (id: string) => {
+      const n = portrait.nodes.find((x) => x.id === id);
+      expect(n, `${id} must exist`).toBeTruthy();
+      return n!.priority;
+    };
+    const order: GuessVerdict[] = ['repeat', 'right-shape', 'circling', 'one-letter', 'cold'];
+    for (let i = 1; i < order.length; i++) {
+      expect(priority(nodeFor[order[i - 1]!]), `${order[i - 1]} outranks ${order[i]}`)
+        .toBeGreaterThan(priority(nodeFor[order[i]!]));
+    }
+    // And each shade the taxonomy names is the one that node actually fires on.
+    expect(guessVerdict({ sharedLetters: 0, rightLength: false, repeat: true })).toBe('repeat');
+    expect(guessVerdict({ sharedLetters: 0, rightLength: true, repeat: false })).toBe('right-shape');
+    expect(guessVerdict({ sharedLetters: 2, rightLength: false, repeat: false })).toBe('circling');
+    expect(guessVerdict({ sharedLetters: 1, rightLength: false, repeat: false })).toBe('one-letter');
+    expect(guessVerdict({ sharedLetters: 0, rightLength: false, repeat: false })).toBe('cold');
   });
 });
 
 describe('nudges — sympathetic, never silence (AAA 4.16)', () => {
-  it('a thin case file gets an explicit nudge, never a gate', () => {
+  it('a thin case file is flagged thin, never gated', () => {
     const r = sanctumReadiness(volume, fresh());
     expect(r.enough).toBe(false);
-    expect(r.nudge).toBeTruthy();
   });
 
-  it(`the nudge stands down at ${THIN_FILE_THRESHOLD} fragments`, () => {
+  it(`the thin-file signal stands down at ${THIN_FILE_THRESHOLD} fragments`, () => {
     const ids = volume.fragments.slice(0, THIN_FILE_THRESHOLD).map((f) => f.id);
     const r = sanctumReadiness(volume, withFound(...ids));
     expect(r.enough).toBe(true);
-    expect(r.nudge).toBeNull();
+  });
+
+  // The nudge COPY is the Portrait's, and it lives in his authored JSON
+  // (AAA 5.13) — it used to be two strings in engine/journal.ts written in
+  // the housekeeper's voice ("…dear") and painted unattributed under his line
+  // on the one screen where he is meant to be at his most forbidding.
+  it('the thin-file nudge is authored, in the Portrait\'s register, and covers every thin count', () => {
+    const portrait = getDialogueFile('portrait');
+    const gates = portrait.nodes.filter((n) => n.id.startsWith('portrait.gate.'));
+    expect(gates.length).toBeGreaterThan(0);
+    for (const g of gates) {
+      expect(g.once).toBe(false);
+      // Round 5: moved off 'idle' onto its own trigger. On 'idle' these were
+      // eligible in his ordinary rotation, so a parlor visit could serve
+      // "your journal is empty" as small talk — the sentence only means
+      // anything on the Sanctum door screen.
+      expect(g.trigger).toBe('sanctum-idle');
+      for (const line of g.lines) {
+        expect(line.speaker).toBe('portrait');
+        // His address term is "reader". "dear" belongs to Bramble, Ellery and Posy.
+        expect(line.text.toLowerCase()).not.toMatch(/\bdear\b/);
+      }
+    }
+    // Every fragment count below the threshold has a line waiting; the first
+    // count at or above it has none (the signal stands down, AAA 4.16).
+    const covers = (count: number) =>
+      gates.some((g) =>
+        (g.conditions ?? []).every((c) =>
+          c.kind === 'fragmentCount' &&
+          (c.gte === undefined || count >= c.gte) &&
+          (c.lte === undefined || count <= c.lte)));
+    for (let n = 0; n < THIN_FILE_THRESHOLD; n++) {
+      expect(covers(n), `no authored gate line for ${n} fragments`).toBe(true);
+    }
+    expect(covers(THIN_FILE_THRESHOLD)).toBe(false);
+  });
+
+  // The engine must not have quietly regrown the strings.
+  it('sanctumReadiness carries counts only — no prose', () => {
+    const r = sanctumReadiness(volume, fresh());
+    expect(Object.keys(r).sort()).toEqual(['enough', 'found', 'total']);
   });
 
   it('the journal nudge always has something warm to say while active', () => {

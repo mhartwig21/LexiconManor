@@ -14,6 +14,22 @@
  *     SB curve ≈2/5/8/15/25/40/50/70% of the room max, garden-themed.
  *     `solved` fires at Full Bloom (70%); the hidden Every Petal tier (100%)
  *     pays a gem via a `reward` event.
+ *
+ * ROUND 5 — FULL BLOOM IS A LANDING, NOT AN EJECTION (AAA 1.12 [COZY], 1.11).
+ * The 70% crossing used to return `outcome.status:'solved'`, which the host
+ * reads as "session over": `RoomHost` then refuses every further dispatch, the
+ * hive is taken off the table mid-sentence, and the hidden Every Petal tier —
+ * with its specified gem — became unreachable dead code on every save. 1.12
+ * says she *walks away* at Full Bloom; the choice is hers.
+ *
+ * So the two things are now separated:
+ *   - the `{type:'solved'}` EVENT still fires exactly once, on the Full Bloom
+ *     crossing. The economy keys the refund, the room-solved spine event and
+ *     the grid's solved flag off that event, not off the status — so walking
+ *     out at Full Bloom pays the full solve exactly as before.
+ *   - `outcome.status` stays 'active' until Every Petal (100%), so the hive
+ *     keeps listening and the gem is actually winnable.
+ * `fullBloom` on the state is the flag the view ceremonies off.
  */
 
 import type { HivePuzzle, Tier } from '../../types';
@@ -87,6 +103,14 @@ export interface HiveRoomState {
   attempts: number;
   pangramsFound: string[];
   lastFeedback: HiveFeedback | null;
+  /**
+   * True once the 70% rung has been crossed — the room is SOLVED and paid, and
+   * the hive is still hers to keep gathering in (AAA 1.12). The view ceremonies
+   * on the rising edge of this flag; the host never ends the session on it.
+   */
+  fullBloom: boolean;
+  /** True at Every Petal (100%) — the hidden tier, and the actual end. */
+  everyPetal: boolean;
 }
 
 export type HiveAction = { type: 'submit'; word: string };
@@ -113,6 +137,8 @@ export const hiveAdapter: RoomPuzzleAdapter<HivePuzzleEx, HiveRoomState, HiveAct
       attempts: 0,
       pangramsFound: [],
       lastFeedback: null,
+      fullBloom: false,
+      everyPetal: false,
     };
   },
 
@@ -137,19 +163,27 @@ export const hiveAdapter: RoomPuzzleAdapter<HivePuzzleEx, HiveRoomState, HiveAct
       for (const name of tierUps) events.push({ type: 'progress', detail: `tier-up:${name}` });
 
       const solveAt = ladderThreshold(next.maxScore, 70);
-      const wasSolved = state.hive.score >= solveAt;
-      const nowSolved = hive.score >= solveAt;
-      if (hive.score >= next.maxScore) {
-        // Every Petal — the hidden 100% tier pays a gem (AAA 1.11).
+      const wasFullBloom = state.fullBloom || state.hive.score >= solveAt;
+      const nowFullBloom = hive.score >= solveAt;
+      const wasEveryPetal = state.everyPetal || state.hive.score >= next.maxScore;
+      const nowEveryPetal = hive.score >= next.maxScore;
+      next = { ...next, fullBloom: nowFullBloom, everyPetal: nowEveryPetal };
+      if (!wasEveryPetal && nowEveryPetal) {
+        // Every Petal — the hidden 100% tier pays a gem (AAA 1.11). Reachable
+        // now that Full Bloom no longer ends the session.
         events.push({ type: 'progress', detail: 'every-petal' });
         events.push({ type: 'reward', gems: 1 });
       }
-      // Emit `solved` exactly once, on the Full Bloom crossing (AAA 1.12).
-      if (!wasSolved && nowSolved) events.push({ type: 'solved', perfect: isPerfect(next) });
+      // Emit `solved` exactly once, on the Full Bloom crossing (AAA 1.12) —
+      // the payout, the grid flag and the spine event all hang off THIS, so a
+      // player who steps out at Full Bloom is paid in full.
+      if (!wasFullBloom && nowFullBloom) events.push({ type: 'solved', perfect: isPerfect(next) });
       return {
         state: next,
         events,
-        outcome: { status: nowSolved ? 'solved' : 'active', perfect: isPerfect(next) },
+        // The room stays PLAYABLE through Full Bloom; only Every Petal (the
+        // hidden 100% tier) actually closes the session.
+        outcome: { status: nowEveryPetal ? 'solved' : 'active', perfect: isPerfect(next) },
       };
     }
 

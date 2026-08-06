@@ -27,8 +27,26 @@
  *      demand a key. Deep pushes are PREPARED for (Key Cabinet, Fern's
  *      trades) — you cannot stumble into the Sanctum row.
  *   5. THE REFILL CURVE IS A CAMPAIGN ARC. Bramble's tea (`TEA_BY_RANK`)
- *      climbs 0 → +10 across her friendship, and snacks shrink to +3..+7.
+ *      climbs 0 → +11 across her friendship, and snacks shrink to +3..+7.
  *      The budget that makes the Sanctum reachable is EARNED over days.
+ *
+ * ═══ ROUND-5 AUDIT — the arcs were on paper, not in the game ═══
+ * The campaign numbers above were verified against a curve the live game could
+ * not draw: `teaBonus`/`fernMorningKeys` index raw affinity POINTS, and the
+ * authored dialogue grants 2 (Bramble) and 3 (Fern) in their entire lifetimes,
+ * while the simulation handed itself `floor(day/2)` points and a key-luck ramp
+ * with no live counterpart at all. Four things closed the gap, all here:
+ *
+ *   a. `TEA_ARC`/`teaArcPoints` — shared mornings warm Bramble on a schedule
+ *      the day slice actually applies, so the step arc has a source.
+ *   b. `FERN_ARC`/`KEY_ACCESS` — her affinity raises the draft weight of
+ *      key-bearing cards (drafting.ts), so the padlock arc has a source, and
+ *      `KEY_SUPPLY.fernMorningKeys` re-indexes to open inside her authored
+ *      point budget instead of two points past its ceiling.
+ *   c. `FIRST_MORNING_POT` — the first evening starts at 0 affinity, so it got
+ *      a scripted welcome pot rather than running under the 10–15 floor.
+ *   d. cross-day investment (`CARRY_OVER_EFFECTS`, engine/manor/deck.ts) — the
+ *      first thing in the game that pays into tomorrow.
  *
  * Net effect (simulated, not hoped): a skilled player first reaches the
  * Sanctum row around day 6–10 and typically wins the volume in 14–28 days of
@@ -83,6 +101,83 @@ export const MOVE_COST_BY_ROW: readonly number[] = [-1, -1, -2, -3, -4, -5, -5];
 export function moveAt(row: number): number {
   const i = Math.max(0, Math.min(MOVE_COST_BY_ROW.length - 1, Math.floor(row)));
   return MOVE_COST_BY_ROW[i]!;
+}
+
+/**
+ * Player-facing name for one storey's walk: "3 steps", "1 step". The blueprint
+ * and the draft modal both read this so the number on the sheet and the number
+ * in the ledger can never disagree (AAA 4.6 — the price is legible BEFORE the
+ * tap, never only after the charge).
+ */
+export function moveCostLabel(row: number): string {
+  const n = -moveAt(row);
+  return `${n} step${n === 1 ? '' : 's'}`;
+}
+
+/**
+ * ── THE TWO-PART WALK (AAA 4.6, "back out for the step already spent") ──────
+ *
+ * Opening a draft is a walk TO A DOOR on the floor she is already standing on;
+ * it is not the climb. So the door-step is ledgered at HER row, and the climb
+ * differential is ledgered only when she actually accepts a card and steps
+ * through (app/slices/manor.ts). Totals for a completed climb are unchanged —
+ * moveAt(her row) + (moveAt(target row) − moveAt(her row)) = moveAt(target
+ * row) — but a DECLINED look now costs the local rate instead of a full storey.
+ *
+ * The differential rides through the same audited `priceEntry` path as every
+ * other move, via a two-cell roomKey: `"2,4>2,5"` reads "from 2,4 into 2,5".
+ * Encoding it in the key (rather than trusting a caller-supplied delta) keeps
+ * the invariant that movement pricing cannot be bypassed from a call site.
+ *
+ * Descending is never a refund: the differential floors at 0, so walking back
+ * downstairs costs only the local door-step.
+ */
+export const CLIMB_KEY_SEP = '>';
+
+/** `"2,4>2,5"` — the roomKey for a climb differential (see CLIMB_KEY_SEP). */
+export function climbKey(fromCellKey: string, toCellKey: string): string {
+  return `${fromCellKey}${CLIMB_KEY_SEP}${toCellKey}`;
+}
+
+const rowOfCellKey = (key: string): number => Number(key.split(',')[1]);
+
+/** The row a move entry ENDED in (the destination), or null if unkeyed. */
+export function moveRowOf(roomKey: string | undefined): number | null {
+  if (!roomKey) return null;
+  const parts = roomKey.split(CLIMB_KEY_SEP);
+  const row = rowOfCellKey(parts[parts.length - 1]!);
+  return Number.isFinite(row) ? row : null;
+}
+
+/** The highest 0-based row any move entry ended in today (for the night digest). */
+export function highestRowVisited(ledger: StepLedger): number {
+  let highest = 0;
+  for (const entry of ledger.entries) {
+    if (entry.reason !== 'move') continue;
+    const row = moveRowOf(entry.roomKey);
+    if (row !== null && row > highest) highest = row;
+  }
+  return highest;
+}
+
+/**
+ * Storey names, ground up — the digest and the blueprint's aria labels speak
+ * in landings, not in grid coordinates ("Walk to the second landing — 3
+ * steps", not "Walk 2,5").
+ */
+export const ROW_NAMES: readonly string[] = [
+  'the ground floor',
+  'the half landing',
+  'the first landing',
+  'the second landing',
+  'the third landing',
+  'the upper gallery',
+  'the Sanctum landing',
+];
+
+export function rowName(row: number): string {
+  const i = Math.max(0, Math.min(ROW_NAMES.length - 1, Math.floor(row)));
+  return ROW_NAMES[i]!;
 }
 
 /**
@@ -189,11 +284,82 @@ export const KEY_SUPPLY = {
    * her. This is the padlock's answer to Bramble's tea — the same shape, the
    * same AAA 5.9 valve of one conversation a day, and the reason a skilled
    * player's FIRST Sanctum reach still lands around day 6–10 however well she
-   * plays day 1. Deliberately flat at 1: it opens ONE gate, and the ascent
-   * needs ~1.7 on average, so Fern shortens the climb and never buys it.
+   * plays day 1.
+   *
+   * RE-INDEXED (round-5 economy audit): the table used to open at 4 points,
+   * and Fern's authored dialogue grants **3 points in her entire lifetime**
+   * (`FERN_ARC` below, asserted against the authored JSON in
+   * tests/economy-simulation.test.ts). A gate whose key is unreachable is a
+   * wall, so the first dawn key now lands at 2 points — inside the authored
+   * budget, i.e. earnable by anyone who actually befriends her — and the
+   * second only at 5, which takes weeks of bookmarks on top. Even then two
+   * keys is barely over the ~1.7 padlocks an average ascent crosses: Fern
+   * shortens the climb, she never walks it for you, and keys still reset
+   * nightly (MANOR_DESIGN §9) so every ascent re-earns its way up.
    */
-  fernMorningKeys: [0, 0, 0, 0, 1, 1, 1] as readonly number[],
+  fernMorningKeys: [0, 0, 1, 1, 1, 2, 2] as readonly number[],
 } as const;
+
+/**
+ * THE LIVE FERN ARC — what her affinity can actually reach, and when.
+ *
+ * These are not wishes: `meetPoints`/`questPoints` mirror the authored
+ * `content/authored/dialogue/fern.json` (fern.meet.1's warm choice, +1;
+ * fern.quest1.done, +2), and the economy simulation asserts the sum against
+ * that file so a dialogue edit that changes her budget breaks the economy
+ * tests instead of the owner's campaign. The DAYS are the AAA 5.9 valve
+ * expressed in the calendar: one substantive conversation per character per
+ * day, so a daily player meets her within a couple of days of the Greenhouse
+ * appearing and finishes her favor about a week in.
+ */
+export const FERN_ARC = {
+  meetPoints: 1,
+  questPoints: 2,
+  /** Day a daily player has typically met her (the Greenhouse is a common card). */
+  meetDay: 2,
+  /** Day her favor is typically closed out. */
+  questDay: 7,
+} as const;
+
+/** Fern's affinity points on 1-based `day`, from her authored sources alone. */
+export function fernPointsOnDay(day: number): number {
+  if (day < FERN_ARC.meetDay) return 0;
+  if (day < FERN_ARC.questDay) return FERN_ARC.meetPoints;
+  return FERN_ARC.meetPoints + FERN_ARC.questPoints;
+}
+
+/**
+ * KEY ACCESS — the other half of the padlock arc, and the half the shipped
+ * game was missing entirely. `categoryWeight`/`RARITY_WEIGHTS` carry no day or
+ * affinity term, so before this the odds of a key-bearing card were identical
+ * on day 1 and day 30 (measured: ~0.21 per ground-floor offer, ~0.04 upstairs)
+ * — a flat line where AAA 4.10d asks for a ramp.
+ *
+ * A friend of the groundskeeper hears where the spare keys are kept: her
+ * affinity raises the DRAFT WEIGHT of key-bearing cards (the Key Cabinet, the
+ * Boot Room) without touching category or rarity weights, so `deckMixAt` — and
+ * with it the 4.10b clock calibration — is untouched. It is read by
+ * `engine/manor/drafting.ts` through `DraftRollCtx.keyAccess`; with no Fern
+ * friendship the multiplier is exactly 1 and drafting behaves as it always did.
+ */
+export const KEY_ACCESS = {
+  /** Weight multiplier added to key-bearing cards at full access. */
+  maxWeightGain: 2.5,
+  /** Fern's points at which access is fully warmed (= her authored ceiling). */
+  pointsToFull: FERN_ARC.meetPoints + FERN_ARC.questPoints,
+} as const;
+
+/** 0..1 key access from Fern's affinity points. */
+export function keyAccessFor(fernAffinity: number): number {
+  if (!Number.isFinite(fernAffinity) || fernAffinity <= 0) return 0;
+  return Math.min(1, fernAffinity / KEY_ACCESS.pointsToFull);
+}
+
+/** Draft-weight multiplier for a key-bearing card at this access level. */
+export function keyCardWeightMultiplier(keyAccess: number): number {
+  const a = Math.max(0, Math.min(1, keyAccess));
+  return 1 + KEY_ACCESS.maxWeightGain * a;
+}
 
 /**
  * Keys Fern leaves out at dawn, from her affinity points. Granted when the
@@ -227,13 +393,77 @@ export function doorLockedAt(daySeed: number, cellKey: string, row: number): boo
  * Sanctum row is reachable if today goes well" somewhere around day 6–10,
  * and it cannot be rushed — affinity is one conversation a day (AAA 5.9).
  * Applied as a 'tea' ledger entry so it renders as a floating +N.
+ *
+ * Round-5 audit: the first two ranks were lifted (3→4, 5→6) because the early
+ * evenings — days 2–3, when she has met Bramble once and the manor is still
+ * strange — measured 10.2–10.5 minutes, right on the floor of the 10–15 band.
+ * The top of the curve is untouched, so the campaign shape is unchanged; only
+ * the first week got its promised length.
  */
-export const TEA_BY_RANK: readonly number[] = [0, 3, 5, 7, 9, 10, 11];
+export const TEA_BY_RANK: readonly number[] = [0, 4, 6, 7, 9, 10, 11];
 
 export function teaBonus(brambleAffinity: number): number {
   if (!Number.isFinite(brambleAffinity) || brambleAffinity <= 0) return 0;
   const rank = Math.floor(brambleAffinity);
   return TEA_BY_RANK[Math.min(rank, TEA_BY_RANK.length - 1)]!;
+}
+
+/**
+ * THE LIVE TEA ARC — the source of the points `TEA_BY_RANK` indexes.
+ *
+ * Round-5 audit: `TEA_BY_RANK` needs 6 points for its full pot, and Bramble's
+ * authored file grants **2 in her entire 57-node lifetime** (both `once:true`),
+ * with everything beyond that competing for the same scarce bookmarks as four
+ * other characters. The published day 6–10 / 14–28 curve was therefore verified
+ * against a warmth the live game could not reach — and, worse, taking the
+ * curious dialogue choice instead of the warm one silently forked the economy
+ * (AAA 5.13).
+ *
+ * The fix is to put the arc where the arc actually happens: SHARED MORNINGS.
+ * Sitting down to tea with her is the one substantive conversation the AAA 5.9
+ * valve already allows per day, so every second morning warms her by a point,
+ * to a ceiling of `maxPoints`. `app/slices/day.ts` applies it as a FLOOR
+ * (`max(current, teaArcPoints(day))`) at the top of `startDay`, before the pot
+ * is poured — so it never eats the gift currency, never double-counts on a
+ * resumed day, never overwrites points she earned by gifting, and cannot be
+ * lost by picking the wrong line of dialogue.
+ *
+ * This is also the live counterpart of the simulation's tea ramp:
+ * `engine/economy/simulate.ts` reads THIS function for a campaign's tea rank,
+ * rather than a hard-coded `CAMPAIGN_ARC` constant with nothing behind it.
+ */
+export const TEA_ARC = {
+  /** Mornings of shared tea per +1 point of Bramble affinity. */
+  morningsPerPoint: 2,
+  /** Ceiling — the pot tops out here (TEA_BY_RANK's last rank). */
+  maxPoints: TEA_BY_RANK.length - 1,
+} as const;
+
+/** Bramble's affinity FLOOR on 1-based `day`, from shared mornings alone. */
+export function teaArcPoints(day: number): number {
+  if (!Number.isFinite(day) || day <= 0) return 0;
+  return Math.min(TEA_ARC.maxPoints, Math.floor(day / TEA_ARC.morningsPerPoint));
+}
+
+/**
+ * THE FIRST MORNING'S POT (AAA 4.10b, round-5 audit).
+ *
+ * Day 1 starts at 0 affinity — `teaBonus(0)` is 0 by design, because rank 0 is
+ * "a plain, kind cup" — so the very first evening ran on the bare 18 and
+ * measured ~9.0 minutes at the median, UNDER the promised 10–15 floor. The
+ * first one or two evenings are the ones that decide whether she comes back,
+ * so day 1 gets a scripted pot: the economy's twin of the scripted first draft
+ * (AAA 4.5), a one-off welcome that is ledgered through the audited path as a
+ * 'tea' entry and renders as a floating +N like everything else.
+ *
+ * Deliberately NOT a bigger `BASE_DAY_BUDGET`: 20 would equal the bare ascent
+ * cost and break the headline invariant `reserveToTop(1) > BASE_DAY_BUDGET`.
+ */
+export const FIRST_MORNING_POT = 3;
+
+/** The scripted welcome pot, on day 1 only. */
+export function firstMorningPot(day: number): number {
+  return day === 1 ? FIRST_MORNING_POT : 0;
 }
 
 /** Fresh ledger for a new day. */
@@ -251,9 +481,20 @@ export function createLedger(budget: number = STEP_TABLE.dayStart): StepLedger {
  */
 export function priceEntry(entry: StepEntry): StepEntry {
   if (entry.reason !== 'move' || !entry.roomKey) return entry;
-  const row = Number(entry.roomKey.split(',')[1]);
-  if (!Number.isFinite(row)) return entry;
-  const delta = moveAt(row);
+  const parts = entry.roomKey.split(CLIMB_KEY_SEP);
+  let delta: number;
+  if (parts.length === 2) {
+    // A climb differential: "from>to" (see CLIMB_KEY_SEP). Floors at 0 so
+    // walking back downstairs is never paid out as a refund.
+    const from = rowOfCellKey(parts[0]!);
+    const to = rowOfCellKey(parts[1]!);
+    if (!Number.isFinite(from) || !Number.isFinite(to)) return entry;
+    delta = Math.min(0, moveAt(to) - moveAt(from));
+  } else {
+    const row = rowOfCellKey(parts[0]!);
+    if (!Number.isFinite(row)) return entry;
+    delta = moveAt(row);
+  }
   return delta === entry.delta ? entry : { ...entry, delta };
 }
 

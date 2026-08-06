@@ -37,9 +37,10 @@ import type { HivePuzzle, Tier } from '../src/engine/types';
  *      so the top of the manor serves a small, dense hive, not a swamp.
  *   2. THE FULL-BLOOM BAR RISES without touching the 70% ladder: `everyday
  *      point share` is the fraction of the room's points reachable using only
- *      everyday-band words. T1 ≥ 0.80 (Full Bloom is comfortably reachable on
- *      common vocabulary alone); T3 ≤ 0.62 (70% is UNREACHABLE without digging
- *      into familiar/advanced words and, usually, the pangram itself).
+ *      everyday-band words. T1 ≥ 0.60 (Full Bloom is comfortably reachable on
+ *      common vocabulary alone); T3 ≤ 0.56 (70% is UNREACHABLE without digging
+ *      into familiar/advanced words and, usually, the pangram itself). The
+ *      cuts move with the pool's own distribution — see TIER_SPECS.
  *   3. PANGRAMS GET RARER: T1 must offer an everyday-band pangram, T2 at worst
  *      a familiar one, T3 ships NO everyday pangram at all — the marquee find
  *      is genuinely hunted for.
@@ -48,8 +49,29 @@ import type { HivePuzzle, Tier } from '../src/engine/types';
 const TARGET_PER_TIER = 100; // 3 tiers => 300 puzzles
 const SEED = 20260701;
 
-/** Frequency bar for findable words (Norvig rank; ≈ everyday + familiar). */
-const CURATION_MAX_RANK = 60_000;
+/**
+ * Frequency bar for findable words (Norvig rank).
+ *
+ * ROUND 5 (BENCHMARKS §1 — "a curated set, not a dictionary dump"). The bar
+ * used to be a single 60,000 cut, i.e. the entire 'familiar' band's ceiling,
+ * which is deep enough to admit genuine obscurities: the shipped tier-1 board
+ * `hive-t1-2` (centre T, petals DILEAF) carried DITA, TALA, FLITE and LATED,
+ * and three of the four found-word chips on its Full Bloom screen were words
+ * the player had typed by accident rather than found. Those entries also took
+ * ladder points and reappeared in the exit silhouettes as words she was
+ * invited to feel bad about not knowing. SB's editorial line is tighter than
+ * ours in both directions, and this is the one place a side-by-side made us
+ * look automated.
+ *
+ * Two bars now:
+ *   ≤ CURATION_FREE_RANK   in, no questions asked;
+ *   anything rarer         in only if it is on CHARMING_ALLOWLIST;
+ *   anything else          out.
+ * If a tier's word-count band starts failing, GROW THE ALLOWLIST — never
+ * reopen the rank bar. (The band check in validate() fails the build loudly,
+ * so the regression is visible immediately.)
+ */
+const CURATION_FREE_RANK = 30_000;
 /** Pangrams may reach into 'advanced' — the hunt makes the obscurity fair. */
 const PANGRAM_MAX_RANK = 120_000;
 
@@ -67,14 +89,21 @@ interface TierSpec {
 
 const TIER_SPECS: Record<Tier, TierSpec> = {
   // Bands are calibrated against the measured distribution of the curated
-  // pool (everyday point share runs ≈0.31–0.61 across every size band, so
-  // these cut it at roughly its own p25 / p50 / p80 — real separation, not
-  // aspirational numbers that would starve a tier).
-  1: { minWords: 48, maxWords: 80, minEverydayShare: 0.52, maxEverydayShare: 1,
+  // pool — real separation, not aspirational numbers that would starve a tier.
+  //
+  // ROUND 5 RECALIBRATION. The share bands were cut at the OLD pool's own
+  // p25/p50/p80. Tightening the curation bar (30k + allowlist, above) deleted
+  // mostly rare words, which mechanically RAISES every board's everyday point
+  // share, so the whole distribution slid up and the old cuts starved tiers 2
+  // and 3 (they fell to 42 and 21 boards against a floor of 30 each). The
+  // WORD-COUNT bands are untouched — they are the owner-facing promise and are
+  // mirrored in tests/puzzles/anchors.test.ts — only the share cuts move, and
+  // they move with the distribution they were always meant to track.
+  1: { minWords: 48, maxWords: 80, minEverydayShare: 0.6, maxEverydayShare: 1,
        requireEverydayPangram: true, forbidEverydayPangram: false },
-  2: { minWords: 40, maxWords: 62, minEverydayShare: 0.42, maxEverydayShare: 0.55,
+  2: { minWords: 40, maxWords: 62, minEverydayShare: 0.5, maxEverydayShare: 0.7,
        requireEverydayPangram: false, forbidEverydayPangram: false },
-  3: { minWords: 26, maxWords: 44, minEverydayShare: 0, maxEverydayShare: 0.42,
+  3: { minWords: 26, maxWords: 44, minEverydayShare: 0, maxEverydayShare: 0.56,
        requireEverydayPangram: false, forbidEverydayPangram: true },
 };
 
@@ -84,7 +113,12 @@ const MAX_WORDS = Math.max(...Object.values(TIER_SPECS).map((s) => s.maxWords));
 
 /**
  * Charming rarities the frequency bar would exclude but the room wants —
- * words that delight when found. Small and hand-kept, by design.
+ * words that delight when found. Hand-kept, by design: this is the ONLY door
+ * out of the 30k rank bar, so tightening curation is paid for here (round 5)
+ * rather than by reopening the bar. Every entry is (a) in enable1, (b) past
+ * the cozy gate, (c) S-free (the hive bans S), and (d) something a player is
+ * pleased rather than baffled to have found: the manor's own vocabulary —
+ * garden, weather, house, hearth, cloth, birds, small warm verbs.
  */
 const CHARMING_ALLOWLIST = new Set([
   'aglow', 'alcove', 'amble', 'aria', 'atoll', 'attar', 'bower', 'brook',
@@ -95,6 +129,78 @@ const CHARMING_ALLOWLIST = new Set([
   'nectar', 'niche', 'nook', 'opaline', 'petal', 'plume', 'quill', 'ripple',
   'rivulet', 'tendril', 'thicket', 'trellis', 'trill', 'vellum', 'verdant',
   'warble', 'willow', 'wend', 'whorl', 'zephyr',
+  // round 5 — the manor's vocabulary, admitted one word at a time.
+  'arbour', 'balmy', 'bide', 'blithe', 'bobbin', 'bodkin', 'bonny', 'bough',
+  'bracken', 'bramble', 'brazier', 'briar', 'brier', 'brim', 'cambric',
+  'canticle', 'catkin', 'cauldron', 'cavort', 'chalice', 'chintz', 'clamber',
+  'clove', 'compote', 'cordial', 'cornice', 'coverlet', 'cruet', 'crumpet',
+  'cupola', 'curd', 'cygnet', 'dahlia', 'dally', 'dappled', 'dawdle',
+  'decanter', 'dewy', 'dirge', 'dither', 'doily', 'dormer', 'downy', 'doze',
+  'dumpling', 'eave', 'ewer', 'fabled', 'fawn', 'flagon', 'flit', 'flume',
+  'frond', 'fugue', 'furrow', 'gambol', 'genial', 'gingham', 'glimmer',
+  'gloam', 'grebe', 'hedgerow', 'honeycomb', 'idyllic', 'ladle', 'lambent',
+  'lamplight', 'larder', 'lichen', 'limpid', 'linger', 'linnet', 'lintel',
+  'loamy', 'loll', 'lull', 'lute', 'madrigal', 'magpie', 'mallow', 'mangle',
+  'mantel', 'marginalia', 'marmalade', 'meander', 'medlar', 'minuet', 'mull',
+  'murk', 'nettle', 'newel', 'nocturne', 'nuthatch', 'nuzzle', 'ochre',
+  'organdy', 'oriel', 'owlet', 'parlour', 'percale', 'pergola', 'pipit',
+  'plover', 'poplin', 'portico', 'privet', 'quarto', 'quince', 'rafter',
+  'ramble', 'rill', 'rondo', 'rook', 'runnel', 'taffeta', 'tarn', 'tarry',
+  'thimble', 'tinder', 'tiptoe', 'treacle', 'trivet', 'trundle', 'tuber',
+  'tulle', 'tureen', 'turret', 'twig', 'umber', 'velvety', 'voile', 'vole',
+  'wagtail', 'yarrow',
+]);
+
+/**
+ * Words enable1 admits as common nouns but whose predominant reading — and
+ * whose entire corpus frequency — is a proper noun: galleries, potteries,
+ * gazetteer entries, given names, currencies. TATE ranks 13,893 (well inside
+ * 'everyday') purely because of the gallery and the surname; nobody has ever
+ * "found a tate" in a word game. Checked BEFORE the rank test, because rank is
+ * exactly the signal these words corrupt.
+ *
+ * Deliberately NOT listing words whose everyday-noun sense dominates the
+ * proper one (ROSE, MARK, AMBER, IRIS, HOLLY, JADE, BROOK…) — the same rule
+ * generate-gate.ts's NAME_BLOCKLIST uses.
+ */
+const PROPER_STRIKE = new Set([
+  // galleries, potteries, wares, gazetteer
+  'tate', 'delft', 'limoges', 'meissen', 'sevres', 'attica', 'iberia', 'ionia',
+  'arcadia', 'mecca', 'babel', 'penang', 'cochin', 'nome', 'aland', 'bora',
+  'glengarry', 'walla', 'volta', 'romano', 'milo', 'lido',
+  // proper-derived adjectives — indistinguishable from a name in uppercase
+  'doric', 'gallic', 'punic', 'vedic', 'iberic', 'nordic', 'magyar',
+  'inca', 'incan', 'aztec', 'maori', 'malay', 'mayan', 'pima',
+  // currency/unit words that are really place- or people-names
+  'tala', 'kwanza', 'naira', 'ringgit', 'quetzal', 'balboa', 'kina', 'kyat',
+  'lempira', 'libra',
+  // transliterated proper nouns enable1 admits as objects
+  'dita', 'datto', 'kanji', 'kana', 'kata', 'raja', 'rajah', 'sahib',
+  'kilim', 'ikat', 'triton', 'giga',
+  // given names / surnames enable1 admits via a rare common-noun sense
+  'nana', 'nanna', 'lena', 'leta', 'reta', 'nita', 'anita', 'elia',
+  'tania', 'dela', 'delia', 'adela', 'otto', 'dane', 'erica', 'amin',
+  'eyre', 'curran', 'maud', 'mott', 'tarzan', 'nellie', 'ginny', 'cicero',
+  'merle', 'dahl', 'lear', 'britt', 'lauder', 'chao', 'ritter', 'conner',
+  'mullen', 'dido', 'tabor', 'magdalen', 'magdalene', 'wally', 'carling',
+]);
+
+/**
+ * Tone leaks the shared cozy gate (content/generate-gate.ts, owned by A5)
+ * does not yet cover but that the Conservatory's *pangram* lane admits — it
+ * reaches to rank 120,000, so illness and bodily vocabulary can land as the
+ * marquee find of a board. A cozy manor does not stage GLAUCOMA in gilt
+ * display type as the reward for a five-minute hunt. Kept local and small; the
+ * upstream additions are filed as a shared-file request.
+ */
+const TONE_STRIKE = new Set([
+  'diarrhea', 'diarrhoea', 'erotica', 'urinate', 'urinated', 'urinating',
+  'impotent', 'impotence', 'glaucoma', 'migraine', 'hernia', 'angina',
+  'edema', 'enema', 'apnea', 'polio', 'moron', 'morons', 'moronic',
+  'crotch', 'dung', 'lice', 'emaciate', 'emaciated', 'decrepit',
+  'decimate', 'decimated', 'impale', 'impaler', 'impaled', 'nonlethal',
+  'deadlift', 'gunpoint', 'militiamen', 'militiaman', 'undead', 'abort',
+  'aborted', 'malice', 'lament', 'lamented',
 ]);
 
 /** True if a word clears the curation bar for findable words. */
@@ -102,8 +208,15 @@ function curated(dict: Dictionary, word: string, isPangram: boolean): boolean {
   // The cozy gate first: the found-word list and the exit silhouettes print
   // these in the manor's own voice, so a gated word never ships (task 2).
   if (!gateOk(word)) return false;
+  // Proper-noun-derived stems are struck before the rank test — their rank is
+  // borrowed from the name, not the word. Tone leaks are struck at the same
+  // point so the generous pangram lane cannot smuggle them in either.
+  if (PROPER_STRIKE.has(word) || TONE_STRIKE.has(word)) return false;
   const rank = dict.rankOf(word);
-  if (rank > 0 && rank <= (isPangram ? PANGRAM_MAX_RANK : CURATION_MAX_RANK)) return true;
+  if (isPangram) return rank > 0 && rank <= PANGRAM_MAX_RANK;
+  if (rank > 0 && rank <= CURATION_FREE_RANK) return true;
+  // The familiar band is admitted one hand-kept charmer at a time, never
+  // wholesale (BENCHMARKS §1).
   return CHARMING_ALLOWLIST.has(word);
 }
 

@@ -57,7 +57,8 @@ export interface RecordedEvent {
 // ---------------------------------------------------------------------------
 
 export type DialogueTrigger =
-  | 'morning' | 'parlor' | 'idle' | 'sanctum-after-guess' | 'letter' | 'night';
+  | 'morning' | 'parlor' | 'idle' | 'sanctum-idle' | 'sanctum-after-guess'
+  | 'letter' | 'night';
 
 export interface DialogueQuery {
   day: number;

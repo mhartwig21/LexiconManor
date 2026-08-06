@@ -16,6 +16,7 @@ import {
 import {
   forgottenWordAdapter, FORGOTTEN_WORD_POOL, type ForgottenWordRoomState,
 } from '../../src/engine/rooms/adapters/forgotten-word';
+import { fernLine, fernKeys } from '../../src/engine/rooms/fern-lines';
 import { STEP_TABLE } from '../../src/engine/economy/steps';
 import { findPath, puzzleSize } from '../../src/engine/twistle';
 import { definitionForLevel } from '../../src/engine/forgotten-word';
@@ -274,15 +275,37 @@ describe('hive adapter', () => {
   const submit = (s: HiveRoomState, word: string) =>
     hiveAdapter.reduce(hivePuzzle, s, { type: 'submit', word });
 
-  it('ignores the v1 pointThreshold: the room solves at 70% of totalPoints', () => {
+  it('ignores the v1 pointThreshold: the room is SOLVED and PAID at 70% of totalPoints', () => {
     // 70% of 27 = 18.9 → ceil 19.
     expect(ladderThreshold(hivePuzzle.totalPoints, 70)).toBe(19);
     let s = startState();
     let r = submit(s, 'RETAINS'); // pangram, 14 pts — over the v1 threshold of 15? No: 14 < 15 and < 19 either way
     expect(r.outcome.status).toBe('active');
+    expect(r.state.fullBloom).toBe(false);
     r = submit(r.state, 'STARE'); // 14 + 5 = 19 ≥ 19 → Full Bloom
+    // The payout, the grid's solved flag and the spine event all key off THIS
+    // event, so walking out at Full Bloom pays the full solve (AAA 1.12).
     expect(eventsOfType(r.events, 'solved')).toEqual([{ type: 'solved', perfect: true }]);
-    expect(r.outcome).toEqual({ status: 'solved', perfect: true });
+    expect(r.state.fullBloom).toBe(true);
+  });
+
+  /**
+   * AAA 1.12 [COZY] — "the room is solved at 70%; walking away at Full Bloom
+   * pays the full solve." Full Bloom is a LANDING, not an ejection. Returning
+   * `status:'solved'` on the 70% crossing made RoomHost refuse every further
+   * dispatch, which took the hive off the table mid-sentence AND made the
+   * hidden Every Petal tier (1.11) unreachable dead code on every save.
+   */
+  it('Full Bloom does not close the room — the hive keeps listening (AAA 1.12)', () => {
+    let s = startState();
+    let r = submit(s, 'RETAINS');
+    r = submit(r.state, 'STARE');           // Full Bloom crossing
+    expect(r.outcome.status).toBe('active'); // still hers to play
+    // …and a further find still scores, still emits, and never re-pays.
+    const after = submit(r.state, 'TEARS');
+    expect(after.state.hive.score).toBe(24);
+    expect(eventsOfType(after.events, 'solved')).toEqual([]);
+    expect(after.outcome.status).toBe('active');
   });
 
   it('a pangram emits a pangram progress beat and tier-ups fire per rung', () => {
@@ -349,12 +372,14 @@ describe('hive adapter', () => {
     expect(s.hive.status).toBe('playing');
   });
 
-  it('finding every word pays the hidden Every Petal gem', () => {
+  it('finding every word pays the hidden Every Petal gem and ends the session', () => {
     let s = startState();
     let all: RoomEvent[] = [];
+    let last = null as ReturnType<typeof submit> | null;
     for (const w of hivePuzzle.validWords) {
       const r = submit(s, w);
       s = r.state;
+      last = r;
       all = [...all, ...r.events];
     }
     expect(s.hive.score).toBe(27);
@@ -362,6 +387,27 @@ describe('hive adapter', () => {
     expect(all.some((e) => e.type === 'progress' && e.detail === 'every-petal')).toBe(true);
     // Full Bloom's solve payout fires exactly once, on the 70% crossing.
     expect(eventsOfType(all, 'solved')).toEqual([{ type: 'solved', perfect: true }]);
+    // Every Petal is the one thing that actually closes the room.
+    expect(s.fullBloom).toBe(true);
+    expect(s.everyPetal).toBe(true);
+    expect(last!.outcome).toEqual({ status: 'solved', perfect: true });
+  });
+
+  it('the Every Petal gem is reachable — the 1.11 tier is no longer dead code', () => {
+    // Regression guard for the round-5 blocker: with `solved` at 70% ending the
+    // session, no save could ever reach 100%, so `{type:'reward',gems:1}` was
+    // unreachable by construction. Play PAST Full Bloom to the last word.
+    let s = startState();
+    let rewards = 0;
+    for (const w of hivePuzzle.validWords) {
+      const r = submit(s, w);
+      s = r.state;
+      // The host only stops dispatching when the outcome leaves 'active'.
+      rewards += eventsOfType(r.events, 'reward').length;
+      if (r.outcome.status !== 'active') break;
+    }
+    expect(rewards).toBe(1);
+    expect(s.hive.score).toBe(s.maxScore);
   });
 
   it('a costed slip forfeits perfect on the eventual solve', () => {
@@ -370,6 +416,48 @@ describe('hive adapter', () => {
     s = submit(s, 'RETAINS').state;
     const r = submit(s, 'STARE');
     expect(eventsOfType(r.events, 'solved')).toEqual([{ type: 'solved', perfect: false }]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fern's voice (AAA 1.15 [BEAT]) — the thing SB structurally cannot do
+// ---------------------------------------------------------------------------
+
+describe('fern lines', () => {
+  const MOMENTS = ['first-word', 'good-word', 'pangram', 'full-bloom', 'every-petal'] as const;
+
+  it('every moment the Conservatory can reach has a line, in character', () => {
+    for (const key of MOMENTS) {
+      const line = fernLine(key, 'hive-t1-1');
+      expect(line, key).toMatch(/^Fern\b/);
+    }
+    // Every reachable ladder rung (Seed is the floor, never a tier-up).
+    for (const rung of HIVE_LADDER.slice(1)) {
+      expect(fernLine(`tier-up:${rung.name}`, 'hive-t1-1'), rung.name).toMatch(/^Fern\b/);
+    }
+  });
+
+  it('offers ≥4 variants per authored key (never a stock phrase)', () => {
+    for (const key of fernKeys()) {
+      const variants = new Set(
+        Array.from({ length: 400 }, (_, i) => fernLine(key as never, `probe-${i}`)),
+      );
+      expect(variants.size, key).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  it('is deterministic per board — the same hive always says the same thing', () => {
+    for (const key of MOMENTS) {
+      expect(fernLine(key, 'hive-t2-9')).toBe(fernLine(key, 'hive-t2-9'));
+    }
+    // …and salted per key, so the pangram line does not depend on how many
+    // rungs happened to fire before it.
+    const a = MOMENTS.map((k) => fernLine(k, 'hive-t3-4'));
+    expect(new Set(a).size).toBe(a.length);
+  });
+
+  it('an unauthored rung degrades to a warm generic, never an empty slot', () => {
+    expect(fernLine('tier-up:Nonesuch', 'hive-t1-1')).toMatch(/^Fern\b/);
   });
 });
 

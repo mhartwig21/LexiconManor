@@ -104,6 +104,29 @@
       ]
     },
     {
+      "id": "portrait.guess.one-letter",
+      "trigger": "sanctum-after-guess",
+      "priority": 705,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong",
+          "withinDays": 0,
+          "whereGte": {
+            "closeness.sharedLetters": 1
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "Wrong — and one solitary letter of it true, which is not a foothold. The alphabet manages that much by accident, reader."
+        }
+      ]
+    },
+    {
       "id": "portrait.guess.warm-letters",
       "trigger": "sanctum-after-guess",
       "priority": 710,
@@ -175,7 +198,7 @@
     {
       "id": "portrait.guess.thaw",
       "trigger": "sanctum-after-guess",
-      "priority": 705,
+      "priority": 730,
       "once": true,
       "conditions": [
         {
@@ -193,7 +216,12 @@
         {
           "speaker": "portrait",
           "portrait": "wistful",
-          "text": "Three wrong words, and still you climb back up. Persistence. She had it too — no. Never mind. Guess again tomorrow."
+          "text": "Three wrong words, and still you climb back up. Persistence. She had it too — no. Never mind."
+        },
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "Today's word missed as the others did, and the door's verdict on it is struck into your journal beside it. Read your own margins. Guess again tomorrow."
         }
       ],
       "summary": "The Portrait almost mentioned someone. 'She had it too.'"
@@ -201,7 +229,7 @@
     {
       "id": "portrait.guess.thaw-2",
       "trigger": "sanctum-after-guess",
-      "priority": 708,
+      "priority": 740,
       "once": true,
       "conditions": [
         {
@@ -220,6 +248,11 @@
           "speaker": "portrait",
           "portrait": "wistful",
           "text": "Do you know what it costs a portrait to hope? The varnish cracks. Six wrong words now, and still I find I want you to manage it. Curious."
+        },
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "This one missed too, and the journal has kept what it was worth, as the journal keeps everything. Go and read your own margins. I shall be here. I am always here."
         }
       ],
       "summary": "The varnish is cracking. The Portrait wants you to succeed."
@@ -380,6 +413,45 @@
           "speaker": "portrait",
           "portrait": "warm",
           "text": "The door stands easier now. So do I. Odd, how a frame can feel like a window once the word is back in circulation."
+        }
+      ]
+    },
+    {
+      "id": "portrait.gate.empty-journal",
+      "trigger": "sanctum-idle",
+      "priority": 0,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "fragmentCount",
+          "lte": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "Your journal is empty, reader. Nothing filed, nothing struck through. The house keeps me in engravings, in memories, in the post. The door will still hear whatever you bring it."
+        }
+      ]
+    },
+    {
+      "id": "portrait.gate.thin-file",
+      "trigger": "sanctum-idle",
+      "priority": 0,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "fragmentCount",
+          "gte": 1,
+          "lte": 3
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "A thin file, reader. The rooms above hold more of him — of me — and thin files make for expensive guesses. Speak anyway, if you like. The door is not proud."
         }
       ]
     },

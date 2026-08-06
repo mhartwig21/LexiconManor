@@ -22,7 +22,16 @@ import './micro.css';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
 
-const ALPHABET = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
+/**
+ * ROUND 5: the pad is the Linen Closet's three-row QWERTY, not a 7-column
+ * alphabet grid. Four rows of 44px keys cost 191px of a 562px stage at
+ * 375x667 and were the single largest reason the print did not fit above the
+ * sticky deck; three rows cost 142px, the two typing rooms now share one
+ * idiom, and the key geometry is the Wordle-parity geometry the house already
+ * ships next door (a5micro.css). Nothing here is a committing tap — letters
+ * are penciled, and penciling is free.
+ */
+const KEY_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
 
 export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewProps<CipherPuzzle, CipherRoomState, CipherAction>) {
   const letters = useMemo(() => cipherLettersOf(puzzle), [puzzle]);
@@ -76,7 +85,12 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
         sfx.wrong();
         setShaking(true);
         later(() => setShaking(false), 340);
-        setToast({ kind: 'bad', text: `Still murky — ${fb.correct} of ${fb.total} letters ring true · −${hintCost} steps` });
+        setToast({
+          kind: fb.charged ? 'bad' : 'info',
+          text: fb.charged
+            ? `Still murky — ${fb.correct} of ${fb.total} letters ring true · −${hintCost} steps`
+            : 'The same print again — no charge for looking twice.',
+        });
         later(() => setToast(null), 2000);
         break;
       case 'incomplete':
@@ -116,6 +130,15 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
   const words = puzzle.ciphertext.split(' ');
   let cellIndex = 0;
 
+  // A cryptogram is attacked by word shape and letter frequency across the
+  // WHOLE phrase, so the tray must fit the glass: at 33 letters the last rank
+  // was already sliced by the sticky deck, and the pool runs to 41 letters —
+  // worst exactly at tier 3, the long, no-crib, wide-alphabet tier. Long
+  // phrases get a denser cell so every letter stays above the deck (AAA
+  // 3.3 / §0.1: the board is wholly visible at rest).
+  const glyphCount = [...puzzle.ciphertext].filter((c) => /[A-Z]/i.test(c)).length;
+  const dense = glyphCount > 30;
+
   return (
     <div className="mic mic--darkroom">
       <header className="mic__head">
@@ -151,7 +174,7 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
         </div>
       ) : (
         <>
-          <div className={`dk-sheet${shaking ? ' mic-shake' : ''}`}>
+          <div className={`dk-sheet${dense ? ' dk-sheet--dense' : ''}${shaking ? ' mic-shake' : ''}`}>
             {words.map((w, wi) => (
               <span key={wi} className="dk-word">
                 {[...w].map((c) => {
@@ -179,33 +202,80 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
             ))}
           </div>
 
+          {/* Prints in the tray. Every paid develop used to live only in a
+              toast that cleared after 2000ms — after three prints she had
+              spent 6–9 steps and could see none of what she bought. The
+              information she paid for now stays on the paper (AAA 3.3), and
+              the run of counts is itself a solving tool: "print 3 · 12 of 13"
+              after "print 2 · 10 of 13" says the last two swaps were right. */}
+          {state.engine.prints.length > 0 && (
+            <ol
+              className="dk-prints tabular-nums"
+              aria-label={state.engine.prints
+                .map((p, i) => `print ${i + 1}: ${p.correct} of ${p.total} rang true`)
+                .join('; ')}
+            >
+              <li className="dk-prints__label" aria-hidden="true">prints</li>
+              {state.engine.prints.map((p, i) => (
+                <li
+                  key={i}
+                  className="dk-print"
+                  title={`print ${i + 1} · ${p.correct} of ${p.total} rang true`}
+                >
+                  {p.correct}<span className="dk-print__of">/{p.total}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+
           {/* The deck: progress, the refusal toast, the 27-key pad and the two
               verbs all stay pinned to the bottom of the scrolling stage so
               they land in the thumb zone on every iPhone, and so the print
               scrolls BEHIND a clean edge instead of half-cutting a line of
               type (round-4; see ui/rooms/room-host.css). */}
           <div className="room-deck">
-          <div className="mic__meta tabular-nums">{penciled} of {letters.length} letters penciled</div>
-
-          <div className="mic-toastslot" aria-live="polite">
-            {toast && <span className={`mic-toast mic-toast--${toast.kind}`}>{toast.text}</span>}
+          {/* ONE reserved line, not two: progress at rest, the toast when there
+              is one. The ~29px that used to be a second row went to the print,
+              which is the thing that has to be whole (AAA 3.3 / §0.1). Fixed
+              height, so nothing shifts either way. The progress line sits
+              OUTSIDE the live region — a screen reader should hear develops,
+              not a pencil count re-read on every letter. */}
+          <div className="mic-toastslot">
+            {!toast && (
+              <span className="mic__meta tabular-nums">
+                {penciled} of {letters.length} letters penciled
+              </span>
+            )}
+            <span className="mic-toast-live" aria-live="polite">
+              {toast && <span className={`mic-toast mic-toast--${toast.kind}`}>{toast.text}</span>}
+            </span>
           </div>
 
           <div className="mic-keys">
-            {ALPHABET.map((ch) => (
-              <button
-                key={ch}
-                className={`mic-key${dupes.has(ch) || Object.values(state.engine.guesses).includes(ch) ? ' mic-key--dim' : ''}`}
-                onPointerDown={() => pencil(ch)}
-                disabled={won || !sel}
-                aria-label={`Pencil ${ch}`}
-              >
-                {ch}
-              </button>
+            {KEY_ROWS.map((row, ri) => (
+              <div key={row} className="mic-keys__row">
+                {[...row].map((ch) => (
+                  <button
+                    key={ch}
+                    className={`mic-key${dupes.has(ch) || Object.values(state.engine.guesses).includes(ch) ? ' mic-key--dim' : ''}`}
+                    onPointerDown={() => pencil(ch)}
+                    disabled={won || !sel}
+                    aria-label={`Pencil ${ch}`}
+                  >
+                    {ch}
+                  </button>
+                ))}
+                {ri === 2 && (
+                  <button
+                    className="mic-key mic-key--wide"
+                    onClick={erase}
+                    disabled={won || !sel || !state.engine.guesses[sel]}
+                  >
+                    Erase
+                  </button>
+                )}
+              </div>
             ))}
-            <button className="mic-key mic-key--wide" onClick={erase} disabled={won || !sel || !state.engine.guesses[sel]}>
-              Erase
-            </button>
           </div>
 
           <div className="mic-row">

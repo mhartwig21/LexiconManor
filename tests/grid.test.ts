@@ -8,7 +8,13 @@ import {
 import {
   canOpenDoor, isDoorLocked, lockedDraftTargets, rowCanLock, visibleLocks, KEY_COST,
 } from '../src/engine/manor/locks';
-import { DOOR_LOCKS } from '../src/engine/economy/steps';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import BlueprintSheet from '../src/ui/blueprint/BlueprintSheet';
+import {
+  draftLabel, draftTotal, priceStamp, priceWords, stampsDraftPrice, stampsPrice, walkLabel,
+} from '../src/ui/blueprint/pricing';
+import { DOOR_LOCKS, moveAt } from '../src/engine/economy/steps';
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCard } from '../src/engine/types';
 import { ENTRANCE_CELL, MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../src/engine/types';
 import { createRng } from '../src/engine/rng';
@@ -349,6 +355,125 @@ describe('padlocks are VISIBLE before a step is spent toward them (AAA 4.6)', ()
       const seen = visibleLocks(m).map((l) => cellKey(l.cell));
       expect(seen.every((k) => k === '2,5')).toBe(true);
       expect(seen.length).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND-5 AUDIT — the price of a step must be legible BEFORE it is charged
+// ---------------------------------------------------------------------------
+
+/**
+ * The finding, in one line: `MOVE_COST_BY_ROW` ranges −1..−5 and nothing in
+ * the live UI named it. The sheet drew tier bands that said "graver" and walk
+ * targets carried the raw cell key as their accessible name (`Walk 2,5`), so
+ * on the upper storeys a single mis-tap spent 5 of an 18-step budget with no
+ * pre-commit signal, no confirmation and no undo (AAA 4.6). These tests render
+ * the real sheet and read every priced target's ink and label back.
+ */
+function sheetFor(playerRow: number, keys: number): string {
+  const base = createManor(0xBEEF);
+  const landing: PlacedRoom = {
+    cardId: 'gallery', cell: { col: 1, row: playerRow }, doors: ['N', 'E', 'S', 'W'],
+    solved: true, kind: 'twistle',
+  };
+  const withNeighbour: PlacedRoom = {
+    cardId: 'library', cell: { col: 0, row: playerRow }, doors: ['N', 'E', 'S', 'W'],
+    solved: false, kind: 'word-web',
+  };
+  const manor: ManorState = {
+    ...base,
+    rooms: {
+      ...base.rooms,
+      [`1,${playerRow}`]: landing,
+      [`0,${playerRow}`]: withNeighbour,
+    },
+    playerCell: { col: 1, row: playerRow },
+  };
+  return renderToStaticMarkup(createElement(BlueprintSheet, {
+    manor, canEnterCurrent: false, interactive: true, keys,
+    onMove: () => {}, onOpenDraft: () => {}, onEnterRoom: () => {}, onSanctum: () => {},
+  }));
+}
+
+const labelsOf = (html: string) =>
+  [...html.matchAll(/aria-label="([^"]*)"/g)].map((m) => m[1]!);
+
+describe('the blueprint names its prices (AAA 4.6 / 4.9 / 4.10)', () => {
+  it('carries a rate card: one −N per row, straight from moveAt', () => {
+    const html = sheetFor(2, 2);
+    for (let row = 0; row < MANOR_ROWS; row++) {
+      expect(html).toContain(`>${priceStamp(row)}<`);
+    }
+    // …and the numbers on the sheet ARE the ledger's numbers.
+    expect(priceStamp(0)).toBe('−1');
+    expect(priceStamp(6)).toBe(`−${-moveAt(6)}`);
+  });
+
+  it('gives every walk target a spoken price, never a grid coordinate', () => {
+    for (const row of [0, 2, 4, 5]) {
+      const html = sheetFor(row, 2);
+      const walks = labelsOf(html).filter((l) => l.startsWith('Walk'));
+      expect(walks.length).toBeGreaterThan(0);
+      for (const label of walks) {
+        expect(label).not.toMatch(/\d,\d/);                 // no "Walk 2,5"
+        // Exactly one of the manor's row labels is the right one — assert the
+        // label is a price-bearing sentence for SOME row, and that the row it
+        // names and the price it quotes agree with moveAt.
+        const named = Array.from({ length: MANOR_ROWS }, (_, r) => r)
+          .filter((r) => label === walkLabel(r));
+        expect(named).toHaveLength(1);
+        expect(label).toContain(priceWords(named[0]!));
+      }
+    }
+  });
+
+  it('gives every draft target both of its prices: the look and the climb', () => {
+    for (const row of [0, 2, 4]) {
+      const html = sheetFor(row, 2);
+      const drafts = labelsOf(html).filter(
+        (l) => l.startsWith('Draft') || l.startsWith('Unlock') || l.startsWith('Padlocked'));
+      expect(drafts.length).toBeGreaterThan(0);
+      for (const label of drafts) {
+        // The declined look always costs the LOCAL rate — the whole point of
+        // the two-part walk — and the label always says so.
+        expect(label).toContain(priceWords(row));
+        expect(label).not.toMatch(/\d,\d/);
+      }
+      // A climb up a storey names its full price too.
+      const upward = drafts.find((l) => l.includes('in all if you take it'));
+      if (row + 1 < MANOR_ROWS && moveAt(row + 1) !== moveAt(row)) {
+        expect(upward).toBeDefined();
+        expect(upward).toContain(String(draftTotal(row, row + 1)));
+      }
+    }
+  });
+
+  it('stamps a target only when it is priced differently from where she stands', () => {
+    // A price stamped on everything stops being read; a price stamped on the
+    // thing that costs more is the push-your-luck decision, in ink.
+    expect(stampsPrice(2, 2)).toBe(false);
+    expect(stampsPrice(2, 3)).toBe(true);
+    expect(stampsDraftPrice(3, 3)).toBe(false);
+    expect(stampsDraftPrice(3, 4)).toBe(true);
+    // Downstairs is never advertised as a discount it will not give: the
+    // climb differential floors at 0, so taking a room below costs the local
+    // rate, and the stamp says the local rate (i.e. no stamp at all).
+    expect(draftTotal(5, 1)).toBe(-moveAt(5));
+    expect(stampsDraftPrice(5, 1)).toBe(false);
+  });
+
+  it('every priced label is derived from moveAt for every row pair', () => {
+    for (let from = 0; from < MANOR_ROWS; from++) {
+      expect(walkLabel(from)).toContain(priceWords(from));
+      for (let to = 0; to < MANOR_ROWS; to++) {
+        const label = draftLabel(from, to);
+        expect(label).toContain(priceWords(from));
+        expect(draftTotal(from, to)).toBe(Math.max(-moveAt(from), -moveAt(to)));
+        if (draftTotal(from, to) !== -moveAt(from)) {
+          expect(label).toContain(`${draftTotal(from, to)} in all`);
+        }
+      }
     }
   });
 });

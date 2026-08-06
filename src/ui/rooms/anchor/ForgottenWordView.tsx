@@ -33,6 +33,13 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
   const [guess, setGuess] = useState('');
   const [shaking, setShaking] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
+  /**
+   * AAA 3.4: the letter-by-letter `fw-reveal` is the REVEAL, not the
+   * celebration. `inked` is the second beat — the definition's quotation marks
+   * close and the word inks itself into the card. Tap anywhere on the panel to
+   * jump straight to it.
+   */
+  const [inked, setInked] = useState(false);
 
   const handledAttempt = useRef(0);
   const handledHints = useRef(0);
@@ -93,6 +100,14 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.attempts]);
 
+  // The reveal runs word.length × 110ms + the 420ms turn; the celebration
+  // starts when it finishes, not instead of it.
+  useEffect(() => {
+    if (!won) return;
+    later(() => setInked(true), puzzle.word.length * 110 + 420);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [won]);
+
   useEffect(() => {
     if (state.hintsBought === handledHints.current) return;
     handledHints.current = state.hintsBought;
@@ -105,23 +120,48 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
   }, [state.hintsBought]);
 
   return (
-    <div className="anch anch--study">
+    <div className={`anch anch--study${won || slipped ? ' anch--verdict' : ''}`}>
       <header className="anch__head">
         <h2 className="anch__title">The Study</h2>
-        <p className="anch__sub">A word was struck from every dictionary. Its definition remains.</p>
+        {/* 3.2/7.2: the premise is the flavour; the letter count is the RULE —
+            a wrong-length whisper is refused, so she must always be able to
+            read the count, SE-class screen or not. */}
+        {/* NOT the Sanctum's premise. This line used to repeat the Volume 1
+            erasure claim verbatim (see engine/volume.ts) — a word taken out
+            of every dictionary — over forty-odd perfectly ordinary words the
+            player can look up on her phone. That both cheapened the one
+            monstrous erasure the whole mystery turns on and read as a false
+            lead with no character wrongness signal to close it (AAA 4.16).
+            These are the lexicographer's own unfinished entries, which is
+            true, and which makes the Study feed the Sanctum instead of
+            competing with it. Sole ownership of the claim is pinned by
+            tests/volume-premise.test.ts. */}
+        <p className="anch__flavour">An entry in his hand. The headword is torn away.</p>
+        <p className="anch__rule tabular-nums">{puzzle.word.length} letters — whisper it back.</p>
       </header>
 
-      <div className="anch-card fw-def">
-        <div className="fw-def__eyebrow">A word has been forgotten</div>
-        <p className="fw-def__text">“{definitionForLevel(puzzle, state.tier)}”</p>
-        <div className="fw-def__meta tabular-nums">
-          {puzzle.word.length} letters
-          {playing && ` · ${whispersLeft} whisper${whispersLeft === 1 ? '' : 's'} left`}
-        </div>
+      <div className={`anch-card fw-def${inked ? ' fw-def--inked' : ''}`}>
+        <div className="fw-def__eyebrow">{inked ? 'The headword, restored' : 'A headword is missing'}</div>
+        <p className="fw-def__text">
+          <span className="fw-def__q fw-def__q--open">“</span>
+          {definitionForLevel(puzzle, state.tier)}
+          <span className="fw-def__q fw-def__q--close">”</span>
+        </p>
+        {inked && won ? (
+          <div className="fw-def__word">{puzzle.word}</div>
+        ) : (
+          <div className="fw-def__meta tabular-nums">
+            {puzzle.word.length} letters
+            {playing && ` · ${whispersLeft} whisper${whispersLeft === 1 ? '' : 's'} left`}
+          </div>
+        )}
       </div>
 
       {won && state.lastFeedback?.kind === 'correct' ? (
-        <div className="anch-done">
+        <div
+          className={`anch-done${inked ? ' anch-done--settled' : ''}`}
+          onPointerDown={() => setInked(true)}
+        >
           <div className="fw-reveal">
             {[...state.lastFeedback.word].map((ch, i) => (
               <span key={i} className="fw-reveal__ch" style={{ animationDelay: `${i * 110}ms` }}>{ch}</span>

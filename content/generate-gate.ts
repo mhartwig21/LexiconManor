@@ -84,6 +84,19 @@ const TONE_WORDS = [
   'demise', 'demises', 'cull', 'culls', 'culled', 'culling',
   'coke', 'cokes', 'dope', 'dopes', 'doped', 'molly', 'mollies',
   'stoner', 'stoners', 'git', 'gits',
+  // sixth 3.7 read (2026-08-06, round 5) — surfaced by the Conservatory's
+  // pangram lane, which reaches rank ~120k and so lands well past the bands
+  // the earlier reads sampled. Struck locally in generate-hive.ts first;
+  // promoted here so every generator inherits them.
+  'diarrhea', 'erotica',
+  'urinate', 'urinated', 'urinates', 'urinating',
+  'impotent', 'impotence', 'glaucoma', 'migraine', 'migraines',
+  'hernia', 'hernias', 'angina', 'edema', 'enema', 'enemas', 'apnea', 'polio',
+  'moron', 'morons', 'moronic', 'crotch', 'crotches', 'dung', 'lice',
+  'emaciate', 'emaciated', 'decrepit', 'decimate', 'decimated',
+  'impale', 'impaler', 'impaled', 'impales',
+  'nonlethal', 'deadlift', 'gunpoint', 'militiaman', 'militiamen', 'undead',
+  'abort', 'aborted', 'aborts', 'malice', 'lament', 'lamented', 'laments',
 ];
 
 const NAME_WORDS = [
