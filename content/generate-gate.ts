@@ -97,6 +97,17 @@ const TONE_WORDS = [
   'impale', 'impaler', 'impaled', 'impales',
   'nonlethal', 'deadlift', 'gunpoint', 'militiaman', 'militiamen', 'undead',
   'abort', 'aborted', 'aborts', 'malice', 'lament', 'lamented', 'laments',
+  // seventh read (round 6) — the INFLECTION HOLE. The violence block above
+  // gates 'murder'/'murders' and 'strangle'/'choke', but not the agent and
+  // participle forms, and the Conservatory's pangram lane (rank ~120k) printed
+  // MURDERED and MURDERER back to the player as her trophy on the Every Petal
+  // screen. Struck locally in generate-hive.ts first; promoted here because
+  // every other generator was equally exposed and the shared gate is their
+  // honest home. Gate word FAMILIES, never lemmas.
+  'murdered', 'murderer', 'murderers', 'murdering', 'murderous',
+  'slaughter', 'slaughters', 'slaughtered', 'slaughtering', 'manslaughter',
+  'strangled', 'strangler', 'stranglers', 'strangles', 'strangling',
+  'choking', 'stabbing', 'stabbings', 'killings',
 ];
 
 const NAME_WORDS = [

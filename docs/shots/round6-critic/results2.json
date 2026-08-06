@@ -1,0 +1,187 @@
+{
+ "library": {
+  "dead": {
+   "stageH": 721,
+   "totalEmpty": 341,
+   "biggest": [
+    {
+     "top": 52,
+     "h": 136
+    },
+    {
+     "top": 640,
+     "h": 133
+    },
+    {
+     "top": 546,
+     "h": 50
+    }
+   ]
+  },
+  "quotes": [],
+  "board": {
+   "amb": [
+    "BOW",
+    "CROW"
+   ],
+   "groups": [
+    "Rhymes with \"SNOW\"",
+    "Silent \"W\"",
+    "Can Follow \"RAIN\"",
+    "___ BAR"
+   ]
+  },
+  "plainWrongToast": null,
+  "stepsAfterWrong": 21,
+  "herringToast": null,
+  "hintButton": [
+   "Clear",
+   "Shuffle",
+   "Weave"
+  ],
+  "naming": null,
+  "deadSolved": {
+   "stageH": 721,
+   "totalEmpty": 341,
+   "biggest": [
+    {
+     "top": 52,
+     "h": 136
+    },
+    {
+     "top": 640,
+     "h": 133
+    },
+    {
+     "top": 546,
+     "h": 50
+    }
+   ]
+  }
+ },
+ "hive": {
+  "id": "hive-t1-1",
+  "wordCount": 75,
+  "dead": {
+   "stageH": 721,
+   "totalEmpty": 247,
+   "biggest": [
+    {
+     "top": 321,
+     "h": 110
+    },
+    {
+     "top": 232,
+     "h": 69
+    },
+    {
+     "top": 688,
+     "h": 33
+    }
+   ]
+  },
+  "geomStart": {
+   "cellW": 96,
+   "cellH": 83.1,
+   "cellTop": 518.1
+  },
+  "everyPetalPanel": null,
+  "gems": 0
+ },
+ "twistle": {
+  "dead": {
+   "stageH": 721,
+   "totalEmpty": 213,
+   "biggest": [
+    {
+     "top": 689,
+     "h": 84
+    },
+    {
+     "top": 590,
+     "h": 55
+    },
+    {
+     "top": 52,
+     "h": 47
+    }
+   ]
+  }
+ },
+ "study": {
+  "dead": {
+   "stageH": 721,
+   "totalEmpty": 391,
+   "biggest": [
+    {
+     "top": 624,
+     "h": 149
+    },
+    {
+     "top": 52,
+     "h": 114
+    },
+    {
+     "top": 388,
+     "h": 39
+    }
+   ]
+  }
+ },
+ "darkroom": {
+  "dead": {
+   "stageH": 721,
+   "totalEmpty": 216,
+   "biggest": [
+    {
+     "top": 315,
+     "h": 185
+    },
+    {
+     "top": 90,
+     "h": 16
+    },
+    {
+     "top": 521,
+     "h": 15
+    }
+   ]
+  }
+ },
+ "linen-closet": {
+  "dead": {
+   "stageH": 721,
+   "totalEmpty": 127,
+   "biggest": [
+    {
+     "top": 312,
+     "h": 111
+    },
+    {
+     "top": 535,
+     "h": 16
+    }
+   ]
+  }
+ },
+ "counting-house": {
+  "dead": {
+   "stageH": 721,
+   "totalEmpty": 64,
+   "biggest": [
+    {
+     "top": 517,
+     "h": 34
+    },
+    {
+     "top": 475,
+     "h": 20
+    },
+    {
+     "top": 137,
+     "h": 10
+    }
+   ]
+  }
+ }
+}

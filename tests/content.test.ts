@@ -67,7 +67,16 @@ describe('twistle bundle', () => {
 
 describe('word web bundle', () => {
   it('every puzzle is 4 groups of 4 unique words and solvable via the engine', () => {
-    expect(wordWeb.length).toBeGreaterThanOrEqual(50);
+    /* Floor lowered 50 → 45 in round 9, deliberately, and this is the reason.
+       Round 7 dropped six boards that carried no herring the planter could
+       name, because a board whose acknowledged trap can never fire is the
+       Library charging our prices for Connections. The pool landed at 51 — one
+       board of headroom against a 50 floor — which meant the NEXT tightening
+       of the herring budget would fail HERE, on pool size, rather than on the
+       fairness rule that actually motivated the drop. A pool-size floor must
+       not be the thing policing a fairness decision. Per-tier ≥10 floors live
+       in tests/puzzles/anchors.test.ts and are the real guarantee. */
+    expect(wordWeb.length).toBeGreaterThanOrEqual(45);
     for (const p of wordWeb) {
       expect(p.groups.length, p.id).toBe(4);
       const words = p.groups.flatMap((g) => g.words);

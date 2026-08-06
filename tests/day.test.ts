@@ -5,13 +5,17 @@ import {
   pruneEventsAtDusk, refundLine, shouldTriggerDusk, DAY_FLOW, DUSK_FADE_MS,
 } from '../src/engine/day';
 import {
-  appendEntry, climbKey, createLedger, moveAt, rowName, teaArcPoints, teaBonus,
+  appendEntry, climbKey, createLedger, moveAt, rowName, teaArcFloor, teaArcPoints, teaBonus,
   FIRST_MORNING_POT, STEP_TABLE, TEA_ARC,
 } from '../src/engine/economy/steps';
 import { CARRY_OVER_EFFECTS, carryOverFrom } from '../src/engine/manor/deck';
 import type { DayState, DraftOffer, PlacedRoom, StepLedger } from '../src/engine/types';
 import type { RecordedEvent } from '../src/engine/events';
-import { draftTargets } from '../src/engine/manor/grid';
+import {
+  atSanctumDoor, draftTargets, SANCTUM_DOOR_CELL, SANCTUM_DOOR_KEY,
+} from '../src/engine/manor/grid';
+import { ENTRANCE_CELL } from '../src/engine/types';
+import { getVolumeContent } from '../src/app/content/volumes';
 import { createEmptySaveV2 } from '../src/app/save';
 import type { ManorStore } from '../src/app/store';
 import { createDaySlice } from '../src/app/slices/day';
@@ -252,6 +256,93 @@ const exploringStore = () => {
   return store;
 };
 
+describe('THE SECOND GATE: the word is spoken at the door (AAA 4.10e, round 7)', () => {
+  /** The answer to the shipped Volume 1, straight off the authored content. */
+  const answerFor = (store: ReturnType<typeof makeStore>) =>
+    getVolumeContent(store.getState().volume.volumeId)!.answer;
+
+  it('refuses the guess from the ground floor, however much she knows', () => {
+    // THE BLOCKER, REPRODUCED AND CLOSED. Live repro on the shipped build: a
+    // fresh save, day 1, standing in the Entrance Hall with the ledger
+    // untouched at 21 steps — journal → "Take it to the Sanctum" → type the
+    // word → solved. Winning takes BOTH gates (knowing it AND reaching the
+    // door that day); only one of them existed.
+    const store = exploringStore();
+    const manor = store.getState().manor!;
+    expect(manor.playerCell).toEqual(ENTRANCE_CELL);   // she has not climbed
+    expect(atSanctumDoor(manor)).toBe(false);
+    const stepsBefore = store.getState().stepsRemaining();
+
+    store.getState().guessAtSanctum(answerFor(store));
+
+    expect(store.getState().volume.status).not.toBe('solved');
+    expect(store.getState().volume.guesses).toHaveLength(0);   // not even the daily guess
+    expect(store.getState().stepsRemaining()).toBe(stepsBefore);
+  });
+
+  it('refuses it from the landing when the room drew no north door', () => {
+    // Arriving on the storey is not arriving at the door: the landing room has
+    // to have drawn the opening that matches the Sanctum's sealed one.
+    const store = exploringStore();
+    const manor = store.getState().manor!;
+    const blind: PlacedRoom = {
+      cardId: 'test-room', cell: SANCTUM_DOOR_CELL, doors: ['S'], solved: true, kind: 'parlor',
+    };
+    store.setState({
+      manor: {
+        ...manor,
+        rooms: { ...manor.rooms, [SANCTUM_DOOR_KEY]: blind },
+        playerCell: { ...SANCTUM_DOOR_CELL },
+      },
+    });
+    expect(atSanctumDoor(store.getState().manor)).toBe(false);
+    store.getState().guessAtSanctum(answerFor(store));
+    expect(store.getState().volume.status).not.toBe('solved');
+    expect(store.getState().volume.guesses).toHaveLength(0);
+  });
+
+  it('hears it when she is standing at the door', () => {
+    const store = exploringStore();
+    const manor = store.getState().manor!;
+    const landing: PlacedRoom = {
+      cardId: 'test-room', cell: SANCTUM_DOOR_CELL, doors: ['N', 'S'], solved: true, kind: 'parlor',
+    };
+    store.setState({
+      manor: {
+        ...manor,
+        rooms: { ...manor.rooms, [SANCTUM_DOOR_KEY]: landing },
+        playerCell: { ...SANCTUM_DOOR_CELL },
+      },
+    });
+    expect(atSanctumDoor(store.getState().manor)).toBe(true);
+    store.getState().guessAtSanctum(answerFor(store));
+    expect(store.getState().volume.status).toBe('solved');
+  });
+
+  it('spends only the daily guess on a wrong word, and only at the door', () => {
+    const store = exploringStore();
+    const manor = store.getState().manor!;
+    store.setState({
+      manor: {
+        ...manor,
+        rooms: {
+          ...manor.rooms,
+          [SANCTUM_DOOR_KEY]: {
+            cardId: 'test-room', cell: SANCTUM_DOOR_CELL, doors: ['N', 'S'],
+            solved: true, kind: 'parlor',
+          },
+        },
+        playerCell: { ...SANCTUM_DOOR_CELL },
+      },
+    });
+    const stepsBefore = store.getState().stepsRemaining();
+    store.getState().guessAtSanctum('NOTTHEWORD');
+    expect(store.getState().volume.guesses).toHaveLength(1);
+    expect(store.getState().volume.status).not.toBe('solved');
+    expect(store.getState().stepsRemaining()).toBe(stepsBefore);   // free, forever
+  });
+});
+
 describe('the last-step draft never charges for a look it refuses to give (AAA 4.6 + 4.12/R.3)', () => {
   it('1 step left + openDraft → the offer is visible; the day ends only after it resolves', async () => {
     const store = exploringStore();
@@ -412,21 +503,87 @@ describe('backing out of a draft costs the LOCAL rate, not a storey (AAA 4.6)', 
 });
 
 describe("the tea arc has a live source: shared mornings (AAA 4.10d / 5.9)", () => {
-  it('warms Bramble every other morning, without spending a bookmark', () => {
+  /** Play `days` days; `sitDown` decides whether she takes her tea that day. */
+  const mornings = (days: number, sitDown: (day: number) => boolean) => {
     const store = makeStore();
     const seen: number[] = [];
-    for (let d = 1; d <= 12; d++) {
+    for (let d = 1; d <= days; d++) {
       store.getState().startDay();
+      if (sitDown(d)) store.getState().shareMorningTea();   // the scene closed
       seen.push(store.getState().affinities.bramble);
       store.getState().advanceDayPhase();      // → exploring
       store.getState().endDay('retired-early');
       store.getState().advanceDayPhase();      // dusk → night
     }
+    return { store, seen };
+  };
+
+  it('warms Bramble every other morning she actually sits down for', () => {
+    const { store, seen } = mornings(12, () => true);
     expect(seen).toEqual(Array.from({ length: 12 }, (_, i) => teaArcPoints(i + 1)));
     expect(seen.at(-1)).toBe(TEA_ARC.maxPoints);
     // The gift currency is untouched: the arc costs mornings, not bookmarks.
     expect(store.getState().currencies.bookmarks)
       .toBe(makeStore().getState().currencies.bookmarks);
+  });
+
+  it('is BOUGHT, not clocked: a skipped morning leaves her a rung behind', () => {
+    // ROUND-7 FINDING. `startDay` used to apply `max(known, teaArcPoints(day))`
+    // on the calendar alone, so the game's only meta-progression was a day
+    // counter wearing a friendship's clothes — the player had no agency in the
+    // one arc that decides when the Sanctum becomes affordable.
+    const shared = mornings(12, () => true).seen;
+    const skipped = mornings(12, () => false).seen;
+    expect(skipped).not.toEqual(shared);
+    for (let d = 1; d <= 12; d++) {
+      // Never missable, only slower: the unconditional dawn floor still warms
+      // her, one rung behind the player who turns up (AAA 5.5).
+      expect(skipped[d - 1]).toBe(teaArcFloor(d));
+      expect(skipped[d - 1]!).toBeLessThanOrEqual(shared[d - 1]!);
+    }
+    expect(skipped.at(-1)!).toBeLessThan(shared.at(-1)!);
+    // And she can start turning up again: the floor is a floor, not a cap.
+    const late = mornings(12, (d) => d > 6).seen;
+    expect(late.at(-1)!).toBeGreaterThan(skipped.at(-1)!);
+  });
+
+  it('tops the pot up in the same breath, so the +N lands where she can see it', () => {
+    // The dawn pot is poured before the scene; the shared morning's rung is
+    // added AS THE SCENE CLOSES, through the audited ledger, so the largest
+    // step grant in the game is a visible floating +N instead of a number that
+    // moved between glances (AAA 4.9 / 11.15).
+    const store = makeStore();
+    for (let d = 1; d < 4; d++) {           // roll to day 4: a rung morning
+      store.getState().startDay();
+      store.getState().shareMorningTea();
+      store.getState().advanceDayPhase();
+      store.getState().endDay('retired-early');
+      store.getState().advanceDayPhase();
+    }
+    store.getState().startDay();
+    const before = store.getState().ledger.entries.filter((e) => e.reason === 'tea');
+    const known = store.getState().affinities.bramble;
+    store.getState().shareMorningTea();
+    const after = store.getState().ledger.entries.filter((e) => e.reason === 'tea');
+    expect(store.getState().affinities.bramble).toBe(known + 1);
+    expect(after.length).toBe(before.length + 1);
+    expect(after.at(-1)!.delta).toBe(teaBonus(known + 1) - teaBonus(known));
+    // The day's whole pot is exactly what the simulation models for day 4.
+    const total = after.reduce((s, e) => s + e.delta, 0);
+    expect(total).toBe(teaBonus(teaArcPoints(4)));
+  });
+
+  it('never lifts her past the mornings she has actually had', () => {
+    const store = makeStore();
+    store.getState().startDay();                 // day 1: the ceiling is 0
+    store.getState().shareMorningTea();
+    store.getState().shareMorningTea();          // and again, and again
+    store.getState().shareMorningTea();
+    expect(store.getState().affinities.bramble).toBe(teaArcPoints(1));
+    // Not during any other phase, either.
+    store.getState().advanceDayPhase();
+    store.getState().shareMorningTea();
+    expect(store.getState().affinities.bramble).toBe(teaArcPoints(1));
   });
 
   it('is a FLOOR, never a clobber: gifted points are kept', () => {
@@ -467,8 +624,9 @@ describe('something keeps overnight (AAA 4.11 — the cross-day investment)', ()
     return store;
   };
 
-  /** Day 2's morning steps that are NOT the carry-over: Bramble's tea alone. */
-  const baselineTea = () => teaBonus(teaArcPoints(2));
+  /** Day 2's morning steps that are NOT the carry-over: Bramble's tea alone.
+   *  `overnight` never plays the morning scene, so this is the dawn FLOOR. */
+  const baselineTea = () => teaBonus(teaArcFloor(2));
   const teaTotal = (store: ReturnType<typeof makeStore>) =>
     store.getState().ledger.entries
       .filter((e) => e.reason === 'tea')
@@ -499,7 +657,7 @@ describe('something keeps overnight (AAA 4.11 — the cross-day investment)', ()
     store.getState().advanceDayPhase();      // dusk → night
     const before = teaTotal(store);
     store.getState().startDay();             // day 3: yesterday set nothing up
-    expect(teaTotal(store)).toBe(teaBonus(teaArcPoints(3)));
+    expect(teaTotal(store)).toBe(teaBonus(teaArcFloor(3)));
     expect(before).toBeGreaterThan(0);
   });
 });

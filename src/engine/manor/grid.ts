@@ -20,6 +20,30 @@ export const DIRS: readonly Dir[] = ['N', 'E', 'S', 'W'];
 export const ENTRANCE_KEY = cellKey(ENTRANCE_CELL);
 export const SANCTUM_KEY = cellKey(SANCTUM_CELL);
 
+/**
+ * ── THE DOOR IS A PLACE (AAA 4.10e, MANOR_DESIGN §7) ───────────────────────
+ *
+ * The Sanctum cell (2,6) is sealed and never walked into; the word is spoken
+ * from the landing directly below it, (2,5), through that room's north door.
+ * So "reaching the Sanctum" means STANDING HERE with a matched door pair
+ * overhead — nothing else in the game is the second gate.
+ *
+ * ROUND-7 DEFECT this exists to close: the predicate was written inline in
+ * `ui/blueprint/BlueprintSheet.tsx` only, so the journal's "Take it to the
+ * Sanctum" button and `SanctumView.speak()` could both reach the door from
+ * anywhere in the house, on any day, for zero steps — the owner's exact
+ * complaint ("I reached the Forgotten Word on my first day"), reproducible on
+ * a fresh save at 21 untouched steps. One exported predicate now, consumed by
+ * the sheet, by the guess flow (app/slices/journal.ts) and by the Sanctum
+ * screen, so a fourth caller cannot invent a fifth answer.
+ */
+export const SANCTUM_DOOR_CELL: Cell = {
+  col: SANCTUM_CELL.col,
+  row: SANCTUM_CELL.row - 1,
+};
+
+export const SANCTUM_DOOR_KEY = cellKey(SANCTUM_DOOR_CELL);
+
 /** Reserved card ids for the two pre-placed rooms (deck registry touchpoint). */
 export const ENTRANCE_CARD_ID = 'entrance-hall';
 export const SANCTUM_CARD_ID = 'sanctum';
@@ -133,6 +157,20 @@ export function walkableNeighbors(manor: ManorState): Cell[] {
     if (n && doorsConnect(manor, manor.playerCell, d)) out.push(n);
   }
   return out;
+}
+
+/**
+ * Is the player standing at the Sanctum door right now? (See SANCTUM_DOOR_CELL.)
+ *
+ * Both halves matter: she is on the landing AND the room she drafted there
+ * drew a north door that matches the Sanctum's sealed south one. A landing
+ * room with no north door is a landing she has to draft again tomorrow — the
+ * climb is not banked by arriving on the storey.
+ */
+export function atSanctumDoor(manor: ManorState | null | undefined): boolean {
+  if (!manor) return false;
+  if (!sameCell(manor.playerCell, SANCTUM_DOOR_CELL)) return false;
+  return doorsConnect(manor, manor.playerCell, 'N');
 }
 
 /**

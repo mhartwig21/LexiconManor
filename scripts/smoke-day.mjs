@@ -28,14 +28,35 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const SHOTS = resolve(root, 'docs/shots/round4');
+const SHOTS = resolve(root, 'docs/shots/round6');
 mkdirSync(SHOTS, { recursive: true });
 const BASE = 'http://localhost:4173/LexiconManor/';
 const cipherPool = JSON.parse(readFileSync(resolve(root, 'content/generated/cipher.json'), 'utf8'));
 const sudokuPool = JSON.parse(readFileSync(resolve(root, 'content/generated/sudoku.json'), 'utf8'));
 
-/** The Sanctum sits at the top of a 5×7 manor. Day 1 must not get here. */
-const SANCTUM_ROW = 6;
+/**
+ * ROUND 6 CORRECTION. This read `SANCTUM_ROW = 6` and asserted day 1 never
+ * touched it — but row 6 is the SEALED SANCTUM ITSELF, a cell the player never
+ * stands in and the drafter never offers. The storey that actually matters is
+ * the LANDING at row 5, where the door is and where a word may be spoken. The
+ * old constant therefore asserted something that was true for free, which is
+ * how the economy shipped a 41.5% day-1 reach against a published <8%.
+ *
+ * Kept in lockstep with the engine rather than re-typed: SANCTUM_DOOR_CELL is
+ * the one place the door's cell is declared (engine/manor/grid.ts), so if it
+ * moves, this smoke pass moves with it instead of silently checking a storey
+ * nobody enters.
+ */
+const typesSrc = readFileSync(resolve(root, 'src/engine/types.ts'), 'utf8');
+const sanctumRow = Number(
+  /SANCTUM_CELL\s*:\s*Cell\s*=\s*\{[^}]*row:\s*(\d+)/.exec(typesSrc)?.[1],
+);
+if (!Number.isInteger(sanctumRow)) {
+  console.error('[smoke] FAIL: could not read SANCTUM_CELL from engine/types.ts');
+  process.exit(1);
+}
+// grid.ts: SANCTUM_DOOR_CELL.row === SANCTUM_CELL.row - 1. The landing.
+const SANCTUM_LANDING_ROW = sanctumRow - 1;
 
 const log = (...a) => console.log('[smoke]', ...a);
 const fail = (msg) => { console.error('[smoke] FAIL:', msg); process.exitCode = 1; };
@@ -112,7 +133,12 @@ async function pencilLetter(cipherCh, plainCh) {
   await page.waitForTimeout(50);
   const key = await page.$(`.mic-key:text-is("${plainCh}")`);
   if (!key) { fail(`no key for plain letter ${plainCh}`); return; }
-  await key.dispatchEvent('pointerdown');
+  // ROUND 6: the Darkroom's letter keys commit on RELEASE (`onClick`), not on
+  // pointerdown — a touch-down commit could not be escaped by sliding off, and
+  // the room mixed two commit idioms (its reveal button was already onClick).
+  // Dispatching pointerdown here would now type nothing at all, so this line
+  // is load-bearing evidence that the fix is live rather than a comment.
+  await key.click();
   await page.waitForTimeout(50);
 }
 
@@ -267,11 +293,11 @@ try {
   // 6a. THE NEW TENSION (AAA 4.10c/4.10d). Before the overhaul a day-1 player
   //     could stroll to the top. Now the climb is the expense and the Sanctum
   //     row is a campaign event, not a Tuesday.
-  log(`day-1 high-water row: ${maxRow} (Sanctum row is ${SANCTUM_ROW})`);
-  if (maxRow >= SANCTUM_ROW) {
-    fail(`day 1 reached the Sanctum row (${maxRow}) — the climb is not priced`);
+  log(`day-1 high-water row: ${maxRow} (Sanctum LANDING is row ${SANCTUM_LANDING_ROW})`);
+  if (maxRow >= SANCTUM_LANDING_ROW) {
+    fail(`day 1 reached the Sanctum landing (row ${maxRow}) — the climb is not priced`);
   } else {
-    ok(`day 1 topped out at row ${maxRow}; the Sanctum row stayed out of reach`);
+    ok(`day 1 topped out at row ${maxRow}; the Sanctum landing stayed out of reach`);
   }
 
   // 7. Dusk veil → night digest.
@@ -540,11 +566,15 @@ try {
     log(`padlock: standing at ${planted} with ${before.keys} keys, ${before.steps} steps, `
       + `${before.ledger} ledger entries`);
 
-    // The ghost carries aria-disabled="true" (there is nothing to buy), which
-    // Playwright's actionability check reads as "not enabled". A real finger
-    // still lands on it and still gets the shrug, so dispatch the event rather
-    // than asserting through the a11y gate.
-    await lockedGhost.dispatchEvent('click');
+    // ROUND 6: the ghost used to carry aria-disabled="true", which lied — the
+    // control genuinely answers a tap (it names the storey, the key cost and
+    // "nothing was spent"), and ARIA that contradicts behaviour invites AT to
+    // skip the one control the player most needs explained. The attribute is
+    // gone, so this is now a real click through the a11y gate, not a dispatch.
+    const ariaDisabled = await lockedGhost.getAttribute('aria-disabled');
+    if (ariaDisabled) fail(`the padlock still claims aria-disabled="${ariaDisabled}" while answering taps`);
+    else ok('the padlock does not lie about being disabled — it answers the tap');
+    await lockedGhost.click();
     await page.waitForTimeout(150);
     const shrugged = await page.$('.bp-padlock-slot--refused');
     await shot('18-padlock-refused');

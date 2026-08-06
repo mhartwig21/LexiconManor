@@ -46,6 +46,17 @@ import type { Tier, WordWebPuzzle } from '../src/engine/types';
  *     cross-board-semantic heuristics and FAILS THE BUILD on any complete
  *     unintended grouping; planted herrings (≤3, 5th-member or cross-category
  *     traps) are emitted as `ambiguousWords`;
+ *   - ROUND 7 (AAA 2.10 [BEAT]): the trap is emitted WITH ITS RELATION —
+ *     `herrings: [{ words, relation, detail }]`, relation ∈ rhyme /
+ *     shared-affix / doubled-letter / semantic. `ambiguousWords` (the flat
+ *     intruder list the layout clusters on) is derived from it and unchanged.
+ *     Without the relation the room could only say "no": the acknowledged-
+ *     herring line named neither the words nor the thread, so a −2-step guess
+ *     bought nothing the shake had not already said. The bar's own example
+ *     ("they *do* all rhyme, don't they?") is informative BECAUSE it names the
+ *     relation. Every tier now also carries a floor of ≥1 trap (tier 1 used to
+ *     ship `minHerrings: 0`, and 22 of 55 boards had an empty trap list — on
+ *     40% of nights the one channel meant to beat Connections was dead);
  *   - an adversarial opening `layout` (2.6): herrings clustered adjacently,
  *     no gift rows (no row holds 3+ of one group);
  *   - two plausible same-tier `decoys` per group for the 2.11 act of naming.
@@ -181,6 +192,24 @@ const WORDPLAY_BANK: BankGroup[] = [
   { theme: 'Can Precede "BERRY"', words: ['BLUE', 'STRAW', 'RASP', 'ELDER'] },
   { theme: 'Can Follow "SUN"', words: ['FLOWER', 'SHINE', 'RISE', 'BEAM'] },
   { theme: 'Can Precede "WORK"', words: ['HOME', 'NET', 'FRAME', 'CLOCK'] },
+
+  // --- round 7: MORE planting stock. Tier 1's herring floor rose from 0 to 1
+  // (22 of 55 shipped boards used to carry an empty trap list, so on 40% of
+  // nights AAA 2.10's acknowledged herring could not fire at all), and the
+  // planter promptly ran the old stock dry: six boards had to be dropped for
+  // want of a bank group that could seed a trap without manufacturing a
+  // complete unintended grouping. These are deliberately common letter
+  // strings, which is exactly what makes them good trap seed.
+  { theme: 'Contains "OWN"', words: ['BROWN', 'CROWN', 'DOWNY', 'FROWN'] },
+  { theme: 'Contains "AND"', words: ['GARLAND', 'ISLAND', 'SANDAL', 'MEANDER'] },
+  { theme: 'Contains "OLD"', words: ['GOLDEN', 'BOLDER', 'HOLDER', 'SOLDER'] },
+  { theme: 'Contains "TEA"', words: ['STEAM', 'INSTEAD', 'TEAPOT', 'STEADY'] },
+  { theme: 'Contains "ROW"', words: ['ARROW', 'BURROW', 'SPARROW', 'THROW'] },
+  { theme: 'Contains "AME"', words: ['FLAME', 'BLAME', 'SESAME', 'CARAMEL'] },
+  { theme: 'Contains "ARM"', words: ['HARMONY', 'CHARMED', 'GARMENT', 'ALARM'] },
+  { theme: 'Contains "ILL"', words: ['WILLOW', 'MILLER', 'THRILL', 'CHILLY'] },
+  { theme: '___ WOOD', words: ['DRIFT', 'PLY', 'ROSE', 'TEAK'] },
+  { theme: '___ MARK', words: ['LAND', 'BENCH', 'TRADE', 'CHECK'] },
 ];
 /** How many boards may share one bank group before it feels like wallpaper. */
 const BANK_REUSE_CAP = 4;
@@ -205,11 +234,27 @@ type AuthoredDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
 interface RawBoard { id: string; difficulty: AuthoredDifficulty; groups: RawGroup[] }
 
 interface OutGroup extends RawGroup { type: GroupType; decoys: string[] }
+
+/**
+ * AAA 2.10 [BEAT] — the acknowledged herring, with the thread it pretends to
+ * be. `words` is the WHOLE set that shares the relation (the group it imitates
+ * plus its intruders), so the room can match a selection against it: ≥3 of her
+ * four tiles inside the set means she really was chasing this trap.
+ */
+type HerringRelation = 'rhyme' | 'shared-affix' | 'doubled-letter' | 'semantic';
+interface OutHerring {
+  words: string[];
+  relation: HerringRelation;
+  /** The shared letters, when the relation is one you can point at. */
+  detail?: string;
+}
+
 interface OutBoard extends WordWebPuzzle {
   /** Manor row band — authoritative (rows 0–2 / 3–4 / 5–6). */
   tier: Tier;
   groups: OutGroup[];
   ambiguousWords: string[];
+  herrings: OutHerring[];
   layout: string[];
 }
 
@@ -238,7 +283,12 @@ interface RoomTierSpec {
 const HERRING_TIGHT = 2;
 
 const TIER_SPECS: Record<Tier, RoomTierSpec> = {
-  1: { maxTrivia: 1, minWordplay: 2, minSubtle: 0, minHerrings: 0, maxHerrings: 1, minHerringScore: 1 },
+  // Round 7: tier 1's floor was 0, so 22 of 55 shipped boards carried an empty
+  // trap list and the AAA 2.10 acknowledged-herring channel could never fire on
+  // them. A tier-1 board still ships at most ONE loose trap — the near-clean
+  // board is the point — but it must ship that one, and pass 2 drops any board
+  // the planter cannot supply rather than shipping a room that can only say no.
+  1: { maxTrivia: 1, minWordplay: 2, minSubtle: 0, minHerrings: 1, maxHerrings: 1, minHerringScore: 1 },
   2: { maxTrivia: 1, minWordplay: 2, minSubtle: 1, minHerrings: 1, maxHerrings: 2, minHerringScore: HERRING_TIGHT },
   3: { maxTrivia: 0, minWordplay: 2, minSubtle: 2, minHerrings: 2, maxHerrings: 3, minHerringScore: HERRING_TIGHT },
 };
@@ -399,21 +449,32 @@ function createRngFrom(rng: () => number): () => number {
 
 const phonetics = loadPhonetics();
 
-/** All pattern-derived word sets on a board, by a printable pattern name. */
-function patternSets(words: string[]): Map<string, Set<string>> {
-  const sets = new Map<string, Set<string>>();
-  const add = (name: string, w: string) => {
-    let s = sets.get(name);
-    if (!s) sets.set(name, (s = new Set()));
-    s.add(w);
+/**
+ * All pattern-derived word sets on a board. Each carries the RELATION it is
+ * built from (and, where you can point at it, the shared letters) so the trap
+ * the solver finds can be named out loud in the room (AAA 2.10).
+ */
+interface PatternSet {
+  key: string;
+  relation: HerringRelation;
+  detail?: string;
+  words: Set<string>;
+}
+
+function patternSets(words: string[]): PatternSet[] {
+  const sets = new Map<string, PatternSet>();
+  const add = (key: string, relation: HerringRelation, detail: string | undefined, w: string) => {
+    let s = sets.get(key);
+    if (!s) sets.set(key, (s = { key, relation, detail, words: new Set() }));
+    s.words.add(w);
   };
   for (const w of words) {
-    if (w.length >= 5) add(`suffix:${w.slice(-3)}`, w);
-    if (w.length >= 5) add(`prefix:${w.slice(0, 3)}`, w);
-    if (/([A-Z])\1/.test(w)) add('doubled-letter', w);
-    for (const key of phonetics.rhymeKeysOf(w.toLowerCase())) add(`rhyme:${key}`, w);
+    if (w.length >= 5) add(`suffix:${w.slice(-3)}`, 'shared-affix', w.slice(-3), w);
+    if (w.length >= 5) add(`prefix:${w.slice(0, 3)}`, 'shared-affix', w.slice(0, 3), w);
+    if (/([A-Z])\1/.test(w)) add('doubled-letter', 'doubled-letter', undefined, w);
+    for (const key of phonetics.rhymeKeysOf(w.toLowerCase())) add(`rhyme:${key}`, 'rhyme', undefined, w);
   }
-  return sets;
+  return [...sets.values()];
 }
 
 /**
@@ -442,10 +503,10 @@ function crossBoardClusters(board: RawBoard, all: RawBoard[]): { name: string; w
  * the same as a letter-pattern 5th member (HERRING_TIGHT) — it is the one
  * semantic pull we can prove.
  */
-function crossBoardTraps(board: RawBoard, all: RawBoard[]): Map<string, number> {
+function crossBoardTrapSets(board: RawBoard, all: RawBoard[]): Trap[] {
   const groupOf = new Map<string, RawGroup>();
   for (const g of board.groups) for (const w of g.words) groupOf.set(w, g);
-  const scores = new Map<string, number>();
+  const traps: Trap[] = [];
   for (const other of all) {
     if (other.id === board.id) continue;
     for (const g of other.groups) {
@@ -458,10 +519,18 @@ function crossBoardTraps(board: RawBoard, all: RawBoard[]): Map<string, number> 
       }
       if (byGroup.size !== 2) continue;
       const minority = [...byGroup.values()].find((ws) => ws.length === 1);
-      if (minority) scores.set(minority[0]!, (scores.get(minority[0]!) ?? 0) + HERRING_TIGHT);
+      if (minority) {
+        traps.push({
+          key: `semantic:${other.id}:${g.theme}`,
+          words: overlap,
+          intruders: [minority[0]!],
+          relation: 'semantic',
+          score: HERRING_TIGHT,
+        });
+      }
     }
   }
-  return scores;
+  return traps;
 }
 
 function sameMembers(a: Iterable<string>, b: string[]): boolean {
@@ -478,9 +547,9 @@ function patternFailures(groups: readonly RawGroup[]): string[] {
   const words = groups.flatMap((g) => g.words);
   const intended = groups.map((g) => g.words);
   const failures: string[] = [];
-  for (const [name, set] of patternSets(words)) {
-    if (set.size === 4 && !intended.some((g) => sameMembers(set, g))) {
-      failures.push(`pattern ${name}: ${[...set].join(', ')}`);
+  for (const ps of patternSets(words)) {
+    if (ps.words.size === 4 && !intended.some((g) => sameMembers(ps.words, g))) {
+      failures.push(`pattern ${ps.key}: ${[...ps.words].join(', ')}`);
     }
   }
   return failures;
@@ -494,21 +563,37 @@ function patternFailures(groups: readonly RawGroup[]): string[] {
 interface ScoredHerring { word: string; score: number }
 
 /**
- * Trap scoring, extracted so composition can *plant* traps rather than only
+ * A discovered trap: the whole set of words that share a relation, which of
+ * them are the intruders (the words the set makes look like they belong when
+ * they do not), and what the relation IS. Round 7: this used to return only a
+ * word→score map, which is why the room could charge for a wrong guess and
+ * then say nothing but "no" — the relation existed at build time and was
+ * thrown away before it reached the player (AAA 2.10 [BEAT]).
+ */
+interface Trap {
+  key: string;
+  words: string[];
+  intruders: string[];
+  relation: HerringRelation;
+  detail?: string;
+  score: number;
+}
+
+/**
+ * Trap discovery, extracted so composition can *plant* traps rather than only
  * discover them (round 4: tier 3 must ship 2–3 tight ones). Score ≥ 2 means a
  * real pull — a 5th member of a complete group, or a word that literally
  * satisfies another group's stated letter rule.
  */
-function scoreTraps(groups: readonly RawGroup[]): ScoredHerring[] {
+function findTraps(groups: readonly RawGroup[]): Trap[] {
   const words = groups.flatMap((g) => g.words);
   const groupOf = new Map<string, RawGroup>();
   for (const g of groups) for (const w of g.words) groupOf.set(w, g);
+  const traps: Trap[] = [];
 
-  const herringScore = new Map<string, number>();
-  const bump = (w: string, n: number) => herringScore.set(w, (herringScore.get(w) ?? 0) + n);
-
-  for (const [, set] of patternSets(words)) {
-    if (set.size === 5 || set.size === 6) {
+  for (const ps of patternSets(words)) {
+    const set = [...ps.words];
+    if (set.length === 5 || set.length === 6) {
       // A full group + 1–2 extras sharing its pattern: 5th-member traps.
       const byGroup = new Map<RawGroup, string[]>();
       for (const w of set) {
@@ -516,33 +601,80 @@ function scoreTraps(groups: readonly RawGroup[]): ScoredHerring[] {
         byGroup.set(g, [...(byGroup.get(g) ?? []), w]);
       }
       const dominant = [...byGroup.entries()].find(([, ws]) => ws.length === 4);
-      if (dominant) for (const w of set) if (groupOf.get(w) !== dominant[0]) bump(w, 2);
+      if (dominant) {
+        traps.push({
+          key: ps.key,
+          words: set,
+          intruders: set.filter((w) => groupOf.get(w) !== dominant[0]),
+          relation: ps.relation,
+          detail: ps.detail,
+          score: 2,
+        });
+      }
     }
-    if (set.size === 3) {
+    if (set.length === 3) {
       // Three words sharing a visible pattern across two groups: the minority
       // word(s) read as belonging with the pair — soft cross-category traps.
       const counts = new Map<RawGroup, number>();
       for (const w of set) counts.set(groupOf.get(w)!, (counts.get(groupOf.get(w)!) ?? 0) + 1);
       if (counts.size === 2) {
         const minority = [...counts.entries()].find(([, n]) => n === 1);
-        if (minority) for (const w of set) if (groupOf.get(w) === minority[0]) bump(w, 1);
+        if (minority) {
+          traps.push({
+            key: ps.key,
+            words: set,
+            intruders: set.filter((w) => groupOf.get(w) === minority[0]),
+            relation: ps.relation,
+            detail: ps.detail,
+            score: 1,
+          });
+        }
       }
     }
   }
 
   // "Contains X" themes are letter-verifiable: an outside word containing X is
   // a cross-category trap for that group.
+  //
+  // ROUND 7 BUG FIX: this pattern used to require STRAIGHT U+0022 quotes. The
+  // round-6 typography pass set every authored theme in curly quotes, so from
+  // that moment the tightest, most nameable trap class on the board — "OUT",
+  // "EAR", "OVER", "IGHT" and eleven more — scored ZERO on every authored
+  // group, and only survived on the straight-quoted bank groups. Four boards
+  // shipped trap-free purely because of a quotation mark. Both handednesses
+  // are accepted, and `typeset()` is idempotent, so this holds whichever way
+  // the authored file is set.
   for (const g of groups) {
-    const m = g.theme.match(/^Contains "([A-Z]+)"$/);
+    const m = g.theme.match(/^Contains [“"]([A-Z]+)[”"]$/);
     if (!m) continue;
-    for (const w of words) {
-      if (groupOf.get(w) !== g && w.includes(m[1]!)) bump(w, 3);
-    }
+    const outside = words.filter((w) => groupOf.get(w) !== g && w.includes(m[1]!));
+    if (outside.length === 0) continue;
+    traps.push({
+      key: `contains:${m[1]!}`,
+      words: [...g.words, ...outside],
+      intruders: outside,
+      relation: 'shared-affix',
+      detail: m[1]!,
+      score: 3,
+    });
   }
 
+  return traps;
+}
+
+/** The per-word herring score the tier gates read, folded out of the traps. */
+function scoresOf(traps: readonly Trap[]): ScoredHerring[] {
+  const herringScore = new Map<string, number>();
+  for (const t of traps) {
+    for (const w of t.intruders) herringScore.set(w, (herringScore.get(w) ?? 0) + t.score);
+  }
   return [...herringScore.entries()]
     .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
     .map(([word, score]) => ({ word, score }));
+}
+
+function scoreTraps(groups: readonly RawGroup[]): ScoredHerring[] {
+  return scoresOf(findTraps(groups));
 }
 
 /** How many traps on this board pull tightly enough to count for a tier. */
@@ -550,7 +682,10 @@ function tightTrapCount(groups: readonly RawGroup[], minScore: number): number {
   return scoreTraps(groups).filter((h) => h.score >= minScore).length;
 }
 
-function solveBoard(board: RawBoard, all: RawBoard[]): { failures: string[]; herrings: ScoredHerring[] } {
+function solveBoard(
+  board: RawBoard,
+  all: RawBoard[],
+): { failures: string[]; herrings: ScoredHerring[]; traps: Trap[] } {
   const failures = patternFailures(board.groups);
   const intended = board.groups.map((g) => g.words);
 
@@ -562,15 +697,8 @@ function solveBoard(board: RawBoard, all: RawBoard[]): { failures: string[]; her
   }
 
   // Letter/sound traps plus the corpus-verified semantic ones.
-  const scores = new Map(scoreTraps(board.groups).map((h) => [h.word, h.score] as const));
-  for (const [word, score] of crossBoardTraps(board, all)) {
-    scores.set(word, (scores.get(word) ?? 0) + score);
-  }
-  const herrings: ScoredHerring[] = [...scores.entries()]
-    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
-    .map(([word, score]) => ({ word, score }));
-
-  return { failures, herrings };
+  const traps = [...findTraps(board.groups), ...crossBoardTrapSets(board, all)];
+  return { failures, herrings: scoresOf(traps), traps };
 }
 
 // ---------------------------------------------------------------------------
@@ -661,6 +789,32 @@ function shippedHerrings(herrings: ScoredHerring[], tier: Tier): string[] {
     .map((h) => h.word);
 }
 
+/**
+ * AAA 2.10 — the shipped traps, WITH the thread they imitate. One entry per
+ * shipped intruder (its tightest trap), deduped by pattern so a word caught by
+ * both `suffix:GHT` and `rhyme:AY1T` is acknowledged once. `words` carries the
+ * whole set, which is what lets the room require ≥3 of the player's four tiles
+ * inside a trap before it claims she was chasing it.
+ */
+function herringSets(traps: readonly Trap[], ship: readonly string[]): OutHerring[] {
+  const out: OutHerring[] = [];
+  const seenKeys = new Set<string>();
+  for (const word of ship) {
+    const candidates = traps
+      .filter((t) => t.intruders.includes(word) && !seenKeys.has(t.key))
+      .sort((a, b) => b.score - a.score || b.words.length - a.words.length || (a.key < b.key ? -1 : 1));
+    const best = candidates[0];
+    if (!best) continue;
+    seenKeys.add(best.key);
+    out.push({
+      words: [...best.words].sort(),
+      relation: best.relation,
+      ...(best.detail ? { detail: best.detail } : {}),
+    });
+  }
+  return out;
+}
+
 function main() {
   const rng = createRng(SEED);
 
@@ -695,7 +849,7 @@ function main() {
   }
 
   let demoted = 0;
-  const out: OutBoard[] = solved.map(({ board: b, herrings }) => {
+  const built: OutBoard[] = solved.map(({ board: b, herrings, traps }) => {
     const wanted = composedTier.get(b.id)!;
     let tier = wanted;
     while (tier > 1 && !meetsTier(b, herrings, tier)) tier = (tier - 1) as Tier;
@@ -707,9 +861,16 @@ function main() {
       tier,
       groups: b.groups.map((g) => ({ ...g, type: typeOfTheme(g.theme), decoys: [] as string[] })),
       ambiguousWords: ship,
+      herrings: herringSets(traps, ship),
       layout,
     };
   });
+
+  // Round 7: a board with no trap is a board on which AAA 2.10's acknowledged
+  // herring can never fire — the wrong guess buys nothing but "no". Drop it
+  // rather than ship a night where the Library is Connections with our prices.
+  const out = built.filter((b) => b.ambiguousWords.length >= TIER_SPECS[b.tier].minHerrings);
+  const dropped = built.length - out.length;
 
   // Pass 2b: balance. Every board that CAN be tier 3 does not have to BE tier
   // 3 — the bottom rows are visited far more often than the top, so the tier-3
@@ -736,9 +897,13 @@ function main() {
     return `t${t} (${tierLabel(t)}): ${arr.length} boards (~${avgHerrings.toFixed(1)} traps, ~${subtle.toFixed(1)} subtle cats)`;
   }).join(', ');
   const trivia = out.filter((b) => b.groups.some((g) => g.type === 'trivia')).length;
+  const byRelation = new Map<string, number>();
+  for (const b of out) for (const h of b.herrings) byRelation.set(h.relation, (byRelation.get(h.relation) ?? 0) + 1);
   console.log(
     `word-web.json: ${out.length} boards — ${perTier}; ${demoted} demoted for want of tight traps, ` +
-    `${trivia} with a (yellow-tier) trivia category, bank groups used: ${[...bankUse.values()].reduce((a, b) => a + b, 0)}`,
+    `${dropped} dropped for having none at all, ` +
+    `${trivia} with a (yellow-tier) trivia category, bank groups used: ${[...bankUse.values()].reduce((a, b) => a + b, 0)}; ` +
+    `named herrings by relation: ${[...byRelation].map(([r, n]) => `${r} ${n}`).join(', ')}`,
   );
 }
 
@@ -778,6 +943,30 @@ function validate(puzzles: OutBoard[]): void {
       problems.push(`${p.id}: ${p.ambiguousWords.length} herrings (tier ${p.tier} needs ${spec.minHerrings})`);
     }
     if (p.ambiguousWords.some((w) => !words.includes(w))) problems.push(`${p.id}: herring not on board`);
+
+    // 2.10 — every shipped trap is NAMED. A herring the room cannot describe
+    // is a −2-step guess that buys nothing, which is the criterion's whole
+    // complaint; and a set of fewer than 3 words can never be matched by the
+    // ≥3-of-4 rule the room uses, so it would be dead copy.
+    const RELATIONS = ['rhyme', 'shared-affix', 'doubled-letter', 'semantic'];
+    if (p.herrings.length === 0 && p.ambiguousWords.length > 0) {
+      problems.push(`${p.id}: ${p.ambiguousWords.length} herrings but none named`);
+    }
+    for (const h of p.herrings) {
+      if (!RELATIONS.includes(h.relation)) problems.push(`${p.id}: unknown herring relation "${h.relation}"`);
+      if (h.words.length < 3) problems.push(`${p.id}: herring set of ${h.words.length} can never be matched`);
+      if (new Set(h.words).size !== h.words.length) problems.push(`${p.id}: herring set repeats a word`);
+      for (const w of h.words) if (!words.includes(w)) problems.push(`${p.id}: herring word "${w}" not on board`);
+      if (h.relation === 'shared-affix' && !h.detail) {
+        problems.push(`${p.id}: shared-affix herring with no letters to point at`);
+      }
+    }
+    // Every shipped intruder is described by at least one named set.
+    for (const w of p.ambiguousWords) {
+      if (!p.herrings.some((h) => h.words.includes(w))) {
+        problems.push(`${p.id}: herring "${w}" has no named relation`);
+      }
+    }
 
     // 2.6
     if (p.layout.length !== 16 || new Set(p.layout).size !== 16 || p.layout.some((w) => !words.includes(w))) {

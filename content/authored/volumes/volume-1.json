@@ -11,7 +11,7 @@
       "group": "definition",
       "sourceRoomCategory": "mystery",
       "revealOrder": 1,
-      "source": "A torn leaf in the lexicographer's hand",
+      "source": "A torn leaf in the lexicographer’s hand",
       "text": "Where a thing is missing, I am what remains: not nothing — the shape that nothing takes.",
       "interpretation": "Ellery reads it twice. “A word that means an absence, then. Not a thing, but a missing. Very few words dare to mean a hole.”"
     },
@@ -44,7 +44,7 @@
       "group": "definition",
       "sourceRoomCategory": "mystery",
       "revealOrder": 4,
-      "source": "A torn leaf in the lexicographer's hand",
+      "source": "A torn leaf in the lexicographer’s hand",
       "text": "The copyist blinks above his candle, and his sentence steps mid-breath onto air. I am that step. I am that air.",
       "interpretation": "Ellery smiles faintly. “Scribes had a word for a break in a manuscript — a passage the copyist lost. He is quoting his own trade at you.”"
     },
@@ -74,9 +74,9 @@
       "id": "v1-d3",
       "kind": "definition-line",
       "group": "definition",
-      "sourceRoomCategory": "mystery",
+      "sourceRoomCategory": "puzzle",
       "revealOrder": 7,
-      "source": "A torn leaf in the lexicographer's hand",
+      "source": "Loose in the Study, among his unfinished entries",
       "text": "In my mother Latin I was a little pool — a hollow where the rain remembered what the ground forgot.",
       "interpretation": "Ellery goes very still. “Mother Latin. A little pool, a hollow. The word crossed into English still wearing its Latin dress — when you find it, it will look Latin. Hold that thought like a candle.”"
     },
@@ -108,9 +108,9 @@
       "group": "definition",
       "sourceRoomCategory": "mystery",
       "revealOrder": 10,
-      "source": "A torn leaf in the lexicographer's hand",
+      "source": "A torn leaf in the lexicographer’s hand",
       "text": "The moth eats a word from the page and leaves me behind as the payment.",
-      "interpretation": "Ellery: “Moth-eaten pages, missing text. It is the scholar's word for the gap the moth leaves behind — librarians grieve it by name.”",
+      "interpretation": "Ellery: “Moth-eaten pages, missing text. It is the scholar’s word for the gap the moth leaves behind — librarians grieve it by name.”",
       "relatedIds": ["v1-t4"]
     },
     {
@@ -139,9 +139,9 @@
       "id": "v1-d5",
       "kind": "definition-line",
       "group": "definition",
-      "sourceRoomCategory": "mystery",
+      "sourceRoomCategory": "puzzle",
       "revealOrder": 13,
-      "source": "A torn leaf in the lexicographer's hand",
+      "source": "Blotted on the Study’s desk-pad, read back in the glass",
       "text": "Seek me in ledgers, in memory, in a row of teeth: wherever something was, and is not, and is missed by its own outline.",
       "interpretation": "Ellery: “Anatomists borrow it too — for small hollows in bone. One word, and every science of missing pays it rent.”"
     },
@@ -160,9 +160,9 @@
       "id": "v1-d6",
       "kind": "definition-line",
       "group": "definition",
-      "sourceRoomCategory": "mystery",
+      "sourceRoomCategory": "puzzle",
       "revealOrder": 15,
-      "source": "A torn leaf in the lexicographer's hand",
+      "source": "The last leaf in the Study’s word-book, face down",
       "text": "A dictionary keeps my chair forever empty. Speak me at the door, and I will sit.",
       "interpretation": "Ellery closes the journal softly. “He built the door to want the word itself. Name the gap, and it is a gap no longer. That is the whole of his apology, I think.”",
       "relatedIds": ["v1-t1"]
@@ -196,7 +196,7 @@
       "from": "posy",
       "earliestDay": 1,
       "subject": "On the matter of your journal",
-      "body": "Dear newcomer,\n\nWelcome to the manor. Two things, before the kettle: first, the house files things. Anything you find — a torn page, a carved line, something one of us lets slip — goes into your journal on its own, sorted and cross-referenced. You need only do the noticing.\n\nSecond: the door at the top does not want a key. It wants a word, spoken once a day, and it is patient about wrong ones. We all rather hope you'll manage it.\n\n— Posy, Post Room"
+      "body": "Dear newcomer,\n\nWelcome to the manor. Two things, before the kettle: first, the house files things. Anything you find — a torn page, a carved line, something one of us lets slip — goes into your journal on its own, sorted and cross-referenced. You need only do the noticing.\n\nSecond: the door at the top does not want a key. It wants a word, spoken once a day, and it is patient about wrong ones. We all rather hope you’ll manage it.\n\n— Posy, Post Room"
     },
     {
       "id": "readers-note",
@@ -214,7 +214,7 @@
       "earliestDay": 4,
       "subject": "From between the pages of my flower book",
       "grantsFragmentIds": ["v1-e4"],
-      "body": "Found this pressed between the campion and the sweet-pea — a charcoal rubbing he took of the Conservatory arch, years back. The arch has weathered; the rubbing hasn't.\n\nHe rubbed it the way you'd take a keepsake of a face. Whatever is written on it mattered to him. Mind the charcoal on your cuffs.\n\n— Fern"
+      "body": "Found this pressed between the campion and the sweet-pea — a charcoal rubbing he took of the Conservatory arch, years back. The arch has weathered; the rubbing hasn’t.\n\nHe rubbed it the way you’d take a keepsake of a face. Whatever is written on it mattered to him. Mind the charcoal on your cuffs.\n\n— Fern"
     },
     {
       "id": "the-cut-word",
@@ -223,7 +223,7 @@
       "minFragments": 4,
       "subject": "The letter with the window in it",
       "grantsFragmentIds": ["v1-t4"],
-      "body": "I kept it. I oughtn't have — post is post — but the last letter he ever gave me to send had a word cut out of it, neat as a stamp, and I could not bring myself to let it leave the house incomplete.\n\nI enclose it now. Hold it to the light: you can read the whole sentence around the hole. He wanted the hole read too, I think.\n\n— Posy"
+      "body": "I kept it. I oughtn’t have — post is post — but the last letter he ever gave me to send had a word cut out of it, neat as a stamp, and I could not bring myself to let it leave the house incomplete.\n\nI enclose it now. Hold it to the light: you can read the whole sentence around the hole. He wanted the hole read too, I think.\n\n— Posy"
     },
     {
       "id": "under-the-tray",
@@ -231,7 +231,7 @@
       "earliestDay": 4,
       "pity": true,
       "subject": "Found under the mail tray, dear",
-      "body": "This was under the mail tray this morning, of all places — no stamp, no sender, just your name in pencil. The house does this, you know, when it thinks a search has gone quiet too long. It seemed to want finding.\n\nI've filed the enclosure in your journal already. Do come by; the kettle's on.\n\n— Posy"
+      "body": "This was under the mail tray this morning, of all places — no stamp, no sender, just your name in pencil. The house does this, you know, when it thinks a search has gone quiet too long. It seemed to want finding.\n\nI’ve filed the enclosure in your journal already. Do come by; the kettle’s on.\n\n— Posy"
     },
     {
       "id": "second-under-the-tray",
@@ -239,7 +239,7 @@
       "earliestDay": 8,
       "pity": true,
       "subject": "Again, under the tray",
-      "body": "Again! Under the tray, same pencil, same nothing-else. I begin to suspect the house keeps its own postal service for slow evenings, and I try not to take it personally.\n\nThe enclosure is in your journal. Whatever it is you're circling, dear — you are closer than the quiet makes it feel.\n\n— Posy"
+      "body": "Again! Under the tray, same pencil, same nothing-else. I begin to suspect the house keeps its own postal service for slow evenings, and I try not to take it personally.\n\nThe enclosure is in your journal. Whatever it is you’re circling, dear — you are closer than the quiet makes it feel.\n\n— Posy"
     },
     {
       "id": "after-the-door",
@@ -247,7 +247,7 @@
       "earliestDay": 1,
       "afterSolved": true,
       "subject": "The morning after",
-      "body": "I went up at first light and the door stood open, and the six candles on his desk were lit. All six. I did not light them.\n\nThe house is warmer today — you'll have noticed. Whatever else he was, he was waiting to be contradicted, and you did it kindly, which is the only way it could be done.\n\nBreakfast is on the sideboard. You've earned the window seat.\n\n— Mrs. B."
+      "body": "I went up at first light and the door stood open, and the six candles on his desk were lit. All six. I did not light them.\n\nThe house is warmer today — you’ll have noticed. Whatever else he was, he was waiting to be contradicted, and you did it kindly, which is the only way it could be done.\n\nBreakfast is on the sideboard. You’ve earned the window seat.\n\n— Mrs. B."
     }
   ]
 }

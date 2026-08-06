@@ -15,6 +15,7 @@ import type { GameEventType, RecordedEvent } from '../engine/events';
 import type { RoomPuzzleKind } from '../engine/rooms/room-puzzle';
 import { ROOM_PUZZLE_KINDS } from '../engine/rooms/room-puzzle';
 import type { RunRecord } from '../engine/types';
+import { VIEWED_BACKFILL_FLAG } from '../engine/journal';
 import { migrate } from './migrations';
 
 export const SAVE_KEY = 'lexicon-loop-save-v2';
@@ -62,6 +63,13 @@ export interface SaveV2 {
   events: EventsSave;
   cabinet: { unlockedCardIds: string[] };
   chronicles: ChroniclesSave;
+  /**
+   * The keepsake shelf (engine/achievements.KEEPSAKES) — the manor's permanent
+   * progress layer. Field name kept from v1 so the wife's live save migrates in
+   * place; the CONTENTS are manor keepsake ids, and `migrations.backfillKeepsakes`
+   * prunes any v1 roguelike id that rides in and backfills what the save has
+   * already deserved. Awarded by `app/slices/meta.syncEarnedRewards` (AAA 11.17).
+   */
   earnedAchievementIds: string[];
   seenPuzzleIds: Record<RoomPuzzleKind, string[]>;
   settings: SettingsV2;
@@ -91,7 +99,11 @@ export function createEmptySaveV2(profileName: string): SaveV2 {
     },
     journal: {
       seenNodeIds: [],
-      flags: [],
+      // A save born under this build has nothing that predates the unread
+      // flags, so the migration's one-time "everything filed is taken as read"
+      // sweep must never run on it — otherwise the first reload after finding a
+      // fragment would quietly mark it viewed (AAA 11.20). Stamped at birth.
+      flags: [VIEWED_BACKFILL_FLAG],
       affinities: { bramble: 0, ellery: 0, posy: 0, fern: 0, dewey: 0, portrait: 0 },
       dailyTalked: [],
       dailyGifted: [],

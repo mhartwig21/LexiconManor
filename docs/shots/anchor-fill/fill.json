@@ -1,0 +1,94 @@
+{
+ "library": {
+  "stageH": 721,
+  "totalEmpty": 189,
+  "biggest": [
+   {
+    "top": 607,
+    "h": 80
+   },
+   {
+    "top": 52,
+    "h": 45
+   },
+   {
+    "top": 731,
+    "h": 42
+   }
+  ],
+  "ratio": 0.262,
+  "budget": 0.28,
+  "tile": {
+   "w": 84.3,
+   "h": 96
+  },
+  "pass": true
+ },
+ "conservatory": {
+  "stageH": 721,
+  "totalEmpty": 216,
+  "biggest": [
+   {
+    "top": 286,
+    "h": 112
+   },
+   {
+    "top": 686,
+    "h": 35
+   },
+   {
+    "top": 232,
+    "h": 34
+   }
+  ],
+  "ratio": 0.3,
+  "budget": 0.34,
+  "tile": {
+   "w": 107.3,
+   "h": 92.9
+  },
+  "pass": true
+ },
+ "gallery": {
+  "stageH": 721,
+  "totalEmpty": 213,
+  "biggest": [
+   {
+    "top": 689,
+    "h": 84
+   },
+   {
+    "top": 590,
+    "h": 55
+   },
+   {
+    "top": 52,
+    "h": 47
+   }
+  ],
+  "ratio": 0.295,
+  "budget": 0.32,
+  "pass": true
+ },
+ "study": {
+  "stageH": 721,
+  "totalEmpty": 275,
+  "biggest": [
+   {
+    "top": 632,
+    "h": 62
+   },
+   {
+    "top": 52,
+    "h": 37
+   },
+   {
+    "top": 464,
+    "h": 36
+   }
+  ],
+  "ratio": 0.381,
+  "budget": 0.4,
+  "pass": true
+ }
+}

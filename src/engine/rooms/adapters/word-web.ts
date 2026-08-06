@@ -7,6 +7,16 @@
  *   - malformed input          → mistake weight 0 (AAA 3.2)
  *   - herring acknowledgment + one-away info ride on state feedback for the
  *     view; the priced intruder nudge (AAA 2.10) emits a `hint` event.
+ *
+ * ROUND 7 — AAA 2.10 [BEAT], "every wrong guess yields ≥1 bit". It did not:
+ * a plain-wrong guess returned the bare word `wrong`, so the room charged 2–3
+ * steps and replied with nothing the shake had not already said, and the
+ * herring line fired whenever ANY flagged word merely sat in the selection —
+ * misinformation, not a hint. Two changes, both free with the guess she has
+ * already paid for: `together` (how many of her four really do share a thread,
+ * which prunes the LOGIC space, not just the option space) and a herring match
+ * gated on ≥3 of the four tiles sitting inside one NAMED trap, so the knowing
+ * line can say which words and which thread.
  */
 
 import type { Tier, WordWebGroup, WordWebPuzzle } from '../../types';
@@ -27,10 +37,30 @@ export interface WordWebGroupEx extends WordWebGroup {
   /** 2.11 naming act: two plausible decoy labels for this group, from the pool. */
   decoys?: string[];
 }
+/**
+ * AAA 2.10 [BEAT] — a planted trap AND the thread it imitates, emitted by
+ * content/generate-wordweb.ts. `words` is the whole set that shares the
+ * relation (the group it apes plus its intruders), which is what lets the room
+ * check whether the player was actually chasing THIS trap before it says so.
+ */
+export type WordWebHerringRelation = 'rhyme' | 'shared-affix' | 'doubled-letter' | 'semantic';
+export interface WordWebHerring {
+  words: string[];
+  relation: WordWebHerringRelation;
+  /** The shared letters, when the relation is one you can point at. */
+  detail?: string;
+}
+/** A herring the player's selection actually landed on, with her own words. */
+export interface WordWebHerringMatch extends WordWebHerring {
+  matched: string[];
+}
+
 export interface WordWebPuzzleEx extends WordWebPuzzle {
   groups: WordWebGroupEx[];
   /** 2.6 adversarial opening layout: herrings clustered, no gift rows. */
   layout?: string[];
+  /** 2.10 named traps. Absent on pre-round-7 fixtures; then nothing is claimed. */
+  herrings?: WordWebHerring[];
   /**
    * Round 4 — manor row band. Now declared REQUIRED on WordWebPuzzle in
    * engine/types.ts (the honest home); restated here only for the doc.
@@ -52,8 +82,17 @@ export type WordWebFeedback =
   /** 2.11 act of naming: the last four are woven, but the thread must be named. */
   | { kind: 'name-final'; words: string[]; options: string[] }
   | { kind: 'one-away' }
-  /** herring: selected words flagged ambiguous by the generator — the knowing line. */
-  | { kind: 'wrong'; herring: string[] }
+  /**
+   * A plain-wrong claim. AAA 2.10 [BEAT] — it never returns only "no":
+   *   - `herring` is set when ≥3 of her four tiles sit inside ONE named trap,
+   *     so the room can name the words AND the thread they really share;
+   *   - `together` is the free structural bit Connections withholds: how many
+   *     of the four DO belong to one group (1 = no two of these share a thread,
+   *     2 = two of these do). The engine intercepts 3 as one-away and 4 as a
+   *     solve, so this is always 1 or 2 here — and either value prunes the
+   *     logic space, not just the option space.
+   */
+  | { kind: 'wrong'; herring: WordWebHerringMatch | null; together: 1 | 2 }
   | { kind: 'hint'; intruder: string }
   | { kind: 'invalid'; reason: 'need-four' | 'unknown-word' | 'finished' };
 
@@ -112,6 +151,35 @@ function namingOptions(puzzle: WordWebPuzzleEx, theme: string, tier: string): st
   }
   const rng = createRng([...puzzle.id].reduce((h, ch) => (h * 33 + ch.charCodeAt(0)) | 0, 13));
   return shuffle(rng, [theme, ...decoys]);
+}
+
+/**
+ * AAA 2.10 — the acknowledged herring, and ONLY when it is honest.
+ *
+ * The round-6 rule fired the knowing line whenever any flagged word merely sat
+ * in the selection, so a guess that had nothing to do with the trap was told it
+ * had — the line was misinformation dressed as a hint. A trap is only claimed
+ * when ≥3 of her four tiles are inside it: at that point she demonstrably
+ * followed the false thread, and naming it is a real bit.
+ */
+function matchHerring(puzzle: WordWebPuzzleEx, selection: string[]): WordWebHerringMatch | null {
+  let best: WordWebHerringMatch | null = null;
+  for (const h of puzzle.herrings ?? []) {
+    const matched = selection.filter((w) => h.words.includes(w));
+    if (matched.length < 3) continue;
+    if (!best || matched.length > best.matched.length) best = { ...h, matched };
+  }
+  return best;
+}
+
+/** How many of the four genuinely belong to one thread (the free bit). */
+function togetherCount(puzzle: WordWebPuzzle, selection: string[]): number {
+  let best = 0;
+  for (const g of puzzle.groups) {
+    const n = selection.filter((w) => g.words.includes(w)).length;
+    if (n > best) best = n;
+  }
+  return best;
 }
 
 /** The intruder: a word in the wrong selection outside its best-overlap group. */
@@ -217,12 +285,15 @@ export const wordWebAdapter: RoomPuzzleAdapter<WordWebPuzzleEx, WordWebRoomState
       }
       case 'wrong': {
         const sel = action.selection.map((w) => w.toUpperCase());
-        const herring = (puzzle.ambiguousWords ?? []).filter((w) => sel.includes(w));
         next = {
           ...next,
           costedMistakes: next.costedMistakes + 1,
           lastWrongSelection: sel,
-          lastFeedback: { kind: 'wrong', herring },
+          lastFeedback: {
+            kind: 'wrong',
+            herring: matchHerring(puzzle, sel),
+            together: (Math.min(2, Math.max(1, togetherCount(puzzle, sel))) as 1 | 2),
+          },
         };
         events.push({ type: 'mistake', weight: 1 });
         break;

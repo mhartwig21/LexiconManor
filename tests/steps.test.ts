@@ -3,11 +3,16 @@ import {
   appendEntry, climbKey, createLedger, dayStartTotal, doorLockedAt, fernMorningKeys,
   firstMorningPot, highestRowVisited, keyAccessFor, keyCardWeightMultiplier, ledgerTotal,
   moveAt, moveRowOf, priceEntry, rowName, stepsRefunded, stepsRemaining, stepsSpent,
-  teaArcPoints, teaBonus,
+  teaArcFloor, teaArcPoints, teaBonus,
   BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, FIRST_MORNING_POT, KEY_SUPPLY, MOVE_COST_BY_ROW,
-  SANCTUM_GUESS_COST, STEP_TABLE, TEA_ARC, TEA_BY_RANK,
+  SANCTUM_GUESS_COST, STEP_TABLE, TEA_ARC, TEA_BY_POINTS,
 } from '../src/engine/economy/steps';
 import { draftCardStake } from '../src/engine/economy/preview';
+import { REFILL_PAYOUTS } from '../src/engine/economy/simulate';
+import { UTILITY_EFFECTS } from '../src/engine/manor/deck';
+import { SANCTUM_DOOR_CELL } from '../src/engine/manor/grid';
+import { SANCTUM_CELL } from '../src/engine/types';
+import { rankFor, AFFINITY_RANK_THRESHOLDS } from '../src/engine/dialogue/affinity';
 import type { StepEntry, StepLedger } from '../src/engine/types';
 
 /**
@@ -34,7 +39,11 @@ describe('STEP_TABLE (the one tunable const)', () => {
   it('prices movement per row — climbing IS the expense', () => {
     expect(moveAt(0)).toBe(-1);                        // the ground floor stroll
     expect(moveAt(3)).toBe(-3);
-    expect(moveAt(6)).toBe(-5);                        // the Sanctum storey
+    // Round 7: the two upper storeys carry the climb, because the ascent the
+    // player must actually pay for ends at the Sanctum LANDING (0-based row
+    // 5), not at the sealed Sanctum above it.
+    expect(moveAt(5)).toBe(-9);                        // the Sanctum landing
+    expect(moveAt(6)).toBe(moveAt(5));                 // the sealed room itself
     expect(STEP_TABLE.moveAt).toBe(moveAt);
     // Monotone, and out-of-range rows clamp rather than throw.
     for (let r = 1; r < MOVE_COST_BY_ROW.length; r++) {
@@ -88,12 +97,62 @@ describe('STEP_TABLE (the one tunable const)', () => {
     expect(STEP_TABLE.solve('anchor', 3)).toBeLessThan(-moveAt(6));
   });
 
-  it('pays +2 for a perfect solve and keeps snacks lean (+3..+7)', () => {
+  it('pays +2 for a perfect solve and keeps refills lean (+2..+6)', () => {
     expect(STEP_TABLE.perfect).toBe(2);
-    expect(STEP_TABLE.snack.min).toBe(3);
-    expect(STEP_TABLE.snack.max).toBe(7);
+    expect(STEP_TABLE.snack.min).toBe(2);
+    expect(STEP_TABLE.snack.max).toBe(6);
     // A refill extends a day; it never doubles it.
     expect(STEP_TABLE.snack.max).toBeLessThan(BASE_DAY_BUDGET / 2);
+  });
+
+  /**
+   * ROUND-6 AUDIT — THE CONSTANT THAT DESCRIBED A GAME WE DO NOT SHIP.
+   *
+   * `STEP_TABLE.snack` declared 3..7 and NOTHING live sampled it: refills are
+   * fixed authored numbers on the green cards (`UTILITY_EFFECTS`), and each
+   * card prints its own number in its own toast. Its only reader was the
+   * simulation, so the documented "scarce refills (+3..+7)" was verified
+   * against a distribution the deck could not produce — the Still Room's +2
+   * sat BELOW the declared floor, and nothing paid 7 at all.
+   *
+   * The constant is now a CONTRACT over the shipped deck, checked here, so a
+   * deck edit that quietly lifts the Kitchen to +9 breaks this test instead of
+   * the owner's evening.
+   */
+  it('CONTRACT: every shipped refill payout lies inside STEP_TABLE.snack', () => {
+    const refills = Object.values(UTILITY_EFFECTS)
+      .map((e) => e.steps ?? 0)
+      .filter((n) => n > 0);
+    expect(refills.length).toBeGreaterThan(0);
+    for (const n of refills) {
+      expect(n).toBeGreaterThanOrEqual(STEP_TABLE.snack.min);
+      expect(n).toBeLessThanOrEqual(STEP_TABLE.snack.max);
+    }
+    // Not merely inside: the declared bounds are TIGHT — they are the deck's
+    // own extremes, so the range cannot drift back into fiction unnoticed.
+    expect(Math.min(...refills)).toBe(STEP_TABLE.snack.min);
+    expect(Math.max(...refills)).toBe(STEP_TABLE.snack.max);
+    // And the simulation draws from those very payouts (no parallel universe).
+    expect([...REFILL_PAYOUTS].sort((a, b) => a - b))
+      .toEqual([...refills].sort((a, b) => a - b));
+  });
+
+  it('CONTRACT: compounding hooks pay inside their own declared band', () => {
+    const hooks = Object.values(UTILITY_EFFECTS)
+      .filter((e) => e.compounding)
+      .map((e) => e.compoundSteps ?? 0)
+      .filter((n) => n > 0);
+    expect(hooks.length).toBeGreaterThan(0);
+    for (const n of hooks) {
+      expect(n).toBeGreaterThanOrEqual(STEP_TABLE.compound.min);
+      expect(n).toBeLessThanOrEqual(STEP_TABLE.compound.max);
+    }
+    expect(Math.min(...hooks)).toBe(STEP_TABLE.compound.min);
+    expect(Math.max(...hooks)).toBe(STEP_TABLE.compound.max);
+    // The classes are declared apart on purpose: a compounding rattle is
+    // allowed to sit below the refill floor, and one shared constant would
+    // have to lie about one of them.
+    expect(STEP_TABLE.compound.min).toBeLessThan(STEP_TABLE.snack.min);
   });
 
   it('prices the bookmark gift at −1 (a small walk to find them)', () => {
@@ -111,7 +170,12 @@ describe('locked doors on the upper storeys (the prepared-ascent gate)', () => {
     expect(DOOR_LOCKS.chanceByRow.slice(0, 4)).toEqual([0, 0, 0, 0]);
     expect(DOOR_LOCKS.chanceByRow[4]!).toBeGreaterThan(0);
     expect(DOOR_LOCKS.chanceByRow[5]!).toBeGreaterThan(DOOR_LOCKS.chanceByRow[4]!);
-    expect(DOOR_LOCKS.chanceByRow[6]!).toBeGreaterThan(DOOR_LOCKS.chanceByRow[5]!);
+    // Row 6 is the sealed Sanctum: pre-placed, never drafted, so its rate is
+    // never rolled. It stays at the landing's rate only so the table is total
+    // — the ascent the player makes crosses rows 4 and 5, and THOSE two now
+    // sum to the ~1.7 padlocks the design has always claimed for a climb.
+    expect(DOOR_LOCKS.chanceByRow[6]!).toBeGreaterThanOrEqual(DOOR_LOCKS.chanceByRow[5]!);
+    expect(DOOR_LOCKS.chanceByRow[4]! + DOOR_LOCKS.chanceByRow[5]!).toBeGreaterThan(1.5);
     expect(DOOR_LOCKS.keyCost).toBe(1);
   });
 
@@ -142,8 +206,8 @@ describe('priceEntry (movement cannot be mispriced by a caller)', () => {
     let l = createLedger();
     // A caller still passing the deprecated flat STEP_TABLE.move…
     l = appendEntry(l, { reason: 'move', delta: STEP_TABLE.move, at: 0, roomKey: '2,6' });
-    expect(l.entries[0]!.delta).toBe(-5);
-    expect(stepsRemaining(l)).toBe(BASE_DAY_BUDGET - 5);
+    expect(l.entries[0]!.delta).toBe(moveAt(6));
+    expect(stepsRemaining(l)).toBe(BASE_DAY_BUDGET - -moveAt(6));
   });
 
   it('leaves every other reason exactly as written', () => {
@@ -197,19 +261,89 @@ describe("Bramble's tea (the campaign's economic arc)", () => {
   });
 
   it('climbs one rank at a time and caps at the published ceiling', () => {
-    expect(teaBonus(1)).toBe(TEA_BY_RANK[1]);
-    expect(teaBonus(3)).toBe(TEA_BY_RANK[3]);
-    expect(teaBonus(6)).toBe(TEA_BY_RANK[6]);
-    expect(teaBonus(99)).toBe(TEA_BY_RANK[TEA_BY_RANK.length - 1]);
-    for (let r = 1; r < TEA_BY_RANK.length; r++) {
-      expect(TEA_BY_RANK[r]!).toBeGreaterThan(TEA_BY_RANK[r - 1]!);
+    expect(teaBonus(1)).toBe(TEA_BY_POINTS[1]);
+    expect(teaBonus(3)).toBe(TEA_BY_POINTS[3]);
+    expect(teaBonus(6)).toBe(TEA_BY_POINTS[6]);
+    expect(teaBonus(99)).toBe(TEA_BY_POINTS[TEA_BY_POINTS.length - 1]);
+    for (let r = 1; r < TEA_BY_POINTS.length; r++) {
+      expect(TEA_BY_POINTS[r]!).toBeGreaterThan(TEA_BY_POINTS[r - 1]!);
     }
   });
 
   it('is worth a serious fraction of a day once earned — but only once earned', () => {
-    const top = TEA_BY_RANK[TEA_BY_RANK.length - 1]!;
+    const top = TEA_BY_POINTS[TEA_BY_POINTS.length - 1]!;
     expect(top / BASE_DAY_BUDGET).toBeGreaterThan(0.4);
     expect(teaBonus(1) / BASE_DAY_BUDGET).toBeLessThan(0.25);
+  });
+});
+
+/**
+ * ═══ UNITS: POINTS, NOT RANKS ═══════════════════════════════════════════
+ *
+ * The silent catastrophe this file exists to prevent. `TEA_BY_POINTS` and
+ * `KEY_SUPPLY.fernMorningKeysByPoints` are indexed by RAW AFFINITY POINTS —
+ * the integer `affinities.<character>` carries — on a 0..6 one-point-per-index
+ * scale. Affinity RANKS are a different scale entirely: 0..4 on the thresholds
+ * `[0, 2, 5, 9, 14]` (engine/dialogue/affinity.ts `rankFor`).
+ *
+ * Both tables were previously NAMED for ranks ("TEA_BY_RANK",
+ * "fernMorningKeys"), which invited a maintainer to "correct" the call sites
+ * to `teaBonus(rankFor(points))`. That edit compiles, reads like a bug fix,
+ * caps the tea two entries below its published ceiling, pushes Fern's first
+ * dawn key from 2 points out to 5 — past her entire authored budget of 3 —
+ * and reshapes the whole campaign with every other test still green.
+ *
+ * These assertions fail loudly if anyone makes it. They are deliberately
+ * written as *inequalities against the rank-indexed answer*, not merely as
+ * value checks, so they cannot be satisfied by accident.
+ */
+describe('UNITS — the affinity tables are indexed by POINTS, never by rank', () => {
+  it('the two scales really are different (else these tests prove nothing)', () => {
+    expect([...AFFINITY_RANK_THRESHOLDS]).toEqual([0, 2, 5, 9, 14]);
+    expect(TEA_BY_POINTS.length).toBeGreaterThan(AFFINITY_RANK_THRESHOLDS.length);
+    expect(KEY_SUPPLY.fernMorningKeysByPoints.length)
+      .toBeGreaterThan(AFFINITY_RANK_THRESHOLDS.length);
+  });
+
+  it('teaBonus(points) reads the POINTS index — rankFor() would cap the arc', () => {
+    for (const points of [1, 2, 3, 4, 5, 6]) {
+      expect(teaBonus(points)).toBe(TEA_BY_POINTS[points]);
+    }
+    // The exact values where the "fix" bites: at 2 and 3 points a rank lookup
+    // answers with a smaller pot, and beyond 5 points it can never grow again.
+    expect(teaBonus(2)).toBe(6);
+    expect(TEA_BY_POINTS[rankFor(2)]).toBe(4);
+    expect(teaBonus(2)).not.toBe(TEA_BY_POINTS[rankFor(2)]);
+    expect(teaBonus(3)).not.toBe(TEA_BY_POINTS[rankFor(3)]);
+    // Rank saturates at 4 (14 points), so a rank-indexed pot could never pay
+    // the published ceiling of 11 that AAA 4.10d's day 6–10 curve is built on.
+    const topByRank = Math.max(
+      ...[0, 1, 2, 3, 4, 5, 6].map((p) => TEA_BY_POINTS[rankFor(p)]!),
+    );
+    expect(topByRank).toBeLessThan(TEA_BY_POINTS.at(-1)!);
+    expect(teaBonus(TEA_ARC.maxPoints)).toBe(TEA_BY_POINTS.at(-1));
+  });
+
+  it('fernMorningKeys(points) reads the POINTS index — rankFor() locks the gate', () => {
+    const table = KEY_SUPPLY.fernMorningKeysByPoints;
+    for (const points of [0, 1, 2, 3, 4, 5, 6]) {
+      expect(fernMorningKeys(points)).toBe(table[points]);
+    }
+    // Her first dawn key lands at 2 points, INSIDE her authored lifetime
+    // budget of 3 (FERN_ARC). A rank lookup answers 0 there and would not pay
+    // a key until 5 points, which her dialogue can never grant.
+    const authoredCeiling = FERN_ARC.meetPoints + FERN_ARC.questPoints;
+    expect(fernMorningKeys(2)).toBe(1);
+    expect(table[rankFor(2)]).toBe(0);
+    expect(fernMorningKeys(authoredCeiling)).toBeGreaterThan(0);
+    expect(table[rankFor(authoredCeiling)]).toBe(0);
+  });
+
+  it('the accessors saturate on the POINTS table, not on MAX_AFFINITY_RANK', () => {
+    // A rank-indexed reader would have clamped at index 4; these clamp at 6.
+    expect(teaBonus(999)).toBe(TEA_BY_POINTS.at(-1));
+    expect(fernMorningKeys(999)).toBe(KEY_SUPPLY.fernMorningKeysByPoints.at(-1));
+    expect(teaBonus(TEA_BY_POINTS.length - 1)).toBe(TEA_BY_POINTS.at(-1));
   });
 });
 
@@ -279,7 +413,7 @@ describe('the key supply — the padlock arc (AAA 4.10d)', () => {
   it("mirrors Bramble's tea: nothing on the first mornings, a key once trusted", () => {
     expect(fernMorningKeys(0)).toBe(0);
     expect(fernMorningKeys(1)).toBe(0);
-    const table = KEY_SUPPLY.fernMorningKeys;
+    const table = KEY_SUPPLY.fernMorningKeysByPoints;
     for (let i = 1; i < table.length; i++) {
       expect(table[i]!).toBeGreaterThanOrEqual(table[i - 1]!);   // never regresses
     }
@@ -310,7 +444,7 @@ describe('the key supply — the padlock arc (AAA 4.10d)', () => {
     // Past it — weeks of bookmarks, deep into a campaign — the sill can hold a
     // second key, and even then never more than the ascent has locked storeys.
     const lockedStoreys = [4, 5, 6].filter((r) => DOOR_LOCKS.chanceByRow[r]! > 0).length;
-    expect(Math.max(...KEY_SUPPLY.fernMorningKeys)).toBeLessThan(lockedStoreys);
+    expect(Math.max(...KEY_SUPPLY.fernMorningKeysByPoints)).toBeLessThan(lockedStoreys);
   });
 
   it('keeps the gate real on day one: no key arrives before the friendship does', () => {
@@ -383,6 +517,12 @@ describe("the night digest's two missing numbers (AAA 4.10 / R.3)", () => {
     }
     expect(new Set(MOVE_COST_BY_ROW.map((_, r) => rowName(r))).size)
       .toBe(MOVE_COST_BY_ROW.length);
+    // …and it names the right storey the Sanctum landing. Round 7: row 5 IS
+    // the landing the word is spoken from (grid.ts SANCTUM_DOOR_CELL) and row
+    // 6 is the sealed room; the names were one storey out, so the digest
+    // congratulated her on reaching a floor she had not.
+    expect(rowName(SANCTUM_DOOR_CELL.row)).toMatch(/Sanctum landing/);
+    expect(rowName(SANCTUM_CELL.row)).not.toMatch(/landing/);
   });
 
   it('counts everything the manor gave back', () => {
@@ -396,7 +536,7 @@ describe("the night digest's two missing numbers (AAA 4.10 / R.3)", () => {
 });
 
 describe('the tea arc has a LIVE source (AAA 4.10d, round-5 audit)', () => {
-  it('warms one point every other morning, to a ceiling TEA_BY_RANK can use', () => {
+  it('warms one point every other morning, to a ceiling TEA_BY_POINTS can use', () => {
     expect(teaArcPoints(1)).toBe(0);                 // day 1: they have just met
     expect(teaArcPoints(2)).toBe(1);
     expect(teaArcPoints(TEA_ARC.morningsPerPoint * TEA_ARC.maxPoints)).toBe(TEA_ARC.maxPoints);
@@ -408,13 +548,31 @@ describe('the tea arc has a LIVE source (AAA 4.10d, round-5 audit)', () => {
     }
   });
 
+  it('is a CEILING mornings buy, with a floor one rung behind it', () => {
+    // ROUND-7 FINDING: `teaArcPoints` was applied unconditionally at dawn, so
+    // the arc was the calendar and the player had no agency in it. It is the
+    // ceiling now — `DaySlice.shareMorningTea` grants against it when the
+    // scene actually plays — and `teaArcFloor` is the mercy path for a player
+    // who skipped her mornings (AAA 5.5: later and less, never lost).
+    for (let day = 1; day < 40; day++) {
+      expect(teaArcFloor(day)).toBeLessThanOrEqual(teaArcPoints(day));
+      expect(teaArcFloor(day + 1)).toBeGreaterThanOrEqual(teaArcFloor(day));
+    }
+    // Exactly one rung behind, once the arc is running.
+    expect(teaArcFloor(TEA_ARC.morningsPerPoint * 2)).toBe(teaArcPoints(TEA_ARC.morningsPerPoint * 2) - 1);
+    expect(teaArcFloor(1)).toBe(0);
+    expect(teaArcFloor(2)).toBe(0);
+    // …and it still arrives at the same brim, for anyone who keeps playing.
+    expect(teaArcFloor(999)).toBe(TEA_ARC.maxPoints);
+  });
+
   it('reaches the full pot — which raw affinity points never could', () => {
-    // TEA_BY_RANK's top rank needs `maxPoints`; Bramble's authored file grants
+    // TEA_BY_POINTS's top rank needs `maxPoints`; Bramble's authored file grants
     // 2 in its entire lifetime, so before this the published campaign curve was
     // measured against warmth the live game could not draw.
-    expect(TEA_ARC.maxPoints).toBe(TEA_BY_RANK.length - 1);
+    expect(TEA_ARC.maxPoints).toBe(TEA_BY_POINTS.length - 1);
     expect(teaBonus(teaArcPoints(TEA_ARC.morningsPerPoint * TEA_ARC.maxPoints)))
-      .toBe(TEA_BY_RANK.at(-1));
+      .toBe(TEA_BY_POINTS.at(-1));
   });
 
   it('lifts the FIRST evening without touching the base budget', () => {

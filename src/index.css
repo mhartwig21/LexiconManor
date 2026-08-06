@@ -58,14 +58,16 @@ h3 {
 
 /* --------------------------------------------------------------------------
    Generic page frame (fallback screens: NotFound, RoomPage empty state).
-   Padded below the fixed chrome header (A2's DayHeader, ~48px + safe area).
+   Padded below the fixed chrome header. Clearance derives from --chrome-h, the
+   one place the bar's height is declared (AAA 11.4) — this used to read a hard
+   56px, a third number matching neither the token (52) nor the measured bar.
    -------------------------------------------------------------------------- */
 
 .page {
   max-width: 720px;
   margin: 0 auto;
   padding: 1.25rem;
-  padding-top: calc(56px + env(safe-area-inset-top, 0px));
+  padding-top: calc(var(--chrome-h) + env(safe-area-inset-top, 0px));
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
 }
 

@@ -18,6 +18,7 @@ import {
   type SaveV2,
 } from '../src/app/save';
 import { ROOM_PUZZLE_KINDS } from '../src/engine/rooms/room-puzzle';
+import { VIEWED_BACKFILL_FLAG, viewedFragmentFlag } from '../src/engine/journal';
 
 // --- localStorage stub (vitest runs in node) -------------------------------
 
@@ -140,7 +141,16 @@ describe('v1 → v2 migration', () => {
       activePerkLoadout: ['perk-second-wind'],
     });
 
-    expect(v2.earnedAchievementIds).toEqual(['five-nodes', 'first-web']);
+    // ROUND 7 (AAA 11.17): `earnedAchievementIds` is now the MANOR KEEPSAKE
+    // shelf (engine/achievements.KEEPSAKES), the one field the Chronicles'
+    // "N of 12" reads. The v1 roguelike ids have no def in that catalog — they
+    // cannot render a name and would make the count a lie (11.21) — so the
+    // shape migration still carries them across and `backfillKeepsakes` then
+    // drops them. Nothing is destroyed: the raw v1 blob is kept verbatim under
+    // the backup key (asserted below) and the runs under chronicles.runHistoryV1.
+    expect(v2.earnedAchievementIds).toEqual([]);
+    const rawBackup = JSON.parse(store.get(V1_BACKUP_KEY)!) as typeof V1_FIXTURE;
+    expect(rawBackup.earnedAchievementIds).toEqual(['five-nodes', 'first-web']);
 
     // Seen puzzles carried; the new kinds initialized empty.
     expect(v2.seenPuzzleIds['word-web']).toEqual(['ww-007', 'ww-012']);
@@ -208,6 +218,52 @@ describe('v2 → v2 normalization (forward-compat backfill)', () => {
     expect(v2.currencies).toEqual({ gems: 3, keys: 1, bookmarks: 2 });
     expect(v2.volume.foundFragmentIds).toEqual(['frag.v1.01']);
     expect(v2.journal.affinities.bramble).toBe(2);
+  });
+});
+
+describe('unread viewed-flags backfill (AAA 11.20/11.21)', () => {
+  it('takes everything already filed as read, once, on a save that predates the flags', () => {
+    const old = createEmptySaveV2('Meredith');
+    old.volume.foundFragmentIds = ['v1-d1', 'v1-e1'];
+    old.journal.flags = ['met.bramble']; // written before viewed-flags existed
+
+    const v2 = migrate(JSON.parse(JSON.stringify(old)));
+    expect(v2.journal.flags).toContain('met.bramble');
+    expect(v2.journal.flags).toContain(viewedFragmentFlag('volume-1', 'v1-d1'));
+    expect(v2.journal.flags).toContain(viewedFragmentFlag('volume-1', 'v1-e1'));
+    expect(v2.journal.flags).toContain(VIEWED_BACKFILL_FLAG);
+  });
+
+  it('never runs twice — a fragment filed AFTER the sweep keeps its marker', () => {
+    const swept = createEmptySaveV2('Meredith');
+    swept.volume.foundFragmentIds = ['v1-d1'];
+    swept.journal.flags = [VIEWED_BACKFILL_FLAG];
+
+    const v2 = migrate(JSON.parse(JSON.stringify(swept)));
+    // v1-d1 arrived under this build and has not been looked at: no flag.
+    expect(v2.journal.flags).not.toContain(viewedFragmentFlag('volume-1', 'v1-d1'));
+    expect(v2.journal.flags).toEqual([VIEWED_BACKFILL_FLAG]);
+  });
+
+  it('a save born under this build is stamped at birth, so the sweep can never catch it', () => {
+    // Otherwise the first reload after finding a fragment would quietly mark
+    // it viewed — the marker would clear on something that is not viewing.
+    expect(createEmptySaveV2('Meredith').journal.flags).toContain(VIEWED_BACKFILL_FLAG);
+  });
+
+  it('a migrated v1 save is stamped too (it has nothing filed to sweep)', () => {
+    const v2 = migrate(JSON.parse(JSON.stringify(V1_FIXTURE)));
+    expect(v2.journal.flags).toEqual([VIEWED_BACKFILL_FLAG]);
+    expect(v2.volume.foundFragmentIds).toEqual([]);
+  });
+
+  it('is idempotent across repeated loads', () => {
+    const old = createEmptySaveV2('Meredith');
+    old.volume.foundFragmentIds = ['v1-d1'];
+    old.journal.flags = [];
+    const once = migrate(JSON.parse(JSON.stringify(old)));
+    const twice = migrate(JSON.parse(JSON.stringify(once)));
+    expect(twice.journal.flags).toEqual(once.journal.flags);
   });
 });
 

@@ -36,7 +36,7 @@
         {
           "speaker": "dewey",
           "narration": true,
-          "text": "The purr is entirely disproportionate to the cat. Somewhere below your ribs, the day's arithmetic quietly improves."
+          "text": "The purr is entirely disproportionate to the cat. Somewhere below your ribs, the day’s arithmetic quietly improves."
         }
       ],
       "summary": "Petted Dewey. Worth the step. Worth most steps."
@@ -60,7 +60,7 @@
           "text": "Dewey sees you coming and rolls over with the weary generosity of a monarch extending a hand. This is your job now. There is no pension."
         }
       ],
-      "summary": "You are now Dewey's staff. There is no pension."
+      "summary": "You are now Dewey’s staff. There is no pension."
     },
     {
       "id": "dewey.react.devoted",
@@ -78,10 +78,10 @@
         {
           "speaker": "dewey",
           "narration": true,
-          "text": "He is asleep before you touch him, purring before you are near. The manor's most rigorous critic has filed his review: staying."
+          "text": "He is asleep before you touch him, purring before you are near. The manor’s most rigorous critic has filed his review: staying."
         }
       ],
-      "summary": "Dewey's review of you is in: staying."
+      "summary": "Dewey’s review of you is in: staying."
     },
     {
       "id": "dewey.react.journal",
@@ -98,7 +98,7 @@
         {
           "speaker": "dewey",
           "narration": true,
-          "text": "Dewey is sitting on your journal. Precisely on it. The page he warmed is one of the lexicographer's fragments. Cats file by importance."
+          "text": "Dewey is sitting on your journal. Precisely on it. The page he warmed is one of the lexicographer’s fragments. Cats file by importance."
         }
       ],
       "summary": "Dewey sat on a fragment. Cats file by importance."

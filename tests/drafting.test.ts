@@ -237,7 +237,11 @@ describe('never an unplaceable offer (AAA 4.4)', () => {
         }
       }
     }
-  });
+    // 25k placements over 60 seeded manors: ~0.5s idle, well over vitest's 5s
+    // default when the dev box is running other suites (or a browser) beside
+    // it. The assertion is exhaustive and deterministic, so a busy machine
+    // must not read as an unplaceable-offer regression.
+  }, 60_000);
 });
 
 describe('deck thinning', () => {
@@ -324,7 +328,11 @@ const makeStore = () => {
 
 /** Day seed 2 padlocks the cell at 2,4; seed 1 leaves it open. */
 const LOCK_SEED = 2;
-const OPEN_SEED = 1;
+// Round 7: the row-4 lock rate rose 0.5 → 0.75 (the ascent to the LIVE Sanctum
+// landing crosses rows 4 and 5, not the sealed row 6 the old rates counted), so
+// the old open seed is padlocked now. Both seeds are asserted below, so a
+// future retune breaks with a legible message rather than a mystery.
+const OPEN_SEED = 6;
 
 /**
  * Out on the blueprint, standing in a row-3 room with two live doors: north

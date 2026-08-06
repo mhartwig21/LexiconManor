@@ -12,6 +12,14 @@
  *     seen on abandon so a revealed word can't be farmed on a later day.
  *   - definition clarity + guess allowance scale with room tier
  *     (tier 1 plain/5 → tier 2 poetic/4 → tier 3 riddle/3).
+ *
+ * ROUND 7 — the closeness taxonomy (AAA 4.17, applied to the same verb at a
+ * higher price). A whisper cost 3 steps and bought exactly one bit: "not that
+ * word". The Sanctum's own criterion mandates shared letters / right length /
+ * repeat guess for the identical act, so the Study — the most expensive
+ * deduction room in the house — was returning strictly less than the criterion
+ * that governs it. `closenessOf()` now rides along with every costed wrong
+ * guess and is remembered per guess (AAA 3.3).
  */
 
 import type { ForgottenWordPuzzle, Tier } from '../../types';
@@ -39,9 +47,60 @@ export const FORGOTTEN_WORD_POOL = lazyContent<ForgottenWordPuzzleEx[]>(
   () => getPools().forgottenWord as ForgottenWordPuzzleEx[],
 );
 
+/**
+ * AAA 4.17 — the Sanctum's closeness taxonomy ("shared letters / right length /
+ * repeat guess"), which the Study owed and did not pay. The Study charges 2–3
+ * steps for the identical verb at a *higher* price and used to return exactly
+ * one bit ("not that word"), while the room we benchmark for reveal juice
+ * (Wordle) is built entirely out of closeness. The adapter already knows the
+ * answer; this is free with the guess it has already charged for.
+ */
+export interface GuessCloseness {
+  guess: string;
+  /** Letters of the headword the guess contains, counted as a multiset. */
+  shared: number;
+  /** …of those, how many stand in the right place. */
+  exact: number;
+}
+
+/**
+ * Multiset overlap + positional matches against the headword. Wordle's two
+ * signals, computed once and remembered (AAA 3.3: she never re-derives what
+ * the game already told her).
+ */
+export function closenessOf(answer: string, guess: string): { shared: number; exact: number } {
+  const a = answer.toUpperCase().replace(/[^A-Z]/g, '');
+  const g = guess.toUpperCase().replace(/[^A-Z]/g, '');
+  const pool = new Map<string, number>();
+  for (const ch of a) pool.set(ch, (pool.get(ch) ?? 0) + 1);
+  let shared = 0;
+  for (const ch of g) {
+    const n = pool.get(ch) ?? 0;
+    if (n > 0) {
+      shared += 1;
+      pool.set(ch, n - 1);
+    }
+  }
+  let exact = 0;
+  for (let i = 0; i < Math.min(a.length, g.length); i++) if (a[i] === g[i]) exact += 1;
+  return { shared, exact };
+}
+
 export type ForgottenWordFeedback =
   | { kind: 'correct'; word: string }
-  | { kind: 'wrong'; guess: string; guessesLeft: number }
+  /**
+   * A costed claim, answered with closeness rather than a bare refusal:
+   * `rightLength` is always true here (a wrong length is refused for free
+   * upstream), and `shared`/`exact` are the two Wordle signals.
+   */
+  | {
+      kind: 'wrong';
+      guess: string;
+      guessesLeft: number;
+      shared: number;
+      exact: number;
+      rightLength: boolean;
+    }
   /** Out of guesses: warm auto-abandon, word revealed for closure. */
   | { kind: 'slipped'; word: string }
   | { kind: 'clue-unsealed'; clue: ClueId }
@@ -55,6 +114,12 @@ export interface ForgottenWordRoomState {
   costedMistakes: number;
   hintsBought: number;
   attempts: number;
+  /**
+   * AAA 3.3 [PARITY] — the elimination history keeps its closeness. The struck
+   * chips told her only *that* she had tried a word; the count she paid for
+   * stays attached to it so she never re-derives it.
+   */
+  closeness: GuessCloseness[];
   lastFeedback: ForgottenWordFeedback | null;
 }
 
@@ -79,6 +144,7 @@ export const forgottenWordAdapter: RoomPuzzleAdapter<ForgottenWordPuzzleEx, Forg
       costedMistakes: 0,
       hintsBought: 0,
       attempts: 0,
+      closeness: [],
       lastFeedback: null,
     };
   },
@@ -111,7 +177,13 @@ export const forgottenWordAdapter: RoomPuzzleAdapter<ForgottenWordPuzzleEx, Forg
         return { state: next, events, outcome: { status: 'solved', perfect: isPerfect(next) } };
       }
       case 'wrong': {
-        next = { ...next, costedMistakes: next.costedMistakes + 1 };
+        const guess = fw.guesses[fw.guesses.length - 1]!;
+        const { shared, exact } = closenessOf(puzzle.word, guess);
+        next = {
+          ...next,
+          costedMistakes: next.costedMistakes + 1,
+          closeness: [...next.closeness, { guess, shared, exact }],
+        };
         events.push({ type: 'mistake', weight: 1 });
         if (result.lost) {
           // Auto-abandon, never a fail (AAA 3.7): reveal for closure.
@@ -121,7 +193,17 @@ export const forgottenWordAdapter: RoomPuzzleAdapter<ForgottenWordPuzzleEx, Forg
         }
         next = {
           ...next,
-          lastFeedback: { kind: 'wrong', guess: fw.guesses[fw.guesses.length - 1]!, guessesLeft: result.guessesLeft },
+          lastFeedback: {
+            kind: 'wrong',
+            guess,
+            guessesLeft: result.guessesLeft,
+            shared,
+            exact,
+            // The card announces the count and a wrong length is refused free
+            // upstream, so a costed claim is always the right length — and the
+            // room now says so out loud instead of leaving her to infer it.
+            rightLength: true,
+          },
         };
         break;
       }

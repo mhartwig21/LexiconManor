@@ -273,6 +273,17 @@ export default function SudokuView({
     else dispatch({ type: 'clear-pencil', cell: sel });
   };
 
+  // Undo — the permanent, always-visible control NYT Sudoku ships for the same
+  // reason we do: pencil work IS the solve (AAA 3.3), so no free tap may cost
+  // her ten minutes of eliminations with no way back. Board only; steps stay
+  // spent, and a bought figure is never walked off the leaf.
+  const canUndo = !won && state.history.length > 0;
+  const undo = () => {
+    if (!canUndo) return;
+    sfx.tap();
+    dispatch({ type: 'undo' });
+  };
+
   const consult = () => {
     if (won) return;
     dispatch({ type: 'reveal-cell', cell: sel !== null && engine.values[sel] === 0 ? sel : undefined });
@@ -391,10 +402,11 @@ export default function SudokuView({
           </div>
 
           {/* Thumb zone: sticky, always reachable, board scrolls behind it.
-              Two bands — what is free on top, what costs underneath — so the
-              price of a verb is never a surprise (AAA 4.6's principle). On a
-              667-tall screen the bands collapse into one row (CSS) to give the
-              leaf back its height. */}
+              The verbs read free → priced, left to right, and every priced one
+              prints its own price in its label, so the cost of a verb is never
+              a surprise (AAA 4.6's principle). They share ONE row at every
+              size: the second band cost ~48px of height, and height is what
+              decides how big the ledger leaf can be (counting-house.css). */}
           <div className="room-deck">
             <div className="ch-toolbar">
               <div className="ch-tools ch-tools--free">
@@ -451,8 +463,19 @@ export default function SudokuView({
                   </button>
                 );
               })}
+              {/* Undo sits beside Erase, in the pad, permanently — not behind a
+                  menu. Six columns rather than five, so the eleventh key costs
+                  the ledger no height (the axis this room has none of). */}
               <button
-                className="ch-key ch-key--wide"
+                className="ch-key ch-key--verb"
+                onClick={undo}
+                disabled={!canUndo}
+                aria-label="Undo the last change to the leaf"
+              >
+                ↶ Undo
+              </button>
+              <button
+                className="ch-key ch-key--verb ch-key--wide"
                 onClick={erase}
                 disabled={!canErase}
                 aria-label={canLift ? 'Lift this figure back off the leaf' : 'Erase the pencil marks in this cell'}

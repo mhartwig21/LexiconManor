@@ -99,15 +99,20 @@ export function assignCipher(
 ): CipherEngineState {
   const c = cipherLetter.toUpperCase();
   if (state.status !== 'playing' || state.locked.includes(c)) return state;
-  const guesses = { ...state.guesses };
+  // Identity-stable when nothing changes (erasing a blank, penciling the
+  // letter already standing there): the adapter's `engine === state.engine`
+  // guard and the view's cursor both key off "did this do anything".
+  const current = state.guesses[c];
   if (plain === null) {
+    if (current === undefined) return state;
+    const guesses = { ...state.guesses };
     delete guesses[c];
-  } else {
-    const p = plain.toUpperCase();
-    if (!LETTER.test(p)) return state;
-    guesses[c] = p;
+    return { ...state, guesses };
   }
-  return { ...state, guesses };
+  const p = plain.toUpperCase();
+  if (!LETTER.test(p)) return state;
+  if (current === p) return state;
+  return { ...state, guesses: { ...state.guesses, [c]: p } };
 }
 
 /** The claim: check the full mapping. */

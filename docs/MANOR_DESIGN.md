@@ -64,7 +64,7 @@ from v2 carry over (see §10).
 | Solve a small room (micro-puzzle) | +3 |
 | Solve a large room (anchor mode) | +6 to +8 |
 | Perfect solve (no mistakes) | +2 bonus |
-| Kitchen snack / Bramble's tea | snack +3..+7 · tea 0 → +11 across the friendship |
+| Kitchen snack / Bramble's tea | green-room refills +2..+6 (Kitchen +6, Larder +5, Boot Room +3, Still Room +2; compounding hooks +1..+2) · tea 0 → +11 across the friendship |
 | Petting Dewey (the cat) | −1 (worth it) |
 
 - Steps never go negative mid-puzzle: a puzzle can always be *abandoned* (the room stays

@@ -10,7 +10,7 @@
  *   (a) a no-refund day (skip every puzzle) tops out low and ends in ~5 min;
  *   (b) a decent day runs 10–15 MINUTES at the median (p90 ≤ 20) — the
  *       criterion the 2026-08 owner playtest said we were missing by half;
- *   (c) a skilled player first REACHES the Sanctum row around day 6–10 —
+ *   (c) a skilled player first REACHES the Sanctum landing around day 6–10 —
  *       never day 1 ("way too easy — I reached the Forgotten Word on my first
  *       day; Blue Prince took me 28 days");
  *   (d) the volume is typically won in 14–28 days of daily play.
@@ -35,14 +35,30 @@
  * here only needs it to be roughly ~1 fragment/day with a pity floor, which
  * is what AAA 4.14 already guarantees.
  *
- * Rows are 1-BASED here: entrance row 1, Sanctum row 7 (matching the docs'
- * "reaches row 6–7" language). Engine rows are 0-based; conversions are
- * explicit (`row - 1`) at every boundary.
+ * Rows are 1-BASED here: entrance row 1, the SANCTUM LANDING row 6. Engine
+ * rows are 0-based; conversions are explicit (`row - 1`) at every boundary.
+ *
+ * ═══ ROUND-7 CORRECTION — THE MILESTONE WAS A STOREY THE GAME NEVER ASKS FOR
+ * ═══
+ * `SANCTUM_ROW` was 7 (0-based 6): the Sanctum's OWN cell. That cell is
+ * pre-placed and sealed at manor build, it is never drafted, and
+ * `walkableNeighbors` only ever offers it as the door the blueprint refuses to
+ * render as a walk. The word is spoken from the landing BELOW it — 0-based
+ * (2,5), `engine/manor/grid.ts SANCTUM_DOOR_CELL` — so every published number
+ * ("first reach day 6–10", "<8% on day 1", "the top is always bought with
+ * refunds") was verified against a floor the player is never asked to enter,
+ * and the floor she IS asked to reach cost 15 steps bare: under the 18-step
+ * base budget. Re-measured at the live landing on the old tables, a skilled
+ * player stood at the door on day 1 in 41.5% of campaigns and by day 2 in 74%.
+ *
+ * The milestone below is now the live landing, and `MOVE_COST_BY_ROW`'s upper
+ * rows plus `DOOR_LOCKS.chanceByRow[4..5]` were re-tuned until every 4.10
+ * target held for the ascent the player actually pays for.
  */
 
 import { createRng } from '../rng';
 import type { Cell, RoomCard, Tier } from '../types';
-import { BASE_DECK, deckFor, isKeyBearing } from '../manor/deck';
+import { BASE_DECK, deckFor, isKeyBearing, UTILITY_EFFECTS } from '../manor/deck';
 import { categoryWeight, rollCards, RARITY_WEIGHTS } from '../manor/drafting';
 import { createManor, rowTier } from '../manor/grid';
 import { getRoomAdapter } from '../rooms/registry';
@@ -53,8 +69,34 @@ import {
 } from './steps';
 import type { StepLedger } from '../types';
 
-/** The Sanctum's row, 1-based (engine row 6). */
-export const SANCTUM_ROW = 7;
+/**
+ * THE LIVE MILESTONE, 1-based: the landing the word is spoken from — engine
+ * row 5, cell (2,5), `SANCTUM_DOOR_CELL`. Standing here with a north door onto
+ * the sealed Sanctum is what "reached the Sanctum" means everywhere in the
+ * game; the Sanctum's own row (1-based 7) is not walkable and is not a
+ * milestone. Named for the landing so a future reader cannot re-confuse the
+ * two (the old name was `SANCTUM_ROW` and it meant row 7).
+ */
+export const SANCTUM_LANDING_ROW = 6;
+
+/**
+ * THE REFILLS THE LIVE DECK CAN ACTUALLY PAY — read off `UTILITY_EFFECTS`
+ * (engine/manor/deck.ts), never re-typed.
+ *
+ * Round-6 audit: the utility beat used to roll `randInt(STEP_TABLE.snack.min,
+ * .max)` over a range — then a declared 3..7 — that NOTHING live sampled.
+ * Refills are fixed, authored numbers printed on the green cards' own toasts
+ * (+6 Kitchen, +5 Larder, +3 Boot Room, +2 Still Room), so AAA 4.10's "scarce
+ * refills" was being verified against a distribution the deck cannot produce
+ * — its floor was above the Still Room and its ceiling above every card in
+ * the game. The model now draws from the shipped payouts themselves, so a
+ * deck edit moves the simulated day instead of leaving it stale, and
+ * `tests/steps.test.ts` holds `STEP_TABLE.snack` to describing this set.
+ */
+export const REFILL_PAYOUTS: readonly number[] = Object.values(UTILITY_EFFECTS)
+  .map((e) => e.steps ?? 0)
+  .filter((n) => n > 0)
+  .sort((a, b) => a - b);
 
 export const MOVEMENT = {
   /** Hard cap so a runaway profile terminates. */
@@ -376,24 +418,27 @@ export function climbStepCost(
 }
 
 /**
- * What the whole remaining ascent costs from 1-based `fromRow` to the Sanctum
- * row — movement only. Exported because it is the headline number of this
+ * What the whole remaining ascent costs from 1-based `fromRow` to THE SANCTUM
+ * LANDING — movement only. Exported because it is the headline number of this
  * overhaul: a bare, perfectly-efficient ascent costs MORE than the day's base
- * budget, so the Sanctum row must be paid for with refunds and tea.
+ * budget, so the landing must be paid for with refunds and tea. Round 7: this
+ * now stops at the landing (1-based 6) instead of the sealed Sanctum's own row
+ * (7), i.e. it prices the climb the player is actually asked to make.
  */
 export function reserveToTop(
   fromRow: number,
   profile: Pick<SimProfile, 'walkbackPerRow'>,
 ): number {
   let cost = 0;
-  for (let r = Math.max(1, fromRow); r < SANCTUM_ROW; r++) cost += climbStepCost(r, profile);
+  for (let r = Math.max(1, fromRow); r < SANCTUM_LANDING_ROW; r++) cost += climbStepCost(r, profile);
   return cost;
 }
 
 export interface SimDayResult {
   rooms: number;            // new rooms drafted + entered
   roomsSolved: number;
-  maxRow: number;           // 1-based; 7 = the Sanctum row
+  maxRow: number;           // 1-based; 6 = the Sanctum landing (the live door)
+  /** Stood on the Sanctum landing — the second gate of AAA 4.10e. */
   reachedSanctum: boolean;
   fragmentsFound: number;   // violet rooms entered today
   keysFound: number;
@@ -482,8 +527,8 @@ export function simulateDay(
     // affordable; the tea arc is what eventually lifts it over the line.
     const stepsNow = stepsRemaining(ledger);
     const canAffordStorey = stepsNow >= climbStepCost(row, profile) * profile.boldness;
-    const wantsUp = row < SANCTUM_ROW && canAffordStorey && rng() < profile.pushBias;
-    let targetRow = wantsUp ? Math.min(SANCTUM_ROW, row + 1) : row;
+    const wantsUp = row < SANCTUM_LANDING_ROW && canAffordStorey && rng() < profile.pushBias;
+    let targetRow = wantsUp ? Math.min(SANCTUM_LANDING_ROW, row + 1) : row;
     const targetRow0 = targetRow - 1;
 
     // --- Walk to the frontier door: 1 step in + depth-scaled walk-back. ----
@@ -533,7 +578,7 @@ export function simulateDay(
     seconds += TIME_TABLE.draft;
     const mix = deckMixAt(targetRow - 1);
     const stepsLeft = stepsRemaining(ledger);
-    const nextRow0 = Math.min(SANCTUM_ROW, targetRow + 1) - 1;
+    const nextRow0 = Math.min(SANCTUM_LANDING_ROW, targetRow + 1) - 1;
     const ctx = {
       stepsLeft, keys,
       needsKeySoon: (DOOR_LOCKS.chanceByRow[nextRow0] ?? 0) > 0,
@@ -605,7 +650,11 @@ export function simulateDay(
       } else if (roll < 0.55) {
         ledger = appendEntry(ledger, {
           reason: 'snack',
-          delta: randInt(rng, STEP_TABLE.snack.min, STEP_TABLE.snack.max),
+          // Round-6 audit: this used to roll uniformly over `STEP_TABLE.snack`
+          // (then a fictional 3..7). Refills are FIXED authored numbers on the
+          // green cards, so the model now draws from the payouts the deck can
+          // actually pay — see REFILL_PAYOUTS.
+          delta: REFILL_PAYOUTS[randInt(rng, 0, REFILL_PAYOUTS.length - 1)]!,
           at: 0, roomKey,
         });
       } else if (roll < 0.75) {
@@ -628,7 +677,7 @@ export function simulateDay(
     rooms,
     roomsSolved,
     maxRow,
-    reachedSanctum: maxRow >= SANCTUM_ROW,
+    reachedSanctum: maxRow >= SANCTUM_LANDING_ROW,
     fragmentsFound,
     keysFound,
     lockedOut,

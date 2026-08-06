@@ -887,23 +887,42 @@ function visibleMask(values: readonly number[], cell: number): number {
 }
 
 /**
- * "Pencil what fits" — set every blank cell's marks to the figures its placed
- * peers still allow. NYT ships this as Auto Candidate Mode directly under the
- * pad, and the tier-2/3 bins are DEFINED by techniques (naked triple, X-wing,
+ * "Pencil what fits" — give every blank cell the figures its placed peers
+ * still allow. NYT ships this as Auto Candidate Mode directly under the pad,
+ * and the tier-2/3 bins are DEFINED by techniques (naked triple, X-wing,
  * swordfish, colouring) that are unreachable without complete candidate marks
  * — so hand-pencilling ~250 taps is not difficulty, it is a toll gate in front
- * of the puzzle's own design. Free, idempotent, and reversible with the eraser:
- * it derives nothing the player could not read straight off the grid, so it is
- * a mode-neutral tool, never a hint, and never touches `perfect`.
+ * of the puzzle's own design. Free, idempotent, never a hint, never touches
+ * `perfect`: it derives nothing the player could not read off the grid.
+ *
+ * ═══ ROUND 6 FIX — IT MAY NEVER DESTROY HAND WORK (AAA 3.3) ═══
+ * It used to ASSIGN the naive mask to every blank, so a second tap restored
+ * the naive fill byte-identical and ten minutes of eliminations died to one
+ * mis-tap 5px off the pencil toggle. Pencil work IS the solve; a free button
+ * that can silently delete it is a memory prosthetic that forgets.
+ *
+ * Note the shape of the fix, because the obvious one is a no-op: UNIONING the
+ * naive set with her marks changes nothing at all, since a hand-pruned set is
+ * a SUBSET of the naive set and `prune ∪ naive === naive` — the wipe would
+ * survive verbatim. Additivity has to be per CELL, not per mark: the button
+ * fills the blanks she has NOT marked, and does not touch a cell she has.
+ * That is the whole job it was ever for ("pencil the board for me"), and it
+ * makes the button strictly monotone — it can only ever add marks where there
+ * were none.
+ *
+ * It needs no tidying pass: `inkCell` already sweeps a landed figure out of
+ * its peers' marks, so the marks stay true as the leaf fills. Erasing a cell
+ * (free) hands it back to this button, and UNDO (see sudoku-adapter.ts) covers
+ * everything else.
  */
 export function fillPencil(state: SudokuEngineState): SudokuEngineState {
   if (state.status !== 'playing') return state;
   const pencil = [...state.pencil];
   let changed = false;
   for (let i = 0; i < 81; i++) {
-    if (state.values[i] !== 0) continue;
-    const mask = visibleMask(state.values, i);
-    if (pencil[i] !== mask) { pencil[i] = mask; changed = true; }
+    if (state.values[i] !== 0 || pencil[i] !== 0) continue;
+    pencil[i] = visibleMask(state.values, i);
+    changed = true;
   }
   return changed ? { ...state, pencil } : state;
 }

@@ -29,9 +29,11 @@
  */
 
 import type {
-  CharacterId, DayRecord, FragmentDef, LetterDef, RoomCategory, VolumeDef, VolumeState,
+  CharacterId, DayRecord, FragmentDef, FragmentKind, LetterDef, RoomCategory, VolumeDef,
+  VolumeState,
 } from './types';
-import type { GuessCloseness } from './events';
+import type { GuessCloseness, RecordedEvent } from './events';
+import type { RoomPuzzleKind } from './rooms/room-puzzle';
 
 // ---------------------------------------------------------------------------
 // Letter-constraint engravings — machine-readable clue algebra
@@ -254,6 +256,118 @@ export function nextFragmentForRoom(
       ? unfound.filter((f) => !reserved.has(f.id))
       : unfound;
   return pool.find((f) => f.sourceRoomCategory === category) ?? pool[0]!;
+}
+
+// ---------------------------------------------------------------------------
+// Room-SOLVE channels — the word games pay the mystery (AAA 4.14 / 11.17)
+// ---------------------------------------------------------------------------
+
+/**
+ * ROUND-8 DEFECT: THE LABELLED CHANNEL WITH NO EMITTER.
+ *
+ * `nextFragmentForRoom` above had exactly one live caller — the violet-room
+ * branch of A1's `chooseCard` — so *drafting a mystery room* was the only room
+ * channel in the game. Volume 1 nevertheless labels fragments
+ * `sourceRoomCategory: "puzzle"`, and `RoomEvent.reward.fragmentId` is
+ * consumed by `app/slices/room.ts` and emitted by no adapter. A source
+ * category no room can answer to is a dead reward class (AAA 11.17), and it
+ * made the word games and the mystery mechanically disjoint: the Study — the
+ * room MANOR_DESIGN §6 calls the meta-mystery's engine — moved the mystery
+ * not at all.
+ *
+ * A solve channel closes that. It is a STRICT match (category *and* fragment
+ * kind, never the global fallback `nextFragmentForRoom` uses): a channel with
+ * nothing authored for it pays nothing rather than quietly draining the
+ * violet drip, so the number of fragments a volume routes through the word
+ * games is an authoring decision visible in the volume JSON.
+ *
+ *   - THE STUDY (`forgotten-word`, MANOR_DESIGN §6 "feeds the meta-mystery
+ *     directly") hands over a DEFINITION LINE. Its own puzzles are the
+ *     lexicographer's unfinished entries (tests/volume-premise.test.ts), so
+ *     finishing one and being handed a line of the entry he *unfinished on
+ *     purpose* is the room's whole point, paid out.
+ *   - EVERY OTHER PUZZLE ROOM hands over an ENGRAVING — the lintel/plate
+ *     inscriptions, which are cut into the fabric of the rooms themselves.
+ *
+ * Both are valved to once per day per channel by the caller (see
+ * `solveChannelFiledToday`), so a five-room evening is not a fragment
+ * firehose and `tests/volume-pacing.test.ts` keeps measuring 4.10e.
+ */
+export interface SolveChannel {
+  /** Stable name — used by the daily valve, the tests and nothing else. */
+  id: 'study' | 'lintel';
+  category: RoomCategory;
+  kind: FragmentKind;
+}
+
+export const STUDY_CHANNEL: SolveChannel = {
+  id: 'study', category: 'puzzle', kind: 'definition-line',
+};
+export const LINTEL_CHANNEL: SolveChannel = {
+  id: 'lintel', category: 'puzzle', kind: 'engraving',
+};
+
+/** Which channel a solved room of this kind pays into. */
+export function solveChannelFor(kind: RoomPuzzleKind): SolveChannel {
+  return kind === 'forgotten-word' ? STUDY_CHANNEL : LINTEL_CHANNEL;
+}
+
+/** Does this fragment belong to that channel? (Also the valve's predicate.) */
+export function isChannelFragment(f: FragmentDef, channel: SolveChannel): boolean {
+  return f.sourceRoomCategory === channel.category && f.kind === channel.kind;
+}
+
+/**
+ * The fragment a solved room hands over: lowest unfound `revealOrder` in the
+ * channel, or null. STRICT — no fallback (see the header). Reserved testimony
+ * is honoured for symmetry with the room drip, though a channel never selects
+ * testimony in the first place.
+ */
+export function fragmentForSolveChannel(
+  def: VolumeDef,
+  state: VolumeState,
+  channel: SolveChannel,
+  opts?: { reservedIds?: ReadonlySet<string> },
+): FragmentDef | null {
+  const reserved = opts?.reservedIds;
+  return (
+    unfoundFragments(def, state).find(
+      (f) => isChannelFragment(f, channel) && !reserved?.has(f.id),
+    ) ?? null
+  );
+}
+
+/**
+ * The daily valve, derived off the audited spine rather than stored: has this
+ * channel already paid today? `recentEvents` are day-stamped and live in the
+ * save, so this survives a screen change, a reload and a force-quit, and it
+ * resets exactly when the day does — no new save field, no in-memory counter
+ * that a refresh could hand back (the AAA 11.20 lesson, applied to a valve).
+ */
+export function solveChannelFiledToday(
+  def: VolumeDef,
+  channel: SolveChannel,
+  recentEvents: readonly RecordedEvent[],
+  day: number,
+): boolean {
+  return recentEvents.some((r) => {
+    if (r.day !== day) return false;
+    const ev = r.event;
+    if (ev.type !== 'fragment-found') return false;
+    const frag = def.fragments.find((f) => f.id === ev.fragmentId);
+    return !!frag && isChannelFragment(frag, channel);
+  });
+}
+
+/** Every source category the authored volume actually labels — the manifest
+ *  `tests/volume-channels.test.ts` walks so a label with no emitter fails the
+ *  build rather than shipping as decoration (AAA 11.17). */
+export function declaredSourceCategories(def: VolumeDef): RoomCategory[] {
+  const out: RoomCategory[] = [];
+  for (const f of def.fragments) {
+    if (!out.includes(f.sourceRoomCategory)) out.push(f.sourceRoomCategory);
+  }
+  return out;
 }
 
 /**

@@ -8,6 +8,7 @@ import JournalPage from './pages/JournalPage';
 import ChroniclesPage from './pages/ChroniclesPage';
 import SanctumPage from './pages/SanctumPage';
 import GameChrome from './ui/chrome/GameChrome';
+import MomentLayer from './ui/moment/MomentLayer';
 
 /**
  * ARCHITECT-OWNED (integration pass applied). Hash routing so the static
@@ -22,6 +23,15 @@ import GameChrome from './ui/chrome/GameChrome';
  * DayHeader/StepMeter + the morning/dusk/night scenes overlay every route
  * and never unmount across navigation, so the candle and its floating ±N
  * survive room entry/exit.
+ *
+ * <MomentLayer /> mounts beside it (the moment layer's shared-file request),
+ * and the ONE line is load-bearing: the layer used to bootstrap itself from
+ * ManorPage's mount effect, which meant a cold deep-link straight to
+ * #/journal left the campaign-grant watcher uninstalled until the player
+ * happened to visit the manor. Mounted here it is live from first commit on
+ * every route, and `retireBootstrapLayer()` makes the old path a no-op.
+ * It is OUTSIDE the <Switch> for the same reason GameChrome is: no route
+ * change may unmount the thing whose whole job is to outlive the screen.
  */
 export default function App() {
   // AAA 9.6/7.3 gate: content pools ride the lazy 'content' chunk
@@ -64,6 +74,7 @@ export default function App() {
         </Route>
       </Switch>
       <GameChrome />
+      <MomentLayer />
     </Router>
   );
 }

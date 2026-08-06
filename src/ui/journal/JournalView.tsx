@@ -6,27 +6,31 @@
  * Journal → tab). The deduction is the player's; the filing is not.
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useManorStore } from '../../app/store';
 import { getVolumeContent } from '../../app/content/volumes';
 import {
-  alphabetFacts, ALPHABET, crossRefs, definitionSlots, filedToday, foundByKind,
+  alphabetFacts, ALPHABET, crossRefs, definitionSlots, displayedFragmentIds, foundByKind,
   guessHistory, isInterpreted, journalNudge, letterBoxes, sanctumReadiness, VERDICT_TOKENS,
+  type JournalTab,
 } from '../../engine/journal';
 import {
   arrivedLetters, fragmentDroughtDays, openedLetterIds, type FragmentContent,
 } from '../../engine/volume';
 import type { CharacterId } from '../../engine/types';
+import { atSanctumDoor } from '../../engine/manor/grid';
 import { getDialogueFile } from '../../engine/dialogue/content';
 import { selectDialogue } from '../../engine/dialogue/select';
 import DialogueScene from '../dialogue/DialogueScene';
 import BackLink from '../chrome/BackLink';
+import UnreadMark, { UnreadPip } from './UnreadMark';
+import { useJournalUnread } from './useJournalUnread';
 import { sfx } from '../../app/sound';
 import { quoted } from './quote';
 import './journal.css';
 
-type Tab = 'word' | 'engravings' | 'testimony' | 'letters';
+type Tab = JournalTab;
 
 const CHARACTER_NAMES: Record<CharacterId, string> = {
   bramble: 'Mrs. Bramble',
@@ -49,12 +53,44 @@ export default function JournalView() {
   const volume = useManorStore((s) => s.volume);
   const day = useManorStore((s) => s.day?.day ?? s.volume.day);
   const flags = useManorStore((s) => s.flags);
-  const recentEvents = useManorStore((s) => s.recentEvents);
   const dayRecords = useManorStore((s) => s.chronicles.dayRecords);
   const openLetter = useManorStore((s) => s.openLetter);
+  const markFragmentsViewed = useManorStore((s) => s.markFragmentsViewed);
   const buildDialogueQuery = useManorStore((s) => s.buildDialogueQuery);
+  /** Is she actually standing at the door? (See the Word tab's nudge.) */
+  const atLanding = useManorStore((s) => atSanctumDoor(s.manor));
 
   const content = getVolumeContent(volume.volumeId);
+  const unread = useJournalUnread();
+
+  /**
+   * What was unread when she got here — and it STAYS marked for this visit.
+   *
+   * Two different questions wear the same wax, and conflating them is what
+   * produced the round-5 bug: the tabs and the entrance answer "is there
+   * something you have not looked at?" (live, and it clears permanently as she
+   * looks); the card markers answer "which of these is the new one?" (frozen
+   * for as long as she is standing here, so the answer does not vanish out from
+   * under her the instant the tab paints). Additive, so a fragment that arrives
+   * mid-visit — a letter's grant — gets its marker too.
+   */
+  const shownNew = useRef<Set<string>>(new Set());
+  for (const id of unread.fragments) shownNew.current.add(id);
+
+  /**
+   * Viewing — and only viewing — retires the marker (AAA 11.20). This fires on
+   * what the sheet actually PUT ON THE GLASS, so it is not a focus edge and not
+   * a navigation edge; the slice makes it a no-op once nothing is left to mark,
+   * so it is safe to re-run on every tab change and every filing.
+   */
+  const displayed = content ? displayedFragmentIds(content, volume, tab) : [];
+  const displayedKey = displayed.join(',');
+  useEffect(() => {
+    if (displayed.length > 0) markFragmentsViewed(displayed);
+    // displayedKey stands in for the array identity; markFragmentsViewed is a
+    // stable store action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedKey, markFragmentsViewed]);
   if (!content) {
     return (
       <div className="jrn-page">
@@ -71,7 +107,7 @@ export default function JournalView() {
   }
 
   const solved = volume.status === 'solved';
-  const newToday = filedToday(recentEvents, day);
+  const isNew = (id: string) => shownNew.current.has(id);
   // Derived from the write-once flags directly (NOT by filtering
   // content.letters) so opened synthesized pity letters ('pity-extra-N',
   // never in the authored array) stay marked opened and readable.
@@ -80,11 +116,8 @@ export default function JournalView() {
     droughtDays: fragmentDroughtDays(dayRecords),
     openedIds,
   });
-  const unreadLetters = letters.filter((l) => !openedIds.has(l.id)).length;
   const engravings = foundByKind(content, volume, 'engraving');
   const testimony = foundByKind(content, volume, 'testimony');
-
-  const hasNew = (frags: FragmentContent[]) => frags.some((f) => newToday.has(f.id));
   const slots = definitionSlots(content, volume);
 
   const switchTab = (t: Tab) => {
@@ -104,11 +137,13 @@ export default function JournalView() {
           Volume I — {content.title}{solved ? ' · closed' : ''}
         </div>
 
+        {/* Every tab dot is live persisted unread — it retires when the tab's
+            contents have been on the glass, and it does not come back. */}
         <nav className="jrn-tabs" aria-label="Journal tabs">
-          <TabButton label="The Word" active={tab === 'word'} dot={hasNew(slots.flatMap((s) => (s.fragment ? [s.fragment] : [])))} onClick={() => switchTab('word')} />
-          <TabButton label="Engravings" active={tab === 'engravings'} dot={hasNew(engravings)} onClick={() => switchTab('engravings')} />
-          <TabButton label="Testimony" active={tab === 'testimony'} dot={hasNew(testimony)} onClick={() => switchTab('testimony')} />
-          <TabButton label="Letters" active={tab === 'letters'} dot={unreadLetters > 0} onClick={() => switchTab('letters')} />
+          <TabButton label="The Word" noun="lines of the definition" active={tab === 'word'} unread={unread.word.length} onClick={() => switchTab('word')} />
+          <TabButton label="Engravings" noun="engravings" active={tab === 'engravings'} unread={unread.engravings.length} onClick={() => switchTab('engravings')} />
+          <TabButton label="Testimony" noun="pieces of testimony" active={tab === 'testimony'} unread={unread.testimony.length} onClick={() => switchTab('testimony')} />
+          <TabButton label="Letters" noun="letters" active={tab === 'letters'} unread={unread.letters.length} onClick={() => switchTab('letters')} />
         </nav>
 
         <div className="jrn-sheet">
@@ -117,14 +152,14 @@ export default function JournalView() {
             engravings.length === 0 ? (
               <p className="jrn-empty">No engravings found yet. They are cut into lintels and inkstands about the house — the manor will file them as you pass.</p>
             ) : (
-              engravings.map((f) => <EngravingCard key={f.id} frag={f} isNew={newToday.has(f.id)} />)
+              engravings.map((f) => <EngravingCard key={f.id} frag={f} isNew={isNew(f.id)} />)
             )
           )}
           {tab === 'testimony' && (
             testimony.length === 0 ? (
               <p className="jrn-empty">No one has said anything worth filing. Yet. Try tea, and patience.</p>
             ) : (
-              testimony.map((f) => <TestimonyCard key={f.id} frag={f} isNew={newToday.has(f.id)} />)
+              testimony.map((f) => <TestimonyCard key={f.id} frag={f} isNew={isNew(f.id)} />)
             )
           )}
           {tab === 'letters' && (
@@ -212,6 +247,9 @@ export default function JournalView() {
             {slots.map((s) =>
               s.fragment ? (
                 <div key={s.revealOrder} className="jrn-poem__line">
+                  {/* The item level of the chain (AAA 11.19): the line itself
+                      carries the mark, not only the tab above it. */}
+                  {isNew(s.fragment.id) && <UnreadPip label="a line you have not read" />}{' '}
                   {quoted(s.fragment.text)}
                   {isInterpreted(volume, s.fragment.id) && s.fragment.interpretation && (
                     <div className="jrn-note">{s.fragment.interpretation}</div>
@@ -285,11 +323,26 @@ export default function JournalView() {
             <span className="jrn-nudge__sign" aria-label="a pencilled note from Ellery">— E.</span>
           </div>
         )}
+        {/* ROUND-8: this used to be an unconditional shortcut to /sanctum, and
+            it was how the owner reached the climax on day 2 from the Entrance
+            Hall with nothing filed — the Portrait duly congratulated her on a
+            climb she had not made. The door is at the top of the house now
+            (ui/sanctum/SanctumView.tsx), so the journal points at it rather
+            than teleporting to it: a live link only from the landing, and
+            otherwise a plain sentence saying where the door is. No dead end
+            either way — /sanctum keeps its blueprint entrance (AAA 11.9). */}
         {!solved && readiness.enough && (
           <div className="jrn-nudge">
-            <button className="jrn-nudge__link" onClick={() => navigate('/sanctum')}>
-              Take it to the Sanctum
-            </button>
+            {atLanding ? (
+              <button className="jrn-nudge__link" onClick={() => navigate('/sanctum')}>
+                Take it to the Sanctum
+              </button>
+            ) : (
+              <span className="jrn-nudge__text">
+                Enough to take upstairs, when you can get up there — the door is on the top
+                landing, and it only hears a word from someone standing at it.
+              </span>
+            )}
           </div>
         )}
       </>
@@ -297,17 +350,32 @@ export default function JournalView() {
   }
 }
 
-function TabButton({ label, active, dot, onClick }: { label: string; active: boolean; dot: boolean; onClick: () => void }) {
-  // Wax has to mean something TRUE (AAA 6.15): the dot says "there is something
-  // here you have not looked at". On the tab she is currently reading, that is
-  // false by construction — the contents are on the glass in front of her — so
-  // the marker retires the moment the tab opens. (Unread letters keep their own
-  // unbroken wax seal per row inside the sheet, which stays honest.)
-  const showDot = dot && !active;
+function TabButton({
+  label, noun, active, unread, onClick,
+}: {
+  label: string; noun: string; active: boolean; unread: number; onClick: () => void;
+}) {
+  /**
+   * This used to render `dot && !active` — suppress the marker while the tab is
+   * selected — and that is the bug AAA 11.20 is written against. Selecting a tab
+   * is not viewing it, and DEselecting it is certainly not un-viewing it: leave
+   * /journal, come back, and the dot was handed straight back for the rest of
+   * the day. The marker now tracks persisted viewed-state, so the tab she is
+   * reading loses its dot because its contents have genuinely been displayed,
+   * and it does not return.
+   *
+   * The Letters tab is the exception that proves it: opening the tab shows a
+   * row of unbroken seals, not their contents, so its count stands until she
+   * breaks each seal (openLetter's write-once flag).
+   */
   return (
-    <button className={`jrn-tab${active ? ' jrn-tab--active' : ''}`} onClick={onClick} aria-pressed={active}>
+    <button
+      className={`jrn-tab unread-host${active ? ' jrn-tab--active' : ''}`}
+      onClick={onClick}
+      aria-pressed={active}
+    >
       {label}
-      {showDot && <span className="jrn-tab__dot" aria-label="new" />}
+      <UnreadMark count={unread} noun={noun} corner />
     </button>
   );
 }
@@ -320,7 +388,7 @@ function EngravingCard({ frag, isNew }: { frag: FragmentContent; isNew: boolean 
   return (
     <div className="jrn-card jrn-card--rubbing">
       <div className="jrn-card__source">
-        {isNew && <span className="jrn-card__new" aria-label="filed today" />}
+        {isNew && <UnreadPip />}
         {frag.source}
       </div>
       <p className="jrn-card__text">{quoted(frag.text)}</p>
@@ -352,7 +420,7 @@ function TestimonyCard({ frag, isNew }: { frag: FragmentContent; isNew: boolean 
         <div>
           <div className="jrn-card__speaker">{name}</div>
           <div className="jrn-card__source">
-            {isNew && <span className="jrn-card__new" aria-label="filed today" />}
+            {isNew && <UnreadPip />}
             {frag.source}
           </div>
         </div>

@@ -250,6 +250,16 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
             ))}
           </div>
 
+          {/* Keys commit on RELEASE (`onClick`), never on pointerdown — the
+              house rule, and the same round-6 fix the Darkroom took: the deck
+              is `position: sticky` over a scrolling stage, so the gesture that
+              scrolls the grid begins on a key, and a press that lands wrong
+              must be abortable by sliding off. Selecting a square or a clue
+              still answers on pointerdown: selection commits nothing and is
+              free to redo. Press feedback is `.is-pressed` from the capture
+              delegate in app/platform/boot.ts, so U.1 is unaffected, and
+              `touch-action: manipulation` (a5micro.css) already does the job
+              the old `preventDefault()` was doing. */}
           <div className="lc-keys">
             {KEY_ROWS.map((row, ri) => (
               <div key={row} className="lc-keys__row">
@@ -257,7 +267,7 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
                   <button
                     key={k}
                     className="lc-key"
-                    onPointerDown={(ev) => { ev.preventDefault(); typeLetter(k); }}
+                    onClick={() => typeLetter(k)}
                   >
                     {k}
                   </button>
@@ -265,7 +275,7 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
                 {ri === 2 && (
                   <button
                     className="lc-key lc-key--wide"
-                    onPointerDown={(ev) => { ev.preventDefault(); backspace(); }}
+                    onClick={backspace}
                     aria-label="Delete"
                   >
                     ⌫

@@ -1,0 +1,85 @@
+{
+ "board": {
+  "id": "web-34",
+  "tier": 3,
+  "amb": [
+   "STENO",
+   "TENT"
+  ],
+  "herrings": [
+   {
+    "words": [
+     "EXTEND",
+     "KITTEN",
+     "OFTEN",
+     "STENO",
+     "TENDER",
+     "TENT"
+    ],
+    "relation": "shared-affix",
+    "detail": "TEN"
+   }
+  ],
+  "groups": [
+   "Anagrams of \"NOTES\"",
+   "Things That Fold",
+   "Starts and Ends with the Same Letter",
+   "Contains \"TEN\""
+  ]
+ },
+ "scattered": {
+  "toast": {
+   "main": "No two of these share a thread. · −3 steps",
+   "bit": null
+  },
+  "stepsBefore": 21,
+  "stepsAfter": 18
+ },
+ "chase": {
+  "sel": [
+   "EXTEND",
+   "KITTEN",
+   "STENO",
+   "STONE"
+  ],
+  "relation": "shared-affix",
+  "detail": "TEN",
+  "toast": {
+   "main": "Two of these share a thread. · −3 steps",
+   "bit": "EXTEND, KITTEN, STENO carry “TEN”. But no."
+  },
+  "steps": 15
+ },
+ "study": {
+  "rule": "9 letters — whisper it back.",
+  "wrongLength": {
+   "main": "It was nine letters, dear.",
+   "bit": null
+  },
+  "wrongGuess": {
+   "main": "Not “aeiouaeio” — 3 whispers remain. · −2 steps",
+   "bit": "The right length · 3 of his letters · 0 in place."
+  },
+  "chips": [
+   "AEIOUAEIO3·0"
+  ]
+ },
+ "hive": {
+  "id": "hive-t3-41",
+  "words": 30,
+  "petalVignette": {
+   "petals": 12,
+   "title": "Every Petal"
+  },
+  "foundLabel": "30 found ▾",
+  "landing": {
+   "title": "Every Petal",
+   "fern": "Fern: “Every last one. Take a gem from the trug — you’ve earned the trug.”",
+   "line": "+4 steps for the flowering · +2 for a bed without a bent stem · +1 gem",
+   "trophyChips": 30,
+   "hiveStillMounted": true,
+   "vignetteGone": true
+  },
+  "gems": 1
+ }
+}

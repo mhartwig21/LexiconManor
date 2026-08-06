@@ -1,0 +1,177 @@
+/* ==========================================================================
+   THE MOMENT — the wax seal that presses into whatever page she is on.
+   OWNER: the moment layer (src/ui/moment/*). Per-module CSS (conflict rule 3).
+
+   AAA 11.14 — "rewards never dress as flavour". The rules below deliberately
+   share NOTHING with the two things this used to be mistaken for:
+
+     .bp-foot__dewey (the cat's purr)   italic · --text-sm · --ink-soft · in
+                                        the blueprint footer, no ground
+     .anch-toast--bad (a mistake)       --text-sm · --wax INK · inside the room
+                                        board's reserved slot, no ground
+
+     .mom (a campaign grant)            a raised sheet with a deckle edge and
+                                        a lift shadow · IM Fell display title
+                                        at the 22px floor · body serif quote in
+                                        full --ink · a wax SEAL (wax as a
+                                        pressed disc, 6.15's "seals" use, never
+                                        as text ink) · fixed above every screen
+
+   Stacking: --z-moment (100 by default) sits above every game surface
+   (chrome 40/50, overlays 40, blueprint modals 60) and below the paper
+   material (grain/vignette, 120/121) and the platform layer (9999), so the
+   seal takes the room's tooth and never covers a system prompt. The token is
+   requested from the architect (SHARED-FILE REQUESTS); the fallback keeps the
+   layer correct until it lands.
+   ========================================================================== */
+
+.mom-layer {
+  position: fixed;
+  z-index: var(--z-moment, 100);
+  /* Clears TWO things, and both are read from tokens rather than copied as
+     pixels (AAA 11.4): the fixed chrome bar, and the back-control row that
+     every sheet screen (journal, chronicles, sanctum) puts directly beneath
+     it. Measured before this line existed: the seal's box was 12,60,366×99
+     and `elementFromPoint` at the centre of "The manor" returned `.mom` on
+     /journal, /chronicles and /sanctum — a §11.2 fail for the 5.6s it was up,
+     which is precisely the defect class this layer exists to end. */
+  top: calc(
+    var(--chrome-h, 52px) + env(safe-area-inset-top, 0px) + var(--tap-target, 44px) + 12px
+  );
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  /* Only the seal itself takes taps; the page underneath stays live. */
+  pointer-events: none;
+}
+
+.mom {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 420px);
+  min-height: var(--tap-target, 44px);
+  margin: 0;
+  padding: 12px 16px;
+  text-align: left;
+  background: var(--paper-raised);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-sheet);
+  box-shadow: var(--shadow-lift), var(--deckle);
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* No fill-mode: the resting state IS the base style, so the press state
+     below is not outranked by a finished animation (AAA U.1). */
+  animation: mom-press 240ms var(--ease-settle);
+}
+
+/* U.1: iOS never fires :active on a plain button; boot.ts stamps .is-pressed. */
+.mom:active,
+.mom.is-pressed { transform: translateY(1px); }
+
+/* --- The seal ------------------------------------------------------------- */
+
+.mom__seal {
+  /* Wax as a pressed disc — 6.15's sanctioned "seal" use, never as text ink. */
+  --mom-seal-ink: var(--paper-raised);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--wax);
+  color: var(--mom-seal-ink);
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm); /* 22px floor (AAA 6.6) */
+  line-height: 1;
+  /* Pressed-in relief: light catch at the top, shade at the bottom. */
+  box-shadow:
+    inset 0 1px 0 rgba(252, 248, 238, 0.28),
+    inset 0 -2px 3px rgba(43, 33, 24, 0.35),
+    0 1px 2px rgba(43, 33, 24, 0.25);
+  transform: rotate(-4deg);
+  animation: mom-stamp 220ms var(--ease-settle);
+}
+
+/* Candlelit theme: paper-raised is a dark brown there, and dark-on-wax fails
+   the large-glyph 3:1 bar (AAA 6.2) — the seal's letterform flips to the pale
+   ink instead (#e7dcc6 on #b04a41 ≈ 4.0:1). Both signals for the theme, both
+   directions, so the explicit toggle always wins (AAA 6.4). */
+@media (prefers-color-scheme: dark) {
+  .mom__seal { --mom-seal-ink: var(--ink); }
+}
+:root[data-theme='dark'] .mom__seal { --mom-seal-ink: var(--ink); }
+:root[data-theme='light'] .mom__seal { --mom-seal-ink: var(--paper-raised); }
+
+/* --- The words ------------------------------------------------------------ */
+
+.mom__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mom__title {
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+/* The reward in its own voice. Roman, full ink, body serif — the journal's
+   register for recovered text, and pointedly not the footer's italic aside. */
+.mom__quote {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--ink);
+}
+
+/* Where it lives now: the moment names its own persistent trace (AAA 11.12). */
+.mom__where {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-variant: small-caps;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+
+.mom__waiting { color: var(--ink-faint); }
+
+/* --- Motion (transform/opacity only — AAA U.3/9.5) ------------------------ */
+
+@keyframes mom-press {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mom-stamp {
+  0%   { opacity: 0; transform: scale(1.5) rotate(-11deg); }
+  55%  { opacity: 1; }
+  100% { opacity: 1; transform: scale(1) rotate(-4deg); }
+}
+
+@keyframes mom-appear {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Reduced motion, both sources: the system preference AND the in-game setting
+   (the same toggle that drives chrome.css's `.chr--reduced`), because a player
+   who turned motion off inside the game must not have to also change an OS
+   setting. The state change stays fully legible — only the stamp goes. */
+@media (prefers-reduced-motion: reduce) {
+  .mom       { animation: mom-appear 200ms linear; }
+  .mom__seal { animation: mom-appear 200ms linear; }
+}
+
+.mom--reduced .mom,
+.mom--reduced .mom__seal { animation: mom-appear 200ms linear; }

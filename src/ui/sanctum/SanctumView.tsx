@@ -28,14 +28,44 @@
  * content in the shipped build. The audience button below is that mount; the
  * per-(character, trigger) manifest in engine/dialogue/validate.ts now fails
  * the build rather than letting it happen a fourth time.
+ *
+ * ROUND-8 DEFECT: THE CLIMAX WITH NO CLIMB (AAA 4.16 / 5.1, MANOR_DESIGN §7).
+ *
+ * Measured live: day 2, standing in the Entrance Hall, zero fragments,
+ * reached by tapping "Take it to the Sanctum" in the journal — and he opened
+ * with "So you have climbed far enough to ask." He was addressing someone who
+ * had climbed nothing, because the door was a menu item. Everything staged on
+ * top of it said so too: the thin-file nudge, the "Back down the stairs"
+ * back-link, and tests/volume-pacing.test.ts's model of his testimony being
+ * "delivered only on a day she reaches the Sanctum landing" — which in the
+ * shipped game was any day at all.
+ *
+ * Two changes close it, and they belong together:
+ *   1. THE DOOR IS A PLACE. The guess row, his audience, the arrival lines
+ *      and the heading itself are gated on `atDoor` — she is on the landing
+ *      cell AND the room she drafted there drew a north door. Read from
+ *      downstairs this is THE STAIRWELL: the Portrait, the struck-through
+ *      list, the nudge and the fragment count all stay readable (they are
+ *      journal-class information, AAA 4.15/4.16) and the page keeps its
+ *      BackLink, so nothing about it is a dead end (AAA 11.1/11.3). The
+ *      blueprint's own Sanctum hit is the way in (AAA 11.9).
+ *   2. HE SPEAKS TO THE WALK SHE HAD. `arrivalShade` (engine/journal.ts)
+ *      classifies it first / spent / again exactly as `guessVerdict`
+ *      classifies a refused word, and the authored `portrait.arrive.*`
+ *      variants are keyed by it. First arrival is a real first arrival now,
+ *      recorded write-once as `vol.<id>.landing-reached`.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useManorStore } from '../../app/store';
 import { getVolumeContent } from '../../app/content/volumes';
-import { definitionSlots, guessVerdict, sanctumReadiness } from '../../engine/journal';
+import {
+  arrivalShade, definitionSlots, guessVerdict, landingFlag, sanctumReadiness,
+  type ArrivalShade,
+} from '../../engine/journal';
 import { applyGuess, hasGuessedOnDay } from '../../engine/volume';
+import { atSanctumDoor } from '../../engine/manor/grid';
 import type { GuessCloseness } from '../../engine/events';
 import type { PortraitExpression } from '../../engine/dialogue/schema';
 import { getDialogueFile } from '../../engine/dialogue/content';
@@ -71,6 +101,18 @@ function sighFor(c: GuessCloseness): string {
   return FALLBACK_SIGHS[guessVerdict(c)];
 }
 
+/** Fallback openings, one per arrival shade (engine/journal.arrivalShade) —
+ *  the authored portrait.arrive.* variants normally play instead. Same
+ *  contract as FALLBACK_SIGHS: the taxonomy is shared with the authored
+ *  content, so a fallback can never say something the writing contradicts.
+ *  None of them may congratulate a climb that did not happen — that is the
+ *  whole round-8 defect, and 'first' is the ONLY one that gets to. */
+const FALLBACK_ARRIVALS: Readonly<Record<ArrivalShade, string>> = {
+  first: 'So. You climbed it, and the last stair squeaked, and here you are. Very well: the door wants no key. It wants the word. One a day, spoken plainly.',
+  again: 'Up again. One word a day, reader, whenever you are sure of one — the door keeps no other appointment.',
+  spent: 'You have nothing left in your legs and you spent it getting here. Say your word if you have one; the door is in no hurry either way.',
+};
+
 /** Fallback closing beats when portrait.react.victory cannot be selected
  *  (e.g. already seen on a later volume) — tapped through, each skippable. */
 const CLOSING_BEATS = [
@@ -85,9 +127,24 @@ export default function SanctumView() {
   const day = useManorStore((s) => s.day?.day ?? s.volume.day);
   const dayActive = useManorStore((s) => s.day !== null && (s.day.phase === 'morning' || s.day.phase === 'exploring'));
   const guessAtSanctum = useManorStore((s) => s.guessAtSanctum);
+  /**
+   * ── THE DOOR IS A PLACE (AAA 4.10e). ─────────────────────────────────────
+   * The word is spoken from the landing at (2,5), through that room's north
+   * door — the one shared predicate the blueprint draws its approach with
+   * (engine/manor/grid.ts `atSanctumDoor`), and the same one the store's
+   * `guessAtSanctum` refuses without. Everything else on this screen stays
+   * readable from anywhere: the Portrait, the struck-through list, the nudge
+   * are journal-class information (AAA 4.15/4.16).
+   */
+  const atDoor = useManorStore((s) => atSanctumDoor(s.manor));
   const beginNextVolume = useManorStore((s) => s.beginNextVolume);
   const endDay = useManorStore((s) => s.endDay);
   const buildDialogueQuery = useManorStore((s) => s.buildDialogueQuery);
+  // The walk-up, as facts (round-8 defect, see the module header). `atDoor`
+  // above is the same predicate; these are what let him speak to WHICH walk.
+  const flags = useManorStore((s) => s.flags);
+  const setFlag = useManorStore((s) => s.setFlag);
+  const stepsLeft = useManorStore((s) => s.stepsRemaining());
 
   const content = getVolumeContent(volume.volumeId);
 
@@ -120,6 +177,21 @@ export default function SanctumView() {
     timers.current.push(window.setTimeout(fn, ms));
   };
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  /**
+   * First arrival is captured BEFORE the write-once flag lands, and held for
+   * the whole visit — otherwise setting the flag would immediately demote his
+   * opening from "you climbed it" to "up again" mid-scene.
+   */
+  const landingSeenFlag = landingFlag(volume.volumeId);
+  const firstArrival = useRef<boolean | null>(null);
+  if (atDoor && firstArrival.current === null) {
+    firstArrival.current = !flags.includes(landingSeenFlag);
+  }
+  useEffect(() => {
+    if (atDoor && !flags.includes(landingSeenFlag)) setFlag(landingSeenFlag);
+  }, [atDoor, flags, landingSeenFlag, setFlag]);
+  const shade = arrivalShade({ firstEver: firstArrival.current ?? false, stepsLeft });
 
   // Arriving at an already-solved volume: the door stands open.
   const alreadySolved = volume.status === 'solved' && phase === 'idle';
@@ -177,8 +249,17 @@ export default function SanctumView() {
           'portrait.gate.',
         );
 
+  /** His opening, keyed to the walk she actually had — rendered, not played,
+   *  exactly like the gate lines above (no valve spent, nothing marked seen). */
+  const arriveNode = selectTaggedLine(
+    getDialogueFile('portrait'),
+    buildDialogueQuery('portrait', 'sanctum-idle'),
+    `portrait.arrive.${shade}`,
+  );
+
   const speak = () => {
     if (phase !== 'idle' || guessedToday || !guess.trim()) return;
+    if (!atDoor) return;   // the second gate — see `atDoor` above (AAA 4.10e)
     // Pure preview of the outcome; the store applies the same transition.
     const { result } = applyGuess(content, volume, guess, day);
     if (result.kind === 'empty' || result.kind === 'gate') return;
@@ -230,9 +311,21 @@ export default function SanctumView() {
     (volume.status === 'solved' && phase === 'idle');
 
   // ------ Win staging ------
+  //
+  // ROUND 9 (AAA 11.5, blocker). The ceremony phases below are MODAL and say
+  // so with `data-overlay`. They render `.snc-page`, which is not `.dlg`,
+  // `.bp-modal` or `.chr-scene`, so neither lock in ui/chrome (the `:has()`
+  // rule in chrome.css, and DayHeader's `useOverlayOpen()` unmount) knew a
+  // scene was up: the destructive `.chr-retire` moon stayed MOUNTED and
+  // hit-testable at 334,4,44x44 straight through the won-reveal card, and two
+  // taps there ended the day mid-ceremony — the dusk veil dropping over "Look
+  // up at the Portrait" during the campaign's single biggest, unrepeatable
+  // moment. `data-overlay` is the published opt-in contract
+  // (ui/chrome/layers.ts OVERLAY_SELECTOR); one attribute closes both locks.
+  // Regression-tested live by the ceremony row in tests/modal-hit-test.mjs.
   if (phase === 'won-reveal') {
     return (
-      <div className="snc-page">
+      <div className="snc-page" data-overlay>
         <div className="snc" onClick={enterWonPortrait}>
           <PortraitFrame soft />
           <div className="snc-won">
@@ -262,7 +355,7 @@ export default function SanctumView() {
     // came back empty.
     if (victoryScene) {
       return (
-        <div className="snc-page">
+        <div className="snc-page" data-overlay>
           <div className="snc">
             <PortraitFrame soft expression={sceneExpression ?? undefined} />
             <h2 className="snc__title">The Lexicographer</h2>
@@ -281,7 +374,7 @@ export default function SanctumView() {
       else { sfx.tap(); setBeat(beat + 1); }
     };
     return (
-      <div className="snc-page">
+      <div className="snc-page" data-overlay>
         <div className="snc" onClick={advance}>
           <PortraitFrame soft />
           <h2 className="snc__title">The Lexicographer</h2>
@@ -296,8 +389,13 @@ export default function SanctumView() {
 
   if (phase === 'epilogue' || alreadySolved) {
     const slots = definitionSlots(content, volume);
+    // Modal only while the CEREMONY is running. The `alreadySolved` variant is
+    // an ordinary page — it carries a BackLink and the player may legitimately
+    // retire from it — so it must NOT claim modality (11.21's "no marker where
+    // nothing is unread", applied to the overlay signal: a page that lies about
+    // being modal disables the chrome for no reason).
     return (
-      <div className="snc-page">
+      <div className="snc-page" {...(phase === 'epilogue' ? { 'data-overlay': '' } : {})}>
         <div className="snc">
           <BackLink className="snc__nav" flavour="Back down the stairs" />
           <PortraitFrame soft />
@@ -336,9 +434,15 @@ export default function SanctumView() {
   const portraitLine =
     phase === 'listening' ? null
     : phase === 'wrong' ? (sigh ?? '…')
+    // Read from below (the journal's pointer, a returning visit): he is happy
+    // to be consulted, and says plainly where the door is. Never a scolding —
+    // the climb is the price, not a punishment (AAA 4.10e / R.3).
+    : !atDoor ? 'Consult me as often as you like. But the door hears one word a day, and only from the landing at the top of the stairs — you will have to climb to it.'
     : guessedToday ? 'The door has heard today’s word. It is a patient door — come back with the morning.'
-    : volume.guesses.length === 0 ? 'So you have climbed far enough to ask. Very well: the door wants no key. It wants the word. One a day, spoken plainly.'
-    : 'The door is listening, whenever you are sure. There is no hurry in this house but yours.';
+    // His opening now answers the walk she actually had: a first arrival, a
+    // repeat visit, or an arrival on fumes (engine/journal.arrivalShade). The
+    // line this replaced congratulated a climb on a day she had not made one.
+    : (arriveNode?.lines[0]?.text ?? FALLBACK_ARRIVALS[shade]);
 
   return (
     <div className="snc-page">
@@ -348,7 +452,11 @@ export default function SanctumView() {
           soft={soft}
           expression={phase === 'wrong' ? sceneExpression ?? undefined : undefined}
         />
-        <h2 className="snc__title">The Sanctum Door</h2>
+        {/* The heading tells the truth about where she is standing (AAA 11.7:
+            the recognisable word leads). Read from the armchair this is the
+            stairwell, and calling it the door was half of why the climax
+            staged itself for a climb that had not happened. */}
+        <h2 className="snc__title">{atDoor ? 'The Sanctum Door' : 'The Stairwell'}</h2>
 
         {phase === 'listening' ? (
           <p className="snc-line snc-listening">The door listens…</p>
@@ -362,8 +470,17 @@ export default function SanctumView() {
 
         <div className={`snc-door${shaking ? ' snc-shake' : ''}`}>
           <div className="snc-door__caption">
-            {guessedToday ? 'One word a day. Today’s is spent.' : 'The door will hear one word today.'}
+            {!atDoor
+              ? 'He hears one word a day — and only from the top of the stairs.'
+              : guessedToday ? 'One word a day. Today’s is spent.'
+              : 'The door will hear one word today.'}
           </div>
+          {/* The word is spoken at the door, never from the armchair (AAA
+              4.10e). Away from the landing this whole row is absent rather
+              than greyed: a disabled input on a screen she can legitimately
+              read would look like a bug, and the caption above already says
+              where the door is. Everything else here stays readable. */}
+          {atDoor && (
           <div className="snc-row">
             <input
               className="snc-input"
@@ -387,6 +504,7 @@ export default function SanctumView() {
               Speak
             </button>
           </div>
+          )}
           {wrongGuesses.length > 0 && (
             <div className="snc-struck" aria-label="Words the door refused">
               {wrongGuesses.map((g, i) => (
@@ -396,7 +514,14 @@ export default function SanctumView() {
           )}
         </div>
 
-        {phase === 'idle' && audienceButton}
+        {/* His audience is the LANDING's audience (MANOR_DESIGN §8: "the
+            Portrait — landing outside the Sanctum"). Offering it from the
+            armchair is the same defect as the door being a menu item, and it
+            is what let his testimony (v1-t5) arrive on a day with no climb in
+            it — which tests/volume-pacing.test.ts models as a landing day.
+            The mount is unchanged (TRIGGER_MOUNTS.portrait.parlor); it is now
+            where the fiction always said it was. */}
+        {phase === 'idle' && atDoor && audienceButton}
 
         <button className="snc-journal-link" onClick={() => navigate('/journal')}>
           Consult the journal ({readiness.found} of {readiness.total} fragments filed)

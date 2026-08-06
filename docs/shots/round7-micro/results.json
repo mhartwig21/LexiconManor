@@ -1,0 +1,126 @@
+{
+  "geometry": {
+    "viewport": {
+      "w": 390,
+      "h": 844
+    },
+    "leaf": {
+      "x": 5.6,
+      "y": 145,
+      "w": 378.8,
+      "h": 378.8,
+      "bottom": 523.8
+    },
+    "cell": {
+      "x": 7.6,
+      "y": 147,
+      "w": 41.6,
+      "h": 41.6,
+      "bottom": 188.6
+    },
+    "stage": {
+      "clientH": 721,
+      "scrollH": 721,
+      "over": 0
+    },
+    "deckTop": 601.4,
+    "padKey": {
+      "x": 5.6,
+      "y": 660.6,
+      "w": 59,
+      "h": 52,
+      "bottom": 712.6
+    },
+    "pencil": {
+      "fontSize": "11.2px",
+      "color": "rgb(85, 69, 47)"
+    },
+    "leafFullyVisible": true
+  },
+  "pencilWork": {
+    "prunedCells": 5,
+    "prunedChanged": true,
+    "refillWipedWork": false,
+    "refillTouchedAnything": false
+  },
+  "undo": {
+    "present": true,
+    "box": {
+      "x": 197.5,
+      "y": 717.6,
+      "w": 59,
+      "h": 52,
+      "bottom": 769.6
+    },
+    "hitTest": {
+      "centre": true,
+      "corners": true
+    },
+    "eraseChanged": true,
+    "restoredExactly": true
+  },
+  "cipher": {
+    "keyBox": {
+      "x": 14.4,
+      "y": 535.7,
+      "w": 32.5,
+      "h": 55.7,
+      "bottom": 591.4
+    },
+    "selBefore": "U",
+    "before": "IINIEENINE",
+    "after": "IINIEENINE",
+    "selAfter": "U",
+    "dragCommitted": false,
+    "cursorMoved": false,
+    "tapCommitted": true,
+    "tapAdvanced": true,
+    "repeat": {
+      "letter": "Q",
+      "heldCursor": true,
+      "unchangedText": true
+    }
+  },
+  "crossword": {
+    "keyBox": {
+      "x": 14.4,
+      "y": 550.9,
+      "w": 32.5,
+      "h": 50.6,
+      "bottom": 601.6
+    },
+    "before": "",
+    "dragCommitted": false,
+    "tapCommitted": true
+  },
+  "se": {
+    "leaf": {
+      "x": 38,
+      "y": 93.1,
+      "w": 299,
+      "h": 299,
+      "bottom": 392.1
+    },
+    "cell": {
+      "x": 40,
+      "y": 95.1,
+      "w": 32.8,
+      "h": 32.8,
+      "bottom": 127.8
+    },
+    "padKey": {
+      "x": 5.6,
+      "y": 500.4,
+      "w": 56.5,
+      "h": 46,
+      "bottom": 546.4
+    },
+    "pencilFont": "none",
+    "leafFullyVisible": true,
+    "stage": {
+      "clientH": 551,
+      "scrollH": 551,
+      "over": 0
+    }
+  }
+}

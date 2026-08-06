@@ -91,6 +91,27 @@
      exactly one place). Consumed by rooms/room-host.css and sanctum/sanctum.css.
      Trimmed on short screens by the compaction block at the bottom of this file. */
   --chrome-h: 52px;
+
+  /* --- Layering scale (published in ui/chrome/layers.ts; AAA 11.5) --------- */
+  /* A rung is a decision about what may be TAPPED, not only what is seen.
+     Three modules independently chose "40" and the day bar hit-tested above
+     every "modal" scene — two taps on the retire moon ended the day through a
+     conversation. Never write a bare z-index again; write
+     var(--z-<rung>, <fallback>) so a module tracks this block. */
+  --z-page: 0;        /* route surfaces (.bp-page, .room-host, .jrn-page…)      */
+  --z-overlay: 40;    /* full-screen modal scenes (.dlg, .bp-modal, .chr-scene) */
+  --z-chrome: 50;     /* the day bar: readable over overlays, never tappable    */
+  --z-veil: 55;       /* the dusk veil (pointer-events: none)                   */
+  --z-notice: 60;     /* the notice rail (pointer-events: none)                 */
+  --z-moment: 100;    /* campaign seals — above every game surface, TAPPABLE    */
+  --z-material: 120;  /* grain + vignette (index.css, 120/121)                  */
+  --z-platform: 9999; /* update toast, rotate screen                            */
+
+  /* --- Ink that sits ON a wax fill (AAA 6.1/6.3) -------------------------- */
+  /* The unread chip is a dark wax disc in BOTH themes, so its numeral cannot
+     use --paper (which flips to #241d15 and lands at 3.1:1 in candlelight).
+     This is the light-parchment value, deliberately theme-invariant. */
+  --on-wax: #f6efe2;
 }
 
 /* --- Candlelit dark (authored, warm charcoal — never inverted) ------------ */

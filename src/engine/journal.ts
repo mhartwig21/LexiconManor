@@ -13,8 +13,9 @@
  * exists only in a transient scene — anything filed renders here forever).
  */
 
-import type { VolumeState } from './types';
-import type { GuessCloseness, RecordedEvent } from './events';
+import { MANOR_ROWS, type VolumeState } from './types';
+import type { GuessCloseness } from './events';
+import { BASE_DAY_BUDGET, moveAt } from './economy/steps';
 import {
   computeCloseness,
   type EngravingConstraint,
@@ -72,21 +73,143 @@ export function crossRefs(
     .filter((f): f is FragmentContent => !!f && isFound(state, f.id));
 }
 
-/** Fragment ids filed today — the journal's unread wax dots. */
-export function filedToday(recentEvents: readonly RecordedEvent[], day: number): Set<string> {
-  const out = new Set<string>();
-  for (const e of recentEvents) {
-    if (e.day === day && e.event.type === 'fragment-found') out.add(e.event.fragmentId);
-  }
-  return out;
-}
-
 /** The first found-but-uninterpreted fragment (Ellery's 'next' service). */
 export function nextUninterpreted(content: VolumeContent, state: VolumeState): string | null {
   const found = content.fragments
     .filter((f) => isFound(state, f.id) && !isInterpreted(state, f.id))
     .sort((a, b) => a.revealOrder - b.revealOrder);
   return found[0]?.id ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Unread — real state, not recency (AAA 11.19–11.22)
+// ---------------------------------------------------------------------------
+
+/**
+ * `filedToday(recentEvents, day)` used to live here and it was a lie.
+ *
+ * It answered "was this fragment filed on the current day number?", read off
+ * `day.recentEvents` — which `pruneEventsAtDusk` empties every night. So a
+ * fragment the player never actually looked at lost its marker at dusk, and a
+ * fragment she read the instant it arrived kept one until dusk. That is a
+ * RECENCY badge wearing state's clothes, the exact shape AAA 11.20 fails.
+ *
+ * Unread is now real persisted state, modelled on the one marker in this app
+ * that was always honest: the letters' write-once `vol.<id>.opened-<letterId>`
+ * flags (engine/volume.openedLetterFlag). A fragment is unread until it has
+ * actually been displayed, at which point the journal writes
+ * `vol.<id>.viewed-<fragmentId>` — write-once, in the save, therefore surviving
+ * tab switches, screen changes, the day roll and a force-quit (AAA 11.20).
+ *
+ * Flags, not a new save field, for three reasons: it is the same mechanism as
+ * the letters (one model for "the player has seen this"), `docs/flags.md`
+ * already reserves `vol.*` for the volume machine, and `app/store.ts`'s
+ * `selectSave` projection is architect-frozen — a new `JournalSave` field
+ * could not be persisted without editing it (see SHARED-FILE REQUESTS).
+ */
+export function viewedFragmentFlag(volumeId: string, fragmentId: string): string {
+  return `vol.${volumeId}.viewed-${fragmentId}`;
+}
+
+/** Fragment ids this volume has actually shown the player. */
+export function viewedFragmentIds(volumeId: string, flags: Iterable<string>): Set<string> {
+  const prefix = `vol.${volumeId}.viewed-`;
+  const out = new Set<string>();
+  for (const f of flags) if (f.startsWith(prefix)) out.add(f.slice(prefix.length));
+  return out;
+}
+
+/**
+ * Set once by the save migration. Before viewed-flags existed there was no
+ * record of what had been read, so everything already filed is taken as read
+ * — a live save must not open the journal wearing sixteen wax dots for pages
+ * its owner has been reading for a fortnight (AAA 11.21: no marker where
+ * nothing is unread).
+ */
+export const VIEWED_BACKFILL_FLAG = 'sys.unread.backfilled';
+
+export type JournalTab = 'word' | 'engravings' | 'testimony' | 'letters';
+
+export interface JournalUnread {
+  /** Unviewed definition lines (the Word tab). */
+  word: readonly string[];
+  engravings: readonly string[];
+  testimony: readonly string[];
+  /** Arrived-but-unopened letter ids — the seals are their own marker. */
+  letters: readonly string[];
+  /** Every unviewed fragment id, all tabs. Feeds the per-card markers. */
+  fragments: readonly string[];
+  /** Exactly the number of unviewed items behind the Journal entrance. */
+  total: number;
+}
+
+export const NOTHING_UNREAD: JournalUnread = Object.freeze({
+  word: Object.freeze([]) as readonly string[],
+  engravings: Object.freeze([]) as readonly string[],
+  testimony: Object.freeze([]) as readonly string[],
+  letters: Object.freeze([]) as readonly string[],
+  fragments: Object.freeze([]) as readonly string[],
+  total: 0,
+});
+
+export interface UnreadInput {
+  viewedIds: ReadonlySet<string>;
+  /** Letters in the tray today (engine/volume.arrivedLetters). */
+  arrivedLetterIds: readonly string[];
+  /** engine/volume.openedLetterIds — the existing honest marker. */
+  openedLetterIds: ReadonlySet<string>;
+}
+
+/**
+ * The whole unread chain in one derivation: the entrance count, the per-tab
+ * counts, and the per-card ids all come from HERE, so the three levels of
+ * AAA 11.19 cannot disagree with each other or with the items themselves.
+ */
+export function journalUnread(
+  content: VolumeContent,
+  state: VolumeState,
+  input: UnreadInput,
+): JournalUnread {
+  const unviewed = (kind: FragmentContent['kind']): string[] =>
+    content.fragments
+      .filter((f) => f.kind === kind && isFound(state, f.id) && !input.viewedIds.has(f.id))
+      .sort((a, b) => a.revealOrder - b.revealOrder)
+      .map((f) => f.id);
+
+  const word = unviewed('definition-line');
+  const engravings = unviewed('engraving');
+  const testimony = unviewed('testimony');
+  const letters = input.arrivedLetterIds.filter((id) => !input.openedLetterIds.has(id));
+  const fragments = [...word, ...engravings, ...testimony];
+  return { word, engravings, testimony, letters, fragments, total: fragments.length + letters.length };
+}
+
+/**
+ * Exactly the fragments a tab puts on the glass. Marking viewed is driven off
+ * this and nothing else — a tab being *selected* is not viewing, and a tab
+ * being deselected is not un-viewing (the round-5 bug: `dot && !active`
+ * suppressed the marker while the tab was open and handed it straight back on
+ * return).
+ */
+export function displayedFragmentIds(
+  content: VolumeContent,
+  state: VolumeState,
+  tab: JournalTab,
+): string[] {
+  switch (tab) {
+    case 'word':
+      return definitionSlots(content, state)
+        .filter((s) => s.fragment)
+        .map((s) => s.fragment!.id);
+    case 'engravings':
+      return foundByKind(content, state, 'engraving').map((f) => f.id);
+    case 'testimony':
+      return foundByKind(content, state, 'testimony').map((f) => f.id);
+    // Letters are not "viewed" by opening the tab: the seal is unbroken until
+    // she breaks it, and openLetter already records that (AAA 11.20).
+    case 'letters':
+      return [];
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -228,6 +351,62 @@ export function guessHistory(content: VolumeContent, state: VolumeState): GuessR
       g.guess === answerNorm ||
       content.accepted.some((a) => a.toUpperCase().replace(/[^A-Z]/g, '') === g.guess),
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Arrival — what the walk up actually was (AAA 4.16 / 5.1, MANOR_DESIGN §7)
+// ---------------------------------------------------------------------------
+
+/**
+ * ROUND-8 DEFECT: THE CLIMAX WITH NO JOURNEY BEHIND IT.
+ *
+ * The Portrait opened every first visit with "So you have climbed far enough
+ * to ask" — measured live on day 2, standing in the Entrance Hall, with zero
+ * fragments, reached by tapping a link in the journal. The line was addressed
+ * to someone who had climbed nothing, because the door was a menu item.
+ *
+ * The door is now the door: `SanctumView` only puts the guess box on glass
+ * when `atSanctumDoor(manor)` — she is on the landing and the room she
+ * drafted there drew a north door. That makes an arrival a real event, and
+ * this taxonomy is what lets him speak to the one she actually had. It is the
+ * same shape as `guessVerdict` above (a coarse shade, never a number), and
+ * the authored `portrait.arrive.*` variants are keyed by it — the closeness
+ * variants already proved the pattern works.
+ *
+ *   first — she has never stood here before, in this volume
+ *   spent — she got here on fumes: not enough left to climb another storey,
+ *           so this is the last thing today will be
+ *   again — she has been here before and has road left under her
+ */
+export type ArrivalShade = 'first' | 'spent' | 'again';
+
+/**
+ * The step floor for "spent": one more storey's walk at the top of the house
+ * — below that the landing IS the end of the evening — read off the live
+ * movement table rather than re-typed, so retuning the climb retunes the line
+ * that comments on it.
+ *
+ * Clamped to a third of the day's budget so the shade can never swallow the
+ * others: a future `MOVE_COST_BY_ROW` that priced the top storey at half a day
+ * would otherwise make EVERY arrival "spent" and turn the other two variants
+ * into unseeable content (the AAA 5.5 starvation shape, in code rather than
+ * in priorities).
+ */
+export const SPENT_ARRIVAL_STEPS = Math.min(
+  -moveAt(MANOR_ROWS - 1),
+  Math.floor(BASE_DAY_BUDGET / 3),
+);
+
+export function arrivalShade(opts: { firstEver: boolean; stepsLeft: number }): ArrivalShade {
+  if (opts.firstEver) return 'first';
+  if (opts.stepsLeft <= SPENT_ARRIVAL_STEPS) return 'spent';
+  return 'again';
+}
+
+/** `vol.<volumeId>.landing-reached` — write-once, set by the volume machine
+ *  the first time she actually stands at the door (docs/flags.md `vol.*`). */
+export function landingFlag(volumeId: string): string {
+  return `vol.${volumeId}.landing-reached`;
 }
 
 // ---------------------------------------------------------------------------

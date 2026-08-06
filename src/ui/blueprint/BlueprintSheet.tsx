@@ -40,14 +40,15 @@ import type { PointerEvent, ReactNode } from 'react';
 import type { Cell, Dir, ManorState, PlacedRoom } from '../../engine/types';
 import { MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../../engine/types';
 import {
-  cellKey, deadDoors, deweyCell, doorsConnect, draftTargets, ENTRANCE_CARD_ID,
+  atSanctumDoor, cellKey, deadDoors, deweyCell, doorsConnect, draftTargets, ENTRANCE_CARD_ID,
   roomAt, sameCell, walkableNeighbors,
 } from '../../engine/manor/grid';
 import { isDoorLocked, visibleLocks, KEY_COST } from '../../engine/manor/locks';
 import { useManorStore } from '../../app/store';
 import { ROOM_KIND_GLYPH_PATHS } from './CategoryGlyph';
 import {
-  draftLabel, draftStamp, lockedDraftLabel, priceStamp, stampsDraftPrice, stampsPrice, walkLabel,
+  draftLabel, draftStamp, lockedDraftLabel, lockedRefusalAnnouncement, lockedRefusalLine,
+  priceStamp, stampsDraftPrice, stampsPrice, walkLabel,
 } from './pricing';
 
 const CELL = 64;
@@ -209,14 +210,36 @@ export default function BlueprintSheet({
 }: BlueprintSheetProps) {
   const liveKeys = useManorStore((s) => s.currencies.keys);
   const keys = keysProp ?? liveKeys;
-  /** A padlock she just tried without a key: it shrugs, nothing is charged. */
-  const [refused, setRefused] = useState<string | null>(null);
+  /**
+   * A padlock she just tried without a key: it shrugs, nothing is charged —
+   * AND IT SAYS SO (AAA 4.16, round-6 fix). The refusal used to be a 420ms
+   * wiggle and total silence, which is both the silence 4.16 forbids and, to
+   * a first-time player, indistinguishable from a mis-tap. `line` is the
+   * house's brief answer, drawn on the sheet beside the lock; `spoken` is the
+   * fuller live-region restatement for anyone who cannot see the brass at all.
+   */
+  const [refused, setRefused] = useState<
+    { key: string; row: number; line: string; spoken: string } | null
+  >(null);
   const refuseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Consecutive taps per door, so a second try is answered, never parroted. */
+  const refuseCount = useRef(new Map<string, number>());
   useEffect(() => () => { if (refuseTimer.current) clearTimeout(refuseTimer.current); }, []);
-  const refuse = (key: string) => {
-    setRefused(key);
+  const refuse = (key: string, row: number) => {
+    const attempt = refuseCount.current.get(key) ?? 0;
+    refuseCount.current.set(key, attempt + 1);
+    setRefused({
+      key,
+      row,
+      line: lockedRefusalLine(attempt),
+      spoken: lockedRefusalAnnouncement(attempt, row, KEY_COST),
+    });
     if (refuseTimer.current) clearTimeout(refuseTimer.current);
-    refuseTimer.current = setTimeout(() => setRefused(null), 900);
+    // Long enough to read a short line without becoming furniture. The lock's
+    // own shrug is 420ms; the words outlast it deliberately (AAA 11.13 —
+    // transience is capped by attention, and this one fires on the very
+    // surface she is looking at).
+    refuseTimer.current = setTimeout(() => setRefused(null), 2600);
   };
 
   const rooms = Object.values(manor.rooms);
@@ -228,9 +251,11 @@ export default function BlueprintSheet({
   const padlocks = visibleLocks(manor);
   const den = deweyCell(manor.daySeed);
   const deweyHome = roomAt(manor, den);
-  const sanctumReachable = interactive &&
-    sameCell(player, { col: SANCTUM_CELL.col, row: SANCTUM_CELL.row - 1 }) &&
-    doorsConnect(manor, player, 'N');
+  // The one predicate, shared (engine/manor/grid.ts `atSanctumDoor`). It used
+  // to be written out here and nowhere else, so the journal and the Sanctum
+  // screen each had their own idea of "reached the door" — which was none at
+  // all (AAA 4.10e, round-7 blocker).
+  const sanctumReachable = interactive && atSanctumDoor(manor);
 
   const roomNodes: ReactNode[] = rooms.map((room) => {
     const x = px(room.cell.col), y = py(room.cell.row);
@@ -280,6 +305,7 @@ export default function BlueprintSheet({
   });
 
   return (
+    <>
     <svg
       className="bp-sheet"
       viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
@@ -377,14 +403,26 @@ export default function BlueprintSheet({
             key={`draft-${key}`}
             className={`bp-hit bp-ghost${locked ? ' bp-ghost--locked' : ''}${canPay ? '' : ' bp-ghost--shut'}`}
             role="button"
-            aria-disabled={canPay ? undefined : true}
+            /**
+             * NO `aria-disabled` (round-6 fix). It used to be set to true on a
+             * keyless padlock, which told assistive tech the control was inert
+             * — while a real finger got a shrug, a line of house voice and a
+             * live-region announcement. ARIA that contradicts behaviour is
+             * worse than absent ARIA: it invites AT to skip a control that
+             * *does* respond, so the one player who most needs the gate
+             * explained is the one told there is nothing here. The control is
+             * genuinely actionable in both states; the LABEL is what carries
+             * the difference (`lockedDraftLabel` names the padlock, the key
+             * cost and the price once it opens), and the refusal answers in
+             * `.bp-refusal`'s live region.
+             */
             aria-label={
               locked
                 ? lockedDraftLabel(player.row, cell.row, KEY_COST, canPay)
                 : draftLabel(player.row, cell.row)
             }
             {...pressProps}
-            onClick={() => (canPay ? onOpenDraft(dir) : refuse(key))}
+            onClick={() => (canPay ? onOpenDraft(dir) : refuse(key, cell.row))}
           >
             <rect className="bp-hit__zone" x={x} y={y} width={CELL} height={CELL} />
             <rect
@@ -467,13 +505,34 @@ export default function BlueprintSheet({
           return (
             <g
               key={`lock-${key}`}
-              className={refused === key ? 'bp-padlock-slot bp-padlock-slot--refused' : 'bp-padlock-slot'}
+              className={refused?.key === key ? 'bp-padlock-slot bp-padlock-slot--refused' : 'bp-padlock-slot'}
             >
               <Padlock x={px(cell.col)} y={py(cell.row)} ready={keys >= KEY_COST} />
             </g>
           );
         })}
       </g>
+
+      {/* THE PADLOCK'S ANSWER (AAA 4.16 — never silence at a gate).
+          A surveyor's pencilled note on the storey she just tried: the lock
+          shrugs AND says why, in a line she can read from arm's length. Drawn
+          on the sheet rather than in the chrome so it lands where her eye
+          already is (AAA 11.11), pointer-transparent so it never eats the tap
+          she makes next, and paired with a live region because a screen-reader
+          user cannot see the brass at all. Flavour-class: it persists nothing,
+          because nothing happened — no step, no key, no state (11.14 keeps it
+          visually distinct from anything that awards). */}
+      {refused && (
+        <g className="bp-refusal" aria-hidden="true">
+          <rect
+            className="bp-refusal__ground"
+            x={MX - 2} y={py(refused.row) + CELL - 5} width={MANOR_COLS * CELL + 4} height={25} rx={3}
+          />
+          <text className="bp-refusal__line" x={MX + (MANOR_COLS * CELL) / 2} y={py(refused.row) + CELL + 12}>
+            {refused.line}
+          </text>
+        </g>
+      )}
 
       {/* the player token — glides on transform only */}
       <g
@@ -484,5 +543,16 @@ export default function BlueprintSheet({
         <circle className="bp-token__dot" r={3.2} />
       </g>
     </svg>
+    {/* The refusal, spoken. Separate from the drawn line because the two have
+        different jobs: the pencilled note on the plan is terse, the
+        announcement restates the whole gate — a screen-reader user never sees
+        the brass padlock glyph, so "shut fast" alone would tell her nothing.
+        `role="status"` + polite: it waits its turn and never interrupts.
+        Visually hidden and out of flow (`.bp-sr`), so it cannot shift a pixel
+        of the sheet (AAA 1.5). */}
+    <p className="bp-sr" role="status" aria-live="polite" aria-atomic="true">
+      {refused?.spoken ?? ''}
+    </p>
+    </>
   );
 }

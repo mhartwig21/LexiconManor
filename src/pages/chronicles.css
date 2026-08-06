@@ -86,10 +86,14 @@
   min-height: 0;
 }
 
+/* Round 9 (AAA 11.23): the rhythm is tighter than it was. Settings and the
+   trunk are the two things that must be on the glass at scroll 0 on a 375x667
+   screen whose scroller is only 414px tall, and 4px per heading is most of the
+   difference between "one tap to the control" and "one tap and a scroll". */
 .chron__section {
   font-family: var(--font-display);
   font-size: var(--text-display-sm);
-  margin: 14px 0 6px;
+  margin: 10px 0 4px;
   color: var(--ink);
 }
 
@@ -120,18 +124,83 @@
   text-align: center;
 }
 
-.chron__badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+/* "3 of 12" — the denominator rides small and soft under the count so the
+   tile keeps one number as its headline (AAA 6.6 tabular figures above). */
+.chron__of {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: var(--text-sm);
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--ink-faint);
+  line-height: 1.1;
 }
 
-.chron__badge {
-  border: 1px solid var(--gilt);
+/* ── Keepsakes (AAA 11.17) ────────────────────────────────────────────────
+   The whole shelf renders, earned and unearned, so the section can never be
+   an empty advertisement again. State is double-encoded (AAA 6.3 / 11.22):
+   seal glyph + a word ("kept" / "not yet") + ink weight — hue is never
+   load-bearing, and nothing here animates, so a grayscale screenshot with
+   prefers-reduced-motion on reads identically. */
+.chron__keepsakes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chron__keepsake {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 4px;
+  border-bottom: var(--rule);
+}
+
+.chron__seal {
+  flex-shrink: 0;
+  width: 1.1em;
+  text-align: center;
+  color: var(--ink-faint);
+}
+
+.chron__keepsake.is-earned .chron__seal {
   color: var(--gilt);
-  border-radius: 999px;
-  padding: 4px 12px;
+}
+
+.chron__keepsake-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.chron__keepsake-name {
+  display: block;
+  font-family: var(--font-display);
+  color: var(--ink-faint);
+}
+
+.chron__keepsake.is-earned .chron__keepsake-name {
+  color: var(--gilt);
+}
+
+.chron__keepsake-note {
+  display: block;
   font-size: var(--text-sm);
+  color: var(--ink-faint);
+}
+
+.chron__keepsake.is-earned .chron__keepsake-note {
+  color: var(--ink-soft);
+}
+
+.chron__keepsake-state {
+  flex-shrink: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  font-variant: small-caps;
+}
+
+.chron__keepsake.is-earned .chron__keepsake-state {
+  color: var(--ink-soft);
 }
 
 /* Household settings — wax-seal style toggles, 44px+ targets. */
@@ -174,7 +243,7 @@
 /* Travelling trunk (save code) */
 .chron__trunk textarea {
   width: 100%;
-  min-height: 64px;
+  min-height: 56px;
   border: var(--rule);
   border-radius: var(--radius-card);
   background: var(--paper-raised);
@@ -191,6 +260,9 @@
   gap: 8px;
   margin-top: 8px;
 }
+
+/* The verbs lead the box (see ChroniclesPage's trunk comment, AAA 11.23). */
+.chron__trunk-row--lead { margin-top: 0; margin-bottom: 8px; }
 
 .chron__trunk-row button {
   flex: 1;

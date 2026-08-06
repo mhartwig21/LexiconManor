@@ -9,9 +9,12 @@
  *      labelled purely poetically ("Put it down"), so they did not read as
  *      navigation at all; and
  *   2. on the journal and the chronicles they sat UNDER the fixed chrome bar
- *      (chrome.css .chr-header, z-index 40, opaque) — invisible and, worse,
+ *      (chrome.css .chr-header — z-index 40 at the time, the `chrome` rung of
+ *      the published scale now; opaque either way) — invisible and, worse,
  *      un-tappable. Verified with a hit test: elementFromPoint at the
- *      button's centre returned `.chr-retire`.
+ *      button's centre returned `.chr-retire`. The same control's reach
+ *      THROUGH overlays was the sibling defect, closed in the same file:
+ *      see the inert-chrome block in chrome.css and tests/modal-hit-test.mjs.
  * In the installed PWA there is no browser back button, so that is a genuine
  * strand. The page owners now clear --chrome-h; this component fixes the
  * affordance.

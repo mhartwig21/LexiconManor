@@ -38,10 +38,60 @@ import './anchor.css';
  * INTO THE HIVE (AAA 1.12 — the room is hers to keep gathering in). Stroke
  * ladder per §6.9: 3.0 contour / 2.0 features / 1.2 hatch, all
  * `currentColor`/accent, animated with transform+opacity only.
+ *
+ * ROUND 7 — IT ESCALATES (AAA 1.16 / 1.8's proportionality / 3.4). Full Bloom
+ * (the 70% tier) had the bespoke vignette and Every Petal — the rarest, hidden,
+ * gem-paying tier, our Queen Bee — had a green heading and 350px of blank
+ * parchment, so the player who did the hardest thing in the room got the
+ * weakest moment in it. The same drawing now carries a second, offset ring of
+ * petals on a longer stagger for the 100% crossing: same idiom, unmistakably
+ * more of it. Still ≤2s (last petal lands ~1.25s, heart at 1.3s) and still
+ * tap-skippable per U.2/3.4.
  */
-function BloomVignette({ onDone }: { onDone: () => void }) {
+type BloomVariant = 'bloom' | 'every-petal';
+
+interface Petal { deg: number; rx: number; ry: number; cy: number; delay: number }
+
+const BLOOM_PETALS: Record<BloomVariant, Petal[]> = {
+  bloom: [0, 60, 120, 180, 240, 300].map((deg, i) => ({
+    deg, rx: 7, ry: 14, cy: 76, delay: 350 + i * 110,
+  })),
+  // The outer ring is drawn (and unfurls) first and is deliberately LARGER
+  // than Full Bloom's whole flower; the inner ring is Full Bloom's exact ring,
+  // offset 30° so the two read as two layers rather than one scribble.
+  'every-petal': [
+    ...[30, 90, 150, 210, 270, 330].map((deg, i) => ({
+      deg, rx: 8, ry: 20, cy: 68, delay: 250 + i * 120,
+    })),
+    ...[0, 60, 120, 180, 240, 300].map((deg, i) => ({
+      deg, rx: 6, ry: 13, cy: 77, delay: 310 + i * 120,
+    })),
+  ],
+};
+
+const BLOOM_COPY: Record<BloomVariant, { title: string; label: string; heart: number }> = {
+  bloom: {
+    title: 'Full Bloom!',
+    label: 'The conservatory stands in full bloom',
+    heart: 1050,
+  },
+  'every-petal': {
+    title: 'Every Petal',
+    label: 'Every petal in the conservatory has opened',
+    heart: 1300,
+  },
+};
+
+function BloomVignette({ variant, onDone }: { variant: BloomVariant; onDone: () => void }) {
+  const petals = BLOOM_PETALS[variant];
+  const { title, label, heart } = BLOOM_COPY[variant];
   return (
-    <div className="hv-bloom" onPointerDown={onDone} role="img" aria-label="The conservatory stands in full bloom">
+    <div
+      className={`hv-bloom${variant === 'every-petal' ? ' hv-bloom--every' : ''}`}
+      onPointerDown={onDone}
+      role="img"
+      aria-label={label}
+    >
       <svg className="hv-bloom__svg" viewBox="0 0 220 150" fill="none">
         {/* glasshouse contour */}
         <g stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -70,19 +120,23 @@ function BloomVignette({ onDone }: { onDone: () => void }) {
         <g stroke="var(--room-accent)" strokeWidth="2" strokeLinecap="round">
           {/* rotation lives on the wrapper <g>; the CSS unfurl animates the
               ellipse itself, so the two transforms never fight */}
-          {[0, 60, 120, 180, 240, 300].map((deg, i) => (
-            <g key={deg} transform={`rotate(${deg} 110 88)`}>
+          {petals.map((p, i) => (
+            <g key={`${p.deg}-${i}`} transform={`rotate(${p.deg} 110 88)`}>
               <ellipse
                 className="hv-bloom__petal"
-                style={{ animationDelay: `${350 + i * 110}ms` }}
-                cx="110" cy="76" rx="7" ry="14"
+                style={{ animationDelay: `${p.delay}ms` }}
+                cx="110" cy={p.cy} rx={p.rx} ry={p.ry}
               />
             </g>
           ))}
-          <circle className="hv-bloom__heart" cx="110" cy="88" r="5.5" fill="var(--room-accent)" />
+          <circle
+            className="hv-bloom__heart"
+            style={{ animationDelay: `${heart}ms` }}
+            cx="110" cy="88" r="5.5" fill="var(--room-accent)"
+          />
         </g>
       </svg>
-      <div className="hv-bloom__title">Full Bloom!</div>
+      <div className="hv-bloom__title">{title}</div>
     </div>
   );
 }
@@ -155,11 +209,13 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
   const [showFound, setShowFound] = useState(false);
   const [showRest, setShowRest] = useState(false);
   const [bloom, setBloom] = useState(false);
+  const [petalBloom, setPetalBloom] = useState(false);
   const [rungBeat, setRungBeat] = useState(0);
 
   const handledAttempt = useRef(0);
   const shuffleCount = useRef(0);
   const bloomShown = useRef(false);
+  const petalShown = useRef(false);
   const timers = useRef<number[]>([]);
   const later = (fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms));
@@ -262,10 +318,15 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
   }, [fullBloom]);
 
   // Every Petal: the hidden 100% tier actually lands now (it used to be dead
-  // code behind the old forced solve at 70%).
+  // code behind the old forced solve at 70%) — and it gets the ESCALATED
+  // vignette (AAA 1.16 / 1.8), not less ceremony than the tier below it.
   useEffect(() => {
-    if (!everyPetal) return;
+    if (!everyPetal || petalShown.current) return;
+    petalShown.current = true;
     sfx.levelUp();
+    setBloom(false);            // never two vignettes stacked
+    setPetalBloom(true);
+    later(() => setPetalBloom(false), 2000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [everyPetal]);
 
@@ -337,7 +398,36 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
   // panel pins the column to the top instead of letting the stage re-centre
   // it; otherwise the header slides 300px on the vignette, slides back 2s
   // later, and does it again on the found drawer.
-  const verdict = everyPetal || showRest || bloom || showFound;
+  const verdict = everyPetal || showRest || bloom || petalBloom || showFound;
+
+  /**
+   * The hive itself, hoisted so Every Petal can keep it ON THE TABLE beneath
+   * its trophy (AAA 1.12's lesson, one tier up): the player who found every
+   * word should not be the one ejected from the room.
+   */
+  const hiveBoard = (
+    <div className={`hv-board${shuffling ? ' hv-board--shuffling' : ''}${everyPetal ? ' hv-board--kept' : ''}`}>
+      <button
+        className="hv-cell hv-cell--center hv-cell--c"
+        {...pressProps<HTMLButtonElement>({ down: () => tapLetter(puzzle.center) })}
+      >
+        <span className="hv-cell__g">{puzzle.center}</span>
+      </button>
+      {petals.map((letter, i) => (
+        <button
+          key={letter}
+          className={`hv-cell hv-cell--p${i}`}
+          {...pressProps<HTMLButtonElement>({ down: () => tapLetter(letter) })}
+        >
+          <span className="hv-cell__g">{letter}</span>
+        </button>
+      ))}
+      {/* Pure glow. No text over the hive, no tap-catcher: the one moment
+          she most wants to keep typing is not the moment the hive stops
+          listening (AAA 1.7 [PARITY]). */}
+      {burst && <div className="hv-burst" aria-hidden="true" />}
+    </div>
+  );
 
   return (
     <div className={`anch anch--conservatory${verdict ? ' anch--verdict' : ''}`}>
@@ -389,15 +479,34 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
           ))}
           {found.length === 0 && <span className="anch__flavour">Nothing gathered yet — tap to close.</span>}
         </div>
+      ) : petalBloom ? (
+        <BloomVignette variant="every-petal" onDone={() => setPetalBloom(false)} />
       ) : bloom ? (
-        <BloomVignette onDone={() => setBloom(false)} />
+        <BloomVignette variant="bloom" onDone={() => setBloom(false)} />
       ) : everyPetal ? (
-        // The hidden tier finally lands: nothing folded, a gem in the trug.
-        <div className="anch-done">
-          <div className="anch-done__title">Every Petal</div>
-          <p className="anch-done__fern">{fernLine('every-petal', puzzle.id)}</p>
-          <p className="anch-done__line">{payoutLine} · +1 gem</p>
-        </div>
+        // The hidden tier finally lands: nothing folded, a gem in the trug —
+        // and the room she emptied stays under her hands. `RestGrid` would
+        // render nothing here (there is no unfound space left), so the column
+        // is filled with the thing that IS the trophy: the whole gathering,
+        // pangrams in the accent. AAA 1.16 / 3.4.
+        <>
+          <div className="anch-done hv-trophy">
+            <div className="anch-done__title">Every Petal</div>
+            <p className="anch-done__fern">{fernLine('every-petal', puzzle.id)}</p>
+            <p className="anch-done__line">{payoutLine} · +1 gem</p>
+          </div>
+          {hiveBoard}
+          <div className="hv-trophy__cap">
+            All {state.hive.foundWords.length} gathered — nothing left folded
+          </div>
+          <div className="hv-foundpanel hv-trophy__list">
+            {[...state.hive.foundWords].sort().map((w) => (
+              <span key={w} className={`anch-chip${puzzle.pangrams.includes(w) ? ' anch-chip--accent' : ''}`}>
+                {w}
+              </span>
+            ))}
+          </div>
+        </>
       ) : showRest ? (
         // AAA 1.12: what remains, as shape rather than words — opened by her,
         // covering 100% of the unfound space, and never a list to feel bad about.
@@ -451,27 +560,7 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
             )}
           </div>
 
-          <div className={`hv-board${shuffling ? ' hv-board--shuffling' : ''}`}>
-            <button
-              className="hv-cell hv-cell--center hv-cell--c"
-              {...pressProps<HTMLButtonElement>({ down: () => tapLetter(puzzle.center) })}
-            >
-              <span className="hv-cell__g">{puzzle.center}</span>
-            </button>
-            {petals.map((letter, i) => (
-              <button
-                key={letter}
-                className={`hv-cell hv-cell--p${i}`}
-                {...pressProps<HTMLButtonElement>({ down: () => tapLetter(letter) })}
-              >
-                <span className="hv-cell__g">{letter}</span>
-              </button>
-            ))}
-            {/* Pure glow. No text over the hive, no tap-catcher: the one moment
-                she most wants to keep typing is not the moment the hive stops
-                listening (AAA 1.7 [PARITY]). */}
-            {burst && <div className="hv-burst" aria-hidden="true" />}
-          </div>
+          {hiveBoard}
 
           <div className="anch-row">
             <button

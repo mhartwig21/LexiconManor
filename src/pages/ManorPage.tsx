@@ -9,7 +9,7 @@
  * the character seams (parlor visits, Dewey) via A6's DialogueScene.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useManorStore } from '../app/store';
 import { deweyAnswer, deweyPettedToday, ensureManor } from '../app/slices/manor';
@@ -22,25 +22,103 @@ import BlueprintSheet from '../ui/blueprint/BlueprintSheet';
 import CabinetSheet from '../ui/blueprint/CabinetSheet';
 import DraftModal from '../ui/blueprint/DraftModal';
 import DialogueScene from '../ui/dialogue/DialogueScene';
+import { plateSeenFlag, unseenKeepsakes, unseenPlates } from '../ui/moment/mantel';
+import UnreadMark from '../ui/journal/UnreadMark';
+import { useJournalUnread } from '../ui/journal/useJournalUnread';
 import '../ui/blueprint/blueprint.css';
 
 const ROMAN = ['', 'I', 'II', 'III'];
 
-/** A quiet, self-clearing note above the footer (fragment found, etc.). */
-function useFragmentNote(): string | null {
-  const fragmentCount = useManorStore((s) => s.counters['fragment-found'] ?? 0);
-  const [note, setNote] = useState<string | null>(null);
-  const prev = useRef(fragmentCount);
-  useEffect(() => {
-    if (fragmentCount > prev.current) {
-      setNote('A clue fragment, filed to the journal.');
-      const t = setTimeout(() => setNote(null), 3200);
-      prev.current = fragmentCount;
-      return () => clearTimeout(t);
-    }
-    prev.current = fragmentCount;
-  }, [fragmentCount]);
-  return note;
+/* ROUND 6 — `useFragmentNote` lived here and is deleted.
+ *
+ * It announced the core reward of the whole mystery as a 3.2s line in the
+ * footer wearing `.bp-foot__dewey` — the cat's flavour class (AAA 11.14) —
+ * and it could only ever fire on this screen, from a mount-scoped
+ * `useRef(fragmentCount)` cursor. Three of the four grant channels fire
+ * somewhere else entirely (behind the dialogue overlay, inside a room, on the
+ * journal), and the journal channel was strictly worse than silent: the ref
+ * re-initialised at the next mount, so a fragment filed while this page was
+ * unmounted was never announced at all (AAA §0.5, escape 3).
+ *
+ * It is replaced by the always-mounted moment layer (src/ui/moment/*), which
+ * reads every campaign grant off the event spine and presses a wax seal into
+ * whatever screen the player is actually on. */
+
+/**
+ * THE DOORS OFF THE BLUEPRINT — and the top level of every unread chain.
+ *
+ * A component rather than JSX written twice, because the round-9 blocker was
+ * exactly that the no-day branch of this page `return`ed above them: on a fresh
+ * save the front step rendered ONE control, ["Begin the first day"], at both
+ * 390x844 and 375x667. Audio settings, reduced motion and the save trunk cost
+ * infinity taps, and a returning player restoring a save code had to start a
+ * day — mutate state — before she could reach the trunk that would overwrite
+ * it. AAA 11.8 and 11.26 both name that path specifically. One component, both
+ * branches, so a future early return cannot quietly drop the doors again.
+ */
+function Entrances({ onCabinet }: { onCabinet?: () => void }) {
+  const [, navigate] = useLocation();
+  /** The entrance link of the unread chain (AAA 11.19). Same derivation the
+   *  journal's tabs and cards use — one truth, three places it shows. */
+  const journalUnread = useJournalUnread();
+  const earned = useManorStore((s) => s.earnedAchievementIds);
+  const flags = useManorStore((s) => s.flags);
+  const unlockedCardIds = useManorStore((s) => s.cabinet.unlockedCardIds);
+
+  // ROUND 9 (AAA 11.12/11.19). The comment that used to stand here justified
+  // leaving Chronicles deliberately unmarked because keepsakes "had no live
+  // emitter anywhere in the v2 app, so it can never gain a row". That went
+  // stale in round 7: app/slices/meta.ts landed the emitter, and round 8 caught
+  // `earnedAchievementIds` going [] → ['first-morning'] live with nothing said
+  // anywhere in the app. Both permanent-unlock channels now carry the same mark
+  // as the journal, against write-once viewed-flags (ui/moment/mantel.ts) —
+  // real persisted state, so it survives the day roll and a force-quit (11.20)
+  // and is truthful in both directions (11.21).
+  const keepsakeUnread = useMemo(() => unseenKeepsakes(earned, flags).length, [earned, flags]);
+  const plateUnread = useMemo(
+    () => unseenPlates(unlockedCardIds, flags).length, [unlockedCardIds, flags],
+  );
+
+  return (
+    <>
+      {onCabinet && (
+        <button className="bp-btn bp-btn--quiet unread-host" onClick={onCabinet}>
+          Cabinet
+          <UnreadMark
+            count={plateUnread}
+            noun={plateUnread === 1 ? 'new floorplan' : 'new floorplans'}
+            showCount
+          />
+        </button>
+      )}
+      <button
+        className="bp-btn bp-btn--quiet unread-host"
+        onClick={() => navigate('/journal')}
+      >
+        Journal
+        <UnreadMark
+          count={journalUnread.total}
+          noun={journalUnread.total === 1 ? 'thing in the journal' : 'things in the journal'}
+          showCount
+        />
+      </button>
+      {/* Round 5: /chronicles had no entrance anywhere in the app — sound,
+          music, reduced motion, the mute-switch bypass, keepsakes and the
+          save trunk all sat behind a URL nobody could reach. It lives with
+          its siblings on the blueprint footer now, in EVERY phase (11.24). */}
+      <button
+        className="bp-btn bp-btn--quiet unread-host"
+        onClick={() => navigate('/chronicles')}
+      >
+        Chronicles
+        <UnreadMark
+          count={keepsakeUnread}
+          noun={keepsakeUnread === 1 ? 'keepsake' : 'keepsakes'}
+          showCount
+        />
+      </button>
+    </>
+  );
 }
 
 export default function ManorPage() {
@@ -66,7 +144,24 @@ export default function ManorPage() {
   const [visiting, setVisiting] = useState<CharacterId | null>(null);
   /** The Floorplan Cabinet sheet (AAA 4.7): the whole live deck, browsable. */
   const [cabinetOpen, setCabinetOpen] = useState(false);
-  const fragmentNote = useFragmentNote();
+
+  const flags = useManorStore((s) => s.flags);
+  const setFlag = useManorStore((s) => s.setFlag);
+  /** Opening the cabinet IS the plate being displayed — the only thing that
+   *  retires its marker (AAA 11.20). Write-once, so it survives everything. */
+  const openCabinet = () => {
+    setCabinetOpen(true);
+    for (const card of unseenPlates(cabinet.unlockedCardIds, flags)) {
+      setFlag(plateSeenFlag(card.id));
+    }
+  };
+
+  /* ROUND 9: the `ensureMomentLayer()` bootstrap that used to live here is
+     gone — App.tsx now mounts <MomentLayer /> beside <GameChrome />, outside
+     the router. Bootstrapping from THIS page's mount effect meant the campaign
+     grant watcher was only installed once the player had visited the manor, so
+     a cold deep-link to #/journal adopted its grants silently. The layer must
+     outlive every screen, so it may not be owned by one (AAA 11.11/11.13). */
 
   // A1 builds the grid when a live day has no manor (day-slice integration note).
   const daySeed = day?.daySeed;
@@ -92,6 +187,13 @@ export default function ManorPage() {
             every dictionary in the house.
           </p>
           <button className="bp-btn bp-btn--seal" onClick={startDay}>Begin the first day</button>
+          {/* AAA 11.8 / 11.26 (round-9 blocker). These sat below the early
+              return, so the front step shipped with exactly one control. The
+              trunk is the RECOVERY path: reaching it must cost no day, no step
+              and no scene, which is only true if it is reachable from here. */}
+          <div className="bp-scene__row">
+            <Entrances />
+          </div>
         </div>
       </div>
     );
@@ -165,21 +267,18 @@ export default function ManorPage() {
           {atDewey && exploring && !petted && (
             <button className="bp-btn" onClick={onPetDewey}>Pet Dewey · 1 step</button>
           )}
-          <button className="bp-btn bp-btn--quiet" onClick={() => setCabinetOpen(true)}>
-            Cabinet
-          </button>
-          <button className="bp-btn bp-btn--quiet" onClick={() => navigate('/journal')}>
-            Journal
-          </button>
-          {/* Round 5: /chronicles had no entrance anywhere in the app — sound,
-              music, reduced motion, the mute-switch bypass, keepsakes and the
-              save trunk all sat behind a URL nobody could reach. It lives with
-              its siblings on the blueprint footer now. */}
-          <button className="bp-btn bp-btn--quiet" onClick={() => navigate('/chronicles')}>
-            Chronicles
-          </button>
+          {/* ROUND 6 — the unread chain used to BREAK right here (AAA 11.19).
+              Every marker in the game lived inside the journal: tab dots, card
+              markers, letter seals. These buttons — the only doors to all of
+              it — were plain quiet buttons, so a player with no reason to open
+              the journal never learned that anything had arrived, and a missed
+              3-second footer line was the end of it (AAA §0.5, escape 3). The
+              counts are exact (11.21), read in grayscale and with reduced
+              motion (11.22), and come off the same derivations the tabs and the
+              cards use, so the levels cannot disagree. Round 9 extended the
+              same treatment to the two permanent-unlock channels. */}
+          <Entrances onCabinet={openCabinet} />
         </div>
-        {fragmentNote && <p className="bp-foot__dewey">{fragmentNote}</p>}
         {atDewey && petted && !visiting && (
           <p className="bp-foot__dewey">
             {prophecy

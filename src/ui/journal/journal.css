@@ -106,16 +106,10 @@
   font-weight: 600;
   transform: translateY(1px);
 }
-/* Unread marker: wax red = state, never decoration (AAA 6.15). */
-.jrn-tab__dot {
-  position: absolute;
-  top: 7px;
-  right: 9px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--wax);
-}
+/* The unread marker itself lives in ./unread.css — ONE wax mark for the whole
+   chain (entrance → tab → item, AAA 11.19), so the three levels cannot drift
+   apart in shape, size or meaning. `.jrn-tab` keeps position:relative above
+   because the tab hosts the corner mark. */
 
 /* --- Scrolling sheet (internal scroll, hidden scrollbar) ------------------- */
 .jrn-sheet {
@@ -304,11 +298,6 @@
   display: flex;
   align-items: center;
   gap: 0.45rem;
-}
-.jrn-card__new {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--wax);
-  flex: none;
 }
 .jrn-card__text { margin: 0.35rem 0 0; }
 .jrn-card__sealednote {

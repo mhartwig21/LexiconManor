@@ -14,12 +14,50 @@
  */
 
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { useLocation } from 'wouter';
 import { useManorStore } from '../../app/store';
 import { sfx } from '../../app/sound';
-import type { DayRecord } from '../../engine/types';
+import type { DayRecord, DayState } from '../../engine/types';
 import { highestRowLine, refundLine } from '../../engine/day';
-import { dawnCarryOverLines } from '../../app/slices/manor';
+import { dawnCarryOver, dawnCarryOverLines } from '../../app/slices/manor';
+import { firstMorningPot, teaArcPoints, teaBonus, TEA_ARC } from '../../engine/economy/steps';
+import { getVolumeContent } from '../../app/content/volumes';
+import { arrivedLetters, fragmentDroughtDays, openedLetterIds } from '../../engine/volume';
+import { mantelLine, unseenKeepsakes, unseenPlates } from '../moment/mantel';
 import DialogueScene from '../dialogue/DialogueScene';
+
+/**
+ * THE SCENE'S OWN ROUTE TO SETTINGS (AAA 11.24, round-9 major).
+ *
+ * Measured from the morning card, the minimum path to the blueprint — and
+ * therefore to the only Chronicles entrance in the app — was 3 taps ("Begin the
+ * day" → "Skip" → "Farewell"), and 14 if she actually READ Mrs. Bramble rather
+ * than skipping her. Settings then cost the usual 2: five taps at the start of
+ * every single day, sixteen if she is reading. The night digest had the same
+ * shape ("To tomorrow" → the next morning card → a conversation). 11.24 allows
+ * either a one-tap dismissal or the scene's own route to settings; "Begin the
+ * day" is not a dismissal (it opens a conversation), so the scenes carry the
+ * route. 11.25 is the reason it has to be this one and not a deeper link: a
+ * player opening the app because it moved too much, or was too loud, must be
+ * able to turn that off without sitting through the thing she is turning off.
+ *
+ * GameChrome suppresses the lifecycle scenes while the player is standing on
+ * /chronicles, so this really lands on the page; the phase is untouched and the
+ * scene is exactly where she left it when she comes back.
+ */
+export function SceneSettingsLink() {
+  const [, navigate] = useLocation();
+  return (
+    <button
+      type="button"
+      className="chr-scene__aside"
+      onClick={() => { sfx.tap(); navigate('/chronicles'); }}
+    >
+      Chronicles
+      <span className="chr-scene__aside-sub">sound, motion, the trunk</span>
+    </button>
+  );
+}
 
 const MORNING_LINES = [
   'Light through the tall windows. The manor is waiting.',
@@ -36,9 +74,80 @@ const NIGHT_LINES: Record<string, string> = {
   'volume-solved': 'The Sanctum heard the word. The manor sleeps easy tonight.',
 };
 
+/** "her fourth pot" — pots are poured one a morning, so the day IS the count. */
+const ORDINALS = [
+  '', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth',
+  'ninth', 'tenth', 'eleventh', 'twelfth',
+];
+function ordinal(n: number): string {
+  return ORDINALS[n] ?? `${n}${n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'}`;
+}
+
+/**
+ * ── THE POT, NAMED WHERE IT IS POURED (AAA 4.9 / 4.10d / 11.16, round 7) ───
+ *
+ * The single largest step grant in the game used to arrive in silence: the tea,
+ * the welcome pot and yesterday's carry-over are all appended inside
+ * `startDay`, the StepMeter classified that batch as "a new day, no floats",
+ * and the header is covered by this very card anyway. Nothing in the shipped
+ * UI ever said the tea GROWS, what it is worth today, or what the next rung
+ * costs — so weeks of friendship read as "some mornings I have more steps".
+ *
+ * The card now itemises the morning where her eyes already are, and says what
+ * buys the next rung. (The floating +N still fires too — StepMeter holds the
+ * dawn batch until this card is dismissed, so it lands on the blueprint.)
+ */
+function DawnGrants({ day }: { day: DayState }) {
+  const recentEvents = useManorStore((s) => s.recentEvents);
+  const known = useManorStore((s) => s.affinities.bramble ?? 0);
+  const dayNumber = day.day;
+  // What today's pot comes to once she has sat down with her (the shared
+  // morning tops it up as the scene closes — DaySlice.shareMorningTea).
+  const points = Math.max(known, teaArcPoints(dayNumber));
+  const pot = teaBonus(points);
+  const welcome = firstMorningPot(dayNumber);
+  const carried = dawnCarryOver({ day, recentEvents });
+
+  const rows: Array<[string, number]> = [];
+  if (pot > 0) rows.push([`Her ${ordinal(dayNumber)} pot`, pot]);
+  if (welcome > 0) rows.push(['A welcome cup, poured before you asked', welcome]);
+  if (carried.steps > 0) rows.push(['What yesterday left steeping', carried.steps]);
+
+  // The next rung, named. `teaArcPoints` is the ceiling shared mornings buy;
+  // it moves every `morningsPerPoint` days, so this is a promise, not a tease.
+  const atTop = points >= TEA_ARC.maxPoints;
+  const nextRungDay = TEA_ARC.morningsPerPoint * (points + 1);
+  const mornings = Math.max(1, nextRungDay - dayNumber);
+  const rung = atTop
+    ? 'She fills it to the brim now; there is no more pot to give.'
+    : mornings === 1
+      ? 'One more morning like this and she pours a little deeper.'
+      : `${mornings} more mornings like this and she pours a little deeper.`;
+
+  if (rows.length === 0) {
+    return <p className="chr-dawn__rung">{rung}</p>;
+  }
+  return (
+    <div className="chr-dawn">
+      <dl className="chr-dawn__list">
+        {rows.map(([label, n]) => (
+          <Fragment key={label}>
+            <dt>{label}</dt>
+            <dd className="tabular-nums">+{n} steps</dd>
+          </Fragment>
+        ))}
+      </dl>
+      <p className="chr-dawn__rung">{rung}</p>
+    </div>
+  );
+}
+
 export function MorningCard() {
   const day = useManorStore((s) => s.day);
   const advance = useManorStore((s) => s.advanceDayPhase);
+  // The tea arc is BOUGHT, not clocked (AAA 4.10d): the point lands when this
+  // scene has actually played, and the pot tops up with it.
+  const shareMorningTea = useManorStore((s) => s.shareMorningTea);
   // What yesterday left steeping (AAA 4.11 cross-day investment): the Larder's
   // risen dough, the Still Room's key on the sill. Read at dawn, so a green
   // room drafted on a quiet Tuesday visibly pays for Wednesday's climb.
@@ -51,7 +160,8 @@ export function MorningCard() {
   if (!day) return null;
   const line = MORNING_LINES[(day.day - 1) % MORNING_LINES.length];
   if (greeting) {
-    return <DialogueScene character="bramble" slot="morning" onClose={advance} />;
+    const closeMorning = () => { shareMorningTea(); advance(); };
+    return <DialogueScene character="bramble" slot="morning" onClose={closeMorning} />;
   }
   const kept = dawnCarryOverLines({ day, recentEvents });
   return (
@@ -62,9 +172,11 @@ export function MorningCard() {
       {kept.length > 0 && (
         <p className="chr-digest__prose">{kept.join(' ')}</p>
       )}
+      <DawnGrants day={day} />
       <button className="chr-scene__btn" onClick={() => setGreeting(true)}>
         Begin the day
       </button>
+      <SceneSettingsLink />
     </section>
   );
 }
@@ -107,7 +219,7 @@ export function DuskVeil() {
  * suppressed rather than printed**: a quiet day says less, it never says you
  * scored nothing.
  */
-function NightLedger({ record }: { record: DayRecord }) {
+function NightLedger({ record, lettersOpened }: { record: DayRecord; lettersOpened: number }) {
   const climb = highestRowLine(record);
   const gave = refundLine(record);
   const rows: Array<[string, number]> = [
@@ -115,6 +227,10 @@ function NightLedger({ record }: { record: DayRecord }) {
     ['Rooms solved', record.roomsSolved],
     ['Steps spent', record.stepsSpent],
     ['Fragments found', record.fragmentsFound],
+    // Round 6 (AAA 11.12): the post was the one campaign channel the digest
+    // never mentioned — a letter could arrive, be read, and leave no trace
+    // anywhere outside the journal tab nobody had a reason to open.
+    ['Letters read', lettersOpened],
   ];
   const kept = rows.filter(([, n]) => n > 0);
   return (
@@ -140,12 +256,52 @@ function NightLedger({ record }: { record: DayRecord }) {
   );
 }
 
+/** "A letter waits" / "Two letters wait" — counted in words, never a badge. */
+const COUNT_WORDS = ['no', 'A', 'Two', 'Three', 'Four', 'Five', 'Six'];
+function waitingPostLine(n: number): string | null {
+  if (n <= 0) return null;
+  if (n === 1) return 'A letter waits unopened in the post tray.';
+  const word = COUNT_WORDS[n] ?? String(n);
+  return `${word} letters wait unopened in the post tray.`;
+}
+
 export function NightDigest() {
   const day = useManorStore((s) => s.day);
   const records = useManorStore((s) => s.chronicles.dayRecords);
   const startDay = useManorStore((s) => s.startDay);
+  // The post, read back with the rest of the day (AAA 11.12): what she opened
+  // today, and what is still sealed. Both are derivations over the save — they
+  // survive the day roll and a force-quit, which a moment on glass cannot.
+  const volume = useManorStore((s) => s.volume);
+  const flags = useManorStore((s) => s.flags);
+  const recentEvents = useManorStore((s) => s.recentEvents);
+  // ROUND 9 (AAA 11.12): the mantel was the last campaign channel with no line
+  // here. A keepsake could be banked at the day roll and a floorplan plate
+  // filled by a favour, and the digest — the one surface that reads the day
+  // back — said nothing, exactly as the post used to. Both are derivations over
+  // write-once flags, so they survive the roll and a force-quit.
+  const earned = useManorStore((s) => s.earnedAchievementIds);
+  const unlockedCardIds = useManorStore((s) => s.cabinet.unlockedCardIds);
   const [turning, setTurning] = useState(false);
   if (!day) return null;
+
+  const mantel = mantelLine(
+    unseenKeepsakes(earned, flags).length,
+    unseenPlates(unlockedCardIds, flags).length,
+  );
+
+  const content = getVolumeContent(volume.volumeId);
+  const openedIds = content ? openedLetterIds(content.id, flags) : new Set<string>();
+  const tray = content
+    ? arrivedLetters(content, volume, day.day, {
+        droughtDays: fragmentDroughtDays(records),
+        openedIds,
+      })
+    : [];
+  const waitingPost = waitingPostLine(tray.filter((l) => !openedIds.has(l.id)).length);
+  const lettersOpened = recentEvents.filter(
+    (e) => e.day === day.day && e.event.type === 'letter-opened',
+  ).length;
 
   // The record banked at endDay for the closing day.
   let record: DayRecord | undefined;
@@ -166,10 +322,13 @@ export function NightDigest() {
       <h1 className="chr-scene__title">Night</h1>
       <hr className="chr-scene__rule" />
       <p className="chr-scene__line">{line}</p>
-      {record ? <NightLedger record={record} /> : null}
+      {record ? <NightLedger record={record} lettersOpened={lettersOpened} /> : null}
+      {waitingPost && <p className="chr-digest__prose">{waitingPost}</p>}
+      {mantel && <p className="chr-digest__prose">{mantel}</p>}
       <button className="chr-scene__btn" onClick={onTomorrow}>
         To tomorrow
       </button>
+      <SceneSettingsLink />
     </section>
   );
 }

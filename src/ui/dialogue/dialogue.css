@@ -7,10 +7,20 @@
    No page scroll — the scene is a fixed overlay (house rule / AAA 7.7).
    ========================================================================== */
 
+/* z: overlay (40) on the published scale — ui/chrome/layers.ts. This used to
+   be a bare 40, the SAME number the fixed day bar and the draft modal had each
+   picked independently; at equal z-index paint order falls back to DOM order
+   and <GameChrome /> mounts after the router, so the chrome — including its
+   two-tap "end my day" moon — sat on top of this scene and took its taps
+   (AAA 11.5). The bar still paints above (the candle stays readable through a
+   conversation, deliberately), but it is pointer-inert while this element is
+   in the DOM: chrome.css keys off `.dlg` by name and off `[data-overlay]` for
+   anything added later. Never raise this above --z-chrome to "win" — that
+   would only bury the candle; the modality is enforced up there. */
 .dlg {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: var(--z-overlay, 40);
   display: flex;
   align-items: flex-end;
   justify-content: center;

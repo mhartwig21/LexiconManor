@@ -9,7 +9,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useManorStore } from '../../app/store';
+import CurrencyChip from './CurrencyChip';
 import StepMeter from './StepMeter';
+import { useOverlayOpen } from './overlay-watch';
 
 const PHASE_LABEL: Record<string, string> = {
   morning: 'morning',
@@ -35,16 +37,34 @@ function KeyGlyph() {
   );
 }
 
+/** A ribbon marker — the gift currency's own shape (AAA 6.3 double-encoding). */
+function BookmarkGlyph() {
+  return (
+    <svg width="10" height="13" viewBox="0 0 10 13" aria-hidden="true">
+      <path d="M1 0.8 H9 V12.2 L5 9.2 L1 12.2 Z" fill="currentColor" />
+    </svg>
+  );
+}
+
 export default function DayHeader() {
   const day = useManorStore((s) => s.day);
   const currencies = useManorStore((s) => s.currencies);
   const endDay = useManorStore((s) => s.endDay);
   const inRoom = useManorStore((s) => Boolean(s.day?.activeRoom));
+  // Is a scene the player believes is modal on the glass? (AAA 11.5)
+  const overlayOpen = useOverlayOpen();
 
   // Retire: first tap arms, second confirms; disarms itself after a moment.
   const [armed, setArmed] = useState(false);
   const disarm = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (disarm.current) clearTimeout(disarm.current); }, []);
+  // An overlay opening mid-arm must not leave a live confirm tap waiting in
+  // the band above it — the second tap ends the day with no further warning.
+  useEffect(() => {
+    if (!overlayOpen) return;
+    if (disarm.current) clearTimeout(disarm.current);
+    setArmed(false);
+  }, [overlayOpen]);
   const onRetire = () => {
     if (!armed) {
       setArmed(true);
@@ -58,7 +78,20 @@ export default function DayHeader() {
 
   if (!day) return null;
   const phase = PHASE_LABEL[day.phase];
-  const showRetire = day.phase === 'exploring' && !inRoom;
+  // AAA 11.5. The two-tap retire is the one DESTRUCTIVE control in the chrome,
+  // and the chrome is painted above every overlay so the candle stays readable
+  // (see layers.ts). Readable is not tappable: while a draft, a conversation or
+  // a lifecycle card is up, the control is not rendered at all. `.chr-header`
+  // also goes pointer-inert in CSS, so this is the second of two locks, not the
+  // only one — the audited failure was a player able to end her evening by
+  // tapping the top of a scene she thought was modal.
+  const showRetire = day.phase === 'exploring' && !inRoom && !overlayOpen;
+  // A currency move is HERS while the manor is open for business. At dusk and
+  // night the same numbers go to zero because the day ended (day.ts endDay),
+  // and a −3 floating off the gem chip at bedtime would be a lie about
+  // spending. Dawn counts: Fern's key and the Still Room's carry over both
+  // land in `morning`, behind the morning card, with the bar in full view.
+  const live = day.phase === 'exploring' || day.phase === 'morning';
 
   return (
     <header className="chr-header">
@@ -68,14 +101,25 @@ export default function DayHeader() {
       </div>
       <StepMeter />
       <div className="chr-right">
-        <span className="chr-chip chr-chip--gems" aria-label={`${currencies.gems} gems`}>
+        <CurrencyChip name="gems" unit={['gem', 'gems']} value={currencies.gems} live={live}>
           <GemGlyph />
-          <span className="chr-chip__n tabular-nums">{currencies.gems}</span>
-        </span>
-        <span className="chr-chip chr-chip--keys" aria-label={`${currencies.keys} keys`}>
+        </CurrencyChip>
+        <CurrencyChip name="keys" unit={['key', 'keys']} value={currencies.keys} live={live}>
           <KeyGlyph />
-          <span className="chr-chip__n tabular-nums">{currencies.keys}</span>
-        </span>
+        </CurrencyChip>
+        {/* Bookmarks are earned in letters and spent in a parlor two rooms
+            away, so the ONE place they were shown — inside the dialogue scene
+            that spends them — was the one place the decision was already
+            made. AAA 11.16: she cannot plan against a quantity she cannot
+            see. They persist across nights (day.ts), so the chip does too. */}
+        <CurrencyChip
+          name="bookmarks"
+          unit={['bookmark', 'bookmarks']}
+          value={currencies.bookmarks}
+          live={live}
+        >
+          <BookmarkGlyph />
+        </CurrencyChip>
         {showRetire ? (
           <button
             className={`chr-retire${armed ? ' chr-retire--armed' : ''}`}

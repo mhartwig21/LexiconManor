@@ -134,6 +134,12 @@ export const createRoomSlice =
                 },
               }));
             }
+            // A specific fragment named by the adapter itself. NOT the
+            // room→mystery channel: that is the spine watcher in
+            // slices/journal.ts (`collectFragmentForSolve`), and this slice
+            // deliberately does NOT call it from the solve branch — double
+            // wiring would file two different fragments for one solve. See the
+            // rule on RoomEvent.reward in engine/rooms/room-puzzle.ts.
             if (ev.fragmentId) get().fileFragment(ev.fragmentId); // emits 'fragment-found'
             break;
           }

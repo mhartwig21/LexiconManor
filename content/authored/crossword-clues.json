@@ -1,11 +1,11 @@
 {
-  "comment": "Linen Closet clue bank — OWNER: A5. Words 3-5 letters, must be in enable1 (generator hard-fails otherwise). Difficulty tags the WORD+CLUE pair; a puzzle of difficulty D uses only words <= D and at least one word == D. Clues are manor-toned, terse enough for a 390px clue bar. Round 4: an optional `wry` clue carries the harder, misdirecting clue style — the Linen Closet's tier-3 puzzles must use at least two of them.",
+  "comment": "Linen Closet clue bank — OWNER: A5. Words 3-5 letters, must be in enable1 (generator hard-fails otherwise). Difficulty tags the WORD+CLUE pair; a puzzle of difficulty D uses only words <= D and at least one word == D. Clues are manor-toned, terse enough for a 390px clue bar. Round 4: an optional `wry` clue carries the harder, misdirecting clue style — the Linen Closet’s tier-3 puzzles must use at least two of them.",
   "clues": [
     {
       "word": "TEA",
-      "clue": "Mrs. Bramble's morning ritual",
+      "clue": "Mrs. Bramble’s morning ritual",
       "difficulty": "easy",
-      "wry": "The manor's answer to nearly every question"
+      "wry": "The manor’s answer to nearly every question"
     },
     {
       "word": "CAT",
@@ -15,13 +15,13 @@
     },
     {
       "word": "INK",
-      "clue": "What fills the manor's pens",
+      "clue": "What fills the manor’s pens",
       "difficulty": "easy",
       "wry": "It remembers longer than the writer does"
     },
     {
       "word": "KEY",
-      "clue": "A locked drawer's desire",
+      "clue": "A locked drawer’s desire",
       "difficulty": "easy",
       "wry": "It opens a door, or explains a map"
     },
@@ -39,7 +39,7 @@
     },
     {
       "word": "OWL",
-      "clue": "Night's librarian",
+      "clue": "Night’s librarian",
       "difficulty": "easy",
       "wry": "All question, no answer"
     },
@@ -81,7 +81,7 @@
     },
     {
       "word": "JAM",
-      "clue": "Toast's sweet topping",
+      "clue": "Toast’s sweet topping",
       "difficulty": "easy",
       "wry": "A traffic problem, or breakfast"
     },
@@ -111,9 +111,9 @@
     },
     {
       "word": "MOON",
-      "clue": "Night's lantern",
+      "clue": "Night’s lantern",
       "difficulty": "easy",
-      "wry": "The night's borrowed light"
+      "wry": "The night’s borrowed light"
     },
     {
       "word": "STAR",
@@ -123,9 +123,9 @@
     },
     {
       "word": "RAIN",
-      "clue": "The garden's drink",
+      "clue": "The garden’s drink",
       "difficulty": "easy",
-      "wry": "The garden's uninvited watering"
+      "wry": "The garden’s uninvited watering"
     },
     {
       "word": "LEAF",
@@ -141,7 +141,7 @@
     },
     {
       "word": "MILK",
-      "clue": "Tea's pale partner",
+      "clue": "Tea’s pale partner",
       "difficulty": "easy",
       "wry": "It goes in first, the argument runs"
     },
@@ -177,13 +177,13 @@
     },
     {
       "word": "GATE",
-      "clue": "The garden's iron door",
+      "clue": "The garden’s iron door",
       "difficulty": "easy",
       "wry": "A fence that agreed to open"
     },
     {
       "word": "POND",
-      "clue": "A duck's mirror",
+      "clue": "A duck’s mirror",
       "difficulty": "easy",
       "wry": "Where the sky goes to be looked at"
     },
@@ -201,7 +201,7 @@
     },
     {
       "word": "SNOW",
-      "clue": "Winter's quilt",
+      "clue": "Winter’s quilt",
       "difficulty": "easy",
       "wry": "Weather that tucks the garden in"
     },
@@ -213,13 +213,13 @@
     },
     {
       "word": "FIRE",
-      "clue": "The hearth's heart",
+      "clue": "The hearth’s heart",
       "difficulty": "easy",
       "wry": "The hearth, being enthusiastic"
     },
     {
       "word": "SEED",
-      "clue": "Fern's little promise",
+      "clue": "Fern’s little promise",
       "difficulty": "easy",
       "wry": "A whole garden, being patient"
     },
@@ -231,15 +231,15 @@
     },
     {
       "word": "SALT",
-      "clue": "The sea's seasoning",
+      "clue": "The sea’s seasoning",
       "difficulty": "easy",
-      "wry": "It takes the sea's side in every dish"
+      "wry": "It takes the sea’s side in every dish"
     },
     {
       "word": "MOSS",
       "clue": "Soft coat on old stone",
       "difficulty": "easy",
-      "wry": "Old stone's green opinion"
+      "wry": "Old stone’s green opinion"
     },
     {
       "word": "NOOK",
@@ -249,7 +249,7 @@
     },
     {
       "word": "HONEY",
-      "clue": "The hive's gold",
+      "clue": "The hive’s gold",
       "difficulty": "easy",
       "wry": "What the hive charges for rent"
     },
@@ -285,13 +285,13 @@
     },
     {
       "word": "MOUSE",
-      "clue": "Dewey's quarry",
+      "clue": "Dewey’s quarry",
       "difficulty": "easy",
-      "wry": "Dewey's chief professional interest"
+      "wry": "Dewey’s chief professional interest"
     },
     {
       "word": "WAX",
-      "clue": "A seal's material",
+      "clue": "A seal’s material",
       "difficulty": "medium",
       "wry": "It seals a letter and ruins a candle"
     },
@@ -351,34 +351,34 @@
     },
     {
       "word": "WICK",
-      "clue": "A candle's core",
+      "clue": "A candle’s core",
       "difficulty": "medium",
-      "wry": "The candle's short temper"
+      "wry": "The candle’s short temper"
     },
     {
       "word": "SILL",
-      "clue": "A window's ledge",
+      "clue": "A window’s ledge",
       "difficulty": "medium",
       "wry": "Where the cat and the pie compete"
     },
     {
       "word": "HASP",
-      "clue": "A latch's loop",
+      "clue": "A latch’s loop",
       "difficulty": "medium"
     },
     {
       "word": "JAMB",
-      "clue": "A door's side post",
+      "clue": "A door’s side post",
       "difficulty": "medium"
     },
     {
       "word": "NAVE",
-      "clue": "A church's long middle",
+      "clue": "A church’s long middle",
       "difficulty": "medium"
     },
     {
       "word": "APSE",
-      "clue": "A church's rounded end",
+      "clue": "A church’s rounded end",
       "difficulty": "medium"
     },
     {
@@ -390,7 +390,7 @@
       "word": "QUILL",
       "clue": "Pen before pens",
       "difficulty": "medium",
-      "wry": "A bird's contribution to literature"
+      "wry": "A bird’s contribution to literature"
     },
     {
       "word": "ATTIC",
@@ -406,7 +406,7 @@
     },
     {
       "word": "ORGAN",
-      "clue": "The chapel's pipes",
+      "clue": "The chapel’s pipes",
       "difficulty": "medium",
       "wry": "Pipes with opinions"
     },
@@ -420,7 +420,7 @@
       "word": "RHYME",
       "clue": "What a poet trades in",
       "difficulty": "medium",
-      "wry": "Reason's noisier partner"
+      "wry": "Reason’s noisier partner"
     },
     {
       "word": "FABLE",
@@ -454,7 +454,7 @@
     },
     {
       "word": "SPELL",
-      "clue": "A witch's wording",
+      "clue": "A witch’s wording",
       "difficulty": "medium",
       "wry": "Words with consequences"
     },
@@ -472,9 +472,9 @@
     },
     {
       "word": "PEARL",
-      "clue": "The oyster's prize",
+      "clue": "The oyster’s prize",
       "difficulty": "medium",
-      "wry": "The oyster's complaint, formalised"
+      "wry": "The oyster’s complaint, formalised"
     },
     {
       "word": "OPAL",
@@ -484,7 +484,7 @@
     },
     {
       "word": "TOPAZ",
-      "clue": "November's stone",
+      "clue": "November’s stone",
       "difficulty": "medium"
     },
     {
@@ -494,12 +494,12 @@
     },
     {
       "word": "LINEN",
-      "clue": "This closet's namesake",
+      "clue": "This closet’s namesake",
       "difficulty": "medium"
     },
     {
       "word": "TWEED",
-      "clue": "A professor's jacket cloth",
+      "clue": "A professor’s jacket cloth",
       "difficulty": "medium"
     },
     {
@@ -514,7 +514,7 @@
     },
     {
       "word": "EASEL",
-      "clue": "A painter's stand",
+      "clue": "A painter’s stand",
       "difficulty": "medium"
     },
     {
@@ -524,7 +524,7 @@
     },
     {
       "word": "PIANO",
-      "clue": "The parlor's eighty-eight",
+      "clue": "The parlor’s eighty-eight",
       "difficulty": "medium"
     },
     {
@@ -539,7 +539,7 @@
     },
     {
       "word": "EMBER",
-      "clue": "The fire's last word",
+      "clue": "The fire’s last word",
       "difficulty": "medium",
       "wry": "The fire, still arguing"
     },
@@ -547,7 +547,7 @@
       "word": "FROST",
       "clue": "Morning window lace",
       "difficulty": "medium",
-      "wry": "The window's overnight drawing"
+      "wry": "The window’s overnight drawing"
     },
     {
       "word": "BROOK",
@@ -591,24 +591,24 @@
     },
     {
       "word": "GABLE",
-      "clue": "The roof's triangle",
+      "clue": "The roof’s triangle",
       "difficulty": "medium",
       "wry": "The roof, coming to a point"
     },
     {
       "word": "EAVES",
-      "clue": "The roof's overhang",
+      "clue": "The roof’s overhang",
       "difficulty": "medium"
     },
     {
       "word": "HINGE",
-      "clue": "A door's pivot",
+      "clue": "A door’s pivot",
       "difficulty": "medium",
       "wry": "The small thing everything turns on"
     },
     {
       "word": "SPADE",
-      "clue": "The groundskeeper's digger",
+      "clue": "The groundskeeper’s digger",
       "difficulty": "medium",
       "wry": "Called by its own name, they say"
     },
@@ -644,7 +644,7 @@
     },
     {
       "word": "TAROT",
-      "clue": "The fortune-teller's deck",
+      "clue": "The fortune-teller’s deck",
       "difficulty": "hard",
       "wry": "Cards that claim to know"
     },
@@ -686,13 +686,13 @@
     },
     {
       "word": "LATHE",
-      "clue": "The woodturner's wheel",
+      "clue": "The woodturner’s wheel",
       "difficulty": "hard",
       "wry": "It turns wood, and turns it again"
     },
     {
       "word": "CRUET",
-      "clue": "Vinegar's little bottle",
+      "clue": "Vinegar’s little bottle",
       "difficulty": "hard"
     },
     {
@@ -709,13 +709,13 @@
     },
     {
       "word": "NICHE",
-      "clue": "A statue's recess",
+      "clue": "A statue’s recess",
       "difficulty": "hard",
       "wry": "A wall, making room for a saint"
     },
     {
       "word": "EPEE",
-      "clue": "A fencer's blade",
+      "clue": "A fencer’s blade",
       "difficulty": "hard"
     },
     {
@@ -731,9 +731,9 @@
     },
     {
       "word": "BRINE",
-      "clue": "The pickle's bath",
+      "clue": "The pickle’s bath",
       "difficulty": "hard",
-      "wry": "The pickle's holiday at the sea"
+      "wry": "The pickle’s holiday at the sea"
     },
     {
       "word": "TITHE",
@@ -757,17 +757,17 @@
       "word": "BALM",
       "clue": "Soother from the still-room",
       "difficulty": "hard",
-      "wry": "The still-room's soothing answer"
+      "wry": "The still-room’s soothing answer"
     },
     {
       "word": "ETUI",
-      "clue": "A needle's little case",
+      "clue": "A needle’s little case",
       "difficulty": "expert",
       "wry": "A little case with needle business"
     },
     {
       "word": "ADIT",
-      "clue": "A mine's entrance",
+      "clue": "A mine’s entrance",
       "difficulty": "expert"
     },
     {
@@ -789,13 +789,13 @@
     },
     {
       "word": "NEWEL",
-      "clue": "The staircase's post",
+      "clue": "The staircase’s post",
       "difficulty": "expert",
       "wry": "The post the staircase leans on"
     },
     {
       "word": "ADZE",
-      "clue": "The axe's carving cousin",
+      "clue": "The axe’s carving cousin",
       "difficulty": "expert"
     },
     {
@@ -828,7 +828,7 @@
     },
     {
       "word": "SENNA",
-      "clue": "Apothecary's laxative leaf",
+      "clue": "Apothecary’s laxative leaf",
       "difficulty": "expert"
     },
     {

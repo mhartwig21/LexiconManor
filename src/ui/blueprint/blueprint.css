@@ -24,8 +24,15 @@
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;
-  /* below A2's fixed chrome header (~48px + safe area) */
-  padding: calc(52px + env(safe-area-inset-top, 0px)) 0 max(10px, env(safe-area-inset-bottom));
+  /* Clear A2's fixed chrome bar — BY THE TOKEN, never by a pixel copy of it.
+     This line was `calc(52px + env(safe-area-inset-top))` while tokens.css
+     re-declared `--chrome-h: 50px` at the short-screen breakpoint, so on a
+     375x667 glass the blueprint reserved 2px MORE than the bar took, and any
+     retune in the other direction would have slid the sheet straight under it.
+     That drift is the exact mechanism of the shipped navigation bug (AAA 11.4)
+     and scripts/lint-chrome-clearance.mjs now fails the build if a literal
+     chrome height comes back into any page or overlay CSS. */
+  padding: calc(var(--chrome-h) + env(safe-area-inset-top, 0px)) 0 max(10px, env(safe-area-inset-bottom));
 }
 
 /* Vignette: RETIRED here. The paper material (grain tile + vignette, AAA 6.13)
@@ -315,6 +322,50 @@
   60% { transform: translateX(1.4px) rotate(2.5deg); }
 }
 
+/* THE PADLOCK'S ANSWER (AAA 4.16 — never silence at a gate).
+   A pencilled surveyor's note laid across the storey she just tried. It is
+   annotation ink, not reward ink: no wax red, no gilt, no stamp idiom — 11.14
+   requires that a thing which awards nothing cannot dress like a thing that
+   awards something. Pointer-transparent, so the note never eats her next tap. */
+.bp-refusal { pointer-events: none; animation: bp-refusal-in 180ms var(--ease-settle); }
+.bp-refusal__ground {
+  fill: var(--paper-raised);
+  stroke: var(--ink-faint);
+  stroke-width: 0.8;
+  opacity: 0.94;
+}
+.bp-refusal__line {
+  font-family: var(--font-body);
+  /* AAA 6.6: body serif never below 16px. The sheet's viewBox is 372 units
+     wide and it lays out at ~371 CSS px on a 390pt phone, so one user unit is
+     ~1 CSS px and 16 here IS 16 on the glass — measured, not assumed. The
+     longest authored line (48 chars) is ~270 units at this size, inside the
+     324-unit note ground, so nothing clips or wraps. */
+  font-size: 16px;
+  fill: var(--ink-soft);
+  text-anchor: middle;
+  font-style: italic;
+}
+@keyframes bp-refusal-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* The same refusal, spoken. Out of flow and 1px, so it cannot move the sheet
+   (AAA 1.5 zero layout shift) while still living in the accessibility tree —
+   `display: none` / `visibility: hidden` would remove it from announcements. */
+.bp-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* A door she cannot open today is not advertised as one. */
 .bp-ghost--shut .bp-ghost__outline { stroke: var(--ink-faint); opacity: 0.5; }
 .bp-ghost--locked .bp-ghost__outline { stroke-dasharray: 2.4 3.6; }
@@ -434,10 +485,18 @@
    preference got the light-theme scrim. Both dark paths are covered now, and
    the explicit-light selector out-specifies the media query in both
    directions (tokens.css house rule). */
+/* z: overlay (40) on the published scale — ui/chrome/layers.ts. Note this
+   number is LOCAL: `.bp-page` is `position: fixed`, which makes it a stacking
+   context, so nothing inside it can out-paint the chrome bar however high it
+   climbs. The scene's modality is therefore enforced from the chrome side —
+   chrome.css makes `.chr-header` pointer-inert while a `.bp-modal` is in the
+   DOM, and DayHeader stops rendering the retire moon entirely (AAA 11.5).
+   Before that, tapping the top band of this "modal" hit the day bar behind it
+   and a second tap ended the day. */
 .bp-modal {
   position: absolute;
   inset: 0;
-  z-index: 40;
+  z-index: var(--z-overlay, 40);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -612,11 +671,31 @@
   letter-spacing: 0.06em;
 }
 
+/* THE EXIT IS ALWAYS ON THE GLASS (AAA 11.3, round-9 blocker).
+   `.bp-modal__sheet` scrolls internally, and the Floorplan Cabinet's content is
+   the whole deck: measured 3229px of sheet in a 742px scrollport. The footer —
+   which holds "Close the cabinet", the modal's ONLY labelled exit — therefore
+   opened at top 3282 in an 844px viewport, `elementFromPoint` returned null at
+   its centre and all four inset corners, and it only became tappable after
+   scrolling ~3.2k px. The scrim-tap fallback worked but is not a control and
+   carries no word (11.7). Sticking the foot to the bottom of its own scrollport
+   costs nothing on sheets that already fit (a sticky box at its natural
+   position does not move) and makes the exit unmissable on the ones that do
+   not. `bottom` is the sheet's own bottom padding, so the resting position and
+   the stuck position are the same point and the foot never jumps at full
+   scroll; the safe-area inset keeps it off the home indicator (7.8). */
 .bp-modal__foot {
   display: flex;
   justify-content: space-between;
   gap: 0.6rem;
   margin-top: 0.8rem;
+  position: sticky;
+  bottom: calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  z-index: 1;
+  padding-top: 0.55rem;
+  /* Opaque, or the deck scrolls visibly through the exit. */
+  background: var(--paper-raised);
+  border-top: var(--rule);
 }
 .bp-modal__foot--center { justify-content: center; }
 
@@ -753,6 +832,10 @@
   .bp-scene,
   .bp-dusk,
   .bp-dusk__text,
-  .bp-padlock-slot--refused { animation: none; }
+  .bp-padlock-slot--refused,
+  .bp-refusal { animation: none; }
+  /* The words are the point; only the fade is motion. The note still appears,
+     it simply appears at once (AAA U.3 — state changes stay legible). */
+  .bp-refusal { opacity: 1; }
   .bp-ghost__handle { opacity: 0.9; }
 }

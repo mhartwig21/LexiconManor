@@ -1,0 +1,91 @@
+{
+ "libTile": {
+  "w": 84.3,
+  "h": 58
+ },
+ "libGrid": {
+  "w": 361.2,
+  "h": 256,
+  "top": 290.1
+ },
+ "twistle": {
+  "gridLen": 25,
+  "matched": true,
+  "cell": {
+   "w": 66.8,
+   "h": 66.8
+  },
+  "deadPlay": {
+   "stageH": 721,
+   "totalEmpty": 213,
+   "biggest": [
+    {
+     "top": 689,
+     "h": 84
+    },
+    {
+     "top": 590,
+     "h": 55
+    },
+    {
+     "top": 52,
+     "h": 47
+    }
+   ]
+  }
+ },
+ "cipher": {
+  "stage": {
+   "over": 0
+  },
+  "deckPos": "sticky",
+  "keyTouchAction": "manipulation",
+  "keyBox": {
+   "w": 32.5,
+   "h": 55.7
+  },
+  "selBefore": "D",
+  "before": "OFFEEFOOEE",
+  "after": "QOFFEEFOOEE",
+  "selAfter": "F",
+  "dragCommitted": true,
+  "cursorMoved": true,
+  "dead": {
+   "stageH": 721,
+   "totalEmpty": 216,
+   "biggest": [
+    {
+     "top": 315,
+     "h": 185
+    },
+    {
+     "top": 90,
+     "h": 16
+    },
+    {
+     "top": 521,
+     "h": 15
+    }
+   ]
+  }
+ },
+ "sudoku": {
+  "verbs": [
+   "✎ Pencil — off",
+   "Pencil what fits",
+   "Balance the books · −2",
+   "Ask the clerk · −2",
+   "Consult a figure · −4"
+  ],
+  "hasUndo": false,
+  "pencilFont": "8.96px",
+  "pencilLayout": {
+   "display": "grid",
+   "cols": "10.4688px 10.4844px 10.4844px"
+  },
+  "destructive": {
+   "prunedChanged": true,
+   "refillWipedWork": true
+  }
+ }
+}

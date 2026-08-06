@@ -18,17 +18,70 @@
  *   (b) THE HOLD. The last tile settles at 600ms (300ms hop, 100ms stagger);
  *       the verdict used to fire at 760ms — a 160ms suspense hold against the
  *       required 300–400ms. It fires at 950ms now.
+ *
+ * ROUND 6 — TYPOGRAPHY. Theme labels are authored/generated copy and half the
+ * bank quotes a fragment of a word: `Contains "OUT"`, `Anagrams of "LISTEN"`,
+ * `Can Follow "SUN"`. Straight U+0022 has no handedness, and the body serif
+ * draws it as a right-leaning comma-shape on BOTH sides, so the showcase read
+ * `Anagrams of ”LISTEN”` — the opening mark backwards, 96 themes over. Every
+ * authored string this view prints now goes through `typeset()`
+ * (content/lib/typography.ts), which is idempotent, so the shipped theme bank
+ * is set correctly whether or not its generator has been re-run.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { RoomViewProps } from '../registry';
-import type { WordWebAction, WordWebPuzzleEx, WordWebRoomState } from '../../../engine/rooms/adapters/word-web';
+import type {
+  WordWebAction, WordWebHerringMatch, WordWebPuzzleEx, WordWebRoomState,
+} from '../../../engine/rooms/adapters/word-web';
 import { createRng, shuffle } from '../../../engine/rng';
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
+import { typeset } from '../../../../content/lib/typography';
 import './anchor.css';
 
-type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
+type Toast = { kind: 'good' | 'bad' | 'info'; text: string; bit?: string } | null;
+
+/**
+ * AAA 2.10 [BEAT] — the two things a wrong guess buys, both free with the
+ * steps she has already spent.
+ *
+ * (a) THE STRUCTURAL BIT, printed on every wrong guess. Connections tells you
+ *     only "one away" and otherwise nothing; our validator knows the true
+ *     membership at build time, so the room can say how many of her four
+ *     genuinely share a thread. That prunes the LOGIC space (which pairs can
+ *     still be together), not merely the option space.
+ */
+function togetherLine(together: 1 | 2): string {
+  return together >= 2
+    ? 'Two of these share a thread.'
+    : 'No two of these share a thread.';
+}
+
+/**
+ * (b) THE ACKNOWLEDGED HERRING, printed when ≥3 of her four tiles sat inside
+ *     one planted trap. The bar's own example ("they *do* all rhyme, don't
+ *     they?") is informative BECAUSE it names the relation; the round-6 line
+ *     ("They do keep company, don't they? But no.") named neither the words
+ *     nor the thread, and fired on guesses that had never touched the trap.
+ */
+function herringLine(h: WordWebHerringMatch): string {
+  // Naming all four by name overflows the reserved slot at 390px, and when all
+  // four ARE the trap the count says it better anyway.
+  const subject = h.matched.length >= 4 ? 'All four of these' : h.matched.join(', ');
+  switch (h.relation) {
+    case 'rhyme':
+      return `${subject} do rhyme. But no.`;
+    case 'shared-affix':
+      return h.detail
+        ? `${subject} carry “${h.detail}”. But no.`
+        : `${subject} share their letters. But no.`;
+    case 'doubled-letter':
+      return `${subject} double a letter. But no.`;
+    case 'semantic':
+      return `${subject} keep company. But no.`;
+  }
+}
 
 function hashStr(s: string): number {
   let h = 0;
@@ -200,18 +253,20 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
       case 'wrong':
         pendingMerge.current = [];
         sfx.wrong();
-        setToast(
-          fb.herring.length > 0
-            ? { kind: 'bad', text: `They do keep company, don't they? But no. · −${stepCost} steps` }
-            : { kind: 'bad', text: `Not quite a thread. · −${stepCost} steps` },
-        );
+        // Never bare "no": the structural bit is the headline, and a trap she
+        // genuinely followed is named beneath it (AAA 2.10).
+        setToast({
+          kind: 'bad',
+          text: `${togetherLine(fb.together)} · −${stepCost} steps`,
+          bit: fb.herring ? herringLine(fb.herring) : undefined,
+        });
         setShaking(true);
         later(() => setShaking(false), 420);
         later(() => setBusy(false), 430);
         break;
       case 'hint':
         sfx.glyph();
-        setToast({ kind: 'good', text: `${fb.intruder} stands apart from the rest.` });
+        setToast({ kind: 'good', text: typeset(`${fb.intruder} stands apart from the rest.`) });
         break;
       case 'invalid':
         pendingMerge.current = [];
@@ -267,7 +322,7 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
                 className="ww-banner__theme"
                 style={won && perfect ? { animationDelay: `${i * 100 + 160}ms` } : undefined}
               >
-                {g.theme}
+                {typeset(g.theme)}
               </div>
               <div className="ww-banner__words">{g.words.join(' · ')}</div>
               <div className="ww-banner__dots">{TIER_DOTS[g.tier]}</div>
@@ -291,7 +346,7 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
                 {...pressProps<HTMLButtonElement>()}
                 onClick={() => dispatch({ type: 'name-theme', theme })}
               >
-                {theme}
+                {typeset(theme)}
               </button>
             ))}
           </div>
@@ -302,7 +357,7 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
           <p className="anch-done__line">{endCopy(state.costedMistakes + state.hintsBought)}</p>
           {state.namedCorrectly === false && state.lastFeedback?.kind === 'group-solved' && (
             // Warm, never shame-adjacent (2.14): a missed name is just told true.
-            <p className="anch-done__line">It called itself “{state.lastFeedback.theme}”.</p>
+            <p className="anch-done__line">It called itself “{typeset(state.lastFeedback.theme)}”.</p>
           )}
         </div>
       ) : (
@@ -335,7 +390,12 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
           </div>
 
           <div className="anch-toastslot" aria-live="polite">
-            {toast && <span className={`anch-toast anch-toast--${toast.kind}`}>{toast.text}</span>}
+            {toast && (
+              <span className={`anch-toast anch-toast--${toast.kind}`}>
+                {toast.text}
+                {toast.bit && <span className="anch-toast__bit">{toast.bit}</span>}
+              </span>
+            )}
           </div>
 
           <div className="anch-row">

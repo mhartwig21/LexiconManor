@@ -121,8 +121,31 @@ export const CODE_SET_FLAGS: readonly string[] = [
   'sys.tutorial.first-draft',
   'sys.dewey.first-pet',
   'vol.volume-1.solved',
+  // ui/sanctum/SanctumView.tsx writes this the first time she stands on the
+  // Sanctum landing. Listed so authored dialogue MAY condition on the climb
+  // (the arrival variants are selected by node id, so nothing does yet).
+  'vol.volume-1.landing-reached',
   // app/slices/dialogue.ts giveGift() sets sys.first-gift.<character>.
   ...CHARACTER_IDS.map((c) => `sys.first-gift.${c}`),
+];
+
+/**
+ * Code-set flag FAMILIES — one flag per id, so they cannot be enumerated here.
+ * None is referenced by an authored condition (they are viewed/unread
+ * bookkeeping, read only by UI derivations), so the orphan rule never sees
+ * them; they are named for docs/flags.md's benefit and asserted against the
+ * frozen grammar by tests/moment.test.ts and tests/journal.test.ts.
+ *
+ *   vol.<volumeId>.viewed-<fragmentId>  journal slice, on display (AAA 11.20)
+ *   sys.unread.backfilled               migrations.ts, once per save
+ *   sys.keepsake.<keepsakeId>           ChroniclesPage, when the shelf is seen
+ *   sys.plate.<cardId>                  ManorPage, when the cabinet is opened
+ */
+export const CODE_SET_FLAG_FAMILIES: readonly string[] = [
+  'vol.<volumeId>.viewed-<fragmentId>',
+  'sys.unread.backfilled',
+  'sys.keepsake.<keepsakeId>',
+  'sys.plate.<cardId>',
 ];
 
 /**

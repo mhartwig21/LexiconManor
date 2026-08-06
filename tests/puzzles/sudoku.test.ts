@@ -9,7 +9,7 @@ import {
   type SudokuPuzzle, type SudokuTier, type TechniqueLevel,
 } from '../../src/engine/puzzles/sudoku';
 import {
-  SUDOKU_POOL, sudokuAdapter, type SudokuRoomState,
+  SUDOKU_POOL, UNDO_DEPTH, sudokuAdapter, type SudokuRoomState,
 } from '../../src/engine/puzzles/sudoku-adapter';
 import sudokuData from '../../content/generated/sudoku.json';
 
@@ -331,6 +331,62 @@ describe('play state', () => {
     expect(balanceBooks(fixture, moved).report).toEqual({ astray: 0, settled: 1, charged: true });
   });
 
+  /**
+   * ROUND 6 BLOCKER (AAA 3.3): "Pencil what fits" sits in the FREE row beside
+   * the pencil toggle, so a tap 5px off it must never be able to cost her the
+   * solve. It used to ASSIGN the naive mask, restoring the naive fill
+   * byte-identical over hand-pruned marks. It is now additive PER CELL — and
+   * the obvious "union with existing" is not the fix, because a pruned set is
+   * a subset of the naive set, so the union would restore the wipe verbatim.
+   */
+  it('pencils what fits ADDITIVELY: a second tap can never restore pruned marks', () => {
+    const s0 = startSudoku(fixture);
+    const filled = fillPencil(s0);
+    const blanks = [...fixture.givens].flatMap((c, i) => (c === '.' ? [i] : []));
+
+    // Hand-prune five cells down to a single candidate each — a real morning's
+    // deduction, and a strict subset of what the naive fill would say.
+    let pruned = filled;
+    const bits = (m: number) => [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => m & (1 << (d - 1))).length;
+    const targets = blanks.filter((i) => bits(filled.pencil[i]!) > 1).slice(0, 5);
+    expect(targets.length, 'the fixture must offer five multi-candidate cells').toBe(5);
+    for (const cell of targets) {
+      for (let d = 1; d <= 9; d++) {
+        const bit = 1 << (d - 1);
+        if ((pruned.pencil[cell]! & bit) && pruned.pencil[cell] !== bit) {
+          pruned = togglePencil(pruned, cell, d);
+        }
+      }
+      expect(pruned.pencil[cell], `cell ${cell} pruned to one`).not.toBe(filled.pencil[cell]);
+    }
+
+    // The button again: her work survives, untouched.
+    const refilled = fillPencil(pruned);
+    for (const cell of targets) {
+      expect(refilled.pencil[cell], `cell ${cell} survived the refill`).toBe(pruned.pencil[cell]);
+    }
+    expect(refilled).toBe(pruned);                     // nothing to add: same object
+
+    // ...and it still does its job on a cell she has NOT marked.
+    const untouched = blanks[10]!;
+    const clearedOne = clearPencil(pruned, untouched);
+    expect(clearedOne.pencil[untouched]).toBe(0);
+    const again = fillPencil(clearedOne);
+    expect(again.pencil[untouched]).toBe(filled.pencil[untouched]);
+    for (const cell of targets) expect(again.pencil[cell]).toBe(pruned.pencil[cell]);
+
+    // It is monotone at the level of marks too: over any sequence of taps, a
+    // marked cell never loses a mark to this button — including a mark she
+    // added by hand that no candidate rule would have suggested.
+    const spare = blanks[11]!;
+    const impossible = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      .find((d) => (filled.pencil[spare]! & (1 << (d - 1))) === 0);
+    if (impossible !== undefined) {
+      const byHand = togglePencil(clearPencil(again, spare), spare, impossible);
+      expect(fillPencil(byHand).pencil[spare]).toBe(byHand.pencil[spare]);
+    }
+  });
+
   it('pencils what fits: free, idempotent, derived only from placed figures', () => {
     const s = startSudoku(fixture);
     const filled = fillPencil(s);
@@ -537,6 +593,127 @@ describe('adapter economy mapping (AAA §0.3)', () => {
     expect(ofType(out.events, 'progress')).toHaveLength(1);
     expect(out.state.engine.values[blank]).toBe(truth);
     expect(out.outcome.perfect).toBe(true);
+  });
+
+  /**
+   * ROUND 6 BLOCKER (AAA 3.3, NYT-Sudoku parity): pencil work IS the solve, so
+   * the room owes a permanent, free way back from any board edit.
+   */
+  describe('undo', () => {
+    it('walks back every free board edit, in order, and costs nothing', () => {
+      let s = start();
+      const boards: string[] = [];
+      const marks: number[] = [];
+      const record = () => { boards.push(JSON.stringify(s.engine.values)); marks.push(s.engine.pencil[blank]!); };
+
+      record();
+      for (const action of [
+        { type: 'fill-pencil' },
+        { type: 'pencil', cell: blank, digit: 3 },
+        { type: 'ink', cell: blank, digit: legalWrong },
+        { type: 'unink', cell: blank },
+      ] as const) {
+        const out = sudokuAdapter.reduce(fixture, s, action);
+        expect(out.events.filter((e) => e.type !== 'progress'), JSON.stringify(action)).toEqual([]);
+        s = out.state;
+        record();
+      }
+      expect(s.history).toHaveLength(4);
+
+      for (let step = 4; step > 0; step--) {
+        const out = sudokuAdapter.reduce(fixture, s, { type: 'undo' });
+        expect(out.events).toEqual([]);                       // free, always
+        s = out.state;
+        expect(JSON.stringify(s.engine.values), `undo to step ${step - 1}`).toBe(boards[step - 1]);
+        expect(s.engine.pencil[blank]).toBe(marks[step - 1]);
+        expect(s.history).toHaveLength(step - 1);
+      }
+      // Nothing left to undo: a no-op, not a crash and not a state churn.
+      const spent = sudokuAdapter.reduce(fixture, s, { type: 'undo' });
+      expect(spent.state).toBe(s);
+      expect(spent.events).toEqual([]);
+      expect(spent.outcome.perfect).toBe(true);
+    });
+
+    it('rescues hand-pruned marks from a stray free verb', () => {
+      let s = start();
+      s = sudokuAdapter.reduce(fixture, s, { type: 'fill-pencil' }).state;
+      s = sudokuAdapter.reduce(fixture, s, { type: 'pencil', cell: blank, digit: 3 }).state;
+      const kept = s.engine.pencil[blank];
+
+      // "Pencil what fits" is now incapable of the wipe on its own...
+      const refill = sudokuAdapter.reduce(fixture, s, { type: 'fill-pencil' });
+      expect(refill.state).toBe(s);
+      expect(refill.state.engine.pencil[blank]).toBe(kept);
+
+      // ...and the eraser, which IS destructive by design, has a way back.
+      s = sudokuAdapter.reduce(fixture, s, { type: 'clear-pencil', cell: blank }).state;
+      expect(s.engine.pencil[blank]).toBe(0);
+      s = sudokuAdapter.reduce(fixture, s, { type: 'undo' }).state;
+      expect(s.engine.pencil[blank]).toBe(kept);
+    });
+
+    it('restores the BOARD only: steps stay spent and a weighed leaf stays weighed', () => {
+      let s = start();
+      s = sudokuAdapter.reduce(fixture, s, { type: 'ink', cell: blank, digit: legalWrong }).state;
+      s = sudokuAdapter.reduce(fixture, s, { type: 'balance' }).state;
+      expect(s.costedMistakes).toBe(1);
+      const weighed = s.engine.balancedSignatures;
+      expect(weighed).toHaveLength(1);
+
+      // Balancing changes no cell, so it is not an undo step: one undo lands
+      // on the leaf before the ink.
+      const undone = sudokuAdapter.reduce(fixture, s, { type: 'undo' });
+      expect(undone.state.engine.values[blank]).toBe(0);
+      expect(undone.state.costedMistakes).toBe(1);            // never refunded
+      expect(undone.outcome.perfect).toBe(false);             // and never laundered
+      // Monotone claim memory: walking back to a leaf she already weighed must
+      // not make it chargeable a second time.
+      expect(undone.state.engine.balancedSignatures).toEqual(weighed);
+      const redone = sudokuAdapter.reduce(fixture, undone.state, { type: 'ink', cell: blank, digit: legalWrong });
+      const again = sudokuAdapter.reduce(fixture, redone.state, { type: 'balance' });
+      expect(ofType(again.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+      expect(again.state.costedMistakes).toBe(1);
+    });
+
+    it('never walks a bought figure back off the leaf, and never un-wins a leaf', () => {
+      let s = start();
+      s = sudokuAdapter.reduce(fixture, s, { type: 'pencil', cell: blank, digit: 3 }).state;
+      expect(s.history).toHaveLength(1);
+      const bought = sudokuAdapter.reduce(fixture, s, { type: 'reveal-cell', cell: blank });
+      // The purchase seals the leaf: there is nothing behind it to undo.
+      expect(bought.state.history).toEqual([]);
+      const tryUndo = sudokuAdapter.reduce(fixture, bought.state, { type: 'undo' });
+      expect(tryUndo.state).toBe(bought.state);
+      expect(tryUndo.state.engine.values[blank]).toBe(truth);
+      expect(tryUndo.state.engine.revealed).toEqual([blank]);
+
+      // A won leaf is final — the room has already reported `solved`.
+      let full = start();
+      for (let cell = 0; cell < 81; cell++) {
+        if (full.engine.values[cell] !== 0) continue;
+        full = sudokuAdapter.reduce(
+          fixture, full, { type: 'ink', cell, digit: Number(fixture.solution[cell]) },
+        ).state;
+      }
+      expect(full.engine.status).toBe('won');
+      const afterWin = sudokuAdapter.reduce(fixture, full, { type: 'undo' });
+      expect(afterWin.state).toBe(full);
+      expect(afterWin.outcome.status).toBe('solved');
+    });
+
+    it('bounds the history so a long solve cannot grow without limit', () => {
+      let s = start();
+      const blanks = [...fixture.givens].flatMap((c, i) => (c === '.' ? [i] : []));
+      for (let i = 0; i < UNDO_DEPTH + 20; i++) {
+        const cell = blanks[i % blanks.length]!;
+        s = sudokuAdapter.reduce(fixture, s, { type: 'pencil', cell, digit: (i % 9) + 1 }).state;
+      }
+      expect(s.history).toHaveLength(UNDO_DEPTH);
+      // The most recent edits are the ones that survive.
+      const back = sudokuAdapter.reduce(fixture, s, { type: 'undo' }).state;
+      expect(back.history).toHaveLength(UNDO_DEPTH - 1);
+    });
   });
 
   it('balancing the books is the ONE priced claim, and free to repeat', () => {

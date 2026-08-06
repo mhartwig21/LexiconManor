@@ -1,0 +1,80 @@
+/* ==========================================================================
+   The unread marker — OWNER: A7. Per-module CSS (conflict rule 3); consumes
+   ui/theme/tokens.css only, so both themes come free and no token is added.
+
+   Wax red means state, never decoration (AAA 6.15) — unread is one of its four
+   sanctioned meanings. The mark is double-encoded (AAA 11.22): a rimmed disc in
+   a position nothing else occupies, carrying an exact numeral at the entrance.
+   Nothing here animates, so reduced motion needs no special case.
+   ========================================================================== */
+
+.unread {
+  /* The numeral's ink. Deliberately theme-INVARIANT: the wax chip is a dark
+     fill in both themes (#8c2b2b on parchment, #b04a41 in candlelight), so the
+     text on it must be light in both. var(--paper) flips to #241d15 in the dark
+     theme and would land at 3.1:1 on wax. This is the shipped light-parchment
+     value (light --paper-raised), never #fff (AAA 6.1): 7.4:1 in the light
+     theme, 4.7:1 in the dark one. ROUND 9: it IS `--on-wax` in tokens.css now;
+     the literal remains only as the fallback, so this file still stands alone. */
+  --unread-ink: var(--on-wax, #f6efe2);
+
+  /* inline-flex makes this an atomic inline box, so a host with
+     `text-decoration: underline` (the quiet footer buttons) cannot draw its
+     rule through the wax. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-sizing: border-box;
+  width: 10px;
+  height: 10px;
+  margin-left: 0.35rem;
+  vertical-align: 0.24em;
+  border-radius: 50%;
+  background: var(--wax);
+  /* The pressed rim of a seal, borrowed from .jrn-seal: it gives the disc an
+     edge on paper-shade AND on candlelit charcoal, and in grayscale. */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+/* The item-level pip sits inside a flex row of caption text (the card's source
+   line), not trailing a button label — no lead gap, no superscript lift. */
+.unread--pip {
+  margin-left: 0;
+  vertical-align: baseline;
+}
+
+/* Any control that hosts a corner mark. Declared here rather than in the
+   owning module's CSS so the mark can be dropped onto A1's blueprint buttons
+   and A7's ribbon tabs without either file learning about the other. */
+.unread-host {
+  position: relative;
+}
+
+/* Pinned to the host's own top-right corner — the second encoding is the
+   place, which is empty in every other state. */
+.unread--corner {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  margin-left: 0;
+}
+
+/* The counted form, used where the label has room for it (the entrance).
+   Tabular numerals so the pill does not jitter as the count changes (AAA 6.6),
+   and the number is the EXACT count, never capped (AAA 11.21). */
+.unread--count {
+  width: auto;
+  height: 1.15rem;
+  min-width: 1.15rem;
+  padding: 0 0.32rem;
+  border-radius: 999px;
+}
+.unread__n {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  line-height: 1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--unread-ink);
+}

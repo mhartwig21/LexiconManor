@@ -3,7 +3,8 @@ import {
   cellKey, parseCellKey, sameCell, inBounds, opposite, rotateDir, neighbor,
   dirBetween, rowTier, createManor, doorsConnect, canMoveTo, walkableNeighbors,
   draftTargets, deadDoors, placeRoom, orientationsOf, resolveDoors, hashSeed,
-  roomSeed, deweyCell, roomAt, DIRS, ENTRANCE_KEY, SANCTUM_KEY,
+  roomSeed, deweyCell, roomAt, atSanctumDoor,
+  DIRS, ENTRANCE_KEY, SANCTUM_DOOR_CELL, SANCTUM_DOOR_KEY, SANCTUM_KEY,
 } from '../src/engine/manor/grid';
 import {
   canOpenDoor, isDoorLocked, lockedDraftTargets, rowCanLock, visibleLocks, KEY_COST,
@@ -96,6 +97,48 @@ describe('createManor', () => {
   it('entrance never opens through the front wall', () => {
     const m = createManor(1);
     expect(m.rooms[ENTRANCE_KEY]!.doors).not.toContain('S');
+  });
+});
+
+describe('the Sanctum door is a PLACE (AAA 4.10e — the second gate)', () => {
+  it('sits on the landing directly below the sealed Sanctum', () => {
+    expect(SANCTUM_DOOR_CELL.col).toBe(SANCTUM_CELL.col);
+    expect(SANCTUM_DOOR_CELL.row).toBe(SANCTUM_CELL.row - 1);
+    expect(SANCTUM_DOOR_KEY).toBe(cellKey(SANCTUM_DOOR_CELL));
+    // The Sanctum's own cell is sealed with one south door and is never a
+    // draft target — the landing is where the word is spoken from.
+    expect(createManor(3).rooms[SANCTUM_KEY]!.doors).toEqual(['S']);
+  });
+
+  it('is false everywhere else in the house, on any day', () => {
+    // THE ROUND-7 BLOCKER: with no such predicate on the guess path, a fresh
+    // save could win Volume 1 on day 1 from the Entrance Hall, 21 steps
+    // untouched, via the journal's "Take it to the Sanctum" button.
+    const m = createManor(11);
+    expect(atSanctumDoor(m)).toBe(false);
+    expect(atSanctumDoor(null)).toBe(false);
+    expect(atSanctumDoor(undefined)).toBe(false);
+    for (const row of [0, 1, 2, 3, 4]) {
+      expect(atSanctumDoor({ ...m, playerCell: { col: 2, row } })).toBe(false);
+    }
+    // Even the rest of the landing storey: only the cell under the door.
+    for (const col of [0, 1, 3, 4] as const) {
+      expect(atSanctumDoor({ ...m, playerCell: { col, row: SANCTUM_DOOR_CELL.row } })).toBe(false);
+    }
+  });
+
+  it('needs the north door as well as the cell', () => {
+    let m = createManor(11);
+    // Standing on the landing in a room that drew no north door: arriving on
+    // the storey is not arriving at the door.
+    m = placeRoom(m, room(SANCTUM_DOOR_CELL, ['S', 'E']));
+    expect(atSanctumDoor({ ...m, playerCell: { ...SANCTUM_DOOR_CELL } })).toBe(false);
+
+    let open = createManor(11);
+    open = placeRoom(open, room(SANCTUM_DOOR_CELL, ['S', 'N']));
+    expect(atSanctumDoor({ ...open, playerCell: { ...SANCTUM_DOOR_CELL } })).toBe(true);
+    // …and it is the same fact the blueprint's approach is drawn from.
+    expect(doorsConnect(open, SANCTUM_DOOR_CELL, 'N')).toBe(true);
   });
 });
 

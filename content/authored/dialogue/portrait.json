@@ -10,7 +10,7 @@
         {
           "speaker": "portrait",
           "portrait": "stern",
-          "text": "So. The house has let another one climb this far. State your business with my door — no. Don't. I know your business. Everyone wants the word."
+          "text": "So. The house has let another one climb this far. State your business with my door — no. Don’t. I know your business. Everyone wants the word."
         },
         {
           "speaker": "portrait",
@@ -20,7 +20,7 @@
       ],
       "choices": [
         {
-          "text": "It's an honor.",
+          "text": "It’s an honor.",
           "goto": "portrait.meet.1a"
         },
         {
@@ -81,7 +81,7 @@
           "text": "Understand the terms. The door wants the word spoken — once a day, no more. I do not set the rules. I merely became them."
         }
       ],
-      "summary": "The Sanctum's terms: one spoken word per day."
+      "summary": "The Sanctum’s terms: one spoken word per day."
     },
     {
       "id": "portrait.guess.cold",
@@ -99,7 +99,7 @@
         {
           "speaker": "portrait",
           "portrait": "stern",
-          "text": "No. Not a letter of it true. The door didn't even creak. Go and read more of him — of me — before you spend tomorrow's breath."
+          "text": "No. Not a letter of it true. The door didn’t even creak. Go and read more of him — of me — before you spend tomorrow’s breath."
         }
       ]
     },
@@ -221,10 +221,10 @@
         {
           "speaker": "portrait",
           "portrait": "stern",
-          "text": "Today's word missed as the others did, and the door's verdict on it is struck into your journal beside it. Read your own margins. Guess again tomorrow."
+          "text": "Today’s word missed as the others did, and the door’s verdict on it is struck into your journal beside it. Read your own margins. Guess again tomorrow."
         }
       ],
-      "summary": "The Portrait almost mentioned someone. 'She had it too.'"
+      "summary": "The Portrait almost mentioned someone. ‘She had it too.’"
     },
     {
       "id": "portrait.guess.thaw-2",
@@ -328,7 +328,7 @@
         {
           "speaker": "portrait",
           "portrait": "wistful",
-          "text": "You have read more of me now than anyone living. I would object, if it weren't such a relief to be legible again."
+          "text": "You have read more of me now than anyone living. I would object, if it weren’t such a relief to be legible again."
         }
       ],
       "summary": "The Portrait finds it a relief to be legible again."
@@ -356,7 +356,7 @@
           "text": "Leave it there. Let the house see that the old man is still being read."
         }
       ],
-      "summary": "Left a bookmark in the Portrait's frame. He is still being read."
+      "summary": "Left a bookmark in the Portrait’s frame. He is still being read."
     },
     {
       "id": "portrait.gen.stairs",
@@ -413,6 +413,45 @@
           "speaker": "portrait",
           "portrait": "warm",
           "text": "The door stands easier now. So do I. Odd, how a frame can feel like a window once the word is back in circulation."
+        }
+      ]
+    },
+    {
+      "id": "portrait.arrive.first",
+      "trigger": "sanctum-idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "So. You climbed it. Seven storeys of other people’s rooms, and the last stair squeaking in iambs, and here you are at my door with your hat still crooked. Very well: it wants no key. It wants the word."
+        }
+      ]
+    },
+    {
+      "id": "portrait.arrive.again",
+      "trigger": "sanctum-idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "Up again. The house notices, you know — it puts the stairs back in the same order for people it expects. One word a day, reader, whenever you are sure of one."
+        }
+      ]
+    },
+    {
+      "id": "portrait.arrive.spent",
+      "trigger": "sanctum-idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "concerned",
+          "text": "You have nothing left in your legs, and you spent it getting to me. Sit a moment on the top stair; the door is in no hurry. Then say your word, and let the evening close on it either way."
         }
       ]
     },
@@ -542,7 +581,7 @@
         {
           "speaker": "portrait",
           "portrait": "stern",
-          "text": "You. Before you go — I will say this once, and to no one's question."
+          "text": "You. Before you go — I will say this once, and to no one’s question."
         },
         {
           "speaker": "portrait",

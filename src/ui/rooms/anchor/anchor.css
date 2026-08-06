@@ -30,6 +30,11 @@
 }
 
 /* One accent per room, used only for state — never decoration (AAA 1.14). */
+/* The Study has no board to fill the column, so its gutters are the tightest
+   in the house — every 0.7rem between eight stacked cards was pure parchment
+   (AAA §0.1's empty-ratio measurement). */
+.anch--study { gap: 0.5rem; }
+
 .anch--library      { --room-accent: var(--cat-puzzle); }
 .anch--conservatory { --room-accent: var(--cat-utility); }
 .anch--gallery      { --room-accent: var(--gilt); }
@@ -81,8 +86,12 @@
 .anch-toast--big  { font-family: var(--font-display); font-size: var(--text-display-sm); color: var(--room-accent); }
 /* Fern's voice rides in the SAME reserved slot as the mechanical text, so the
    in-character line (AAA 1.15 [BEAT]) costs zero layout shift. The slot is
-   sized for two lines in the Conservatory whether or not one is present. */
-.anch-toast__fern {
+   sized for two lines in the Conservatory whether or not one is present.
+   `.anch-toast__bit` is the same idiom carrying the round-7 information bits
+   (AAA 2.10's acknowledged herring, AAA 4.17's closeness line): the mechanical
+   verdict + cost on line 1, the thing she LEARNED underneath it. */
+.anch-toast__fern,
+.anch-toast__bit {
   display: block;
   margin-top: 0.05rem;
   font-family: var(--font-body);
@@ -93,6 +102,11 @@
   line-height: 1.25;
 }
 .anch--conservatory .anch-toastslot { min-height: 3.3rem; }
+/* The Library's and Study's wrong-guess replies now carry a second line (the
+   information bit AAA 2.10 / 4.17 require). Reserved, so the board never jumps
+   when it appears (AAA 1.5). */
+.anch--library .anch-toastslot { min-height: 3.6rem; }
+.anch--study .anch-toastslot { min-height: 2.9rem; }
 
 .anch-row { display: flex; gap: 0.6rem; justify-content: center; align-items: center; flex-wrap: wrap; }
 
@@ -297,13 +311,28 @@
    Round-4: the board is also capped against the VIEWPORT HEIGHT. At 375×667
    the 300px square plus the entry line, toast slot and Shuffle row overran
    the stage and pushed the lower petals under the home indicator; scaling on
-   vh keeps the whole flower on the glass on every iPhone. */
+   vh keeps the whole flower on the glass on every iPhone.
+
+   Round 7 (§0.1 side-by-side): the 300px cap left the Conservatory 34% empty
+   parchment at 390×844 while SB's hive fills the thumb zone. The px cap moves
+   to 340 and the vw cap to 86 — at 390 wide that is a 335px flower with ~107px
+   petals — while the vh cap (the thing that actually protects the SE-class
+   layout) is untouched at the short-screen breakpoint below. */
 .hv-board {
   position: relative;
-  width: min(78vw, 300px, 42vh);
+  /* NEVER shrinks. The cells are absolutely positioned in PERCENTAGES, so a
+     flex-shrink on this box does not scale the flower — it collapses the box
+     and leaves six hexes stacked on whatever is above them (observed the
+     moment the Every Petal trophy list gave the column more content than the
+     stage). The stage scrolls instead; the hive stays a hive. */
+  flex: 0 0 auto;
+  width: min(86vw, 340px, 42vh);
   aspect-ratio: 1 / 1;
   margin: 0 auto;
 }
+/* Kept on the table after Every Petal, at a size that leaves room for the
+   trophy — the room is hers to look at, not to type into any more. */
+.hv-board--kept { width: min(58vw, 215px, 26vh); }
 .hv-cell {
   position: absolute;
   width: 32%;
@@ -419,7 +448,25 @@
   cursor: pointer;
   animation: anch-pop 260ms var(--ease-settle);
 }
+/* Every Petal escalates the SAME drawing rather than inventing a second idiom
+   (AAA 1.16 / 6.16): a second, offset ring of petals on a longer stagger, in a
+   larger frame. Still ≤2s, still tap-skippable (U.2 / 3.4). */
+.hv-bloom--every .hv-bloom__svg { width: min(78vw, 300px); }
+.hv-bloom--every .hv-bloom__title { font-size: var(--text-display-lg); }
 .hv-bloom__svg { width: min(64vw, 250px); height: auto; }
+
+/* The Every Petal landing: the trophy, and the hive still under her hands.
+   `.anch-done`'s leading spacer exists to stop the verdict panel sliding up a
+   short column; here the panel is the TOP of a full column, so it is dropped. */
+.hv-trophy { margin-top: 0.2rem; }
+.hv-trophy__cap {
+  text-align: center;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.hv-trophy__list { padding-top: 0; }
 .hv-bloom__title {
   font-family: var(--font-display);
   font-size: var(--text-display);
@@ -520,13 +567,28 @@
   70% { transform: translateY(2px); }
 }
 
+/* AAA 2.1 / §0.1 — THE BOARD CONSUMES THE GLASS.
+   Measured at 390×844 in round 6: the Library left 341 of 721 stage px empty
+   (47%) — a 136px void above the title and a 133px void below the buttons —
+   while running 84×58 tiles against NYT Connections' ~89×90 at the same width.
+   Side by side, ours read as a smaller game on the same phone. The cause was
+   a fixed-size grid centred in a tall flex column: the slack had nowhere to go
+   but the margins. The grid now GROWS into that slack (`flex: 1`) with rows
+   floored at the benchmark's height and capped so the toast slot, the button
+   row and the priced-nudge row are never squeezed. */
 .ww-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: minmax(80px, 1fr);
   gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  /* 4 rows at 96px + 3 gaps = 408 — comfortably inside the 721px stage with
+     the header, banners, toast slot and controls all still above the fold. */
+  max-height: 408px;
 }
 .ww-tile {
-  min-height: 58px;
+  min-height: 80px;
   border: 1px solid var(--paper-edge);
   border-radius: var(--radius-card);
   background: var(--paper-raised);
@@ -679,8 +741,22 @@
    The Study (Forgotten Word) — AAA §3.7
    -------------------------------------------------------------------------- */
 
+/* AAA §0.1 / 3.7 — the Study measured 391 of 721 stage px empty (54%), with a
+   149px void above the footer. The first attempt at this (stretch the card,
+   centre the text inside it) made the number WORSE: an empty card is empty
+   glass however tall it is. The freed height has to become INK, and in this
+   room the ink that deserves it is the definition — "the best writing in the
+   game" — which was set two steps below the display size a room whose entire
+   content is one sentence can afford. The torn headword also gets its shape
+   back (`.fw-slots`), which is the rule the room charges for (3.2) drawn
+   rather than stated. */
 .fw-def {
   text-align: center;
+}
+.anch--study .fw-def__text {
+  font-size: clamp(1.5rem, 7vw, 2.1rem);
+  line-height: 1.3;
+  margin: 0.55rem 0;
 }
 .fw-def__eyebrow {
   font-size: 0.78rem;
@@ -730,7 +806,25 @@
 /* Skip: the staggered reveal snaps complete when she taps the panel. */
 .anch-done--settled .fw-reveal__ch { animation: none; }
 
-.fw-clue { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; }
+/* The headword's shape, where the headword was torn out. Ink, not a caption:
+   the letter count is the room's one mechanical RULE (a wrong-length whisper
+   is refused), and drawing it is both stronger than saying it and the reason
+   the freed height stopped being empty parchment. */
+.fw-slots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem;
+}
+.fw-slot {
+  width: clamp(15px, 6.6vw, 28px);
+  height: 2.2rem;
+  border-radius: 2px 2px 0 0;
+  border-bottom: 2px solid var(--ink-faint);
+  background: var(--paper-shade);
+}
+
+.fw-clue { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; min-height: 3.4rem; }
 .fw-clue__label { font-family: var(--font-display); font-size: 1rem; color: var(--room-accent); }
 .fw-clue__text { font-size: var(--text-sm); }
 .fw-clue__sealed { font-size: var(--text-sm); font-style: italic; color: var(--ink-faint); }
@@ -762,6 +856,26 @@
   opacity: 1;
 }
 
+/* AAA 3.3 [PARITY] — the elimination history, with the closeness she paid for
+   still attached. The strike-through belongs to the word (that one is spent);
+   the counts are live information, so they are NOT struck. */
+.fw-tried { text-align: center; }
+.fw-tried__cap {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.25rem;
+}
+.fw-tried__chip { display: inline-flex; align-items: baseline; gap: 0.4rem; }
+.fw-tried__n {
+  text-decoration: none;
+  color: var(--room-accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.fw-tried__none { font-size: var(--text-sm); font-style: italic; color: var(--ink-faint); }
+
 .fw-reveal { display: flex; justify-content: center; gap: 0.18rem; }
 .fw-reveal__ch {
   display: inline-block;
@@ -791,6 +905,8 @@
   .anch__rule { font-size: 0.8rem; margin-top: 0.1rem; }
   .anch-toastslot { min-height: 1.2rem; }
   .anch--conservatory .anch-toastslot { min-height: 2.5rem; }
+  .anch--library .anch-toastslot { min-height: 3rem; }
+  .anch--study .anch-toastslot { min-height: 2.5rem; }
   .anch-done { margin-top: clamp(0.5rem, 7vh, 3rem); }
   .hv-grid { font-size: 0.8rem; }
   .hv-grid th, .hv-grid td { min-width: 1.6rem; padding: 0.05rem 0.22rem; }
@@ -800,11 +916,17 @@
   /* Measured: at 375x667 a 42vh hive left the Shuffle row 62px past the
      bottom of the stage. 33vh brings the whole cluster back on-screen and
      still leaves every petal a ~72px hit target (AAA 6.19). */
-  .hv-board { width: min(78vw, 300px, 33vh); }
+  .hv-board { width: min(86vw, 340px, 33vh); }
   .fw-def__text { font-size: 1.05rem; margin: 0.3rem 0; }
+  .anch--study .fw-def__text { font-size: clamp(1.15rem, 5.2vw, 1.45rem); margin: 0.3rem 0; }
+  .fw-clue { min-height: 2.9rem; }
+  .fw-slot { height: 1.7rem; }
   .tw-word { min-height: 1.8rem; }
   .tw-lists { min-height: 1.4rem; }
-  .ww-tile { min-height: 50px; }
+  /* The SE-class board still fills what it is given — the floor drops, the
+     "grow into the slack" behaviour does not. */
+  .ww-tile { min-height: 56px; }
+  .ww-grid { grid-auto-rows: minmax(56px, 1fr); max-height: 296px; }
 }
 
 /* iOS keyboard open: the Study's whisper row is the only thing that matters
@@ -812,7 +934,19 @@
    platform has to apply (--kb-shift), so the entry row rides up with far less
    of the room moving under her thumb (AAA 7.9). */
 html.kb-open .anch .fw-def__meta,
-html.kb-open .anch .anch-toastslot {
+html.kb-open .anch .fw-slots,
+html.kb-open .anch .fw-tried__cap {
+  display: none;
+}
+/* NOT the toast slot any more. It used to be the first thing collapsed, which
+   was harmless while the reply was "not that word" — it is the room's answer
+   now (AAA 4.17's closeness line), and she is most likely to be reading it
+   with the keyboard still up, one whisper after another. The height comes out
+   of the letter slots and the meta line instead. Every other room keeps the
+   old behaviour. */
+html.kb-open .anch--conservatory .anch-toastslot,
+html.kb-open .anch--gallery .anch-toastslot,
+html.kb-open .anch--library .anch-toastslot {
   display: none;
 }
 html.kb-open .anch .fw-def__text {

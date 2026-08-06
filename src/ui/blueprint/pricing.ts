@@ -97,3 +97,46 @@ export function lockedDraftLabel(
 export function stampsPrice(fromRow: number, toRow: number): boolean {
   return moveAt(toRow) !== moveAt(fromRow);
 }
+
+/**
+ * ── THE PADLOCK'S ANSWER (AAA 4.16 — never silence at a gate) ───────────────
+ *
+ * ROUND-6 DEFECT: tapping a padlocked door with no key played a 420ms shrug
+ * animation on the lock and said NOTHING. The refusal was correct in every
+ * other way — nothing charged, no scolding, the padlock drawn before she ever
+ * walked toward it — but a gate that answers a deliberate tap with a wiggle
+ * and no words is exactly the silence 4.16 forbids, and it is worse on the
+ * quiet end of the range: a player who has not yet learned what the brass
+ * shape means gets no way to learn it by trying. (It also read as a possible
+ * bug: an animation with no message is indistinguishable from a mis-tap.)
+ *
+ * So the lock speaks. Briefly, in the house's voice, warm and never scolding
+ * (AAA R.3: costs read as spending, never dying — and nothing is spent here
+ * at all), and the line CHANGES on a repeat tap so a second try is
+ * acknowledged rather than parroted back.
+ *
+ * Each line names the remedy — a key — because the refusal's whole job is to
+ * point at the Key Cabinet, the Boot Room and Fern's dawn key.
+ */
+export const LOCKED_REFUSAL_LINES: readonly string[] = [
+  'Shut fast. It wants a key.',
+  'Still shut — a key first, then the door.',
+  'The brass holds. Bring a key and it won’t argue.',
+];
+
+/** The refusal line for the `attempt`-th consecutive tap (0-based). */
+export function lockedRefusalLine(attempt: number): string {
+  const lines = LOCKED_REFUSAL_LINES;
+  return lines[Math.max(0, Math.floor(attempt)) % lines.length]!;
+}
+
+/**
+ * What assistive tech hears when the same tap lands. The visible line is
+ * short because it sits on a drawing; the spoken one restates the gate in
+ * full, because a screen-reader user cannot see the padlock glyph at all.
+ */
+export function lockedRefusalAnnouncement(attempt: number, toRow: number, keyCost: number): string {
+  const key = `${keyCost} key${keyCost === 1 ? '' : 's'}`;
+  return `${lockedRefusalLine(attempt)} The door onto ${rowName(toRow)} stays padlocked — ` +
+    `it opens with ${key}. Nothing was spent.`;
+}

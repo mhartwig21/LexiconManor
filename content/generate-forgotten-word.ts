@@ -1,5 +1,5 @@
-import { writeFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ForgottenWordPuzzle, Tier } from '../src/engine/types';
 
@@ -29,6 +29,29 @@ import type { ForgottenWordPuzzle, Tier } from '../src/engine/types';
  * usage blanks, ≤15-letter words, ≥20 entries, and ≥10 entries per tier so no
  * row runs out of Studies.
  *
+ * ---------------------------------------------------------------------------
+ * ROUND 6 — THE LINT WAS UNREACHABLE FROM CI
+ * ---------------------------------------------------------------------------
+ * Everything below was real and correct and *ran nowhere*: `lint()` was not
+ * exported, `main()` executed at module scope (so importing this file wrote a
+ * JSON artifact as a side effect), and `content:verify` never named it. The
+ * register gate therefore only fired when a human happened to re-run the
+ * generator by hand. Worse, the gate only ever looked at `ENTRIES` — the
+ * SHIPPED pool is `generated/forgotten-word.json`, so a hand-edit collapsing
+ * the three registers into one gloss, applied to the file the game actually
+ * loads, was invisible to every check in the repo.
+ *
+ * Both holes are closed here:
+ *   - `lint()`, `lintPuzzles()` and `ENTRIES` are exported; `main()` runs only
+ *     when this file is the process entry point, so importing it is free of
+ *     side effects.
+ *   - `--check` lints the AUTHORED entries *and* re-lints the SHIPPED JSON
+ *     through the same rules, then asserts the two agree, and writes nothing.
+ *     Wired into `content:verify` (package.json) and re-run from
+ *     `tests/forgotten-word-register.test.ts`, which also proves the gate
+ *     fails on a deliberately collapsed fixture — a lint nobody has watched
+ *     fail is a lint nobody knows still works.
+ *
  * ROUND 5 (writing pass, AAA 3.7 "best writing in the game"): the register
  * lint above was verified live — a deliberately-glossy poetic line trips both
  * the first-person gate and the overlap gate, so the three tiers are provably
@@ -50,7 +73,7 @@ const TIER_OF_OBSCURITY: Record<ForgottenWordPuzzle['obscurity'], Tier> = {
 /** Minimum entries per tier — a row must never run dry of Studies. */
 const MIN_PER_TIER = 10;
 
-interface Entry {
+export interface Entry {
   word: string;
   obscurity: ForgottenWordPuzzle['obscurity'];
   plain: string;
@@ -61,7 +84,7 @@ interface Entry {
   acceptedAnswers?: string[];
 }
 
-const ENTRIES: Entry[] = [
+export const ENTRIES: Entry[] = [
   // ---- common --------------------------------------------------------------
   {
     word: 'SERENDIPITY', obscurity: 'common',
@@ -474,7 +497,11 @@ function registerProblems(id: string, e: Entry): string[] {
   return problems;
 }
 
-function lint(entries: Entry[]): string[] {
+/**
+ * The pool gate. EXPORTED (round 6) so `content:verify` and vitest can both
+ * run it — an unexported build-time lint is a lint that does not exist.
+ */
+export function lint(entries: Entry[]): string[] {
   const problems: string[] = [];
   if (entries.length < 20) problems.push(`pool too small: ${entries.length} < 20`);
   const perTier: Record<Tier, number> = { 1: 0, 2: 0, 3: 0 };
@@ -515,14 +542,19 @@ function lint(entries: Entry[]): string[] {
   return problems;
 }
 
-function main() {
-  const problems = lint(ENTRIES);
-  if (problems.length > 0) {
-    console.error(problems.join('\n'));
-    throw new Error(`forgotten-word lint failed with ${problems.length} problem(s)`);
-  }
+// ---------------------------------------------------------------------------
+// The SHIPPED pool — what the game actually loads.
+// ---------------------------------------------------------------------------
 
-  const puzzles: (ForgottenWordPuzzle & { tier: Tier })[] = ENTRIES.map((e) => ({
+/** Where the built pool lives (the file `src/content/pools.ts` serves). */
+export const POOL_PATH = join(
+  dirname(fileURLToPath(import.meta.url)), 'generated', 'forgotten-word.json',
+);
+
+type ShippedPuzzle = ForgottenWordPuzzle & { tier: Tier };
+
+export function buildPuzzles(entries: Entry[] = ENTRIES): ShippedPuzzle[] {
+  return entries.map((e) => ({
     id: `fw-${e.word.toLowerCase()}`,
     word: e.word,
     obscurity: e.obscurity,
@@ -532,9 +564,80 @@ function main() {
     usage: e.usage,
     ...(e.acceptedAnswers ? { acceptedAnswers: e.acceptedAnswers } : {}),
   }));
+}
 
-  const outPath = join(dirname(fileURLToPath(import.meta.url)), 'generated', 'forgotten-word.json');
-  writeFileSync(outPath, JSON.stringify(puzzles));
+/** A shipped puzzle read back into the shape the register lint speaks. */
+export function entryOfPuzzle(p: ShippedPuzzle): Entry {
+  return {
+    word: p.word,
+    obscurity: p.obscurity,
+    plain: p.definitions.plain,
+    poetic: p.definitions.poetic,
+    riddle: p.definitions.riddle,
+    etymology: p.etymology,
+    usage: p.usage,
+    ...(p.acceptedAnswers ? { acceptedAnswers: [...p.acceptedAnswers] } : {}),
+  };
+}
+
+/**
+ * Lint the SHIPPED pool through the very same rules as the authored entries.
+ *
+ * This is the half that was missing: `ENTRIES` is the manuscript, but
+ * `generated/forgotten-word.json` is the book, and the Study reads the book.
+ * A hand-edit that collapses a word's three registers into one gloss lands in
+ * the JSON, where nothing looked.
+ */
+export function lintPuzzles(puzzles: ShippedPuzzle[]): string[] {
+  return lint(puzzles.map(entryOfPuzzle));
+}
+
+/** Reads the shipped pool from disk (throws if it is missing or malformed). */
+export function readShippedPool(path: string = POOL_PATH): ShippedPuzzle[] {
+  return JSON.parse(readFileSync(path, 'utf-8')) as ShippedPuzzle[];
+}
+
+/**
+ * The whole gate, in one call: the manuscript lints, the book lints, and the
+ * book is the manuscript. Returns [] when the Study is honest.
+ */
+export function verifyPool(path: string = POOL_PATH): string[] {
+  const problems = lint(ENTRIES);
+  let shipped: ShippedPuzzle[];
+  try {
+    shipped = readShippedPool(path);
+  } catch (err) {
+    return [...problems, `shipped pool unreadable at ${path}: ${(err as Error).message}`];
+  }
+  problems.push(...lintPuzzles(shipped).map((p) => `[shipped] ${p}`));
+  const expected = JSON.stringify(buildPuzzles());
+  if (JSON.stringify(shipped) !== expected) {
+    problems.push(
+      '[shipped] generated/forgotten-word.json is out of sync with ENTRIES — ' +
+      'run `npm run content:forgotten-word` (never hand-edit the pool)',
+    );
+  }
+  return problems;
+}
+
+function main() {
+  const check = process.argv.includes('--check');
+  const problems = check ? verifyPool() : lint(ENTRIES);
+  if (problems.length > 0) {
+    console.error(problems.join('\n'));
+    throw new Error(`forgotten-word lint failed with ${problems.length} problem(s)`);
+  }
+
+  if (check) {
+    console.log(
+      `forgotten-word: register lint clean over ${ENTRIES.length} authored entries ` +
+      'and the shipped pool',
+    );
+    return;
+  }
+
+  const puzzles = buildPuzzles();
+  writeFileSync(POOL_PATH, JSON.stringify(puzzles));
   const counts = puzzles.reduce<Record<string, number>>((m, p) => {
     m[`t${p.tier}`] = (m[`t${p.tier}`] ?? 0) + 1;
     return m;
@@ -542,4 +645,12 @@ function main() {
   console.log(`forgotten-word.json: ${puzzles.length} entries (${Object.entries(counts).sort().map(([k, v]) => `${k}: ${v}`).join(', ')})`);
 }
 
-main();
+/**
+ * Run only as the process entry point (round 6). `main()` used to execute at
+ * module scope, so this file could not be imported by a test or by another
+ * script without writing a build artifact as a side effect — which is exactly
+ * why the lint never reached CI.
+ */
+const invokedDirectly = process.argv[1] !== undefined &&
+  resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+if (invokedDirectly) main();

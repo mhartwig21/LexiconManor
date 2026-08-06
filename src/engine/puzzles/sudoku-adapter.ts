@@ -10,8 +10,8 @@
  * technique the tier ladder is built on could be bisected instead of deduced.
  * The claim has moved off the ink and onto a verb:
  *
- *   - pencil marks, "pencil what fits", and lifting her own figure: FREE. All
- *     exploration is thinking, and thinking is never priced;
+ *   - pencil marks, "pencil what fits", lifting her own figure, and UNDO:
+ *     FREE. All exploration is thinking, and thinking is never priced;
  *   - inking a figure that duplicates a visible peer: MALFORMED — weight 0,
  *     free shake + reason toast, nothing lands (AAA 3.2);
  *   - inking a board-legal figure: FREE, and it LANDS, unsettled. A wrong one
@@ -27,6 +27,15 @@
  *     that buys an actual figure, strictly dearer than the nudge, and it does
  *     forfeit `perfect`;
  *   - perfect = no charged balance and no bought figure.
+ *
+ * ═══ ROUND 6: UNDO (AAA 3.3, NYT-Sudoku parity) ═══
+ * Every board edit is remembered in a bounded `history`, and `{type:'undo'}`
+ * walks it back — free, unlimited within UNDO_DEPTH, and the one thing that
+ * makes a free "pencil what fits" button safe to sit next to the pencil
+ * toggle. It restores the BOARD only: steps already spent stay spent, the
+ * weighed-leaf memory stays monotone (never charge twice for the same claim
+ * because the board walked back to it), a bought figure is sealed in (it
+ * clears the stack — she paid for it), and a won leaf is final.
  *
  * Size: 'anchor'. An expert-baseline sudoku is a 10-minute-class solve —
  * pricing it as a +3 micro would misprice the wife-playtest economy; the
@@ -68,6 +77,12 @@ export type SudokuFeedback =
 
 export interface SudokuRoomState {
   engine: SudokuEngineState;
+  /**
+   * Board states before each undoable edit, oldest first — the room's UNDO
+   * (round 6). Bounded at UNDO_DEPTH; session-only (RoomHost holds room state
+   * in memory, so this never reaches the save file).
+   */
+  history: SudokuEngineState[];
   /** Charged balances — the room's only costed claim. */
   costedMistakes: number;
   /** Bought FIGURES only (the dead-end button). Forfeits perfect. */
@@ -85,9 +100,31 @@ export type SudokuAction =
   | { type: 'fill-pencil' }
   | { type: 'ink'; cell: number; digit: number }
   | { type: 'unink'; cell: number }
+  | { type: 'undo' }
   | { type: 'balance' }
   | { type: 'nudge' }
   | { type: 'reveal-cell'; cell?: number };
+
+/**
+ * How many board edits UNDO can walk back. Deep enough to survive a long
+ * pencilling run, bounded so a two-hour Diabolical session cannot grow a
+ * memory leak out of 81-cell snapshots (AAA 9.4).
+ */
+export const UNDO_DEPTH = 64;
+
+/**
+ * Record the board she is leaving, then move to the new one. Every undoable
+ * edit goes through here; the priced CLAIM (balance) does not, because it
+ * changes no cell — only the room's memory of which leaves it has already
+ * weighed, which must stay monotone so undo can never make a leaf chargeable
+ * a second time.
+ */
+function remember(state: SudokuRoomState, engine: SudokuEngineState): SudokuRoomState {
+  const history = state.history.length >= UNDO_DEPTH
+    ? [...state.history.slice(state.history.length - UNDO_DEPTH + 1), state.engine]
+    : [...state.history, state.engine];
+  return { ...state, engine, history };
+}
 
 function isPerfect(s: SudokuRoomState): boolean {
   return s.costedMistakes === 0 && s.hintsBought === 0;
@@ -118,6 +155,7 @@ export const sudokuAdapter: RoomPuzzleAdapter<SudokuPuzzle, SudokuRoomState, Sud
   start(puzzle: SudokuPuzzle, _ctx: RoomContext): SudokuRoomState {
     return {
       engine: startSudoku(puzzle),
+      history: [],
       costedMistakes: 0,
       hintsBought: 0,
       nudgesBought: 0,
@@ -128,9 +166,10 @@ export const sudokuAdapter: RoomPuzzleAdapter<SudokuPuzzle, SudokuRoomState, Sud
 
   reduce(puzzle, state, action) {
     const events: RoomEvent[] = [];
+    /** A free, silent board edit — remembered, so UNDO can walk it back. */
     const quiet = (engine: SudokuEngineState) => {
       if (engine === state.engine) return { state, events, outcome: outcomeOf(state) };
-      const next: SudokuRoomState = { ...state, engine };
+      const next = remember(state, engine);
       return { state: next, events, outcome: outcomeOf(next) };
     };
 
@@ -139,6 +178,27 @@ export const sudokuAdapter: RoomPuzzleAdapter<SudokuPuzzle, SudokuRoomState, Sud
     if (action.type === 'clear-pencil') return quiet(clearPencil(state.engine, action.cell));
     if (action.type === 'fill-pencil') return quiet(fillPencil(state.engine));
     if (action.type === 'unink') return quiet(uninkCell(puzzle, state.engine, action.cell));
+
+    // ── UNDO — free, and the reason every other verb here can be free ────
+    // Pencil work IS the solve (AAA 3.3), so the room owes the player a way
+    // back from any board edit, exactly as NYT Sudoku's permanent Undo does.
+    // It restores the previous BOARD only: charges already paid stay paid
+    // (steps are spending, never rewound), `balancedSignatures` stays at its
+    // current, monotone value so an already-weighed leaf is never charged
+    // twice, and a won leaf is final — the room has already reported `solved`.
+    if (action.type === 'undo') {
+      if (state.engine.status !== 'playing' || state.history.length === 0) {
+        return { state, events, outcome: outcomeOf(state) };
+      }
+      const prev = state.history[state.history.length - 1]!;
+      const engine: SudokuEngineState = prev.balancedSignatures === state.engine.balancedSignatures
+        ? prev
+        : { ...prev, balancedSignatures: state.engine.balancedSignatures };
+      const next: SudokuRoomState = {
+        ...state, engine, history: state.history.slice(0, -1),
+      };
+      return { state: next, events, outcome: outcomeOf(next) };
+    }
 
     // ── The priced claim: how many of her own figures are astray ─────────
     if (action.type === 'balance') {
@@ -189,6 +249,11 @@ export const sudokuAdapter: RoomPuzzleAdapter<SudokuPuzzle, SudokuRoomState, Sud
       let next: SudokuRoomState = {
         ...state,
         engine,
+        // A purchase SEALS the leaf: undo may not walk back over a figure she
+        // paid steps for (the engine already treats a bought figure as
+        // immutable — `uninkCell` refuses it). Everything she does after this
+        // is undoable again from the next edit onward.
+        history: [],
         hintsBought: state.hintsBought + 1,
         attempts: state.attempts + 1,
         lastFeedback: { kind: 'revealed', cell },
@@ -221,14 +286,13 @@ export const sudokuAdapter: RoomPuzzleAdapter<SudokuPuzzle, SudokuRoomState, Sud
         return { state: next, events, outcome: outcomeOf(next) };
       }
       case 'placed': {
-        const next: SudokuRoomState = { ...state, engine };
+        const next = remember(state, engine);
         events.push({ type: 'progress', detail: `inked:${blanksRemaining(engine)}-left` });
         return { state: next, events, outcome: outcomeOf(next) };
       }
       case 'won': {
         const next: SudokuRoomState = {
-          ...state,
-          engine,
+          ...remember(state, engine),
           attempts: state.attempts + 1,
           lastFeedback: { kind: 'solved' },
         };

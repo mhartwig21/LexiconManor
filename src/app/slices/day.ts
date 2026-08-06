@@ -20,7 +20,8 @@ import {
   beginDay, buildDayRecord, canAdvancePhase, canEndDay, pruneEventsAtDusk, shouldTriggerDusk,
 } from '../../engine/day';
 import {
-  appendEntry, stepsRemaining as remaining, teaArcPoints, STEP_TABLE,
+  appendEntry, stepsRemaining as remaining, teaArcFloor, teaArcPoints, teaBonus,
+  STEP_TABLE,
 } from '../../engine/economy/steps';
 import { carryOverFrom } from '../../engine/manor/deck';
 
@@ -49,6 +50,23 @@ export interface DaySlice {
 
   /** A2 additive (chrome-only): morning→exploring and dusk→night edges. */
   advanceDayPhase(): void;
+
+  /**
+   * A2 ADDITIVE (called by the chrome's MorningCard when Bramble's morning
+   * scene closes) — THE TEA ARC, BOUGHT RATHER THAN CLOCKED (AAA 4.10d).
+   *
+   * Round-7 defect: `startDay` applied `max(known, teaArcPoints(day))` on the
+   * calendar, whether or not she ever sat down with Bramble, so the game's one
+   * meta-progression was a day counter wearing a friendship's clothes. The
+   * point is now granted HERE — after the shared morning actually played — and
+   * the day's pot is topped up to match in the same breath, so the +N lands on
+   * the counter on the screen she is standing on rather than silently at dawn
+   * (AAA 4.9 / 11.15). A skipped morning falls back to `teaArcFloor`, one rung
+   * behind (AAA 5.5: nothing is missable, it is only slower).
+   *
+   * Idempotent by construction: it never lifts her past today's ceiling.
+   */
+  shareMorningTea(): void;
 }
 
 export const createDaySlice =
@@ -97,19 +115,23 @@ export const createDaySlice =
       if (prevDay && prevDay.phase !== 'night') return; // a day is already underway
       const dayNumber = (prevDay?.day ?? 0) + 1;
 
-      // ── THE LIVE TEA ARC (AAA 4.10d, round-5 audit). ────────────────────
+      // ── THE LIVE TEA ARC (AAA 4.10d, round-5 audit; round-7 correction). ─
       // Bramble's authored file grants 2 affinity points in its entire
-      // lifetime, and TEA_BY_RANK's full pot wants 6 — so the published day
+      // lifetime, and TEA_BY_POINTS's full pot wants 6 — so the published day
       // 6–10 curve was verified against warmth the live game could not reach.
       // The arc lives where the arc actually happens: sitting down to tea with
-      // her IS the one substantive conversation AAA 5.9 allows per day, and
-      // every second morning warms her by a point (`teaArcPoints`), to a
-      // ceiling. Applied as a FLOOR, before the pot is poured, so it never
-      // eats the scarce gift currency, never overwrites points she earned by
-      // gifting, never double-counts on a resumed day, and cannot be lost to a
-      // dialogue choice (AAA 5.13).
+      // her IS the one substantive conversation AAA 5.9 allows per day.
+      //
+      // ROUND 7: that point is now GRANTED BY THE SHARED MORNING ITSELF
+      // (`shareMorningTea`, called when her scene closes), not by the
+      // calendar. What survives here is the MERCY FLOOR — the same curve one
+      // rung behind (`teaArcFloor`) — so a player who skipped her mornings
+      // still warms, later and less. Applied as a floor, before the pot is
+      // poured, so it never eats the scarce gift currency, never overwrites
+      // points she earned by gifting, never double-counts on a resumed day,
+      // and cannot be lost to a dialogue choice (AAA 5.13).
       const known = get().affinities.bramble ?? 0;
-      const warmed = Math.max(known, teaArcPoints(dayNumber));
+      const warmed = Math.max(known, teaArcFloor(dayNumber));
 
       const begun = beginDay(prevDay, {
         brambleAffinity: warmed,
@@ -208,6 +230,26 @@ export const createDaySlice =
       const to = day.phase === 'morning' ? 'exploring' : day.phase === 'dusk' ? 'night' : null;
       if (!to || !canAdvancePhase(day.phase, to)) return;
       set({ day: { ...day, phase: to } });
+    },
+
+    shareMorningTea: () => {
+      const day = get().day;
+      if (!day || day.phase !== 'morning') return;
+      const known = get().affinities.bramble ?? 0;
+      const ceiling = teaArcPoints(day.day);
+      if (known >= ceiling) return;    // already as warm as the mornings allow
+      // One rung per shared morning: a player catching up after a gap warms a
+      // rung a day, never all at once.
+      const warmed = known + 1;
+      get().adjustAffinity('bramble', 1);
+      // …and the pot she is drinking grows to match, through the audited
+      // ledger, so the single largest step grant in the game is a visible
+      // floating +N at the moment the friendship pays out (AAA 4.9 / 11.15) —
+      // rather than a silent dawn entry the StepMeter used to swallow.
+      const topUp = teaBonus(warmed) - teaBonus(known);
+      if (topUp > 0) {
+        get().applyStepEntry({ reason: 'tea', delta: topUp, at: Date.now() });
+      }
     },
     };
   };

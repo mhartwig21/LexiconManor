@@ -8,27 +8,82 @@
    toggle) and prefers-reduced-motion both strip it. Costs render as
    spending, never dying (R.3): no red flashes, no shakes here — the wax
    hue appears only on mistake deltas, which ARE the mistake state (6.15).
+
+   LAYERING: this file consumes the published scale in ui/chrome/layers.ts —
+   page 0 · overlay 40 · chrome 50 · veil 55 · notice 60 · moment 100 ·
+   material 120/121 · platform 9999. Read that file before changing any
+   z-index here; the numbers are a decision about what may be TAPPED, not
+   only about what is seen (AAA 11.5).
    ========================================================================== */
 
 /* --- Header bar ----------------------------------------------------------- */
 
+/* z: chrome (50) — ABOVE the overlays (40), deliberately and per AAA 11.5's
+   documented exception. The day numeral, the candle and the three currency
+   chips stay READABLE through a draft or a conversation, because "can I
+   afford one more room?" is the question the whole game is asking and a
+   conversation is exactly when she is deciding it. What it is NOT is
+   tappable: see the `.chr-header` inert block below. */
 .chr-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 40;
+  z-index: var(--z-chrome, 50);
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 8px;
-  padding: calc(4px + env(safe-area-inset-top, 0px)) 12px 4px;
-  min-height: 48px;
+  /* 4 + 3 + the 1px hairline below = 8px of frame around a 44pt control.
+     box-sizing is border-box, so `min-height` counts that border: the old
+     symmetric 4/4 made the bar 53px tall against a 52px token, and a bar 1px
+     taller than the clearance every page reserves is the drift in miniature.
+     MEASURED, not reasoned: tests/modal-hit-test.mjs compares the bar's real
+     bounding box to --chrome-h at both viewport heights. */
+  padding: calc(4px + env(safe-area-inset-top, 0px)) 12px 3px;
+  /* THE BAR IS THE TOKEN. Every subordinate surface clears itself by
+     `var(--chrome-h)`, so if the bar's own height were a separate literal the
+     two would drift the first time either was retuned — which is exactly how
+     the shipped navigation bug worked (a 52px clearance against a bar that
+     tokens.css had trimmed to 50px at the short-screen breakpoint, AAA 11.4).
+     Now there is one number, in one place, and both sides read it.
+     box-sizing is border-box app-wide (index.css), so this height INCLUDES
+     the 4+4 padding and the safe-area band it adds on top. The content floor
+     is the retire moon's 44pt target (AAA 6.19): 44 + 4 + 3 + 1px of border
+     = 52 = --chrome-h, so the bar measures the token exactly. The short-screen
+     block at the bottom of this file re-balances that arithmetic for 50. */
+  min-height: calc(var(--chrome-h) + env(safe-area-inset-top, 0px));
   background: var(--paper-raised);
   border-bottom: var(--rule);
   box-shadow: 0 1px 0 rgba(43, 33, 24, 0.04);
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* --- The chrome does not reach through an overlay (AAA 11.5) -------------- */
+
+/* THE DEFECT THIS CLOSES. `.chr-header` was z-index 40; so was `.dlg`
+   (dialogue) and so was `.bp-modal` (draft + floorplan cabinet). At equal
+   z-index paint order falls back to DOM order, and <GameChrome /> mounts
+   AFTER the route <Switch> in App.tsx — so the header sat on top of, and
+   hit-tested above, every scene the player believed was modal. `.chr-retire`
+   lives in that band: two taps and the evening is over. A player tapping the
+   top of a "modal" draft could end her own day, and `elementFromPoint` at the
+   retire moon returned `.chr-retire` with the draft wide open.
+   Two locks, because the failure is destructive and silent:
+     1. HERE, in CSS, instantly: the whole bar goes pointer-transparent while
+        any overlay is mounted, so taps fall through to the scene that owns
+        them. `:has()` needs no JS and cannot lag a frame.
+     2. In React (DayHeader + overlay-watch.ts): the retire control is not
+        RENDERED while an overlay is up. A control that is not mounted cannot
+        be hit-tested, so the guarantee does not rest on one CSS feature.
+   The attribute selector is the fallback for any engine without :has(); it is
+   stamped by overlay-watch.ts. Both selectors, always paired.
+   Nothing inside the header may set `pointer-events: auto` — the bar is a
+   readout during a scene, and a readout has no verbs. */
+:root[data-overlay-open] .chr-header,
+body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
+  pointer-events: none;
 }
 
 .chr-day {
@@ -52,17 +107,22 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 3px;
 }
 
 /* --- Currency chips ------------------------------------------------------- */
 
+/* Three chips now share the right cluster with the retire moon (gems, keys and
+   — new in round 6 — bookmarks, per AAA 11.16). The padding is trimmed from
+   8px to 6px and the cluster gap from 4 to 3 so the whole bar still fits a
+   390px viewport without the day numeral or the candle giving up a pixel. */
 .chr-chip {
+  position: relative;   /* the anchor its own ±N floats against (AAA 11.15) */
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   min-height: 28px;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: var(--radius-card);
   background: var(--paper-shade);
   color: var(--ink-soft);
@@ -73,7 +133,23 @@
 .chr-chip svg { display: block; }
 .chr-chip--gems { color: var(--gilt); }
 .chr-chip--keys { color: var(--ink-soft); }
+.chr-chip--bookmarks { color: var(--ink-soft); }
 .chr-chip__n { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* The unit word, for the polite live region only. Real text, not aria-label:
+   VoiceOver announces "3 gems" when the counter moves, and the glyph carries
+   the same fact visually (AAA 6.3). */
+.chr-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* --- Step meter (the candle) ---------------------------------------------- */
 
@@ -177,6 +253,79 @@
   100% { opacity: 0; transform: translate(-50%, -22px); }
 }
 
+/* --- The notice rail (AAA 11.11 / 11.14 / 11.18) -------------------------- */
+
+/* Payout lines and warmer friendships, on the screen she is actually on.
+   z: notice (60) clears both the full-screen overlays (40) and the chrome bar
+   itself (50), because the whole point is that a notice fired behind a modal
+   is a notice that did not happen — and `pointer-events: none` all the way
+   down means nothing here is tappable through that modal (AAA 11.5). It was
+   45, a number chosen to beat an overlay band that was ALSO 40; the rungs are
+   named and spaced now (layers.ts) so the next layer to arrive does not have
+   to guess a gap.
+
+   ITS OWN BAND, DELIBERATELY. The moment layer (src/ui/moment/*, z-index 100)
+   owns the strip immediately under the chrome for campaign-class seals, and
+   those seals are TAPPABLE. So this rail takes a band further down the glass:
+   a session notice can never cover a moment's dismiss target (11.5), and a
+   moment can never swallow a payout line (11.11). The offset is
+   viewport-relative on purpose — a pixel copy of another layer's card height
+   would silently bury one of them the first time that card grew (11.4). It
+   clears the bottom-anchored dialogue sheet at every size in the matrix. */
+.chr-notices {
+  position: fixed;
+  top: 33%;
+  left: 0;
+  right: 0;
+  z-index: var(--z-notice, 60);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  pointer-events: none;
+}
+
+/* A REWARD, dressed as one (AAA 11.14): a raised sheet with a named eyebrow
+   and a colored rule. Flavour in this game is unadorned prose on the page
+   (.chr-scene__line, .dlg__text--narration) — nothing shares a rule with it. */
+.chr-notice {
+  max-width: 34ch;
+  padding: 7px 11px;
+  border: var(--rule);
+  border-left: 3px solid var(--gilt);
+  border-radius: var(--radius-card);
+  background: var(--paper-raised);
+  box-shadow: var(--shadow-lift);
+  text-align: left;
+  animation: chrNoticeIn 260ms var(--ease-settle);
+}
+
+.chr-notice--warm { border-left-color: var(--moss); }
+
+.chr-notice__eyebrow {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.chr-notice__line {
+  display: block;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: 1.3;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+@keyframes chrNoticeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
 /* --- Retire button (moon) ------------------------------------------------- */
 
 .chr-retire {
@@ -211,7 +360,12 @@
 .chr-scene {
   position: fixed;
   inset: 0;
-  z-index: 30; /* under the header so the candle & floats stay visible */
+  /* z: overlay (40). The morning card and the night digest ARE modal scenes
+     — the day cannot proceed around them — so they take the overlay rung and
+     the chrome above them goes inert with everything else (AAA 11.5). They
+     stay UNDER the bar (50) on purpose: the candle and its floats must remain
+     visible while the day is handed over. */
+  z-index: var(--z-overlay, 40);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -263,6 +417,35 @@
 .chr-scene__btn:active,
 .chr-scene__btn.is-pressed { transform: translateY(1px); box-shadow: none; }
 
+/* The scene's own route to settings (AAA 11.24) — quiet, but a real control:
+   the RECOGNISABLE WORD leads and the house's voice is the smaller, softer
+   subtitle (11.7), and it holds the 44pt floor (6.19) rather than being a
+   text link the owner has to aim at. Deliberately unlike `.chr-scene__btn`:
+   this is stepping aside, not the verb of the scene. */
+.chr-scene__aside {
+  margin-top: 10px;
+  min-height: var(--tap-target);
+  padding: 6px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-sheet);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.chr-scene__aside-sub {
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+}
+.chr-scene__aside:active { transform: translateY(1px); }
+
 .chr-scene--enter { animation: chrSceneIn 400ms var(--ease-settle); }
 
 @keyframes chrSceneIn {
@@ -300,12 +483,76 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* --- The morning's grants, itemised (AAA 4.9 / 4.10d / 11.16) -------------
+   The tea, the welcome pot and yesterday's carry-over, named where they are
+   poured. Reward copy, so it is deliberately NOT the flavour line's rule
+   (.chr-scene__line) — ink, size and layout all differ (AAA 11.14). */
+.chr-dawn {
+  margin: 6px 0 2px;
+}
+
+.chr-dawn__list {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 14px;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--ink-soft);
+}
+
+.chr-dawn__list dt { text-align: left; }
+.chr-dawn__list dd {
+  margin: 0;
+  text-align: right;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The next rung: the arc's one honest promise, in a quieter hand. */
+.chr-dawn__rung {
+  margin: 6px 0 0;
+  font-family: var(--font-body);
+  font-size: var(--text-small, 0.86rem);
+  color: var(--ink-faint);
+  text-wrap: balance;
+}
+
+/* --- "The house, so far" (Chronicles arc panel, AAA 4.10d / 11.16) -------- */
+.chr-house {
+  display: grid;
+  gap: 8px;
+}
+
+.chr-house__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 4px 14px;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--ink);
+}
+
+.chr-house__value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.chr-house__note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--text-small, 0.86rem);
+  color: var(--ink-faint);
+}
+
 /* --- The dusk veil (AAA 4.12: ≤4s, walk-but-no-interact, gentle) ---------- */
 
 .chr-dusk {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  /* z: veil (55) — over the bar, because dusk falls on the whole house. */
+  z-index: var(--z-veil, 55);
   pointer-events: none; /* the walking grace — taps pass through the veil */
   background:
     radial-gradient(ellipse at 50% 20%, rgba(36, 29, 21, 0.0) 0%, rgba(36, 29, 21, 0.55) 100%),
@@ -363,6 +610,7 @@
   .chr-steps__count--tick { animation: none; }
   .chr-float { animation: chrFloatStill 1100ms linear forwards; }
   .chr-float--gain, .chr-float--warm { animation-name: chrFloatStill; }
+  .chr-notice { animation: none; }
   .chr-scene--enter { animation: none; }
   .chr-dusk { animation: chrDuskStill 200ms linear forwards; }
   .chr-dusk__line { animation: chrDuskLineStill 200ms linear 300ms forwards; }
@@ -372,6 +620,7 @@
 .chr--reduced .chr-steps--guttering .chr-steps__flame { animation: none; transform: scale(0.7); }
 .chr--reduced .chr-steps__count--tick { animation: none; }
 .chr--reduced .chr-float { animation: chrFloatStill 1100ms linear forwards; }
+.chr--reduced .chr-notice { animation: none; }
 .chr--reduced .chr-scene--enter { animation: none; }
 .chr--reduced .chr-dusk { animation: chrDuskStill 200ms linear forwards; }
 .chr--reduced .chr-dusk__line { animation: chrDuskLineStill 200ms linear 300ms forwards; }
@@ -391,4 +640,34 @@
 @keyframes chrDuskLineStill {
   from { opacity: 0; }
   to   { opacity: 0.95; }
+}
+
+/* --- Very narrow frames (last block: must win over the base rules) --------- */
+
+/* iPhone SE 1st-gen / 4-class, 320pt. MEASURED (round-6 live pass): the third
+   currency chip pushed the retire moon 25px past the right edge at 320, and
+   the shell is `overflow: hidden`, so it did not scroll — it simply cut the
+   exit off (AAA 11.3). The bar now sheds its least load-bearing pixels first:
+   the word "steps" (the candle, the tabular numeral and the candle SVG's full
+   `aria-label` all still say it) and some padding. Nothing that counts is
+   dropped — three currencies, the candle and the moon all stay, and the moon
+   keeps its 44pt box (AAA 6.19). */
+@media (max-width: 360px) {
+  .chr-header { gap: 6px; padding-left: 8px; padding-right: 8px; }
+  .chr-steps { min-width: 0; gap: 6px; padding: 2px 4px; }
+  .chr-steps__label { display: none; }
+  .chr-chip { padding: 2px 4px; gap: 2px; }
+}
+
+/* Short screens (iPhone SE/8 at 375×667 and any compact standalone frame).
+   tokens.css trims --chrome-h to 50px here so every surface gives the bar 2px
+   less; the BAR has to actually be 2px shorter or the clearance is a lie and
+   the top of every page slides under it (AAA 11.4 — the drift this whole pass
+   exists to end). The retire moon keeps its full 44pt target (AAA 6.19), so
+   the 2px comes out of the bar's own padding: 44 + 3 + 2 + 1px border = 50.
+   If --chrome-h is ever retuned again, re-check this arithmetic — the live
+   hit test (tests/modal-hit-test.mjs) measures the bar against the token at
+   both viewport heights and fails if they part company. */
+@media (max-height: 700px) {
+  .chr-header { padding-top: calc(3px + env(safe-area-inset-top, 0px)); padding-bottom: 2px; }
 }

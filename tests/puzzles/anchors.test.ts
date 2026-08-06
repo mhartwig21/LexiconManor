@@ -5,7 +5,8 @@ import type {
 import type { RoomContext, RoomEvent } from '../../src/engine/rooms/room-puzzle';
 import { getRoomAdapter, registeredRoomKinds } from '../../src/engine/rooms/registry';
 import {
-  wordWebAdapter, WORD_WEB_POOL, type WordWebRoomState,
+  wordWebAdapter, WORD_WEB_POOL,
+  type WordWebPuzzleEx, type WordWebRoomState,
 } from '../../src/engine/rooms/adapters/word-web';
 import {
   hiveAdapter, HIVE_POOL, HIVE_LADDER, ladderIndex, ladderThreshold, type HiveRoomState,
@@ -14,7 +15,8 @@ import {
   twistleAdapter, TWISTLE_POOL, type TwistleRoomState,
 } from '../../src/engine/rooms/adapters/twistle';
 import {
-  forgottenWordAdapter, FORGOTTEN_WORD_POOL, type ForgottenWordRoomState,
+  forgottenWordAdapter, FORGOTTEN_WORD_POOL, closenessOf,
+  type ForgottenWordRoomState,
 } from '../../src/engine/rooms/adapters/forgotten-word';
 import { fernLine, fernKeys } from '../../src/engine/rooms/fern-lines';
 import { STEP_TABLE } from '../../src/engine/economy/steps';
@@ -39,7 +41,7 @@ const eventsOfType = (events: RoomEvent[], type: RoomEvent['type']) =>
 // Fixtures (mirroring tests/engine.test.ts shapes)
 // ---------------------------------------------------------------------------
 
-const webPuzzle: WordWebPuzzle = {
+const webPuzzle: WordWebPuzzleEx = {
   id: 'web-fixture',
   tier: 2,
   groups: [
@@ -48,7 +50,12 @@ const webPuzzle: WordWebPuzzle = {
     { theme: 'Iron ___', tier: 'blue', words: ['FIST', 'WILL', 'CURTAIN', 'MAN'] },
     { theme: '___ Bar', tier: 'purple', words: ['CANDY', 'SALAD', 'SPACE', 'CROW'] },
   ],
-  ambiguousWords: ['SPACE'],
+  // BLOCK is a genuine 5th member of "Iron ___" — the trap, and the thread it
+  // pretends to be (AAA 2.10, round 7: the relation is emitted, not discarded).
+  ambiguousWords: ['BLOCK'],
+  herrings: [
+    { words: ['FIST', 'WILL', 'CURTAIN', 'MAN', 'BLOCK'], relation: 'semantic' },
+  ],
 };
 
 const hivePuzzle: HivePuzzle = {
@@ -232,12 +239,56 @@ describe('word-web adapter', () => {
     expect(r.outcome).toEqual({ status: 'active', perfect: false });
   });
 
-  it('acknowledges planted herrings on a wrong guess (AAA 2.10)', () => {
+  /**
+   * AAA 2.10 [BEAT] — round 7. Three regressions guarded here:
+   *   (a) the herring is acknowledged WITH ITS RELATION (the bar's own example
+   *       is informative because it names the thread);
+   *   (b) it only fires when ≥3 of her four tiles sat inside the trap. The old
+   *       rule fired on ANY flagged word in the selection, which told a player
+   *       who had never touched the trap that she had — misinformation, not a
+   *       hint;
+   *   (c) every wrong guess still yields ≥1 bit even with no trap in sight:
+   *       `together` says how many of the four really do share a thread, which
+   *       prunes the logic space Connections leaves untouched.
+   */
+  it('acknowledges a herring, with its relation, when she really chased it', () => {
     const s = startState();
     const r = wordWebAdapter.reduce(webPuzzle, s, {
-      type: 'submit', selection: ['SPACE', 'DUNK', 'FIST', 'WAFFLE'],
+      // FIST + WILL are Iron ___; BLOCK is the planted 5th member. Three of the
+      // four tiles sit inside the trap, so she was demonstrably following it.
+      type: 'submit', selection: ['FIST', 'WILL', 'BLOCK', 'TOAST'],
     });
-    expect(r.state.lastFeedback).toMatchObject({ kind: 'wrong', herring: ['SPACE'] });
+    expect(r.state.lastFeedback).toMatchObject({
+      kind: 'wrong',
+      herring: { relation: 'semantic' },
+      together: 2,
+    });
+    const fb = r.state.lastFeedback as { herring: { matched: string[] } };
+    expect(fb.herring.matched.sort()).toEqual(['BLOCK', 'FIST', 'WILL']);
+  });
+
+  it('does NOT claim a herring the guess never chased (round-6 misinformation)', () => {
+    const s = startState();
+    const r = wordWebAdapter.reduce(webPuzzle, s, {
+      // BLOCK is flagged, but only one other tile touches the trap — the old
+      // rule printed the knowing line here anyway.
+      type: 'submit', selection: ['BLOCK', 'WAFFLE', 'CANDY', 'FIST'],
+    });
+    expect(r.state.lastFeedback).toMatchObject({ kind: 'wrong', herring: null });
+  });
+
+  it('every wrong guess yields ≥1 bit: the free structural count (AAA 2.10)', () => {
+    const s = startState();
+    // Four words from four different groups: nothing belongs together.
+    const scattered = wordWebAdapter.reduce(webPuzzle, s, {
+      type: 'submit', selection: ['WAFFLE', 'DUNK', 'FIST', 'CANDY'],
+    });
+    expect(scattered.state.lastFeedback).toMatchObject({ kind: 'wrong', together: 1 });
+    // Two from one group: a strictly different, strictly useful claim.
+    const paired = wordWebAdapter.reduce(webPuzzle, s, {
+      type: 'submit', selection: ['WAFFLE', 'PANCAKE', 'FIST', 'CANDY'],
+    });
+    expect(paired.state.lastFeedback).toMatchObject({ kind: 'wrong', together: 2 });
   });
 
   it('malformed input is free (AAA 3.2)', () => {
@@ -573,6 +624,48 @@ describe('forgotten-word adapter', () => {
     const r = guess(s, 'rainstorm');
     expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
     expect(r.state.fw.guesses).toEqual(['RAINSTORM']);
+    // A repeat is not a new claim, so it never adds a new elimination row.
+    expect(r.state.closeness).toHaveLength(1);
+  });
+
+  /**
+   * ROUND 7 — AAA 4.17's closeness taxonomy, which the Sanctum mandates for
+   * the identical verb at a LOWER price. The Study charged 2–3 steps per
+   * whisper and returned one bit ("not that word"); the room we benchmark for
+   * reveal juice is built entirely out of closeness.
+   */
+  it('closenessOf counts shared letters as a multiset and positions exactly', () => {
+    expect(closenessOf('PETRICHOR', 'PETRICHOR')).toEqual({ shared: 9, exact: 9 });
+    // R appears twice in PETRICHOR, so RAINSTORM's two R's both count.
+    expect(closenessOf('PETRICHOR', 'RAINSTORM')).toEqual({ shared: 5, exact: 0 });
+    // PET_ lines up letter for letter — the positional signal, on its own axis.
+    expect(closenessOf('PETRICHOR', 'PETUNIAS')).toEqual({ shared: 4, exact: 3 });
+    expect(closenessOf('PETRICHOR', 'ZZZZZZZZZ')).toEqual({ shared: 0, exact: 0 });
+  });
+
+  it('a wrong whisper answers with closeness, not a bare refusal (AAA 4.17)', () => {
+    const r = guess(start(1), 'RAINSTORM');
+    expect(r.state.lastFeedback).toEqual({
+      kind: 'wrong',
+      guess: 'RAINSTORM',
+      guessesLeft: 4,
+      shared: 5,
+      exact: 0,
+      rightLength: true,
+    });
+  });
+
+  it('the elimination history keeps its closeness (AAA 3.3)', () => {
+    let s = start(1);
+    s = guess(s, 'RAINSTORM').state;
+    s = guess(s, 'PETRIFIED').state;
+    expect(s.closeness.map((c) => c.guess)).toEqual(['RAINSTORM', 'PETRIFIED']);
+    expect(s.closeness[1]).toMatchObject({ guess: 'PETRIFIED' });
+    // PETRIFIED shares P,E,T,R,I with PETRICHOR and four of them are in place.
+    expect(s.closeness[1]!.exact).toBeGreaterThanOrEqual(4);
+    // A free malformed refusal never writes a row.
+    s = guess(s, 'LANTERN').state;
+    expect(s.closeness).toHaveLength(2);
   });
 });
 
@@ -683,6 +776,76 @@ describe('shipped content — Library boards (AAA 2.6–2.11)', () => {
       for (const g of trivia) expect(g.tier, `${p.id} "${g.theme}"`).toBe('yellow');
       expect(p.groups.filter((g) => g.type === 'wordplay').length, p.id).toBeGreaterThanOrEqual(2);
       for (const g of p.groups) expect(['semantic', 'trivia', 'wordplay'], p.id).toContain(g.type);
+    }
+  });
+
+  /**
+   * ROUND 7 — the channel that beats Connections is live on EVERY night.
+   * 22 of the 55 shipped boards used to carry `ambiguousWords: []`, so on 40%
+   * of boards the acknowledged-herring line could not fire at all, and the
+   * ones that could printed a board-agnostic string naming neither the words
+   * nor the relation. Both halves are now content invariants.
+   */
+  const HERRING_RELATIONS = ['rhyme', 'shared-affix', 'doubled-letter', 'semantic'];
+
+  it('2.10: every board ships at least one trap, and every trap is NAMED', () => {
+    for (const p of WORD_WEB_POOL) {
+      const words = p.groups.flatMap((g) => g.words);
+      expect((p.ambiguousWords ?? []).length, p.id).toBeGreaterThanOrEqual(1);
+      expect(p.herrings?.length ?? 0, p.id).toBeGreaterThanOrEqual(1);
+      for (const h of p.herrings ?? []) {
+        expect(HERRING_RELATIONS, `${p.id} "${h.relation}"`).toContain(h.relation);
+        // Fewer than 3 words could never satisfy the ≥3-of-4 match rule, so it
+        // would be a set of dead copy that never reaches the player.
+        expect(h.words.length, p.id).toBeGreaterThanOrEqual(3);
+        expect(new Set(h.words).size, p.id).toBe(h.words.length);
+        for (const w of h.words) expect(words, p.id).toContain(w);
+        // A shared-affix trap that cannot point at the letters is not a hint.
+        if (h.relation === 'shared-affix') expect(h.detail, p.id).toBeTruthy();
+      }
+      for (const w of p.ambiguousWords ?? []) {
+        expect(
+          (p.herrings ?? []).some((h) => h.words.includes(w)),
+          `${p.id}: herring "${w}" has no named relation`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('2.10: on EVERY shipped board some wrong guess actually fires the trap', () => {
+    /** A wrong (not one-away) selection with ≥3 tiles inside a named trap. */
+    const chase = (p: (typeof WORD_WEB_POOL)[number]): string[] | null => {
+      const all = p.groups.flatMap((g) => g.words);
+      const overlap = (sel: string[]) =>
+        Math.max(...p.groups.map((g) => sel.filter((w) => g.words.includes(w)).length));
+      for (const h of p.herrings ?? []) {
+        const hw = h.words;
+        for (let i = 0; i < hw.length; i++) {
+          for (let j = i + 1; j < hw.length; j++) {
+            for (let k = j + 1; k < hw.length; k++) {
+              const base = [hw[i]!, hw[j]!, hw[k]!];
+              for (const w of all) {
+                if (base.includes(w)) continue;
+                const sel = [...base, w];
+                if (overlap(sel) <= 2) return sel;
+              }
+            }
+          }
+        }
+      }
+      return null;
+    };
+
+    for (const p of WORD_WEB_POOL) {
+      const sel = chase(p);
+      expect(sel, `${p.id}: no wrong guess can reach its own trap`).not.toBeNull();
+      const s = wordWebAdapter.start(p, ctx(p.tier ?? 1));
+      const r = wordWebAdapter.reduce(p, s, { type: 'submit', selection: sel! });
+      expect(r.state.lastFeedback, `${p.id}: ${sel!.join('/')}`).toMatchObject({ kind: 'wrong' });
+      const fb = r.state.lastFeedback as { herring: { matched: string[] } | null; together: number };
+      expect(fb.herring, `${p.id}: ${sel!.join('/')}`).not.toBeNull();
+      expect(fb.herring!.matched.length, p.id).toBeGreaterThanOrEqual(3);
+      expect([1, 2], p.id).toContain(fb.together);
     }
   });
 

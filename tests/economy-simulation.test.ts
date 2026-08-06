@@ -3,20 +3,23 @@ import {
   campaignProfileForDay, climbStepCost, deckMixAt, keyLuckFor, measuredKeyRate, median, medianOf,
   microShareAt, quantile, quantileOf, share,
   reserveToTop, simulateDay, simulateDays, simulateCampaigns,
-  MOVEMENT, SANCTUM_ROW, TIME_TABLE,
+  MOVEMENT, SANCTUM_LANDING_ROW, TIME_TABLE,
   PROFILE_DECENT, PROFILE_GREAT, PROFILE_SKILLED, PROFILE_SKIPPER,
 } from '../src/engine/economy/simulate';
 import {
   doorLockedAt, fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, ledgerTotal,
   teaArcPoints, BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, KEY_SUPPLY,
-  MOVE_COST_BY_ROW, TEA_ARC, TEA_BY_RANK,
+  MOVE_COST_BY_ROW, TEA_ARC, TEA_BY_POINTS,
 } from '../src/engine/economy/steps';
 import { createRng } from '../src/engine/rng';
 import {
   BASE_DECK, carryOverFrom, deckFor, CARRY_OVER_EFFECTS, UTILITY_EFFECTS,
 } from '../src/engine/manor/deck';
 import { rollCards } from '../src/engine/manor/drafting';
-import { createManor } from '../src/engine/manor/grid';
+import {
+  atSanctumDoor, cellKey, createManor, SANCTUM_DOOR_CELL, SANCTUM_DOOR_KEY,
+} from '../src/engine/manor/grid';
+import { SANCTUM_CELL } from '../src/engine/types';
 import { getRoomAdapter, registeredRoomKinds } from '../src/engine/rooms/registry';
 import brambleDialogue from '../content/authored/dialogue/bramble.json';
 import fernDialogue from '../content/authored/dialogue/fern.json';
@@ -31,12 +34,14 @@ import fernDialogue from '../content/authored/dialogue/fern.json';
  *
  *   (a) a no-refund day tops out on the middle floors in a couple of minutes;
  *   (b) a decent day is 10–15 MINUTES at the median, p90 ≤ 23;
- *   (c) a skilled player FIRST REACHES the Sanctum row on day 6–10;
+ *   (c) a skilled player FIRST REACHES the Sanctum LANDING on day 6–10;
  *   (d) she typically WINS THE VOLUME in 14–28 days of daily play.
  *
  * The old `it.fails` tripwire on (b) is gone: it is a passing gate now.
  *
- * Rows are 1-based here (entrance 1 … Sanctum 7), matching the docs.
+ * Rows are 1-based here: entrance 1 … THE SANCTUM LANDING 6, the cell the word
+ * is spoken from. (Round 7: the milestone used to be row 7, the sealed
+ * Sanctum's own cell, which is never drafted and never entered.)
  */
 
 /**
@@ -67,6 +72,16 @@ function authoredAffinity(file: DialogueFile, character: string): number {
 
 const AUTHORED_BRAMBLE = authoredAffinity(brambleDialogue as DialogueFile, 'bramble');
 const AUTHORED_FERN = authoredAffinity(fernDialogue as DialogueFile, 'fern');
+
+/**
+ * These suites play thousands of seeded days and hundreds of seeded campaigns
+ * through the real ledger; several of them run for a second or two on an idle
+ * box and considerably longer when the dev machine is running other suites (or
+ * a browser) beside them. Vitest's 5s default turned that into a flake, so the
+ * heavy cases carry their own budget — the assertions are deterministic per
+ * seed, so a slow box must not read as a tuning regression.
+ */
+const HEAVY_MS = 60_000;
 
 const DAYS = 3000;
 const CAMPAIGNS = 400;
@@ -131,6 +146,49 @@ describe('the simulation models the REAL post-cull deck (not a remembered one)',
   });
 });
 
+describe('the milestone is the LIVE door, not a storey nobody enters (round 7)', () => {
+  it('measures the climb to the cell the word is actually spoken from', () => {
+    // THE ROUND-7 BLOCKER IN ONE ASSERTION. `SANCTUM_ROW` was 7 — the sealed
+    // Sanctum's own row, which is pre-placed at manor build, never drafted and
+    // never walked into. Everything 4.10c/d/e published was therefore verified
+    // against a storey the game never asks the player to enter, while the
+    // storey it does ask for (the landing, 0-based row 5) cost 15 bare steps:
+    // under the 18-step budget. The milestone is now the landing itself.
+    expect(SANCTUM_LANDING_ROW).toBe(SANCTUM_DOOR_CELL.row + 1);   // 1-based
+    expect(SANCTUM_LANDING_ROW).toBeLessThan(SANCTUM_CELL.row + 1);
+    expect(SANCTUM_DOOR_KEY).toBe(cellKey(SANCTUM_DOOR_CELL));
+  });
+
+  it('holds the headline invariant for THAT ascent, not the one above it', () => {
+    // The clause the finding proved false: a bare, perfectly efficient ascent
+    // to the door must cost more than the whole base budget, so the top is
+    // always bought with refunds. Measured at the live landing: 21 > 18.
+    const bareToDoor = reserveToTop(1, { walkbackPerRow: 0 });
+    expect(bareToDoor).toBeGreaterThan(BASE_DAY_BUDGET);
+    // …and it is not scraping past it on a rounding error.
+    expect(bareToDoor).toBeGreaterThanOrEqual(BASE_DAY_BUDGET + 2);
+    // Day 1's whole purse — the budget plus the scripted welcome pot, with no
+    // tea at all at 0 affinity — is at best exactly the price of the bare
+    // walk: arriving would mean spending the entire first day on stairs, with
+    // nothing left for a card and no key for either padlocked storey.
+    expect(bareToDoor).toBeGreaterThanOrEqual(BASE_DAY_BUDGET + firstMorningPot(1));
+  });
+
+  it('never claims a reach the live predicate would refuse', () => {
+    // The sim's `reachedSanctum` and the game's `atSanctumDoor` must mean the
+    // same thing. A fresh manor puts her at the entrance: not at the door, on
+    // any day, however many fragments she has filed.
+    const manor = createManor(4242);
+    expect(atSanctumDoor(manor)).toBe(false);
+    expect(atSanctumDoor(null)).toBe(false);
+    // Standing on the landing cell is necessary but NOT sufficient: the room
+    // she drafted there has to have drawn the north door.
+    expect(atSanctumDoor({ ...manor, playerCell: { ...SANCTUM_DOOR_CELL } })).toBe(false);
+    // And no simulated day ever tops out above the landing.
+    for (const r of [...decent, ...great]) expect(r.maxRow).toBeLessThanOrEqual(SANCTUM_LANDING_ROW);
+  });
+});
+
 describe('4.10 — climbing IS the expense', () => {
   it('prices movement strictly upward by row band', () => {
     for (let r = 1; r < MOVE_COST_BY_ROW.length; r++) {
@@ -141,8 +199,8 @@ describe('4.10 — climbing IS the expense', () => {
   });
 
   it('makes a bare, perfect ascent cost MORE than the whole day budget', () => {
-    // The headline of the overhaul: the Sanctum row can never be reached on
-    // the budget alone — it has to be paid for with tea, snacks and solves.
+    // The headline of the overhaul: the Sanctum landing can never be reached
+    // on the budget alone — it has to be paid for with tea, snacks and solves.
     const bare = reserveToTop(1, { walkbackPerRow: 0 });
     expect(bare).toBeGreaterThan(BASE_DAY_BUDGET);
     const realistic = reserveToTop(1, PROFILE_SKILLED);
@@ -151,7 +209,7 @@ describe('4.10 — climbing IS the expense', () => {
   });
 
   it('charges more for each storey than the one below it', () => {
-    for (let row = 2; row < SANCTUM_ROW; row++) {
+    for (let row = 2; row < SANCTUM_LANDING_ROW; row++) {
       expect(climbStepCost(row, PROFILE_SKILLED))
         .toBeGreaterThan(climbStepCost(row - 1, PROFILE_SKILLED));
     }
@@ -184,19 +242,19 @@ describe('4.10 — climbing IS the expense', () => {
   });
 
   it("makes Bramble's tea a campaign arc, not a day-2 windfall", () => {
-    expect(TEA_BY_RANK[0]).toBe(0);                       // day 1: a kind cup
-    for (let r = 1; r < TEA_BY_RANK.length; r++) {
-      expect(TEA_BY_RANK[r]!).toBeGreaterThan(TEA_BY_RANK[r - 1]!);
+    expect(TEA_BY_POINTS[0]).toBe(0);                       // day 1: a kind cup
+    for (let r = 1; r < TEA_BY_POINTS.length; r++) {
+      expect(TEA_BY_POINTS[r]!).toBeGreaterThan(TEA_BY_POINTS[r - 1]!);
     }
     // Fully warmed she is worth roughly half a day again — earned over weeks.
-    const top = TEA_BY_RANK[TEA_BY_RANK.length - 1]!;
+    const top = TEA_BY_POINTS[TEA_BY_POINTS.length - 1]!;
     expect(top).toBeGreaterThanOrEqual(BASE_DAY_BUDGET * 0.45);
     expect(top).toBeLessThanOrEqual(BASE_DAY_BUDGET * 0.75);
   });
 });
 
 describe('4.10a — the no-refund day', () => {
-  it('tops out on the middle floors, never the Sanctum row', () => {
+  it('tops out on the middle floors, never the Sanctum landing', () => {
     const m = median(skipper, (r) => r.maxRow);
     expect(m).toBeGreaterThanOrEqual(3);
     expect(m).toBeLessThanOrEqual(5);
@@ -241,7 +299,7 @@ describe('4.10b — the decent day is 10–15 MINUTES (the owner-playtest fix)',
       expect(m).toBeLessThanOrEqual(15);
       expect(quantile(days, 0.9, (r) => r.minutes)).toBeLessThanOrEqual(23);
     }
-  });
+  }, HEAVY_MS);
 
   it('refunds visibly extend the day past the skipper baseline', () => {
     expect(median(decent, (r) => r.refunded)).toBeGreaterThan(10);
@@ -258,7 +316,7 @@ describe('4.10b — the decent day is 10–15 MINUTES (the owner-playtest fix)',
   });
 });
 
-describe('4.10c — a great single day still only flirts with the Sanctum row', () => {
+describe('4.10c — a great single day still only flirts with the Sanctum landing', () => {
   it('reaches the upper floors but not the top as a matter of course', () => {
     const m = median(great, (r) => r.maxRow);
     expect(m).toBeGreaterThanOrEqual(5);
@@ -297,7 +355,7 @@ describe('4.10d — the CAMPAIGN: first Sanctum reach lands on day 6–10', () =
       expect(m).toBeGreaterThanOrEqual(6);
       expect(m).toBeLessThanOrEqual(10);
     }
-  });
+  }, HEAVY_MS);
 
   it('is driven by the META arcs, not by the player suddenly getting better', () => {
     // Same hands every day: the profile's puzzle skill is constant, so the
@@ -447,7 +505,7 @@ describe('the padlock is LIVE, and the live key supply can pay for it', () => {
     // giveaway: a single offer never hands her a full ascent's worth.
     expect(banking).toBeLessThan(
       [4, 5, 6].reduce((s, row) => s + DOOR_LOCKS.chanceByRow[row]!, 0));
-  });
+  }, HEAVY_MS);
 
   it("Fern's morning key is an arc, not a bypass", () => {
     expect(fernMorningKeys(0)).toBe(0);                      // day 1 is the gate
@@ -458,7 +516,7 @@ describe('the padlock is LIVE, and the live key supply can pay for it', () => {
     expect(authored).toBeLessThan(
       [4, 5, 6].reduce((s, row) => s + DOOR_LOCKS.chanceByRow[row]! * DOOR_LOCKS.keyCost, 0));
     // Weeks of bookmarks past it can add a second, never a third.
-    expect(Math.max(...KEY_SUPPLY.fernMorningKeys)).toBeLessThan(3);
+    expect(Math.max(...KEY_SUPPLY.fernMorningKeysByPoints)).toBeLessThan(3);
   });
 });
 

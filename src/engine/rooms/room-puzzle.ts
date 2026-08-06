@@ -44,6 +44,27 @@ export type RoomEvent =                    // consumed by slices, never by adapt
   | { type: 'hint'; weight: 1 | 2 }
   | { type: 'progress'; detail?: string }  // sfx/juice/music-director hook
   | { type: 'solved'; perfect: boolean }
+  /**
+   * A payout from inside the puzzle. `gems`/`keys` are live (the Conservatory
+   * pays a gem at Every Petal).
+   *
+   * `fragmentId` is a DOCUMENTED SEAM, NOT the room→mystery channel, and the
+   * distinction is load-bearing enough to write down (round 9 decision):
+   *
+   *   - No adapter emits it today. The channel that actually pays the mystery
+   *     for solving a word game is the spine watcher in app/slices/journal.ts,
+   *     which reads `room-solved` off the audited event stream and calls
+   *     `collectFragmentForSolve(kind)` — the Study pays a definition line,
+   *     other rooms a lintel engraving, one per channel per day.
+   *   - It is KEPT rather than deleted because it is the only way an adapter
+   *     could ever hand out ONE SPECIFIC fragment for one specific puzzle (a
+   *     future authored set-piece), and app/slices/room.ts already honours it.
+   *
+   * THE RULE, for whoever writes that adapter: an adapter that emits
+   * `fragmentId` is choosing a fragment ITSELF, so the day's channel valve
+   * must be closed for that solve or the player is paid twice for one puzzle
+   * with two different fragments. Do not wire both.
+   */
   | { type: 'reward'; gems?: number; keys?: number; fragmentId?: string };
 
 export interface RoomPuzzleAdapter<P = unknown, S = unknown, A = unknown> {

@@ -118,8 +118,13 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
   const pencil = (plain: string) => {
     if (won || !sel) return;
     sfx.tap();
+    // The cursor follows a CHANGE, never a keypress. Pressing the letter the
+    // cell already carries used to advance anyway, so a confirming re-tap
+    // silently skipped the next blank and she typed the following letter into
+    // the wrong cipher letter (AAA 3.3 — earned state must not move under her).
+    const changed = state.engine.guesses[sel] !== plain;
     dispatch({ type: 'pencil', cipherLetter: sel, plain });
-    setSel(advanceFrom(sel));
+    if (changed) setSel(advanceFrom(sel));
   };
   const erase = () => {
     if (won || !sel) return;
@@ -251,6 +256,16 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
             </span>
           </div>
 
+          {/* Every key in this pad commits on RELEASE (`onClick`), never on
+              pointerdown — the house rule the Counting House already states in
+              its own source, and the reason a 32.5px key is safe: the deck is
+              `position: sticky` over a scrolling stage, so the gesture that
+              scrolls the print to read the top of a long cryptogram BEGINS on
+              a letter key, and a press that lands wrong must be abortable by
+              sliding off. (Erase was already `onClick`; two commit idioms in
+              one keyboard is also 6.16's one-metaphor-per-verb.) Press
+              feedback is unaffected — `.is-pressed` lands from the capture
+              delegate in app/platform/boot.ts on pointerdown, AAA U.1. */}
           <div className="mic-keys">
             {KEY_ROWS.map((row, ri) => (
               <div key={row} className="mic-keys__row">
@@ -258,7 +273,7 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
                   <button
                     key={ch}
                     className={`mic-key${dupes.has(ch) || Object.values(state.engine.guesses).includes(ch) ? ' mic-key--dim' : ''}`}
-                    onPointerDown={() => pencil(ch)}
+                    onClick={() => pencil(ch)}
                     disabled={won || !sel}
                     aria-label={`Pencil ${ch}`}
                   >

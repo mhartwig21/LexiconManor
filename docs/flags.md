@@ -55,4 +55,30 @@ such as `sys.dewey.first-pet`.)
 ## Reserved today
 
 - `sys.tutorial.first-draft` — set when the scripted day-1 draft completes.
+- `sys.dewey.first-pet` — set the first time the cat is petted.
+- `sys.first-gift.<character>` — set by `app/slices/dialogue.ts giveGift()`.
 - `vol.volume-1.solved` — set by the volume machine on the winning guess.
+- `vol.volume-1.landing-reached` — set by the Sanctum screen the first time she
+  stands on the landing. Listed in `CODE_SET_FLAGS`, so authored dialogue may
+  condition on the climb.
+
+### Viewed / unread bookkeeping (code-set families, round 6)
+
+These are per-id families, so they cannot be enumerated in `CODE_SET_FLAGS`.
+None is referenced by an authored condition — they are read only by UI
+derivations — so the orphan rule never sees them. They exist because AAA 11.20
+requires a marker to clear on **viewing**, which is persistent state, and never
+on `recentEvents`, which dusk prunes.
+
+| Flag | Set by | When |
+|---|---|---|
+| `vol.<volumeId>.viewed-<fragmentId>` | `app/slices/journal.ts` | the fragment is actually displayed on a journal tab |
+| `sys.unread.backfilled` | `app/slices/migrations.ts` | once, on the first load of a save written before viewed-flags existed |
+| `sys.keepsake.<keepsakeId>` | `pages/ChroniclesPage.tsx` | the keepsake shelf is scrolled into view |
+| `sys.plate.<cardId>` | `pages/ManorPage.tsx` | the Floorplan Cabinet is opened |
+
+Both `posy.quest1.done` and `posy.deputy` (authored, existing) additionally gate
+Floorplan Cabinet cards via `engine/manor/deck.ts` `unlockedBy` — the gate is the
+story flag itself, so it cannot drift from the conversation that fills it.
+
+All five match the frozen grammar above (`viewed-v1-e1` is one kebab segment).

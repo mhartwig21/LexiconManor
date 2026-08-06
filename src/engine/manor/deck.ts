@@ -129,15 +129,34 @@ export const BASE_DECK: readonly RoomCard[] = [
 ];
 
 /**
- * Cabinet-unlockable extras (unlockedBy = achievement/quest ids other agents
- * award via meta.unlockCard). Kept tiny until Posy's quest chains land.
+ * Cabinet-unlockable extras (AAA 4.7).
+ *
+ * ROUND-7 DEFECT, fixed here: `unlockedBy` named `posy-quest-1` /
+ * `posy-quest-2` — ids nothing in the game ever produced. Posy's favor chain
+ * had been authored the whole time and sets `posy.quest1.done`; her locked
+ * rank sets `posy.deputy` (content/authored/dialogue/posy.json). The two
+ * vocabularies never met, `meta.unlockCard` had zero call sites, and both
+ * plates in the cabinet were permanently silhouetted.
+ *
+ * `unlockedBy` is now THE STORY FLAG ITSELF (docs/flags.md grammar), so the
+ * award path is a lookup instead of a translation table someone has to
+ * remember to keep in step: the meta slice watches the flag set and calls
+ * `unlockCard` for every card whose flag has been set (app/slices/meta.ts).
+ * `tests/keepsakes.test.ts` walks the authored dialogue and fails the build if
+ * a card is gated on a flag no authored effect can set.
  */
 export const UNLOCKABLE_CARDS: readonly RoomCard[] = [
   { id: 'winter-garden', name: 'The Winter Garden', category: 'puzzle', puzzleKind: 'hive',
-    doorLayouts: [CROSS], tierRange: [1, 3], gemCost: 0, rarity: 'unusual', unlockedBy: 'posy-quest-1' },
+    doorLayouts: [CROSS], tierRange: [1, 3], gemCost: 0, rarity: 'unusual', unlockedBy: 'posy.quest1.done' },
   { id: 'map-room', name: 'The Map Room', category: 'mystery',
-    doorLayouts: [CORNER], tierRange: [1, 3], gemCost: 1, rarity: 'unusual', unlockedBy: 'posy-quest-2' },
+    doorLayouts: [CORNER], tierRange: [1, 3], gemCost: 1, rarity: 'unusual', unlockedBy: 'posy.deputy' },
 ];
+
+/** Cards whose gating flag is set — the live unlock path (AAA 11.17). */
+export function cardsUnlockedByFlags(flags: readonly string[]): string[] {
+  const have = new Set(flags);
+  return UNLOCKABLE_CARDS.filter((c) => c.unlockedBy && have.has(c.unlockedBy)).map((c) => c.id);
+}
 
 const CARDS_BY_ID = new Map<string, RoomCard>(
   [...BASE_DECK, ...UNLOCKABLE_CARDS].map((c) => [c.id, c]),
@@ -195,11 +214,12 @@ export const CARD_PREVIEWS: Record<string, string> = {
 
 /**
  * Player-facing names for cabinet unlock quests (AAA 4.7: a locked plate names
- * the deed that fills it). Ids are awarded by other agents via meta.unlockCard.
+ * the deed that fills it). Keyed by the gating STORY FLAG, so a plate and the
+ * conversation that fills it cannot drift apart. Rendered by CabinetSheet.
  */
 export const UNLOCK_QUEST_NAMES: Record<string, string> = {
-  'posy-quest-1': "Posy's first favor",
-  'posy-quest-2': "Posy's second favor",
+  'posy.quest1.done': "Posy's lost word",
+  'posy.deputy': "Posy's deputy sash",
 };
 
 export interface UtilityEffect {
@@ -241,6 +261,28 @@ export const UTILITY_EFFECTS: Record<string, UtilityEffect> = {
   'still-room': { gems: 1, steps: 2,
     toast: 'Cordial and a gem. +2 steps — and a batch set to steep for tomorrow' },
 };
+
+/**
+ * THE RENDER SEAM FOR `UtilityEffect.toast` (AAA 11.18).
+ *
+ * Round-6 defect: these lines had been authored since the deck was written
+ * ("Two gems, cold and bright"; "Dry socks, and a spare key on the hook") and
+ * `applyDraftEffects` (app/slices/manor.ts) applied the steps, gems and keys
+ * without ever reading `.toast`. Two gems appeared in the bar with no word
+ * said about them and no delta on the chip. Unused notice copy is a notice
+ * someone forgot to show, so the string now has exactly one accessor and
+ * `tests/notice-copy.test.ts` fails the build if any shipped notice string
+ * loses its render site.
+ *
+ * Rendered by `src/ui/chrome/NoticeRail.tsx`, driven off the audited event
+ * spine's `room-drafted` — so the notice lands on whatever screen she is
+ * actually standing on (AAA 11.11), not on the one that happened to apply it.
+ */
+export function payoutNoticeFor(cardId: string): { title: string; toast: string } | null {
+  const effect = UTILITY_EFFECTS[cardId];
+  if (!effect) return null;
+  return { title: cardById(cardId)?.name ?? cardId, toast: effect.toast };
+}
 
 /** Cards whose face promises a key — the padlock arc's supply (AAA 4.10d). */
 export const KEY_BEARING_CARD_IDS: readonly string[] = Object.entries(UTILITY_EFFECTS)

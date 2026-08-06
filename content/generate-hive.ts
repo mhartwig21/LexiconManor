@@ -193,6 +193,13 @@ const PROPER_STRIKE = new Set([
  * display type as the reward for a five-minute hunt. Kept local and small; the
  * upstream additions are filed as a shared-file request.
  */
+/* ROUND 9: every word below has been PROMOTED into generate-gate.ts's shared
+   TONE_WORDS, so `gateOk` already rejects them for every generator, not just
+   this one. The local set is kept as belt-and-braces (it costs nothing and
+   documents where each strike was actually caught on glass), but the shared
+   gate is now the load-bearing copy — and it immediately earned its keep:
+   promoting the 'murder' inflections surfaced CHOKING as a live target word in
+   a shipped Gallery board, which this local list could never have seen. */
 const TONE_STRIKE = new Set([
   'diarrhea', 'diarrhoea', 'erotica', 'urinate', 'urinated', 'urinating',
   'impotent', 'impotence', 'glaucoma', 'migraine', 'hernia', 'angina',
@@ -201,6 +208,12 @@ const TONE_STRIKE = new Set([
   'decimate', 'decimated', 'impale', 'impaler', 'impaled', 'nonlethal',
   'deadlift', 'gunpoint', 'militiamen', 'militiaman', 'undead', 'abort',
   'aborted', 'malice', 'lament', 'lamented',
+  // Round 7: caught in the shipped pool while capturing the Every Petal
+  // trophy — the found list printed MURDERED and MURDERER back to the player
+  // as her prize. The shared gate blocks 'murder'/'murders' but not the
+  // inflections, and the pangram lane's rank-120k reach admits them.
+  'murdered', 'murderer', 'murderers', 'murdering', 'murderous',
+  'slaughter', 'slaughtered', 'manslaughter', 'strangled', 'strangler',
 ]);
 
 /** True if a word clears the curation bar for findable words. */

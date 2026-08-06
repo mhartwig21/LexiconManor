@@ -306,15 +306,24 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     Counting House counts as anchor-weight and a future deck edit breaks the test
     rather than the owner's evening).
   - **4.10c — a great single day flirts with the top, it does not own it.** A sharply
-    played day reaches row 5–6; the Sanctum row is reached on **<25%** of even great
-    days. Standing at that door is a campaign event, not a Tuesday.
-  - **4.10d — a skilled player FIRST REACHES the Sanctum row on day 6–10** (median),
+    played day reaches row 5–6; the **Sanctum landing** is reached on **<25%** of even
+    great days. Standing at that door is a campaign event, not a Tuesday.
+    **Round 6 correction:** these clauses said "the Sanctum row", and the simulation
+    measured row 7 — a row the player never stands on, because row 6 (0-based row 5)
+    is the *landing* where the sealed door is, and row 7 is the Sanctum behind it.
+    The arc was therefore verified against a storey nobody enters; at the live
+    landing the old tables gave 41.5% day-1 reach against a published <8%. The
+    milestone row is now `SANCTUM_LANDING_ROW`, tied to `SANCTUM_DOOR_CELL.row`, and
+    `tests/economy-simulation.test.ts` asserts the identity so the two can never drift
+    apart again.
+  - **4.10d — a skilled player FIRST REACHES the Sanctum landing on day 6–10** (median),
     **<8% on day 1**, and >90% of campaigns get there by day 21. The gate must be
     **meta, not skill**: the simulated player's puzzle ability is identical on day 1 and
     day 30 — what changes is Bramble's tea (the step arc) and Fern/Key-Cabinet access
     (the padlock arc), both affinity-gated at one conversation per day (5.9). A bare,
     perfectly efficient ascent must cost **more than the entire base day budget**
-    (`reserveToTop(1) > BASE_DAY_BUDGET`), so the top is always bought with refunds.
+    (`reserveToTop(1) > BASE_DAY_BUDGET`, measured **to the landing**: 21 > 18), so the
+    top is always bought with refunds.
   - **4.10e — the volume is typically won in 14–28 days** of daily play (median), <2%
     inside the first week, >90% by day 35. Winning requires **both** gates independently:
     knowing the word (fragments) *and* reaching the door that day.
@@ -322,12 +331,22 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     whole campaign: the tea arc's extra budget goes into the *climb* (cheap in minutes),
     never into more puzzles per evening.
   - **Levers, in the order they were pulled** (all in `engine/economy/steps.ts`, the one
-    tunable file): per-row movement pricing (`MOVE_COST_BY_ROW`, −1 ground floor → −5 up
+    tunable file): per-row movement pricing (`MOVE_COST_BY_ROW`, −1 ground floor → −9 up
     top — *climbing is the expense*); leaner-as-you-climb refunds (anchor +6/+5/+4, micro
     +3/+3/+2 — a tier-3 solve no longer funds the storey that reached it); a lean base
-    budget (18); locked upper-row doors (`DOOR_LOCKS`, rows 4–6 only, keys reset nightly
-    so every ascent re-earns its way up); and scarce refills (snack +3..+7, tea 0 → +11
-    across the friendship).
+    budget (18); locked upper-row doors (`DOOR_LOCKS`, **rows 4–5 carry the gate** — row 6
+    is the sealed Sanctum and is never drafted, so the published "≈1.7 padlocks per
+    ascent" used to be summed over a row the drafter never sees; keys reset nightly
+    so every ascent re-earns its way up); and scarce refills (green-room refills
+    +2..+6, compounding hooks +1..+2, tea 0 → +11 across the friendship).
+    **Round 6 correction:** this clause read "snack +3..+7", which described a
+    distribution the deck cannot produce — refills are fixed authored numbers
+    on the green cards (Kitchen +6, Larder +5, Boot Room +3, Still Room +2),
+    and the Still Room sat *below* the declared floor while nothing paid 7 at
+    all. `STEP_TABLE.snack` now declares the deck's real extremes and
+    `tests/steps.test.ts` holds it to them; the simulation samples the shipped
+    payouts rather than a uniform roll. Felt difficulty is unchanged — no card
+    payout moved.
 - 4.11 At least two rooms/services implement *compounding* refunds (BP's Nursery
   pattern: "+N per future X") and at least one cross-day investment exists (Fern's
   seeds; a tea variant). **Round 5: satisfied** — `CARRY_OVER_EFFECTS`

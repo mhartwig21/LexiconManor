@@ -8,13 +8,17 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { VolumeState } from '../src/engine/types';
+import type { ManorState, PlacedRoom, VolumeState } from '../src/engine/types';
+import { cellKey, createManor, SANCTUM_DOOR_CELL } from '../src/engine/manor/grid';
 import { freshVolumeState, openedLetterFlag, solvedFlag, type VolumeContent } from '../src/engine/volume';
 import {
-  alphabetFacts, crossRefs, definitionSlots, filedToday, foundByKind, guessHistory,
-  guessVerdict, journalNudge, letterBoxes, nextUninterpreted, sanctumReadiness,
-  THIN_FILE_THRESHOLD, VERDICT_TOKENS, type GuessVerdict,
+  alphabetFacts, arrivalShade, crossRefs, definitionSlots, displayedFragmentIds, foundByKind,
+  guessHistory, guessVerdict, journalNudge, journalUnread, landingFlag, letterBoxes,
+  nextUninterpreted, sanctumReadiness, SPENT_ARRIVAL_STEPS, THIN_FILE_THRESHOLD, VERDICT_TOKENS,
+  viewedFragmentFlag, viewedFragmentIds,
+  type GuessVerdict, type JournalTab,
 } from '../src/engine/journal';
+import { FLAG_REGEX } from '../src/engine/dialogue/validate';
 import { getDialogueFile } from '../src/engine/dialogue/content';
 import { useManorStore } from '../src/app/store';
 
@@ -151,6 +155,51 @@ describe('guess history — her own elimination record (AAA 4.17)', () => {
   });
 });
 
+/**
+ * The arrival taxonomy (round-8 defect): the Portrait used to open every
+ * first visit with "So you have climbed far enough to ask" — measured live on
+ * day 2 from the Entrance Hall, with nothing filed, reached by a link in the
+ * journal. He was congratulating a climb nobody made. The shades below are
+ * what he now answers, and each one must have an authored line, exactly the
+ * way the five closeness shades do.
+ */
+describe('arrival shades — the climax answers the walk she had (AAA 4.16 / 5.1)', () => {
+  it('classifies first / spent / again off the real movement table', () => {
+    expect(arrivalShade({ firstEver: true, stepsLeft: 40 })).toBe('first');
+    // Even on fumes, a first arrival is a first arrival.
+    expect(arrivalShade({ firstEver: true, stepsLeft: 0 })).toBe('first');
+    expect(arrivalShade({ firstEver: false, stepsLeft: SPENT_ARRIVAL_STEPS })).toBe('spent');
+    expect(arrivalShade({ firstEver: false, stepsLeft: SPENT_ARRIVAL_STEPS + 1 })).toBe('again');
+    // "Spent" is priced off the climb itself, never a magic number.
+    expect(SPENT_ARRIVAL_STEPS).toBeGreaterThan(0);
+  });
+
+  it('every shade has an authored portrait.arrive.* line on the door screen', () => {
+    const portrait = getDialogueFile('portrait');
+    for (const shade of ['first', 'spent', 'again'] as const) {
+      const node = portrait.nodes.find((n) => n.id === `portrait.arrive.${shade}`);
+      expect(node, `portrait.arrive.${shade} is missing — the fallback would carry it alone`).toBeTruthy();
+      expect(node!.trigger, 'arrival lines ride the door screen\'s own slot').toBe('sanctum-idle');
+      expect(node!.once, 'an arrival line is not a one-shot').toBe(false);
+    }
+  });
+
+  it('only the first-arrival line is allowed to mention the climb', () => {
+    const portrait = getDialogueFile('portrait');
+    const text = (id: string) =>
+      portrait.nodes.find((n) => n.id === id)!.lines.map((l) => l.text).join(' ');
+    expect(text('portrait.arrive.first')).toMatch(/climb|stair|storey/i);
+    // A repeat visit must not be told it has "climbed far enough to ask" —
+    // the exact sentence that shipped, on a day with no climb in it.
+    expect(text('portrait.arrive.again')).not.toMatch(/climbed far enough/i);
+  });
+
+  it('the landing flag is a legal vol.* write-once flag (docs/flags.md)', () => {
+    expect(landingFlag(volume.id)).toBe(`vol.${volume.id}.landing-reached`);
+    expect(landingFlag(volume.id)).toMatch(FLAG_REGEX);
+  });
+});
+
 describe('nudges — sympathetic, never silence (AAA 4.16)', () => {
   it('a thin case file is flagged thin, never gated', () => {
     const r = sanctumReadiness(volume, fresh());
@@ -212,14 +261,121 @@ describe('nudges — sympathetic, never silence (AAA 4.16)', () => {
     expect(journalNudge(volume, { ...all, status: 'solved' })).toBeNull();
   });
 
-  it('filedToday feeds the unread wax dots', () => {
-    const events = [
-      { day: 2, at: 1, event: { type: 'fragment-found', fragmentId: 'v1-d1' } as const },
-      { day: 3, at: 2, event: { type: 'fragment-found', fragmentId: 'v1-e1' } as const },
-    ];
-    expect([...filedToday(events, 3)]).toEqual(['v1-e1']);
+});
+
+// ---------------------------------------------------------------------------
+// The unread chain (AAA 11.19-11.22)
+// ---------------------------------------------------------------------------
+
+const noLetters = { arrivedLetterIds: [] as string[], openedLetterIds: new Set<string>() };
+const unread = (state: VolumeState, viewed: string[] = [], letters = noLetters) =>
+  journalUnread(volume, state, { viewedIds: new Set(viewed), ...letters });
+
+describe('unread is state, not recency', () => {
+  it('is empty when nothing is filed — no marker where nothing is unread (11.21)', () => {
+    const u = unread(fresh());
+    expect(u.total).toBe(0);
+    expect(u.fragments).toEqual([]);
+  });
+
+  it('marks every filed-but-unviewed fragment, grouped by the tab that shows it', () => {
+    const state = withFound('v1-d1', 'v1-e1', 'v1-t2');
+    const u = unread(state);
+    expect(u.word).toEqual(['v1-d1']);
+    expect(u.engravings).toEqual(['v1-e1']);
+    expect(u.testimony).toEqual(['v1-t2']);
+    // The entrance count is EXACTLY the number of unviewed items (11.21).
+    expect(u.total).toBe(3);
+    expect(u.total).toBe(u.fragments.length + u.letters.length);
+  });
+
+  it('retires only what has been viewed, and only that', () => {
+    const state = withFound('v1-d1', 'v1-e1', 'v1-t2');
+    const u = unread(state, ['v1-e1']);
+    expect(u.engravings).toEqual([]);
+    expect(u.total).toBe(2);
+  });
+
+  it('never marks a fragment the volume has not filed', () => {
+    // Viewed-but-unfound and unfound-entirely both contribute nothing.
+    expect(unread(fresh(), ['v1-d1']).total).toBe(0);
+  });
+
+  it('counts arrived-but-unopened letters, and drops them once opened', () => {
+    const state = fresh();
+    const tray = { arrivedLetterIds: ['first-post', 'readers-note'], openedLetterIds: new Set(['first-post']) };
+    const u = unread(state, [], tray);
+    expect(u.letters).toEqual(['readers-note']);
+    expect(u.total).toBe(1);
+  });
+
+  it('takes no event stream and no day number — nothing dusk can prune (11.20)', () => {
+    // The old `filedToday(recentEvents, day)` answered "filed on day N?" off
+    // day.recentEvents, which pruneEventsAtDusk empties every night — so an
+    // unviewed fragment silently lost its marker overnight and a fragment read
+    // the instant it arrived kept one until dusk. The derivation's whole input
+    // surface is now (content, volume state, viewed/opened ids): three
+    // arguments, none of them day-scoped. The store-level proof that the
+    // marker survives an actual day roll is in the slice suite below.
+    expect(journalUnread.length).toBe(3);
   });
 });
+
+describe('viewed flags — the same write-once model as the letters', () => {
+  it('round-trips a fragment id through the flag namespace', () => {
+    const flag = viewedFragmentFlag('volume-1', 'v1-d1');
+    expect(flag).toBe('vol.volume-1.viewed-v1-d1');
+    expect([...viewedFragmentIds('volume-1', [flag, 'vol.volume-1.opened-first-post'])]).toEqual(['v1-d1']);
+  });
+
+  it('ignores flags belonging to another volume', () => {
+    expect(viewedFragmentIds('volume-2', ['vol.volume-1.viewed-v1-d1']).size).toBe(0);
+  });
+
+  it('every authored fragment id yields a flag docs/flags.md accepts', () => {
+    // setFlag silently REJECTS anything off-grammar, which would make the
+    // marker un-clearable. A future volume authoring dotted ids (frag.v1.03)
+    // must fail here, not in the wife's save.
+    for (const f of volume.fragments) {
+      expect(FLAG_REGEX.test(viewedFragmentFlag(volume.id, f.id))).toBe(true);
+    }
+  });
+});
+
+describe('displayedFragmentIds — viewing is what a tab puts on the glass', () => {
+  const state = withFound('v1-d1', 'v1-e1', 'v1-t2');
+  it('reports exactly the found fragments each tab renders', () => {
+    expect(displayedFragmentIds(volume, state, 'word')).toEqual(['v1-d1']);
+    expect(displayedFragmentIds(volume, state, 'engravings')).toEqual(['v1-e1']);
+    expect(displayedFragmentIds(volume, state, 'testimony')).toEqual(['v1-t2']);
+  });
+  it('never claims a letter was viewed by opening the tab — the seal is the marker', () => {
+    expect(displayedFragmentIds(volume, state, 'letters')).toEqual([]);
+  });
+  it('viewing every tab in turn clears the whole chain, and nothing else does', () => {
+    const tabs: JournalTab[] = ['word', 'engravings', 'testimony', 'letters'];
+    const viewed = tabs.flatMap((t) => displayedFragmentIds(volume, state, t));
+    expect(unread(state, viewed).total).toBe(0);
+  });
+});
+
+/**
+ * A manor with the player standing on the landing, through a north door into
+ * the sealed Sanctum — the ONLY place the door hears a word (AAA 4.10e). The
+ * guess fixtures below stand here because the game makes her stand here.
+ */
+function manorAtTheDoor(): ManorState {
+  const base = createManor(1);
+  const landing: PlacedRoom = {
+    cardId: 'reading-nook', cell: SANCTUM_DOOR_CELL, doors: ['N', 'S'],
+    solved: true, kind: 'parlor',
+  };
+  return {
+    ...base,
+    rooms: { ...base.rooms, [cellKey(SANCTUM_DOOR_CELL)]: landing },
+    playerCell: { ...SANCTUM_DOOR_CELL },
+  };
+}
 
 describe('journal slice through the real store', () => {
   beforeEach(() => {
@@ -230,7 +386,19 @@ describe('journal slice through the real store', () => {
       recentEvents: [],
       counters: {},
       day: null,
+      manor: manorAtTheDoor(),
     });
+  });
+
+  it('the door refuses a word spoken from anywhere but the landing', () => {
+    // The round-7 blocker in one case: from the Entrance Hall the guess is
+    // simply not heard — no attempt spent, nothing journaled, no penalty.
+    useManorStore.setState({ manor: createManor(1) });
+    useManorStore.getState().guessAtSanctum('lacuna');
+    const st = useManorStore.getState();
+    expect(st.volume.status).toBe('active');
+    expect(st.volume.guesses).toEqual([]);
+    expect(st.counters['sanctum-guess-wrong']).toBeUndefined();
   });
 
   it('fileFragment files once, forever, and rings the event spine', () => {
@@ -305,6 +473,60 @@ describe('journal slice through the real store', () => {
     expect(useManorStore.getState().counters['letter-opened']).toBe(1);
     s.openLetter('not-a-letter-at-all'); // unknown ids stay a no-op
     expect(useManorStore.getState().counters['letter-opened']).toBe(1);
+  });
+
+  it('markFragmentsViewed writes the write-once flag, once, and only for filed ids', () => {
+    const s = useManorStore.getState();
+    s.fileFragment('v1-d1');
+    s.fileFragment('v1-e1');
+    s.markFragmentsViewed(['v1-d1', 'not-a-real-fragment']);
+    let st = useManorStore.getState();
+    expect(st.flags).toContain(viewedFragmentFlag(volume.id, 'v1-d1'));
+    expect(st.flags).not.toContain(viewedFragmentFlag(volume.id, 'not-a-real-fragment'));
+    // v1-e1 was never displayed, so it stays unread (11.20: viewing, and
+    // nothing else, retires the marker).
+    expect(st.flags).not.toContain(viewedFragmentFlag(volume.id, 'v1-e1'));
+
+    const before = st.flags.length;
+    s.markFragmentsViewed(['v1-d1']); // idempotent — no save churn
+    st = useManorStore.getState();
+    expect(st.flags.length).toBe(before);
+  });
+
+  it('an UNVIEWED fragment keeps its marker across the dusk that prunes the day (11.20)', () => {
+    const s = useManorStore.getState();
+    useManorStore.setState({
+      day: {
+        day: 3, phase: 'exploring', daySeed: 1, activeRoom: null,
+      } as unknown as NonNullable<ReturnType<typeof useManorStore.getState>['day']>,
+    });
+    s.fileFragment('v1-e1');
+    const seen = () =>
+      journalUnread(volume, useManorStore.getState().volume, {
+        viewedIds: viewedFragmentIds(volume.id, useManorStore.getState().flags),
+        ...noLetters,
+      });
+    expect(seen().engravings).toEqual(['v1-e1']);
+
+    // The day rolls. pruneEventsAtDusk keeps only the CLOSING day's events, so
+    // it takes two dusks for a day-3 filing to leave the stream entirely —
+    // which is exactly how long the old `filedToday` marker lasted, and why it
+    // looked like it worked.
+    const store = () => useManorStore.getState();
+    store().endDay('steps-exhausted');   // dusk of day 3
+    store().advanceDayPhase();           // → night
+    store().startDay();                  // day 4
+    store().endDay('steps-exhausted');   // dusk of day 4 — day 3 is gone
+    expect(
+      store().recentEvents.some((e) => e.event.type === 'fragment-found'),
+    ).toBe(false);
+    // The marker is still there, because it was never made of that.
+    expect(seen().engravings).toEqual(['v1-e1']);
+    expect(seen().total).toBe(1);
+
+    // And it retires on viewing, permanently.
+    useManorStore.getState().markFragmentsViewed(['v1-e1']);
+    expect(seen().total).toBe(0);
   });
 
   it('collectFragmentForRoom walks the drip for A1’s violet rooms', () => {

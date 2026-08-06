@@ -4,6 +4,14 @@
  * auto-abandon with the word revealed for closure, never a fail screen.
  * Clues unseal for steps (the one currency) — no timers anywhere.
  * Whispers-left is plain text, never a depleting-dots UI (AAA R.3).
+ *
+ * ROUND 6 — TYPOGRAPHY. The wrong-guess toast quoted the player's own word in
+ * straight U+0022 (`Not "gloaming" — …`). U+0022 has no handedness and the
+ * body serif draws it as a right-leaning comma-shape on BOTH sides, so the
+ * opening mark came out backwards on the one line in this room the player
+ * reads most often. Quotes the view sets itself are now curly; authored strings
+ * it prints go through `typeset()` (content/lib/typography.ts), which is
+ * idempotent and repairs any pool entry a generator has not re-set.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -13,9 +21,10 @@ import type { ForgottenWordAction, ForgottenWordRoomState } from '../../../engin
 import { definitionForLevel, type ClueId } from '../../../engine/forgotten-word';
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
+import { typeset } from '../../../../content/lib/typography';
 import './anchor.css';
 
-type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
+type Toast = { kind: 'good' | 'bad' | 'info'; text: string; bit?: string } | null;
 
 /** Warm words for the free length refusal ("It was eleven letters, dear"). */
 const NUMBER_WORDS = [
@@ -24,9 +33,28 @@ const NUMBER_WORDS = [
 ];
 const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
 
-const CLUES: { id: ClueId; label: string }[] = [
-  { id: 'etymology', label: 'Etymology' },
-  { id: 'usage', label: 'Usage' },
+/**
+ * AAA 4.17's taxonomy, spoken in the Study's voice. The room already charged
+ * 2–3 steps for the claim; these bits cost nothing further and are exactly
+ * what the criterion governing this verb demands — right length, shared
+ * letters, and (below) a repeat refusal that costs nothing at all.
+ */
+function closenessLine(shared: number, exact: number): string {
+  // The warmth is on the main line ("Not 'gloaming' — 2 whispers remain"); this
+  // is the marginal note, and it has one reserved line to say it in.
+  if (shared === 0) return 'The right length · not one letter of his.';
+  return `The right length · ${shared} of his letters · ${exact} in place.`;
+}
+
+/**
+ * The teaser is not decoration: a sealed drawer that says only "Sealed…" asks
+ * her to spend 2–3 steps on an unknown, which is the one thing a priced hint
+ * must never do. It also gives the room's freed height something to hold
+ * (AAA §0.1) instead of parchment.
+ */
+const CLUES: { id: ClueId; label: string; teaser: string }[] = [
+  { id: 'etymology', label: 'Etymology', teaser: 'Where the word came from.' },
+  { id: 'usage', label: 'Usage', teaser: 'The word at work in a sentence.' },
 ];
 
 export default function ForgottenWordView({ puzzle, state, tier, dispatch }: RoomViewProps<ForgottenWordPuzzle, ForgottenWordRoomState, ForgottenWordAction>) {
@@ -79,14 +107,16 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
         later(() => setShaking(false), 340);
         setToast({
           kind: 'bad',
-          text: `Not "${fb.guess.toLowerCase()}" — ${fb.guessesLeft} whisper${fb.guessesLeft === 1 ? '' : 's'} remain${fb.guessesLeft === 1 ? 's' : ''}. · −${clueCost} steps`,
+          text: `Not “${fb.guess.toLowerCase()}” — ${fb.guessesLeft} whisper${fb.guessesLeft === 1 ? '' : 's'} remain${fb.guessesLeft === 1 ? 's' : ''}. · −${clueCost} steps`,
+          bit: closenessLine(fb.shared, fb.exact),
         });
-        later(() => setToast(null), 1800);
+        later(() => setToast(null), 2400);
         break;
       case 'invalid':
         if (fb.reason === 'repeat') {
-          setToast({ kind: 'info', text: 'Already whispered.' });
-          later(() => setToast(null), 1100);
+          // 4.17: a repeat is not a new claim, so it is not a new price.
+          setToast({ kind: 'info', text: 'Already whispered — that one is free.' });
+          later(() => setToast(null), 1300);
         } else if (fb.reason === 'wrong-length') {
           // AAA 3.2: the card announced the count, so a wrong-length guess is
           // malformed input — a warm free refusal, no whisper, no steps.
@@ -144,7 +174,7 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
         <div className="fw-def__eyebrow">{inked ? 'The headword, restored' : 'A headword is missing'}</div>
         <p className="fw-def__text">
           <span className="fw-def__q fw-def__q--open">“</span>
-          {definitionForLevel(puzzle, state.tier)}
+          {typeset(definitionForLevel(puzzle, state.tier))}
           <span className="fw-def__q fw-def__q--close">”</span>
         </p>
         {inked && won ? (
@@ -156,6 +186,18 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
           </div>
         )}
       </div>
+
+      {/* The shape of what was torn out. AAA 3.2: the letter count is the one
+          rule this room refuses a guess over, so it is drawn as well as said —
+          and AAA §0.1: the freed height in a room with no board has to become
+          ink, not a taller empty card. */}
+      {playing && (
+        <div className="fw-slots" aria-hidden="true">
+          {Array.from({ length: puzzle.word.length }, (_, i) => (
+            <span key={i} className="fw-slot" />
+          ))}
+        </div>
+      )}
 
       {won && state.lastFeedback?.kind === 'correct' ? (
         <div
@@ -178,16 +220,16 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
         </div>
       ) : (
         <>
-          {CLUES.map(({ id, label }) => {
+          {CLUES.map(({ id, label, teaser }) => {
             const unlocked = state.fw.unlockedClues.includes(id);
             return (
               <div key={id} className="anch-card fw-clue">
                 <div>
                   <div className="fw-clue__label">{label}</div>
                   {unlocked ? (
-                    <div className="fw-clue__text anch-pop">{id === 'etymology' ? puzzle.etymology : puzzle.usage}</div>
+                    <div className="fw-clue__text anch-pop">{typeset(id === 'etymology' ? puzzle.etymology : puzzle.usage)}</div>
                   ) : (
-                    <div className="fw-clue__sealed">Sealed…</div>
+                    <div className="fw-clue__sealed">{teaser} Sealed…</div>
                   )}
                 </div>
                 {!unlocked && (
@@ -218,16 +260,41 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
           </div>
 
           <div className="anch-toastslot" aria-live="polite">
-            {toast && <span className={`anch-toast anch-toast--${toast.kind}`}>{toast.text}</span>}
+            {toast && (
+              <span className={`anch-toast anch-toast--${toast.kind}`}>
+                {toast.text}
+                {toast.bit && <span className="anch-toast__bit tabular-nums">{toast.bit}</span>}
+              </span>
+            )}
           </div>
 
-          {state.fw.guesses.length > 0 && (
+          {/* AAA 3.3 [PARITY] — the elimination history keeps the closeness she
+              paid for. A struck chip alone told her only THAT she had tried the
+              word; the two counts (letters of his in the word · of those, in
+              place) mean she never re-derives what the toast already said. */}
+          {/* Always mounted: the history is the room's memory prosthetic, so
+              its place on the page is fixed from the first whisper onward and
+              nothing below it moves when a chip arrives (AAA 1.5). */}
+          <div className="fw-tried">
+            <div className="fw-tried__cap">Whispered · his letters · in place</div>
             <div className="anch-row">
-              {state.fw.guesses.map((g) => (
-                <span key={g} className="anch-chip anch-chip--muted">{g}</span>
-              ))}
+              {state.closeness.length === 0 ? (
+                <span className="fw-tried__none">Nothing whispered yet.</span>
+              ) : (
+                state.closeness.map(({ guess, shared, exact }) => (
+                  <span key={guess} className="anch-chip anch-chip--muted fw-tried__chip">
+                    {guess}
+                    <span
+                      className="fw-tried__n tabular-nums"
+                      aria-label={`${shared} of his letters, ${exact} in place`}
+                    >
+                      {shared}·{exact}
+                    </span>
+                  </span>
+                ))
+              )}
             </div>
-          )}
+          </div>
         </>
       )}
     </div>

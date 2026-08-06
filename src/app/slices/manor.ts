@@ -100,7 +100,9 @@ export function ensureManor(): void {
   if (!day || (day.phase !== 'morning' && day.phase !== 'exploring')) return;
   sessionFor(day.daySeed);
   if (s.manor) return;
-  // Fern's arc (KEY_SUPPLY.fernMorningKeys): the padlock's answer to Bramble's
+  // Fern's arc (KEY_SUPPLY.fernMorningKeysByPoints — indexed by RAW POINTS,
+  // never by rank; see the indexing contract at the top of economy/steps.ts):
+  // the padlock's answer to Bramble's
   // tea. A friend of the groundskeeper finds a key left on the sill at dawn —
   // affinity-gated, one conversation a day (AAA 5.9), and it does NOT carry
   // over: the day slice still zeroes keys at night, so every ascent re-earns
@@ -126,17 +128,29 @@ export function ensureManor(): void {
   }));
 }
 
-/** Prose for the morning: what the manor left out for her overnight. */
-export function dawnCarryOverLines(
+/**
+ * What yesterday left steeping, in full (steps, keys, prose) — the same
+ * derivation `startDay` and `ensureManor` bank, exposed so the morning card
+ * can NAME the numbers it is handing her (AAA 4.9/11.15) instead of only
+ * describing them.
+ */
+export function dawnCarryOver(
   s: Pick<ManorStore, 'day' | 'recentEvents'>,
-): string[] {
+): { steps: number; keys: number; lines: string[] } {
   const today = s.day?.day;
-  if (today === undefined) return [];
+  if (today === undefined) return { steps: 0, keys: 0, lines: [] };
   return carryOverFrom(
     s.recentEvents
       .filter((e) => e.day === today - 1 && e.event.type === 'room-drafted')
       .map((e) => (e.event as { cardId: string }).cardId),
-  ).lines;
+  );
+}
+
+/** Prose for the morning: what the manor left out for her overnight. */
+export function dawnCarryOverLines(
+  s: Pick<ManorStore, 'day' | 'recentEvents'>,
+): string[] {
+  return dawnCarryOver(s).lines;
 }
 
 /** Has Dewey been petted today? (Derives his reveal state — no extra save shape.) */

@@ -13,10 +13,11 @@
  * tests/economy-simulation.test.ts):
  *
  *   1. CLIMBING IS THE EXPENSE. Movement is priced per row band
- *      (`MOVE_COST_BY_ROW`): −1 on the ground floor, −5 up top. A single
- *      minimum-length ascent to the Sanctum row costs 20 steps of pure
- *      walking — more than the entire base budget — and every walk-back to a
- *      frontier door up there is charged at the same top rate.
+ *      (`MOVE_COST_BY_ROW`): −1 on the ground floor, −9 up top. A single
+ *      minimum-length ascent to THE SANCTUM LANDING (0-based row 5 — the cell
+ *      the word is spoken from, not the sealed Sanctum above it) costs 21
+ *      steps of pure walking — more than the entire base budget — and every
+ *      walk-back to a frontier door up there is charged at the same top rate.
  *   2. REFUNDS GET LEANER AS YOU CLIMB. anchor +6/+5/+4 by tier (was
  *      +6/+7/+8 — the old curve literally paid you to be high up), micro
  *      +3/+3/+2. A tier-3 solve softens the next mistake; it no longer
@@ -26,9 +27,24 @@
  *   4. LOCKED DOORS UP TOP. `DOOR_LOCKS`: drafting into 0-based rows 4+ can
  *      demand a key. Deep pushes are PREPARED for (Key Cabinet, Fern's
  *      trades) — you cannot stumble into the Sanctum row.
- *   5. THE REFILL CURVE IS A CAMPAIGN ARC. Bramble's tea (`TEA_BY_RANK`)
- *      climbs 0 → +11 across her friendship, and snacks shrink to +3..+7.
+ *   5. THE REFILL CURVE IS A CAMPAIGN ARC. Bramble's tea (`TEA_BY_POINTS`)
+ *      climbs 0 → +11 across her friendship, and refills shrink to +2..+6.
  *      The budget that makes the Sanctum reachable is EARNED over days.
+ *
+ * ═══ THE INDEXING CONTRACT — READ BEFORE TOUCHING AN AFFINITY TABLE ═══
+ * Every affinity-indexed table in this file is indexed by raw affinity
+ * **POINTS** — the integer the day slice carries in `affinities.<character>` —
+ * and NEVER by an affinity RANK. The two scales are different lengths and
+ * different shapes: ranks run 0–4 on the thresholds `[0, 2, 5, 9, 14]`
+ * (engine/dialogue/affinity.ts `rankFor`), while these tables run 0–6 on one
+ * point per index. Feeding `rankFor(points)` into `teaBonus` or
+ * `fernMorningKeys` would cap the tea at TEA_BY_POINTS[4] and move Fern's
+ * first key from 2 points out to 5 — reshaping the whole campaign arc with
+ * every test still green. The tables are therefore NAMED for their unit
+ * (`TEA_BY_POINTS`, `KEY_SUPPLY.fernMorningKeysByPoints`), the accessors take
+ * a `…Points` parameter, and `tests/steps.test.ts` pins the units by asserting
+ * the point-indexed answer differs from the rank-indexed one at the exact
+ * values where a "fix" to `rankFor(points)` would bite.
  *
  * ═══ ROUND-5 AUDIT — the arcs were on paper, not in the game ═══
  * The campaign numbers above were verified against a curve the live game could
@@ -41,8 +57,8 @@
  *      the day slice actually applies, so the step arc has a source.
  *   b. `FERN_ARC`/`KEY_ACCESS` — her affinity raises the draft weight of
  *      key-bearing cards (drafting.ts), so the padlock arc has a source, and
- *      `KEY_SUPPLY.fernMorningKeys` re-indexes to open inside her authored
- *      point budget instead of two points past its ceiling.
+ *      `KEY_SUPPLY.fernMorningKeysByPoints` re-indexes to open inside her
+ *      authored point budget instead of two points past its ceiling.
  *   c. `FIRST_MORNING_POT` — the first evening starts at 0 affinity, so it got
  *      a scripted welcome pot rather than running under the 10–15 floor.
  *   d. cross-day investment (`CARRY_OVER_EFFECTS`, engine/manor/deck.ts) — the
@@ -89,14 +105,30 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
  * The ground floor is a stroll; the upper storeys are a climb, and every
  * traverse of them is charged, including the walk back to a frontier door.
  *
- * Minimum pure ascent, entrance (row 0) → Sanctum row (row 6):
- *   1 + 2 + 3 + 4 + 5 + 5 = 20 steps — MORE than the whole base budget, in a
+ * ═══ ROUND-7 CORRECTION — PRICED FOR THE STOREY SHE ACTUALLY HAS TO BUY ═══
+ * The old curve (−1,−1,−2,−3,−4,−5,−5) was verified against the SANCTUM'S OWN
+ * ROW (0-based 6) — a cell that is sealed, never drafted, never walked into.
+ * The word is spoken from the landing BELOW it, 0-based row 5
+ * (engine/manor/grid.ts `SANCTUM_DOOR_CELL`), and the bare ascent to THERE
+ * cost 1+2+3+4+5 = 15: comfortably under the 18-step base budget and under
+ * day 1's 21. So the headline invariant `reserveToTop(1) > BASE_DAY_BUDGET`
+ * was true of a storey the game never asks her to enter and false of the one
+ * it does — measured at the live landing, a skilled player stood at the door
+ * on day 1 in 41.5% of campaigns.
+ *
+ * Minimum pure ascent, entrance (row 0) → THE SANCTUM LANDING (row 5) — the
+ * ascent the player actually has to pay for:
+ *   1 + 2 + 3 + 6 + 9 = 21 steps — MORE than the whole base budget, in a
  *   straight line, before a single card is drafted or a single door is
- *   re-walked. The Sanctum row is therefore never reachable on the budget
- *   alone: it has to be paid for with tea, snacks and solves. That is the
+ *   re-walked. The landing is therefore never reachable on the budget alone:
+ *   it has to be paid for with tea, snacks and solves. That is the
  *   push-your-luck, and it is why day 1 is not day 30.
+ *
+ * The two lower bands are UNTOUCHED (−1/−1/−2/−3): the decent day lives on
+ * rows 0–3 and its 10–15 minute window is calibrated there. Every added step
+ * sits on the last two storeys, where the climb is the whole point.
  */
-export const MOVE_COST_BY_ROW: readonly number[] = [-1, -1, -2, -3, -4, -5, -5];
+export const MOVE_COST_BY_ROW: readonly number[] = [-1, -1, -2, -3, -6, -9, -9];
 
 export function moveAt(row: number): number {
   const i = Math.max(0, Math.min(MOVE_COST_BY_ROW.length - 1, Math.floor(row)));
@@ -164,6 +196,13 @@ export function highestRowVisited(ledger: StepLedger): number {
  * Storey names, ground up — the digest and the blueprint's aria labels speak
  * in landings, not in grid coordinates ("Walk to the second landing — 3
  * steps", not "Walk 2,5").
+ *
+ * ROUND-7: row 5 is the LANDING OUTSIDE THE SANCTUM — the cell the word is
+ * spoken from (engine/manor/grid.ts `SANCTUM_DOOR_CELL`) — and row 6 is the
+ * sealed Sanctum itself, which is never entered. The names used to be one
+ * storey out ('the upper gallery' for the landing), so the night digest
+ * congratulated her on reaching a floor she had not, and hid the one arrival
+ * that is a campaign event.
  */
 export const ROW_NAMES: readonly string[] = [
   'the ground floor',
@@ -171,8 +210,8 @@ export const ROW_NAMES: readonly string[] = [
   'the first landing',
   'the second landing',
   'the third landing',
-  'the upper gallery',
   'the Sanctum landing',
+  'the Sanctum',
 ];
 
 export function rowName(row: number): string {
@@ -217,9 +256,42 @@ export const STEP_TABLE = {
   },
   /** No costed mistakes and no purchased hints → bonus. */
   perfect: 2,
-  /** Kitchen snack range (utility rooms roll inside this, reason 'snack').
-   *  Owner retune: 5..10 → 3..7 — a refill extends a day, never doubles it. */
-  snack: { min: 3, max: 7 },
+  /**
+   * REFILL PAYOUTS — the declared BOUND on a green room's own step payout,
+   * ledgered with reason 'snack'.
+   *
+   * ═══ ROUND-6 AUDIT: this constant described a game we do not ship ═══
+   * It read `{ min: 3, max: 7 }`, and nothing live ever sampled it. Refills
+   * are FIXED, AUTHORED numbers on the green cards (`UTILITY_EFFECTS`,
+   * engine/manor/deck.ts): the Kitchen's +6, the Larder's +5, the Boot Room's
+   * +3, the Still Room's +2 — and every one of those cards NAMES its number
+   * in its own player-facing toast ("Something warm from the oven. +6 steps").
+   * The only reader of the range was `engine/economy/simulate.ts`, so AAA
+   * 4.10's "scarce refills" was verified against a distribution the deck
+   * cannot produce: the Still Room's +2 sits BELOW the old floor of 3, and no
+   * card in the deck pays 7 at all.
+   *
+   * Reconciled the honest way round — the DECK keeps its authored numbers
+   * (felt difficulty untouched, and the toast copy stays true) and the
+   * CONSTANT is corrected to describe them. It is now a contract, not a
+   * source: `tests/steps.test.ts` asserts every shipped `UTILITY_EFFECTS`
+   * payout lies inside this range, so a deck edit that quietly lifts the
+   * Kitchen to +9 breaks the economy tests instead of the owner's evening.
+   * The simulation samples the real card payouts (`REFILL_PAYOUTS`,
+   * engine/economy/simulate.ts), never a uniform roll over this range.
+   *
+   * A refill extends a day; it never doubles it (< half BASE_DAY_BUDGET).
+   */
+  snack: { min: 2, max: 6 },
+  /**
+   * COMPOUNDING HOOKS pay a smaller, separate class through the same 'snack'
+   * reason (AAA 4.11, BP's Nursery pattern): the Kitchen hums +2 for every
+   * later green room, the Dumbwaiter rattles +1 for every later room of any
+   * stripe. Declared apart from `snack` because +1 sits below the refill
+   * floor by design — one constant covering both would have to lie about one
+   * of them. Also contract-checked against `UTILITY_EFFECTS`.
+   */
+  compound: { min: 1, max: 2 },
   /** Gifting a bookmark is a small walk to find them (reason 'gift'). */
   gift: -1,
   /** A wrong Sanctum guess is free, forever (AAA 4.17). */
@@ -246,10 +318,21 @@ export const STEP_TABLE = {
  *      never a surprise charge, never pay-for-nothing (AAA 4.6);
  *   3. with a key the draft opens for the usual 1 step, and the key is spent
  *      ON PLACEMENT, so backing out of the offer still costs only that step.
+ *
+ * ═══ ROUND-7 RETUNE — THE GATE WAS COUNTING A DOOR NOBODY OPENS ═══
+ * The published "an ascent crosses roughly 1.7 padlocks" summed rows 4, 5 AND
+ * 6 (0.35 + 0.55 + 0.8). Row 6 is the sealed Sanctum: it is pre-placed at
+ * manor build, never drafted, so its lock never rolls. The ascent the player
+ * really makes ends on row 5, and it crossed 0.35 + 0.55 = 0.9 padlocks — a
+ * gate she could walk around by re-drafting laterally twice. Rows 4 and 5 now
+ * carry the gate the docs always described (0.75 + 0.95 = 1.7 for the LIVE
+ * ascent), which is what makes the last two storeys something you prepare for
+ * with Fern's key rather than something you stumble into on a lucky Tuesday.
+ * Row 6 keeps a rate only so the table stays total; nothing ever reads it.
  */
 export const DOOR_LOCKS = {
   /** P(a door into this 0-based row is locked); rows 0–3 never lock. */
-  chanceByRow: [0, 0, 0, 0, 0.35, 0.55, 0.8] as readonly number[],
+  chanceByRow: [0, 0, 0, 0, 0.75, 0.95, 0.95] as readonly number[],
   keyCost: 1,
 } as const;
 
@@ -278,10 +361,17 @@ export const KEY_SUPPLY = {
   /** The Boot Room hook: the common ground-floor key, tiers 1 only. */
   bootRoomKeys: 1,
   /**
-   * Fern's arc, indexed by her affinity POINTS (the same convention
-   * `TEA_BY_RANK`/`teaBonus` already use — the day slice passes raw points):
-   * a key left on the sill at dawn for a friend who tends the garden with
-   * her. This is the padlock's answer to Bramble's tea — the same shape, the
+   * ── INDEXED BY AFFINITY **POINTS**, NEVER BY RANK ──────────────────────
+   * `fernMorningKeysByPoints[p]` is the answer for p RAW POINTS, the integer
+   * the day slice carries in `affinities.fern`. It is NOT an affinity-rank
+   * table: ranks run 0–4 on the thresholds `[0, 2, 5, 9, 14]`
+   * (engine/dialogue/affinity.ts). Passing `rankFor(points)` here would push
+   * her first dawn key from 2 points out to 5 — past her entire authored
+   * budget of 3 — and turn the padlock arc back into the wall it was, with
+   * every test still green. Pinned by tests/steps.test.ts ("units").
+   *
+   * Fern's arc: a key left on the sill at dawn for a friend who tends the
+   * garden with her. The padlock's answer to Bramble's tea — the same shape, the
    * same AAA 5.9 valve of one conversation a day, and the reason a skilled
    * player's FIRST Sanctum reach still lands around day 6–10 however well she
    * plays day 1.
@@ -297,7 +387,7 @@ export const KEY_SUPPLY = {
    * shortens the climb, she never walks it for you, and keys still reset
    * nightly (MANOR_DESIGN §9) so every ascent re-earns its way up.
    */
-  fernMorningKeys: [0, 0, 1, 1, 1, 2, 2] as readonly number[],
+  fernMorningKeysByPoints: [0, 0, 1, 1, 1, 2, 2] as readonly number[],
 } as const;
 
 /**
@@ -362,14 +452,17 @@ export function keyCardWeightMultiplier(keyAccess: number): number {
 }
 
 /**
- * Keys Fern leaves out at dawn, from her affinity points. Granted when the
- * day's manor is built (app/slices/manor.ts) and zeroed again at night with
- * the rest of the purse — access is what the campaign buys, never a hoard.
+ * Keys Fern leaves out at dawn. Granted when the day's manor is built
+ * (app/slices/manor.ts) and zeroed again at night with the rest of the purse
+ * — access is what the campaign buys, never a hoard.
+ *
+ * UNITS: `fernPoints` is RAW AFFINITY POINTS (`affinities.fern`), never an
+ * affinity rank. See the indexing contract on `KEY_SUPPLY`.
  */
-export function fernMorningKeys(fernAffinity: number): number {
-  if (!Number.isFinite(fernAffinity) || fernAffinity <= 0) return 0;
-  const points = Math.floor(fernAffinity);
-  const table = KEY_SUPPLY.fernMorningKeys;
+export function fernMorningKeys(fernPoints: number): number {
+  if (!Number.isFinite(fernPoints) || fernPoints <= 0) return 0;
+  const points = Math.floor(fernPoints);
+  const table = KEY_SUPPLY.fernMorningKeysByPoints;
   return table[Math.min(points, table.length - 1)]!;
 }
 
@@ -386,32 +479,46 @@ export function doorLockedAt(daySeed: number, cellKey: string, row: number): boo
 }
 
 /**
- * Bramble's morning tea by affinity rank (MANOR_DESIGN §8) — the campaign's
- * main economic arc. Rank 0 (just met) is a plain, kind cup worth nothing but
- * the scene; by the time she trusts you, the pot is worth nearly half a day
- * again. THIS is what turns "the Sanctum row is out of reach" into "the
- * Sanctum row is reachable if today goes well" somewhere around day 6–10,
- * and it cannot be rushed — affinity is one conversation a day (AAA 5.9).
- * Applied as a 'tea' ledger entry so it renders as a floating +N.
+ * Bramble's morning tea (MANOR_DESIGN §8) — the campaign's main economic arc.
+ * 0 points (just met) is a plain, kind cup worth nothing but the scene; by the
+ * time she trusts you, the pot is worth nearly half a day again. THIS is what
+ * turns "the Sanctum row is out of reach" into "the Sanctum row is reachable
+ * if today goes well" somewhere around day 6–10, and it cannot be rushed —
+ * affinity is one conversation a day (AAA 5.9). Applied as a 'tea' ledger
+ * entry so it renders as a floating +N.
  *
- * Round-5 audit: the first two ranks were lifted (3→4, 5→6) because the early
- * evenings — days 2–3, when she has met Bramble once and the manor is still
- * strange — measured 10.2–10.5 minutes, right on the floor of the 10–15 band.
- * The top of the curve is untouched, so the campaign shape is unchanged; only
- * the first week got its promised length.
+ * ── INDEXED BY AFFINITY **POINTS**, NEVER BY RANK ────────────────────────
+ * RENAMED in the round-6 audit: this table was called `TEA_BY_RANK` while
+ * being indexed, correctly, by raw affinity POINTS (`affinities.bramble`).
+ * The name invited exactly one silent catastrophe — a maintainer "fixing" the
+ * call site to `teaBonus(rankFor(points))`, which would cap the pot at
+ * TEA_BY_POINTS[4] (ranks only run 0–4 on the thresholds `[0, 2, 5, 9, 14]`,
+ * engine/dialogue/affinity.ts) and quietly delete the top of the arc while
+ * every test stayed green. It now says what it means, and
+ * tests/steps.test.ts pins the units.
+ *
+ * Round-5 audit: the first two entries were lifted (3→4, 5→6) because the
+ * early evenings — days 2–3, when she has met Bramble once and the manor is
+ * still strange — measured 10.2–10.5 minutes, right on the floor of the 10–15
+ * band. The top of the curve is untouched, so the campaign shape is
+ * unchanged; only the first week got its promised length.
  */
-export const TEA_BY_RANK: readonly number[] = [0, 4, 6, 7, 9, 10, 11];
+export const TEA_BY_POINTS: readonly number[] = [0, 4, 6, 7, 9, 10, 11];
 
-export function teaBonus(brambleAffinity: number): number {
-  if (!Number.isFinite(brambleAffinity) || brambleAffinity <= 0) return 0;
-  const rank = Math.floor(brambleAffinity);
-  return TEA_BY_RANK[Math.min(rank, TEA_BY_RANK.length - 1)]!;
+/**
+ * The morning pot for a Bramble affinity of `bramblePoints` RAW POINTS
+ * (never a rank — see the indexing contract above).
+ */
+export function teaBonus(bramblePoints: number): number {
+  if (!Number.isFinite(bramblePoints) || bramblePoints <= 0) return 0;
+  const points = Math.floor(bramblePoints);
+  return TEA_BY_POINTS[Math.min(points, TEA_BY_POINTS.length - 1)]!;
 }
 
 /**
- * THE LIVE TEA ARC — the source of the points `TEA_BY_RANK` indexes.
+ * THE LIVE TEA ARC — the source of the points `TEA_BY_POINTS` indexes.
  *
- * Round-5 audit: `TEA_BY_RANK` needs 6 points for its full pot, and Bramble's
+ * Round-5 audit: `TEA_BY_POINTS` needs 6 points for its full pot, and Bramble's
  * authored file grants **2 in her entire 57-node lifetime** (both `once:true`),
  * with everything beyond that competing for the same scarce bookmarks as four
  * other characters. The published day 6–10 / 14–28 curve was therefore verified
@@ -422,33 +529,69 @@ export function teaBonus(brambleAffinity: number): number {
  * The fix is to put the arc where the arc actually happens: SHARED MORNINGS.
  * Sitting down to tea with her is the one substantive conversation the AAA 5.9
  * valve already allows per day, so every second morning warms her by a point,
- * to a ceiling of `maxPoints`. `app/slices/day.ts` applies it as a FLOOR
- * (`max(current, teaArcPoints(day))`) at the top of `startDay`, before the pot
- * is poured — so it never eats the gift currency, never double-counts on a
- * resumed day, never overwrites points she earned by gifting, and cannot be
- * lost by picking the wrong line of dialogue.
+ * to a ceiling of `maxPoints`.
+ *
+ * ═══ ROUND-7 CORRECTION — THE ARC WAS CLOCKED, NOT BOUGHT ═══
+ * `startDay` applied `max(known, teaArcPoints(day))` unconditionally, so what
+ * the docs call "shared mornings, one conversation a day (AAA 5.9)" was in
+ * fact the calendar: the pot grew whether or not she ever sat down with
+ * Bramble, and the player had no agency in the one arc that decides when the
+ * Sanctum becomes affordable. The two halves are now separated:
+ *
+ *   - `teaArcPoints(day)` is the CEILING — the warmth a player who shares the
+ *     morning every day is entitled to have reached by day `day`. The point
+ *     itself is granted by `DaySlice.shareMorningTea()` when the morning scene
+ *     actually plays, and the pot is topped up in the same breath so the
+ *     +N lands on the counter while she is looking at it (AAA 4.9 / 11.15).
+ *   - `teaArcFloor(day)` is the MERCY — the same curve, `floorLagMornings`
+ *     behind, applied at dawn so a player who skipped mornings still warms
+ *     eventually (AAA 5.5, nothing missable). She simply runs a rung behind
+ *     the player who sat down.
+ *
+ * Both are floors on `affinities.bramble`, never overwrites, so gifted points
+ * and authored points only ever add, and no dialogue choice can lose the arc
+ * (AAA 5.13).
  *
  * This is also the live counterpart of the simulation's tea ramp:
- * `engine/economy/simulate.ts` reads THIS function for a campaign's tea rank,
- * rather than a hard-coded `CAMPAIGN_ARC` constant with nothing behind it.
+ * `engine/economy/simulate.ts` reads `teaArcPoints` for a campaign's tea rank
+ * — the simulated player plays every day and takes her tea, so she sits on the
+ * ceiling — rather than a hard-coded `CAMPAIGN_ARC` constant with nothing
+ * behind it.
  */
 export const TEA_ARC = {
   /** Mornings of shared tea per +1 point of Bramble affinity. */
   morningsPerPoint: 2,
-  /** Ceiling — the pot tops out here (TEA_BY_RANK's last rank). */
-  maxPoints: TEA_BY_RANK.length - 1,
+  /** Ceiling — the pot tops out here (TEA_BY_POINTS's last index). */
+  maxPoints: TEA_BY_POINTS.length - 1,
+  /**
+   * How far behind the ceiling the unconditional dawn floor runs. Two mornings
+   * = exactly one rung of the arc: skip your tea and the pot is one rung
+   * smaller until you start turning up again.
+   */
+  floorLagMornings: 2,
 } as const;
 
-/** Bramble's affinity FLOOR on 1-based `day`, from shared mornings alone. */
+/**
+ * Bramble's affinity CEILING on 1-based `day` — what shared mornings can have
+ * bought by now. `shareMorningTea()` grants against this; nothing else does.
+ */
 export function teaArcPoints(day: number): number {
   if (!Number.isFinite(day) || day <= 0) return 0;
   return Math.min(TEA_ARC.maxPoints, Math.floor(day / TEA_ARC.morningsPerPoint));
 }
 
 /**
+ * The unconditional dawn FLOOR on 1-based `day`: the same curve, one rung
+ * behind, so a player who never sits down still warms — later, and less.
+ */
+export function teaArcFloor(day: number): number {
+  return teaArcPoints(day - TEA_ARC.floorLagMornings);
+}
+
+/**
  * THE FIRST MORNING'S POT (AAA 4.10b, round-5 audit).
  *
- * Day 1 starts at 0 affinity — `teaBonus(0)` is 0 by design, because rank 0 is
+ * Day 1 starts at 0 affinity — `teaBonus(0)` is 0 by design, because 0 points is
  * "a plain, kind cup" — so the very first evening ran on the bare 18 and
  * measured ~9.0 minutes at the median, UNDER the promised 10–15 floor. The
  * first one or two evenings are the ones that decide whether she comes back,

@@ -1,0 +1,81 @@
+{
+ "library": {
+  "tileWords": [
+   "WRINKLE",
+   "COMB",
+   "LAMB",
+   "WRENCH",
+   "HEAD",
+   "AWRY",
+   "TRACK",
+   "FORCE",
+   "JURY",
+   "LEFT",
+   "ANSWER",
+   "HYMN",
+   "PICTURE",
+   "LAUNDRY",
+   "COLUMN",
+   "MINE"
+  ],
+  "boardId": "web-43",
+  "amb": [],
+  "themes": [
+   "Silent \"W\"",
+   "Things That Hang",
+   "Silent Letters at the End",
+   "___ FIELD"
+  ],
+  "quotesInDom": [],
+  "plainWrong": {
+   "toast": "Not quite a thread. · −2 steps",
+   "steps": 19
+  },
+  "buttonsAfterWrong": [
+   "Clear",
+   "Shuffle",
+   "Weave",
+   "A nudge from the shelves · −2 steps"
+  ],
+  "selectionKept": 0,
+  "namingDom": {
+   "html": [
+    "___ FIELD",
+    "___ SHOT",
+    "Contains “ONE”"
+   ],
+   "text": "The Library\n\nWeave the sixteen words.\n\nFour threads of four.\n\nSilent “W”\nWRENCH · ANSWER · WRINKLE · AWRY\n●\nThings That Hang\nPICTURE · LAUNDRY · HEAD · JURY\n●●\nSilent Letters at the End\nCOMB · LAMB · HYMN · COLUMN\n●●●\nTHE LAST FOUR FALL TOGETHER\nLEFT · TRACK · MINE · FORCE\n\nWhat thread binds them?\n\n___ FIELD\n___ SHOT\nContains “ONE”"
+  }
+ },
+ "hive": {
+  "center": "D",
+  "outer": [
+   "R",
+   "E",
+   "A",
+   "W",
+   "T",
+   "N"
+  ],
+  "id": "hive-t1-11",
+  "words": 73,
+  "total": 327,
+  "geomStart": {
+   "w": 96,
+   "h": 83.1,
+   "top": 518.1
+  },
+  "geomBloom": {
+   "w": 96,
+   "h": 83.1,
+   "top": 518.1
+  },
+  "done": {
+   "title": "Every Petal",
+   "fern": "Fern is genuinely quiet for a second. “Every petal. I’ve not seen that.”",
+   "line": "+6 steps for the flowering · +2 for a bed without a bent stem · +1 gem"
+  },
+  "gems": 1,
+  "bloomed": true
+ }
+}

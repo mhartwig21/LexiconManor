@@ -88,15 +88,26 @@
    room's only verb (scan a column or a quarter for a missing figure) stopped
    working, on the very tiers whose techniques (X-wing, swordfish, colouring)
    literally span the grid. Height-capping costs a few px of cell and buys a
-   board that is WHOLLY VISIBLE AT REST (AAA 3.3 / 7.7 / §0.1). */
+   board that is WHOLLY VISIBLE AT REST (AAA 3.3 / 7.7 / §0.1).
+
+   ROUND 6 (the "58px of unused width" finding): the width was never spare —
+   the leaf is a SQUARE, so the only way to spend that width is to spend the
+   same number of pixels of height, and at 390x844 there were exactly 9.3px of
+   free height (measured, scripts/micro-rooms-round7-verify.mjs). The height
+   was bought instead: the verb row collapses to ONE band at every size (it
+   already did below 760), which returns ~48px, and the leaf now reaches the
+   full content width at 390 — 42px cells instead of 36.4, and pencil slots of
+   12.5px instead of 10.8 for marks that must be read at speed. */
 .ch-leaf {
   width: 100%;
   /* Two bands, because the chrome above and below the leaf is not the same
-     height in both: on a tall glass the deck carries two tool rows and 52px
-     pad keys (−32rem); on a short one the verbs collapse to a single row and
-     the room's subtitle is gone (−23rem, below). Both were measured, not
-     guessed — scripts/round5-capture.mjs re-measures them on every tour. */
-  max-width: min(100%, calc(100dvh - 32rem));
+     height in both: on a tall glass the room's subtitle is up and the pad
+     keys are 52px (−29rem); on a short one the subtitle is gone and the keys
+     are 46px (−23rem, below). Both were measured, not guessed —
+     scripts/round5-capture.mjs and scripts/micro-rooms-round7-verify.mjs
+     re-measure them on every tour. At 390x844 the WIDTH is now the binding
+     constraint, which is the right way round for a board. */
+  max-width: min(100%, calc(100dvh - 29rem));
   margin-inline: auto;
   flex: 0 0 auto;
   aspect-ratio: 1;
@@ -207,16 +218,25 @@
 .ch-cell--pop .ch-cell__fig { animation: ch-pop 200ms var(--ease-settle); }
 
 /* Pencil marks: nine slots so a mark never moves when its neighbours change
-   (a moving pencil grid is unreadable at speed). */
+   (a moving pencil grid is unreadable at speed).
+
+   ROUND 6 (AAA 3.3 + 6.2): these marks ARE the room's memory prosthetic, and
+   they shipped at 8.96px in `--ink-faint` (#8a795f on #f6efe2 = 3.69:1) —
+   under the 4.5:1 body floor and, at 1:1 on the glass, close to invisible.
+   NYT prints candidates at ~11-12px in clearly-inked grey. They now sit at
+   11.2px in `--ink-soft` (#55452f on #f6efe2 = 8.07:1; dark theme #c2b394 on
+   #2c241a = 8.5:1). The three ink weights still separate cleanly in
+   grayscale — given BOLD `--ink`, her figures regular in the accent, marks a
+   third the size in soft ink — and none of this costs a pixel of height. */
 .ch-pencil {
   position: absolute;
   inset: 2px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  font-size: 0.56rem;
+  font-size: 0.7rem;
   line-height: 1;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   pointer-events: none;
 }
 .ch-pencil span { display: flex; align-items: center; justify-content: center; }
@@ -226,28 +246,38 @@
    Thumb zone: the figure pad + the room's verbs (all >=44px)
    -------------------------------------------------------------------------- */
 
-/* Two bands: what is free on top, what costs underneath. On a short screen
-   they collapse into one row (`display: contents` promotes the five buttons to
-   direct children of the toolbar) — that alone gives the ledger leaf back
-   ~50px of height on a 375x667 glass, which is worth more than the roominess. */
-.ch-toolbar { display: flex; flex-direction: column; gap: 0.4rem; }
-.ch-tools { display: flex; gap: 0.4rem; }
+/* ONE row of verbs at every size (`display: contents` promotes the five
+   buttons to direct children of the toolbar). It used to be two stacked bands
+   — free on top, priced underneath — which cost ~48px of height on a tall
+   glass, and height is the axis that decides how big the ledger leaf can be.
+   The bands were belt-and-braces anyway: every priced verb prints its own
+   price in its label ("· −2", "· −4") and the free ones print none, so the
+   thing the bands were for (the price of a verb is never a surprise) survives
+   the collapse. Reading order still runs free → priced, left to right. */
+.ch-toolbar { display: flex; flex-direction: row; gap: 0.3rem; }
+.ch-tools { display: contents; }
 
 .ch-tool {
   flex: 1;
   min-height: var(--tap-target);
-  padding: 0.35rem 0.5rem;
+  padding: 0.2rem 0.15rem;
   border: 1px solid var(--paper-edge);
   border-radius: 999px;
   background: var(--paper-raised);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: var(--text-sm);
+  /* Five verbs share the row at ~70px each on a 390px glass; the label wraps
+     to two or three lines inside the 44px key rather than truncating. */
+  font-size: 0.72rem;
+  line-height: 1.1;
   cursor: pointer;
   transition: transform var(--dur-press), filter var(--dur-press);
   touch-action: manipulation;
 }
-.ch-tool:active { transform: translateY(1px); filter: brightness(0.94); }
+/* U.1: `.is-pressed` lands from pointerdown (the capture-phase delegate in
+   app/platform/boot.ts), so the press answers within a frame even where iOS
+   Safari withholds `:active`. Both selectors, so nothing regresses. */
+.ch-tool:active, .ch-tool.is-pressed { transform: translateY(1px); filter: brightness(0.94); }
 .ch-tool:disabled { opacity: 0.45; cursor: default; }
 /* Pencil mode ON is a MODE, so it reads as pressed ink, not as a commit. */
 .ch-tool--on {
@@ -257,9 +287,13 @@
   font-weight: 600;
 }
 
+/* SIX columns, not five: nine figures + Undo + a double-wide Erase land in the
+   same TWO rows the five-column pad used, so the room's undo costs the ledger
+   leaf nothing on the axis it has none of. Keys are ~59px at 390px — still
+   comfortably over the 44px floor (AAA 6.19). */
 .ch-pad {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 5px;
 }
 .ch-key {
@@ -279,7 +313,7 @@
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-.ch-key:active { transform: scale(0.94); }
+.ch-key:active, .ch-key.is-pressed { transform: scale(0.94); }
 .ch-key:disabled { opacity: 0.5; cursor: default; }
 /* Pencil mode: the pad is drawn in pencil too, so the mode is visible from
    the keys themselves and not only from the toggle. */
@@ -294,7 +328,9 @@
   font-size: 0.6rem;
   color: var(--ink-faint);
 }
-.ch-key--wide { font-family: var(--font-body); font-size: 0.85rem; }
+/* The two word-keys (Undo, Lift/Erase): body type, not the figure display face. */
+.ch-key--verb { font-family: var(--font-body); font-size: 0.8rem; }
+.ch-key--wide { grid-column: span 2; }
 
 /* ONE reserved chrome line — the tier + figures-left at rest, the toast when
    there is one. Two lines tall at 390px so a wrapping refusal never shifts the
@@ -372,16 +408,13 @@
   .ch { gap: 0.35rem; padding-top: 0.35rem; }
   .ch__sub { display: none; }
   .ch-key { min-height: 46px; font-size: 1.3rem; }
+  .ch-key--verb { font-size: 0.72rem; }
+  /* Height is the binding constraint here, so the cell is ~33px and the nine
+     mark slots are ~10px each: the marks scale with them (9.9px) rather than
+     spilling. Still 10% up on the 8.96px that shipped, and the contrast fix
+     above applies at every size. */
+  .ch-pencil { font-size: 0.62rem; }
   .ch-toastslot { min-height: 2.1rem; }
-  /* The five verbs share ONE row: `display: contents` lifts the buttons out of
-     their bands and lets the toolbar lay them out directly. */
-  .ch-toolbar { flex-direction: row; gap: 0.3rem; }
-  .ch-tools { display: contents; }
-  .ch-tool {
-    padding: 0.2rem 0.15rem;
-    font-size: 0.72rem;
-    line-height: 1.1;
-  }
   /* 667 − 23rem = 299px ≈ 33px cells, and the whole leaf clears the deck with
      room for a three-line verb label. Measured for real by the bounding-box
      assertion in scripts/round5-capture.mjs. */
@@ -398,5 +431,6 @@
     animation-delay: 0ms;
   }
   .ch-cell--wrong .ch-cell__ghost { display: none; }
-  .ch-key:active, .ch-tool:active { transform: none; }
+  .ch-key:active, .ch-key.is-pressed,
+  .ch-tool:active, .ch-tool.is-pressed { transform: none; }
 }
