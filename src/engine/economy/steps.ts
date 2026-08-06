@@ -68,6 +68,27 @@
  * Sanctum row around day 6–10 and typically wins the volume in 14–28 days of
  * daily play — Blue Prince's shape, at cozy scale.
  *
+ * ═══ ROUND-10 — SOLVING POWERS THE CLIMB ═══
+ * Owner directive: *"Keys toward the padlocked upper floors should come
+ * primarily from SOLVED rooms rather than only from utility cards — so skill,
+ * not just persistence, earns the campaign."* Before this, every key in the
+ * game came off a green card or off Fern, so the padlock arc was a
+ * DRAFTING-LUCK arc and playing the word games well bought steps and nothing
+ * else. Three numbers here carry the change, and every 4.10 target was
+ * re-measured against them:
+ *
+ *   - `KEY_SUPPLY.solveKeysByTier` — a solved room pays a key by row-band
+ *     tier (0/1/1). Rows 3–4 are tier 2 and `DOOR_LOCKS` gates rows 4–5, so
+ *     THE STOREY BELOW A PADLOCK IS THE STOREY THAT PAYS FOR IT.
+ *   - `DOOR_LOCKS.keyCost` 1 → 2, `chanceByRow[4]` 0.75 → 0.9 — the gate
+ *     repriced for the bigger supply rather than the supply capped, so the
+ *     solve stays generous and the top stays expensive.
+ *   - `MOVE_COST_BY_ROW[4]` −6 → −7 — the first locked storey, where the
+ *     push-your-luck decision actually happens.
+ *
+ * Measured after the retune: solves supply ≈1.2 keys/day against ≈0.7 off the
+ * green deck — keys are now primarily earned, not drafted.
+ *
  * Unchanged rulings:
  *   - weight 0 → free feedback moment, never ledgered (AAA R.1 / 3.2)
  *   - weight 1 → −2 (tier 3 rooms −3); weight 2 doubles (reserved risk rooms)
@@ -118,17 +139,27 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
  *
  * Minimum pure ascent, entrance (row 0) → THE SANCTUM LANDING (row 5) — the
  * ascent the player actually has to pay for:
- *   1 + 2 + 3 + 6 + 9 = 21 steps — MORE than the whole base budget, in a
+ *   1 + 2 + 3 + 7 + 9 = 22 steps — MORE than the whole base budget, in a
  *   straight line, before a single card is drafted or a single door is
  *   re-walked. The landing is therefore never reachable on the budget alone:
  *   it has to be paid for with tea, snacks and solves. That is the
  *   push-your-luck, and it is why day 1 is not day 30.
  *
+ * ROUND-10 RETUNE — row 4 moved −6 → −7. Solved rooms now pay KEYS
+ * (`KEY_SUPPLY.solveKeysByTier`), which is the owner's "skill, not just
+ * persistence, earns the campaign"; a solve-fed climb crosses the padlocks
+ * faster, and re-measured on the old table a skilled player stood at the
+ * door on day 1 in 29% of campaigns (published: <8%) with a median first
+ * reach of day 2 (published: 6–10). The step price of the FIRST locked
+ * storey is where that came back, because it is the storey the whole
+ * push-your-luck decision hinges on and it does not touch the decent day
+ * (whose median top row is 4, 1-based — i.e. row 3, 0-based).
+ *
  * The two lower bands are UNTOUCHED (−1/−1/−2/−3): the decent day lives on
  * rows 0–3 and its 10–15 minute window is calibrated there. Every added step
  * sits on the last two storeys, where the climb is the whole point.
  */
-export const MOVE_COST_BY_ROW: readonly number[] = [-1, -1, -2, -3, -6, -9, -9];
+export const MOVE_COST_BY_ROW: readonly number[] = [-1, -1, -2, -3, -7, -9, -9];
 
 export function moveAt(row: number): number {
   const i = Math.max(0, Math.min(MOVE_COST_BY_ROW.length - 1, Math.floor(row)));
@@ -329,11 +360,29 @@ export const STEP_TABLE = {
  * ascent), which is what makes the last two storeys something you prepare for
  * with Fern's key rather than something you stumble into on a lucky Tuesday.
  * Row 6 keeps a rate only so the table stays total; nothing ever reads it.
+ *
+ * ═══ ROUND-10 RETUNE — THE GATE NOW PRICES A SOLVE-FED KEY SUPPLY ═══
+ * `KEY_SUPPLY.solveKeysByTier` makes SOLVING the main source of keys (the
+ * owner's directive 3). That roughly doubled the supply, so the gate was
+ * repriced rather than the supply capped — a padlock now costs **2 keys**
+ * (`keyCost`), i.e. an ascent buys its way through ≈1.85 padlocks at 2 keys
+ * each ≈ 3.7 keys, against ≈1.2/day from solves + ≈0.7/day off the green deck
+ * + Fern's dawn key once her friendship warms. Capping the payout instead
+ * would have made the *solve* the thing that felt weak; pricing the door
+ * keeps the solve generous and the top expensive, which is the shape AAA
+ * 4.10d asks for. Rates lifted 0.75/0.95 → 0.9/0.95 in the same pass: with
+ * two keys to find, a 25%-unlocked first gate was a coin flip that skipped
+ * the arc entirely.
+ *
+ * Re-measured (tests/economy-simulation.test.ts, 400 seeded campaigns):
+ * first Sanctum reach median day 8, 4.8% on day 1, 97% by day 21; volume
+ * win median day 20; decent day 11.8 min median, p90 21.6.
  */
 export const DOOR_LOCKS = {
   /** P(a door into this 0-based row is locked); rows 0–3 never lock. */
-  chanceByRow: [0, 0, 0, 0, 0.75, 0.95, 0.95] as readonly number[],
-  keyCost: 1,
+  chanceByRow: [0, 0, 0, 0, 0.9, 0.95, 0.95] as readonly number[],
+  /** Keys one padlock consumes. Round 10: 1 → 2 (see the retune note above). */
+  keyCost: 2,
 } as const;
 
 /**
@@ -360,6 +409,33 @@ export const KEY_SUPPLY = {
   cabinetKeys: 2,
   /** The Boot Room hook: the common ground-floor key, tiers 1 only. */
   bootRoomKeys: 1,
+  /**
+   * ── ROUND 10: THE CLIMB IS BOUGHT WITH SOLVES ──────────────────────────
+   *
+   * Owner directive: *"Keys toward the padlocked upper floors should come
+   * primarily from SOLVED rooms rather than only from utility cards — so
+   * skill, not just persistence, earns the campaign."*
+   *
+   * Before this, every key in the game came off a green card or off Fern:
+   * the padlock arc was a *drafting-luck* arc, and playing the word games
+   * well bought nothing but steps. A solved room now hands over a key by
+   * ROW-BAND TIER, and the geometry is the point — `DOOR_LOCKS` gates rows 4
+   * and 5, and rows 3–4 are tier 2, so THE STOREY BELOW A PADLOCK IS THE
+   * STOREY THAT PAYS FOR IT. Solve your way up, or bank green cards and hope.
+   *
+   * Indexed by tier − 1 (tiers 1/2/3 ⇒ rows 0–2 / 3–4 / 5–6):
+   *   tier 1 → 0 — the ground floor pays in steps; there is nothing locked
+   *                between her and the first landing, so a key there would be
+   *                a key with nowhere to go.
+   *   tier 2 → 1 — the storey under the first padlock.
+   *   tier 3 → 1 — she is already past the gates; a second would only bank.
+   *
+   * Keys still reset nightly (MANOR_DESIGN §9), so this buys today's ascent
+   * and never a stockpile, and `tests/economy-simulation.test.ts` re-measures
+   * AAA 4.10b/c/d/e against it (a solve-fed climb is a faster climb, so the
+   * lock rates below were re-tuned in the same change).
+   */
+  solveKeysByTier: [0, 1, 1] as readonly number[],
   /**
    * ── INDEXED BY AFFINITY **POINTS**, NEVER BY RANK ──────────────────────
    * `fernMorningKeysByPoints[p]` is the answer for p RAW POINTS, the integer
@@ -464,6 +540,19 @@ export function fernMorningKeys(fernPoints: number): number {
   const points = Math.floor(fernPoints);
   const table = KEY_SUPPLY.fernMorningKeysByPoints;
   return table[Math.min(points, table.length - 1)]!;
+}
+
+/**
+ * Keys a solved room hands over, by its row-band tier (round 10 — the owner's
+ * "skill, not just persistence, earns the campaign"). Applied by
+ * `app/slices/room.ts` on the `solved` RoomEvent, i.e. through the ONE place
+ * every room kind's solve already lands, rather than per-adapter: a future
+ * room kind earns its keys the day it is registered, and no adapter can pay a
+ * different rate than the table says.
+ */
+export function solveKeys(tier: Tier): number {
+  const i = Math.max(0, Math.min(KEY_SUPPLY.solveKeysByTier.length - 1, Math.floor(tier) - 1));
+  return KEY_SUPPLY.solveKeysByTier[i]!;
 }
 
 /** Deterministic lock roll for a draft target cell (0-based row). */

@@ -29,7 +29,7 @@
  */
 
 import type {
-  CharacterId, DayRecord, FragmentDef, FragmentKind, LetterDef, RoomCategory, VolumeDef,
+  CharacterId, DayRecord, FragmentDef, FragmentKind, LetterDef, RoomCategory, Tier, VolumeDef,
   VolumeState,
 } from './types';
 import type { GuessCloseness, RecordedEvent } from './events';
@@ -432,6 +432,117 @@ export function pityDue(
     unfoundFragments(def, state).length > 0 &&
     fragmentDroughtDays(dayRecords) >= PITY_DROUGHT_DAYS
   );
+}
+
+// ---------------------------------------------------------------------------
+// LEGIBILITY — entering gets the document, solving makes it legible
+// ---------------------------------------------------------------------------
+
+/**
+ * ROUND-10 DESIGN CHANGE — "WHAT IS THE POINT OF SOLVING THE WORD PUZZLES?"
+ *
+ * Owner directive, verbatim: *"What's the point of solving the word puzzles?
+ * Solving them needs to matter, even if they're not blocking (I like they're
+ * not blocking from a cozy pov)."*
+ *
+ * The verified defect: a violet room handed over its fragment on ENTRY
+ * (app/slices/manor.ts), fully readable, and a solved word game paid back
+ * steps. So the player could walk into the Archive, walk out without touching
+ * anything, and keep the clue — the word games funded the mystery without ever
+ * BEING the mystery.
+ *
+ * The fix keeps the cozy promise (nothing is ever locked away) and still makes
+ * the puzzle the thing that moves the case:
+ *
+ *   - ENTERING a mystery room still files the fragment, forever, immediately —
+ *     but SEALED: a torn leaf, a smudged rubbing, a page not yet made out. It
+ *     is hers regardless, it is visible in the journal, and it is never
+ *     required for anything (AAA 4.18 — a sharp player still wins on day one,
+ *     because the answer is fixed at volume start and no fragment gates the
+ *     door).
+ *   - SOLVING a word game MAKES PAGES OUT. The room's own solve-channel
+ *     fragment arrives already legible (you solved for it), and the solve
+ *     additionally deciphers `decipherYield(tier)` of the sealed backlog —
+ *     ONE at the ground floor, THREE at the top (AAA 4.10's "tier scales the
+ *     yield").
+ *
+ * A sealed engraving therefore carries no machine-checkable constraint yet:
+ * `alphabetFacts` reads only made-out engravings (engine/journal.ts), which is
+ * exactly the mechanical teeth the directive asks for — the plate narrows when
+ * she SOLVES, not when she walks.
+ *
+ * ── PERSISTENCE, WITHOUT A SAVE-SCHEMA CHANGE ──────────────────────────────
+ * `VolumeState` is frozen in engine/types.ts and `app/store.ts`'s `selectSave`
+ * projection is architect-owned, so legibility rides the same write-once flag
+ * mechanism the letters' `opened-` and the journal's `viewed-` markers already
+ * use (docs/flags.md `vol.*`).
+ *
+ * It takes TWO flags rather than one, deliberately, and the reason is the live
+ * save: a fragment is sealed iff `sealed-<id>` is set AND `legible-<id>` is
+ * not. Flags are write-once (never unset), so "made out" has to be its own
+ * flag; and because the DEFAULT of a save that has neither flag is *legible*,
+ * every fragment already filed in the owner's live save stays readable. A
+ * single `legible-` opt-in flag would have re-sealed sixteen pages she has
+ * been reading for a fortnight, and would have needed a migration in another
+ * agent's file to avoid it.
+ */
+export function sealedFragmentFlag(volumeId: string, fragmentId: string): string {
+  return `vol.${volumeId}.sealed-${fragmentId}`;
+}
+
+export function legibleFragmentFlag(volumeId: string, fragmentId: string): string {
+  return `vol.${volumeId}.legible-${fragmentId}`;
+}
+
+function idsWithPrefix(prefix: string, flags: Iterable<string>): Set<string> {
+  const out = new Set<string>();
+  for (const f of flags) if (f.startsWith(prefix)) out.add(f.slice(prefix.length));
+  return out;
+}
+
+/**
+ * The fragments of this volume that are filed but NOT yet made out. Derived,
+ * never stored: `sealed-` minus `legible-`, so the write-once rule holds and a
+ * save written before this mechanic existed reports nothing sealed.
+ */
+export function sealedFragmentIds(volumeId: string, flags: Iterable<string>): Set<string> {
+  const all = [...flags];
+  const sealed = idsWithPrefix(`vol.${volumeId}.sealed-`, all);
+  for (const id of idsWithPrefix(`vol.${volumeId}.legible-`, all)) sealed.delete(id);
+  return sealed;
+}
+
+/**
+ * How many sealed pages one solve makes out, by the room's row-band tier.
+ * THE TIER SCALING (owner directive 4): "a tier-3 room near the top yields
+ * more mystery material than a ground-floor one". Strictly increasing, and
+ * pinned by tests/journal.test.ts so a retune cannot flatten it silently.
+ */
+export const DECIPHER_YIELD_BY_TIER: readonly number[] = [1, 2, 3];
+
+export function decipherYield(tier: Tier): number {
+  return DECIPHER_YIELD_BY_TIER[Math.max(0, Math.min(2, tier - 1))]!;
+}
+
+/**
+ * Which sealed pages a solve makes out: the oldest still-sealed fragments on
+ * the drip (lowest `revealOrder` first), so the definition poem fills from the
+ * top and the journal never leaves an early gap staring at her while a late
+ * one resolves.
+ */
+export function fragmentsToDecipher(
+  def: VolumeDef,
+  state: VolumeState,
+  sealedIds: ReadonlySet<string>,
+  count: number,
+): string[] {
+  if (count <= 0) return [];
+  const found = new Set(state.foundFragmentIds);
+  return [...def.fragments]
+    .filter((f) => found.has(f.id) && sealedIds.has(f.id))
+    .sort((a, b) => a.revealOrder - b.revealOrder)
+    .slice(0, count)
+    .map((f) => f.id);
 }
 
 // ---------------------------------------------------------------------------

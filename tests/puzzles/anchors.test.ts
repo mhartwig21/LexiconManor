@@ -900,15 +900,24 @@ function isSubtleTheme(theme: string): boolean {
   if (['Palindromes', 'Semordnilaps', 'Heteronyms', 'Contronyms',
     'Contronyms (Own Opposite)', 'Onomatopoeia', 'Portmanteau Words',
     'Contains Roman Numerals'].includes(theme)) return true;
-  return /^(Anagrams of|Rhymes with|Hidden |Silent |Two Pairs|Starts and Ends)/.test(theme);
+  return /^(Anagrams of|Rhymes with|Hidden |Silent |Two Pairs|Starts and Ends|Homophones|Add an? |Drop )/
+    .test(theme);
 }
 
 describe('tier escalation — The Library (herring budget + category subtlety)', () => {
   const at = (tier: 1 | 2 | 3) => WORD_WEB_POOL.filter((p) => (p.tier ?? 1) === tier);
 
-  it('all three tiers are stocked', () => {
+  /**
+   * ROUND 10 — 10 → 45 per tier. The pool-size floor in tests/content.test.ts
+   * only proves the Library is deep; this proves it is deep *evenly*. Before
+   * the expansion the shelf ran 17/16/18 and, mid-expansion, 29/80/18 — a
+   * middle-heavy house where the top row held twelve percent of the content
+   * and the tier-3 cap was doing the shaping. A per-tier floor is what stops
+   * a future generator tweak from refilling one row at another's expense.
+   */
+  it('all three tiers are stocked to a volume’s depth', () => {
     for (const tier of [1, 2, 3] as const) {
-      expect(at(tier).length, `tier ${tier}`).toBeGreaterThanOrEqual(10);
+      expect(at(tier).length, `tier ${tier}`).toBeGreaterThanOrEqual(45);
     }
   });
 

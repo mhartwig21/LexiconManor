@@ -304,6 +304,45 @@ export default function SanctumView() {
     navigate('/');
   };
 
+  /**
+   * THE CEREMONY'S WAY OUT (AAA 11.1 — round-10 blocker, decided rather than
+   * excused).
+   *
+   * `won-reveal` and the CLOSING_BEATS variant of `won-portrait` advanced
+   * FORWARD only: every control on them ("Look up at the Portrait", "…",
+   * "Let him rest") went deeper into the ceremony, none returned toward the
+   * blueprint, and there is no auto-advance — so neither surface satisfied
+   * 11.1, whose one exemption is an unconditional auto-advance of ≤2s.
+   *
+   * The choice was: carry a BackLink through, or write a forward-only
+   * exception into docs/AAA_BAR.md. Neither, exactly — both would have been
+   * wrong here, and for the same reason. A plain BackLink would have LEFT the
+   * volume open: the ceremony's terminal button is the only caller of
+   * `beginNextVolume()` + `endDay('volume-solved')` anywhere in the app, and
+   * the `alreadySolved` screen she would return to does not offer it. So a
+   * "way back" would have been a way to strand the campaign's roll-over. And a
+   * documented exception would have kept the single biggest, unrepeatable
+   * scene in the game as the one surface with no exit — on a phone, in a house
+   * with no browser back button.
+   *
+   * So the ceremony's OWN terminal action is offered from its first beat:
+   * `Let the house sleep` does exactly what the epilogue's button does — closes
+   * the volume properly and returns to the blueprint. Forward-only stays the
+   * default path for anyone who wants the whole ceremony; the exit is a quiet
+   * aside beside it, never the loud one. It also satisfies U.2 (every
+   * celebration is tap-skippable) with the same control.
+   */
+  const ceremonyExit = (
+    <button
+      type="button"
+      className="snc-btn snc-btn--aside"
+      onClick={(e) => { e.stopPropagation(); closeVolume(); }}
+    >
+      <span className="snc-btn__label">Let the house sleep</span>
+      <span className="snc-btn__sub">the journal keeps the rest</span>
+    </button>
+  );
+
   // The portrait softens only once the win is *shown* (not during the
   // listening beat, even though the store already knows).
   const soft =
@@ -342,6 +381,7 @@ export default function SanctumView() {
             <button className="snc-btn snc-btn--primary" onClick={(e) => { e.stopPropagation(); enterWonPortrait(); }}>
               Look up at the Portrait
             </button>
+            {ceremonyExit}
           </div>
         </div>
       </div>
@@ -382,6 +422,11 @@ export default function SanctumView() {
           <button className="snc-btn" onClick={(e) => { e.stopPropagation(); advance(); }}>
             {last ? 'Let him rest' : '…'}
           </button>
+          {/* On EVERY beat, not only the early ones. 11.1 is a per-surface
+              promise and the beat is the surface: a player who taps to the
+              last line and then wants out must not have to pass through one
+              more screen to find the door. */}
+          {ceremonyExit}
         </div>
       </div>
     );

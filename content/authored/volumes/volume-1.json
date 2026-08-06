@@ -118,7 +118,7 @@
       "kind": "engraving",
       "group": "engravings",
       "sourceRoomCategory": "mystery",
-      "revealOrder": 11,
+      "revealOrder": 14,
       "source": "A rubbing from the Conservatory arch",
       "text": "Its breath runs A, then U, then A — exhale, hollow, exhale. All the rest of it is consonant bone.",
       "constraint": { "kind": "vowel-sequence", "vowels": "AUA" },
@@ -150,11 +150,12 @@
       "kind": "engraving",
       "group": "engravings",
       "sourceRoomCategory": "mystery",
-      "revealOrder": 14,
+      "revealOrder": 11,
       "source": "Etched around the Study inkstand",
       "text": "One letter enters it twice, like a guest who cannot keep away. Every other letter calls only once.",
       "constraint": { "kind": "one-letter-twice" },
-      "interpretation": "Ellery: “Exactly one letter is doubled somewhere in the word; the rest appear a single time each.”"
+      "relatedIds": ["v1-e4"],
+      "interpretation": "Ellery: “Exactly one letter is doubled somewhere in the word; the rest appear a single time each. That halves what is left of your list, and it is the half with the pool in it.”"
     },
     {
       "id": "v1-d6",

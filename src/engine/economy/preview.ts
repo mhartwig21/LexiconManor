@@ -11,7 +11,7 @@
 
 import type { RoomCard, Tier } from '../types';
 import { getRoomAdapter } from '../rooms/registry';
-import { STEP_TABLE } from './steps';
+import { solveKeys, STEP_TABLE } from './steps';
 
 /** What the ui needs to say about a card's payback, already stringified. */
 export interface DraftCardStake {
@@ -28,7 +28,10 @@ export interface DraftCardStake {
  *   LEANER as you climb after the 2026-08 owner retune, so the card face is
  *   also the warning that a tier-3 room will not pay for the stairs it took
  *   to reach it);
- * - mystery rooms: "+1 fragment" (the clue drips on entry, AAA 4.14);
+ * - mystery rooms: "+1 sealed page" (round 10 — the clue still drips on ENTRY
+ *   and is hers forever, AAA 4.14, but it arrives undeciphered and a solved
+ *   word game is what makes it out, so the card must not promise a reading it
+ *   does not hand over);
  * - parlor/utility: null — parlors trade in conversation, and utility cards
  *   already print their own numbers in the card preview line.
  */
@@ -37,12 +40,19 @@ export function draftCardStake(
   tier: Tier,
 ): DraftCardStake | null {
   if (card.category === 'mystery') {
-    return { size: null, label: '+1 fragment' };
+    return { size: null, label: '+1 sealed page' };
   }
   if (card.category === 'puzzle' && card.puzzleKind) {
     const size = getRoomAdapter(card.puzzleKind)?.size ?? 'anchor';
     const payout = STEP_TABLE.solve(size, tier);
-    return { size, label: `${size} · +${payout} steps on solve` };
+    // Round 10: the card face states what a solve is worth in FULL, because
+    // the solve is now the engine of both arcs — steps back into the day, a
+    // key toward the padlocks above (`solveKeys`), and pages made out in the
+    // journal. Derived, never hand-copied, so a retune moves every card.
+    const keys = solveKeys(tier);
+    const parts = [`+${payout} steps`];
+    if (keys > 0) parts.push(`+${keys} key${keys === 1 ? '' : 's'}`);
+    return { size, label: `${size} · ${parts.join(' · ')} on solve` };
   }
   return null;
 }

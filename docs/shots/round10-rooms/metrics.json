@@ -1,0 +1,172 @@
+{
+  "gallery": {
+    "boardId": "twistle-t1-34",
+    "size": 25,
+    "won": true,
+    "hasGrid": true,
+    "threads": 5,
+    "hungCells": 18,
+    "threadOpacity": "0.42",
+    "gridBox": {
+      "x": 28.8,
+      "y": 300.9,
+      "w": 332.4,
+      "h": 332.4,
+      "bottom": 633.3
+    },
+    "doneBox": {
+      "x": 14.4,
+      "y": 179.1,
+      "w": 361.2,
+      "h": 537.7,
+      "bottom": 716.8
+    },
+    "emptyBelow": 56.1
+  },
+  "conservatory": {
+    "boardId": "hive-t1-95",
+    "strip": {
+      "stripRight": 287,
+      "stripW": 272.6,
+      "sliced": [],
+      "chips": [
+        {
+          "word": "ALLURE",
+          "left": 14.4,
+          "right": 92.1,
+          "visible": 77.7,
+          "full": 77.7,
+          "hidden": false
+        },
+        {
+          "word": "ALLELE",
+          "left": 97.7,
+          "right": 170.9,
+          "visible": 73.2,
+          "full": 73.2,
+          "hidden": false
+        },
+        {
+          "word": "REGULAR",
+          "left": 176.5,
+          "right": 267.1,
+          "visible": 90.6,
+          "full": 90.6,
+          "hidden": false
+        },
+        {
+          "word": "LUGGAGE",
+          "left": 272.7,
+          "right": 363.3,
+          "visible": 14.3,
+          "full": 90.6,
+          "hidden": true
+        },
+        {
+          "word": "LEGALLY",
+          "left": 368.9,
+          "right": 453.2,
+          "visible": -81.9,
+          "full": 84.3,
+          "hidden": true
+        },
+        {
+          "word": "LARGELY",
+          "left": 458.8,
+          "right": 545.1,
+          "visible": -171.8,
+          "full": 86.3,
+          "hidden": true
+        },
+        {
+          "word": "GALLERY",
+          "left": 550.7,
+          "right": 635.7,
+          "visible": -263.7,
+          "full": 85.1,
+          "hidden": true
+        },
+        {
+          "word": "EAGERLY",
+          "left": 641.3,
+          "right": 726.8,
+          "visible": -354.3,
+          "full": 85.5,
+          "hidden": true
+        }
+      ]
+    }
+  },
+  "countingHouse": {
+    "leaf": {
+      "x": 0,
+      "y": 145,
+      "w": 390,
+      "h": 390,
+      "bottom": 535
+    },
+    "cell": {
+      "x": 0,
+      "y": 145,
+      "w": 43.3,
+      "h": 43.3,
+      "bottom": 188.3
+    },
+    "chPad": {
+      "left": "0px",
+      "right": "0px",
+      "width": 390
+    },
+    "stageW": 390,
+    "padKey": {
+      "x": 5.6,
+      "y": 660.6,
+      "w": 59,
+      "h": 52,
+      "bottom": 712.6
+    },
+    "undoPresent": true,
+    "leafFullyVisible": true,
+    "erase": {
+      "cell": {
+        "i": 0,
+        "marks": "3567"
+      },
+      "keyBefore": {
+        "label": "Rub out 7",
+        "disabled": false
+      },
+      "marksAfter": "356",
+      "keyAfter": {
+        "label": "Rub out 6",
+        "disabled": false
+      },
+      "marksAfterUndo": "3567"
+    }
+  },
+  "darkroom": {
+    "meta": "3/15 letters penciled",
+    "toast": "Still murky — 4/15 letters ring true · −2 steps",
+    "prints": [
+      "4/15"
+    ]
+  },
+  "library": {
+    "boardId": "web-28",
+    "herrings": 1,
+    "scattered": {
+      "main": "No two of these share a thread. · −3 steps",
+      "bit": null
+    },
+    "herringChase": {
+      "picked": [
+        "EAR",
+        "PEARS",
+        "REHEARSE",
+        "REAPS"
+      ],
+      "main": "Two of these share a thread. · −3 steps",
+      "bit": "EAR, PEARS, REHEARSE carry “EAR”. But no."
+    }
+  }
+}

@@ -65,7 +65,7 @@
         "words": [
           "COMB",
           "SAW",
-          "ZIPPER",
+          "RAKE",
           "GEAR"
         ]
       },
@@ -452,7 +452,7 @@
         "tier": "purple",
         "words": [
           "ESCALATOR",
-          "ZIPPER",
+          "THERMOS",
           "ASPIRIN",
           "TRAMPOLINE"
         ]
@@ -638,7 +638,7 @@
           "WATER",
           "NOSE",
           "JOKE",
-          "COMMENTARY"
+          "TOTAL"
         ]
       }
     ]
@@ -718,7 +718,7 @@
         "tier": "blue",
         "words": [
           "FRANK",
-          "BILL",
+          "HOPE",
           "GRACE",
           "MARK"
         ]
@@ -754,7 +754,7 @@
         "tier": "green",
         "words": [
           "CLOCK",
-          "BOMB",
+          "METER",
           "HEART",
           "BOX"
         ]
@@ -1683,7 +1683,7 @@
         "theme": "Disney Villains",
         "tier": "blue",
         "words": [
-          "SCAR",
+          "CRUELLA",
           "URSULA",
           "JAFAR",
           "MALEFICENT"
@@ -1903,10 +1903,10 @@
         "theme": "Things That Tick",
         "tier": "green",
         "words": [
-          "CLOCK",
-          "BOMB",
-          "HEART",
-          "BOX"
+          "WATCH",
+          "TIMER",
+          "PULSE",
+          "CRICKET"
         ]
       },
       {
@@ -2044,7 +2044,7 @@
           "FLAG",
           "OCEAN",
           "HAIR",
-          "GOODBYE"
+          "CROWD"
         ]
       },
       {
@@ -2400,7 +2400,7 @@
         "tier": "yellow",
         "words": [
           "TENT",
-          "SLEEPING",
+          "LANTERN",
           "FLASHLIGHT",
           "COMPASS"
         ]
@@ -2525,6 +2525,5158 @@
           "HOME",
           "FRAME",
           "DREAM"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a01",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Toolbox",
+        "tier": "yellow",
+        "words": [
+          "HAMMER",
+          "PLIERS",
+          "LEVEL",
+          "CHISEL"
+        ]
+      },
+      {
+        "theme": "Kinds of Waves",
+        "tier": "green",
+        "words": [
+          "HEAT",
+          "CROWD",
+          "RADIO",
+          "TIDAL"
+        ]
+      },
+      {
+        "theme": "Contains “HAM”",
+        "tier": "blue",
+        "words": [
+          "GRAHAM",
+          "CHAMBER",
+          "SHAMPOO",
+          "HAMLET"
+        ]
+      },
+      {
+        "theme": "Can Follow “THUNDER”",
+        "tier": "purple",
+        "words": [
+          "STORM",
+          "BOLT",
+          "CLAP",
+          "STRUCK"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a02",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Cat Breeds",
+        "tier": "yellow",
+        "words": [
+          "SIAMESE",
+          "PERSIAN",
+          "TABBY",
+          "SPHYNX"
+        ]
+      },
+      {
+        "theme": "Things That Come in Pairs",
+        "tier": "green",
+        "words": [
+          "SOCKS",
+          "DICE",
+          "SCISSORS",
+          "CHOPSTICKS"
+        ]
+      },
+      {
+        "theme": "Contains “PER”",
+        "tier": "blue",
+        "words": [
+          "WHISPER",
+          "PEPPER",
+          "HAMPER",
+          "TEMPER"
+        ]
+      },
+      {
+        "theme": "___ MILL",
+        "tier": "purple",
+        "words": [
+          "WIND",
+          "TREAD",
+          "SAW",
+          "RUMOR"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a03",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Parts of a Shoe",
+        "tier": "yellow",
+        "words": [
+          "SOLE",
+          "HEEL",
+          "LACE",
+          "TONGUE"
+        ]
+      },
+      {
+        "theme": "Card Games",
+        "tier": "green",
+        "words": [
+          "BRIDGE",
+          "HEARTS",
+          "SPADES",
+          "RUMMY"
+        ]
+      },
+      {
+        "theme": "Rhymes with “HEEL”",
+        "tier": "blue",
+        "words": [
+          "CONCEAL",
+          "GENTEEL",
+          "ORDEAL",
+          "REPEAL"
+        ]
+      },
+      {
+        "theme": "Silent “G”",
+        "tier": "purple",
+        "words": [
+          "GNAT",
+          "DESIGN",
+          "CHAMPAGNE",
+          "REIGN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a04",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Sewing Kit",
+        "tier": "yellow",
+        "words": [
+          "THREAD",
+          "NEEDLE",
+          "THIMBLE",
+          "BUTTON"
+        ]
+      },
+      {
+        "theme": "Things With Arms",
+        "tier": "green",
+        "words": [
+          "OCTOPUS",
+          "CHAIR",
+          "JACKET",
+          "WINDMILL"
+        ]
+      },
+      {
+        "theme": "Contains “EED”",
+        "tier": "blue",
+        "words": [
+          "SEEDLING",
+          "PROCEED",
+          "INDEED",
+          "SPEEDY"
+        ]
+      },
+      {
+        "theme": "Can Precede “PRINT”",
+        "tier": "purple",
+        "words": [
+          "FOOT",
+          "BLUE",
+          "FINGER",
+          "NEWS"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a05",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Sandwich Breads",
+        "tier": "yellow",
+        "words": [
+          "RYE",
+          "SOURDOUGH",
+          "PITA",
+          "FOCACCIA"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Flat",
+        "tier": "green",
+        "words": [
+          "TIRE",
+          "NOTE",
+          "SODA",
+          "DENIAL"
+        ]
+      },
+      {
+        "theme": "Contains “OUR”",
+        "tier": "blue",
+        "words": [
+          "DETOUR",
+          "FLOURISH",
+          "JOURNEY",
+          "TOURIST"
+        ]
+      },
+      {
+        "theme": "Homophones of Letters",
+        "tier": "purple",
+        "words": [
+          "QUEUE",
+          "SEA",
+          "WHY",
+          "YOU"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a06",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things on a Desk",
+        "tier": "yellow",
+        "words": [
+          "LAMP",
+          "STAPLER",
+          "MONITOR",
+          "MUG"
+        ]
+      },
+      {
+        "theme": "Ways to Cook an Egg",
+        "tier": "green",
+        "words": [
+          "POACHED",
+          "SCRAMBLED",
+          "FRIED",
+          "BOILED"
+        ]
+      },
+      {
+        "theme": "Contains “MON”",
+        "tier": "blue",
+        "words": [
+          "LEMONADE",
+          "HARMONY",
+          "CEREMONY",
+          "ALMOND"
+        ]
+      },
+      {
+        "theme": "Can Follow “EGG”",
+        "tier": "purple",
+        "words": [
+          "SHELL",
+          "PLANT",
+          "NOG",
+          "HEAD"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a07",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Types of Cheese",
+        "tier": "yellow",
+        "words": [
+          "CHEDDAR",
+          "BRIE",
+          "GOUDA",
+          "FETA"
+        ]
+      },
+      {
+        "theme": "Things You Can Draw",
+        "tier": "green",
+        "words": [
+          "CURTAINS",
+          "CONCLUSION",
+          "BATH",
+          "CROWD"
+        ]
+      },
+      {
+        "theme": "Contains “RIE”",
+        "tier": "blue",
+        "words": [
+          "FRIEND",
+          "CARRIER",
+          "ORIENT",
+          "VARIETY"
+        ]
+      },
+      {
+        "theme": "___ BOAT",
+        "tier": "purple",
+        "words": [
+          "GRAVY",
+          "SAIL",
+          "HOUSE",
+          "TUG"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a08",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Sea Birds",
+        "tier": "yellow",
+        "words": [
+          "GULL",
+          "PELICAN",
+          "TERN",
+          "PUFFIN"
+        ]
+      },
+      {
+        "theme": "Things That Have Banks",
+        "tier": "green",
+        "words": [
+          "RIVER",
+          "SNOW",
+          "PIGGY",
+          "MEMORY"
+        ]
+      },
+      {
+        "theme": "Rhymes with “TERN”",
+        "tier": "blue",
+        "words": [
+          "YEARN",
+          "CHURN",
+          "RETURN",
+          "DISCERN"
+        ]
+      },
+      {
+        "theme": "Can Precede “LINE”",
+        "tier": "purple",
+        "words": [
+          "HEAD",
+          "PIPE",
+          "SIDE",
+          "TIME"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a09",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Picnic Basket Items",
+        "tier": "yellow",
+        "words": [
+          "BLANKET",
+          "THERMOS",
+          "SANDWICH",
+          "NAPKIN"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Sharp",
+        "tier": "green",
+        "words": [
+          "CURVE",
+          "WIT",
+          "TURN",
+          "CONTRAST"
+        ]
+      },
+      {
+        "theme": "Contains “NAP”",
+        "tier": "blue",
+        "words": [
+          "SNAPSHOT",
+          "KNAPSACK",
+          "CATNAP",
+          "SYNAPSE"
+        ]
+      },
+      {
+        "theme": "___ FLY",
+        "tier": "purple",
+        "words": [
+          "BUTTER",
+          "DRAGON",
+          "HORSE",
+          "MAY"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a10",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Units of Time",
+        "tier": "yellow",
+        "words": [
+          "MINUTE",
+          "DECADE",
+          "FORTNIGHT",
+          "ERA"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Stolen",
+        "tier": "green",
+        "words": [
+          "BASE",
+          "THUNDER",
+          "SHOW",
+          "HEART"
+        ]
+      },
+      {
+        "theme": "Contains “CAD”",
+        "tier": "blue",
+        "words": [
+          "CASCADE",
+          "ARCADE",
+          "CADET",
+          "CADENCE"
+        ]
+      },
+      {
+        "theme": "Heteronyms",
+        "tier": "purple",
+        "words": [
+          "WIND",
+          "CLOSE",
+          "DOVE",
+          "REFUSE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a11",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Deck of Cards",
+        "tier": "yellow",
+        "words": [
+          "JOKER",
+          "ACE",
+          "QUEEN",
+          "SUIT"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Blown",
+        "tier": "green",
+        "words": [
+          "BUBBLE",
+          "FUSE",
+          "WHISTLE",
+          "KISS"
+        ]
+      },
+      {
+        "theme": "Contains “OKE”",
+        "tier": "blue",
+        "words": [
+          "BROKEN",
+          "SMOKED",
+          "POKER",
+          "AWOKE"
+        ]
+      },
+      {
+        "theme": "Can Follow “CARD”",
+        "tier": "purple",
+        "words": [
+          "BOARD",
+          "SHARP",
+          "HOLDER",
+          "TABLE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a12",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Musical Genres",
+        "tier": "yellow",
+        "words": [
+          "JAZZ",
+          "REGGAE",
+          "FOLK",
+          "BLUES"
+        ]
+      },
+      {
+        "theme": "Things With Roots",
+        "tier": "green",
+        "words": [
+          "TREE",
+          "TOOTH",
+          "WORD",
+          "PROBLEM"
+        ]
+      },
+      {
+        "theme": "Contains “EGG”",
+        "tier": "blue",
+        "words": [
+          "LEGGINGS",
+          "BEGGAR",
+          "EGGPLANT",
+          "VEGGIE"
+        ]
+      },
+      {
+        "theme": "Can Precede “WORM”",
+        "tier": "purple",
+        "words": [
+          "BOOK",
+          "EARTH",
+          "SILK",
+          "GLOW"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a13",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Beach Things",
+        "tier": "yellow",
+        "words": [
+          "TOWEL",
+          "UMBRELLA",
+          "SANDCASTLE",
+          "SUNSCREEN"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Caught",
+        "tier": "green",
+        "words": [
+          "WAVE",
+          "GLIMPSE",
+          "BREAK",
+          "DRIFT"
+        ]
+      },
+      {
+        "theme": "Hidden Colors",
+        "tier": "blue",
+        "words": [
+          "DISTANT",
+          "HUNDRED",
+          "MOROSE",
+          "PLUMBING"
+        ]
+      },
+      {
+        "theme": "Silent “K”",
+        "tier": "purple",
+        "words": [
+          "KNEE",
+          "KNACK",
+          "KNOWLEDGE",
+          "KNUCKLE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a14",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Salad Ingredients",
+        "tier": "yellow",
+        "words": [
+          "LETTUCE",
+          "CUCUMBER",
+          "RADISH",
+          "CROUTON"
+        ]
+      },
+      {
+        "theme": "Things You Toss",
+        "tier": "green",
+        "words": [
+          "SALAD",
+          "COIN",
+          "SALT",
+          "BOUQUET"
+        ]
+      },
+      {
+        "theme": "Contains “RAD”",
+        "tier": "blue",
+        "words": [
+          "PARADE",
+          "GRADUAL",
+          "COMRADE",
+          "TRADITION"
+        ]
+      },
+      {
+        "theme": "Anagrams of “DANGER”",
+        "tier": "purple",
+        "words": [
+          "GARDEN",
+          "GANDER",
+          "RANGED",
+          "GRANDE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a15",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Cleaning Cupboard",
+        "tier": "yellow",
+        "words": [
+          "BROOM",
+          "SPONGE",
+          "BUCKET",
+          "POLISH"
+        ]
+      },
+      {
+        "theme": "Things You Can Hold",
+        "tier": "green",
+        "words": [
+          "BREATH",
+          "GRUDGE",
+          "COURT",
+          "DOOR"
+        ]
+      },
+      {
+        "theme": "Contains “ROOM”",
+        "tier": "blue",
+        "words": [
+          "MUSHROOM",
+          "GROOM",
+          "BEDROOM",
+          "LEGROOM"
+        ]
+      },
+      {
+        "theme": "___ BOX",
+        "tier": "purple",
+        "words": [
+          "SAND",
+          "CHATTER",
+          "SHOE",
+          "JUKE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a16",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Coffee Orders",
+        "tier": "yellow",
+        "words": [
+          "CORTADO",
+          "ESPRESSO",
+          "MOCHA",
+          "AMERICANO"
+        ]
+      },
+      {
+        "theme": "Things That Have Beans",
+        "tier": "green",
+        "words": [
+          "CHILI",
+          "JELLY",
+          "COFFEE",
+          "COCOA"
+        ]
+      },
+      {
+        "theme": "Contains “OCH”",
+        "tier": "blue",
+        "words": [
+          "BROCHURE",
+          "RICOCHET",
+          "EPOCH",
+          "CROCHET"
+        ]
+      },
+      {
+        "theme": "Silent “T”",
+        "tier": "purple",
+        "words": [
+          "LISTEN",
+          "CASTLE",
+          "WRESTLE",
+          "FASTEN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a17",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Winter Sports",
+        "tier": "yellow",
+        "words": [
+          "SKIING",
+          "CURLING",
+          "HOCKEY",
+          "LUGE"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Curled",
+        "tier": "green",
+        "words": [
+          "HAIR",
+          "LIP",
+          "RIBBON",
+          "MUSTACHE"
+        ]
+      },
+      {
+        "theme": "Contains “KEY”",
+        "tier": "blue",
+        "words": [
+          "MONKEY",
+          "TURKEY",
+          "DONKEY",
+          "JOCKEY"
+        ]
+      },
+      {
+        "theme": "Silent “C”",
+        "tier": "purple",
+        "words": [
+          "SCISSORS",
+          "SCENT",
+          "MUSCLE",
+          "SCENE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a18",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things You Wear on Your Head",
+        "tier": "yellow",
+        "words": [
+          "HELMET",
+          "CROWN",
+          "TURBAN",
+          "VISOR"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Royal",
+        "tier": "green",
+        "words": [
+          "FLUSH",
+          "BLUE",
+          "JELLY",
+          "MAIL"
+        ]
+      },
+      {
+        "theme": "Contains “OWN”",
+        "tier": "blue",
+        "words": [
+          "BROWNIE",
+          "DOWNPOUR",
+          "TOWNSHIP",
+          "RENOWNED"
+        ]
+      },
+      {
+        "theme": "Palindromes",
+        "tier": "purple",
+        "words": [
+          "NOON",
+          "ROTOR",
+          "MADAM",
+          "REFER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a19",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Ice Cream Flavors",
+        "tier": "yellow",
+        "words": [
+          "VANILLA",
+          "PISTACHIO",
+          "STRAWBERRY",
+          "MINT"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Fresh",
+        "tier": "green",
+        "words": [
+          "START",
+          "AIR",
+          "COAT",
+          "PRODUCE"
+        ]
+      },
+      {
+        "theme": "Rhymes with “MINT”",
+        "tier": "blue",
+        "words": [
+          "SPRINT",
+          "SQUINT",
+          "IMPRINT",
+          "LINT"
+        ]
+      },
+      {
+        "theme": "___ CONE",
+        "tier": "purple",
+        "words": [
+          "PINE",
+          "TRAFFIC",
+          "SNOW",
+          "NOSE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a20",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Types of Boats",
+        "tier": "yellow",
+        "words": [
+          "CANOE",
+          "KAYAK",
+          "FERRY",
+          "YACHT"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Cracked",
+        "tier": "green",
+        "words": [
+          "EGG",
+          "CODE",
+          "KNUCKLE",
+          "SMILE"
+        ]
+      },
+      {
+        "theme": "Contains “ERR”",
+        "tier": "blue",
+        "words": [
+          "TERRACE",
+          "HERRING",
+          "ERRAND",
+          "TERRIBLE"
+        ]
+      },
+      {
+        "theme": "Homophones of Numbers",
+        "tier": "purple",
+        "words": [
+          "WON",
+          "ATE",
+          "FOR",
+          "TOO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a21",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Bakery Case",
+        "tier": "yellow",
+        "words": [
+          "ECLAIR",
+          "DONUT",
+          "TART",
+          "MACARON"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Sweet",
+        "tier": "green",
+        "words": [
+          "TOOTH",
+          "TALK",
+          "SPOT",
+          "DREAM"
+        ]
+      },
+      {
+        "theme": "Rhymes with “TART”",
+        "tier": "blue",
+        "words": [
+          "HEART",
+          "APART",
+          "CHART",
+          "DEPART"
+        ]
+      },
+      {
+        "theme": "Silent “W”",
+        "tier": "purple",
+        "words": [
+          "SWORD",
+          "TWO",
+          "WRAP",
+          "WRIGGLE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a22",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Farm Equipment",
+        "tier": "yellow",
+        "words": [
+          "TRACTOR",
+          "PLOW",
+          "COMBINE",
+          "BALER"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Struck",
+        "tier": "green",
+        "words": [
+          "MATCH",
+          "DEAL",
+          "POSE",
+          "GOLD"
+        ]
+      },
+      {
+        "theme": "Contains “RAC”",
+        "tier": "blue",
+        "words": [
+          "MIRACLE",
+          "EMBRACE",
+          "ORACLE",
+          "CHARACTER"
+        ]
+      },
+      {
+        "theme": "Can Precede “FIELD”",
+        "tier": "purple",
+        "words": [
+          "CORN",
+          "MINE",
+          "BATTLE",
+          "OUT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a23",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in the Sky",
+        "tier": "yellow",
+        "words": [
+          "CLOUD",
+          "COMET",
+          "KITE",
+          "MOON"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Silver",
+        "tier": "green",
+        "words": [
+          "LINING",
+          "SCREEN",
+          "MEDAL",
+          "SPOON"
+        ]
+      },
+      {
+        "theme": "Contains “LOU”",
+        "tier": "blue",
+        "words": [
+          "BLOUSE",
+          "FLOURISH",
+          "JEALOUS",
+          "FABULOUS"
+        ]
+      },
+      {
+        "theme": "Add a “T” to the Front",
+        "tier": "purple",
+        "words": [
+          "RAIN",
+          "ABLE",
+          "RUST",
+          "HERE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a24",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Pasta Shapes",
+        "tier": "yellow",
+        "words": [
+          "PENNE",
+          "FUSILLI",
+          "RIGATONI",
+          "ORZO"
+        ]
+      },
+      {
+        "theme": "Things With Ribs",
+        "tier": "green",
+        "words": [
+          "UMBRELLA",
+          "SHIP",
+          "CELERY",
+          "RADIATOR"
+        ]
+      },
+      {
+        "theme": "Contains “ONI”",
+        "tier": "blue",
+        "words": [
+          "HARMONICA",
+          "IRONIC",
+          "CHRONICLE",
+          "SONIC"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "purple",
+        "words": [
+          "COMMITTEE",
+          "SUCCEED",
+          "ADDRESS",
+          "HAPPINESS"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-a25",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Herbs",
+        "tier": "yellow",
+        "words": [
+          "BASIL",
+          "THYME",
+          "OREGANO",
+          "PARSLEY"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Ground",
+        "tier": "green",
+        "words": [
+          "COFFEE",
+          "ZERO",
+          "BEEF",
+          "RULES"
+        ]
+      },
+      {
+        "theme": "Contains “SIL”",
+        "tier": "blue",
+        "words": [
+          "UTENSIL",
+          "FOSSIL",
+          "SILHOUETTE",
+          "SILENCE"
+        ]
+      },
+      {
+        "theme": "Silent “P”",
+        "tier": "purple",
+        "words": [
+          "RECEIPT",
+          "CUPBOARD",
+          "RASPBERRY",
+          "CORPS"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b01",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Types of Cloud",
+        "tier": "yellow",
+        "words": [
+          "CIRRUS",
+          "CUMULUS",
+          "STRATUS",
+          "NIMBUS"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Cast",
+        "tier": "green",
+        "words": [
+          "SPELL",
+          "VOTE",
+          "SHADOW",
+          "NET"
+        ]
+      },
+      {
+        "theme": "Contains “MUL”",
+        "tier": "blue",
+        "words": [
+          "FORMULA",
+          "SIMULATE",
+          "STIMULUS",
+          "MULBERRY"
+        ]
+      },
+      {
+        "theme": "Rhymes with “SHOE”",
+        "tier": "purple",
+        "words": [
+          "CREW",
+          "THREW",
+          "BAMBOO",
+          "TABOO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b02",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things in a Cathedral",
+        "tier": "yellow",
+        "words": [
+          "ALTAR",
+          "PEW",
+          "SPIRE",
+          "ORGAN"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Pitched",
+        "tier": "green",
+        "words": [
+          "TENT",
+          "IDEA",
+          "BALL",
+          "FIT"
+        ]
+      },
+      {
+        "theme": "Contains “ORG”",
+        "tier": "blue",
+        "words": [
+          "FORGE",
+          "GORGEOUS",
+          "CYBORG",
+          "FORGIVE"
+        ]
+      },
+      {
+        "theme": "Homophones of Animals",
+        "tier": "purple",
+        "words": [
+          "MOUSSE",
+          "DOUGH",
+          "BARE",
+          "HAIR"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b03",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Chess Pieces",
+        "tier": "yellow",
+        "words": [
+          "BISHOP",
+          "ROOK",
+          "KNIGHT",
+          "PAWN"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Ruled",
+        "tier": "green",
+        "words": [
+          "LINE",
+          "KINGDOM",
+          "ROOST",
+          "OUT"
+        ]
+      },
+      {
+        "theme": "Contains “OOK”",
+        "tier": "blue",
+        "words": [
+          "BOOKCASE",
+          "COOKIE",
+          "OVERLOOK",
+          "SPOOKY"
+        ]
+      },
+      {
+        "theme": "Silent “GH”",
+        "tier": "purple",
+        "words": [
+          "DAUGHTER",
+          "THOROUGH",
+          "WEIGHT",
+          "BOUGH"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b04",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things That Come in a Bunch",
+        "tier": "yellow",
+        "words": [
+          "GRAPES",
+          "BANANAS",
+          "KEYS",
+          "FLOWERS"
+        ]
+      },
+      {
+        "theme": "Things You Can Pick",
+        "tier": "green",
+        "words": [
+          "LOCK",
+          "POCKET",
+          "WINNER",
+          "BONE"
+        ]
+      },
+      {
+        "theme": "Contains “ANA”",
+        "tier": "blue",
+        "words": [
+          "CANAL",
+          "MANAGER",
+          "ANATOMY",
+          "PANACHE"
+        ]
+      },
+      {
+        "theme": "Anagrams of “TEAM”",
+        "tier": "purple",
+        "words": [
+          "MATE",
+          "MEAT",
+          "TAME",
+          "META"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b05",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Types of Pepper",
+        "tier": "yellow",
+        "words": [
+          "BELL",
+          "GHOST",
+          "CAYENNE",
+          "BLACK"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Hard",
+        "tier": "green",
+        "words": [
+          "DRIVE",
+          "CANDY",
+          "LABOR",
+          "CIDER"
+        ]
+      },
+      {
+        "theme": "Contains “AYE”",
+        "tier": "blue",
+        "words": [
+          "PLAYER",
+          "PRAYER",
+          "LAYER",
+          "BETRAYED"
+        ]
+      },
+      {
+        "theme": "Contronyms",
+        "tier": "purple",
+        "words": [
+          "BOLT",
+          "TRIM",
+          "WEATHER",
+          "SEED"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b06",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Parts of a Guitar",
+        "tier": "yellow",
+        "words": [
+          "FRET",
+          "BRIDGE",
+          "NECK",
+          "TUNER"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Strung",
+        "tier": "green",
+        "words": [
+          "BEADS",
+          "LIGHTS",
+          "RACKET",
+          "ALONG"
+        ]
+      },
+      {
+        "theme": "Contains “UNE”",
+        "tier": "blue",
+        "words": [
+          "FORTUNE",
+          "IMMUNE",
+          "PRUNES",
+          "COMMUNE"
+        ]
+      },
+      {
+        "theme": "Hidden Instruments",
+        "tier": "purple",
+        "words": [
+          "HARPOON",
+          "ORGANIC",
+          "ABSOLUTE",
+          "VIOLATION"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b07",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things in a Nursery",
+        "tier": "yellow",
+        "words": [
+          "CRIB",
+          "MOBILE",
+          "RATTLE",
+          "ROCKER"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Loose",
+        "tier": "green",
+        "words": [
+          "CHANGE",
+          "ENDS",
+          "TOOTH",
+          "LEAF"
+        ]
+      },
+      {
+        "theme": "Contains “ATT”",
+        "tier": "blue",
+        "words": [
+          "BATTERY",
+          "SCATTER",
+          "FLATTEN",
+          "MATTRESS"
+        ]
+      },
+      {
+        "theme": "Semordnilaps",
+        "tier": "purple",
+        "words": [
+          "DRAWER",
+          "REWARD",
+          "DIAPER",
+          "REPAID"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b08",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Desert Animals",
+        "tier": "yellow",
+        "words": [
+          "CAMEL",
+          "MEERKAT",
+          "SCORPION",
+          "FENNEC"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Golden",
+        "tier": "green",
+        "words": [
+          "RETRIEVER",
+          "HOUR",
+          "RULE",
+          "GATE"
+        ]
+      },
+      {
+        "theme": "Contains “MEL”",
+        "tier": "blue",
+        "words": [
+          "MELON",
+          "CARAMEL",
+          "MELLOW",
+          "ENAMEL"
+        ]
+      },
+      {
+        "theme": "Silent “D”",
+        "tier": "purple",
+        "words": [
+          "WEDNESDAY",
+          "HANDKERCHIEF",
+          "HANDSOME",
+          "GRANDMA"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b09",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Types of Soup",
+        "tier": "yellow",
+        "words": [
+          "MINESTRONE",
+          "GAZPACHO",
+          "CHOWDER",
+          "BISQUE"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Stirred",
+        "tier": "green",
+        "words": [
+          "POT",
+          "EMOTIONS",
+          "TROUBLE",
+          "MEMORY"
+        ]
+      },
+      {
+        "theme": "Contains “OWD”",
+        "tier": "blue",
+        "words": [
+          "CROWDED",
+          "ROWDY",
+          "SNOWDROP",
+          "POWDER"
+        ]
+      },
+      {
+        "theme": "Heteronyms",
+        "tier": "purple",
+        "words": [
+          "BASS",
+          "LIVE",
+          "DESERT",
+          "PRESENT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b10",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Types of Window",
+        "tier": "yellow",
+        "words": [
+          "BAY",
+          "DORMER",
+          "PICTURE",
+          "SASH"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Open",
+        "tier": "green",
+        "words": [
+          "BOOK",
+          "SEASON",
+          "HOUSE",
+          "MIND"
+        ]
+      },
+      {
+        "theme": "Contains “ASH”",
+        "tier": "blue",
+        "words": [
+          "CASHEW",
+          "WASHING",
+          "FASHION",
+          "POTASH"
+        ]
+      },
+      {
+        "theme": "Add an “S” to the Front",
+        "tier": "purple",
+        "words": [
+          "PARK",
+          "TAR",
+          "LAP",
+          "WING"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b11",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Circus Performers",
+        "tier": "yellow",
+        "words": [
+          "CLOWN",
+          "ACROBAT",
+          "JUGGLER",
+          "RINGMASTER"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Big",
+        "tier": "green",
+        "words": [
+          "TOP",
+          "DIPPER",
+          "LEAGUE",
+          "PICTURE"
+        ]
+      },
+      {
+        "theme": "Contains “ACR”",
+        "tier": "blue",
+        "words": [
+          "SACRED",
+          "LACROSSE",
+          "ACRYLIC",
+          "ACREAGE"
+        ]
+      },
+      {
+        "theme": "Rhymes with “CROWN”",
+        "tier": "purple",
+        "words": [
+          "NOUN",
+          "RENOWN",
+          "GOWN",
+          "BROWN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b12",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Types of Door",
+        "tier": "yellow",
+        "words": [
+          "REVOLVING",
+          "SLIDING",
+          "TRAP",
+          "BARN"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Set",
+        "tier": "green",
+        "words": [
+          "TABLE",
+          "RECORD",
+          "ALARM",
+          "SUN"
+        ]
+      },
+      {
+        "theme": "Contains “REV”",
+        "tier": "blue",
+        "words": [
+          "FOREVER",
+          "REVENUE",
+          "BREVITY",
+          "REVERSE"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "purple",
+        "words": [
+          "FOOTBALL",
+          "CLASSROOM",
+          "GODDESS",
+          "BEEKEEPER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b13",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Types of Knot",
+        "tier": "yellow",
+        "words": [
+          "SQUARE",
+          "SLIP",
+          "BOW",
+          "HITCH"
+        ]
+      },
+      {
+        "theme": "Things a Detective Follows",
+        "tier": "green",
+        "words": [
+          "LEAD",
+          "HUNCH",
+          "TRAIL",
+          "SCENT"
+        ]
+      },
+      {
+        "theme": "Contains “ITC”",
+        "tier": "blue",
+        "words": [
+          "KITCHEN",
+          "PITCHER",
+          "SWITCHBOARD",
+          "STITCH"
+        ]
+      },
+      {
+        "theme": "Silent “H”",
+        "tier": "purple",
+        "words": [
+          "HONEST",
+          "HEIR",
+          "EXHAUST",
+          "VEHICLE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b14",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Constellations",
+        "tier": "yellow",
+        "words": [
+          "ORION",
+          "LYRA",
+          "DRACO",
+          "PEGASUS"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Charted",
+        "tier": "green",
+        "words": [
+          "COURSE",
+          "WATERS",
+          "HITS",
+          "PROGRESS"
+        ]
+      },
+      {
+        "theme": "Contains “ION”",
+        "tier": "blue",
+        "words": [
+          "CUSHION",
+          "ONION",
+          "MILLION",
+          "STATION"
+        ]
+      },
+      {
+        "theme": "Hidden Body Parts",
+        "tier": "purple",
+        "words": [
+          "CHINA",
+          "FLIPPER",
+          "CALIBER",
+          "CHIPMUNK"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b15",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things at a Wedding",
+        "tier": "yellow",
+        "words": [
+          "VEIL",
+          "GARTER",
+          "VOWS",
+          "RECEPTION"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Thrown",
+        "tier": "green",
+        "words": [
+          "PARTY",
+          "FIT",
+          "SHADE",
+          "TOWEL"
+        ]
+      },
+      {
+        "theme": "Contains “EPT”",
+        "tier": "blue",
+        "words": [
+          "CONCEPT",
+          "ACCEPTED",
+          "SKEPTIC",
+          "SEPTEMBER"
+        ]
+      },
+      {
+        "theme": "Anagrams of “STAPLE”",
+        "tier": "purple",
+        "words": [
+          "PLATES",
+          "PETALS",
+          "PLEATS",
+          "PASTEL"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b16",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Types of Tea",
+        "tier": "yellow",
+        "words": [
+          "OOLONG",
+          "CHAMOMILE",
+          "ROOIBOS",
+          "MATCHA"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Bitter",
+        "tier": "green",
+        "words": [
+          "RIVAL",
+          "END",
+          "TRUTH",
+          "COLD"
+        ]
+      },
+      {
+        "theme": "Contains “OMI”",
+        "tier": "blue",
+        "words": [
+          "DOMINO",
+          "PROMISE",
+          "ECONOMIC",
+          "OMINOUS"
+        ]
+      },
+      {
+        "theme": "Onomatopoeia",
+        "tier": "purple",
+        "words": [
+          "SIZZLE",
+          "CRUNCH",
+          "CLANG",
+          "PLINK"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b17",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Types of Rock",
+        "tier": "yellow",
+        "words": [
+          "IGNEOUS",
+          "GRANITE",
+          "BASALT",
+          "SHALE"
+        ]
+      },
+      {
+        "theme": "Things a Band Does",
+        "tier": "green",
+        "words": [
+          "TOUR",
+          "RECORD",
+          "SPLIT",
+          "JAM"
+        ]
+      },
+      {
+        "theme": "Contains “ALT”",
+        "tier": "blue",
+        "words": [
+          "HALTED",
+          "SALTY",
+          "WALTZ",
+          "EXALT"
+        ]
+      },
+      {
+        "theme": "Silent “N”",
+        "tier": "purple",
+        "words": [
+          "AUTUMN",
+          "COLUMN",
+          "HYMN",
+          "SOLEMN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b18",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things in an Orchestra",
+        "tier": "yellow",
+        "words": [
+          "CONDUCTOR",
+          "CELLO",
+          "TIMPANI",
+          "BATON"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Sounded",
+        "tier": "green",
+        "words": [
+          "ALARM",
+          "HORN",
+          "DEPTH",
+          "RETREAT"
+        ]
+      },
+      {
+        "theme": "Contains “TON”",
+        "tier": "blue",
+        "words": [
+          "ASTONISH",
+          "PISTON",
+          "MONOTONE",
+          "PLANKTON"
+        ]
+      },
+      {
+        "theme": "Rhymes with “JELLO”",
+        "tier": "purple",
+        "words": [
+          "YELLOW",
+          "MELLOW",
+          "FELLOW",
+          "BELLOW"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b19",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things in a Barn",
+        "tier": "yellow",
+        "words": [
+          "HAYLOFT",
+          "STALL",
+          "TROUGH",
+          "PITCHFORK"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Blue",
+        "tier": "green",
+        "words": [
+          "CHEESE",
+          "PRINT",
+          "RIBBON",
+          "WHALE"
+        ]
+      },
+      {
+        "theme": "Contains “ALL”",
+        "tier": "blue",
+        "words": [
+          "GALLERY",
+          "CHALLENGE",
+          "SHALLOW",
+          "VALLEY"
+        ]
+      },
+      {
+        "theme": "Drop the First Letter for a New Word",
+        "tier": "purple",
+        "words": [
+          "WHEAT",
+          "CLOVER",
+          "STABLE",
+          "PLACE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b20",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Types of Fabric",
+        "tier": "yellow",
+        "words": [
+          "LINEN",
+          "VELVET",
+          "DENIM",
+          "TWEED"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Woven",
+        "tier": "green",
+        "words": [
+          "BASKET",
+          "TALE",
+          "WEB",
+          "WREATH"
+        ]
+      },
+      {
+        "theme": "Contains “NIM”",
+        "tier": "blue",
+        "words": [
+          "ANIMAL",
+          "ANIMATE",
+          "UNANIMOUS",
+          "MINIMUM"
+        ]
+      },
+      {
+        "theme": "Silent “L”",
+        "tier": "purple",
+        "words": [
+          "CHALK",
+          "TALKING",
+          "HALF",
+          "FOLKLORE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b21",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things in a Pond",
+        "tier": "yellow",
+        "words": [
+          "LILYPAD",
+          "FROG",
+          "REEDS",
+          "MINNOW"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Skipped",
+        "tier": "green",
+        "words": [
+          "STONE",
+          "MEAL",
+          "ROPE",
+          "TRACK"
+        ]
+      },
+      {
+        "theme": "Contains “INN”",
+        "tier": "blue",
+        "words": [
+          "BEGINNING",
+          "CINNAMON",
+          "SPINNER",
+          "GRINNED"
+        ]
+      },
+      {
+        "theme": "Silent “B”",
+        "tier": "purple",
+        "words": [
+          "PLUMBER",
+          "CRUMB",
+          "DEBTOR",
+          "LIMB"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b22",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things in a Library",
+        "tier": "yellow",
+        "words": [
+          "SHELF",
+          "CATALOG",
+          "ATLAS",
+          "LADDER"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Overdue",
+        "tier": "green",
+        "words": [
+          "BOOK",
+          "RENT",
+          "APOLOGY",
+          "BABY"
+        ]
+      },
+      {
+        "theme": "Contains “TAL”",
+        "tier": "blue",
+        "words": [
+          "METAL",
+          "CRYSTAL",
+          "PEDESTAL",
+          "TOTAL"
+        ]
+      },
+      {
+        "theme": "Hidden Animals",
+        "tier": "purple",
+        "words": [
+          "PIGMENT",
+          "COWARD",
+          "APEX",
+          "RATIONAL"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b23",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Parts of a Castle",
+        "tier": "yellow",
+        "words": [
+          "MOAT",
+          "TURRET",
+          "DRAWBRIDGE",
+          "KEEP"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Kept",
+        "tier": "green",
+        "words": [
+          "SECRET",
+          "PROMISE",
+          "TIME",
+          "HOUSE"
+        ]
+      },
+      {
+        "theme": "Contains “URR”",
+        "tier": "blue",
+        "words": [
+          "CURRENT",
+          "SQUIRREL",
+          "FURROW",
+          "SCURRY"
+        ]
+      },
+      {
+        "theme": "Add an “E” to the End",
+        "tier": "purple",
+        "words": [
+          "CAP",
+          "HUG",
+          "PIN",
+          "RAT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b24",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Types of Poem",
+        "tier": "yellow",
+        "words": [
+          "SONNET",
+          "HAIKU",
+          "LIMERICK",
+          "ODE"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Composed",
+        "tier": "green",
+        "words": [
+          "LETTER",
+          "FACE",
+          "SYMPHONY",
+          "SELF"
+        ]
+      },
+      {
+        "theme": "Contains “ODE”",
+        "tier": "blue",
+        "words": [
+          "MODEL",
+          "EPISODE",
+          "EXPLODE",
+          "CATHODE"
+        ]
+      },
+      {
+        "theme": "Silent “S”",
+        "tier": "purple",
+        "words": [
+          "ISLAND",
+          "AISLE",
+          "DEBRIS",
+          "VISCOUNT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-b25",
+    "difficulty": "medium",
+    "groups": [
+      {
+        "theme": "Things You Do to Dough",
+        "tier": "yellow",
+        "words": [
+          "KNEAD",
+          "PROOF",
+          "ROLL",
+          "PUNCH"
+        ]
+      },
+      {
+        "theme": "Things With a Crust",
+        "tier": "green",
+        "words": [
+          "PIE",
+          "PIZZA",
+          "EARTH",
+          "BREAD"
+        ]
+      },
+      {
+        "theme": "Contains “EAD”",
+        "tier": "blue",
+        "words": [
+          "MEADOW",
+          "INSTEAD",
+          "STEADFAST",
+          "LEADER"
+        ]
+      },
+      {
+        "theme": "Portmanteau Words",
+        "tier": "purple",
+        "words": [
+          "PODCAST",
+          "EMOTICON",
+          "SPORK",
+          "GLAMPING"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c01",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Parts of a Flower",
+        "tier": "yellow",
+        "words": [
+          "PETAL",
+          "STAMEN",
+          "SEPAL",
+          "FILAMENT"
+        ]
+      },
+      {
+        "theme": "Contains “MEN”",
+        "tier": "green",
+        "words": [
+          "MENTOR",
+          "MOMENTUM",
+          "SEDIMENT",
+          "ELEMENT"
+        ]
+      },
+      {
+        "theme": "Homophones of Body Parts",
+        "tier": "blue",
+        "words": [
+          "MUSSEL",
+          "NAVAL",
+          "WASTE",
+          "VAIN"
+        ]
+      },
+      {
+        "theme": "Anagrams of “SEPAL”",
+        "tier": "purple",
+        "words": [
+          "PLEAS",
+          "LAPSE",
+          "PALES",
+          "PEALS"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c02",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Types of Nut",
+        "tier": "yellow",
+        "words": [
+          "PECAN",
+          "CASHEW",
+          "WALNUT",
+          "HAZEL"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Wild",
+        "tier": "green",
+        "words": [
+          "CARD",
+          "GUESS",
+          "WEST",
+          "GOOSE"
+        ]
+      },
+      {
+        "theme": "Silent “W”",
+        "tier": "blue",
+        "words": [
+          "WHOLE",
+          "WRIST",
+          "ANSWER",
+          "TOWARD"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "purple",
+        "words": [
+          "MILLENNIUM",
+          "SUCCESSFUL",
+          "WOOLLEN",
+          "COMMITTED"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c03",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Parts of a Bicycle",
+        "tier": "yellow",
+        "words": [
+          "SPOKE",
+          "PEDAL",
+          "CHAIN",
+          "SADDLE"
+        ]
+      },
+      {
+        "theme": "Contains “AIN”",
+        "tier": "green",
+        "words": [
+          "FOUNTAIN",
+          "CAPTAIN",
+          "MAINTAIN",
+          "VILLAIN"
+        ]
+      },
+      {
+        "theme": "Rhymes with “PLAIN”",
+        "tier": "blue",
+        "words": [
+          "TERRAIN",
+          "MUNDANE",
+          "CHAMPAGNE",
+          "DISDAIN"
+        ]
+      },
+      {
+        "theme": "Add a “W” to the Front",
+        "tier": "purple",
+        "words": [
+          "HEAT",
+          "HERE",
+          "ANT",
+          "ARM"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c04",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things on a Ship",
+        "tier": "yellow",
+        "words": [
+          "PLANK",
+          "MAST",
+          "PARROT",
+          "BALLAST"
+        ]
+      },
+      {
+        "theme": "Contains “AST”",
+        "tier": "green",
+        "words": [
+          "PASTRY",
+          "FORECAST",
+          "PLASTER",
+          "ASTONISH"
+        ]
+      },
+      {
+        "theme": "Silent “C”",
+        "tier": "blue",
+        "words": [
+          "INDICT",
+          "CZAR",
+          "ACQUIRE",
+          "SCISSORS"
+        ]
+      },
+      {
+        "theme": "Homophones of Weather Words",
+        "tier": "purple",
+        "words": [
+          "REIGN",
+          "HALE",
+          "SON",
+          "DUE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c05",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things With a Shell",
+        "tier": "yellow",
+        "words": [
+          "TURTLE",
+          "TACO",
+          "PEANUT",
+          "SCALLOP"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Beaten",
+        "tier": "green",
+        "words": [
+          "RECORD",
+          "DRUM",
+          "PATH",
+          "ODDS"
+        ]
+      },
+      {
+        "theme": "Silent “L”",
+        "tier": "blue",
+        "words": [
+          "SALMON",
+          "ALMOND",
+          "PALM",
+          "CALF"
+        ]
+      },
+      {
+        "theme": "Palindromes",
+        "tier": "purple",
+        "words": [
+          "NOON",
+          "DEED",
+          "TOOT",
+          "PEEP"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c06",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Coffee Drinks",
+        "tier": "yellow",
+        "words": [
+          "ESPRESSO",
+          "CAPPUCCINO",
+          "AFFOGATO",
+          "MACCHIATO"
+        ]
+      },
+      {
+        "theme": "Things You Pull",
+        "tier": "green",
+        "words": [
+          "PUNCH",
+          "STRINGS",
+          "RANK",
+          "PLUG"
+        ]
+      },
+      {
+        "theme": "Hidden Numbers",
+        "tier": "blue",
+        "words": [
+          "MONETARY",
+          "TENDON",
+          "HONEYMOON",
+          "FRIGHTEN"
+        ]
+      },
+      {
+        "theme": "Silent “G”",
+        "tier": "purple",
+        "words": [
+          "GNAW",
+          "FOREIGN",
+          "PHLEGM",
+          "ASSIGNMENT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c07",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Jewelry Box",
+        "tier": "yellow",
+        "words": [
+          "LOCKET",
+          "BROOCH",
+          "PENDANT",
+          "ANKLET"
+        ]
+      },
+      {
+        "theme": "Contains “OCK”",
+        "tier": "green",
+        "words": [
+          "DOCKYARD",
+          "BLOCKADE",
+          "SHOCKING",
+          "STOCKPILE"
+        ]
+      },
+      {
+        "theme": "Silent “K”",
+        "tier": "blue",
+        "words": [
+          "KNOCKED",
+          "KNEEL",
+          "KNITTING",
+          "KNOWLEDGE"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "purple",
+        "words": [
+          "SETTEE",
+          "TOFFEE",
+          "MISSPELL",
+          "SUCCESSION"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c08",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Parts of a Tree",
+        "tier": "yellow",
+        "words": [
+          "TRUNK",
+          "BARK",
+          "CANOPY",
+          "ROOTS"
+        ]
+      },
+      {
+        "theme": "Contains “ARK”",
+        "tier": "green",
+        "words": [
+          "MARKET",
+          "SPARKLE",
+          "DARKNESS",
+          "EMBARK"
+        ]
+      },
+      {
+        "theme": "Silent “B”",
+        "tier": "blue",
+        "words": [
+          "NUMB",
+          "PLUMBING",
+          "SUBTLE",
+          "LAMB"
+        ]
+      },
+      {
+        "theme": "Drop the First Letter for a New Word",
+        "tier": "purple",
+        "words": [
+          "SPARK",
+          "CHARM",
+          "BRAIN",
+          "STONE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c09",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Kinds of Berry",
+        "tier": "yellow",
+        "words": [
+          "RASPBERRY",
+          "STRAWBERRY",
+          "BLUEBERRY",
+          "GOOSEBERRY"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Jammed",
+        "tier": "green",
+        "words": [
+          "PRINTER",
+          "LOCK",
+          "SIGNAL",
+          "TOE"
+        ]
+      },
+      {
+        "theme": "Homophones of Letters",
+        "tier": "blue",
+        "words": [
+          "BEE",
+          "CUE",
+          "JAY",
+          "ARE"
+        ]
+      },
+      {
+        "theme": "Silent “T”",
+        "tier": "purple",
+        "words": [
+          "BALLET",
+          "GOURMET",
+          "MORTGAGE",
+          "DEPOT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c10",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Cellar",
+        "tier": "yellow",
+        "words": [
+          "CASK",
+          "COBWEB",
+          "FURNACE",
+          "PRESERVES"
+        ]
+      },
+      {
+        "theme": "Contains “RES”",
+        "tier": "green",
+        "words": [
+          "FOREST",
+          "INTEREST",
+          "CRESCENT",
+          "THRESHOLD"
+        ]
+      },
+      {
+        "theme": "Rhymes with “BEST”",
+        "tier": "blue",
+        "words": [
+          "GUESSED",
+          "ZEST",
+          "PRESSED",
+          "ADDRESSED"
+        ]
+      },
+      {
+        "theme": "Palindromes",
+        "tier": "purple",
+        "words": [
+          "RACECAR",
+          "TENET",
+          "SOLOS",
+          "STATS"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c11",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things at a Formal Dinner",
+        "tier": "yellow",
+        "words": [
+          "PLACECARD",
+          "DECANTER",
+          "CANDELABRA",
+          "TUREEN"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Served",
+        "tier": "green",
+        "words": [
+          "JUSTICE",
+          "NOTICE",
+          "DINNER",
+          "TIME"
+        ]
+      },
+      {
+        "theme": "Silent “P”",
+        "tier": "blue",
+        "words": [
+          "PSYCHIC",
+          "COUP",
+          "PSALM",
+          "RECEIPT"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "purple",
+        "words": [
+          "ACCESSORY",
+          "EMBARRASS",
+          "OCCURRED",
+          "ATTENDEE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c12",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Parts of a Violin",
+        "tier": "yellow",
+        "words": [
+          "SCROLL",
+          "CHINREST",
+          "PEGBOX",
+          "ROSIN"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "green",
+        "words": [
+          "WOOLLEN",
+          "ASSESSED",
+          "PUPPETEER",
+          "WOODCUTTER"
+        ]
+      },
+      {
+        "theme": "Contains “OLL”",
+        "tier": "blue",
+        "words": [
+          "FOLLOW",
+          "HOLLOW",
+          "COLLAR",
+          "POLLEN"
+        ]
+      },
+      {
+        "theme": "Add a “B” to the Front",
+        "tier": "purple",
+        "words": [
+          "RIDGE",
+          "LOOM",
+          "RUSH",
+          "EAST"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c13",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Garden Pests",
+        "tier": "yellow",
+        "words": [
+          "APHID",
+          "SLUG",
+          "WEEVIL",
+          "EARWIG"
+        ]
+      },
+      {
+        "theme": "Contains “EAR”",
+        "tier": "green",
+        "words": [
+          "REHEARSE",
+          "PEARL",
+          "YEARNING",
+          "ENDEARMENT"
+        ]
+      },
+      {
+        "theme": "Rhymes with “FERN”",
+        "tier": "blue",
+        "words": [
+          "LEARN",
+          "CONCERN",
+          "ADJOURN",
+          "DISCERN"
+        ]
+      },
+      {
+        "theme": "Semordnilaps",
+        "tier": "purple",
+        "words": [
+          "STRAW",
+          "WARTS",
+          "SPOOL",
+          "LOOPS"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c14",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Baking Supplies",
+        "tier": "yellow",
+        "words": [
+          "FLOUR",
+          "YEAST",
+          "SIFTER",
+          "PARCHMENT"
+        ]
+      },
+      {
+        "theme": "Contains “ARC”",
+        "tier": "green",
+        "words": [
+          "MARCHING",
+          "SEARCHLIGHT",
+          "MONARCH",
+          "ANARCHY"
+        ]
+      },
+      {
+        "theme": "Add an “M” to the Front",
+        "tier": "blue",
+        "words": [
+          "ARCH",
+          "OTHER",
+          "ASK",
+          "INK"
+        ]
+      },
+      {
+        "theme": "Heteronyms",
+        "tier": "purple",
+        "words": [
+          "CONTENT",
+          "OBJECT",
+          "SUBJECT",
+          "CONVERT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c15",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in an Attic",
+        "tier": "yellow",
+        "words": [
+          "TRUNK",
+          "COBWEB",
+          "HEIRLOOM",
+          "CRATE"
+        ]
+      },
+      {
+        "theme": "Contains “OOM”",
+        "tier": "green",
+        "words": [
+          "BLOOMING",
+          "GROOMED",
+          "MUSHROOM",
+          "BROOMSTICK"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "blue",
+        "words": [
+          "BALLROOM",
+          "RACCOON",
+          "COFFEE",
+          "MISSPELL"
+        ]
+      },
+      {
+        "theme": "Drop the Last Letter for a New Word",
+        "tier": "purple",
+        "words": [
+          "PLANET",
+          "RATION",
+          "CLOVER",
+          "BRANDY"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c16",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Rock Pool",
+        "tier": "yellow",
+        "words": [
+          "ANEMONE",
+          "LIMPET",
+          "KELP",
+          "URCHIN"
+        ]
+      },
+      {
+        "theme": "Contains “IMP”",
+        "tier": "green",
+        "words": [
+          "SIMPLE",
+          "GLIMPSE",
+          "IMPULSE",
+          "WHIMPER"
+        ]
+      },
+      {
+        "theme": "Drop the First Letter for a New Word",
+        "tier": "blue",
+        "words": [
+          "LIMP",
+          "CHAIR",
+          "SCENT",
+          "TRAIN"
+        ]
+      },
+      {
+        "theme": "Onomatopoeia",
+        "tier": "purple",
+        "words": [
+          "MURMUR",
+          "RUSTLE",
+          "CLINK",
+          "WHIRR"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c17",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Parts of a Chimney",
+        "tier": "yellow",
+        "words": [
+          "FLUE",
+          "HEARTH",
+          "MANTEL",
+          "DAMPER"
+        ]
+      },
+      {
+        "theme": "Contains “AMP”",
+        "tier": "green",
+        "words": [
+          "CHAMPION",
+          "SAMPLE",
+          "TRAMPLE",
+          "RAMPART"
+        ]
+      },
+      {
+        "theme": "Silent “T”",
+        "tier": "blue",
+        "words": [
+          "OFTEN",
+          "SOFTEN",
+          "HUSTLE",
+          "NESTLE"
+        ]
+      },
+      {
+        "theme": "Add a “C” to the Front",
+        "tier": "purple",
+        "words": [
+          "RAMP",
+          "LOVER",
+          "HOSE",
+          "RATE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c18",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Sweet Shop",
+        "tier": "yellow",
+        "words": [
+          "LOLLIPOP",
+          "TOFFEE",
+          "BRITTLE",
+          "TRUFFLE"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Sticky",
+        "tier": "green",
+        "words": [
+          "SITUATION",
+          "FINGERS",
+          "WICKET",
+          "BUNS"
+        ]
+      },
+      {
+        "theme": "Silent “GH”",
+        "tier": "blue",
+        "words": [
+          "BOROUGH",
+          "SLEIGH",
+          "HEIGHT",
+          "HIGHNESS"
+        ]
+      },
+      {
+        "theme": "Hidden Numbers",
+        "tier": "purple",
+        "words": [
+          "ATONEMENT",
+          "TENDERNESS",
+          "HONESTLY",
+          "SHORTEN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c19",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Meadow",
+        "tier": "yellow",
+        "words": [
+          "CLOVER",
+          "THISTLE",
+          "BUTTERCUP",
+          "SKYLARK"
+        ]
+      },
+      {
+        "theme": "Contains “TTE”",
+        "tier": "green",
+        "words": [
+          "LETTER",
+          "GLITTER",
+          "FLUTTER",
+          "SCATTERED"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "blue",
+        "words": [
+          "SETTEE",
+          "BOOKKEEPER",
+          "GODDESS",
+          "OCCURRED"
+        ]
+      },
+      {
+        "theme": "Homophones of Letters",
+        "tier": "purple",
+        "words": [
+          "ARE",
+          "EWE",
+          "TEE",
+          "PEA"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c20",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Kinds of Hat",
+        "tier": "yellow",
+        "words": [
+          "BERET",
+          "FEDORA",
+          "BOWLER",
+          "BEANIE"
+        ]
+      },
+      {
+        "theme": "Contains “OWL”",
+        "tier": "green",
+        "words": [
+          "PROWLER",
+          "HOWLING",
+          "FOWL",
+          "GROWLED"
+        ]
+      },
+      {
+        "theme": "Silent “K”",
+        "tier": "blue",
+        "words": [
+          "KNOWLEDGE",
+          "KNIT",
+          "KNAVE",
+          "KNEAD"
+        ]
+      },
+      {
+        "theme": "Contronyms",
+        "tier": "purple",
+        "words": [
+          "BUCKLE",
+          "GARNISH",
+          "CLEAVE",
+          "TABLE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c21",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Potting Shed",
+        "tier": "yellow",
+        "words": [
+          "TWINE",
+          "TROWEL",
+          "COMPOST",
+          "SECATEURS"
+        ]
+      },
+      {
+        "theme": "Contains “OST”",
+        "tier": "green",
+        "words": [
+          "FROSTED",
+          "NOSTALGIA",
+          "HOSTEL",
+          "POSTAGE"
+        ]
+      },
+      {
+        "theme": "Silent “H”",
+        "tier": "blue",
+        "words": [
+          "GHOSTLY",
+          "RHUBARB",
+          "HEIRESS",
+          "KHAKI"
+        ]
+      },
+      {
+        "theme": "Palindromes",
+        "tier": "purple",
+        "words": [
+          "SEES",
+          "ROTATOR",
+          "REPAPER",
+          "DEIFIED"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c22",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Hedgerow",
+        "tier": "yellow",
+        "words": [
+          "BRAMBLE",
+          "HAWTHORN",
+          "NETTLE",
+          "SLOE"
+        ]
+      },
+      {
+        "theme": "Contains “THO”",
+        "tier": "green",
+        "words": [
+          "AUTHOR",
+          "PYTHON",
+          "ANTHOLOGY",
+          "METHOD"
+        ]
+      },
+      {
+        "theme": "Silent “GH”",
+        "tier": "blue",
+        "words": [
+          "ALTHOUGH",
+          "CAUGHT",
+          "BRIGHTEN",
+          "TAUGHT"
+        ]
+      },
+      {
+        "theme": "Homophones of Animals",
+        "tier": "purple",
+        "words": [
+          "HOARSE",
+          "DEAR",
+          "FLEE",
+          "TOWED"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c23",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Rock Garden",
+        "tier": "yellow",
+        "words": [
+          "BOULDER",
+          "SEDUM",
+          "GRAVEL",
+          "ALPINE"
+        ]
+      },
+      {
+        "theme": "Contains “OUL”",
+        "tier": "green",
+        "words": [
+          "SHOULDER",
+          "POULTRY",
+          "SMOULDER",
+          "BOULEVARD"
+        ]
+      },
+      {
+        "theme": "Silent “L”",
+        "tier": "blue",
+        "words": [
+          "COULD",
+          "WALK",
+          "HALVES",
+          "TALKER"
+        ]
+      },
+      {
+        "theme": "Add an “S” to the Front",
+        "tier": "purple",
+        "words": [
+          "TONE",
+          "PORT",
+          "MASH",
+          "HARP"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c24",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Fishmonger’s",
+        "tier": "yellow",
+        "words": [
+          "SCALES",
+          "ICE",
+          "PRAWNS",
+          "OYSTER"
+        ]
+      },
+      {
+        "theme": "Contains “ALE”",
+        "tier": "green",
+        "words": [
+          "PALETTE",
+          "VALENTINE",
+          "CALENDAR",
+          "TALENTED"
+        ]
+      },
+      {
+        "theme": "Rhymes with “SAIL”",
+        "tier": "blue",
+        "words": [
+          "PALE",
+          "VEIL",
+          "DERAIL",
+          "EXHALE"
+        ]
+      },
+      {
+        "theme": "Semordnilaps",
+        "tier": "purple",
+        "words": [
+          "REGAL",
+          "LAGER",
+          "SLEEK",
+          "KEELS"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-c25",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Music Box",
+        "tier": "yellow",
+        "words": [
+          "BALLERINA",
+          "SPRING",
+          "CHIME",
+          "VELVET"
+        ]
+      },
+      {
+        "theme": "Contains “LLE”",
+        "tier": "green",
+        "words": [
+          "GALLERY",
+          "BULLETIN",
+          "TALLEST",
+          "SMALLEST"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "blue",
+        "words": [
+          "MILLENNIUM",
+          "ASSESSED",
+          "TOFFEE",
+          "OCCURRED"
+        ]
+      },
+      {
+        "theme": "Hidden Instruments",
+        "tier": "purple",
+        "words": [
+          "SHARPEN",
+          "POLLUTE",
+          "THORNY",
+          "VIOLATE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d01",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Bird’s Nest",
+        "tier": "yellow",
+        "words": [
+          "TWIG",
+          "EGG",
+          "FEATHER",
+          "MOSS"
+        ]
+      },
+      {
+        "theme": "Things That Come in Layers",
+        "tier": "green",
+        "words": [
+          "ONION",
+          "CAKE",
+          "PAINT",
+          "ROCK"
+        ]
+      },
+      {
+        "theme": "Contains “OSS”",
+        "tier": "blue",
+        "words": [
+          "BLOSSOM",
+          "CROSSING",
+          "POSSIBLE",
+          "GLOSSARY"
+        ]
+      },
+      {
+        "theme": "___ TAIL",
+        "tier": "purple",
+        "words": [
+          "PONY",
+          "COAT",
+          "DOVE",
+          "FISH"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d02",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Pencil Case",
+        "tier": "yellow",
+        "words": [
+          "ERASER",
+          "RULER",
+          "SHARPENER",
+          "COMPASS"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Sharpened",
+        "tier": "green",
+        "words": [
+          "WITS",
+          "PENCIL",
+          "SKILLS",
+          "FOCUS"
+        ]
+      },
+      {
+        "theme": "Contains “ULE”",
+        "tier": "blue",
+        "words": [
+          "SCHEDULE",
+          "MOLECULE",
+          "CAPSULE",
+          "GRANULE"
+        ]
+      },
+      {
+        "theme": "___ MATE",
+        "tier": "purple",
+        "words": [
+          "CHECK",
+          "ROOM",
+          "PLAY",
+          "SOUL"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d03",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things at a Bus Stop",
+        "tier": "yellow",
+        "words": [
+          "TIMETABLE",
+          "SHELTER",
+          "QUEUE",
+          "BENCH"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Missed",
+        "tier": "green",
+        "words": [
+          "BUS",
+          "POINT",
+          "CALL",
+          "MARK"
+        ]
+      },
+      {
+        "theme": "Rhymes with “BENCH”",
+        "tier": "blue",
+        "words": [
+          "CLENCH",
+          "DRENCH",
+          "WRENCH",
+          "TRENCH"
+        ]
+      },
+      {
+        "theme": "Can Precede “STAND”",
+        "tier": "purple",
+        "words": [
+          "BAND",
+          "GRAND",
+          "HAND",
+          "UNDER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d04",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things You Find on a Beach",
+        "tier": "yellow",
+        "words": [
+          "DRIFTWOOD",
+          "SEAGLASS",
+          "PEBBLE",
+          "SHELL"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Combed",
+        "tier": "green",
+        "words": [
+          "HAIR",
+          "BEACH",
+          "ARCHIVES",
+          "WOOL"
+        ]
+      },
+      {
+        "theme": "Contains “IFT”",
+        "tier": "blue",
+        "words": [
+          "SWIFTLY",
+          "THRIFTY",
+          "FIFTEEN",
+          "GIFTED"
+        ]
+      },
+      {
+        "theme": "___ WATER",
+        "tier": "purple",
+        "words": [
+          "SALT",
+          "FRESH",
+          "BREAK",
+          "FIRE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d05",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Fruit Bowl",
+        "tier": "yellow",
+        "words": [
+          "BANANA",
+          "PEAR",
+          "PLUM",
+          "GRAPES"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Tough",
+        "tier": "green",
+        "words": [
+          "CROWD",
+          "COOKIE",
+          "LUCK",
+          "CALL"
+        ]
+      },
+      {
+        "theme": "Rhymes with “PLUM”",
+        "tier": "blue",
+        "words": [
+          "THUMB",
+          "CRUMB",
+          "BECOME",
+          "SUCCUMB"
+        ]
+      },
+      {
+        "theme": "___ TREE",
+        "tier": "purple",
+        "words": [
+          "FAMILY",
+          "PALM",
+          "SHOE",
+          "GUM"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d06",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Kitchen Drawer Items",
+        "tier": "yellow",
+        "words": [
+          "WHISK",
+          "PEELER",
+          "GRATER",
+          "TONGS"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Folded",
+        "tier": "green",
+        "words": [
+          "OMELET",
+          "HAND",
+          "LAUNDRY",
+          "ARMS"
+        ]
+      },
+      {
+        "theme": "Rhymes with “GRATER”",
+        "tier": "blue",
+        "words": [
+          "TRAITOR",
+          "CRATER",
+          "WAITER",
+          "EQUATOR"
+        ]
+      },
+      {
+        "theme": "Can Follow “TEA”",
+        "tier": "purple",
+        "words": [
+          "SPOON",
+          "POT",
+          "CUP",
+          "BAG"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d07",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Museum",
+        "tier": "yellow",
+        "words": [
+          "EXHIBIT",
+          "PLINTH",
+          "CURATOR",
+          "DIORAMA"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Preserved",
+        "tier": "green",
+        "words": [
+          "JAM",
+          "MEMORY",
+          "PEACE",
+          "EVIDENCE"
+        ]
+      },
+      {
+        "theme": "Contains “RAM”",
+        "tier": "blue",
+        "words": [
+          "PROGRAM",
+          "CERAMIC",
+          "DRAMATIC",
+          "PYRAMID"
+        ]
+      },
+      {
+        "theme": "Can Follow “SHOW”",
+        "tier": "purple",
+        "words": [
+          "CASE",
+          "DOWN",
+          "ROOM",
+          "STOPPER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d08",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Riding Tack",
+        "tier": "yellow",
+        "words": [
+          "BRIDLE",
+          "HALTER",
+          "STIRRUP",
+          "GIRTH"
+        ]
+      },
+      {
+        "theme": "Things That Can Gallop",
+        "tier": "green",
+        "words": [
+          "HORSE",
+          "IMAGINATION",
+          "PULSE",
+          "TIME"
+        ]
+      },
+      {
+        "theme": "Contains “IRR”",
+        "tier": "blue",
+        "words": [
+          "MIRROR",
+          "IRRIGATE",
+          "SQUIRREL",
+          "WHIRRING"
+        ]
+      },
+      {
+        "theme": "___ POWER",
+        "tier": "purple",
+        "words": [
+          "HORSEPOWER",
+          "WILL",
+          "SOLAR",
+          "FIRE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d09",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Types of Fastener",
+        "tier": "yellow",
+        "words": [
+          "ZIPPER",
+          "VELCRO",
+          "BUCKLE",
+          "TOGGLE"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Zipped",
+        "tier": "green",
+        "words": [
+          "LIPS",
+          "FILE",
+          "JACKET",
+          "BAG"
+        ]
+      },
+      {
+        "theme": "Contains “OGG”",
+        "tier": "blue",
+        "words": [
+          "FOGGY",
+          "SOGGY",
+          "BOGGLE",
+          "JOGGING"
+        ]
+      },
+      {
+        "theme": "Can Precede “TIGHT”",
+        "tier": "purple",
+        "words": [
+          "AIR",
+          "WATER",
+          "SKIN",
+          "UP"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d10",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Parts of a Staircase",
+        "tier": "yellow",
+        "words": [
+          "BANISTER",
+          "TREAD",
+          "NEWEL",
+          "RISER"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Climbed",
+        "tier": "green",
+        "words": [
+          "CHARTS",
+          "WALLS",
+          "RANKS",
+          "MOUNTAIN"
+        ]
+      },
+      {
+        "theme": "Rhymes with “RISER”",
+        "tier": "blue",
+        "words": [
+          "MISER",
+          "VISOR",
+          "GEYSER",
+          "INCISOR"
+        ]
+      },
+      {
+        "theme": "Can Follow “STAIR”",
+        "tier": "purple",
+        "words": [
+          "CASE",
+          "WAY",
+          "WELL",
+          "LIFT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d11",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Cave",
+        "tier": "yellow",
+        "words": [
+          "STALACTITE",
+          "BAT",
+          "ECHO",
+          "CRYSTAL"
+        ]
+      },
+      {
+        "theme": "Things That Can Echo",
+        "tier": "green",
+        "words": [
+          "CANYON",
+          "HALL",
+          "SENTIMENT",
+          "LAUGH"
+        ]
+      },
+      {
+        "theme": "Rhymes with “BAT”",
+        "tier": "blue",
+        "words": [
+          "FLAT",
+          "CHAT",
+          "GNAT",
+          "SPLAT"
+        ]
+      },
+      {
+        "theme": "Can Precede “SHIP”",
+        "tier": "purple",
+        "words": [
+          "FRIEND",
+          "HARD",
+          "MEMBER",
+          "CHAMPION"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d12",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Types of Sleeve",
+        "tier": "yellow",
+        "words": [
+          "RAGLAN",
+          "PUFF",
+          "BELL",
+          "CAP"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Pressed",
+        "tier": "green",
+        "words": [
+          "FLOWER",
+          "CHARGES",
+          "SUIT",
+          "BUTTON"
+        ]
+      },
+      {
+        "theme": "Contains “UFF”",
+        "tier": "blue",
+        "words": [
+          "SHUFFLE",
+          "BUFFALO",
+          "RUFFLE",
+          "SCUFFED"
+        ]
+      },
+      {
+        "theme": "___ HORN",
+        "tier": "purple",
+        "words": [
+          "FOG",
+          "LONG",
+          "SHOE",
+          "BUCK"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d13",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Types of Cake",
+        "tier": "yellow",
+        "words": [
+          "SPONGE",
+          "MADEIRA",
+          "CARROT",
+          "MARBLE"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Rich",
+        "tier": "green",
+        "words": [
+          "SOIL",
+          "SAUCE",
+          "HISTORY",
+          "UNCLE"
+        ]
+      },
+      {
+        "theme": "Rhymes with “CARROT”",
+        "tier": "blue",
+        "words": [
+          "PARROT",
+          "CLARET",
+          "FERRET",
+          "GARRET"
+        ]
+      },
+      {
+        "theme": "___ TOP",
+        "tier": "purple",
+        "words": [
+          "BLACK",
+          "TABLE",
+          "HILL",
+          "DESK"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d14",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Chemistry Lab",
+        "tier": "yellow",
+        "words": [
+          "BEAKER",
+          "PIPETTE",
+          "BUNSEN",
+          "FUNNEL"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Filtered",
+        "tier": "green",
+        "words": [
+          "WATER",
+          "COFFEE",
+          "NOISE",
+          "LIGHT"
+        ]
+      },
+      {
+        "theme": "Contains “UNS”",
+        "tier": "blue",
+        "words": [
+          "COUNSEL",
+          "SUNSHINE",
+          "SUNSET",
+          "UNSTABLE"
+        ]
+      },
+      {
+        "theme": "Can Precede “GLASS”",
+        "tier": "purple",
+        "words": [
+          "HOUR",
+          "SPY",
+          "PLEXI",
+          "SUN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d15",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Parts of a Door",
+        "tier": "yellow",
+        "words": [
+          "HINGE",
+          "LATCH",
+          "KNOB",
+          "JAMB"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Answered",
+        "tier": "green",
+        "words": [
+          "PRAYER",
+          "DOOR",
+          "QUESTION",
+          "CALL"
+        ]
+      },
+      {
+        "theme": "Rhymes with “LATCH”",
+        "tier": "blue",
+        "words": [
+          "SCRATCH",
+          "DETACH",
+          "ATTACH",
+          "DISPATCH"
+        ]
+      },
+      {
+        "theme": "Can Precede “BELL”",
+        "tier": "purple",
+        "words": [
+          "COW",
+          "BLUE",
+          "DUMB",
+          "BAR"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d16",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Cinema",
+        "tier": "yellow",
+        "words": [
+          "POPCORN",
+          "SCREEN",
+          "USHER",
+          "TRAILER"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Screened",
+        "tier": "green",
+        "words": [
+          "CALL",
+          "FILM",
+          "TENANT",
+          "PORCH"
+        ]
+      },
+      {
+        "theme": "Rhymes with “TRAILER”",
+        "tier": "blue",
+        "words": [
+          "SAILOR",
+          "WHALER",
+          "TAILOR",
+          "JAILER"
+        ]
+      },
+      {
+        "theme": "___ STAR",
+        "tier": "purple",
+        "words": [
+          "SUPER",
+          "ROCK",
+          "LODE",
+          "FIVE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d17",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in an Orchard",
+        "tier": "yellow",
+        "words": [
+          "SAPLING",
+          "BLOSSOM",
+          "WINDFALL",
+          "HIVE"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Grafted",
+        "tier": "green",
+        "words": [
+          "SKIN",
+          "BRANCH",
+          "IDEA",
+          "VINE"
+        ]
+      },
+      {
+        "theme": "Contains “IND”",
+        "tier": "blue",
+        "words": [
+          "KINDLE",
+          "SPINDLE",
+          "GRINDING",
+          "BLINDFOLD"
+        ]
+      },
+      {
+        "theme": "Can Follow “HONEY”",
+        "tier": "purple",
+        "words": [
+          "COMB",
+          "MOON",
+          "DEW",
+          "SUCKLE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d18",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Types of Stitch",
+        "tier": "yellow",
+        "words": [
+          "CROSS",
+          "CHAIN",
+          "BLANKET",
+          "RUNNING"
+        ]
+      },
+      {
+        "theme": "Things a Tailor Does",
+        "tier": "green",
+        "words": [
+          "HEM",
+          "BASTE",
+          "PIN",
+          "PRESS"
+        ]
+      },
+      {
+        "theme": "Contains “UNN”",
+        "tier": "blue",
+        "words": [
+          "TUNNEL",
+          "FUNNY",
+          "BUNNY",
+          "SUNNY"
+        ]
+      },
+      {
+        "theme": "Can Follow “PIN”",
+        "tier": "purple",
+        "words": [
+          "CUSHION",
+          "POINT",
+          "WHEEL",
+          "STRIPE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d19",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things at a Village Fair",
+        "tier": "yellow",
+        "words": [
+          "TOMBOLA",
+          "BUNTING",
+          "RAFFLE",
+          "COCONUT"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Spun",
+        "tier": "green",
+        "words": [
+          "WOOL",
+          "TALE",
+          "RECORD",
+          "SUGAR"
+        ]
+      },
+      {
+        "theme": "Contains “UNT”",
+        "tier": "blue",
+        "words": [
+          "COUNTRY",
+          "MOUNTAIN",
+          "HAUNTED",
+          "JAUNTY"
+        ]
+      },
+      {
+        "theme": "___ NUT",
+        "tier": "purple",
+        "words": [
+          "DOUGH",
+          "PEA",
+          "CHEST",
+          "HAZEL"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d20",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Suitcase",
+        "tier": "yellow",
+        "words": [
+          "PASSPORT",
+          "TOILETRIES",
+          "ADAPTER",
+          "SUNHAT"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Packed",
+        "tier": "green",
+        "words": [
+          "LUNCH",
+          "HOUSE",
+          "PUNCH",
+          "BAGS"
+        ]
+      },
+      {
+        "theme": "Contains “APT”",
+        "tier": "blue",
+        "words": [
+          "CHAPTER",
+          "CAPTURE",
+          "RAPTURE",
+          "CAPTIVATE"
+        ]
+      },
+      {
+        "theme": "Can Follow “SUN”",
+        "tier": "purple",
+        "words": [
+          "DIAL",
+          "FLOWER",
+          "BURN",
+          "RISE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d21",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Types of Pastry",
+        "tier": "yellow",
+        "words": [
+          "FILO",
+          "PUFF",
+          "CHOUX",
+          "SHORTCRUST"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Crisp",
+        "tier": "green",
+        "words": [
+          "AIR",
+          "APPLE",
+          "SHIRT",
+          "ACCENT"
+        ]
+      },
+      {
+        "theme": "Contains “HOU”",
+        "tier": "blue",
+        "words": [
+          "THOUSAND",
+          "SHOULDER",
+          "THOUGHTFUL",
+          "HOUNDED"
+        ]
+      },
+      {
+        "theme": "___ ROLL",
+        "tier": "purple",
+        "words": [
+          "DRUM",
+          "BANK",
+          "PAY",
+          "SAUSAGE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d22",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Instruments in a Brass Band",
+        "tier": "yellow",
+        "words": [
+          "TUBA",
+          "CORNET",
+          "TROMBONE",
+          "EUPHONIUM"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Brass",
+        "tier": "green",
+        "words": [
+          "NECK",
+          "BAND",
+          "TACKS",
+          "MONKEY"
+        ]
+      },
+      {
+        "theme": "Rhymes with “TROMBONE”",
+        "tier": "blue",
+        "words": [
+          "ALONE",
+          "POSTPONE",
+          "UNKNOWN",
+          "DISOWN"
+        ]
+      },
+      {
+        "theme": "___ NOTE",
+        "tier": "purple",
+        "words": [
+          "KEY",
+          "FOOT",
+          "BANK",
+          "QUAVER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d23",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things on a Cheeseboard",
+        "tier": "yellow",
+        "words": [
+          "CRACKERS",
+          "CHUTNEY",
+          "QUINCE",
+          "OATCAKES"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Vintage",
+        "tier": "green",
+        "words": [
+          "CAR",
+          "WINE",
+          "CLOTHING",
+          "YEAR"
+        ]
+      },
+      {
+        "theme": "Rhymes with “QUINCE”",
+        "tier": "blue",
+        "words": [
+          "SINCE",
+          "WINCE",
+          "PRINCE",
+          "CONVINCE"
+        ]
+      },
+      {
+        "theme": "Can Follow “CHEESE”",
+        "tier": "purple",
+        "words": [
+          "BURGER",
+          "CAKE",
+          "CLOTH",
+          "BOARD"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d24",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things at the Coast",
+        "tier": "yellow",
+        "words": [
+          "PIER",
+          "GROYNE",
+          "PROMENADE",
+          "DECKCHAIR"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Salty",
+        "tier": "green",
+        "words": [
+          "AIR",
+          "SNACK",
+          "LANGUAGE",
+          "DOG"
+        ]
+      },
+      {
+        "theme": "Contains “IER”",
+        "tier": "blue",
+        "words": [
+          "FRONTIER",
+          "CARRIER",
+          "GLACIER",
+          "TERRIER"
+        ]
+      },
+      {
+        "theme": "___ SIDE",
+        "tier": "purple",
+        "words": [
+          "SEA",
+          "COUNTRY",
+          "BACK",
+          "HILL"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-d25",
+    "difficulty": "easy",
+    "groups": [
+      {
+        "theme": "Things in a Diary",
+        "tier": "yellow",
+        "words": [
+          "APPOINTMENT",
+          "RIBBON",
+          "ENTRY",
+          "DATE"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Booked",
+        "tier": "green",
+        "words": [
+          "TABLE",
+          "FLIGHT",
+          "SUSPECT",
+          "HOLIDAY"
+        ]
+      },
+      {
+        "theme": "Rhymes with “DATE”",
+        "tier": "blue",
+        "words": [
+          "WEIGHT",
+          "STRAIGHT",
+          "AWAIT",
+          "DEBATE"
+        ]
+      },
+      {
+        "theme": "___ BOOK",
+        "tier": "purple",
+        "words": [
+          "NOTE",
+          "SCRAP",
+          "TEXT",
+          "MATCH"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-e01",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Beehive",
+        "tier": "yellow",
+        "words": [
+          "BEESWAX",
+          "DRONE",
+          "QUEEN",
+          "PROPOLIS"
+        ]
+      },
+      {
+        "theme": "Contains “ONE”",
+        "tier": "green",
+        "words": [
+          "CYCLONE",
+          "ABALONE",
+          "TROMBONE",
+          "CHAPERONE"
+        ]
+      },
+      {
+        "theme": "Silent “H”",
+        "tier": "blue",
+        "words": [
+          "HONEST",
+          "RHYTHM",
+          "EXHAUSTED",
+          "GHERKIN"
+        ]
+      },
+      {
+        "theme": "Semordnilaps",
+        "tier": "purple",
+        "words": [
+          "DENIM",
+          "MINED",
+          "STRAP",
+          "PARTS"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-e02",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Lighthouse",
+        "tier": "yellow",
+        "words": [
+          "LENS",
+          "LAMP",
+          "FOGHORN",
+          "KEEPER"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Beamed",
+        "tier": "green",
+        "words": [
+          "SMILE",
+          "SIGNAL",
+          "MESSAGE",
+          "GRIN"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "blue",
+        "words": [
+          "SUCCESS",
+          "BALLOON",
+          "RACCOON",
+          "ADDRESSEE"
+        ]
+      },
+      {
+        "theme": "Silent “G”",
+        "tier": "purple",
+        "words": [
+          "GNARLED",
+          "DIAPHRAGM",
+          "CHAMPAGNE",
+          "SOVEREIGN"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-e03",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Bakery Window",
+        "tier": "yellow",
+        "words": [
+          "LOAF",
+          "PLAIT",
+          "STOLLEN",
+          "TARTLET"
+        ]
+      },
+      {
+        "theme": "Contains “LET”",
+        "tier": "green",
+        "words": [
+          "BRACELET",
+          "OMELETTE",
+          "PAMPHLET",
+          "LEAFLET"
+        ]
+      },
+      {
+        "theme": "Silent “T”",
+        "tier": "blue",
+        "words": [
+          "BALLET",
+          "WHISTLE",
+          "RUSTLE",
+          "CHRISTMAS"
+        ]
+      },
+      {
+        "theme": "Hidden Numbers",
+        "tier": "purple",
+        "words": [
+          "SOFTEN",
+          "LISTENED",
+          "PHONETIC",
+          "FRIGHTENED"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-e04",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Greenhouse",
+        "tier": "yellow",
+        "words": [
+          "SEEDLING",
+          "CLOCHE",
+          "TROLLEY",
+          "VENT"
+        ]
+      },
+      {
+        "theme": "Contains “OLL”",
+        "tier": "green",
+        "words": [
+          "FOLLY",
+          "JOLLY",
+          "POLLUTION",
+          "COLLAPSE"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "blue",
+        "words": [
+          "WOOLLEN",
+          "SUCCESSFUL",
+          "TOFFEE",
+          "ADDRESS"
+        ]
+      },
+      {
+        "theme": "Silent “GH”",
+        "tier": "purple",
+        "words": [
+          "DELIGHTED",
+          "NAUGHTY",
+          "SLEIGHT",
+          "DOUGHNUT"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-e05",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Farmhouse Kitchen",
+        "tier": "yellow",
+        "words": [
+          "DRESSER",
+          "RANGE",
+          "PANTRY",
+          "CROCK"
+        ]
+      },
+      {
+        "theme": "Contains “ESS”",
+        "tier": "green",
+        "words": [
+          "BLESSING",
+          "PROFESSOR",
+          "LESSON",
+          "ESSAY"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "blue",
+        "words": [
+          "GODDESS",
+          "BALLOON",
+          "COMMITTEE",
+          "RACCOON"
+        ]
+      },
+      {
+        "theme": "Silent “W”",
+        "tier": "purple",
+        "words": [
+          "WHOLESOME",
+          "WRAPPING",
+          "ANSWERED",
+          "TOWARDS"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-e06",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Watermill",
+        "tier": "yellow",
+        "words": [
+          "SLUICE",
+          "MILLSTONE",
+          "HOPPER",
+          "WHEEL"
+        ]
+      },
+      {
+        "theme": "Contains “ILL”",
+        "tier": "green",
+        "words": [
+          "THRILLER",
+          "SPILLAGE",
+          "CHILLY",
+          "DISTILLED"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "blue",
+        "words": [
+          "MILLENNIUM",
+          "ASSESSED",
+          "PUPPETEER",
+          "TOFFEE"
+        ]
+      },
+      {
+        "theme": "Heteronyms",
+        "tier": "purple",
+        "words": [
+          "WIND",
+          "TEAR",
+          "ROW",
+          "SEWER"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-e07",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things on a Writing Desk",
+        "tier": "yellow",
+        "words": [
+          "BLOTTER",
+          "INKWELL",
+          "SEAL",
+          "QUILL"
+        ]
+      },
+      {
+        "theme": "Contains “ELL”",
+        "tier": "green",
+        "words": [
+          "UMBRELLA",
+          "PROPELLER",
+          "SPELLING",
+          "CELLAR"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "blue",
+        "words": [
+          "BESTSELLER",
+          "GODDESS",
+          "RACCOON",
+          "TOFFEE"
+        ]
+      },
+      {
+        "theme": "Silent “B”",
+        "tier": "purple",
+        "words": [
+          "PLUMBED",
+          "THUMBNAIL",
+          "DEBTOR",
+          "CLIMBING"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-e08",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Ballroom",
+        "tier": "yellow",
+        "words": [
+          "CHANDELIER",
+          "PARQUET",
+          "BANDSTAND",
+          "WALTZ"
+        ]
+      },
+      {
+        "theme": "Contains “AND”",
+        "tier": "green",
+        "words": [
+          "ABANDON",
+          "RANDOM",
+          "STANDARD",
+          "CANDID"
+        ]
+      },
+      {
+        "theme": "Silent “T”",
+        "tier": "blue",
+        "words": [
+          "LISTENER",
+          "SOFTENED",
+          "GLISTEN",
+          "CASTLE"
+        ]
+      },
+      {
+        "theme": "Palindromes",
+        "tier": "purple",
+        "words": [
+          "REDDER",
+          "SAGAS",
+          "MINIM",
+          "EYE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-e09",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Kitchen Garden",
+        "tier": "yellow",
+        "words": [
+          "RHUBARB",
+          "CLOCHE",
+          "SCARECROW",
+          "BEANPOLE"
+        ]
+      },
+      {
+        "theme": "Contains “ARE”",
+        "tier": "green",
+        "words": [
+          "PARENT",
+          "BAREFOOT",
+          "WAREHOUSE",
+          "CAREFUL"
+        ]
+      },
+      {
+        "theme": "Rhymes with “STARE”",
+        "tier": "blue",
+        "words": [
+          "AWARE",
+          "DESPAIR",
+          "THEIR",
+          "ELSEWHERE"
+        ]
+      },
+      {
+        "theme": "Onomatopoeia",
+        "tier": "purple",
+        "words": [
+          "RUSTLE",
+          "SNAP",
+          "PATTER",
+          "CRACKLE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-e10",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things on a Mantelpiece",
+        "tier": "yellow",
+        "words": [
+          "CLOCK",
+          "CANDLESTICK",
+          "VASE",
+          "PORTRAIT"
+        ]
+      },
+      {
+        "theme": "Contains “ICK”",
+        "tier": "green",
+        "words": [
+          "THICKET",
+          "PRICKLE",
+          "TRICKLE",
+          "QUICKSAND"
+        ]
+      },
+      {
+        "theme": "Silent “K”",
+        "tier": "blue",
+        "words": [
+          "KNICKERS",
+          "KNEEL",
+          "KNOTTED",
+          "KNAPSACK"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "purple",
+        "words": [
+          "SUCCESS",
+          "BALLOON",
+          "GODDESS",
+          "COMMITTEE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-e11",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things That Can Be Hemmed",
+        "tier": "yellow",
+        "words": [
+          "SKIRT",
+          "CURTAIN",
+          "TROUSERS",
+          "TABLECLOTH"
+        ]
+      },
+      {
+        "theme": "Things in a Haberdashery",
+        "tier": "green",
+        "words": [
+          "BUTTONS",
+          "RIBBONS",
+          "ZIPPERS",
+          "TASSELS"
+        ]
+      },
+      {
+        "theme": "Silent “GH”",
+        "tier": "blue",
+        "words": [
+          "NAUGHTY",
+          "THOROUGHLY",
+          "BOUGHT",
+          "HIGHNESS"
+        ]
+      },
+      {
+        "theme": "Heteronyms",
+        "tier": "purple",
+        "words": [
+          "ADDRESS",
+          "ENTRANCE",
+          "MODERATE",
+          "INTIMATE"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-e12",
+    "difficulty": "hard",
+    "groups": [
+      {
+        "theme": "Things in a Dairy",
+        "tier": "yellow",
+        "words": [
+          "CHURN",
+          "RENNET",
+          "PAIL",
+          "MUSLIN"
+        ]
+      },
+      {
+        "theme": "Things That Can Be Churned",
+        "tier": "green",
+        "words": [
+          "BUTTER",
+          "STOMACH",
+          "WATERS",
+          "RUMOURS"
+        ]
+      },
+      {
+        "theme": "Two Pairs of Double Letters",
+        "tier": "blue",
+        "words": [
+          "SUCCESS",
+          "RACCOON",
+          "BALLOON",
+          "COMMITTEE"
+        ]
+      },
+      {
+        "theme": "Silent “T”",
+        "tier": "purple",
+        "words": [
+          "MOISTEN",
+          "HASTEN",
+          "CHASTEN",
+          "FASTEN"
         ]
       }
     ]

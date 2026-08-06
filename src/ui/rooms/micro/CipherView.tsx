@@ -88,7 +88,15 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
         setToast({
           kind: fb.charged ? 'bad' : 'info',
           text: fb.charged
-            ? `Still murky — ${fb.correct} of ${fb.total} letters ring true · −${hintCost} steps`
+            // ROUND 10 — ONE IDIOM FOR ONE QUANTITY. This line used to spell
+            // the tally out ("3 of 16 letters ring true") at the same moment
+            // the prints strip filed the identical number as a fraction
+            // ("3/16"), so the room printed one quantity twice, two ways, on
+            // one screen. The strip is the permanent record (AAA 3.3) and it
+            // has to stay compact, so the fraction is the idiom that wins and
+            // the toast now speaks it too — the eye can match the toast to the
+            // chip it just filed without re-parsing the number.
+            ? `Still murky — ${fb.correct}/${fb.total} letters ring true · −${hintCost} steps`
             : 'The same print again — no charge for looking twice.',
         });
         later(() => setToast(null), 2000);
@@ -246,9 +254,11 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
               OUTSIDE the live region — a screen reader should hear develops,
               not a pencil count re-read on every letter. */}
           <div className="mic-toastslot">
+            {/* Same denominator, same idiom as the prints strip and the develop
+                toast — the room counts part-of-whole exactly one way (r10). */}
             {!toast && (
               <span className="mic__meta tabular-nums">
-                {penciled} of {letters.length} letters penciled
+                {penciled}/{letters.length} letters penciled
               </span>
             )}
             <span className="mic-toast-live" aria-live="polite">

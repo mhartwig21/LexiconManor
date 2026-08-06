@@ -18,49 +18,74 @@ import type { ForgottenWordPuzzle, Tier } from '../src/engine/types';
  * guarantees is that those three registers are genuinely DIFFERENT KINDS OF
  * WRITING rather than three phrasings of one gloss — build-linted below:
  *
- *   - plain  : a dictionary gloss. Third person, no riddling voice.
- *   - poetic : an image. Third person, must not reuse the plain gloss's
- *              content words (token overlap gate), never first-person.
+ *   - plain  : a dictionary gloss. Third person, impersonal (no "I", no
+ *              "you"), never a question, ≤120 characters.
+ *   - poetic : an image. Third person, never a question, must not reuse the
+ *              plain gloss's content words (token-overlap gate).
  *   - riddle : the word SPEAKING or a question put to the player. Must carry
  *              first-person voice or end in a question mark, and must not
  *              reuse the poetic line's content words either.
  *
- * Plus the answer-leak lint (no clue may contain the answer's 4-letter stem),
- * usage blanks, ≤15-letter words, ≥20 entries, and ≥10 entries per tier so no
- * row runs out of Studies.
+ * ---------------------------------------------------------------------------
+ * ROUND 7 — THE POOL DOUBLES AND THE GATE GETS TEETH
+ * ---------------------------------------------------------------------------
+ * 43 entries → the pool below. Every new entry was written to the register of
+ * the Volume 1 fragments (`content/authored/volumes/volume-1.json`) — concrete
+ * nouns, a trade's-eye view, no sentiment the image has not earned — because
+ * the fiction says the same man wrote both.
+ *
+ * Four lint holes were open and are now closed:
+ *
+ * 1. THE ANSWER LEAK WAS ONLY FOUR LETTERS DEEP. The old gate rejected a clue
+ *    containing the answer's first four letters. That caught nothing in a
+ *    compound: EVENTIDE's etymology handed over "tide", HEIRLOOM's handed over
+ *    "loom", PETRICHOR's handed over "ichor", OVERMORROW's handed over
+ *    "morrow", and NOCTAMBULIST's named "somnambulist" — eight of its twelve
+ *    letters. The gate now rejects any clue word that is inside the answer, or
+ *    that shares a run of letters covering most of the answer (or most of the
+ *    word). See `leakProblems`.
+ *    Its cousin — the clue that *glosses the compound* ("roaming joined to
+ *    longing" for WANDERLUST, "The Three Princes of Serendip" for
+ *    SERENDIPITY) — no machine can see, so every etymology in the pool was
+ *    re-read by hand for it and roughly twenty were rewritten. The house rule,
+ *    recorded here so it survives the next author: an etymology may name a
+ *    *fact* (a coiner, a year, a trade, a court case) but never a translation
+ *    of the answer's own parts, and never a source whose title or name is the
+ *    answer.
+ *
+ * 2. THE OVERLAP GATE SAT AT 0.40, above the pool's own worst case (0.33) —
+ *    i.e. it could not have failed. It is 0.30 now, and the offenders were
+ *    rewritten rather than the number raised.
+ *
+ * 3. NOTHING STOPPED THE POOL REPEATING ITSELF. At 43 entries an author can
+ *    hold the whole book in their head; at a hundred they cannot, and the
+ *    hundredth poetic line starts "A small tune…" for the fifth time. Two
+ *    cross-pool gates now watch for it: shared openers (`MAX_SHARED_OPENER`)
+ *    and reused images (`MAX_IMAGE_REUSE`).
+ *
+ * 4. GREETING-CARD DICTION HAD NO TRIPWIRE. A small banned list
+ *    (`DEAD_DICTION`) rejects the abstractions that filler reaches for —
+ *    "Fortune's gentle kiss upon the unprepared soul" now fails the build. It
+ *    is a tripwire, not a judge: the read-aloud pass is still the bar.
+ *
+ * Plus, carried forward: usage blanks (and now usage *sentences*), ≤15-letter
+ * words, curly typography (the authored-JSON lint could never see this file),
+ * and per-tier floors so no row runs out of Studies.
  *
  * ---------------------------------------------------------------------------
  * ROUND 6 — THE LINT WAS UNREACHABLE FROM CI
  * ---------------------------------------------------------------------------
- * Everything below was real and correct and *ran nowhere*: `lint()` was not
- * exported, `main()` executed at module scope (so importing this file wrote a
- * JSON artifact as a side effect), and `content:verify` never named it. The
- * register gate therefore only fired when a human happened to re-run the
- * generator by hand. Worse, the gate only ever looked at `ENTRIES` — the
- * SHIPPED pool is `generated/forgotten-word.json`, so a hand-edit collapsing
- * the three registers into one gloss, applied to the file the game actually
- * loads, was invisible to every check in the repo.
- *
- * Both holes are closed here:
+ * `lint()` was not exported, `main()` executed at module scope (so importing
+ * this file wrote a JSON artifact as a side effect), and `content:verify`
+ * never named it. Both holes closed:
  *   - `lint()`, `lintPuzzles()` and `ENTRIES` are exported; `main()` runs only
- *     when this file is the process entry point, so importing it is free of
- *     side effects.
+ *     when this file is the process entry point.
  *   - `--check` lints the AUTHORED entries *and* re-lints the SHIPPED JSON
  *     through the same rules, then asserts the two agree, and writes nothing.
  *     Wired into `content:verify` (package.json) and re-run from
  *     `tests/forgotten-word-register.test.ts`, which also proves the gate
- *     fails on a deliberately collapsed fixture — a lint nobody has watched
+ *     fails on deliberately collapsed fixtures — a lint nobody has watched
  *     fail is a lint nobody knows still works.
- *
- * ROUND 5 (writing pass, AAA 3.7 "best writing in the game"): the register
- * lint above was verified live — a deliberately-glossy poetic line trips both
- * the first-person gate and the overlap gate, so the three tiers are provably
- * three kinds of sentence and not one gloss reworded. Measured worst-case
- * register overlap across the shipped pool is 0.33 against a 0.40 gate. The
- * remaining seam was tone: five poetic lines were rewritten off greeting-card
- * abstractions onto concrete nouns so the Study reads in the same hand as the
- * Volume 1 fragments (`content/authored/volumes/volume-1.json`), which is the
- * bar the Study is measured against. Pool grown 36 → 43.
  *
  * Run: npx tsx content/generate-forgotten-word.ts
  */
@@ -71,7 +96,10 @@ const TIER_OF_OBSCURITY: Record<ForgottenWordPuzzle['obscurity'], Tier> = {
 };
 
 /** Minimum entries per tier — a row must never run dry of Studies. */
-const MIN_PER_TIER = 10;
+const MIN_PER_TIER = 30;
+
+/** Minimum pool size. Raised with the round-7 writing pass. */
+const MIN_POOL = 100;
 
 export interface Entry {
   word: string;
@@ -88,18 +116,18 @@ export const ENTRIES: Entry[] = [
   // ---- common --------------------------------------------------------------
   {
     word: 'SERENDIPITY', obscurity: 'common',
-    plain: 'The luck of finding something good while you were looking for something else.',
-    poetic: "Fortune's habit of leaving gifts on paths you never meant to walk.",
+    plain: 'The luck of finding one good thing while looking for another.',
+    poetic: 'The wrong turning that pays better than the road that was planned.',
     riddle: 'Hunt one treasure and I slip a better one into your pocket, unasked.',
-    etymology: 'Coined by Horace Walpole in 1754, after a Persian tale of three princes who kept stumbling on discoveries they had not sought.',
+    etymology: 'Coined by Horace Walpole in 1754, out of a Persian fairy tale, for a talent he thought English had no name for.',
     usage: 'By pure ___, the missing letter turned up inside a borrowed book.',
   },
   {
     word: 'WANDERLUST', obscurity: 'common',
     plain: 'A strong longing to travel and see far places.',
     poetic: 'The itch that packs a bag before the mind has agreed to go.',
-    riddle: 'I am a hunger no kitchen can feed; only a horizon quiets me, and never for long.',
-    etymology: 'Borrowed whole from German — roaming joined to longing — in the first years of the twentieth century.',
+    riddle: 'No kitchen can feed me; only a horizon quiets me, and never for long.',
+    etymology: 'Borrowed whole from German in the first years of the twentieth century, at the height of a fashion for walking tours.',
     usage: 'Her ___ flared with every train whistle that crossed the valley.',
   },
   {
@@ -107,7 +135,7 @@ export const ENTRIES: Entry[] = [
     plain: 'A bittersweet longing for times gone by.',
     poetic: 'The past, seen through the one window that opens only from this side.',
     riddle: 'The farther you sail from a shore, the sweeter I make it look.',
-    etymology: 'Greek for the ache of the homeward road — coined in 1688 as a medical diagnosis for Swiss soldiers pining in foreign camps.',
+    etymology: 'Coined in 1688 as a medical diagnosis — Swiss soldiers pining in foreign camps, said to be curable only by going home.',
     usage: 'The smell of woodsmoke filled him with ___ for his grandfather’s cabin.',
   },
   {
@@ -131,12 +159,12 @@ export const ENTRIES: Entry[] = [
     plain: 'The state of being alone, especially by choice and at peace.',
     poetic: 'Aloneness worn as a warm coat rather than a wound.',
     riddle: 'Crowds destroy me, and yet I am no enemy of the ones you love.',
-    etymology: 'From the Latin for ‘alone’, the same root that gave the language ‘sole’ and ‘desolate’.',
+    etymology: 'From the Latin for alone — a monastic word for centuries before it became a comfortable one.',
     usage: 'He kept Sunday mornings for ___, tea, and the slow crossword.',
   },
   {
     word: 'WHIMSY', obscurity: 'common',
-    plain: 'Playful, fanciful humor; a taste for odd and charming notions.',
+    plain: 'Playful, fanciful humour; a taste for odd and charming notions.',
     poetic: 'The soap-bubble logic by which a teapot might well be a house for wrens.',
     riddle: 'I turn umbrellas into rowboats and errands into expeditions, and I weigh nothing at all.',
     etymology: 'A softened form of a seventeenth-century nonsense word for a fanciful trifle, cousin to ‘flim-flam’.',
@@ -144,7 +172,7 @@ export const ENTRIES: Entry[] = [
   },
   {
     word: 'REVERIE', obscurity: 'common',
-    plain: 'A pleasant daydream; being lost in dreamy thought.',
+    plain: 'A pleasant daydream; the state of being lost in dreamy thought.',
     poetic: 'The little rowboat the mind takes out when nobody is asking it to steer.',
     riddle: 'Your eyes stay open while I carry you elsewhere; a dropped teacup calls you back.',
     etymology: 'From an old French word for wild rejoicing and rambling talk; crossing the Channel, it grew quiet and dreamy.',
@@ -156,8 +184,8 @@ export const ENTRIES: Entry[] = [
     word: 'HEIRLOOM', obscurity: 'common',
     plain: 'A treasured object handed down through a family for generations.',
     poetic: 'A thing that outlives its owners and keeps the fingerprints of hands now gone.',
-    riddle: 'I am worth little at auction and everything on a mantelpiece.',
-    etymology: 'Middle English joined an inherited estate to ‘loom’, which then meant simply a tool — the family tool that passed on.',
+    riddle: 'At auction I fetch almost nothing; on a mantelpiece I am the whole family.',
+    etymology: 'Middle English joined an inherited estate to an old word for a tool — the family implement that passed on with the land.',
     usage: 'The clock in the hall was the only ___ that survived the move.',
   },
   {
@@ -165,7 +193,7 @@ export const ENTRIES: Entry[] = [
     plain: 'A gentle song sung to send a child to sleep.',
     poetic: 'A small tune with a door in it, opening onto sleep.',
     riddle: 'Sing me badly and I work just as well; my audience is already half gone.',
-    etymology: 'From the hushing sounds nurses have always made, joined to an old word for goodbye.',
+    etymology: 'In English since the sixteenth century, and imitative at both ends: the sound came first and the spelling was fitted to it.',
     usage: 'She hummed the same ___ her grandmother had hummed to her.',
   },
   {
@@ -202,13 +230,175 @@ export const ENTRIES: Entry[] = [
     etymology: 'From an Old Norse verb for setting alight — the same root the language uses when a feeling catches rather than a log.',
     usage: 'He split the ___ finer than it needed, because the doing of it was restful.',
   },
+  // Round 7: the tier-1 shelf, doubled. Household objects and hours, in the
+  // hand of the volume fragments.
+  {
+    word: 'EMBER', obscurity: 'common',
+    plain: 'A small piece of coal or wood still glowing after the flame has gone out.',
+    poetic: 'The last red eye of a fire, watching the room until morning.',
+    riddle: 'The poker hunts for me at midnight; the bellows can still talk me into a flame.',
+    etymology: 'Old English for a smouldering cinder, with cousins in Old Norse and German — one of the oldest fire-words the language still uses.',
+    usage: 'She banked the ___ under ash so the morning would have somewhere to begin.',
+  },
+  {
+    word: 'HEARTH', obscurity: 'common',
+    plain: 'The floor of a fireplace, and by extension the fireside as the centre of a home.',
+    poetic: 'The one stone in a house that has been warm every winter since the house was built.',
+    riddle: 'Build a house around me and it becomes a home; leave me cold and it is only shelter.',
+    etymology: 'Old English, and the same word in German; the family name for the fireplace floor is older than the chimney that now stands over it.',
+    usage: 'Every chair in the room had been turned to face the ___.',
+  },
+  {
+    word: 'DRIFTWOOD', obscurity: 'common',
+    plain: 'Timber that the sea has carried, worn smooth, and left along the tideline.',
+    poetic: 'A branch that went to sea a tree and came back a sculpture.',
+    riddle: 'The tide hands me over and takes me back for years before I am dry enough to burn.',
+    etymology: 'Recorded in English since the seventeenth century, though the beachcombers who lived off it never needed the word written down.',
+    usage: 'He fed the fire with ___ and the flames burned a strange salt green.',
+  },
+  {
+    word: 'KEEPSAKE', obscurity: 'common',
+    plain: 'A small object held on to only because of the person or place it recalls.',
+    poetic: 'A pebble, a ticket stub, a button: none of them beautiful, all of them evidence.',
+    riddle: 'Usually ugly, always small — and I am the first thing carried out of a burning house.',
+    etymology: 'First written in the 1790s, when English was fond of compounds that name a thing by the errand it runs.',
+    usage: 'She carried the button as a ___, though she never said whose coat it came from.',
+  },
+  {
+    word: 'ORCHARD', obscurity: 'common',
+    plain: 'A plot of ground planted with fruit trees and kept for their crop.',
+    poetic: 'A wood set out in rows by someone who did not expect to eat from it.',
+    riddle: 'Every autumn I pay my rent in apples, and I am the only forest that was ever arranged.',
+    etymology: 'Old English joined a word for a garden herb to the enclosure it grew in; the trees arrived later and kept the name.',
+    usage: 'The old ___ still sets fruit, though nobody has pruned it since the war.',
+  },
+  {
+    word: 'COMPASS', obscurity: 'common',
+    plain: 'An instrument with a magnetised needle that shows which way is north.',
+    poetic: 'One nervous sliver of iron in a dish of glass, insisting on the north.',
+    riddle: 'Spin me, shake me, take me down a mine: I will still point at the same cold country.',
+    etymology: 'From an old verb for stepping round a circle — the jointed legs that draw one share the name, and sailors borrowed it from geometry.',
+    usage: 'The ___ in the hall case points a little east of north, and always has.',
+  },
+  {
+    word: 'MARGIN', obscurity: 'common',
+    plain: 'The blank border of a page, outside the written or printed text.',
+    poetic: 'The white field around the words, where a reader is allowed to argue.',
+    riddle: 'Printers give me away for nothing, and every good reader fills me with a second book.',
+    etymology: 'From the Latin for an edge, the same root behind the word for a frontier province — a border in both senses.',
+    usage: 'Every book he lent came back with the ___ full of his pencilled quarrels.',
+  },
+  {
+    word: 'INKWELL', obscurity: 'common',
+    plain: 'A small pot set into a desk to hold what a pen is dipped in.',
+    poetic: 'A black pool let into oak, from which whole libraries were drawn up a drop at a time.',
+    riddle: 'Dip and dip again: I hold about two hundred words, and then I want filling.',
+    etymology: 'A nineteenth-century desk word; before it, the pot stood loose on the table, or hung from the belt as a horn.',
+    usage: 'The ___ in the study desk still has a crust of black at the bottom.',
+  },
+  {
+    word: 'ALMANAC', obscurity: 'common',
+    plain: 'A yearly book of calendars, tides, moon phases, and weather predictions.',
+    poetic: 'A whole year bound in advance, with the moon’s appointments already kept.',
+    riddle: 'I tell a farmer when to sow and a sailor when the water will be high, and by January I am waste paper.',
+    etymology: 'Reached English through medieval Latin from Arabic; the Arabic word itself is disputed, which pleases lexicographers more than it should.',
+    usage: 'The ___ hanging by the door had every frost of the last decade underlined.',
+  },
+  {
+    word: 'BELLOWS', obscurity: 'common',
+    plain: 'A hinged leather bag with a nozzle, worked by hand to blow air on a fire.',
+    poetic: 'A pair of leather lungs kept on a hook beside the grate.',
+    riddle: 'Squeeze me and the coals go from grey to gold; I breathe only while somebody else does the work.',
+    etymology: 'The plural of an old word for a leather bag; the singular went out of use and the pair kept working.',
+    usage: 'Two puffs of the ___ and the kitchen fire took hold.',
+  },
+  {
+    word: 'COBWEB', obscurity: 'common',
+    plain: 'The dusty tangle a spider leaves behind in a corner nobody sweeps.',
+    poetic: 'Lace that no one ordered, hung in the one corner the broom forgives.',
+    riddle: 'Dust makes me visible and the maid makes me temporary; my builder moved out months ago.',
+    etymology: 'The spider’s older English name survives nowhere else in the language: it hides in this one compound, and nobody notices.',
+    usage: 'A ___ across the door meant nobody had come this way since spring.',
+  },
+  {
+    word: 'BANISTER', obscurity: 'common',
+    plain: 'The handrail of a staircase, and the row of uprights that holds it up.',
+    poetic: 'The part of a staircase that was built to be touched.',
+    riddle: 'Children ride me down; the old are grateful for me going up. What am I?',
+    etymology: 'A slurred form of the word for a pomegranate flower — the little swelling posts were carved in that shape, and the name slid down the stair.',
+    usage: 'She took the stairs two at a time with one hand on the ___.',
+  },
+  {
+    word: 'SCARECROW', obscurity: 'common',
+    plain: 'A figure of straw and old clothes set in a field to frighten birds.',
+    poetic: 'Two poles, one shirt, and just enough suggestion of a man to keep a field honest.',
+    riddle: 'Hired for my outline alone, and by August the rooks have worked me out.',
+    etymology: 'In English since the 1550s, when it also meant a thin and ragged person — an insult before it was a fixture of the fields.',
+    usage: 'The ___ gave up its hat in the March gales and never got another.',
+  },
+  {
+    word: 'SILHOUETTE', obscurity: 'common',
+    plain: 'An outline portrait filled in solid black; any shape seen against the light.',
+    poetic: 'A person reduced to their edge, and still recognisable, which is the unsettling part.',
+    riddle: 'Cut me from black paper in four minutes for a shilling: I was the photograph before there were photographs.',
+    etymology: 'Named in mockery for a French finance minister whose economies were thought as cheap and as thin as the paper cuttings.',
+    usage: 'Her ___ was cut at a fair in 1911 and has hung in the hall ever since.',
+  },
+  {
+    word: 'ECHO', obscurity: 'common',
+    plain: 'A sound thrown back from a surface and heard again a moment later.',
+    poetic: 'The hill’s habit of repeating a shout with all the courage taken out of it.',
+    riddle: 'Call at a cliff and I answer in your own voice, a little later and a little less. What am I?',
+    etymology: 'From the Greek word for a sound, carried into Latin and French and arriving unchanged — a word that behaved like the thing it names.',
+    usage: 'The ___ in the empty ballroom answered every footstep twice.',
+  },
+  {
+    word: 'MEANDER', obscurity: 'common',
+    plain: 'To follow a winding course, as a river does across a flat valley.',
+    poetic: 'The river’s refusal to be a line, written in loops across a hundred fields.',
+    riddle: 'The water prefers me: I am the longest distance between two points.',
+    etymology: 'From the Greek name of a river in Asia Minor so famously crooked that geographers still borrow its name for every bend they map.',
+    usage: 'Let the lane ___ if it likes; there is no hurry before supper.',
+  },
+  {
+    word: 'ATTIC', obscurity: 'common',
+    plain: 'The space under a roof, used for storage and reached by a ladder.',
+    poetic: 'Bars of dust-lit air under the rafters, and a smell of paper kept warm for fifty summers.',
+    riddle: 'Every family sends somebody up into me at Christmas, and nobody stays longer than the errand.',
+    etymology: 'Named for a style of Greek architecture — a low decorative storey above the cornice, which builders promptly filled with boxes.',
+    usage: 'The ___ ladder came down with a groan and a fall of forty years of dust.',
+  },
+  {
+    word: 'HARVEST', obscurity: 'common',
+    plain: 'The gathering in of a ripe crop, and the season in which it is gathered.',
+    poetic: 'The one fortnight of the year when a whole village goes to bed aching and pleased.',
+    riddle: 'The moon in September was given a name of its own on my account.',
+    etymology: 'Old English for autumn itself; the season handed its word over to the work, and borrowed a French one for the leaves.',
+    usage: 'The ___ was in by the ninth, and the whole valley slept.',
+  },
+  {
+    word: 'FIREFLY', obscurity: 'common',
+    plain: 'A small beetle whose body makes a cold greenish light on summer nights.',
+    poetic: 'A spark that can be caught in two hands without harm, and goes out when the jar is shut.',
+    riddle: 'I am a beetle pretending to be a lantern, and I do it in order to be married.',
+    etymology: 'An English compound of the 1650s, wrong twice over: the insect is neither what the first half of its name claims nor what the second half does.',
+    usage: 'One ___ came in at the window and the whole room went quiet to watch it.',
+  },
+  {
+    word: 'WINDFALL', obscurity: 'common',
+    plain: 'Fruit brought down by the weather; by extension, any gain that arrives unearned.',
+    poetic: 'The apples the storm has decided are nobody’s, lying bruised and free in the wet grass.',
+    riddle: 'I arrive by weather and never by work, and nobody has ever refused me.',
+    etymology: 'From English forest law: what the weather delivered could be taken away, while everything still standing belonged to the lord.',
+    usage: 'The legacy was a ___, and she spent every penny of it on the roof.',
+  },
   // ---- medium --------------------------------------------------------------
   {
     word: 'PETRICHOR', obscurity: 'medium',
     plain: 'The earthy smell of rain falling on dry ground.',
     poetic: 'Dust’s one answer to rain, and it arrives before the thunder does.',
-    riddle: 'I am born when thirsty dust drinks; you smell me before you hear the storm.',
-    etymology: 'Greek: stone joined with ichor, the golden blood of the gods — coined by two Australian scientists in 1964.',
+    riddle: 'Thirsty stone drinks, and I am born of it; you smell me before you hear the storm.',
+    etymology: 'Coined in 1964 by two Australian scientists, who traced the smell to an oil that plants shed into dry clay and rock.',
     usage: 'After the drought broke, the whole street smelled of ___.',
   },
   {
@@ -216,7 +406,7 @@ export const ENTRIES: Entry[] = [
     plain: 'Twilight; the fading light just after sunset.',
     poetic: 'The blue seam where day is stitched quietly into night.',
     riddle: 'Neither lamp nor dark, I am the hour when bats and porch lights wake together.',
-    etymology: 'From Old English by way of Scots, kin to ‘glow’ — an hour kept alive in northern songs.',
+    etymology: 'Old English by way of Scots, and kept alive mainly by northern songs long after the rest of England settled on ‘twilight’.',
     usage: 'Children were called in from the ___ one by one.',
   },
   {
@@ -224,7 +414,7 @@ export const ENTRIES: Entry[] = [
     plain: 'Calm, peaceful, and golden — used of remembered happy times.',
     poetic: 'Weather borrowed from a kinder year, kept pressed between the mind’s pages.',
     riddle: 'I nest on a flat sea in midwinter and make the storms wait their turn.',
-    etymology: 'From the Greek name for the kingfisher, which was said to nest on a becalmed sea.',
+    etymology: 'The Greeks held that a certain sea-bird nested on the winter water, and that the gods flattened the waves for a fortnight while it did.',
     usage: 'They spoke of the ___ summers before the mill closed.',
   },
   {
@@ -232,55 +422,55 @@ export const ENTRIES: Entry[] = [
     plain: 'Sweet and smooth to hear, like a flowing voice or melody.',
     poetic: 'Speech that pours slow and amber, coating the ear like warm honey.',
     riddle: 'I describe the voice you would follow into a third hour of the story.',
-    etymology: 'From the Latin for honey and for flowing — a compliment first paid to saints’ sermons.',
+    etymology: 'From the Latin for honey and for flowing — a compliment first paid to the sermons of saints.',
     usage: 'The announcer’s ___ baritone made even the shipping news soothing.',
   },
   {
     word: 'PENUMBRA', obscurity: 'medium',
     plain: 'The soft partial shadow around the edge of a full shadow.',
-    poetic: 'The gray hem where shadow frays into light, and neither side will own the border.',
+    poetic: 'The grey hem where shadow frays into light, and neither side will own the border.',
     riddle: 'In an eclipse I am the almost: not the bite of darkness, only its breath.',
     etymology: 'Coined by the astronomer Kepler from the Latin for ‘almost’ and ‘shadow’.',
-    usage: 'The cat slept in the ___ of the lamplight, half gold, half gray.',
+    usage: 'The cat slept at the edge of the lamplight, half gold, half grey, in the ___.',
   },
   {
     word: 'QUIXOTIC', obscurity: 'medium',
     plain: 'Nobly impractical; chasing ideals without regard for reality.',
-    poetic: 'Armored in daydreams, riding out to rescue what never asked for saving.',
+    poetic: 'Armoured in daydreams, riding out to rescue what never asked for saving.',
     riddle: 'I tilt at windmills and call them giants; sensible people sigh at me, and secretly cheer.',
-    etymology: 'After the lean Spanish knight of a 1605 novel, who mistook windmills for giants and inns for castles.',
+    etymology: 'The novel is 1605; the adjective is 1791 — it took the language two centuries to admit that it needed the word.',
     usage: 'Restoring the ruined lighthouse by hand was a ___ project, and he began anyway.',
   },
   {
     word: 'SUSURRUS', obscurity: 'medium',
     plain: 'A soft whispering or rustling sound.',
     poetic: 'The hush the poplars pass along, leaf to leaf, like a secret.',
-    riddle: 'I am what wind says in a library voice.',
+    riddle: 'The wind lowers its voice to a library hush, and the sound it makes then is me.',
     etymology: 'Latin, an imitative word — say it slowly and you hear the sound it names.',
     usage: 'A ___ of turning pages filled the reading room.',
   },
   {
     word: 'EPHEMERAL', obscurity: 'medium',
-    plain: 'Lasting only a very short time.',
+    plain: 'Lasting for a day or an afternoon; gone almost as soon as it is noticed.',
     poetic: 'Beautiful the way frost-flowers are beautiful: gone by the time the kettle sings.',
     riddle: 'Mayflies, rainbows, and perfect snowballs all swear allegiance to me.',
-    etymology: 'From the Greek for ‘lasting a day’, first said of fevers, then of mayflies, then of everything dear.',
+    etymology: 'From the Greek for ‘lasting a day’, said first of fevers, then of mayflies, then of everything dear.',
     usage: 'Chalk art is ___ by nature; the afternoon rain took the whole mural.',
   },
   {
     word: 'PALIMPSEST', obscurity: 'medium',
-    plain: 'A manuscript page reused after the earlier writing was scraped away, with traces remaining.',
+    plain: 'A manuscript page reused after the earlier writing was scraped away, with traces left.',
     poetic: 'A page that keeps its ghosts: old ink dreaming under the new.',
     riddle: 'Scrape me and rewrite me — still the first story rises through the second like a watermark.',
-    etymology: 'From the Greek for ‘scraped again’: parchment was dear, so monks rubbed old ink away and wrote atop the shadow.',
+    etymology: 'From the Greek for ‘scraped again’: parchment was dear, so monks rubbed the old letters away and wrote atop the shadow.',
     usage: 'The city is a ___, Roman stones showing through the medieval walls.',
   },
   {
     word: 'RIGMAROLE', obscurity: 'medium',
     plain: 'A long, pointless, complicated procedure or ramble of talk.',
-    poetic: 'A corridor of little doors between you and the one simple thing you came for.',
-    riddle: 'Fill in form nine to request form twelve: I am the dance, not the destination.',
-    etymology: 'From the ‘Ragman roll’, a long medieval parchment of names and seals that came to mean any tedious catalogue.',
+    poetic: 'A corridor of little doors between a person and the one simple thing they came for.',
+    riddle: 'Fill in form nine to request form twelve: I am the dance, never the destination.',
+    etymology: 'From a medieval parchment of names and seals so long that its title came to mean any tedious catalogue.',
     usage: 'Renewing the permit was a two-hour ___ of stamps and queues.',
   },
   {
@@ -288,7 +478,7 @@ export const ENTRIES: Entry[] = [
     plain: 'A recessed seat beside a hearth, set inside the chimney’s own corner.',
     poetic: 'The warmest square yard in an English house, and the hardest to leave.',
     riddle: 'Sit in me and the fire is no longer across the room. The fire is family.',
-    etymology: 'A northern word for the hearth-flame joined to an old word for a snug corner; the pair have only been one word for three centuries.',
+    etymology: 'Two old northern words that have only been one word for three centuries; both halves are still alive on their own in Scotland.',
     usage: 'They took their tea in the ___ and let the weather do as it liked.',
   },
   {
@@ -296,8 +486,202 @@ export const ENTRIES: Entry[] = [
     plain: 'A spell of listlessness; a stretch of time in which nothing moves.',
     poetic: 'A becalmed week with the sails up and no wind willing to bother.',
     riddle: 'Sailors named me for a windless sea. You meet me on a Tuesday afternoon.',
-    etymology: 'From an old word for a dullard, pluralized by sailors into a belt of the Atlantic where the trade winds simply give up.',
+    etymology: 'From an old word for a dullard, pluralised by sailors into a belt of the Atlantic where the trade winds simply give up.',
     usage: 'February found the whole house in the ___, cat included.',
+  },
+  // Round 7: the tier-2 shelf. Weather, pigment, sea-law, and the printing
+  // trade — the middle rows should feel like the lexicographer's own shelves.
+  {
+    word: 'MARGINALIA', obscurity: 'medium',
+    plain: 'Notes, arguments, and drawings written by readers in the borders of a book.',
+    poetic: 'The conversation a book has with everyone who has held it, conducted in pencil.',
+    riddle: 'Libraries fine you for me; scholars have spent whole careers reading nothing else.',
+    etymology: 'Latin in dress but modern in use — a nineteenth-century name for a habit as old as parchment, and Coleridge’s best work is filed under it.',
+    usage: 'The second-hand copy came with a stranger’s ___ arguing at every chapter.',
+  },
+  {
+    word: 'GOSSAMER', obscurity: 'medium',
+    plain: 'Fine floating cobweb seen in autumn air; anything as light and thin as that.',
+    poetic: 'Whole fields of spider silk let go at once, drifting like the ghost of a fleece.',
+    riddle: 'Look along the stubble on a bright November morning: the entire field is strung with me.',
+    etymology: 'Recorded from the fourteenth century for the threads of a mild autumn; the compound behind it has been argued over ever since.',
+    usage: 'The hedge was hung with ___ and every strand held its own drop of mist.',
+  },
+  {
+    word: 'FILIGREE', obscurity: 'medium',
+    plain: 'Delicate ornamental work made of fine twisted gold or silver wire.',
+    poetic: 'Metal persuaded to behave like lace by a jeweller with small pliers and no hurry.',
+    riddle: 'Look at me through a lens or do not look at me at all: my whole argument is made at one millimetre.',
+    etymology: 'From the Latin words for thread and for grain — the two things the jeweller’s wire is drawn out and beaded into.',
+    usage: 'The locket’s ___ had blackened, and no cloth would reach into it.',
+  },
+  {
+    word: 'VERDIGRIS', obscurity: 'medium',
+    plain: 'The green crust that forms on copper and bronze left out in the weather.',
+    poetic: 'The colour a roof turns when it stops being metal and starts being landscape.',
+    riddle: 'Every cathedral dome comes to me in the end; I am what rust would be if it had taste.',
+    etymology: 'Old French named the colour after the country supposed to produce it; the phrase collapsed into a single word by the fourteenth century.',
+    usage: 'The ___ on the weathervane had spread until the arrow was as green as the copper beech.',
+  },
+  {
+    word: 'SEPIA', obscurity: 'medium',
+    plain: 'A warm brown pigment, and the brown tone of early photographs.',
+    poetic: 'The colour every old photograph agrees to become, whatever it was on the day.',
+    riddle: 'I began in the ink sac of a cuttlefish and ended up meaning ‘the past’.',
+    etymology: 'Greek for the cuttlefish itself; artists ground its ink for centuries before photographers borrowed both the colour and the name.',
+    usage: 'In the hall portrait, ___ has softened everyone into the same brown family.',
+  },
+  {
+    word: 'MURMURATION', obscurity: 'medium',
+    plain: 'A flock of starlings in flight, moving as one shape over a winter roost.',
+    poetic: 'Ten thousand birds behaving like a single animal, and not one bird in charge of it.',
+    riddle: 'Sunset over a pier in November, and the sky pours itself from shape to shape: what has the sky become?',
+    etymology: 'One of the fifteenth-century company-nouns collected for gentlemen’s sport — the same list that gave us the exaltation of larks.',
+    usage: 'The whole village came down to the pier at dusk to watch the ___.',
+  },
+  {
+    word: 'ZEPHYR', obscurity: 'medium',
+    plain: 'A soft warm breeze, especially one out of the west.',
+    poetic: 'Wind at its gentlest: enough to move a curtain, not enough to turn a page.',
+    riddle: 'Sailors curse me for arriving instead of a real wind; a hammock in August is all I am good for.',
+    etymology: 'The Greeks made the west wind a god and the Romans kept him on the payroll; the god has gone and the breeze still has his name.',
+    usage: 'A ___ came off the water and lifted the corner of the tablecloth.',
+  },
+  {
+    word: 'HOARFROST', obscurity: 'medium',
+    plain: 'The white feathery ice that grows on grass and railings on a still, cold night.',
+    poetic: 'A night’s worth of ice grown in fern shapes on every blade and wire in the field.',
+    riddle: 'Not snow, and I never fell: I grew where I stand, out of the air, between midnight and six.',
+    etymology: 'In English since the fourteenth century, and known to most readers through the translators of Exodus, who needed a name for what lay on the desert ground at dawn.',
+    usage: 'The lawn was stiff with ___ and every footprint stayed until noon.',
+  },
+  {
+    word: 'SOLSTICE', obscurity: 'medium',
+    plain: 'Either of the two days in the year when the sun reaches its farthest point from the equator.',
+    poetic: 'The day the sun climbs no higher and hangs there, apparently thinking it over.',
+    riddle: 'Twice a year I stop the sun in its tracks for three mornings together. What day am I?',
+    etymology: 'Latin, borrowed by astronomers in the thirteenth century; before them, farmers simply called the days by their feasts.',
+    usage: 'The stones line up on the ___, and half the county comes to stand in the mud and see it.',
+  },
+  {
+    word: 'LACONIC', obscurity: 'medium',
+    plain: 'Using very few words; terse to the point of bluntness.',
+    poetic: 'A reply short enough to fit on a coin and sharp enough to end the argument.',
+    riddle: 'A king threatened a city: ‘If I enter, I will level it.’ The city sent back one word — ‘If.’ What kind of answer is that?',
+    etymology: 'From the Greek name of the region whose soldiers were famous for answering at the shortest available length.',
+    usage: 'His ___ note said only: ‘Roof mended. Cat unimpressed.’',
+  },
+  {
+    word: 'CAIRN', obscurity: 'medium',
+    plain: 'A heap of stones piled up as a landmark, a boundary, or a memorial.',
+    poetic: 'The only monument a walker can build in ten minutes, out of whatever is lying about.',
+    riddle: 'Add a stone to me as you pass and I will still be pointing the way in a hundred years.',
+    etymology: 'From Gaelic — one of the few words the hills gave to English, rather than the other way about.',
+    usage: 'They built a ___ at the col, where the path stops being obvious.',
+  },
+  {
+    word: 'SPINDRIFT', obscurity: 'medium',
+    plain: 'Sea spray torn from the tops of waves and blown along the surface by a gale.',
+    poetic: 'The sea’s own smoke, streaming off the crests in long white ropes.',
+    riddle: 'In a full gale I make the difference between a grey sea and a white one, and I never quite come down.',
+    etymology: 'A Scots sea-word that reached English through nineteenth-century poets, who liked the sound of it rather more than the sailors did.',
+    usage: 'The ferry crossed in a smother of ___ and everybody stayed below.',
+  },
+  {
+    word: 'FLOTSAM', obscurity: 'medium',
+    plain: 'Wreckage or cargo found floating after a ship has gone down.',
+    poetic: 'What the sea gives back of a ship, in no order, over several weeks.',
+    riddle: 'The lawyers keep me apart from my brother: he was thrown overboard on purpose, and I was not.',
+    etymology: 'A term of Old French sea-law, in English by the sixteenth century; the distinction it draws decided who owned a wreck.',
+    usage: 'The tideline was a museum of ___: crate boards, one shoe, a doll’s arm.',
+  },
+  {
+    word: 'AUBADE', obscurity: 'medium',
+    plain: 'A poem or song for the dawn, especially one for lovers parting at daybreak.',
+    poetic: 'The song sung under a window at first light, with the singer already late for the road.',
+    riddle: 'Sing my opposite at a cradle and my own kind at a window: the difference between us is only the hour.',
+    etymology: 'From an Old French word for daybreak; the Provençal poets were writing the form for a century before anyone gave it a name.',
+    usage: 'He wrote her an ___ that mentioned the milk cart twice.',
+  },
+  {
+    word: 'PORTMANTEAU', obscurity: 'medium',
+    plain: 'A travelling case that opens into two equal halves; also a word made by fusing two.',
+    poetic: 'Two words folded into one suitcase, with the hinges still showing if the light is right.',
+    riddle: 'Buckle two meanings into one trunk and the strap still shows. What is such a word called?',
+    etymology: 'The bag came from French in the sixteenth century; the second sense was invented in 1871 by a mathematician writing about a looking-glass.',
+    usage: '‘Smog’ is a ___, and so is the name the twins finally agreed on for the pony.',
+  },
+  {
+    word: 'LIMINAL', obscurity: 'medium',
+    plain: 'Belonging to a threshold; occupying the space between one state and the next.',
+    poetic: 'The corridor between two rooms, the hour between two days, the year between two names.',
+    riddle: 'The waiting room, the ferry, the last hour before a wedding: all of them are mine.',
+    etymology: 'From the Latin for a doorway’s sill, taken up a century ago by anthropologists for the middle stage of any rite.',
+    usage: 'The hall at dusk felt ___ — no longer day, and not yet lamps.',
+  },
+  {
+    word: 'CURFEW', obscurity: 'medium',
+    plain: 'An order requiring people to be indoors by a stated hour of the night.',
+    poetic: 'A bell rung at eight that turns a whole town into a set of lit windows.',
+    riddle: 'I began as an order about banking the coals and ended as an order about being home.',
+    etymology: 'Norman French, an instruction shouted at nightfall about the household fire; the bell that carried it outlived the rule by six centuries.',
+    usage: 'The old ___ bell still rings at eight, and nobody now goes in when it does.',
+  },
+  {
+    word: 'ORANGERY', obscurity: 'medium',
+    plain: 'A glass building on a great house, built to winter tender fruit trees under cover.',
+    poetic: 'A greenhouse with pretensions: sash windows, a stove, and a hundred trees in tubs.',
+    riddle: 'Wheel the citrus into me in October and out again in May; I was a rich man’s way of owning a warmer country.',
+    etymology: 'A seventeenth-century fashion imported from France and Holland, when a heated glass house was the most expensive way to show off in Europe.',
+    usage: 'The ___ has lost four panes and gained a fig tree that nobody planted.',
+  },
+  {
+    word: 'CHIAROSCURO', obscurity: 'medium',
+    plain: 'The treatment of light and shade in a picture, especially in strong contrast.',
+    poetic: 'One candle, one face, and a great deal of confident darkness doing the rest.',
+    riddle: 'Rembrandt lit a single cheek and left the whole canvas to me; I am mostly shadow and all of the drama.',
+    etymology: 'Italian, and a studio word long before it was a critical one — painters used it for a workshop technique two centuries before historians made it a virtue.',
+    usage: 'The portrait is nearly all ___: a hand, half a collar, and one very tired eye.',
+  },
+  {
+    word: 'VELLUM', obscurity: 'medium',
+    plain: 'A fine writing surface made from calfskin, smoother and paler than parchment.',
+    poetic: 'A page that was once an animal, scraped and stretched until it could hold a thousand years of ink.',
+    riddle: 'Acts of Parliament were still printed on me long after paper was cheap, because paper is not trusted to last.',
+    etymology: 'From an Old French word for a calf; the trade name outlived the trade, and printers still use it for their best paper.',
+    usage: 'The charter is on ___, and its ink is blacker than anything the last century managed.',
+  },
+  {
+    word: 'SEXTANT', obscurity: 'medium',
+    plain: 'A navigator’s instrument that measures the angle between a star and the horizon.',
+    poetic: 'A brass wedge of a thing that turns one careful glance at the sun into a place on the ocean.',
+    riddle: 'Give me the noon sun and a good clock and I will tell you where in the world you are standing.',
+    etymology: 'An eighteenth-century improvement on older sea-instruments; its arc, its mirrors and its shade glasses are unchanged in the ones carried today.',
+    usage: 'He kept the ___ in its mahogany box and took it out twice a year to be admired.',
+  },
+  {
+    word: 'FRONTISPIECE', obscurity: 'medium',
+    plain: 'The illustration facing the title page at the beginning of a book.',
+    poetic: 'The one picture a book puts on before it will say its own name.',
+    riddle: 'Open the cover, turn a single leaf, and I am looking at the title from across the gutter.',
+    etymology: 'An architect’s word for the face of a building, taken over by printers in the seventeenth century and never given back.',
+    usage: 'The ___ shows the author at forty, looking as though he suspects the reader.',
+  },
+  {
+    word: 'GLEAN', obscurity: 'medium',
+    plain: 'To gather what the harvesters left in a field; to pick up scattered facts.',
+    poetic: 'The right, once written into custom, to walk a cut field and take whatever the rake missed.',
+    riddle: 'Ruth did it in a barley field; a scholar does it in footnotes. What is the verb?',
+    etymology: 'Old French, and probably Celtic before that; the practice was defended by custom for centuries and finally ruled against in an English court in 1788.',
+    usage: 'She would ___ the last of the barley rows while the light held.',
+  },
+  {
+    word: 'QUOTIDIAN', obscurity: 'medium',
+    plain: 'Happening every day; ordinary to the point of going unnoticed.',
+    poetic: 'The kettle, the post, the same three stairs that always creak: a life’s true furniture.',
+    riddle: 'Doctors once used me of a fever that returned at the same hour daily; now I mean only Tuesday.',
+    etymology: 'Latin, and a physician’s word first — fevers were sorted by how often they came back, and this was the one that always did.',
+    usage: 'The ___ business of the house — coal, bread, letters — went on without either of them.',
   },
   // ---- rare ----------------------------------------------------------------
   {
@@ -310,11 +694,11 @@ export const ENTRIES: Entry[] = [
   },
   {
     word: 'BRUMOUS', obscurity: 'rare',
-    plain: 'Foggy, misty, and gray, as winter weather.',
+    plain: 'Foggy, misty, and grey, as winter weather.',
     poetic: 'Weather wearing wool: the world gone soft-edged and near-sighted.',
     riddle: 'On my kind of morning the lighthouse earns its keep and the hills go missing.',
     etymology: 'From the French for winter mist, tracing back to the Latin name for the year’s shortest day.',
-    usage: 'The harbor lay ___ and still, the ferries sounding their horns blind.',
+    usage: 'The harbour lay ___ and still, the ferries sounding their horns blind.',
   },
   {
     word: 'CLINQUANT', obscurity: 'rare',
@@ -328,8 +712,8 @@ export const ENTRIES: Entry[] = [
     word: 'NOCTAMBULIST', obscurity: 'rare',
     plain: 'A sleepwalker; one who walks about at night.',
     poetic: 'A dreamer whose dreams put on slippers and take the stairs.',
-    riddle: 'I climb stairs I never remember and wake owning cold feet.',
-    etymology: 'Latin night joined to walking — the politer cousin of ‘somnambulist’.',
+    riddle: 'I climb stairs I never remember and wake up owning cold feet.',
+    etymology: 'Latin night joined to Latin walking; the doctors preferred the sleep-word for it, and the poets preferred this one.',
     usage: 'The old innkeeper, a gentle ___, was found dusting shelves at three in the morning.',
   },
   {
@@ -361,7 +745,7 @@ export const ENTRIES: Entry[] = [
     plain: 'Of, or happening in, the evening.',
     poetic: 'Belonging to the lamp-lighting hour, when moths take the day shift’s place.',
     riddle: 'Morning glories ignore me; jasmine and owls keep my calendar.',
-    etymology: 'From the Latin name for the first star of dusk, which also lent its name to sung prayers at day’s end.',
+    etymology: 'From the Latin name for the first star of dusk, which also lent its name to the prayers sung at day’s end.',
     usage: 'The café kept ___ hours, opening as the streetlights warmed.',
   },
   {
@@ -380,37 +764,207 @@ export const ENTRIES: Entry[] = [
     etymology: 'From the Latin for ‘four together’, by way of Old French; a printer’s unit for centuries before it was a stationer’s.',
     usage: 'He wrote the whole preface in a single ___, then burned two leaves of it.',
   },
+  // Round 7: the tier-3 shelf. The trades of the book, the instruments, and
+  // the parts of things nobody can name.
+  {
+    word: 'LUCUBRATION', obscurity: 'rare',
+    plain: 'Study or writing carried on late into the night, by lamplight.',
+    poetic: 'The work that only gets done after the household has gone up, and shows it at breakfast.',
+    riddle: 'I smell of hot oil and cold tea, and every preface thanking a patient family is my doing.',
+    etymology: 'Latin, and reckoned by the lamp: a scholar’s labour was measured in how much oil it had cost.',
+    usage: 'The dictionary’s third volume was pure ___, and the family scarcely saw him for a year.',
+  },
+  {
+    word: 'AMANUENSIS', obscurity: 'rare',
+    plain: 'A person employed to write down what another dictates, or to copy their work.',
+    poetic: 'The second pair of hands on a great book, named nowhere on its spine.',
+    riddle: 'Milton went blind and I finished the poem; Dostoevsky married me. What was my post?',
+    etymology: 'Latin, from the household slave who served ‘at the hand’ — a Roman job that became a profession and then a courtesy.',
+    usage: 'He dictated the last entries to an ___ and signed each page with a shaking hand.',
+  },
+  {
+    word: 'SCRIVENER', obscurity: 'rare',
+    plain: 'A professional copyist and drafter of documents, before typewriters and solicitors.',
+    poetic: 'A whole trade of men paid by the sheet for handwriting worth trusting.',
+    riddle: 'I draw up your lease, your will and your love letters in a hand you could not manage, and I charge by the sheet.',
+    etymology: 'From a Latin verb for writing, by way of Italian and French; the trade had guilds, ledgers and a livery company of its own in London.',
+    usage: 'The lease was drawn by a ___ whose flourishes take up half the page.',
+  },
+  {
+    word: 'COLOPHON', obscurity: 'rare',
+    plain: 'The note at the end of a book giving the printer, the place, and the date.',
+    poetic: 'The printer’s signature, set at the back where only the curious will find it.',
+    riddle: 'A title page says what the book is; I say who made it, and I wait until everyone else has left.',
+    etymology: 'Greek for a finishing stroke — the word for putting the last hand to a thing, taken up by the first printers for their last page.',
+    usage: 'The ___ records a printer in Ghent and a year that the binding disputes.',
+  },
+  {
+    word: 'CATCHWORD', obscurity: 'rare',
+    plain: 'A single term printed at the foot of a page, repeating the first of the next page.',
+    poetic: 'A printer’s small insurance against a binder who cannot read.',
+    riddle: 'On an old page, the line beneath the last line is not a mistake: it is me, holding the next leaf’s place.',
+    etymology: 'An English printing term of the seventeenth century; the practice went out with hand-binding, and the name went off to work in politics.',
+    usage: 'The ___ at the foot of folio twelve does not match the page that follows it.',
+  },
+  {
+    word: 'DECKLE', obscurity: 'rare',
+    plain: 'The frame on a paper mould that gives a hand-made sheet its rough, soft edge.',
+    poetic: 'The reason old paper stops in a feathered fringe instead of a cut line.',
+    riddle: 'Machines can only imitate my edge; I am the frame that let the pulp stop where it liked.',
+    etymology: 'From a German word for a cover or lid, carried into English with the papermaking trade.',
+    usage: 'The endpapers keep their ___ edge, soft as felt under the thumb.',
+  },
+  {
+    word: 'FOXING', obscurity: 'rare',
+    plain: 'The small rust-brown spots that spread across the pages of old books.',
+    poetic: 'The freckling that comes to paper with age, and to nothing else in the room.',
+    riddle: 'Damp and iron and eighty years give me to a book; a dealer will knock a third off the price for me.',
+    etymology: 'Booksellers named it for a colour, and the chemistry behind it — damp, mould, or the metal in the paper — is argued over still.',
+    usage: 'A little ___ on the title page, and otherwise a sound copy.',
+  },
+  {
+    word: 'PILCROW', obscurity: 'rare',
+    plain: 'The mark that shows where a new paragraph begins — a reversed P with two legs.',
+    poetic: 'A gate set in the middle of a line, telling the reader to take a breath and start again.',
+    riddle: 'Scribes drew me in red ink and printers stopped drawing me at all; I mean only this: a new thought begins here.',
+    etymology: 'An English mangling of the Greek-derived term for a paragraph — the word was copied by ear until nobody could see the original inside it.',
+    usage: 'The rubricator left a space for a ___ on every third line and then never came back.',
+  },
+  {
+    word: 'FERRULE', obscurity: 'rare',
+    plain: 'The metal band or cap on the end of a stick, tool handle, or pencil.',
+    poetic: 'The small brass collar that stops a walking stick from splitting itself on the road.',
+    riddle: 'The least considered part of an umbrella, and the first of it to meet the pavement — what am I?',
+    etymology: 'From a Latin word for a little bracelet, confused early on with the word for iron, which is what most of them are made of.',
+    usage: 'The stick’s ___ has worn to a wafer on one side from thirty years of the same lane.',
+  },
+  {
+    word: 'AGLET', obscurity: 'rare',
+    plain: 'The stiffened tip at the end of a shoelace or cord.',
+    poetic: 'A shoelace has exactly one engineered component, and it is the first to give way.',
+    riddle: 'Nobody knows my name until I am gone; then the lace frays and the eyelet wins.',
+    etymology: 'From a French word for a little needle — the point that let a lace be threaded, back when laces held whole outfits together.',
+    usage: 'The left ___ is gone, and she threads the lace with a licked point instead.',
+  },
+  {
+    word: 'ORRERY', obscurity: 'rare',
+    plain: 'A clockwork model of the solar system, its planets driven round on brass arms.',
+    poetic: 'The heavens reduced to brass, wound with a key and standing on a library table.',
+    riddle: 'Turn my handle and a century of nights goes by in a minute, with the moon keeping every appointment.',
+    etymology: 'Named after the nobleman who commissioned the first one; the instrument-maker’s own name is on none of them.',
+    usage: 'The ___ has lost Saturn, and the arm that held it swings free.',
+  },
+  {
+    word: 'ESCAPEMENT', obscurity: 'rare',
+    plain: 'The toothed wheel and lever that let a clock’s power out one tick at a time.',
+    poetic: 'The part of a clock that refuses to let the weight fall all at once.',
+    riddle: 'Tick — one tooth is away. Tock — I have caught the next. Take me out and the clock spends its whole strength in a second.',
+    etymology: 'A clockmaker’s term from the eighteenth century, when a dozen designs competed and each was named for its own shape: anchor, deadbeat, grasshopper.',
+    usage: 'The ___ wants oil; you can hear it hesitate before the hour.',
+  },
+  {
+    word: 'LAMBENT', obscurity: 'rare',
+    plain: 'Glowing or flickering softly, without heat; playing lightly over a surface.',
+    poetic: 'The blue that runs along the top of a coal fire and touches nothing.',
+    riddle: 'I play over a log without burning it, and over a good sentence without raising the voice.',
+    etymology: 'From a Latin verb for licking — the flame that plays over a surface, and, by the eighteenth century, the wit that plays over a subject.',
+    usage: 'A ___ light moved on the ceiling where the fire had found the brass.',
+  },
+  {
+    word: 'VIRGA', obscurity: 'rare',
+    plain: 'Rain that falls from a cloud and dries in the air before it reaches the ground.',
+    poetic: 'A grey combing under a cloud, on its way down and never arriving.',
+    riddle: 'The desert sees me most: I am a promise a cloud makes and the air takes back.',
+    etymology: 'Latin for a rod or a slender branch, chosen by meteorologists for the shape the streaks make against the sky.',
+    usage: 'There was ___ over the hills all afternoon, and not a drop fell on the yard.',
+  },
+  {
+    word: 'ESPALIER', obscurity: 'rare',
+    plain: 'A fruit tree trained flat against a wall in a fixed pattern of arms.',
+    poetic: 'A pear tree persuaded, over twenty patient years, to grow in two dimensions.',
+    riddle: 'Give me a south wall and a pair of secateurs and I will hand back fruit a fortnight early, in a straight line.',
+    etymology: 'French, from an Italian word for a shoulder: the tree is set against its support the way a man leans on a rail.',
+    usage: 'The ___ on the kitchen wall has borne pears since the old man trained it.',
+  },
+  {
+    word: 'HOLLOWAY', obscurity: 'rare',
+    plain: 'A lane worn so deep by centuries of feet and carts that it runs below the fields.',
+    poetic: 'A road that has sunk into the land it crosses, roofed over by the hedges on its banks.',
+    riddle: 'Two thousand years of boots and hooves cut me; walk me in June and the light comes down green.',
+    etymology: 'The name is medieval; the lanes are far older than the name, and some of them were sunk a foot deeper by every century that used them.',
+    usage: 'The ___ drops below the fields for half a mile and comes up in the churchyard.',
+  },
+  {
+    word: 'CREPUSCULAR', obscurity: 'rare',
+    plain: 'Of the twilight; active at dusk and dawn rather than by day or by night.',
+    poetic: 'The hunting hour of moths, bats and owls, when the light is generous to neither eye.',
+    riddle: 'Cats keep my hours, and so do deer, and so does every insect a swallow wants.',
+    etymology: 'From the Latin for failing light, and a naturalist’s word before it was a poet’s — it sorts animals, not moods.',
+    usage: 'Badgers are ___, which is why the sett looks abandoned all afternoon.',
+  },
+  {
+    word: 'RIME', obscurity: 'rare',
+    plain: 'White ice built up on branches and wires by fog freezing where it touches.',
+    poetic: 'Fog turned to feathers on the windward side of every twig, and none at all on the other.',
+    riddle: 'My cousin grows on a clear night out of nothing at all; I am built by a fog that froze as it landed.',
+    etymology: 'Old English, and nearly extinct by the eighteenth century before the poets took it up; weather reports have kept it alive since.',
+    usage: 'Every wire on the moor carried an inch of ___ on the windward side.',
+  },
+  {
+    word: 'CHANDLER', obscurity: 'rare',
+    plain: 'A dealer in supplies — once in tallow and wax, later in ship’s stores.',
+    poetic: 'The tradesman a whole harbour depends on, whose shop smells of tar, rope and hot fat.',
+    riddle: 'Two trades wear my name: one lit your evenings, and the other provisioned your voyage.',
+    etymology: 'A Norman-French trade name that outlived its trade; the surname is far commoner now than the shop.',
+    usage: 'The ___ on the quay will have oakum, if anyone still does.',
+  },
+  {
+    word: 'COMPLINE', obscurity: 'rare',
+    plain: 'The last of the day’s prayers in a religious house, said before sleep.',
+    poetic: 'The office that closes a monastery’s day, sung with the lamps already low.',
+    riddle: 'Seven times a day the bell calls; I am the seventh, and after me nobody speaks until morning.',
+    etymology: 'Named in Latin for the closing of the daily round; the rule that follows it — silence until dawn — is older than the name.',
+    usage: 'The bell for ___ went at eight, and the house obeyed it out of habit.',
+  },
+  {
+    word: 'SCRIPTORIUM', obscurity: 'rare',
+    plain: 'The room in a monastery set aside for copying and illuminating books.',
+    poetic: 'A cold room with north light, thirty desks, and no flame permitted anywhere near the parchment.',
+    riddle: 'No lamp was allowed in me, so my working day ended exactly when the light did.',
+    etymology: 'Latin, and monastic; the rule against fire in these rooms is why so many medieval books survive and so few of the copyists stayed warm.',
+    usage: 'Four hands copied the psalter in the ___, and only one of them could spell.',
+  },
   // ---- archaic -------------------------------------------------------------
   {
     word: 'SELCOUTH', obscurity: 'archaic',
-    plain: 'Strange and marvelous; rarely seen.',
+    plain: 'Strange and marvellous; rarely seen.',
     poetic: 'So seldom met that the eye must be taught it twice before it will keep.',
     riddle: 'I once described comets and camels to villagers who had seen neither.',
-    etymology: 'Old English: ‘seldom’ joined with ‘known’ — what is met so rarely it stays wondrous.',
+    etymology: 'Old English, and one of the words the language dropped when it acquired ‘strange’ from the French.',
     usage: 'A ___ light hung above the marsh, and the whole village came out to look.',
   },
   {
     word: 'EVENTIDE', obscurity: 'archaic',
     plain: 'The close of the day; the hour when dusk gathers.',
     poetic: 'The day folding its letter and sealing it with a first star.',
-    riddle: 'I am the hour the plough stops and the lamp is lit — an older tongue’s word for the closing of the light.',
-    etymology: 'Old English: the day’s last hour joined with ‘tide’, back when ‘tide’ still meant time, as in Yuletide.',
+    riddle: 'The plough stops, the lamp is lit, and only the older tongue still has a name for me.',
+    etymology: 'Old English, from a time when the language still measured the day in hours that each had a name of their own.',
     usage: 'At ___ the bells rang the fields home.',
   },
   {
     word: 'YESTREEN', obscurity: 'archaic',
     plain: 'The evening that has just gone by; the hours after dark, now past.',
     poetic: 'Last night’s dark, not yet cold in the room it left.',
-    riddle: 'I am gone mere hours, yet the ballads mourn me like a lost year.',
-    etymology: 'A Scots contraction of an older phrase for the night just gone — beloved of Burns and the border ballads.',
+    riddle: 'Gone a mere handful of hours, and still the ballads mourn me like a whole year.',
+    etymology: 'A Scots contraction of an older phrase for the night just gone — beloved of Burns and of the border ballads.',
     usage: '___ the frost came early and silvered all the panes.',
   },
   {
     word: 'OVERMORROW', obscurity: 'archaic',
-    plain: 'The day after tomorrow.',
-    poetic: 'Tomorrow’s quieter sister, standing two steps down the road.',
-    riddle: 'Skip tomorrow once and you land on me.',
-    etymology: 'Middle English, joining ‘beyond’ to ‘morrow’; German still keeps its twin alive.',
+    plain: 'The second day from now: the one that follows the day that follows this.',
+    poetic: 'Two sunrises off, and English has stopped keeping a name for it.',
+    riddle: 'Let one whole day go by unremarked and I am the next to arrive.',
+    etymology: 'Middle English, and given up when English stopped keeping single words for the days around today; German still has its twin.',
     usage: 'The mended clock will be ready ___, the tinker promised.',
   },
   {
@@ -418,7 +972,7 @@ export const ENTRIES: Entry[] = [
     plain: 'The wishbone of a fowl.',
     poetic: 'The little forked bone that holds a wish until two hands set it free.',
     riddle: 'Two pull; one keeps the longer half and the promise inside it. What bone am I?',
-    etymology: 'Named for the cheerful custom of two diners snapping the forked breast-bone to see whose wish would keep.',
+    etymology: 'Named for the custom rather than the bird: two diners, one snap, and the winner keeps what was wished.',
     usage: 'The cousins dried the ___ on the sill for tomorrow’s tug.',
   },
   {
@@ -437,6 +991,47 @@ export const ENTRIES: Entry[] = [
     etymology: 'Named for the very hair oil it defended against — a preparation sold as coming from a port in the Indies, and named for that port.',
     usage: 'The ___ on the wing-chair has been starched by three generations of housekeepers.',
   },
+  // Round 7: more archaic entries — the words this house would still use.
+  {
+    word: 'LYCHGATE', obscurity: 'archaic',
+    plain: 'The roofed entrance to a churchyard, where a bier could be set down out of the rain.',
+    poetic: 'A little roof at the edge of the yard, built for waiting in and for nothing else.',
+    riddle: 'A shelter with no room, a door with no house — and every village keeps me by the churchyard.',
+    etymology: 'An Old English word survives in this one structure and nowhere else; Victorian restorers rebuilt half of them in a style that never existed.',
+    usage: 'They waited under the ___ until the rain had gone through.',
+  },
+  {
+    word: 'SENNIGHT', obscurity: 'archaic',
+    plain: 'A week, by the reckoning English kept until the eighteenth century.',
+    poetic: 'The old unit of a country week: market to market, sermon to sermon.',
+    riddle: 'My longer twin still books an English holiday; I have not been spoken since Austen.',
+    etymology: 'The Germanic peoples counted time in darknesses rather than daylights, which is why an English holiday is still booked by the same arithmetic.',
+    usage: 'He promised the book in a ___ and delivered it in a year.',
+  },
+  {
+    word: 'HANDSEL', obscurity: 'archaic',
+    plain: 'A gift given at the start of a thing — a new year, a new shop, a new coat.',
+    poetic: 'The first coin taken in a new shop, kept in the apron and never spent.',
+    riddle: 'Pay me to a fishwife on a Monday morning and she will spit on me for luck.',
+    etymology: 'Old English and Old Norse shared it; in Scotland the first Monday of the year was named for the custom and kept as a holiday within living memory.',
+    usage: 'She gave the boy a shilling as a ___ on his first day at the forge.',
+  },
+  {
+    word: 'LIMNER', obscurity: 'archaic',
+    plain: 'A painter of miniatures and illuminated letters; an old word for an artist.',
+    poetic: 'The man who put the gold leaf on the capital letter and the face into the locket.',
+    riddle: 'Before the camera, I was how you knew what your grandmother had looked like.',
+    etymology: 'A worn form of the word for illumination, from the days when the gold on a manuscript was applied by a specialist.',
+    usage: 'The ___ was paid in coin and dinner, and left the eyes until last.',
+  },
+  {
+    word: 'BODKIN', obscurity: 'archaic',
+    plain: 'A blunt, thick needle used to draw tape or cord through a hem or a casing.',
+    poetic: 'The fat needle at the bottom of the workbox, too blunt to prick and too useful to throw out.',
+    riddle: 'Thread me with ribbon and I will find my way through a hem that no finger could.',
+    etymology: 'Middle English, origin obscure and possibly Celtic; it has meant a dagger, a hairpin and a needle, and settled at last on the needle.',
+    usage: 'She threaded the elastic with a ___ and a great deal of patience.',
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -449,6 +1044,14 @@ const STOPWORDS = new Set([
   'it', 'its', 'of', 'on', 'or', 'that', 'the', 'to', 'up', 'was', 'what',
   'when', 'which', 'who', 'with', 'you', 'your', 'i', 'me', 'my', 'am', 'are',
   'no', 'not', 'so', 'than', 'then', 'there', 'they', 'this', 'too', 'very',
+  // Round 7: function words only. Anything added here weakens the overlap
+  // gate, so the list stays closed to nouns, verbs, adjectives and images.
+  'has', 'have', 'had', 'been', 'being', 'will', 'would', 'could', 'should',
+  'into', 'out', 'off', 'over', 'under', 'after', 'before', 'while', 'all',
+  'one', 'only', 'own', 'same', 'other', 'such', 'their', 'them', 'she', 'her',
+  'his', 'him', 'we', 'us', 'if', 'how', 'why', 'where', 'more', 'most',
+  'some', 'any', 'each', 'every', 'never', 'always', 'again', 'about',
+  'because', 'upon', 'without', 'still', 'yet', 'does', 'did', 'do',
 ]);
 
 function contentWords(text: string): Set<string> {
@@ -467,23 +1070,134 @@ function overlap(a: string, b: string): number {
 }
 
 /** First-person voice — the riddle's register, forbidden to plain and poetic. */
-const FIRST_PERSON = /\b(I|I'm|I've|me|my|mine)\b/;
+const FIRST_PERSON = /\b(I|I'm|I’m|I've|I’ve|me|my|mine)\b/;
 
-/** Highest tolerated content-word overlap between two registers. */
-const MAX_REGISTER_OVERLAP = 0.4;
+/** Second person — allowed to a riddle addressing the player, not to a gloss. */
+const SECOND_PERSON = /\b(you|your|yours|yourself)\b/i;
 
 /**
- * The register lint (round 4). Three tiers are only "real" if the three
- * definitions are three different kinds of sentence — this is what proves it.
+ * Highest tolerated content-word overlap between two registers.
+ * Round 7: 0.40 → 0.30. The old figure sat above the pool's own worst case
+ * (0.33), so the gate could not have failed on the shipped pool; the entries
+ * that measured worst were rewritten rather than the threshold relaxed.
+ */
+const MAX_REGISTER_OVERLAP = 0.3;
+
+/**
+ * Diction that reaches for a feeling instead of showing a thing. The example
+ * that named this list — "Fortune's gentle kiss upon the unprepared soul" —
+ * is what a padded pool sounds like. A tripwire, not a judge: passing it is
+ * not evidence a line is good, only that it is not obviously filler.
+ */
+const DEAD_DICTION = [
+  'soul', 'souls', 'essence', 'tapestry', 'embrace', 'embraces', 'eternity',
+  'eternal', 'bliss', 'blissful', 'cherish', 'cherished', 'magic', 'magical',
+  'wondrous', 'beauteous', 'heartfelt', 'yearning', 'timeless', 'myriad',
+  'gentle kiss', 'dance of life', 'journey of the heart',
+];
+
+/** How many poetic (or riddle) lines may open with the same two words. */
+const MAX_SHARED_OPENER = 3;
+
+/** How many poetic lines may reuse the same long image-word. */
+const MAX_IMAGE_REUSE = 5;
+
+/** Straight marks have no handedness — the serif faces draw both backwards. */
+const STRAIGHT_QUOTE = /["']/;
+
+const FIELDS: (keyof Pick<Entry, 'plain' | 'poetic' | 'riddle' | 'etymology' | 'usage'>)[] =
+  ['plain', 'poetic', 'riddle', 'etymology', 'usage'];
+
+/** Longest run of letters shared by two words. */
+function longestCommonRun(a: string, b: string): string {
+  const width = b.length + 1;
+  const table = new Uint16Array((a.length + 1) * width);
+  let bestLength = 0, bestEnd = 0;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1] !== b[j - 1]) continue;
+      const run = (table[(i - 1) * width + (j - 1)] ?? 0) + 1;
+      table[i * width + j] = run;
+      if (run > bestLength) { bestLength = run; bestEnd = i; }
+    }
+  }
+  return a.slice(bestEnd - bestLength, bestEnd);
+}
+
+/**
+ * THE ANSWER-LEAK GATE (round 7, rewritten).
+ *
+ * A paid clue that contains its own answer is a refund with a bow on it. The
+ * old rule caught only the answer's first four letters, which is precisely the
+ * check a COMPOUND walks straight past: "tide" in an EVENTIDE etymology,
+ * "loom" in HEIRLOOM's, "ichor" in PETRICHOR's, "morrow" in OVERMORROW's,
+ * "somnambulist" (eight of twelve letters) in NOCTAMBULIST's. All five shipped.
+ *
+ * Three rules now, all mechanical:
+ *   1. the answer's opening stem anywhere in the text (kept from round 4);
+ *   2. any clue word of four letters or more that sits INSIDE the answer;
+ *   3. any clue word sharing a run of letters that covers most of the answer
+ *      (≥4 letters and ≥60% of it) or most of the word (≥6 letters and ≥60%).
+ *
+ * Rule 3's thresholds are deliberately set to ignore shared English suffixes —
+ * "movement" beside ESCAPEMENT is noise, "kindle" beside KINDLING is not.
+ *
+ * What NO lint can see is the clue that translates the answer's own parts
+ * ("roaming joined to longing" for WANDERLUST). That class is caught only by
+ * reading, and the house rule for it is written at the top of this file.
+ */
+function leakProblems(id: string, field: string, word: string, text: string): string[] {
+  const problems: string[] = [];
+  const answer = word.toLowerCase();
+  const lower = text.toLowerCase();
+
+  const stem = answer.slice(0, 4);
+  if (lower.includes(stem)) {
+    problems.push(`${id}: ${field} leaks the answer stem "${stem}": ${text}`);
+  }
+
+  const seen = new Set<string>();
+  for (const raw of lower.replace(/[^a-z\s]/g, ' ').split(/\s+/)) {
+    if (raw.length < 4 || seen.has(raw)) continue;
+    seen.add(raw);
+    if (answer.includes(raw)) {
+      problems.push(`${id}: ${field} contains "${raw}", which sits inside the answer: ${text}`);
+      continue;
+    }
+    const run = longestCommonRun(raw, answer);
+    const coversAnswer = run.length >= 4 && run.length / answer.length >= 0.6;
+    const coversWord = run.length >= 6 && run.length / raw.length >= 0.6;
+    if (coversAnswer || coversWord) {
+      problems.push(`${id}: ${field} says "${raw}", which shares "${run}" with the answer: ${text}`);
+    }
+  }
+  return problems;
+}
+
+/**
+ * The register lint (round 4, tightened in round 7). Three tiers are only
+ * "real" if the three definitions are three different kinds of sentence —
+ * this is what proves it.
  */
 function registerProblems(id: string, e: Entry): string[] {
   const problems: string[] = [];
+
+  // plain: a dictionary gloss — impersonal, and never a riddle in disguise.
   if (FIRST_PERSON.test(e.plain)) problems.push(`${id}: plain uses the riddle's first-person voice`);
+  if (SECOND_PERSON.test(e.plain)) problems.push(`${id}: plain addresses the player — a gloss is impersonal`);
+  if (e.plain.trim().endsWith('?')) problems.push(`${id}: plain asks a question — that is the riddle's job`);
+  if (e.plain.length > 120) problems.push(`${id}: plain is ${e.plain.length} chars — a gloss, not an essay`);
+
+  // poetic: an image, in the third person, and long enough to be one.
   if (FIRST_PERSON.test(e.poetic)) problems.push(`${id}: poetic uses the riddle's first-person voice`);
+  if (e.poetic.trim().endsWith('?')) problems.push(`${id}: poetic asks a question — that is the riddle's job`);
+  if (e.poetic.length < 40) problems.push(`${id}: poetic is ${e.poetic.length} chars — too short to carry an image`);
+
+  // riddle: the word speaking, or a question put to the player.
   if (!FIRST_PERSON.test(e.riddle) && !e.riddle.trim().endsWith('?')) {
     problems.push(`${id}: riddle neither speaks in first person nor asks a question`);
   }
-  if (e.plain.length > 120) problems.push(`${id}: plain is ${e.plain.length} chars — a gloss, not an essay`);
+
   for (const [a, b, an, bn] of [
     [e.plain, e.poetic, 'plain', 'poetic'],
     [e.poetic, e.riddle, 'poetic', 'riddle'],
@@ -492,6 +1206,61 @@ function registerProblems(id: string, e: Entry): string[] {
     const o = overlap(a, b);
     if (o > MAX_REGISTER_OVERLAP) {
       problems.push(`${id}: ${an}/${bn} share ${(o * 100).toFixed(0)}% of their content words — rewrite one`);
+    }
+  }
+
+  for (const field of FIELDS) {
+    const text = e[field];
+    const lower = text.toLowerCase();
+    for (const dead of DEAD_DICTION) {
+      const hit = dead.includes(' ')
+        ? lower.includes(dead)
+        : new RegExp(`\\b${dead}\\b`).test(lower);
+      if (hit) problems.push(`${id}: ${field} reaches for "${dead}" — greeting-card diction, rewrite it`);
+    }
+    if (STRAIGHT_QUOTE.test(text)) {
+      problems.push(`${id}: ${field} uses a straight quote — set it as ’ “ ” (the serif draws both marks backwards)`);
+    }
+  }
+
+  return problems;
+}
+
+/**
+ * Cross-pool self-repetition (round 7). At 43 entries an author holds the
+ * whole book in their head; at a hundred they do not, and the pool starts
+ * rhyming with itself — five poetic lines opening "A small…", "kettle" in
+ * four different images. Neither is visible entry by entry, so it is checked
+ * over the pool.
+ */
+function repetitionProblems(entries: Entry[]): string[] {
+  const problems: string[] = [];
+
+  const openers = (pick: (e: Entry) => string, what: string) => {
+    const byOpener = new Map<string, string[]>();
+    for (const e of entries) {
+      const key = pick(e).toLowerCase().replace(/[^a-z\s]/g, ' ').trim().split(/\s+/).slice(0, 2).join(' ');
+      byOpener.set(key, [...(byOpener.get(key) ?? []), e.word]);
+    }
+    for (const [key, words] of byOpener) {
+      if (words.length > MAX_SHARED_OPENER) {
+        problems.push(`${words.length} ${what} lines open "${key}…" (max ${MAX_SHARED_OPENER}): ${words.join(', ')}`);
+      }
+    }
+  };
+  openers((e) => e.poetic, 'poetic');
+  openers((e) => e.riddle, 'riddle');
+
+  const byImage = new Map<string, string[]>();
+  for (const e of entries) {
+    for (const w of contentWords(e.poetic)) {
+      if (w.length < 6) continue;
+      byImage.set(w, [...(byImage.get(w) ?? []), e.word]);
+    }
+  }
+  for (const [image, words] of byImage) {
+    if (words.length > MAX_IMAGE_REUSE) {
+      problems.push(`the image "${image}" appears in ${words.length} poetic lines (max ${MAX_IMAGE_REUSE}): ${words.join(', ')}`);
     }
   }
   return problems;
@@ -503,7 +1272,7 @@ function registerProblems(id: string, e: Entry): string[] {
  */
 export function lint(entries: Entry[]): string[] {
   const problems: string[] = [];
-  if (entries.length < 20) problems.push(`pool too small: ${entries.length} < 20`);
+  if (entries.length < MIN_POOL) problems.push(`pool too small: ${entries.length} < ${MIN_POOL}`);
   const perTier: Record<Tier, number> = { 1: 0, 2: 0, 3: 0 };
   for (const e of entries) perTier[TIER_OF_OBSCURITY[e.obscurity]]++;
   for (const tier of [1, 2, 3] as Tier[]) {
@@ -519,6 +1288,8 @@ export function lint(entries: Entry[]): string[] {
     if (e.word.length > 15) problems.push(`${id}: longer than 15 letters`);
     if (!/^[A-Z]+$/.test(e.word)) problems.push(`${id}: word must be uppercase A–Z`);
     if (!e.usage.includes('___')) problems.push(`${id}: usage has no blank`);
+    if (e.usage.split('___').length !== 2) problems.push(`${id}: usage needs exactly one blank`);
+    if (!/[.!?][’”]?$/.test(e.usage.trim())) problems.push(`${id}: usage is not a finished sentence`);
 
     // Three genuinely distinct registers (AAA 3.7 clarity scaling).
     if (e.plain === e.poetic || e.poetic === e.riddle || e.plain === e.riddle) {
@@ -526,19 +1297,11 @@ export function lint(entries: Entry[]): string[] {
     }
     problems.push(...registerProblems(id, e));
 
-    // No clue may contain the answer's stem (first 4 letters ⇒ catches every
-    // prefix of 4+). A paid clue containing the answer is a refund with a bow.
-    const stem = e.word.slice(0, 4).toLowerCase();
-    const clues: [string, string][] = [
-      ['plain', e.plain], ['poetic', e.poetic], ['riddle', e.riddle],
-      ['etymology', e.etymology], ['usage', e.usage],
-    ];
-    for (const [name, text] of clues) {
-      if (text.toLowerCase().includes(stem)) {
-        problems.push(`${id}: ${name} leaks the answer stem "${stem}": ${text}`);
-      }
+    for (const field of FIELDS) {
+      problems.push(...leakProblems(id, field, e.word, e[field]));
     }
   }
+  problems.push(...repetitionProblems(entries));
   return problems;
 }
 

@@ -8,7 +8,7 @@ import {
 } from '../src/engine/economy/simulate';
 import {
   doorLockedAt, fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, ledgerTotal,
-  teaArcPoints, BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, KEY_SUPPLY,
+  solveKeys, teaArcPoints, BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, KEY_SUPPLY,
   MOVE_COST_BY_ROW, TEA_ARC, TEA_BY_POINTS,
 } from '../src/engine/economy/steps';
 import { createRng } from '../src/engine/rng';
@@ -506,6 +506,70 @@ describe('the padlock is LIVE, and the live key supply can pay for it', () => {
     expect(banking).toBeLessThan(
       [4, 5, 6].reduce((s, row) => s + DOOR_LOCKS.chanceByRow[row]!, 0));
   }, HEAVY_MS);
+
+  /**
+   * ROUND 10 — THE OWNER'S "SKILL, NOT JUST PERSISTENCE, EARNS THE CAMPAIGN".
+   *
+   * Every key used to come off a green card or off Fern's sill, so the padlock
+   * arc was a DRAFTING-LUCK arc: playing the word games well bought steps and
+   * nothing else, and the climb belonged to whoever got offered the Key
+   * Cabinet. A solved room pays a key by row-band tier now, and the geometry
+   * is the design — DOOR_LOCKS gates 0-based rows 4–5, rows 3–4 are tier 2, so
+   * the storey below a padlock is the storey that pays for it.
+   *
+   * Re-tuning followed in the same change (see engine/economy/steps.ts): the
+   * door costs two keys, row 4 locks at 0.9, and row 4 costs a step more to
+   * walk into. Measured before that re-tune, the new supply put a skilled
+   * player at the Sanctum door on day 1 in 29% of campaigns against a
+   * published <8%, with a median first reach of day 2. Every 4.10 target
+   * above is re-measured against the retune; this block pins the SOURCE MIX
+   * the directive actually asked for.
+   */
+  describe('round 10 — the climb is bought with solves, not only with luck', () => {
+    it('pays keys by tier, nothing on the ground floor, never a whole ascent', () => {
+      expect(solveKeys(1)).toBe(0);
+      expect(solveKeys(2)).toBeGreaterThan(0);
+      expect(solveKeys(3)).toBeGreaterThanOrEqual(solveKeys(2));
+      // One room is never a whole climb: an ascent crosses ≈1.85 padlocks at
+      // `keyCost` each, and a single solve must stay well under that.
+      const ascent = [4, 5].reduce(
+        (s, row) => s + DOOR_LOCKS.chanceByRow[row]! * DOOR_LOCKS.keyCost, 0);
+      expect(Math.max(...KEY_SUPPLY.solveKeysByTier)).toBeLessThan(ascent);
+    });
+
+    it('makes SOLVED ROOMS the primary source of keys, over the whole campaign', () => {
+      // The directive in one measurement. Deck-sourced keys (`keysFound`) are
+      // green cards taken for their key face; `keysFromSolves` is the round-10
+      // channel. Measured: ≈1.2/day from solves against ≈0.7/day off the deck.
+      const days = campaigns.flatMap((c) => c.days);
+      const fromSolves = days.reduce((s, d) => s + d.keysFromSolves, 0);
+      const fromDeck = days.reduce((s, d) => s + d.keysFound, 0);
+      expect(fromSolves).toBeGreaterThan(fromDeck);
+      // …and Fern's whole authored arc, at her ceiling, is smaller still —
+      // she shortens the climb, the word games pay for it.
+      const fromFern = days.length * fernMorningKeys(FERN_ARC.meetPoints + FERN_ARC.questPoints);
+      expect(fromSolves).toBeGreaterThan(fromFern * 0.9);
+      // It is a real ramp, not a rounding artefact.
+      expect(fromSolves / days.length).toBeGreaterThan(0.5);
+    });
+
+    it('does not turn the padlock into decoration: the gate still bites hard', () => {
+      const early = campaigns.flatMap((c) => c.days.slice(0, 5));
+      expect(share(early, (d) => d.lockedOut > 0)).toBeGreaterThan(0.5);
+      // …and a skipper, who solves nothing, earns no keys at all and never
+      // stands at the door (4.10a) — solving is the difference.
+      expect(skipper.every((r) => r.keysFromSolves === 0)).toBe(true);
+      expect(share(skipper, (r) => r.reachedSanctum)).toBe(0);
+    });
+
+    it('leaves the 10–15 minute evening exactly where it was (4.10f)', () => {
+      // Keys buy CLIMB, which is cheap in minutes. The median day must not
+      // have inflated because solving became more rewarding.
+      const m = median(decent, (r) => r.minutes);
+      expect(m).toBeGreaterThanOrEqual(10);
+      expect(m).toBeLessThanOrEqual(15);
+    });
+  });
 
   it("Fern's morning key is an arc, not a bypass", () => {
     expect(fernMorningKeys(0)).toBe(0);                      // day 1 is the gate

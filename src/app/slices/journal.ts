@@ -14,13 +14,14 @@
  */
 
 import type { StateCreator } from 'zustand';
-import type { RoomCategory, VolumeState } from '../../engine/types';
+import type { RoomCategory, Tier, VolumeState } from '../../engine/types';
 import type { RoomPuzzleKind } from '../../engine/rooms/room-puzzle';
 import type { ManorStore } from '../store';
 import type { SaveV2 } from '../save';
 import {
-  advanceVolume, applyGuess, findLetter, fragmentForSolveChannel, letterGrants,
-  nextFragmentForRoom, normalizeGuess, openedLetterFlag, reservedTestimonyIds,
+  advanceVolume, applyGuess, decipherYield, findLetter, fragmentForSolveChannel,
+  fragmentsToDecipher, legibleFragmentFlag, letterGrants, nextFragmentForRoom, normalizeGuess,
+  openedLetterFlag, reservedTestimonyIds, sealedFragmentFlag, sealedFragmentIds,
   solveChannelFiledToday, solveChannelFor, solvedFlag,
 } from '../../engine/volume';
 import { nextUninterpreted, viewedFragmentFlag } from '../../engine/journal';
@@ -31,8 +32,17 @@ import { getVolumeContent, nextVolumeContent } from '../content/volumes';
 export interface JournalSlice {
   volume: VolumeState;
 
-  /** File a fragment forever; auto-groups + cross-refs are derived. */
-  fileFragment(fragmentId: string): void;
+  /**
+   * File a fragment forever; auto-groups + cross-refs are derived.
+   *
+   * ROUND 10 — `opts.sealed` files it UNDECIPHERED (a torn leaf, a smudged
+   * rubbing): hers immediately and permanently, visible in the journal,
+   * required for nothing (AAA 4.18), but carrying no readable text, no
+   * engraving constraint for the alphabet plate and nothing for Ellery to
+   * read until a solved word game makes it out. Default is legible, so every
+   * existing caller (letters, testimony, the solve channel) is unchanged.
+   */
+  fileFragment(fragmentId: string, opts?: { sealed?: boolean }): void;
   /** Ellery's affinity service. Accepts a fragment id or 'next' (the first
    *  found-but-uninterpreted fragment) — DialogueEffects.interpretFragment. */
   interpretFragment(fragmentId: string): void;
@@ -82,6 +92,28 @@ export interface JournalSlice {
    */
   collectFragmentForSolve(kind: RoomPuzzleKind): string | null;
   /**
+   * A7 ADDITIVE — THE DECIPHER CHANNEL (round 10, the owner's "solving needs
+   * to matter"). Make out up to `count` of the sealed pages, oldest first on
+   * the drip. Returns the ids that became legible.
+   *
+   * Write-once `vol.<id>.legible-<fragmentId>` flags, the same mechanism as
+   * the letters' seals and the journal's viewed markers, so the state survives
+   * the day roll and a force-quit with no save-schema change.
+   */
+  decipherFragments(count: number): string[];
+  /**
+   * A7 ADDITIVE — everything one solved room pays the mystery, in one call:
+   * the channel fragment (legible, because she solved for it), the tier-scaled
+   * decipher of the sealed backlog, and — on a PERFECT solve — Ellery's
+   * reading of the next made-out line, free, which she would otherwise charge
+   * affinity for.
+   *
+   * Exposed rather than private for the same reason `collectFragmentForSolve`
+   * is: AAA 11.17 wants a test that drives the award path. In normal play
+   * nothing calls it by hand — the spine watcher below does, off `room-solved`.
+   */
+  creditSolve(kind: RoomPuzzleKind, tier: Tier, perfect: boolean): void;
+  /**
    * A7 ADDITIVE (consumed by the Sanctum epilogue, after the ceremony):
    * roll the manor onto the next authored volume, if one exists. The closed
    * volume's journal stays readable forever (archived by volumeId).
@@ -125,13 +157,15 @@ export const createJournalSlice =
       // by the gate above: filing does not move the 'room-solved' counter.)
       const last = s.recentEvents[s.recentEvents.length - 1];
       if (last?.event.type !== 'room-solved') return;
-      get().collectFragmentForSolve(last.event.kind);
+      // Round 10: the same spine event now also makes out the sealed backlog
+      // and pays a perfect solve its free reading — see `creditSolve`.
+      get().creditSolve(last.event.kind, last.event.tier, last.event.perfect);
     });
 
     return {
     volume: initial.volume,
 
-    fileFragment: (fragmentId) => {
+    fileFragment: (fragmentId, opts) => {
       const v = get().volume;
       if (v.foundFragmentIds.includes(fragmentId)) return;
       // Only file fragments the current volume actually defines — a stale id
@@ -139,6 +173,10 @@ export const createJournalSlice =
       const content = getVolumeContent(v.volumeId);
       if (content && !content.fragments.some((f) => f.id === fragmentId)) return;
       set({ volume: { ...v, foundFragmentIds: [...v.foundFragmentIds, fragmentId] } });
+      // Sealed BEFORE the event fires, so anything reading the spine (the
+      // moment layer, the journal) already sees the page in the state it
+      // actually arrived in.
+      if (opts?.sealed) get().setFlag(sealedFragmentFlag(v.volumeId, fragmentId));
       get().recordEvent({ type: 'fragment-found', fragmentId });
       // Pity bookkeeping (AAA 4.14) is pure derivation: the drought counter
       // reads the chronicles' DayRecords (engine/volume.fragmentDroughtDays).
@@ -148,8 +186,12 @@ export const createJournalSlice =
       const v = get().volume;
       const content = getVolumeContent(v.volumeId);
       if (!content) return;
-      const id = fragmentId === 'next' ? nextUninterpreted(content, v) : fragmentId;
+      // Ellery reads English, not smudges: 'next' skips sealed pages, and a
+      // sealed page named outright is refused (round 10).
+      const sealedIds = sealedFragmentIds(v.volumeId, get().flags);
+      const id = fragmentId === 'next' ? nextUninterpreted(content, v, { sealedIds }) : fragmentId;
       if (!id) return;
+      if (sealedIds.has(id)) return;
       if (!v.foundFragmentIds.includes(id) || v.interpretedFragmentIds.includes(id)) return;
       if (!content.fragments.some((f) => f.id === id)) return;
       set({ volume: { ...v, interpretedFragmentIds: [...v.interpretedFragmentIds, id] } });
@@ -241,8 +283,42 @@ export const createJournalSlice =
       );
       const frag = nextFragmentForRoom(content, v, category, { reservedIds });
       if (!frag) return null;
-      get().fileFragment(frag.id);
+      // ── ROUND 10: ENTERING GETS THE DOCUMENT, SOLVING MAKES IT LEGIBLE. ──
+      // This is A1's violet-room channel, fired the moment she steps in. The
+      // page is hers forever from this instant — it is filed, it is in the
+      // journal, nothing can take it away and nothing ever requires it — but
+      // it arrives UNDECIPHERED. Walking into the Archive and walking out
+      // still leaves her holding the leaf; it just does not speak until she
+      // finishes a word game. (`decipherFragments` is the other half.)
+      get().fileFragment(frag.id, { sealed: true });
       return frag.id;
+    },
+
+    decipherFragments: (count) => {
+      const v = get().volume;
+      const content = getVolumeContent(v.volumeId);
+      if (!content) return [];
+      const sealedIds = sealedFragmentIds(v.volumeId, get().flags);
+      if (sealedIds.size === 0) return [];
+      const ids = fragmentsToDecipher(content, v, sealedIds, count);
+      for (const id of ids) get().setFlag(legibleFragmentFlag(v.volumeId, id));
+      return ids;
+    },
+
+    creditSolve: (kind, tier, perfect) => {
+      // 1. The room's own channel fragment — legible, because she solved for
+      //    it (the Study a definition line, every other room a lintel
+      //    engraving; one per channel per day, valved off the spine).
+      get().collectFragmentForSolve(kind);
+      // 2. The sealed backlog: tier scales the yield (1 / 2 / 3), so a tier-3
+      //    room near the top is worth three ground-floor ones in mystery
+      //    material — engine/volume.ts DECIPHER_YIELD_BY_TIER.
+      get().decipherFragments(decipherYield(tier));
+      // 3. A PERFECT solve buys the reading Ellery charges affinity for
+      //    (AAA 5.7's service tier, granted free): the next made-out line she
+      //    has not yet annotated. A no-op when there is nothing legible left
+      //    to read, so a flawless day never mints a phantom note.
+      if (perfect) get().interpretFragment('next');
     },
 
     collectFragmentForSolve: (kind) => {

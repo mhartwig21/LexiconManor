@@ -12,11 +12,13 @@ import { useManorStore } from '../../app/store';
 import { getVolumeContent } from '../../app/content/volumes';
 import {
   alphabetFacts, ALPHABET, crossRefs, definitionSlots, displayedFragmentIds, foundByKind,
-  guessHistory, isInterpreted, journalNudge, letterBoxes, sanctumReadiness, VERDICT_TOKENS,
+  guessHistory, isInterpreted, journalNudge, letterBoxes, sanctumReadiness, sealedCount,
+  VERDICT_TOKENS,
   type JournalTab,
 } from '../../engine/journal';
 import {
-  arrivedLetters, fragmentDroughtDays, openedLetterIds, type FragmentContent,
+  arrivedLetters, fragmentDroughtDays, openedLetterIds, sealedFragmentIds,
+  type FragmentContent,
 } from '../../engine/volume';
 import type { CharacterId } from '../../engine/types';
 import { atSanctumDoor } from '../../engine/manor/grid';
@@ -64,6 +66,17 @@ export default function JournalView() {
   const unread = useJournalUnread();
 
   /**
+   * ROUND 10 — the pages she has but cannot read yet (engine/volume.ts).
+   * Entering a violet room files the document; solving a word game makes it
+   * out. Every derivation below is handed this set, so a sealed leaf renders
+   * as a sealed leaf, contributes nothing to the alphabet plate, and offers
+   * Ellery nothing to annotate — while still being hers, visibly, forever.
+   */
+  const sealedIds = sealedFragmentIds(volume.volumeId, flags);
+  const isSealed = (id: string) => sealedIds.has(id);
+  const stillSealed = sealedCount(volume, { sealedIds });
+
+  /**
    * What was unread when she got here — and it STAYS marked for this visit.
    *
    * Two different questions wear the same wax, and conflating them is what
@@ -83,7 +96,7 @@ export default function JournalView() {
    * a navigation edge; the slice makes it a no-op once nothing is left to mark,
    * so it is safe to re-run on every tab change and every filing.
    */
-  const displayed = content ? displayedFragmentIds(content, volume, tab) : [];
+  const displayed = content ? displayedFragmentIds(content, volume, tab, { sealedIds }) : [];
   const displayedKey = displayed.join(',');
   useEffect(() => {
     if (displayed.length > 0) markFragmentsViewed(displayed);
@@ -118,7 +131,7 @@ export default function JournalView() {
   });
   const engravings = foundByKind(content, volume, 'engraving');
   const testimony = foundByKind(content, volume, 'testimony');
-  const slots = definitionSlots(content, volume);
+  const slots = definitionSlots(content, volume, { sealedIds });
 
   const switchTab = (t: Tab) => {
     if (t !== tab) sfx.tap();
@@ -152,14 +165,18 @@ export default function JournalView() {
             engravings.length === 0 ? (
               <p className="jrn-empty">No engravings found yet. They are cut into lintels and inkstands about the house — the manor will file them as you pass.</p>
             ) : (
-              engravings.map((f) => <EngravingCard key={f.id} frag={f} isNew={isNew(f.id)} />)
+              engravings.map((f) => (
+                <EngravingCard key={f.id} frag={f} isNew={isNew(f.id)} sealed={isSealed(f.id)} />
+              ))
             )
           )}
           {tab === 'testimony' && (
             testimony.length === 0 ? (
               <p className="jrn-empty">No one has said anything worth filing. Yet. Try tea, and patience.</p>
             ) : (
-              testimony.map((f) => <TestimonyCard key={f.id} frag={f} isNew={isNew(f.id)} />)
+              testimony.map((f) => (
+                <TestimonyCard key={f.id} frag={f} isNew={isNew(f.id)} sealed={isSealed(f.id)} />
+              ))
             )
           )}
           {tab === 'letters' && (
@@ -195,6 +212,18 @@ export default function JournalView() {
             )
           )}
         </div>
+
+        {/* ══ THE FOOTER RAIL (round-6 §11 gap, fixed round 10) ═══════════════
+            The Sanctum control used to be the LAST child of `.jrn-sheet` —
+            an internally scrolled panel — so on a 390×844 screen with any
+            filed content above it, the control sat below the fold: present in
+            the DOM, `elementFromPoint` at its centre returning the sheet, and
+            photographing exactly like a working button (AAA §0.1.7, 11.3).
+            It is now a sibling of the sheet inside the flex column, so it is
+            pinned to the bottom of the journal at every scroll position and
+            on every tab, and it carries the round-10 backlog counter beside
+            it — the two things the player needs to decide what to do next. */}
+        <FooterRail />
       </div>
 
       {/* Posy's aside as the wax gives way — an overlay above the journal
@@ -212,11 +241,10 @@ export default function JournalView() {
   // -- The Word tab -----------------------------------------------------------
 
   function WordTab() {
-    const facts = alphabetFacts(content!, volume);
+    const facts = alphabetFacts(content!, volume, { sealedIds });
     const boxes = letterBoxes(facts);
     const guesses = guessHistory(content!, volume);
-    const readiness = sanctumReadiness(content!, volume);
-    const nudge = journalNudge(content!, volume);
+    const nudge = journalNudge(content!, volume, { sealedIds });
     const anyLine = slots.some((s) => s.fragment);
 
     return (
@@ -245,7 +273,20 @@ export default function JournalView() {
         {anyLine ? (
           <div className="jrn-poem">
             {slots.map((s) =>
-              s.fragment ? (
+              s.fragment && s.sealed ? (
+                /* Hers, filed, permanent — and not yet made out. The slot is
+                   occupied by a torn leaf rather than a gap, because the
+                   difference between "I do not have this" and "I have this
+                   and cannot read it yet" is the whole point of the round-10
+                   loop. Never required for anything (AAA 4.18). */
+                <div key={s.revealOrder} className="jrn-poem__line jrn-poem__line--sealed">
+                  {isNew(s.fragment.id) && <UnreadPip label="a leaf you have not made out" />}{' '}
+                  <span className="jrn-smudge" aria-hidden>{smudge(s.fragment.text)}</span>
+                  <span className="jrn-sealed__label">
+                    A torn leaf, filed — the hand is too faded to make out. Solve a room.
+                  </span>
+                </div>
+              ) : s.fragment ? (
                 <div key={s.revealOrder} className="jrn-poem__line">
                   {/* The item level of the chain (AAA 11.19): the line itself
                       carries the mark, not only the tab above it. */}
@@ -323,16 +364,42 @@ export default function JournalView() {
             <span className="jrn-nudge__sign" aria-label="a pencilled note from Ellery">— E.</span>
           </div>
         )}
-        {/* ROUND-8: this used to be an unconditional shortcut to /sanctum, and
-            it was how the owner reached the climax on day 2 from the Entrance
-            Hall with nothing filed — the Portrait duly congratulated her on a
-            climb she had not made. The door is at the top of the house now
-            (ui/sanctum/SanctumView.tsx), so the journal points at it rather
-            than teleporting to it: a live link only from the landing, and
-            otherwise a plain sentence saying where the door is. No dead end
-            either way — /sanctum keeps its blueprint entrance (AAA 11.9). */}
-        {!solved && readiness.enough && (
-          <div className="jrn-nudge">
+      </>
+    );
+  }
+
+  // -- The footer rail --------------------------------------------------------
+
+  /**
+   * ROUND-8: the Sanctum control used to be an unconditional shortcut to
+   * /sanctum, and it was how the owner reached the climax on day 2 from the
+   * Entrance Hall with nothing filed — the Portrait duly congratulated her on
+   * a climb she had not made. The door is at the top of the house now
+   * (ui/sanctum/SanctumView.tsx), so the journal points at it rather than
+   * teleporting to it: a live link only from the landing, and otherwise a
+   * plain sentence saying where the door is. No dead end either way —
+   * /sanctum keeps its blueprint entrance (AAA 11.9).
+   *
+   * ROUND-10: and it lives HERE, in a rail pinned outside the scrolling
+   * sheet, because "in the DOM" was never the bar (AAA 11.2/11.3).
+   */
+  function FooterRail() {
+    if (solved) return null;
+    const showSanctum = sanctumReadiness(content!, volume).enough;
+    return (
+      <div className="jrn-rail">
+        {stillSealed > 0 && (
+          <div className="jrn-rail__backlog">
+            <span className="jrn-rail__count" aria-hidden>{stillSealed}</span>
+            <span>
+              {stillSealed === 1 ? 'page filed but not made out' : 'pages filed but not made out'}
+              {' · '}finishing a room makes them out{' '}
+              <span className="jrn-rail__hint">(more of them, the higher the room)</span>
+            </span>
+          </div>
+        )}
+        {showSanctum && (
+          <div className="jrn-nudge jrn-rail__sanctum">
             {atLanding ? (
               <button className="jrn-nudge__link" onClick={() => navigate('/sanctum')}>
                 Take it to the Sanctum
@@ -345,9 +412,37 @@ export default function JournalView() {
             )}
           </div>
         )}
-      </>
+      </div>
     );
   }
+}
+
+/**
+ * What an undeciphered page LOOKS like. Not the text: a run of ink-strokes the
+ * same shape and length as the writing under it, so the card reads as a real
+ * document she is holding rather than as an empty placeholder — and so nothing
+ * of the fragment's content can leak through the DOM (the strokes are derived
+ * from word LENGTHS only, and the element is aria-hidden; the sighted and the
+ * screen-reader player learn exactly the same amount, which is nothing).
+ */
+export function smudge(text: string, maxWords = 22): string {
+  return text
+    .split(/\s+/)
+    .slice(0, maxWords)
+    .map((w) => '·'.repeat(Math.max(1, Math.min(9, w.replace(/[^\p{L}]/gu, '').length))))
+    .join(' ');
+}
+
+/** One sealed document, in whichever tab it lives. */
+function SealedBody({ text }: { text: string }) {
+  return (
+    <>
+      <p className="jrn-card__text jrn-smudge" aria-hidden>{smudge(text)}</p>
+      <div className="jrn-sealed__label">
+        Filed, and not yet made out — the ink has run. Finish a room and it comes clear.
+      </div>
+    </>
+  );
 }
 
 function TabButton({
@@ -380,19 +475,27 @@ function TabButton({
   );
 }
 
-function EngravingCard({ frag, isNew }: { frag: FragmentContent; isNew: boolean }) {
+function EngravingCard({
+  frag, isNew, sealed,
+}: { frag: FragmentContent; isNew: boolean; sealed: boolean }) {
   const volume = useManorStore((s) => s.volume);
+  const flags = useManorStore((s) => s.flags);
   const content = getVolumeContent(volume.volumeId)!;
-  const refs = crossRefs(content, volume, frag.id);
+  const sealedIds = sealedFragmentIds(volume.volumeId, flags);
+  const refs = crossRefs(content, volume, frag.id, { sealedIds });
   const interpreted = isInterpreted(volume, frag.id);
   return (
-    <div className="jrn-card jrn-card--rubbing">
+    <div className={`jrn-card jrn-card--rubbing${sealed ? ' jrn-card--sealed' : ''}`}>
       <div className="jrn-card__source">
         {isNew && <UnreadPip />}
         {frag.source}
       </div>
-      <p className="jrn-card__text">{quoted(frag.text)}</p>
-      {interpreted && frag.interpretation ? (
+      {sealed ? (
+        <SealedBody text={frag.text} />
+      ) : (
+        <p className="jrn-card__text">{quoted(frag.text)}</p>
+      )}
+      {sealed ? null : interpreted && frag.interpretation ? (
         <div className="jrn-note">{frag.interpretation}</div>
       ) : (
         <div className="jrn-card__sealednote">Ellery might read more in this, over something warm.</div>
@@ -408,13 +511,17 @@ function EngravingCard({ frag, isNew }: { frag: FragmentContent; isNew: boolean 
   );
 }
 
-function TestimonyCard({ frag, isNew }: { frag: FragmentContent; isNew: boolean }) {
+function TestimonyCard({
+  frag, isNew, sealed,
+}: { frag: FragmentContent; isNew: boolean; sealed: boolean }) {
   const volume = useManorStore((s) => s.volume);
+  const flags = useManorStore((s) => s.flags);
   const content = getVolumeContent(volume.volumeId)!;
-  const refs = crossRefs(content, volume, frag.id);
+  const sealedIds = sealedFragmentIds(volume.volumeId, flags);
+  const refs = crossRefs(content, volume, frag.id, { sealedIds });
   const name = frag.speaker ? CHARACTER_NAMES[frag.speaker] : 'Someone';
   return (
-    <div className="jrn-card">
+    <div className={`jrn-card${sealed ? ' jrn-card--sealed' : ''}`}>
       <div className="jrn-card__speakerrow">
         <span className="jrn-medallion" aria-hidden>{name.replace('Mrs. ', '').replace('The ', '')[0]}</span>
         <div>
@@ -429,7 +536,11 @@ function TestimonyCard({ frag, isNew }: { frag: FragmentContent; isNew: boolean 
           quotes; the journal owns the quoting now (see ./quote.ts), so the
           authored pair is stripped and re-set — one convention on every card,
           and no doubling however the content is authored later. */}
-      <p className="jrn-card__text">{quoted(frag.text)}</p>
+      {sealed ? (
+        <SealedBody text={frag.text} />
+      ) : (
+        <p className="jrn-card__text">{quoted(frag.text)}</p>
+      )}
       {refs.length > 0 && (
         <div className="jrn-refs">
           {refs.map((r) => (

@@ -17,7 +17,7 @@ import type { SaveV2 } from '../save';
 // provisional const, per the handoff comment that stood here. Values are
 // identical: weight 1 → −2 (tier 3 −3), weight 2 doubles; micro +3,
 // anchor +6/+7/+8 by tier; perfect +2. Hints price through the mistake row.
-import { STEP_TABLE } from '../../engine/economy/steps';
+import { solveKeys, STEP_TABLE } from '../../engine/economy/steps';
 
 export interface RoomSlice {
   /** Enter the room at cellKey: sets day.activeRoom (puzzleId pinned at placement). */
@@ -114,6 +114,23 @@ export const createRoomSlice =
             });
             if (ev.perfect) {
               get().applyStepEntry({ reason: 'perfect', delta: STEP_TABLE.perfect, at: now, roomKey: cellKey });
+            }
+            // ── ROUND 10: SOLVING POWERS THE CLIMB (owner directive 3). ─────
+            // Keys used to come only off green cards and Fern, so the padlock
+            // arc was a drafting-luck arc and playing the word games well
+            // bought nothing but steps. A solved room now pays a key by
+            // row-band tier (engine/economy/steps.ts `solveKeys`) — tier 2 is
+            // the storey directly under the first padlock, so the room she
+            // solves is what opens the door above it.
+            //
+            // Applied HERE, on the one `solved` branch every room kind already
+            // routes through, rather than per-adapter: one rate, one audit
+            // point, and a room kind registered tomorrow earns keys for free.
+            // The chrome's key chip animates the delta like any other currency
+            // (AAA 11.15).
+            const keys = solveKeys(tier);
+            if (keys > 0) {
+              set((s) => ({ currencies: { ...s.currencies, keys: s.currencies.keys + keys } }));
             }
             const manor = get().manor;
             const placed = manor?.rooms[cellKey];

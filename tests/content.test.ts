@@ -67,16 +67,16 @@ describe('twistle bundle', () => {
 
 describe('word web bundle', () => {
   it('every puzzle is 4 groups of 4 unique words and solvable via the engine', () => {
-    /* Floor lowered 50 → 45 in round 9, deliberately, and this is the reason.
-       Round 7 dropped six boards that carried no herring the planter could
-       name, because a board whose acknowledged trap can never fire is the
-       Library charging our prices for Connections. The pool landed at 51 — one
-       board of headroom against a 50 floor — which meant the NEXT tightening
-       of the herring budget would fail HERE, on pool size, rather than on the
-       fairness rule that actually motivated the drop. A pool-size floor must
-       not be the thing policing a fairness decision. Per-tier ≥10 floors live
-       in tests/puzzles/anchors.test.ts and are the real guarantee. */
-    expect(wordWeb.length).toBeGreaterThanOrEqual(45);
+    /* ROUND 10 — 45 → 150. The Library is the pool that runs dry first: it is
+       the marquee room, it competes directly with NYT Connections, and at 51
+       boards a player who visited it once a day exhausted the bottom of the
+       house inside a fortnight. The floor is deliberately just under the
+       shipped 152 so the next fairness tightening fails on the fairness rule
+       it belongs to, not here (the round-9 lesson: a pool-size floor must
+       never be the thing policing a fairness decision). Per-tier ≥45 floors
+       live in tests/puzzles/anchors.test.ts and are the real guarantee that
+       the shelf is stocked evenly rather than piled into one row. */
+    expect(wordWeb.length).toBeGreaterThanOrEqual(150);
     for (const p of wordWeb) {
       expect(p.groups.length, p.id).toBe(4);
       const words = p.groups.flatMap((g) => g.words);
@@ -91,8 +91,30 @@ describe('word web bundle', () => {
 });
 
 describe('forgotten word bundle', () => {
+  /**
+   * Content floors for the Study (AAA 3.7). Round 7 took the pool 43 → 113;
+   * the floor moves with it, because a shipped pool that quietly shrinks back
+   * to a dozen entries is how a player meets the same word twice in a week.
+   * Per-tier floors matter as much as the total: the Study's tier IS the
+   * register of its clue, so a starved tier-3 shelf means a row-6 Study
+   * repeating itself while 80 unused entries sit in the other two bands.
+   * The register/leak/repetition gates themselves live in
+   * `tests/forgotten-word-register.test.ts`.
+   */
+  it('ships a pool deep enough that rows do not repeat themselves', () => {
+    expect(forgottenWord.length).toBeGreaterThanOrEqual(100);
+    expect(new Set(forgottenWord.map((p) => p.id)).size).toBe(forgottenWord.length);
+    const byTier = new Map<number, number>();
+    for (const p of forgottenWord as (ForgottenWordPuzzle & { tier: number })[]) {
+      byTier.set(p.tier, (byTier.get(p.tier) ?? 0) + 1);
+    }
+    for (const tier of [1, 2, 3]) {
+      expect(byTier.get(tier) ?? 0, `tier ${tier}`).toBeGreaterThanOrEqual(30);
+    }
+  });
+
   it('entries are complete and guessable', () => {
-    expect(forgottenWord.length).toBeGreaterThanOrEqual(10);
+    expect(forgottenWord.length).toBeGreaterThanOrEqual(100);
     for (const p of forgottenWord) {
       expect(p.word.length, p.id).toBeLessThanOrEqual(15);
       expect(p.definitions.plain, p.id).toBeTruthy();

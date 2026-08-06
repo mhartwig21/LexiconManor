@@ -136,6 +136,69 @@
   padding: 2.2rem 0.6rem;
 }
 
+/* --- The footer rail (AAA 11.2/11.3 — round-6 gap) --------------------------
+   The Sanctum control used to be the last child of `.jrn-sheet`, which scrolls
+   internally: with anything filed above it the button sat below the fold, so a
+   hit test at its centre returned the sheet and every screenshot of the page
+   looked correct. It is a SIBLING of the sheet now, inside the same flex
+   column, so it is pinned to the bottom of the journal at every scroll
+   position, on every tab, and it clears the home indicator itself. */
+.jrn-rail {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.45rem 0.2rem calc(0.35rem + env(safe-area-inset-bottom));
+}
+.jrn-rail:empty { display: none; }
+.jrn-rail__backlog {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+/* The count is a numeral, not a hue — legible in grayscale (AAA 6.3/11.22). */
+.jrn-rail__count {
+  flex: none;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  border: 1.5px dashed var(--paper-edge);
+  background: var(--paper-shade);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.jrn-rail__hint { color: var(--ink-faint); }
+.jrn-rail__sanctum { padding-top: 0; }
+
+/* --- Sealed documents: filed, hers forever, not yet made out ----------------
+   The round-10 loop, in ink: entering a violet room gets the DOCUMENT, solving
+   a word game makes it LEGIBLE. A sealed card is deliberately a real document
+   (dashed rule, ink-stroke body at the writing's own shape) and never an empty
+   slot — "I do not have this" and "I have this and cannot read it yet" must
+   never look alike. Nothing here is ever required (AAA 4.18). */
+.jrn-card--sealed { border-style: dashed; opacity: 0.92; }
+.jrn-smudge {
+  color: var(--ink-faint);
+  letter-spacing: 0.12em;
+  word-spacing: 0.35em;
+  user-select: none;
+}
+.jrn-sealed__label {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--ink-soft);
+}
+.jrn-poem__line--sealed { font-style: normal; }
+
 .jrn-caption {
   font-size: var(--text-sm);
   color: var(--ink-faint);

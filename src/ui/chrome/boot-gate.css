@@ -1,0 +1,95 @@
+/* ==========================================================================
+   Boot gate — OWNER: A2 (chrome). See BootGate.tsx for why this screen has
+   controls at all.
+
+   No fixed chrome exists on this surface (GameChrome renders nothing without
+   a day, and the boot branch mounts before it), so there is no bar to clear
+   and no --chrome-h arithmetic here. Consumes tokens.css only; both themes
+   come free. Motion: none — a stalled boot is the worst possible moment to
+   animate at someone (AAA U.3).
+   ========================================================================== */
+
+.boot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 100dvh;
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  background: var(--paper);
+}
+
+.boot__waking {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-style: italic;
+  color: var(--ink-faint);
+}
+
+.boot__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg);
+  color: var(--ink);
+}
+
+.boot__line {
+  margin: 0;
+  max-width: 34ch;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--ink-soft);
+  text-wrap: balance;
+}
+
+/* The verb of the screen. Same plate idiom as the lifecycle scenes' button. */
+.boot__btn {
+  margin-top: 8px;
+  min-height: var(--tap-target);
+  padding: 10px 22px;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-sheet);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  cursor: pointer;
+  box-shadow: var(--shadow-lift);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.boot__btn:active,
+.boot__btn.is-pressed { transform: translateY(1px); box-shadow: none; }
+
+/* The other door — deliberately quieter than the retry, and deliberately a
+   real 44pt control rather than a text link (AAA 6.19). Mirrors
+   `.chr-scene__aside`, which is the same idea on the lifecycle scenes. */
+.boot__aside {
+  min-height: var(--tap-target);
+  padding: 6px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-sheet);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.boot__aside-sub {
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+}
+
+.boot__aside:active,
+.boot__aside.is-pressed { transform: translateY(1px); }

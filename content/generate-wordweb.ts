@@ -61,7 +61,16 @@ import type { Tier, WordWebPuzzle } from '../src/engine/types';
  *     no gift rows (no row holds 3+ of one group);
  *   - two plausible same-tier `decoys` per group for the 2.11 act of naming.
  *
- * Run: npx tsx content/generate-wordweb.ts
+ * Run:    npx tsx content/generate-wordweb.ts
+ * Author: npx tsx content/generate-wordweb.ts --report
+ *
+ * `--report` is the authoring loop (round 10, the 51 → 150 board expansion).
+ * The build is a hard fail by design — an unintended complete grouping is not
+ * a warning — but a hard fail is useless feedback when you are writing forty
+ * boards at a sitting: it names the first sixteen problems and stops. Report
+ * mode diagnoses EVERY authored board against its intended tier without
+ * throwing (tone gate, unintended groupings, category composition, measured
+ * trap tightness) so a board can be fixed where it was written.
  */
 
 const SEED = 20260801;
@@ -94,7 +103,24 @@ const WORDPLAY_THEMES = new Set([
   'Things That Can Be "Iron"',
 ]);
 
-function typeOfTheme(theme: string): GroupType {
+/**
+ * ROUND 10 BUG FIX — the round-6 typography pass set every authored theme in
+ * curly quotes, and the three theme SETS above are written with straight ones.
+ * From that moment `TRIVIA_THEMES.has('TV Shows Starting with “The”')` was
+ * false, so that category shipped tagged `semantic`: it dodged the 2.9 trivia
+ * cap, dodged the trivia-sits-at-yellow rule (it shipped at BLUE on web-24),
+ * and would have dodged tier 3's outright ban. `Things That Can Be “Iron”`
+ * lost its wordplay tag the same way. This is the exact shape of the round-7
+ * `Contains "X"` escape — a quotation mark silently switching off a fairness
+ * rule — so membership is now asked of a canonical form rather than of the
+ * bytes the typography pass happened to leave behind.
+ */
+function canon(theme: string): string {
+  return theme.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
+}
+
+function typeOfTheme(rawTheme: string): GroupType {
+  const theme = canon(rawTheme);
   if (TRIVIA_THEMES.has(theme)) return 'trivia';
   if (WORDPLAY_THEMES.has(theme)) return 'wordplay';
   if (theme.includes('___')) return 'wordplay';
@@ -103,6 +129,13 @@ function typeOfTheme(theme: string): GroupType {
   if (/^Hidden /.test(theme)) return 'wordplay';
   if (/^(Anagrams of|Rhymes with) /.test(theme)) return 'wordplay';
   if (/^(Silent|Starts|Two Pairs)/.test(theme)) return 'wordplay';
+  // Round 10 — three more families the letters themselves prove. The 150-board
+  // shelf needs roughly 150 subtle categories and the old vocabulary (five
+  // families plus eight named ones) could not supply them without the same
+  // eight themes becoming wallpaper.
+  if (/^Homophones/.test(theme)) return 'wordplay';
+  if (/^Add an? /.test(theme)) return 'wordplay';
+  if (/^Drop /.test(theme)) return 'wordplay';
   return 'semantic';
 }
 
@@ -118,12 +151,20 @@ const SUBTLE_THEMES = new Set([
   'Contains Roman Numerals',
 ]);
 
-function isSubtleTheme(theme: string): boolean {
+function isSubtleTheme(rawTheme: string): boolean {
+  const theme = canon(rawTheme);
   if (SUBTLE_THEMES.has(theme)) return true;
   if (/^(Anagrams of|Rhymes with) /.test(theme)) return true;
   if (/^Hidden /.test(theme)) return true;
   if (/^Silent /.test(theme)) return true;
   if (/^(Two Pairs|Starts and Ends)/.test(theme)) return true;
+  // A homophone thread has to be HEARD (you cannot see that QUEUE is a "Q"),
+  // and an add-a-letter / drop-a-letter thread has to be performed on the word
+  // before it is visible at all. Both are subtle in exactly the sense tier 3
+  // means: real, provable on the tile, invisible on a first read.
+  if (/^Homophones/.test(theme)) return true;
+  if (/^Add an? /.test(theme)) return true;
+  if (/^Drop /.test(theme)) return true;
   return false;
 }
 
@@ -262,9 +303,18 @@ interface OutBoard extends WordWebPuzzle {
 // The three manor tiers
 // ---------------------------------------------------------------------------
 
-/** The authored difficulty is the *intent*; measured structure confirms it. */
+/**
+ * The authored difficulty is the *intent*; measured structure confirms it.
+ *
+ * ROUND 10: `medium` used to aim at tier 1, which meant NOTHING in the corpus
+ * aimed at tier 2 — every tier-2 board in the shelf was a demoted tier-3 board
+ * or a tier-3 board spilled by the cap. That was survivable at 51 boards and
+ * absurd at 150: the middle of the house was furnished entirely with failures.
+ * The four authored words now map onto the three shelves directly, and pass 2
+ * still demotes anything that does not measure up.
+ */
 const INTENDED_TIER: Record<string, Tier> = {
-  easy: 1, medium: 1, hard: 3, expert: 3,
+  easy: 1, medium: 2, hard: 3, expert: 3,
 };
 
 interface RoomTierSpec {
@@ -273,6 +323,23 @@ interface RoomTierSpec {
   minWordplay: number;
   /** Categories you must hear/unscramble rather than read off the tiles. */
   minSubtle: number;
+  /**
+   * ROUND 10 — the floor the bank may not compose away. `replaceGroups` was
+   * free to swap EVERY authored category for a bank wordplay group, and on 29
+   * of 152 shipped boards it had: four letter-puzzles in a row, no plain
+   * English anywhere. That is not a Connections board, it is a cryptic
+   * crossword with the clues removed, and it is exactly the "boring board"
+   * the owner said to cut rather than pad the count with. Tier 1 — the row
+   * the player stands on most nights — keeps two.
+   *
+   * PLAIN means "not a letter puzzle": semantic OR trivia. Counting only
+   * `semantic` made the trivia gimme structurally impossible at tier 1 (two
+   * semantics + a gimme leaves one slot, and the tier owes two wordplay), so
+   * the composer ate every gimme in the pool to satisfy a floor that was
+   * measuring the wrong thing. A trivia category is a category you read in
+   * English; it belongs on this side of the line.
+   */
+  minPlain: number;
   /** The herring budget: how many planted traps, and how tight each must pull. */
   minHerrings: number;
   maxHerrings: number;
@@ -288,9 +355,9 @@ const TIER_SPECS: Record<Tier, RoomTierSpec> = {
   // them. A tier-1 board still ships at most ONE loose trap — the near-clean
   // board is the point — but it must ship that one, and pass 2 drops any board
   // the planter cannot supply rather than shipping a room that can only say no.
-  1: { maxTrivia: 1, minWordplay: 2, minSubtle: 0, minHerrings: 1, maxHerrings: 1, minHerringScore: 1 },
-  2: { maxTrivia: 1, minWordplay: 2, minSubtle: 1, minHerrings: 1, maxHerrings: 2, minHerringScore: HERRING_TIGHT },
-  3: { maxTrivia: 0, minWordplay: 2, minSubtle: 2, minHerrings: 2, maxHerrings: 3, minHerringScore: HERRING_TIGHT },
+  1: { maxTrivia: 1, minWordplay: 2, minSubtle: 0, minPlain: 2, minHerrings: 1, maxHerrings: 1, minHerringScore: 1 },
+  2: { maxTrivia: 1, minWordplay: 2, minSubtle: 1, minPlain: 1, minHerrings: 1, maxHerrings: 2, minHerringScore: HERRING_TIGHT },
+  3: { maxTrivia: 0, minWordplay: 2, minSubtle: 2, minPlain: 1, minHerrings: 2, maxHerrings: 3, minHerringScore: HERRING_TIGHT },
 };
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -323,17 +390,33 @@ function replaceGroups(board: RawBoard, tier: Tier, rng: () => number): RawBoard
   // allowance, then blunt wordplay, then green/blue/purple semantics. At tier 1
   // the yellow semantic anchor stays; at tier 3 nothing is sacred but the
   // subtle groups we have already installed.
-  const replacementOrder = (): RawGroup[] => {
+  const replacementOrder = (needWordplay = false): RawGroup[] => {
     const t = typed();
     const extraTrivia = t.filter((x) => x.type === 'trivia').slice(spec.maxTrivia).map((x) => x.g);
     const bluntWordplay = t
       .filter((x) => x.type === 'wordplay' && !isSubtleTheme(x.g.theme))
       .map((x) => x.g);
-    const semantics = t
+    // The semantic floor is spent before anything else is: once a board is
+    // down to its last plain-English categories they stop being replaceable,
+    // and the composer either finds a blunt-wordplay victim or gives up on
+    // this tier (the caller then tries the tier below).
+    const spare = count('semantic') + count('trivia') - spec.minPlain;
+    const semantics = spare <= 0 ? [] : t
       .filter((x) => x.type === 'semantic' && (tier === 3 || x.g.tier !== 'yellow'))
       .sort((a, b) => TIER_ORDER.indexOf(a.g.tier) - TIER_ORDER.indexOf(b.g.tier))
-      .map((x) => x.g);
-    return [...extraTrivia, ...semantics, ...bluntWordplay];
+      .map((x) => x.g)
+      .slice(0, spare);
+    // Last resort: a trivia category that is WITHIN the cap. Once the semantic
+    // floor is real, a board of two semantics + one trivia + one wordplay has
+    // no other way to reach the 2-wordplay floor, and the gimme is the least
+    // valuable thing on it (2.9 caps trivia at one; it never requires one).
+    const spareTrivia = t.filter((x) => x.type === 'trivia').slice(0, spec.maxTrivia).map((x) => x.g);
+    // When the board is short of WORDPLAY, replacing one wordplay group with
+    // another cannot help — offering blunt wordplay as a victim just spins the
+    // loop until its guard trips and the whole board is refused. Ask only for
+    // victims whose replacement actually moves the count.
+    if (needWordplay) return [...extraTrivia, ...semantics, ...spareTrivia];
+    return [...extraTrivia, ...semantics, ...bluntWordplay, ...spareTrivia];
   };
 
   const boardWords = () => new Set(groups.flatMap((g) => g.words));
@@ -378,10 +461,13 @@ function replaceGroups(board: RawBoard, tier: Tier, rng: () => number): RawBoard
     const trivia = count('trivia');
     const wordplay = count('wordplay');
     const subtle = subtleCount();
-    if (trivia <= spec.maxTrivia && wordplay >= spec.minWordplay && subtle >= spec.minSubtle) break;
+    const plain = count('semantic') + trivia;
+    if (trivia <= spec.maxTrivia && wordplay >= spec.minWordplay
+      && subtle >= spec.minSubtle && plain >= spec.minPlain) break;
     if (guard++ >= 6) return null;
 
-    const victim = replacementOrder().find((g) => !isSubtleTheme(g.theme));
+    const victim = replacementOrder(wordplay < spec.minWordplay)
+      .find((g) => !isSubtleTheme(g.theme));
     if (!victim) return null;
     const bank = subtle < spec.minSubtle
       ? pickBankGroup(SUBTLE_BANK, victim)
@@ -399,6 +485,7 @@ function replaceGroups(board: RawBoard, tier: Tier, rng: () => number): RawBoard
     const types = gs.map((g) => typeOfTheme(g.theme));
     return types.filter((t) => t === 'trivia').length <= spec.maxTrivia
       && types.filter((t) => t === 'wordplay').length >= spec.minWordplay
+      && types.filter((t) => t !== 'wordplay').length >= spec.minPlain
       && gs.filter((g) => isSubtleTheme(g.theme)).length >= spec.minSubtle;
   };
 
@@ -775,6 +862,7 @@ function meetsTier(board: RawBoard, herrings: ScoredHerring[], tier: Tier): bool
   const types = board.groups.map((g) => typeOfTheme(g.theme));
   if (types.filter((t) => t === 'trivia').length > spec.maxTrivia) return false;
   if (types.filter((t) => t === 'wordplay').length < spec.minWordplay) return false;
+  if (types.filter((t) => t !== 'wordplay').length < spec.minPlain) return false;
   if (board.groups.filter((g) => isSubtleTheme(g.theme)).length < spec.minSubtle) return false;
   const tight = herrings.filter((h) => h.score >= spec.minHerringScore);
   return tight.length >= spec.minHerrings;
@@ -813,6 +901,58 @@ function herringSets(traps: readonly Trap[], ship: readonly string[]): OutHerrin
     });
   }
   return out;
+}
+
+/**
+ * The authoring loop (round 10). Diagnoses every authored board AS WRITTEN —
+ * before any bank substitution — against the tier its `difficulty` claims, and
+ * never throws. Composition shortfalls the bank can cover are reported as
+ * `wants` (the generator will patch them, at the cost of a bank slot); the two
+ * things the bank cannot cover — an unintended complete grouping and a gated
+ * word — are reported as `BROKEN` and must be fixed in the JSON.
+ */
+function report(): void {
+  let broken = 0;
+  let short = 0;
+  for (const b of boards) {
+    const tier = INTENDED_TIER[b.difficulty] ?? 1;
+    const spec = TIER_SPECS[tier];
+    const words = b.groups.flatMap((g) => g.words);
+    const hard: string[] = [];
+    const soft: string[] = [];
+
+    if (new Set(words).size !== 16) hard.push(`${new Set(words).size} unique words`);
+    if (new Set(b.groups.map((g) => g.tier)).size !== 4) hard.push('group tiers not distinct');
+    for (const w of words) if (!toneOk(w.toLowerCase())) hard.push(`tone gate: ${w}`);
+    hard.push(...patternFailures(b.groups));
+    for (const c of crossBoardClusters(b, boards)) {
+      if (!b.groups.some((g) => sameMembers(c.words, g.words))) {
+        hard.push(`semantic cluster ${c.name}: ${c.words.join(', ')}`);
+      }
+    }
+
+    const types = b.groups.map((g) => typeOfTheme(g.theme));
+    const trivia = types.filter((t) => t === 'trivia').length;
+    const wordplay = types.filter((t) => t === 'wordplay').length;
+    const subtle = b.groups.filter((g) => isSubtleTheme(g.theme)).length;
+    if (trivia > spec.maxTrivia) soft.push(`trivia ${trivia} > ${spec.maxTrivia}`);
+    if (wordplay < spec.minWordplay) soft.push(`wordplay ${wordplay} < ${spec.minWordplay}`);
+    if (subtle < spec.minSubtle) soft.push(`subtle ${subtle} < ${spec.minSubtle}`);
+    const tight = tightTrapCount(b.groups, spec.minHerringScore);
+    if (tight < spec.minHerrings) soft.push(`traps ${tight} < ${spec.minHerrings} @score≥${spec.minHerringScore}`);
+
+    if (hard.length > 0) {
+      broken++;
+      console.log(`BROKEN ${b.id} (t${tier}) — ${hard.join(' ; ')}`);
+    } else if (soft.length > 0) {
+      short++;
+      console.log(`wants  ${b.id} (t${tier}) — ${soft.join(' ; ')}`);
+    }
+  }
+  const byTier = ([1, 2, 3] as Tier[])
+    .map((t) => `t${t}: ${boards.filter((b) => (INTENDED_TIER[b.difficulty] ?? 1) === t).length}`)
+    .join(', ');
+  console.log(`\n${boards.length} authored boards (${byTier}) — ${broken} broken, ${short} needing bank help.`);
 }
 
 function main() {
@@ -869,14 +1009,36 @@ function main() {
   // Round 7: a board with no trap is a board on which AAA 2.10's acknowledged
   // herring can never fire — the wrong guess buys nothing but "no". Drop it
   // rather than ship a night where the Library is Connections with our prices.
-  const out = built.filter((b) => b.ambiguousWords.length >= TIER_SPECS[b.tier].minHerrings);
+  //
+  // ROUND 10 adds the second half of that sentence. Demotion lands a board on
+  // a tier it was not composed for, and tier 1 asks for something tier 2 does
+  // not — two plain-English categories. A board that arrives at the bottom of
+  // the house one category short is not "nearly right", it is a board the
+  // composer never built; it leaves rather than lowering the floor for
+  // everyone else.
+  const shipsHere = (b: OutBoard): boolean => {
+    const spec = TIER_SPECS[b.tier];
+    const types = b.groups.map((g) => g.type);
+    return b.ambiguousWords.length >= spec.minHerrings
+      && types.filter((t) => t !== 'wordplay').length >= spec.minPlain
+      && types.filter((t) => t === 'wordplay').length >= spec.minWordplay
+      && types.filter((t) => t === 'trivia').length <= spec.maxTrivia
+      && b.groups.filter((g) => isSubtleTheme(g.theme)).length >= spec.minSubtle;
+  };
+  const out = built.filter(shipsHere);
   const dropped = built.length - out.length;
 
   // Pass 2b: balance. Every board that CAN be tier 3 does not have to BE tier
   // 3 — the bottom rows are visited far more often than the top, so the tier-3
   // shelf keeps only the trappiest TIER3_CAP boards and the rest settle into
   // tier 2 (whose gates they already clear).
-  const TIER3_CAP = 18;
+  // ROUND 10: 18 was the whole tier-3 shelf when the pool was 51 boards. At 150
+  // it would have pinned the top of the house at twelve percent of the content
+  // while the middle bulged to eighty boards — the opposite of the ~50/50/50
+  // the shelf is meant to hold. The cap still does its original job (a board
+  // that CAN be tier 3 need not BE tier 3, and the trappiest ones win the
+  // shelf); it is simply sized to the pool it is now sorting.
+  const TIER3_CAP = 52;
   const top = out.filter((b) => b.tier === 3)
     .sort((a, b) => b.ambiguousWords.length - a.ambiguousWords.length || (a.id < b.id ? -1 : 1));
   for (const b of top.slice(TIER3_CAP)) {
@@ -929,6 +1091,12 @@ function validate(puzzles: OutBoard[]): void {
     if (trivia.some((g) => g.tier !== 'yellow')) problems.push(`${p.id}: trivia not at the easiest tier`);
     if (p.groups.filter((g) => g.type === 'wordplay').length < spec.minWordplay) {
       problems.push(`${p.id}: fewer than ${spec.minWordplay} wordplay categories`);
+    }
+    // Round 10 — the plain-English floor. A board of four letter-puzzles has
+    // no way in for a player who does not already see the trick.
+    const plain = p.groups.filter((g) => g.type !== 'wordplay').length;
+    if (plain < spec.minPlain) {
+      problems.push(`${p.id}: ${plain} plain categories (tier ${p.tier} needs ${spec.minPlain})`);
     }
     const subtle = p.groups.filter((g) => isSubtleTheme(g.theme)).length;
     if (subtle < spec.minSubtle) {
@@ -984,4 +1152,5 @@ function validate(puzzles: OutBoard[]): void {
   }
 }
 
-main();
+if (process.argv.includes('--report')) report();
+else main();

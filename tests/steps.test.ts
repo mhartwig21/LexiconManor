@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   appendEntry, climbKey, createLedger, dayStartTotal, doorLockedAt, fernMorningKeys,
   firstMorningPot, highestRowVisited, keyAccessFor, keyCardWeightMultiplier, ledgerTotal,
-  moveAt, moveRowOf, priceEntry, rowName, stepsRefunded, stepsRemaining, stepsSpent,
+  moveAt, moveRowOf, priceEntry, rowName, solveKeys, stepsRefunded, stepsRemaining, stepsSpent,
   teaArcFloor, teaArcPoints, teaBonus,
   BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, FIRST_MORNING_POT, KEY_SUPPLY, MOVE_COST_BY_ROW,
   SANCTUM_GUESS_COST, STEP_TABLE, TEA_ARC, TEA_BY_POINTS,
@@ -10,10 +10,10 @@ import {
 import { draftCardStake } from '../src/engine/economy/preview';
 import { REFILL_PAYOUTS } from '../src/engine/economy/simulate';
 import { UTILITY_EFFECTS } from '../src/engine/manor/deck';
-import { SANCTUM_DOOR_CELL } from '../src/engine/manor/grid';
+import { rowTier, SANCTUM_DOOR_CELL } from '../src/engine/manor/grid';
 import { SANCTUM_CELL } from '../src/engine/types';
 import { rankFor, AFFINITY_RANK_THRESHOLDS } from '../src/engine/dialogue/affinity';
-import type { StepEntry, StepLedger } from '../src/engine/types';
+import type { StepEntry, StepLedger, Tier } from '../src/engine/types';
 
 /**
  * A2 — the single audited step ledger (AAA 4.9). Every delta in the game
@@ -176,7 +176,12 @@ describe('locked doors on the upper storeys (the prepared-ascent gate)', () => {
     // sum to the ~1.7 padlocks the design has always claimed for a climb.
     expect(DOOR_LOCKS.chanceByRow[6]!).toBeGreaterThanOrEqual(DOOR_LOCKS.chanceByRow[5]!);
     expect(DOOR_LOCKS.chanceByRow[4]! + DOOR_LOCKS.chanceByRow[5]!).toBeGreaterThan(1.5);
-    expect(DOOR_LOCKS.keyCost).toBe(1);
+    // ROUND 10: a padlock takes TWO keys. Solved rooms pay keys now
+    // (`solveKeys`), which roughly doubled the supply — measured on the old
+    // 1-key door a skilled player stood at the Sanctum on day 1 in 29% of
+    // campaigns against a published <8%. The DOOR was repriced rather than the
+    // solve capped, so playing well still feels paid.
+    expect(DOOR_LOCKS.keyCost).toBe(2);
   });
 
   it('answers the same way all day for the same door (AAA 4.6/4.8)', () => {
@@ -235,15 +240,27 @@ describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () =
   it('states anchor payouts at the target row tier (+6/+5/+4)', () => {
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'hive' }, 1)!.label)
       .toBe('anchor · +6 steps on solve');
+    // ROUND 10: the card face names the KEY too, because from tier 2 up the
+    // solve is what buys the padlocked door above it — and the price of the
+    // climb is exactly the thing a draft decision is made on (AAA 1.17/4.6).
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 2)!.label)
-      .toBe('anchor · +5 steps on solve');
+      .toBe('anchor · +5 steps · +1 key on solve');
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'word-web' }, 3)!.label)
-      .toBe('anchor · +4 steps on solve');
+      .toBe('anchor · +4 steps · +1 key on solve');
+    // Derived from the table, never hand-copied: retuning solveKeys retunes
+    // every card face.
+    for (const tier of [1, 2, 3] as const) {
+      const label = draftCardStake({ category: 'puzzle', puzzleKind: 'hive' }, tier)!.label;
+      expect(label.includes('key')).toBe(solveKeys(tier) > 0);
+    }
   });
 
-  it('tells the player mystery rooms yield a fragment on entry', () => {
+  it('tells the player a mystery room yields a SEALED page on entry', () => {
+    // Round 10: entering still hands over the document, unconditionally and
+    // forever — but undeciphered, and the card must not promise a reading it
+    // does not give. The word game is what makes it out.
     expect(draftCardStake({ category: 'mystery' }, 2)).toEqual({
-      size: null, label: '+1 fragment',
+      size: null, label: '+1 sealed page',
     });
   });
 
@@ -406,8 +423,57 @@ describe('ledger invariants (AAA 4.9)', () => {
 
 describe('the key supply — the padlock arc (AAA 4.10d)', () => {
   it('gives a locked door an answer at all: keys exist in more than one place', () => {
+    // At least one source can pay a whole padlock on its own — otherwise a
+    // 2-key door would be a wall for anyone who drew only the small hooks.
     expect(KEY_SUPPLY.cabinetKeys).toBeGreaterThanOrEqual(DOOR_LOCKS.keyCost);
-    expect(KEY_SUPPLY.bootRoomKeys).toBeGreaterThanOrEqual(DOOR_LOCKS.keyCost);
+    // …and the incidental sources are real, if partial: the Boot Room's hook,
+    // Fern's sill, and (round 10) every solved room on the storey below a gate.
+    expect(KEY_SUPPLY.bootRoomKeys).toBeGreaterThan(0);
+    expect(Math.max(...KEY_SUPPLY.solveKeysByTier)).toBeGreaterThan(0);
+    expect(Math.max(...KEY_SUPPLY.fernMorningKeysByPoints)).toBeGreaterThan(0);
+  });
+
+  /**
+   * ROUND 10 — THE OWNER'S "SKILL, NOT JUST PERSISTENCE, EARNS THE CAMPAIGN".
+   *
+   * Every key in the game used to come off a green card or off Fern, so the
+   * padlock arc was a DRAFTING-LUCK arc and playing the word games well bought
+   * steps and nothing else. A solved room pays a key now, and the geometry is
+   * the design: `DOOR_LOCKS` gates 0-based rows 4–5, rows 3–4 are tier 2, so
+   * the storey below a padlock is the storey that pays for it.
+   */
+  describe('a solved room pays the climb (KEY_SUPPLY.solveKeysByTier)', () => {
+    it('pays nothing on the ground floor, where nothing is locked', () => {
+      expect(solveKeys(1)).toBe(0);
+      // …and it is not an oversight: rows 0–2 (tier 1) have no gate above them
+      // that a key could open, so a key there would be a key with nowhere to go.
+      expect(DOOR_LOCKS.chanceByRow[0]).toBe(0);
+      expect(DOOR_LOCKS.chanceByRow[1]).toBe(0);
+      expect(DOOR_LOCKS.chanceByRow[2]).toBe(0);
+    });
+
+    it('pays on the storey directly below the first padlock', () => {
+      // rowTier(3) === 2 and DOOR_LOCKS.chanceByRow[4] > 0: solving on row 3
+      // is what buys the door into row 4.
+      expect(rowTier(3)).toBe(2);
+      expect(DOOR_LOCKS.chanceByRow[4]!).toBeGreaterThan(0);
+      expect(solveKeys(2)).toBeGreaterThan(0);
+    });
+
+    it('never regresses with tier, and clamps outside the table', () => {
+      expect(solveKeys(3)).toBeGreaterThanOrEqual(solveKeys(2));
+      expect(solveKeys(2)).toBeGreaterThanOrEqual(solveKeys(1));
+      expect(solveKeys(0 as Tier)).toBe(KEY_SUPPLY.solveKeysByTier[0]);
+      expect(solveKeys(9 as Tier)).toBe(KEY_SUPPLY.solveKeysByTier.at(-1));
+    });
+
+    it('shortens the ascent without buying it — one room is never a whole climb', () => {
+      // A full ascent crosses ≈1.85 padlocks at 2 keys each. One solve must
+      // never cover that, or the gate stops being a gate the first good room.
+      const ascent = [4, 5].reduce(
+        (sum, row) => sum + DOOR_LOCKS.chanceByRow[row]! * DOOR_LOCKS.keyCost, 0);
+      expect(Math.max(...KEY_SUPPLY.solveKeysByTier)).toBeLessThan(ascent);
+    });
   });
 
   it("mirrors Bramble's tea: nothing on the first mornings, a key once trusted", () => {

@@ -10,14 +10,19 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { ManorState, PlacedRoom, VolumeState } from '../src/engine/types';
 import { cellKey, createManor, SANCTUM_DOOR_CELL } from '../src/engine/manor/grid';
-import { freshVolumeState, openedLetterFlag, solvedFlag, type VolumeContent } from '../src/engine/volume';
+import {
+  decipherYield, freshVolumeState, fragmentsToDecipher, legibleFragmentFlag, openedLetterFlag,
+  sealedFragmentFlag, sealedFragmentIds, solvedFlag, DECIPHER_YIELD_BY_TIER,
+  type VolumeContent,
+} from '../src/engine/volume';
 import {
   alphabetFacts, arrivalShade, crossRefs, definitionSlots, displayedFragmentIds, foundByKind,
-  guessHistory, guessVerdict, journalNudge, journalUnread, landingFlag, letterBoxes,
-  nextUninterpreted, sanctumReadiness, SPENT_ARRIVAL_STEPS, THIN_FILE_THRESHOLD, VERDICT_TOKENS,
-  viewedFragmentFlag, viewedFragmentIds,
+  guessHistory, guessVerdict, isLegible, journalNudge, journalUnread, landingFlag, letterBoxes,
+  nextUninterpreted, sanctumReadiness, sealedCount, SPENT_ARRIVAL_STEPS, THIN_FILE_THRESHOLD,
+  VERDICT_TOKENS, viewedFragmentFlag, viewedFragmentIds,
   type GuessVerdict, type JournalTab,
 } from '../src/engine/journal';
+import { solveKeys } from '../src/engine/economy/steps';
 import { FLAG_REGEX } from '../src/engine/dialogue/validate';
 import { getDialogueFile } from '../src/engine/dialogue/content';
 import { useManorStore } from '../src/app/store';
@@ -359,6 +364,132 @@ describe('displayedFragmentIds — viewing is what a tab puts on the glass', () 
   });
 });
 
+// ---------------------------------------------------------------------------
+// ROUND 10 — entering gets the document, solving makes it legible
+// ---------------------------------------------------------------------------
+
+/**
+ * The owner's directive, in one suite: *"What's the point of solving the word
+ * puzzles? Solving them needs to matter, even if they're not blocking."*
+ *
+ * The verified defect: a violet room paid out its fragment on ENTRY, fully
+ * readable, so a player could walk into the Archive, walk straight out, and
+ * keep the clue — the word games funded the mystery without ever being it.
+ * A filed fragment is now either SEALED (hers, visible, permanent, and not yet
+ * made out) or LEGIBLE, and SOLVING is what moves one to the other.
+ */
+describe('sealed fragments — filed forever, made out by solving', () => {
+  const sealedOf = (...ids: string[]) => ({ sealedIds: new Set(ids) });
+
+  it('derives sealed = sealed-flag MINUS legible-flag, per volume', () => {
+    const flags = [
+      sealedFragmentFlag('volume-1', 'v1-d1'),
+      sealedFragmentFlag('volume-1', 'v1-e1'),
+      legibleFragmentFlag('volume-1', 'v1-e1'),      // this one has been made out
+      sealedFragmentFlag('volume-2', 'v2-d1'),        // another volume entirely
+    ];
+    expect([...sealedFragmentIds('volume-1', flags)]).toEqual(['v1-d1']);
+    expect([...sealedFragmentIds('volume-2', flags)]).toEqual(['v2-d1']);
+  });
+
+  it('reports NOTHING sealed for a save written before the mechanic existed', () => {
+    // The reason legibility takes two write-once flags instead of one: a live
+    // save carries neither, and its default must be "readable". A single
+    // `legible-` opt-in would have re-sealed sixteen pages the owner has been
+    // reading for a fortnight.
+    expect(sealedFragmentIds('volume-1', ['vol.volume-1.viewed-v1-d1']).size).toBe(0);
+    expect(sealedCount(withFound('v1-d1', 'v1-e1'))).toBe(0);
+  });
+
+  it('every fragment id yields sealed/legible flags docs/flags.md accepts', () => {
+    for (const f of volume.fragments) {
+      expect(FLAG_REGEX.test(sealedFragmentFlag(volume.id, f.id)), f.id).toBe(true);
+      expect(FLAG_REGEX.test(legibleFragmentFlag(volume.id, f.id)), f.id).toBe(true);
+    }
+  });
+
+  it('a sealed engraving contributes NOTHING to the alphabet plate', () => {
+    // The mechanical teeth of the whole design change: the constraint the
+    // journal tests against the alphabet arrives when a word game is solved,
+    // not when a violet door is opened.
+    const state = withFound('v1-e1', 'v1-e3');
+    expect(alphabetFacts(volume, state).knownLength).toBe(6);
+    const half = alphabetFacts(volume, state, sealedOf('v1-e1'));
+    expect(half.knownLength).toBeNull();
+    expect(half.startsWith).toBe('L');
+    expect(half.sources).toBe(1);
+    const none = alphabetFacts(volume, state, sealedOf('v1-e1', 'v1-e3'));
+    expect(none.sources).toBe(0);
+    expect(letterBoxes(none)).toBeNull();
+  });
+
+  it('a sealed definition line holds its slot as a torn leaf, not as a gap', () => {
+    const slots = definitionSlots(volume, withFound('v1-d1'), sealedOf('v1-d1'));
+    expect(slots[0]!.fragment?.id).toBe('v1-d1');   // she HAS it
+    expect(slots[0]!.sealed).toBe(true);            // she cannot read it yet
+    expect(slots[1]!.fragment).toBeNull();          // and this one is a real gap
+    expect(slots[1]!.sealed).toBe(false);
+  });
+
+  it('Ellery will not read a smudge: nextUninterpreted skips sealed pages', () => {
+    const state = withFound('v1-d1', 'v1-e1');
+    expect(nextUninterpreted(volume, state)).toBe('v1-d1');
+    expect(nextUninterpreted(volume, state, sealedOf('v1-d1'))).toBe('v1-e1');
+    expect(nextUninterpreted(volume, state, sealedOf('v1-d1', 'v1-e1'))).toBeNull();
+  });
+
+  it('a cross-reference to a page she cannot read is not a cross-reference', () => {
+    const both = withFound('v1-e1', 'v1-t2');
+    expect(crossRefs(volume, both, 'v1-e1').map((f) => f.id)).toContain('v1-t2');
+    expect(crossRefs(volume, both, 'v1-e1', sealedOf('v1-t2'))).toEqual([]);
+  });
+
+  it('a sealed page is never "viewed", so its wax mark stands until it is made out', () => {
+    // AAA 11.20/11.21, applied honestly: the CARD is on the glass but its
+    // CONTENTS are not, so there genuinely is something here she has not read.
+    const state = withFound('v1-e1');
+    expect(displayedFragmentIds(volume, state, 'engravings')).toEqual(['v1-e1']);
+    expect(displayedFragmentIds(volume, state, 'engravings', sealedOf('v1-e1'))).toEqual([]);
+    expect(displayedFragmentIds(volume, withFound('v1-d1'), 'word', sealedOf('v1-d1'))).toEqual([]);
+  });
+
+  it('isLegible is found AND made out', () => {
+    const state = withFound('v1-d1');
+    expect(isLegible(state, 'v1-d1')).toBe(true);
+    expect(isLegible(state, 'v1-d1', sealedOf('v1-d1'))).toBe(false);
+    expect(isLegible(state, 'v1-e1')).toBe(false);   // not even found
+  });
+
+  it('TIER SCALES THE YIELD: a tier-3 room makes out more than a ground-floor one', () => {
+    expect(decipherYield(1)).toBe(1);
+    expect(decipherYield(2)).toBe(2);
+    expect(decipherYield(3)).toBe(3);
+    for (let i = 1; i < DECIPHER_YIELD_BY_TIER.length; i++) {
+      expect(DECIPHER_YIELD_BY_TIER[i]!).toBeGreaterThan(DECIPHER_YIELD_BY_TIER[i - 1]!);
+    }
+  });
+
+  it('makes out the OLDEST sealed pages first, and never more than it has', () => {
+    const state = withFound('v1-e1', 'v1-d1', 'v1-t2');
+    const sealed = new Set(['v1-e1', 'v1-d1', 'v1-t2']);
+    // revealOrder: v1-d1 = 1, v1-e1 = 2, v1-t2 = 3.
+    expect(fragmentsToDecipher(volume, state, sealed, 2)).toEqual(['v1-d1', 'v1-e1']);
+    expect(fragmentsToDecipher(volume, state, sealed, 9)).toEqual(['v1-d1', 'v1-e1', 'v1-t2']);
+    expect(fragmentsToDecipher(volume, state, sealed, 0)).toEqual([]);
+    // Never a fragment that is not filed, however sealed the flag claims it is.
+    expect(fragmentsToDecipher(volume, withFound('v1-d1'), sealed, 3)).toEqual(['v1-d1']);
+  });
+
+  it('the journal points her at the backlog, in a voice, with the answer in it', () => {
+    const state = withFound('v1-d1', 'v1-e1');
+    const nudge = journalNudge(volume, state, sealedOf('v1-d1', 'v1-e1'));
+    expect(nudge).toBeTruthy();
+    expect(nudge!.toLowerCase()).toContain('solve');
+    expect(nudge).toContain('2');
+    expect(sealedCount(state, sealedOf('v1-d1', 'v1-e1'))).toBe(2);
+  });
+});
+
 /**
  * A manor with the player standing on the landing, through a north door into
  * the sealed Sanctum — the ONLY place the door hears a word (AAA 4.10e). The
@@ -536,5 +667,160 @@ describe('journal slice through the real store', () => {
     const second = s.collectFragmentForRoom('puzzle');
     expect(second).toBe('v1-e1');
     expect(useManorStore.getState().volume.foundFragmentIds).toEqual(['v1-d1', 'v1-e1']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND 10 — the award path, driven through the real store (AAA 11.17)
+// ---------------------------------------------------------------------------
+
+describe('solving matters — the live channel, end to end', () => {
+  const sealedNow = () => sealedFragmentIds(volume.id, useManorStore.getState().flags);
+
+  beforeEach(() => {
+    useManorStore.setState({
+      volume: fresh(),
+      flags: [],
+      recentEvents: [],
+      counters: {},
+      day: { day: 1, phase: 'exploring', daySeed: 1, activeRoom: null },
+      manor: manorAtTheDoor(),
+      currencies: { gems: 0, keys: 0, bookmarks: 0 },
+      ledger: { budget: 18, entries: [] },
+      seenPuzzleIds: {
+        'forgotten-word': [], hive: [], twistle: [], 'word-web': [],
+        cipher: [], crossword: [], sudoku: [],
+      },
+    });
+  });
+
+  it('ENTERING files the fragment — undeciphered, hers, and required for nothing', () => {
+    const filed = useManorStore.getState().collectFragmentForRoom('mystery');
+    expect(filed).toBe('v1-d1');
+    const st = useManorStore.getState();
+    // It is HERS: filed forever, on the spine, in the journal.
+    expect(st.volume.foundFragmentIds).toEqual(['v1-d1']);
+    expect(st.counters['fragment-found']).toBe(1);
+    // …and it is SEALED: marked undeciphered, contributing nothing.
+    expect(st.flags).toContain(sealedFragmentFlag(volume.id, 'v1-d1'));
+    expect(sealedNow().has('v1-d1')).toBe(true);
+    expect(definitionSlots(volume, st.volume, { sealedIds: sealedNow() })[0]!.sealed).toBe(true);
+    // Walking out without touching a puzzle does not take it back.
+    expect(useManorStore.getState().volume.foundFragmentIds).toEqual(['v1-d1']);
+  });
+
+  it('SOLVING makes it legible — and the engraving then reaches the alphabet plate', () => {
+    const s = useManorStore.getState();
+    // Two violet rooms walked into: a torn leaf and the six-candles plate,
+    // both filed, both smudged.
+    s.fileFragment('v1-d1', { sealed: true });
+    s.fileFragment('v1-e1', { sealed: true });   // the `length: 6` engraving
+    expect(alphabetFacts(volume, useManorStore.getState().volume, { sealedIds: sealedNow() })
+      .knownLength).toBeNull();
+
+    // A tier-1 room, solved: ONE page made out — the oldest first.
+    useManorStore.getState().creditSolve('cipher', 1, false);
+    expect(sealedNow().has('v1-d1')).toBe(false);
+    expect(sealedNow().has('v1-e1')).toBe(true);
+    expect(useManorStore.getState().flags).toContain(legibleFragmentFlag(volume.id, 'v1-d1'));
+    // The plate is still blank: the engraving is hers and still unreadable.
+    expect(alphabetFacts(volume, useManorStore.getState().volume, { sealedIds: sealedNow() })
+      .knownLength).toBeNull();
+
+    // A tier-3 room, solved: the rest of the backlog at once (tier scales it).
+    useManorStore.getState().creditSolve('cipher', 3, false);
+    expect(sealedNow().size).toBe(0);
+    // …and NOW the engraving speaks to the plate.
+    expect(alphabetFacts(volume, useManorStore.getState().volume, { sealedIds: sealedNow() })
+      .knownLength).toBe(6);
+  });
+
+  it('A PERFECT solve buys the reading Ellery would charge affinity for', () => {
+    const s = useManorStore.getState();
+    s.collectFragmentForRoom('mystery');           // v1-d1, sealed
+    s.creditSolve('cipher', 1, false);             // made out, but not read
+    expect(useManorStore.getState().volume.interpretedFragmentIds).toEqual([]);
+
+    s.collectFragmentForRoom('mystery');           // v1-e1, sealed
+    s.creditSolve('cipher', 1, true);              // perfect: makes out AND reads
+    const st = useManorStore.getState();
+    expect(st.volume.interpretedFragmentIds).toContain('v1-d1');
+    expect(st.counters['fragment-interpreted']).toBe(1);
+  });
+
+  it('never reads a page it cannot make out (the perfect bonus is not a bypass)', () => {
+    const s = useManorStore.getState();
+    s.collectFragmentForRoom('mystery');           // v1-d1, sealed
+    // A perfect solve of a room whose channel has nothing left to give: the
+    // decipher happens first, so the reading lands on the page it just made
+    // out — never on one still sealed.
+    s.interpretFragment('v1-d1');                  // named outright while sealed → refused
+    expect(useManorStore.getState().volume.interpretedFragmentIds).toEqual([]);
+  });
+
+  it('the SPINE drives it: a room-solved event pays the mystery with no direct call', () => {
+    // AAA 11.17 wants the award path DRIVEN, not merely present. This is the
+    // real wiring: app/slices/room.ts records `room-solved`, the journal
+    // slice's spine watcher hears it, and the whole credit runs.
+    const s = useManorStore.getState();
+    s.collectFragmentForRoom('mystery');           // v1-d1, sealed
+    expect(sealedNow().has('v1-d1')).toBe(true);
+
+    s.recordEvent({ type: 'room-solved', cellKey: '2,3', kind: 'crossword', tier: 2, perfect: false });
+
+    const st = useManorStore.getState();
+    expect(sealedNow().has('v1-d1')).toBe(false);          // made out by the solve
+    // …and the room's own channel paid a lintel engraving, already legible.
+    const engravings = st.volume.foundFragmentIds.filter((id) => id.startsWith('v1-e'));
+    expect(engravings.length).toBe(1);
+    expect(sealedNow().has(engravings[0]!)).toBe(false);
+  });
+
+  it('KEYS ACCRUE FROM SOLVES — the climb is bought with skill (owner directive 3)', () => {
+    useManorStore.setState({
+      day: {
+        day: 1, phase: 'exploring', daySeed: 1,
+        activeRoom: { cellKey: '2,3', kind: 'crossword', puzzleId: 'x', tier: 2 },
+      },
+    });
+    expect(useManorStore.getState().currencies.keys).toBe(0);
+    useManorStore.getState().applyRoomEvents(
+      [{ type: 'solved', perfect: false }], { status: 'solved', perfect: false },
+    );
+    const st = useManorStore.getState();
+    expect(st.currencies.keys).toBe(solveKeys(2));
+    expect(st.currencies.keys).toBeGreaterThan(0);
+    expect(st.counters['room-solved']).toBe(1);
+    // The step payout is untouched by the key payout (one ledger, AAA 4.9).
+    expect(st.ledger.entries.some((e) => e.reason === 'solve')).toBe(true);
+  });
+
+  it('pays no key on the ground floor, where there is nothing to unlock', () => {
+    useManorStore.setState({
+      day: {
+        day: 1, phase: 'exploring', daySeed: 1,
+        activeRoom: { cellKey: '2,1', kind: 'crossword', puzzleId: 'x', tier: 1 },
+      },
+    });
+    useManorStore.getState().applyRoomEvents(
+      [{ type: 'solved', perfect: false }], { status: 'solved', perfect: false },
+    );
+    expect(useManorStore.getState().currencies.keys).toBe(0);
+  });
+
+  it('AAA 4.18 — the volume is still winnable on day one with NOTHING made out', () => {
+    // The cozy promise, tested rather than asserted: sealing changes what she
+    // can READ, never what she is allowed to DO. A player who guesses the word
+    // on day one, holding nothing but smudges, wins on day one.
+    const s = useManorStore.getState();
+    s.collectFragmentForRoom('mystery');
+    s.collectFragmentForRoom('mystery');
+    expect(sealedNow().size).toBe(2);
+    s.guessAtSanctum('lacuna');
+    const st = useManorStore.getState();
+    expect(st.volume.status).toBe('solved');
+    expect(st.flags).toContain(solvedFlag(volume.id));
+    // …and the sealed pages are still hers, still filed, still nothing's gate.
+    expect(st.volume.foundFragmentIds.length).toBe(2);
   });
 });

@@ -10,8 +10,8 @@
  * technique the tier ladder is built on could be bisected instead of deduced.
  * The claim has moved off the ink and onto a verb:
  *
- *   - pencil marks, "pencil what fits", lifting her own figure, and UNDO:
- *     FREE. All exploration is thinking, and thinking is never priced;
+ *   - pencil marks, "pencil what fits", rubbing out ONE mark, lifting her own
+ *     figure, and UNDO: FREE. All exploration is thinking, never priced;
  *   - inking a figure that duplicates a visible peer: MALFORMED — weight 0,
  *     free shake + reason toast, nothing lands (AAA 3.2);
  *   - inking a board-legal figure: FREE, and it LANDS, unsettled. A wrong one
@@ -46,8 +46,8 @@
 import type { Tier } from '../types';
 import { createRng, pick } from '../rng';
 import {
-  balanceBooks, blanksRemaining, clearPencil, fillPencil, inkCell, nextTechniqueNudge,
-  revealCell, startSudoku, togglePencil, uninkCell,
+  balanceBooks, blanksRemaining, clearPencil, erasePencilMark, fillPencil, inkCell,
+  nextTechniqueNudge, revealCell, startSudoku, togglePencil, uninkCell,
   type SudokuEngineState, type SudokuPuzzle, type TechniqueId,
 } from './sudoku';
 import type { RoomContext, RoomEvent, RoomOutcome, RoomPuzzleAdapter } from '../rooms/room-puzzle';
@@ -96,6 +96,9 @@ export interface SudokuRoomState {
 
 export type SudokuAction =
   | { type: 'pencil'; cell: number; digit: number }
+  /** Round 10: lift the LAST mark in a cell — the eraser's surgical verb. */
+  | { type: 'erase-mark'; cell: number }
+  /** The whole-cell sweep. Engine verb; no free tap in the room reaches it. */
   | { type: 'clear-pencil'; cell: number }
   | { type: 'fill-pencil' }
   | { type: 'ink'; cell: number; digit: number }
@@ -175,6 +178,7 @@ export const sudokuAdapter: RoomPuzzleAdapter<SudokuPuzzle, SudokuRoomState, Sud
 
     // ── Free: everything that is thinking ────────────────────────────────
     if (action.type === 'pencil') return quiet(togglePencil(state.engine, action.cell, action.digit));
+    if (action.type === 'erase-mark') return quiet(erasePencilMark(state.engine, action.cell));
     if (action.type === 'clear-pencil') return quiet(clearPencil(state.engine, action.cell));
     if (action.type === 'fill-pencil') return quiet(fillPencil(state.engine));
     if (action.type === 'unink') return quiet(uninkCell(puzzle, state.engine, action.cell));

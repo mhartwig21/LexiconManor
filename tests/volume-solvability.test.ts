@@ -56,6 +56,60 @@ describe('volume-1 solvability (constraints admit exactly one dictionary answer)
     }
   });
 
+  /**
+   * ═══ ROUND-10 BLOCKER: THE CLUE THAT SAID NOTHING ═══════════════════════
+   *
+   * Volume 1's fifth engraving — `one-letter-twice`, etched round the Study
+   * inkstand — admitted EXACTLY the candidate pair the state before it already
+   * admitted: {lacuna, laguna} → {lacuna, laguna}. Zero bits. A player who
+   * climbed for it, solved for it, filed it and read Ellery's note on it
+   * learned nothing whatsoever, and nothing in the build could tell — the
+   * solvability suite only ever checked the constraint SET, which is
+   * order-blind, and every engraving in the set is individually soft and
+   * jointly sufficient whether or not any one of them does any work.
+   *
+   * The fix had to be positional, and there is only one place it could be.
+   * The set narrows 171755 → 15232 → 298 → 22 → 2 → 2 → 1, so after the vowel
+   * clue only two words remain and the sixth engraving (the hard C, cut into
+   * the Sanctum door itself) is what separates them. Nothing inserted at
+   * position five can both cut that pair and leave the sixth a job. So the
+   * inkstand's doubling clue moved to where it does real work — revealOrder 11,
+   * ahead of the vowels — and the chain now reads
+   * 171755 → 15232 → 298 → 22 → **11** → 2 → 1.
+   *
+   * THE ASSERTION BELOW IS THE PART THAT MATTERS. "Individually soft, jointly
+   * sufficient" is not enough of a contract: it passes happily for a clue that
+   * is implied by the ones before it. A clue must also PAY — every engraving,
+   * in the order the volume reveals them, has to leave the player with a
+   * strictly smaller shortlist than she had a moment ago.
+   *
+   * (This is deliberately the ORDERED statement and not "every constraint is
+   * load-bearing given the others". The set is over-determined on purpose —
+   * the robustness case below requires exactly that, so that losing any one
+   * engraving still leaves the volume winnable — and in an over-determined set
+   * several constraints are individually redundant while every one of them
+   * still narrows the field at the moment it arrives.)
+   */
+  it('STRICT REDUCTION: every engraving, in revealOrder, narrows the field', () => {
+    const ordered = [...engravings].sort((a, b) => a.revealOrder - b.revealOrder);
+    let pool = dictionary;
+    const trace: string[] = [];
+    for (const f of ordered) {
+      const before = pool.length;
+      pool = pool.filter((w) => constraintAdmits(f.constraint!, w));
+      trace.push(`${f.id} (${f.constraint!.kind}): ${before} → ${pool.length}`);
+      expect(
+        pool.length,
+        `${f.id} (${f.constraint!.kind}) admits the same ${before} words as the state ` +
+        `before it — a clue that yields no information. Chain so far:\n  ${trace.join('\n  ')}`,
+      ).toBeLessThan(before);
+      // …and it must never narrow to nothing: the answer survives every step.
+      expect(pool, `${f.id} eliminated the answer`).toContain(volume.answer.toLowerCase());
+    }
+    // The last engraving is the one that finishes the job.
+    expect(pool).toEqual([volume.answer.toLowerCase()]);
+  });
+
   it('robust: no single lost engraving leaves the mystery unsolvable in principle', () => {
     // Dropping any one constraint must still admit the answer (and stay a
     // short shortlist — the player can finish by elimination at the door).

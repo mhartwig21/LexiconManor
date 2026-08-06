@@ -3,14 +3,27 @@
  * drag-trace OR tap-build through king-adjacent tiles, persistent memory
  * prosthetics (found AND missed words stay visible), center-rule tile marked
  * before it can cost anything, warm toasts, distinct win celebration.
+ *
+ * ROUND 10 — THE WIN STATE KEEPS THE BOARD (AAA 3.4 / 3.3).
+ * The solved screen used to delete the grid: the celebration was a gilt frame
+ * drawn around a title, a line and a row of chips, leaving ~326px of blank
+ * parchment where the board had been (measured: `.anch-done` 197px tall in a
+ * 721px stage) — the only room in the house whose win state was emptier than
+ * its play state, and the one room whose whole pleasure is *where* the words
+ * were hiding. The board now stays, and the celebration is the completed
+ * word-search sheet: every found word's trace is inked back onto the grid,
+ * one after another, inside the same gilt frame. Nothing new is stored for
+ * this — `findPath` (the same solver the engine validates submissions with)
+ * re-derives each trace from `foundWords` + the grid, so the celebration
+ * cannot disagree with what she actually claimed.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { RoomViewProps } from '../registry';
 import type { TwistlePuzzle } from '../../../engine/types';
 import type { TwistleAction, TwistleRoomState } from '../../../engine/rooms/adapters/twistle';
-import { centerIndex, puzzleSize } from '../../../engine/twistle';
+import { centerIndex, findPath, puzzleSize } from '../../../engine/twistle';
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
 import './anchor.css';
@@ -48,6 +61,60 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
   const won = state.twistle.status === 'won';
   const stepCost = tier === 3 ? 3 : 2;
   const word = useMemo(() => path.map((i) => puzzle.grid[i]).join(''), [path, puzzle]);
+
+  // ---- The hung sheet: every claimed word traced back onto the board.
+  /** The traces, in the order she found them. Re-derived, never stored. */
+  const hungTraces = useMemo(
+    () =>
+      won
+        ? state.twistle.foundWords.flatMap((w) => {
+            const p = findPath(puzzle.grid, w, puzzle.rules);
+            return p ? [{ word: w, path: p }] : [];
+          })
+        : [],
+    [won, state.twistle.foundWords, puzzle],
+  );
+  const hungGrid = useRef<HTMLDivElement | null>(null);
+  /**
+   * Cell centres in the grid's own pixel space. Measured rather than computed
+   * from the CSS gap, so the 5×5 and the tier-3 6×6 both land exactly and a
+   * later gutter retune cannot silently shift the traces off the letters.
+   * `offsetLeft/offsetWidth` are layout values, so the panel's `anch-pop`
+   * scale-in cannot distort them mid-measure.
+   */
+  const [hungGeom, setHungGeom] = useState<{ w: number; h: number; cell: number; pts: { x: number; y: number }[] } | null>(null);
+  useLayoutEffect(() => {
+    if (!won) return;
+    const measure = () => {
+      const g = hungGrid.current;
+      if (!g) return;
+      const cells = [...g.children].filter((el): el is HTMLElement => el instanceof HTMLElement && el.classList.contains('tw-cell'));
+      if (cells.length === 0 || g.offsetWidth === 0) return;
+      // `offsetLeft/Top` are measured from the nearest POSITIONED ancestor. The
+      // hung grid is `position: relative`, so it is normally the cells' own
+      // offsetParent and their offsets are already grid-local; the subtraction
+      // is kept for the case where it is not, because getting this wrong does
+      // not fail loudly — it silently draws every trace over the wrong letters
+      // (it did, by exactly the title block's height, until this line).
+      const local = cells[0]!.offsetParent === g;
+      const ox = local ? 0 : g.offsetLeft;
+      const oy = local ? 0 : g.offsetTop;
+      setHungGeom({
+        w: g.offsetWidth,
+        h: g.offsetHeight,
+        cell: cells[0]!.offsetWidth,
+        pts: cells.map((c) => ({
+          x: c.offsetLeft - ox + c.offsetWidth / 2,
+          y: c.offsetTop - oy + c.offsetHeight / 2,
+        })),
+      });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [won, size]);
+  /** Cells that carry at least one claimed word — the sheet's own ink. */
+  const hungCells = useMemo(() => new Set(hungTraces.flatMap((t) => t.path)), [hungTraces]);
 
   const submit = (w: string) => {
     if (won || !w) return;
@@ -177,8 +244,11 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
       {won ? (
         // AAA 3.4: a celebration that is NOT the in-play chip arrival replayed.
         // A gilt frame draws itself around the block, edge by edge (≤1.2s),
-        // matching the room's own "hung" metaphor. Transform-only: each edge is
-        // a hairline scaled from its far end, so nothing paints or reflows.
+        // matching the room's own "hung" metaphor — and inside the frame the
+        // BOARD STAYS, with every claimed word inked back over it on a 150ms
+        // stagger (round 10). Both are transform/opacity only (U.3/9.5): the
+        // frame edges scale from their far ends, the traces fade in; no
+        // stroke-dash repaint anywhere.
         <div
           className={`anch-done tw-hung${frameSkipped ? ' tw-hung--done' : ''}`}
           onPointerDown={() => setFrameSkipped(true)}
@@ -194,6 +264,53 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
             {state.twistle.foundWords.length} works on display
             {state.costedMistakes === 0 ? ' — hung without a single crooked frame' : ''}.
           </p>
+
+          {/* The finished sheet. The grid is inert here (divs, no gesture
+              handlers, no pointer cursor), so the celebration cannot be
+              mistaken for another turn of play. */}
+          <div
+            ref={hungGrid}
+            className="tw-grid tw-grid--hung"
+            style={{ '--tw-size': size } as CSSProperties}
+            role="img"
+            aria-label={`The finished board. ${hungTraces.map((t) => t.word).join(', ')}.`}
+          >
+            {puzzle.grid.map((letter, i) => (
+              <div
+                key={i}
+                className={[
+                  'tw-cell', 'tw-cell--still',
+                  hungCells.has(i) ? 'tw-cell--hung' : '',
+                  i === centre && puzzle.rules.centerRequired ? 'tw-cell--center' : '',
+                ].filter(Boolean).join(' ')}
+              >
+                {letter}
+              </div>
+            ))}
+            {hungGeom && (
+              <svg
+                className="tw-threads"
+                viewBox={`0 0 ${hungGeom.w} ${hungGeom.h}`}
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                {hungTraces.map((t, i) => {
+                  const pts = t.path.map((idx) => hungGeom.pts[idx]).filter(Boolean) as { x: number; y: number }[];
+                  if (pts.length === 0) return null;
+                  return (
+                    <g key={t.word} className="tw-thread" style={{ animationDelay: `${Math.min(i * 150, 1300)}ms` }}>
+                      <polyline
+                        points={pts.map((p) => `${p.x},${p.y}`).join(' ')}
+                        strokeWidth={hungGeom.cell * 0.24}
+                      />
+                      <circle cx={pts[0]!.x} cy={pts[0]!.y} r={hungGeom.cell * 0.19} />
+                    </g>
+                  );
+                })}
+              </svg>
+            )}
+          </div>
+
           <div className="tw-lists">
             {state.twistle.foundWords.map((w) => (
               <span key={w} className="anch-chip anch-chip--accent">{w}</span>

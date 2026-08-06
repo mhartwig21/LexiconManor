@@ -3,10 +3,11 @@ import type { RoomContext, RoomEvent } from '../../src/engine/rooms/room-puzzle'
 import { getRoomAdapter } from '../../src/engine/rooms/registry';
 import {
   PEERS, TECHNIQUE_LEVEL, UNITS, balanceBooks, blanksRemaining, boxUnitOf, clearPencil,
-  countSolutions, digitCount, fillPencil, gridToString, inkCell, isGiven, nextTechniqueNudge,
+  countSolutions, digitCount, erasePencilMark, fillPencil, gridToString, inkCell, isGiven,
+  lastPencilMark, nextTechniqueNudge,
   parseGrid, rateSudoku, revealCell, solveOne, solveWithTechniques, startSudoku, togglePencil,
   uninkCell, unitName, unsettledCells,
-  type SudokuPuzzle, type SudokuTier, type TechniqueLevel,
+  type SudokuEngineState, type SudokuPuzzle, type SudokuTier, type TechniqueLevel,
 } from '../../src/engine/puzzles/sudoku';
 import {
   SUDOKU_POOL, UNDO_DEPTH, sudokuAdapter, type SudokuRoomState,
@@ -208,6 +209,112 @@ describe('shipped pool: technique-tier verification', () => {
 // ---------------------------------------------------------------------------
 // Play state
 // ---------------------------------------------------------------------------
+
+/**
+ * ROUND 10 BLOCKER (AAA 3.3 [PARITY]) — THE SURGICAL ERASER.
+ *
+ * Candidate marks ARE the solve at this room's tier ladder (a naked triple or
+ * an X-wing is nothing but marks), so no free tap may delete an arbitrary
+ * amount of derived work. The eraser peels ONE mark — the last one written —
+ * and the key names it before the tap. `clearPencil` survives as the engine's
+ * whole-cell verb, but nothing in the room's thumb cluster reaches it.
+ */
+describe('the eraser is surgical (AAA 3.3)', () => {
+  const blank = [...fixture.givens].findIndex((c) => c === '.');
+  /** The invariant the two representations owe each other, everywhere. */
+  const trailMatchesMask = (s: SudokuEngineState, where: string) => {
+    for (let i = 0; i < 81; i++) {
+      const fromTrail = s.pencilOrder[i]!.reduce((m, d) => m | (1 << (d - 1)), 0);
+      expect(fromTrail, `${where}: cell ${i}`).toBe(s.pencil[i]);
+      expect(new Set(s.pencilOrder[i]).size, `${where}: cell ${i} duplicates`).toBe(s.pencilOrder[i]!.length);
+    }
+  };
+
+  it('takes back the LAST mark written and leaves every other one standing', () => {
+    let s = startSudoku(fixture);
+    for (const d of [4, 1, 9, 6]) s = togglePencil(s, blank, d);
+    expect(lastPencilMark(s, blank)).toBe(6);
+
+    s = erasePencilMark(s, blank);
+    expect(lastPencilMark(s, blank)).toBe(9);
+    expect(s.pencil[blank]! & (1 << 5)).toBe(0);          // the 6 is gone
+    for (const kept of [4, 1, 9]) expect(s.pencil[blank]! & (1 << (kept - 1))).not.toBe(0);
+
+    s = erasePencilMark(s, blank);
+    expect(lastPencilMark(s, blank)).toBe(1);             // 9 gone, order held
+    trailMatchesMask(s, 'after two peels');
+
+    // Peeled to nothing, then a no-op: never a crash, never a state churn.
+    s = erasePencilMark(erasePencilMark(s, blank), blank);
+    expect(s.pencil[blank]).toBe(0);
+    expect(lastPencilMark(s, blank)).toBe(0);
+    expect(erasePencilMark(s, blank)).toBe(s);
+  });
+
+  it('never touches the rest of the cell — 6 marks take 6 taps, not one', () => {
+    let s = startSudoku(fixture);
+    for (const d of [2, 3, 5, 7, 8, 9]) s = togglePencil(s, blank, d);
+    const before = s.pencil[blank]!;
+    const bits = (m: number) => [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => m & (1 << (d - 1))).length;
+    expect(bits(before)).toBe(6);
+    for (let expected = 5; expected >= 0; expected--) {
+      s = erasePencilMark(s, blank);
+      expect(bits(s.pencil[blank]!)).toBe(expected);
+    }
+  });
+
+  it('rubbing a mark out of the middle keeps the order she wrote the rest in', () => {
+    let s = startSudoku(fixture);
+    for (const d of [7, 2, 5]) s = togglePencil(s, blank, d);
+    s = togglePencil(s, blank, 2);               // pull the middle one out by hand
+    expect(s.pencilOrder[blank]).toEqual([7, 5]);
+    expect(lastPencilMark(s, blank)).toBe(5);
+    s = togglePencil(s, blank, 2);               // and write it again — it is newest now
+    expect(s.pencilOrder[blank]).toEqual([7, 5, 2]);
+    expect(lastPencilMark(s, blank)).toBe(2);
+    trailMatchesMask(s, 'after a middle toggle');
+  });
+
+  it('a machine fill peels back to front, and the sweep stays in step', () => {
+    const filled = fillPencil(startSudoku(fixture));
+    trailMatchesMask(filled, 'after fill-pencil');
+    // No hand-order to honour, so the trail is the cell's own reading order and
+    // the eraser takes the highest figure first.
+    const marks = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => filled.pencil[blank]! & (1 << (d - 1)));
+    expect(lastPencilMark(filled, blank)).toBe(marks[marks.length - 1]);
+
+    // Inking sweeps the figure out of every peer's marks — mask AND trail.
+    const truth = Number(fixture.solution[blank]);
+    const inked = inkCell(fixture, filled, blank, truth).state;
+    expect(inked.pencilOrder[blank]).toEqual([]);
+    trailMatchesMask(inked, 'after an ink sweep');
+    for (const p of PEERS[blank]!) expect(inked.pencilOrder[p]).not.toContain(truth);
+  });
+
+  it('is free at the adapter, and undo puts the mark back', () => {
+    let s = sudokuAdapter.start(fixture, ctx(2)) as SudokuRoomState;
+    s = sudokuAdapter.reduce(fixture, s, { type: 'fill-pencil' }).state;
+    const before = s.engine.pencil[blank]!;
+    const doomed = lastPencilMark(s.engine, blank);
+    expect(doomed).not.toBe(0);
+
+    const out = sudokuAdapter.reduce(fixture, s, { type: 'erase-mark', cell: blank });
+    expect(out.events).toEqual([]);                        // thinking is never priced
+    expect(out.outcome.perfect).toBe(true);
+    expect(out.state.costedMistakes).toBe(0);
+    expect(out.state.engine.pencil[blank]).toBe(before & ~(1 << (doomed - 1)));
+
+    const back = sudokuAdapter.reduce(fixture, out.state, { type: 'undo' }).state;
+    expect(back.engine.pencil[blank]).toBe(before);
+    expect(lastPencilMark(back.engine, blank)).toBe(doomed);
+
+    // Nothing to peel: a no-op that does not even grow the undo stack.
+    const empty = sudokuAdapter.start(fixture, ctx(2)) as SudokuRoomState;
+    const nothing = sudokuAdapter.reduce(fixture, empty, { type: 'erase-mark', cell: blank });
+    expect(nothing.state).toBe(empty);
+    expect(nothing.state.history).toHaveLength(0);
+  });
+});
 
 describe('play state', () => {
   it('starts with the givens inked and nothing penciled', () => {

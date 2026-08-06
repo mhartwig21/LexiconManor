@@ -100,7 +100,9 @@ export default function DayHeader() {
         {phase ? <span className="chr-day__phase">{phase}</span> : null}
       </div>
       <StepMeter />
-      <div className="chr-right">
+      {/* `--arming` is what buys the confirm its width — see the retire block
+          in chrome.css. The chips step aside for the 2.6s the arm lives. */}
+      <div className={`chr-right${armed ? ' chr-right--arming' : ''}`}>
         <CurrencyChip name="gems" unit={['gem', 'gems']} value={currencies.gems} live={live}>
           <GemGlyph />
         </CurrencyChip>
@@ -120,13 +122,37 @@ export default function DayHeader() {
         >
           <BookmarkGlyph />
         </CurrencyChip>
+        {/* THE ONE DESTRUCTIVE CONTROL IN THE GAME — and, until round 10, an
+            unlabelled moon glyph sitting in a row of currency chips (AAA 11.7).
+            It read as a theme toggle, which is the single worst thing an
+            end-the-day control can be mistaken for, and the WORD only appeared
+            after the first tap had already armed it: the player learned what
+            she had touched from the confirm state itself.
+            The recognisable verb leads now and never leaves ("Retire"); the
+            moon is demoted to decoration beside it, ~0.8em and faint, so it
+            can carry the house's voice without carrying the meaning. Arming
+            escalates to the consequence in plain words ("End the day?") rather
+            than to a punctuation mark, and takes the chips' room to say it.
+            The two-tap arm/disarm is unchanged — it is the safety, and 11.7
+            asks for legibility, not for a modal. */}
         {showRetire ? (
           <button
             className={`chr-retire${armed ? ' chr-retire--armed' : ''}`}
             onClick={onRetire}
-            aria-label="Retire for the evening"
+            aria-label={
+              armed
+                ? 'End the day now — tap again to retire for the evening'
+                : 'Retire for the evening — ends the day'
+            }
           >
-            {armed ? 'Retire?' : '☾'}
+            {armed ? (
+              <span className="chr-retire__word">End the day?</span>
+            ) : (
+              <>
+                <span className="chr-retire__moon" aria-hidden="true">☾</span>
+                <span className="chr-retire__word">Retire</span>
+              </>
+            )}
           </button>
         ) : null}
       </div>

@@ -261,15 +261,20 @@
   gap: 0.45rem;
   min-height: 2rem;
 }
+/* ROUND 10 (AAA 1.5): no mask, and no half-word. The mask used to fade the
+   line out at 82% while `overflow: hidden` hard-cut the chip that straddled
+   the edge, so the strip habitually printed a sliced word — the first thing
+   under the rank bar, and it read as a rendering fault. HiveView measures the
+   line and takes any chip that does not fit ENTIRELY off the glass
+   (`--offstrip`); the boxes stay, so the measurement never oscillates. */
 .hv-found__strip {
   flex: 1;
   display: flex;
   gap: 0.35rem;
   overflow: hidden;
   white-space: nowrap;
-  mask-image: linear-gradient(90deg, #000 82%, transparent);
-  -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent);
 }
+.anch-chip--offstrip { visibility: hidden; }
 .hv-found__toggle {
   border: none;
   background: none;
@@ -701,7 +706,14 @@
    it made the finish read as the feedback she had already seen 5 times.
    Each edge is a hairline scaled from its far end — transform only (U.3/9.5),
    so there is no stroke-dash repaint and no SVG aspect distortion. */
-.tw-hung { padding: 1.1rem 1rem; }
+.tw-hung {
+  padding: 0.9rem 0.9rem 0.7rem;
+  /* The hung sheet carries the board, so it does not need `.anch-done`'s tall
+     leading spacer (that spacer exists to keep a SHORT verdict panel from
+     sliding the column 300px — this panel is the same height as the play
+     surface it replaces, which is the actual fix for that shift). */
+  margin-top: clamp(0.4rem, 3vh, 1.6rem);
+}
 .tw-frame { position: absolute; inset: 0; pointer-events: none; }
 .tw-frame__seg {
   position: absolute;
@@ -716,6 +728,65 @@
 @keyframes tw-draw-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 /* Tap anywhere on the panel: the frame snaps complete. */
 .tw-hung--done .tw-frame__seg { animation: none; transform: none; }
+
+/* ---- The finished sheet (round 10) --------------------------------------
+   The solved Gallery shows the board it was played on, with every claimed
+   word inked back over it — the word-search "solution sheet" idiom, which is
+   the only celebration this room could have that is ALSO the answer to the
+   question she has been asking for the whole session ("where were they?").
+   The traces fade in one after another (opacity only, U.3/9.5) and the whole
+   sequence lands inside the frame's own ≤1.2s draw, so the ceremony is one
+   beat, not two. */
+.tw-grid--hung {
+  position: relative;
+  margin: 0.7rem auto 0.6rem;
+  touch-action: auto;                 /* nothing to gesture at any more */
+  /* The sheet must be WHOLLY VISIBLE at rest (AAA §0.1 / 7.7): measured, the
+     panel's non-grid furniture (room head, title, payout line, the found-word
+     chips, padding) costs ~310px above and below the board, and the stage is
+     100dvh − 123px, so the board may be up to 100dvh − 433px. A 28rem (448px)
+     reserve is the honest cap with ~15px of guard. It never binds at 390×844
+     (396 > the 332px the column offers) and sheds the 92px that used to push
+     the chips under the fold on an SE-class glass. Nothing here is a tap
+     target — the finished sheet is a picture — so the cells may shrink. */
+  max-width: min(100%, calc(100dvh - 28rem));
+}
+.tw-cell--still {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: none;
+}
+/* A cell that carries at least one word: the paper under it is warmed, so the
+   shape of the solution survives grayscale and reduced motion even if every
+   trace above it is flattened to one tone (AAA 6.3). */
+.tw-cell--hung {
+  background: color-mix(in srgb, var(--room-accent) 12%, var(--paper-raised));
+  border-color: color-mix(in srgb, var(--room-accent) 40%, var(--paper-edge));
+}
+.tw-threads {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.tw-thread {
+  opacity: 0;
+  animation: tw-thread 300ms var(--ease-settle) both;
+}
+.tw-thread polyline {
+  fill: none;
+  stroke: var(--room-accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tw-thread circle { fill: var(--room-accent); }
+@keyframes tw-thread { from { opacity: 0; } to { opacity: 0.42; } }
+/* Tap-skip completes the traces with the frame — one gesture, both layers. */
+.tw-hung--done .tw-thread { animation: none; opacity: 0.42; }
 .tw-cell__order {
   position: absolute;
   top: 2px;
@@ -963,14 +1034,17 @@ html.kb-open .anch .fw-def__text {
   .ww-banner--perfect .ww-banner__theme,
   .hv-burst, .fw-reveal__ch,
   .fw-def--inked, .fw-def--inked .fw-def__q--open, .fw-def--inked .fw-def__q--close,
-  .fw-def__word, .tw-frame__seg,
+  .fw-def__word, .tw-frame__seg, .tw-thread,
   .hv-bloom, .hv-bloom__title, .hv-bloom__petal, .hv-bloom__heart, .hv-bloom__stem path {
     animation: none;
   }
   /* The frame is a STATE (the work is hung), so it stays drawn — only the
-     drawing goes quiet. Same for the merge clones: `runMerge()` bails out
-     entirely under reduced motion, so nothing ever travels. */
+     drawing goes quiet. Same for the traces on the finished sheet: they ARE
+     the answer to the room's question, so they arrive at once instead of not
+     at all. And the merge clones: `runMerge()` bails out entirely under
+     reduced motion, so nothing ever travels. */
   .tw-frame__seg { transform: none; }
+  .tw-thread { opacity: 0.42; }
   .ww-flip { transition: none; }
   .hv-caret { animation: none; opacity: 1; }
   .hv-cell:active, .hv-cell.is-pressed,

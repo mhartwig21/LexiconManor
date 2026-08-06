@@ -360,6 +360,14 @@ export const createManorSlice =
         // Mystery rooms yield their clue the moment she steps in: the volume's
         // deterministic drip (A7's collectFragmentForRoom, AAA 4.14). The UI
         // reads the resulting 'fragment-found' event for the found-it moment.
+        //
+        // ROUND 10 (owner: "solving them needs to matter"): what she carries
+        // out is the DOCUMENT, not yet the reading — `collectFragmentForRoom`
+        // files it sealed. Hers forever from this step, never required for
+        // anything, and made out later by finishing a word game
+        // (app/slices/journal.ts `creditSolve`). Nothing about this branch is
+        // conditional on solving: the cozy promise is that entering is always
+        // enough to KEEP it.
         if (card.category === 'mystery') get().collectFragmentForRoom('mystery');
         // Step straight into the word game; parlor interiors are dialogue
         // scenes keyed off playerCell (ManorPage), utility pays at draft.

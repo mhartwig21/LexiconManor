@@ -1,0 +1,16 @@
+{
+  "tag": "before",
+  "reduced": false,
+  "report": {
+    "01-front-step": {}
+  },
+  "failures": [
+    {
+      "surface": "walk",
+      "combo": "-",
+      "badge": [
+        "safe-area shim rewrote 0 rules — the inset emulation is dead, every home-band row would be a lie"
+      ]
+    }
+  ]
+}

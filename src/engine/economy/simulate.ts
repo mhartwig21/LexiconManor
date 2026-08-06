@@ -64,8 +64,8 @@ import { createManor, rowTier } from '../manor/grid';
 import { getRoomAdapter } from '../rooms/registry';
 import {
   appendEntry, createLedger, ledgerTotal, stepsRemaining, stepsRefunded, stepsSpent,
-  fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, moveAt, teaArcPoints,
-  teaBonus, DOOR_LOCKS, STEP_TABLE,
+  fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, moveAt, solveKeys,
+  teaArcPoints, teaBonus, DOOR_LOCKS, STEP_TABLE,
 } from './steps';
 import type { StepLedger } from '../types';
 
@@ -441,7 +441,16 @@ export interface SimDayResult {
   /** Stood on the Sanctum landing — the second gate of AAA 4.10e. */
   reachedSanctum: boolean;
   fragmentsFound: number;   // violet rooms entered today
+  /** Keys off the DECK: green cards taken for their key face. */
   keysFound: number;
+  /**
+   * Keys off SOLVED ROOMS (round 10, `solveKeys`) — the owner's "skill, not
+   * just persistence, earns the campaign". Counted apart from `keysFound` so
+   * the deck-supply assertion in tests/economy-simulation.test.ts still
+   * compares like with like, and so the "primarily from solves" claim is a
+   * measured ratio rather than a hope.
+   */
+  keysFromSolves: number;
   /** Climbs refused for want of a key (the DOOR_LOCKS gate biting). */
   lockedOut: number;
   stepsLeft: number;        // stepsRemaining at day end (0 for exhausted days)
@@ -502,6 +511,7 @@ export function simulateDay(
   let roomsSolved = 0;
   let fragmentsFound = 0;
   let keysFound = 0;
+  let keysFromSolves = 0;
   let keys = profile.dawnKeys ?? 0;
   let lockedOut = 0;
   let row = 1;              // 1-based; the entrance
@@ -629,6 +639,13 @@ export function simulateDay(
               reason: 'perfect', delta: STEP_TABLE.perfect, at: 0, roomKey,
             });
           }
+          // ROUND 10 — the solve pays the padlock arc (app/slices/room.ts
+          // applies exactly this, off the same `solveKeys` table).
+          const earned = solveKeys(tier);
+          if (earned > 0) {
+            keys += earned;
+            keysFromSolves += earned;
+          }
           roomsSolved += 1;
         } else {
           seconds += sampleSeconds(TIME_TABLE.abandon, timeRng);
@@ -680,6 +697,7 @@ export function simulateDay(
     reachedSanctum: maxRow >= SANCTUM_LANDING_ROW,
     fragmentsFound,
     keysFound,
+    keysFromSolves,
     lockedOut,
     stepsLeft: stepsRemaining(ledger),
     spent: stepsSpent(ledger),

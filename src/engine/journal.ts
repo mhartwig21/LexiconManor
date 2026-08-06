@@ -46,39 +46,92 @@ export function foundByKind(
     .sort((a, b) => a.revealOrder - b.revealOrder);
 }
 
+/**
+ * ROUND-10: every derivation below takes an optional `sealedIds` — the
+ * fragments that are FILED BUT NOT YET MADE OUT (engine/volume.ts
+ * `sealedFragmentIds`). Omitting it means "nothing is sealed", which is both
+ * the pre-round-10 behaviour and the truth for any save written before the
+ * mechanic existed, so no caller and no existing test had to change.
+ *
+ * A sealed fragment is hers forever and is always visible; what it does NOT do
+ * is speak. It contributes no constraint to the alphabet plate, no line to the
+ * poem, no "see also" chip and nothing for Ellery to read — until a solved
+ * word game makes it out. That is the whole of the owner's design change, and
+ * it is enforced here rather than in the view so a UI regression cannot hand
+ * the information back.
+ */
+export interface SealedOpts {
+  /** Fragment ids filed but not yet deciphered. Absent = none. */
+  sealedIds?: ReadonlySet<string>;
+}
+
+/** Filed AND made out — the only fragments that carry information. */
+export function isLegible(state: VolumeState, fragmentId: string, opts?: SealedOpts): boolean {
+  return isFound(state, fragmentId) && !opts?.sealedIds?.has(fragmentId);
+}
+
 /** One slot per authored definition line: the fragment if found, else a gap.
- *  The poem keeps its shape from day one — gaps are part of the reading. */
+ *  The poem keeps its shape from day one — gaps are part of the reading.
+ *  A found-but-sealed line occupies its slot as a *torn leaf*: she has it, she
+ *  cannot read it yet, and the slot says so rather than pretending it is
+ *  still missing. */
 export interface DefinitionSlot {
   fragment: FragmentContent | null;
   revealOrder: number;
+  /** The leaf is in the journal but not yet made out. */
+  sealed: boolean;
 }
 
-export function definitionSlots(content: VolumeContent, state: VolumeState): DefinitionSlot[] {
+export function definitionSlots(
+  content: VolumeContent,
+  state: VolumeState,
+  opts?: SealedOpts,
+): DefinitionSlot[] {
   return content.fragments
     .filter((f) => f.kind === 'definition-line')
     .sort((a, b) => a.revealOrder - b.revealOrder)
-    .map((f) => ({ fragment: isFound(state, f.id) ? f : null, revealOrder: f.revealOrder }));
+    .map((f) => ({
+      fragment: isFound(state, f.id) ? f : null,
+      revealOrder: f.revealOrder,
+      sealed: isFound(state, f.id) && !!opts?.sealedIds?.has(f.id),
+    }));
 }
 
-/** "See also" chips: related fragments the player has already found. */
+/** "See also" chips: related fragments the player has already MADE OUT — a
+ *  cross-reference to a page she cannot read yet is not a cross-reference. */
 export function crossRefs(
   content: VolumeContent,
   state: VolumeState,
   fragmentId: string,
+  opts?: SealedOpts,
 ): FragmentContent[] {
   const frag = content.fragments.find((f) => f.id === fragmentId);
   if (!frag?.relatedIds) return [];
   return frag.relatedIds
     .map((id) => content.fragments.find((f) => f.id === id))
-    .filter((f): f is FragmentContent => !!f && isFound(state, f.id));
+    .filter((f): f is FragmentContent => !!f && isLegible(state, f.id, opts));
 }
 
-/** The first found-but-uninterpreted fragment (Ellery's 'next' service). */
-export function nextUninterpreted(content: VolumeContent, state: VolumeState): string | null {
+/** The first made-out-but-uninterpreted fragment (Ellery's 'next' service).
+ *  She reads English, not smudges: a sealed page is skipped until it is made
+ *  out, which is also what makes a perfect solve's free reading worth having. */
+export function nextUninterpreted(
+  content: VolumeContent,
+  state: VolumeState,
+  opts?: SealedOpts,
+): string | null {
   const found = content.fragments
-    .filter((f) => isFound(state, f.id) && !isInterpreted(state, f.id))
+    .filter((f) => isLegible(state, f.id, opts) && !isInterpreted(state, f.id))
     .sort((a, b) => a.revealOrder - b.revealOrder);
   return found[0]?.id ?? null;
+}
+
+/** How many filed pages are still waiting to be made out (the journal's
+ *  footer rail says this number out loud — it is the reason to go solve). */
+export function sealedCount(state: VolumeState, opts?: SealedOpts): number {
+  const sealed = opts?.sealedIds;
+  if (!sealed || sealed.size === 0) return 0;
+  return state.foundFragmentIds.filter((id) => sealed.has(id)).length;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,16 +248,27 @@ export function displayedFragmentIds(
   content: VolumeContent,
   state: VolumeState,
   tab: JournalTab,
+  opts?: SealedOpts,
 ): string[] {
+  // ROUND 10 — A SEALED PAGE IS NOT A READ PAGE.
+  // The card is on the glass, but its contents are not: what she can see is a
+  // torn leaf and the words "not yet made out". So it is never marked viewed,
+  // and its wax mark stands until a solved room makes it out and she comes
+  // back to read it. That keeps AAA 11.21 true in both directions (there IS
+  // something unread behind that mark) and turns the journal's unread count
+  // into the honest backlog the footer rail names.
+  const legible = (ids: string[]) => ids.filter((id) => isLegible(state, id, opts));
   switch (tab) {
     case 'word':
-      return definitionSlots(content, state)
-        .filter((s) => s.fragment)
-        .map((s) => s.fragment!.id);
+      return legible(
+        definitionSlots(content, state, opts)
+          .filter((s) => s.fragment)
+          .map((s) => s.fragment!.id),
+      );
     case 'engravings':
-      return foundByKind(content, state, 'engraving').map((f) => f.id);
+      return legible(foundByKind(content, state, 'engraving').map((f) => f.id));
     case 'testimony':
-      return foundByKind(content, state, 'testimony').map((f) => f.id);
+      return legible(foundByKind(content, state, 'testimony').map((f) => f.id));
     // Letters are not "viewed" by opening the tab: the seal is unbroken until
     // she breaks it, and openLetter already records that (AAA 11.20).
     case 'letters':
@@ -233,8 +297,18 @@ export interface AlphabetFacts {
   sources: number;
 }
 
-/** Derived only from FOUND engravings — the journal never spoils. */
-export function alphabetFacts(content: VolumeContent, state: VolumeState): AlphabetFacts {
+/**
+ * Derived only from engravings that are found AND MADE OUT — the journal never
+ * spoils, and (round 10) never reads an inscription the player has not yet
+ * deciphered. This is where "solving matters" has its teeth: the constraint
+ * that the plate tests against the alphabet arrives when a word game is
+ * solved, not when a violet door is opened.
+ */
+export function alphabetFacts(
+  content: VolumeContent,
+  state: VolumeState,
+  opts?: SealedOpts,
+): AlphabetFacts {
   const facts: AlphabetFacts = {
     eliminated: new Set(),
     required: new Set(),
@@ -245,7 +319,7 @@ export function alphabetFacts(content: VolumeContent, state: VolumeState): Alpha
     sources: 0,
   };
   for (const f of content.fragments) {
-    if (f.kind !== 'engraving' || !f.constraint || !isFound(state, f.id)) continue;
+    if (f.kind !== 'engraving' || !f.constraint || !isLegible(state, f.id, opts)) continue;
     facts.sources++;
     applyConstraint(facts, f.constraint);
   }
@@ -450,12 +524,25 @@ export function sanctumReadiness(content: VolumeContent, state: VolumeState): Sa
  * the journal over the player's shoulder, so the ghost librarian owns the
  * "dear" and the pointer is somebody's voice rather than the furniture's.
  */
-export function journalNudge(content: VolumeContent, state: VolumeState): string | null {
+export function journalNudge(
+  content: VolumeContent,
+  state: VolumeState,
+  opts?: SealedOpts,
+): string | null {
   if (state.status === 'solved') return null;
   const found = state.foundFragmentIds.length;
   if (found === 0) return 'Draft toward the violet rooms, dear — the manor files what it finds, all by itself.';
-  const uninterpreted = nextUninterpreted(content, state);
-  const facts = alphabetFacts(content, state);
+  // The backlog outranks every other pointer: a page she cannot read yet is
+  // the most useful thing anyone could point at, and the answer to it is a
+  // word game (the round-10 loop, in Ellery's voice).
+  const sealed = sealedCount(state, opts);
+  if (sealed > 0) {
+    return sealed === 1
+      ? 'One leaf here is still too smudged to read, dear. Solve something — a room well finished steadies the hand wonderfully.'
+      : `${sealed} of these are still too smudged to read, dear. Solve a room and they come clear — the harder the room, the more of them at once.`;
+  }
+  const uninterpreted = nextUninterpreted(content, state, opts);
+  const facts = alphabetFacts(content, state, opts);
   if (facts.sources === 0) {
     return 'No engravings yet. They are cut into lintels and inkstands about the house — the alphabet plate is waiting for them.';
   }

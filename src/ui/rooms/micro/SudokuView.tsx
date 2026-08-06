@@ -5,7 +5,9 @@
  * 390px-first — the leaf takes the full width so the figures stay large, and
  * every control lives in the sticky `.room-deck` thumb cluster at the bottom
  * (>=44px keys, AAA 6.19). Nothing on the board commits anything: tapping a
- * cell only moves the cursor, so a fat-fingered tap on a 42px cell is free.
+ * cell only moves the cursor, so a fat-fingered tap on a 43px cell is free.
+ * (Nine cells at the 44px floor need 396px of glass; the phone offers 390 —
+ * see counting-house.css for the measurement and the exemption note.)
  *
  * ═══ PLAY MODEL (round 5 rewrite) ═══
  * The leaf no longer marks her work as she goes. Pencil marks are free and
@@ -13,7 +15,10 @@
  * the tier-2/3 techniques are unreachable without complete marks). Inking is
  * free too: a figure that duplicates a visible peer is a dead letter (shake +
  * reason, nothing lands, nothing charged), and anything else LANDS as her own
- * unsettled ink, right or wrong, and lifts off again with Erase. The priced
+ * unsettled ink, right or wrong, and lifts off again with the eraser. The eraser
+ * is SURGICAL (round 10): it lifts one figure, or rubs out ONE pencil mark —
+ * the last one written, named on the key before the tap — never the cell's
+ * whole mask, and Undo walks any of it back. The priced
  * verbs are the CLAIM — "Balance the books", which reports how many of her
  * figures are astray without naming them — and two grades of help: the clerk's
  * technique nudge (cheap, teaches, keeps `perfect`) and consulting an actual
@@ -23,7 +28,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { RoomViewProps } from '../registry';
 import {
-  PEERS, TECHNIQUE_LEVEL, TECHNIQUE_NAMES, blanksRemaining, digitCount, isGiven, unitName,
+  PEERS, TECHNIQUE_LEVEL, TECHNIQUE_NAMES, blanksRemaining, digitCount, isGiven,
+  lastPencilMark, unitName,
   type SudokuPuzzle, type TechniqueId,
 } from '../../../engine/puzzles/sudoku';
 import type { SudokuAction, SudokuRoomState } from '../../../engine/puzzles/sudoku-adapter';
@@ -264,13 +270,21 @@ export default function SudokuView({
     dispatch({ type: 'ink', cell: sel, digit });
   };
 
-  // One eraser, two jobs, in the order she means them: lift her own figure if
-  // one is standing here, otherwise sweep the cell's pencil marks. Both free.
+  /**
+   * ROUND 10 — THE ERASER IS SURGICAL (AAA 3.3).
+   *
+   * One eraser, two jobs, in the order she means them: lift her own figure if
+   * one is standing here, otherwise rub out the LAST mark she wrote in this
+   * cell — not the cell's whole mask. Both free. The key names the figure it
+   * is about to take ("Rub out 7"), so the surgery is legible before the tap
+   * rather than explained after it, and every peel is separately undoable.
+   */
+  const nextMark = sel === null ? 0 : lastPencilMark(engine, sel);
   const erase = () => {
     if (won || sel === null) return;
     sfx.tap();
     if (canLift) dispatch({ type: 'unink', cell: sel });
-    else dispatch({ type: 'clear-pencil', cell: sel });
+    else dispatch({ type: 'erase-mark', cell: sel });
   };
 
   // Undo — the permanent, always-visible control NYT Sudoku ships for the same
@@ -289,7 +303,7 @@ export default function SudokuView({
     dispatch({ type: 'reveal-cell', cell: sel !== null && engine.values[sel] === 0 ? sel : undefined });
   };
 
-  const canErase = canLift || (sel !== null && engine.pencil[sel]! !== 0);
+  const canErase = canLift || nextMark !== 0;
 
   return (
     <div className="ch">
@@ -478,9 +492,15 @@ export default function SudokuView({
                 className="ch-key ch-key--verb ch-key--wide"
                 onClick={erase}
                 disabled={!canErase}
-                aria-label={canLift ? 'Lift this figure back off the leaf' : 'Erase the pencil marks in this cell'}
+                aria-label={
+                  canLift
+                    ? 'Lift this figure back off the leaf'
+                    : nextMark !== 0
+                      ? `Rub out the ${nextMark} penciled in this cell — the other marks stay`
+                      : 'Nothing to rub out in this cell'
+                }
               >
-                {canLift ? 'Lift' : 'Erase'}
+                {canLift ? 'Lift' : nextMark !== 0 ? `Rub out ${nextMark}` : 'Rub out'}
               </button>
             </div>
           </div>

@@ -118,6 +118,16 @@ export interface SudokuEngineState {
   values: number[];
   /** 81 bitmasks (bit d-1 = figure d penciled). Cleared on ink. */
   pencil: number[];
+  /**
+   * ROUND 10 — the order the marks in each cell were written, oldest first.
+   * Exactly mirrors `pencil` (a digit is in the trail iff its bit is set), and
+   * exists for ONE reason: the eraser has to be able to take back the LAST
+   * mark rather than the whole cell (AAA 3.3 — the room may not throw away
+   * derived work in one tap). Session-only, like the rest of the engine state:
+   * the room session lives in RoomHost's React state and never reaches the
+   * save file.
+   */
+  pencilOrder: number[][];
   /** Cells filled via a purchased reveal (view styles them as 'developed'). */
   revealed: number[];
   /**
@@ -849,6 +859,7 @@ export function startSudoku(puzzle: SudokuPuzzle): SudokuEngineState {
   return {
     values: parseGrid(puzzle.givens),
     pencil: Array.from({ length: 81 }, () => 0),
+    pencilOrder: Array.from({ length: 81 }, () => [] as number[]),
     revealed: [],
     balancedSignatures: [],
     status: 'playing',
@@ -859,13 +870,32 @@ export function isGiven(puzzle: SudokuPuzzle, cell: number): boolean {
   return puzzle.givens[cell] !== '.';
 }
 
+/**
+ * The trail a cell's mask implies when nobody wrote it by hand (a machine
+ * fill, or any pre-round-10 state that reaches these reducers without one):
+ * ascending figures. Keeping the two representations reconcilable here means
+ * no caller has to remember to maintain both.
+ */
+function trailOf(mask: number, existing?: readonly number[]): number[] {
+  const kept = (existing ?? []).filter((d) => mask & (1 << (d - 1)));
+  for (let d = 1; d <= 9; d++) if ((mask & (1 << (d - 1))) && !kept.includes(d)) kept.push(d);
+  return kept;
+}
+
 /** Pencil a figure in/out of a blank cell. Free — penciling is thinking. */
 export function togglePencil(state: SudokuEngineState, cell: number, digit: number): SudokuEngineState {
   if (state.status !== 'playing' || digit < 1 || digit > 9) return state;
   if (state.values[cell] !== 0) return state;
   const pencil = [...state.pencil];
-  pencil[cell] = pencil[cell]! ^ (1 << (digit - 1));
-  return { ...state, pencil };
+  const bit = 1 << (digit - 1);
+  const on = (pencil[cell]! & bit) === 0;
+  pencil[cell] = pencil[cell]! ^ bit;
+  const pencilOrder = [...state.pencilOrder];
+  const trail = trailOf(state.pencil[cell]!, state.pencilOrder[cell]);
+  // Written → it becomes the newest mark in the cell; rubbed out → it simply
+  // leaves, and the marks around it keep the order she wrote them in.
+  pencilOrder[cell] = on ? [...trail, digit] : trail.filter((d) => d !== digit);
+  return { ...state, pencil, pencilOrder };
 }
 
 /** Clear every pencil mark in a cell. Free. */
@@ -873,7 +903,47 @@ export function clearPencil(state: SudokuEngineState, cell: number): SudokuEngin
   if (state.status !== 'playing' || state.pencil[cell] === 0) return state;
   const pencil = [...state.pencil];
   pencil[cell] = 0;
-  return { ...state, pencil };
+  const pencilOrder = [...state.pencilOrder];
+  pencilOrder[cell] = [];
+  return { ...state, pencil, pencilOrder };
+}
+
+/**
+ * The last mark written in a cell, or 0. The eraser NAMES its next victim on
+ * the key ("Rub out 7"), so a surgical erase is never a guess about what a
+ * tap will take (AAA 3.2's principle: the reason is on the glass before the
+ * press, not in a toast after it).
+ */
+export function lastPencilMark(state: SudokuEngineState, cell: number): number {
+  if (cell < 0 || cell > 80 || state.pencil[cell] === 0) return 0;
+  const trail = trailOf(state.pencil[cell]!, state.pencilOrder[cell]);
+  return trail[trail.length - 1] ?? 0;
+}
+
+/**
+ * ROUND 10 — THE SURGICAL ERASER (AAA 3.3 [PARITY]).
+ *
+ * The eraser used to be `clearPencil`: one tap on a cell holding six
+ * hard-won candidates and all six were gone. Candidate marks ARE the solve at
+ * this room's tier ladder — a naked triple or an X-wing is nothing but marks
+ * — so a single free tap that deletes an arbitrary amount of derived work is
+ * a memory prosthetic that forgets, which is exactly what 3.3 forbids.
+ *
+ * It now lifts ONE mark, the most recent one, and the key says which. Nothing
+ * is ever thrown away wholesale, each peel is separately undoable, and the
+ * player who really does want the cell empty taps it out mark by mark and can
+ * hand the cell straight back to "Pencil what fits" (which only fills cells
+ * that carry no marks at all). `clearPencil` survives as the engine's
+ * whole-cell verb — `inkCell` uses that shape — but no free tap reaches it.
+ */
+export function erasePencilMark(state: SudokuEngineState, cell: number): SudokuEngineState {
+  const digit = lastPencilMark(state, cell);
+  if (state.status !== 'playing' || digit === 0) return state;
+  const pencil = [...state.pencil];
+  pencil[cell] = pencil[cell]! & ~(1 << (digit - 1));
+  const pencilOrder = [...state.pencilOrder];
+  pencilOrder[cell] = trailOf(state.pencil[cell]!, state.pencilOrder[cell]).filter((d) => d !== digit);
+  return { ...state, pencil, pencilOrder };
 }
 
 /** Candidate bitmask for a cell from the figures currently standing on the leaf. */
@@ -918,13 +988,18 @@ function visibleMask(values: readonly number[], cell: number): number {
 export function fillPencil(state: SudokuEngineState): SudokuEngineState {
   if (state.status !== 'playing') return state;
   const pencil = [...state.pencil];
+  const pencilOrder = [...state.pencilOrder];
   let changed = false;
   for (let i = 0; i < 81; i++) {
     if (state.values[i] !== 0 || pencil[i] !== 0) continue;
     pencil[i] = visibleMask(state.values, i);
+    // A machine fill has no hand-order, so the trail is simply ascending —
+    // the eraser then peels the highest figure first, which is the reading
+    // order of the cell's own nine slots, back to front.
+    pencilOrder[i] = trailOf(pencil[i]!);
     changed = true;
   }
-  return changed ? { ...state, pencil } : state;
+  return changed ? { ...state, pencil, pencilOrder } : state;
 }
 
 /** True while the figure standing in `cell` is the player's own unsettled ink. */
@@ -965,15 +1040,21 @@ export function inkCell(
   const values = [...state.values];
   values[cell] = digit;
   const pencil = [...state.pencil];
+  const pencilOrder = [...state.pencilOrder];
   pencil[cell] = 0;
+  pencilOrder[cell] = [];
   const bit = 1 << (digit - 1);
-  for (const p of PEERS[cell]!) pencil[p] = pencil[p]! & ~bit;
+  for (const p of PEERS[cell]!) {
+    if ((pencil[p]! & bit) === 0) continue;
+    pencil[p] = pencil[p]! & ~bit;
+    pencilOrder[p] = (pencilOrder[p] ?? []).filter((d) => d !== digit);
+  }
 
   // A full leaf with no duplicate in any unit is a valid grid; the board's
   // solution is generator-verified UNIQUE, so a full leaf IS that solution.
   const won = values.every((v) => v !== 0);
   return {
-    state: { ...state, values, pencil, status: won ? 'won' : 'playing' },
+    state: { ...state, values, pencil, pencilOrder, status: won ? 'won' : 'playing' },
     result: won ? 'won' : 'placed',
   };
 }

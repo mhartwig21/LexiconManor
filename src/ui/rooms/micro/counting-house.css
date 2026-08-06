@@ -46,8 +46,12 @@
   margin: 0 auto;
   /* No env(safe-area-inset-bottom) here: #root already reserves it for this
      subtree, and paying it twice is exactly what pushed room CTAs under the
-     home indicator in the round-4 ergonomics report (room-host.css). */
-  padding: 0.5rem 0.35rem 0.2rem;
+     home indicator in the round-4 ergonomics report (room-host.css).
+     ROUND 10: the horizontal padding moved OFF the column and onto the
+     column's text/chrome children, because it was the last unclaimed width in
+     the room and the ledger leaf is the one child that must not pay for a
+     margin (see `.ch-leaf`). */
+  padding: 0.5rem 0 0.2rem;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: var(--text-body);
@@ -60,6 +64,14 @@
 
 /* One accent, spent only on state (AAA 1.14). Blue: this is a puzzle room. */
 .ch { --room-accent: var(--cat-puzzle); }
+
+/* Everything that is NOT the leaf pays the column's old side margin, so the
+   leaf can run edge to edge (round 10). One token, declared once. */
+.ch { --ch-gutter: 0.35rem; }
+.ch__head,
+.ch-toastslot,
+.ch-done,
+.ch > .room-deck { padding-inline: var(--ch-gutter); }
 
 .ch__head { text-align: center; }
 .ch__title {
@@ -97,7 +109,32 @@
    was bought instead: the verb row collapses to ONE band at every size (it
    already did below 760), which returns ~48px, and the leaf now reaches the
    full content width at 390 — 42px cells instead of 36.4, and pencil slots of
-   12.5px instead of 10.8 for marks that must be read at speed. */
+   12.5px instead of 10.8 for marks that must be read at speed.
+
+   ROUND 10 (the "still 41.6px" finding). Round 6 landed 378.8px / 41.6px
+   cells, not the 390/42.9 it claimed, because TWO things were still charging
+   the leaf for space it could have had:
+     (a) `.ch`'s own 0.35rem side padding — 11.2px of the 390 the stage
+         actually offers. It has moved onto the head/toast/deck children
+         (`--ch-gutter`), which is where a text margin belongs;
+     (b) the 2px ink border, which is a `border-box` inset and therefore came
+         out of the NINE CELLS. The frame is decoration, so it is drawn as an
+         inset ring in the box-shadow instead and the cells keep the pixels.
+   The height cap moved 29rem → 28rem to stop it binding first: the measured
+   non-leaf chrome is 314px at 390×844 (head 77 + gaps 16 + toast 41.6 + deck
+   168.2 + column padding 11.2), i.e. the leaf may be up to 100dvh − 437px,
+   so a 28rem (448px) reserve is the honest cap with ~11px of guard, and WIDTH
+   binds again — which is the right way round for a square board.
+   Result at 390×844: leaf 390.0, cells 43.3px (from 41.6).
+
+   THE 44px FLOOR IS ARITHMETICALLY OUT OF REACH HERE, and this is the last
+   pixel available: nine cells at the AAA 6.19 floor need 396px of glass and
+   an iPhone 12-class portrait viewport is 390. NYT Sudoku ships ~41px cells
+   at this width for the same reason. See the doc note requested in this
+   round's report — the 9×9 grid wants the same explicit §6.19 exemption the
+   on-screen keyboards want, on the same grounds (benchmark parity, and every
+   COSTED action lives on a ≥44px pad key; touching a cell only moves a
+   cursor and can never spend a step). */
 .ch-leaf {
   width: 100%;
   /* Two bands, because the chrome above and below the leaf is not the same
@@ -107,7 +144,7 @@
      scripts/round5-capture.mjs and scripts/micro-rooms-round7-verify.mjs
      re-measure them on every tour. At 390x844 the WIDTH is now the binding
      constraint, which is the right way round for a board. */
-  max-width: min(100%, calc(100dvh - 29rem));
+  max-width: min(100%, calc(100dvh - 28rem));
   margin-inline: auto;
   flex: 0 0 auto;
   aspect-ratio: 1;
@@ -115,9 +152,10 @@
   grid-template-columns: repeat(9, 1fr);
   grid-template-rows: repeat(9, 1fr);
   background: var(--paper-raised);
-  border: 2px solid var(--ink);
   border-radius: 3px;
-  box-shadow: var(--shadow-lift);
+  /* The leaf's frame, drawn INSIDE the box instead of as a border: identical
+     ink, but it no longer subtracts 4px from the nine cells (round 10). */
+  box-shadow: inset 0 0 0 2px var(--ink), var(--shadow-lift);
   overflow: hidden;
   /* No double-tap zoom (AAA 7.11) — but NOT `none`: the leaf is tall enough
      that the stage scrolls on a 667px screen, and a board that swallows pan
@@ -370,7 +408,7 @@
    — a diagonal wipe with a 224ms head and ~740ms total, inside the ≤2s
    celebration ceiling — and tapping the panel adds `--skip`, which drops every
    delay and the animation with it (AAA 3.4 / U.2, the CipherView contract). */
-.ch-leaf--won { border-color: var(--moss); }
+.ch-leaf--won { box-shadow: inset 0 0 0 2px var(--moss), var(--shadow-lift); }
 .ch-leaf--won .ch-cell__fig { animation: ch-settle 520ms var(--ease-settle) both; }
 .ch-leaf--skip .ch-cell__fig { animation: none; animation-delay: 0ms; }
 

@@ -326,34 +326,66 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   to   { opacity: 1; transform: none; }
 }
 
-/* --- Retire button (moon) ------------------------------------------------- */
+/* --- Retire (the one destructive control) ---------------------------------
+   ROUND 10 (AAA 11.7). This was a bare `☾` in a `border: none; background:
+   transparent` box, sitting immediately after three currency chips — the
+   shape of a display toggle, in the slot where a display toggle would live,
+   and the only control in the game that cannot be undone. The word "Retire"
+   appeared only in the ARMED state, i.e. after the first of the two taps that
+   end the evening. 11.7's rule is the fix: the recognisable verb leads and is
+   permanent; the moon becomes the smaller, softer voice beside it.
+   It must also not READ as a chip, so it is deliberately the chips' opposite:
+   outlined instead of filled, text instead of glyph-and-number, and given a
+   hairline of separation from the cluster. */
 
 .chr-retire {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   min-width: var(--tap-target);
   min-height: var(--tap-target); /* AAA 6.19: was 36px, under the 44pt floor */
-  padding: 0 8px;
-  border: none;
+  padding: 0 9px;
+  margin-left: 5px;              /* the hairline gap that says "not a chip" */
+  border: var(--rule);           /* outlined; the chips are filled */
   border-radius: var(--radius-card);
   background: transparent;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   font-family: var(--font-body);
   font-size: var(--text-sm);
+  white-space: nowrap;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Decoration, at last: the moon may set the tone, but `.chr-retire__word` is
+   what the glance test reads (AAA 11.7 — flavour never carries the meaning). */
+.chr-retire__moon { font-size: 0.8em; color: var(--ink-faint); line-height: 1; }
+.chr-retire__word { line-height: 1; }
 
 /* U.1: iOS never fires :active on a plain button, so the boot.ts pointer
    delegate stamps `.is-pressed`. Both selectors, always paired. */
 .chr-retire:active,
 .chr-retire.is-pressed { transform: translateY(1px); }
 
+/* Armed: the plate fills in and states the consequence in words. No wax —
+   6.15 reserves that hue for mistakes, seals and unread state, and retiring
+   is neither a mistake nor an alarm. It is darker ink and a solid edge. */
 .chr-retire--armed {
   background: var(--paper-shade);
+  border-color: var(--ink-faint);
   color: var(--ink);
 }
+
+/* WHERE "End the day?" GETS ITS ROOM. Measured at 390x844: the bar carries the
+   day numeral, the candle, three currency chips and this control with ~7px to
+   spare, so the armed string cannot simply be longer. For the 2.6s the arm is
+   live the chips stand aside — the cluster is `justify-content: flex-end`, so
+   the plate grows LEFTWARD from a fixed right edge and the finger that armed
+   it is still inside the box it must tap again. The chips return on disarm or
+   on confirm; nothing can be spent while a confirm is pending, so no delta is
+   dropped (11.15). */
+.chr-right--arming .chr-chip { display: none; }
 
 /* --- Day transitions ------------------------------------------------------ */
 

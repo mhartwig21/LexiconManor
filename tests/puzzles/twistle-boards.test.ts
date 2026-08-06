@@ -112,6 +112,37 @@ describe('twistle board solvability (every shipped Gallery can be hung)', () => 
     }
   });
 
+  /**
+   * ROUND 10 — the hung sheet's contract (AAA 3.4). The Gallery's win screen
+   * draws every claimed word back onto the board, and it does that by asking
+   * `findPath` for the trace again rather than storing one; so for every word
+   * the room can ever have accepted, the trace must exist, stay inside the
+   * grid, and be a real king-move walk with no reused tile. If any of that
+   * fails, the celebration silently draws a broken polyline over the letters.
+   */
+  it('every claimable word can be re-traced for the hung sheet', () => {
+    for (const p of POOL) {
+      const n = puzzleSize(p);
+      for (const w of p.targetWords) {
+        const path = findPath(p.grid, w, p.rules);
+        expect(path, `${p.id}: ${w}`).not.toBeNull();
+        expect(path!.length, `${p.id}: ${w} length`).toBe(w.length);
+        expect(new Set(path!).size, `${p.id}: ${w} reuses a tile`).toBe(path!.length);
+        for (const idx of path!) {
+          expect(idx, `${p.id}: ${w} off-grid`).toBeGreaterThanOrEqual(0);
+          expect(idx, `${p.id}: ${w} off-grid`).toBeLessThan(p.grid.length);
+        }
+        for (let i = 1; i < path!.length; i++) {
+          const a = path![i - 1]!;
+          const b = path![i]!;
+          const dr = Math.abs(Math.floor(a / n) - Math.floor(b / n));
+          const dc = Math.abs((a % n) - (b % n));
+          expect(dr <= 1 && dc <= 1 && !(dr === 0 && dc === 0), `${p.id}: ${w} jumps`).toBe(true);
+        }
+      }
+    }
+  });
+
   it('a 6×6 board played through the adapter solves and reports perfect', () => {
     const p = byTier(3)[0]!;
     let state = twistleAdapter.start(p, { tier: 3, seed: 1, volumeId: 'volume-1' });

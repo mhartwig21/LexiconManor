@@ -324,6 +324,26 @@
   font-weight: 600;
 }
 
+/* THE CEREMONY'S WAY OUT (AAA 11.1 — see SanctumView's `ceremonyExit`).
+   Deliberately the quiet one: transparent, softer ink, sitting under the beat's
+   own verb, so the ceremony still LEADS forward and only steps aside for the
+   player who wants her evening back. Keeps the 44pt floor (6.19) — it is a real
+   control, not a text link — and leads with the recognisable phrase, with the
+   house's voice as the smaller subtitle beneath it (11.7). */
+.snc-btn--aside {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  margin-top: 0.5rem;
+  padding: 0.35rem 1rem;
+  background: transparent;
+  color: var(--ink-soft);
+}
+.snc-btn__label { font-size: var(--text-body); line-height: 1.15; }
+.snc-btn__sub { font-size: var(--text-sm); color: var(--ink-faint); line-height: 1.15; }
+
 /* --- Keyframes -------------------------------------------------------------- */
 @keyframes snc-breathe-in {
   from { transform: translateY(8px); opacity: 0; }

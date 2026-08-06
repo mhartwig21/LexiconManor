@@ -18,7 +18,7 @@
  *             (`.anch__rule` is never hidden; only `.anch__flavour` is).
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { RoomViewProps } from '../registry';
 import type { HivePuzzle } from '../../../engine/types';
 import {
@@ -394,6 +394,47 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
   }, [tier, state.costedMistakes]);
 
   const found = [...state.hive.foundWords].reverse();
+  const strip = found.slice(0, 8);
+
+  /**
+   * AAA 1.5 — THE STRIP NEVER SLICES A WORD (round 10).
+   *
+   * The collapsed found-line clipped at `overflow: hidden` under a mask that
+   * faded from 82%, so the last chip on the line was routinely cut through the
+   * middle of a word (measured: `ARRANGE` at 84.7px of its 93.6px, hard-cut
+   * 8.9px short of its own border). It is the first thing on screen under the
+   * rank bar, and a half-drawn word there reads as a rendering fault, not as
+   * "there is more". Chips whose box does not fit ENTIRELY inside the strip
+   * are made invisible instead — the count and the ▾ toggle beside them are
+   * already the honest statement that there is more.
+   *
+   * Measured with layout values (`offsetLeft` / `offsetWidth`), so the newest
+   * chip's `anch-pop` scale cannot make it measure small and then overflow
+   * when it settles; and because the hidden chips keep their boxes, the
+   * measurement is a fixed point (nothing reflows in response to it).
+   */
+  const stripEl = useRef<HTMLDivElement | null>(null);
+  const [stripFit, setStripFit] = useState(strip.length);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = stripEl.current;
+      if (!el) return;
+      const limit = el.clientWidth;
+      const chips = [...el.children] as HTMLElement[];
+      // `offsetLeft` is measured from the nearest POSITIONED ancestor, which
+      // may or may not be the strip itself; normalise before comparing.
+      const ox = chips[0] && chips[0].offsetParent === el ? 0 : el.offsetLeft;
+      let n = 0;
+      for (const child of chips) {
+        if (child.offsetLeft - ox + child.offsetWidth > limit + 0.5) break;
+        n += 1;
+      }
+      setStripFit(n);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [strip.join('')]);
   // AAA 1.5 — every state that swaps the tall play cluster out for a short
   // panel pins the column to the top instead of letting the stage re-centre
   // it; otherwise the header slides 300px on the vignette, slides back 2s
@@ -460,9 +501,18 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
       </div>
 
       <div className="hv-found">
-        <div className="hv-found__strip">
-          {found.slice(0, 8).map((w, i) => (
-            <span key={w} className={`anch-chip${i === 0 ? ' anch-pop' : ''}${puzzle.pangrams.includes(w) ? ' anch-chip--accent' : ''}`}>
+        <div className="hv-found__strip" ref={stripEl}>
+          {strip.map((w, i) => (
+            <span
+              key={w}
+              className={[
+                'anch-chip',
+                i === 0 ? 'anch-pop' : '',
+                puzzle.pangrams.includes(w) ? 'anch-chip--accent' : '',
+                i >= stripFit ? 'anch-chip--offstrip' : '',
+              ].filter(Boolean).join(' ')}
+              aria-hidden={i >= stripFit || undefined}
+            >
               {w}
             </span>
           ))}
