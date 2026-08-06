@@ -4,12 +4,13 @@ import { fileURLToPath } from 'node:url';
 import { loadDictionary, bandOf, type Dictionary, type Band } from './lib/dictionary';
 import { gateOk } from './generate-gate';
 import { createRng, pick, randInt, shuffle, type Rng } from '../src/engine/rng';
-import { findPath, GRID_SIZE } from '../src/engine/twistle';
-import type { TwistlePuzzle, Difficulty, Tier } from '../src/engine/types';
+import { findPath, centerIndex, gridSize } from '../src/engine/twistle';
+import { tierLabel } from '../src/engine/rooms/adapters/tier-select';
+import type { TwistlePuzzle, Tier } from '../src/engine/types';
 
 /**
  * Twistle grid generator with guaranteed solvability:
- *  1. Seed words are placed on the 5x5 grid via backtracking (king-move
+ *  1. Seed words are placed on the board via backtracking (king-move
  *     adjacency, no tile reuse within a word, crossings allowed).
  *  2. Empty tiles are filled with letters weighted by English frequency.
  *  3. A trie-based solver enumerates EVERY findable dictionary word, so
@@ -22,33 +23,42 @@ import type { TwistlePuzzle, Difficulty, Tier } from '../src/engine/types';
  * THREE TIERS, MAPPED TO MANOR ROWS (owner directive, round 4: "bigger grids,
  * twistier paths")
  * ---------------------------------------------------------------------------
- * `tier` (1|2|3 ⇢ rows 0–2 / 3–4 / 5–6) is authoritative; `difficulty` is the
- * legacy display label. The grid stays 5×5 — GRID_SIZE is baked into
- * engine/twistle.ts and GalleryView, both outside this round's territory (see
- * the report's SHARED-FILE REQUESTS) — so the escalation is carried entirely
- * by PATH SHAPE, which is the half of "bigger and twistier" that is real
- * difficulty rather than real estate:
+ * `tier` (1|2|3 ⇢ rows 0–2 / 3–4 / 5–6) is the one authoritative field. (The
+ * old `difficulty` display alias is retired — derive a word from the tier with
+ * `tierLabel()` if one is ever wanted.)
  *
+ * The escalation is now carried by BOTH halves of the directive:
+ *
+ *   0. BOARD SIZE. Tiers 1–2 keep the classic 5×5; TIER 3 IS A 6×6. Eleven
+ *      extra tiles is a materially different room to read — the eye can no
+ *      longer take the whole board in one fixation — and it is what makes the
+ *      tortuosity floors below reachable at all: a 5×5 simply does not have
+ *      room for many 5+ letter words that turn four times through one tile.
+ *      `size` ships on every puzzle; engine/twistle.ts and TwistleView derive
+ *      their metrics from the board, so nothing is told the size twice.
  *   1. TORTUOSITY FLOOR. Every target's shortest valid trace is measured for
  *      *turns* (direction changes between consecutive steps). Tier 1 targets
- *      are mostly straight runs (≤1 turn); tier 3 demands a median of ≥3 turns
- *      and forbids any straight-line gimme — the word genuinely corkscrews.
+ *      are mostly straight runs (≤1 turn); tier 3 demands FOUR turns from every
+ *      target — no straight-line gimme exists on the board at all, and the
+ *      word genuinely corkscrews.
  *   2. LENGTH FLOOR. minLength climbs 4 → 4 → 5, so tier 3 refuses the
  *      four-letter chaff the eye finds for free.
  *   3. THE CENTRE CONSTRAINT. Tier 3 alone sets `centerRequired`, forcing
- *      every trace through tile 12 — a Wordle-hard-mode-shaped knob that
- *      constrains the player rather than adding content (AAA 3.8).
+ *      every trace through the board's centre tile — a Wordle-hard-mode-shaped
+ *      knob that constrains the player rather than adding content (AAA 3.8).
+ *      On the 6×6 the centre is `centerIndex(6)` = tile 14 (row 2, col 2): one
+ *      of the four middle tiles, chosen by the engine so the generator, the
+ *      solver and the marked tile in the view can never disagree.
  */
 
 const TARGET_PER_TIER = 70; // 3 tiers => 210 total
 const SEED = 20260702;
-const TOTAL_TILES = GRID_SIZE * GRID_SIZE;
+
+/** Board side length per tier — the Gallery itself grows at the top. */
+const SIZES: Record<Tier, number> = { 1: 5, 2: 5, 3: 6 };
 
 // Letter frequency weights for filling gaps (rough English distribution).
 const FILL_LETTERS = 'eeeeeeeeeeeetttttttttaaaaaaaaoooooooiiiiiiinnnnnnnsssssshhhhhhrrrrrrddddllllcccuuummwwffggyyppbbvk';
-
-/** Legacy display label per tier (engine/types.ts Difficulty stays frozen). */
-const TIER_LABEL: Record<Tier, Difficulty> = { 1: 'easy', 2: 'medium', 3: 'hard' };
 
 interface TierSpec {
   /** Frequency bands allowed for the words the player must find. */
@@ -77,97 +87,109 @@ const SPECS: Record<Tier, TierSpec> = {
        centerRequired: false, minLength: 4, minTurns: 0, minEntryTurns: 0, maxEntryTurns: 1 },
   2: { targetBands: ['everyday'], seedWordCount: 7, targetCount: 7, minFindable: 12,
        centerRequired: false, minLength: 4, minTurns: 2, minEntryTurns: 2, maxEntryTurns: 99 },
-  3: { targetBands: ['everyday', 'familiar'], seedWordCount: 8, targetCount: 6, minFindable: 8,
-       centerRequired: true, minLength: 5, minTurns: 3, minEntryTurns: 3, maxEntryTurns: 99 },
+  // 6×6: more tiles to seed (10 words; the rest of the board fills with
+  // frequency noise), and the twist bar goes up a notch now that there is room
+  // for it — EVERY tier-3 target turns at least four times (the old 5×5 tier 3
+  // asked for three), so the entry twist is ≥4 by construction. minFindable
+  // rises to the lower rows' floor as well: the top of the manor should offer
+  // no less CHOICE than the ground floor, only harder traces.
+  3: { targetBands: ['everyday', 'familiar'], seedWordCount: 10, targetCount: 6, minFindable: 12,
+       centerRequired: true, minLength: 5, minTurns: 4, minEntryTurns: 4, maxEntryTurns: 99 },
 };
 
 // --- path tortuosity --------------------------------------------------------
 
-/** Direction changes along a tile path — the "twist" measure. */
-export function turnsOf(path: readonly number[]): number {
-  let turns = 0;
-  let prev: string | null = null;
-  for (let i = 1; i < path.length; i++) {
-    const a = path[i - 1]!, b = path[i]!;
-    const step = `${Math.floor(b / GRID_SIZE) - Math.floor(a / GRID_SIZE)},${(b % GRID_SIZE) - (a % GRID_SIZE)}`;
-    if (prev !== null && step !== prev) turns++;
-    prev = step;
-  }
-  return turns;
-}
-
 /**
- * The twistiest trace this word has on the grid. A word is only as easy as its
- * easiest reading, but the *shipped* trace is what the player draws, so we
- * measure the best (most twisted) path the solver can offer and gate on the
- * straightest one available — i.e. a word with any straight reading counts as
- * straight. That keeps the tier-3 promise honest.
+ * The straightest trace this word has on the grid, in turns — or null if the
+ * word cannot be traced under the rules at all. A word is only as easy as its
+ * easiest reading, so we gate on the LEAST twisted path available: a word with
+ * any straight reading counts as straight. That keeps the tier-3 promise
+ * honest.
+ *
+ * Branch-and-bound rather than "enumerate every trace and take the min": on a
+ * 6×6 board a common word can have hundreds of readings and this runs for every
+ * candidate of every attempt, which is what made the naive version too slow to
+ * generate the tier-3 pool at all. Pruning at `turns >= best` (and bailing the
+ * moment a 0-turn reading is found) collapses it.
  */
 function straightestTurns(grid: string[], word: string, rules: TwistlePuzzle['rules']): number | null {
-  const best = allPaths(grid, word, rules);
-  if (best.length === 0) return null;
-  return Math.min(...best.map(turnsOf));
-}
-
-/** Every valid trace of `word` (grids are 25 tiles; words ≤8 — cheap). */
-function allPaths(grid: string[], word: string, rules: TwistlePuzzle['rules']): number[][] {
   const target = word.toUpperCase();
-  if (target.length < rules.minLength) return [];
-  const out: number[][] = [];
-  const walk = (path: number[], depth: number) => {
+  if (target.length < rules.minLength) return null;
+  const n = gridSize(grid);
+  const centre = centerIndex(n);
+  const used = new Array<boolean>(grid.length).fill(false);
+  let best = Infinity;
+
+  const walk = (pos: number, depth: number, prevStep: number, turns: number, hitCentre: boolean) => {
     if (depth === target.length) {
-      if (rules.centerRequired && !path.includes(12)) return;
-      out.push([...path]);
+      if (rules.centerRequired && !hitCentre) return;
+      best = turns;
       return;
     }
-    const last = path[path.length - 1]!;
-    for (const n of neighbors(last)) {
-      if (path.includes(n)) continue;
-      if (grid[n] !== target[depth]) continue;
-      path.push(n);
-      walk(path, depth + 1);
-      path.pop();
+    for (const nb of neighbors(pos, n)) {
+      if (used[nb]) continue;
+      if (grid[nb] !== target[depth]) continue;
+      // Direction as a small integer: (dr+1)*3 + (dc+1).
+      const step = (Math.floor(nb / n) - Math.floor(pos / n) + 1) * 3 + ((nb % n) - (pos % n) + 1);
+      const t = prevStep >= 0 && step !== prevStep ? turns + 1 : turns;
+      if (t >= best) continue;
+      used[nb] = true;
+      walk(nb, depth + 1, step, t, hitCentre || nb === centre);
+      used[nb] = false;
+      if (best === 0) return;
     }
   };
-  for (let i = 0; i < TOTAL_TILES; i++) {
-    if (grid[i] === target[0]) walk([i], 1);
+
+  for (let i = 0; i < grid.length; i++) {
+    if (grid[i] !== target[0]) continue;
+    used[i] = true;
+    walk(i, 1, -1, 0, i === centre);
+    used[i] = false;
+    if (best === 0) break;
   }
-  return out;
+  return best === Infinity ? null : best;
 }
 
 // --- placement ------------------------------------------------------------
 
-function neighbors(index: number): number[] {
-  const r = Math.floor(index / GRID_SIZE);
-  const c = index % GRID_SIZE;
+function neighbors(index: number, n: number): number[] {
+  const r = Math.floor(index / n);
+  const c = index % n;
   const out: number[] = [];
   for (let dr = -1; dr <= 1; dr++) {
     for (let dc = -1; dc <= 1; dc++) {
       if (dr === 0 && dc === 0) continue;
       const nr = r + dr, nc = c + dc;
-      if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) out.push(nr * GRID_SIZE + nc);
+      if (nr >= 0 && nr < n && nc >= 0 && nc < n) out.push(nr * n + nc);
     }
   }
   return out;
 }
 
-/** Try to lay `word` onto the partial grid, reusing matching tiles. */
-function placeWord(grid: (string | null)[], word: string, rng: Rng): boolean {
+/**
+ * Try to lay `word` onto the partial grid, reusing matching tiles.
+ * `through` (tier 3's centre tile) forces the placed path to cross a given
+ * tile — seeding real words through the marked tile is what gives a
+ * `centerRequired` board enough centre-crossing targets to be worth shipping.
+ */
+function placeWord(grid: (string | null)[], word: string, rng: Rng, n: number, through?: number): boolean {
   const tryFrom = (pos: number, depth: number, path: number[]): number[] | null => {
     const need = word[depth]!;
     const cell = grid[pos];
     if (cell !== null && cell !== need) return null;
     const nextPath = [...path, pos];
-    if (depth === word.length - 1) return nextPath;
-    for (const n of shuffle(rng, neighbors(pos))) {
-      if (nextPath.includes(n)) continue;
-      const r = tryFrom(n, depth + 1, nextPath);
+    if (depth === word.length - 1) {
+      return through === undefined || nextPath.includes(through) ? nextPath : null;
+    }
+    for (const nb of shuffle(rng, neighbors(pos, n))) {
+      if (nextPath.includes(nb)) continue;
+      const r = tryFrom(nb, depth + 1, nextPath);
       if (r) return r;
     }
     return null;
   };
 
-  for (const start of shuffle(rng, Array.from({ length: TOTAL_TILES }, (_, i) => i))) {
+  for (const start of shuffle(rng, Array.from({ length: n * n }, (_, i) => i))) {
     const path = tryFrom(start, 0, []);
     if (path) {
       path.forEach((pos, i) => { grid[pos] = word[i]!; });
@@ -202,26 +224,30 @@ function buildTrie(words: Iterable<string>): TrieNode {
 }
 
 /** All dictionary words (4-8 letters) findable on the grid. */
-function solveGrid(grid: string[], trie: TrieNode): Set<string> {
+function solveGrid(grid: string[], trie: TrieNode, n: number): Set<string> {
   const found = new Set<string>();
   const visit = (pos: number, node: TrieNode, used: boolean[]) => {
     const next = node.children.get(grid[pos]!);
     if (!next) return;
     used[pos] = true;
     if (next.word && next.word.length >= 4) found.add(next.word);
-    for (const n of neighbors(pos)) {
-      if (!used[n]) visit(n, next, used);
+    for (const nb of neighbors(pos, n)) {
+      if (!used[nb]) visit(nb, next, used);
     }
     used[pos] = false;
   };
-  const used = new Array(TOTAL_TILES).fill(false);
-  for (let i = 0; i < TOTAL_TILES; i++) visit(i, trie, used);
+  const used = new Array(n * n).fill(false);
+  for (let i = 0; i < n * n; i++) visit(i, trie, used);
   return found;
 }
 
 // --- generation -------------------------------------------------------------
 
-type TieredTwistlePuzzle = TwistlePuzzle & { tier: Tier };
+/**
+ * Shipped shape. `tier` is authoritative and `size` is explicit on every board
+ * so the view never has to infer a 6×6 from a tile count.
+ */
+type GeneratedTwistlePuzzle = TwistlePuzzle & { tier: Tier; size: number };
 
 /**
  * The turn count of the `targetCount`-th easiest target: the twist the player
@@ -239,17 +265,24 @@ function generatePuzzle(
   tier: Tier,
   rng: Rng,
   index: number,
-): TieredTwistlePuzzle | null {
+): GeneratedTwistlePuzzle | null {
   const spec = SPECS[tier];
-  const grid: (string | null)[] = new Array(TOTAL_TILES).fill(null);
+  const n = SIZES[tier];
+  const total = n * n;
+  const centre = centerIndex(n);
+  const grid: (string | null)[] = new Array(total).fill(null);
 
   // Seed the grid with real words (longer first — they're hardest to fit).
+  // On a centre-ruled board the first few seeds are forced through the marked
+  // tile, so the solver has centre-crossing material to find.
   const pool = spec.targetBands.flatMap((b) => pools[b]);
-  const seeds = shuffle(rng, pool).slice(0, 60).sort((a, b) => b.length - a.length);
+  const seeds = shuffle(rng, pool).slice(0, 90).sort((a, b) => b.length - a.length);
+  const throughCentre = spec.centerRequired ? Math.ceil(spec.seedWordCount / 2) : 0;
   let placed = 0;
   for (const word of seeds) {
     if (placed >= spec.seedWordCount) break;
-    if (placeWord(grid, word, rng)) placed++;
+    const through = placed < throughCentre ? centre : undefined;
+    if (placeWord(grid, word, rng, n, through)) placed++;
   }
   if (placed < spec.seedWordCount) return null;
 
@@ -257,7 +290,7 @@ function generatePuzzle(
   const upper = filled.map((c) => c.toUpperCase());
 
   // Enumerate everything findable, then keep only fair target words.
-  const findable = solveGrid(filled, trie);
+  const findable = solveGrid(filled, trie, n);
   const rules = { minLength: spec.minLength, centerRequired: spec.centerRequired };
   const turnsByWord = new Map<string, number>();
   const targets = [...findable].filter((w) => {
@@ -281,7 +314,7 @@ function generatePuzzle(
   return {
     id: `twistle-t${tier}-${index}`,
     tier,
-    difficulty: TIER_LABEL[tier],
+    size: n,
     grid: upper,
     targetWords: targets.map((w) => w.toUpperCase()).sort(),
     targetCount: spec.targetCount,
@@ -300,7 +333,7 @@ function main() {
   }
   const trie = buildTrie([...dict.words].filter((w) => w.length >= 4 && w.length <= 8));
 
-  const puzzles: TieredTwistlePuzzle[] = [];
+  const puzzles: GeneratedTwistlePuzzle[] = [];
   for (const tier of [1, 2, 3] as Tier[]) {
     let made = 0;
     let attempts = 0;
@@ -312,7 +345,13 @@ function main() {
         made++;
       }
     }
-    console.log(`tier ${tier}: ${made} puzzles (${attempts} attempts)`);
+    const n = SIZES[tier];
+    console.log(`tier ${tier} (${tierLabel(tier)}): ${made} puzzles, ${n}×${n} (${attempts} attempts)`);
+    // A half-filled tier is a content bug, not a smaller pool: the manor's rows
+    // would quietly start serving a neighbouring tier's boards.
+    if (made < TARGET_PER_TIER) {
+      throw new Error(`twistle tier ${tier}: only ${made}/${TARGET_PER_TIER} boards in ${attempts} attempts — loosen the tier ${tier} spec`);
+    }
   }
 
   validate(puzzles);
@@ -322,18 +361,24 @@ function main() {
 }
 
 /** Fail the build on any unsolvable, unfair, or off-tier puzzle. */
-function validate(puzzles: TieredTwistlePuzzle[]) {
+function validate(puzzles: GeneratedTwistlePuzzle[]) {
   const problems: string[] = [];
   for (const p of puzzles) {
     const spec = SPECS[p.tier];
-    if (p.grid.length !== TOTAL_TILES) problems.push(`${p.id}: grid is not 5x5`);
-    if (p.difficulty !== TIER_LABEL[p.tier]) problems.push(`${p.id}: label/tier mismatch`);
+    const n = SIZES[p.tier];
+    if (p.size !== n) problems.push(`${p.id}: size ${p.size} is not tier ${p.tier}'s board (${n})`);
+    if (p.grid.length !== n * n) problems.push(`${p.id}: grid is ${p.grid.length} tiles, not ${n}×${n}`);
+    if (gridSize(p.grid) !== p.size) problems.push(`${p.id}: declared size disagrees with the grid`);
     if (p.targetWords.length < p.targetCount) problems.push(`${p.id}: targetCount ${p.targetCount} > ${p.targetWords.length} findable`);
     if (p.rules.minLength !== spec.minLength) problems.push(`${p.id}: minLength ${p.rules.minLength} != tier ${p.tier} floor ${spec.minLength}`);
     if (p.rules.centerRequired !== spec.centerRequired) problems.push(`${p.id}: centerRequired != tier ${p.tier} rule`);
     const turns: number[] = [];
     for (const w of p.targetWords) {
-      if (findPath(p.grid, w, p.rules) === null) problems.push(`${p.id}: target ${w} has no valid path`);
+      const path = findPath(p.grid, w, p.rules);
+      if (path === null) problems.push(`${p.id}: target ${w} has no valid path`);
+      else if (p.rules.centerRequired && !path.includes(centerIndex(n))) {
+        problems.push(`${p.id}: target ${w} misses the marked centre tile`);
+      }
       if (!gateOk(w.toLowerCase())) problems.push(`${p.id}: target ${w} fails the cozy gate`);
       const t = straightestTurns(p.grid, w, p.rules);
       if (t === null) continue;

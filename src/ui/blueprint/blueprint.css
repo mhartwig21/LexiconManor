@@ -28,14 +28,11 @@
   padding: calc(52px + env(safe-area-inset-top, 0px)) 0 max(10px, env(safe-area-inset-bottom));
 }
 
-/* soft paper vignette — ink, ≤8%, decoration-free (AAA 6.13) */
-.bp-page::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(120% 90% at 50% 40%, transparent 62%, rgba(43, 33, 24, 0.07));
-}
+/* Vignette: RETIRED here. The paper material (grain tile + vignette, AAA 6.13)
+   is now mounted once, app-wide, in index.css so every surface in both themes
+   gets the same tooth. A second local gradient stacked on top of the global one
+   and pushed the pair past the ≤8%-ink budget on the blueprint alone, so the
+   rule is deleted rather than merely neutralised. */
 
 /* --------------------------------------------------------------------------
    Day strip (provisional until A2's DayHeader/StepMeter)
@@ -249,6 +246,53 @@
   50% { opacity: 1; }
 }
 
+/* --------------------------------------------------------------------------
+   Padlocks (AAA 4.6 / 4.10d) — the gate on the upper storeys, drawn before
+   she can spend a step toward it.
+
+   Two states, and the difference is carried by SHAPE first so it survives
+   grayscale and every kind of colour blindness (AAA 6.3): a SHUT lock has a
+   closed staple and a hollow keyhole, in quiet ink — it is a drawn object on
+   a drawing, not something to press. A READY lock (a key in her pocket) has
+   its shackle swung open, a filled keyhole and a heavier line, and takes the
+   gilt every other interactable on this sheet wears. The shut state never
+   uses wax red: nothing has gone wrong, the door is simply shut.
+   -------------------------------------------------------------------------- */
+
+.bp-padlocks { pointer-events: none; }
+.bp-padlock__case {
+  fill: var(--paper-raised);
+  stroke: var(--ink-soft);
+  stroke-width: 1.5;
+}
+.bp-padlock__shackle {
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+.bp-padlock__hole { fill: none; stroke: var(--ink-soft); stroke-width: 1.1; }
+.bp-padlock__slot { stroke: var(--ink-soft); stroke-width: 1.1; stroke-linecap: round; }
+
+.bp-padlock--ready .bp-padlock__case,
+.bp-padlock--ready .bp-padlock__shackle { stroke: var(--gilt); stroke-width: 1.9; }
+.bp-padlock--ready .bp-padlock__hole { fill: var(--gilt); stroke: var(--gilt); }
+.bp-padlock--ready .bp-padlock__slot { stroke: var(--gilt); }
+
+/* Refused: she tapped a shut door with no key. Nothing was charged and
+   nothing is scolded — the lock just shrugs. ≤3 units of travel, one beat. */
+.bp-padlock-slot { transform-box: fill-box; transform-origin: center; }
+.bp-padlock-slot--refused { animation: bp-padlock-shrug 420ms var(--ease-settle); }
+@keyframes bp-padlock-shrug {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-1.4px) rotate(-2.5deg); }
+  60% { transform: translateX(1.4px) rotate(2.5deg); }
+}
+
+/* A door she cannot open today is not advertised as one. */
+.bp-ghost--shut .bp-ghost__outline { stroke: var(--ink-faint); opacity: 0.5; }
+.bp-ghost--locked .bp-ghost__outline { stroke-dasharray: 2.4 3.6; }
+
 .bp-enter .bp-hit__zone { fill: transparent; }
 
 /* the player token */
@@ -327,12 +371,19 @@
 .bp-btn:active { transform: translateY(1px); filter: brightness(0.94); }
 .bp-btn:disabled { opacity: 0.45; cursor: default; }
 
+/* ONE commit idiom (AAA 6.16). Every confirm/commit verb in the game — here,
+   in every room, at the Sanctum door — is the same ink seal pill: --commit-bg
+   fill, --commit-ink text, 999px, stamped down 120ms on press (6.17). It used
+   to be wax red here and an accent pill in each room (seven costumes across
+   the game), which taught the player nothing about which button commits. Wax
+   red goes back to meaning only state: mistakes, unread, seal glyphs, the
+   daily guess (6.15). Folded in from the index.css cross-module override. */
 .bp-btn--seal {
-  background: var(--wax);
-  border-color: var(--wax);
-  color: var(--paper);
+  background: var(--commit-bg);
+  border-color: var(--commit-bg);
+  color: var(--commit-ink);
+  font-weight: 600;
 }
-:root[data-theme='dark'] .bp-btn--seal { color: var(--paper-shade); }
 
 .bp-btn--quiet {
   background: transparent;
@@ -347,6 +398,16 @@
    Draft modal — bookplate cards
    -------------------------------------------------------------------------- */
 
+/* The scrim is a WARM veil derived from tokens, never a black wash. The dark
+   theme used to lay `rgba(0,0,0,0.5)` here — the last literal pure black in
+   shipped CSS and a straight AAA 6.1 fail, plus 6.4 ("candlelit, never
+   inverted"): a black scrim over warm charcoal reads as a hole cut in the
+   paper. It is now `--paper-shade` (#1d1710 in candlelight) at veil strength.
+   Second fix in the same rule: the old override keyed only on the EXPLICIT
+   `data-theme='dark'` opt-in, so anyone on system dark with no stored
+   preference got the light-theme scrim. Both dark paths are covered now, and
+   the explicit-light selector out-specifies the media query in both
+   directions (tokens.css house rule). */
 .bp-modal {
   position: absolute;
   inset: 0;
@@ -354,10 +415,19 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(43, 33, 24, 0.35);
+  --bp-scrim: color-mix(in srgb, var(--ink) 35%, transparent);
+  background: var(--bp-scrim);
   animation: bp-fade-in 180ms ease both;
 }
-:root[data-theme='dark'] .bp-modal { background: rgba(0, 0, 0, 0.5); }
+@media (prefers-color-scheme: dark) {
+  .bp-modal { --bp-scrim: color-mix(in srgb, var(--paper-shade) 78%, transparent); }
+}
+:root[data-theme='dark'] .bp-modal {
+  --bp-scrim: color-mix(in srgb, var(--paper-shade) 78%, transparent);
+}
+:root[data-theme='light'] .bp-modal {
+  --bp-scrim: color-mix(in srgb, var(--ink) 35%, transparent);
+}
 
 .bp-modal__sheet {
   width: min(440px, 100%);
@@ -385,6 +455,17 @@
   margin: 0.15rem 0 0;
   font-size: var(--text-sm);
   color: var(--ink-soft);
+}
+
+/* The padlock's price, stated up front on a locked door's offer (AAA 4.6).
+   Gilt because it is a cost she has already covered — never wax red. */
+.bp-modal__lock {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.45rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--gilt);
 }
 
 .bp-modal__cards {
@@ -635,6 +716,7 @@
   .bp-modal__sheet,
   .bp-scene,
   .bp-dusk,
-  .bp-dusk__text { animation: none; }
+  .bp-dusk__text,
+  .bp-padlock-slot--refused { animation: none; }
   .bp-ghost__handle { opacity: 0.9; }
 }

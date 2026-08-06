@@ -1,4 +1,4 @@
-import type { Difficulty, GameMode, WordWebPuzzle, HivePuzzle, TwistlePuzzle, ForgottenWordPuzzle } from '../engine/types';
+import type { Tier, GameMode, WordWebPuzzle, HivePuzzle, TwistlePuzzle, ForgottenWordPuzzle } from '../engine/types';
 import { createRng, pick } from '../engine/rng';
 import { getPools, lazyContent } from './pools';
 
@@ -15,28 +15,36 @@ export const HIVE_PUZZLES = lazyContent<HivePuzzle[]>(() => getPools().hive);
 export const TWISTLE_PUZZLES = lazyContent<TwistlePuzzle[]>(() => getPools().twistle);
 export const FORGOTTEN_WORD_PUZZLES = lazyContent<ForgottenWordPuzzle[]>(() => getPools().forgottenWord);
 
-/** Difficulty tiers served per level, in preference order. */
-export function difficultiesForLevel(level: number): Difficulty[] {
-  if (level <= 1) return ['medium', 'easy'];
-  if (level === 2) return ['hard', 'medium'];
-  return ['expert', 'hard'];
+/**
+ * Tiers served per level, in preference order.
+ *
+ * ROUND 4 CLEANUP: this used to prefer *difficulty labels*, a field that was a
+ * pure alias for `tier`. The alias is retired; the preference is stated in the
+ * authoritative units. (The manor's own selector is
+ * engine/rooms/adapters/tier-select.ts — this legacy v1 path is kept only for
+ * the pre-manor level flow.)
+ */
+export function tiersForLevel(level: number): Tier[] {
+  if (level <= 1) return [1, 2];
+  if (level === 2) return [2, 3];
+  return [3, 2];
 }
 
-interface HasIdAndDifficulty {
+interface HasIdAndTier {
   id: string;
-  difficulty: Difficulty;
+  tier?: Tier;
 }
 
-function selectFrom<T extends HasIdAndDifficulty>(
+function selectFrom<T extends HasIdAndTier>(
   pool: T[],
   opts: { level: number; seenIds: string[]; seed: number },
 ): T {
-  const preferences = difficultiesForLevel(opts.level);
+  const preferences = tiersForLevel(opts.level);
   const rng = createRng(opts.seed);
   const seen = new Set(opts.seenIds);
 
-  for (const difficulty of preferences) {
-    const fresh = pool.filter((p) => p.difficulty === difficulty && !seen.has(p.id));
+  for (const tier of preferences) {
+    const fresh = pool.filter((p) => (p.tier ?? 1) === tier && !seen.has(p.id));
     if (fresh.length > 0) return pick(rng, fresh);
   }
   // Any unseen puzzle beats a repeat; a repeat beats crashing.

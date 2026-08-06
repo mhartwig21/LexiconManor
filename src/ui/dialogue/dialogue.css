@@ -77,23 +77,36 @@
   to   { transform: translateY(0);    opacity: 1; }
 }
 
+/* The row has to seat a 22px display name (the AAA 6.6 floor — it cannot be
+   shrunk), four rank pips and the Skip verb in whatever is left beside the
+   overlapping portrait plate. It was 17px short at 390px, which is why the
+   name wrapped. The plate ends 6.7rem into the box, so the reserve is trimmed
+   to the measured clearance and the two ornaments give up their slack; Skip
+   keeps its ≥44pt target through the ::after hit area below, so tightening
+   its padding costs nothing. */
 .dlg__plate-row {
   display: flex;
   align-items: baseline;
-  gap: 0.6rem;
+  gap: 0.45rem;
   /* leave room for the portrait plate overlapping at the left */
-  padding-left: 7.4rem;
+  padding-left: 6.9rem;
   min-height: 1.6rem;
 }
 
+/* One line, always: "Mrs. Bramble" was wrapping to two at 390px in the gap
+   left beside the portrait plate, which pushed the whole box up and made the
+   speaker's name look like body copy. It fits on one line with room to spare
+   once it is told not to break. */
 .dlg__nameplate {
   font-family: var(--font-display);
   font-size: var(--text-display-sm);
   line-height: 1.1;
   letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex: none;   /* never shrink under the pips — it would overlap, not wrap */
 }
 
-.dlg__pips { display: inline-flex; gap: 0.25rem; align-self: center; }
+.dlg__pips { display: inline-flex; gap: 0.18rem; align-self: center; flex: none; }
 .dlg__pip {
   width: 0.5rem;
   height: 0.5rem;
@@ -110,7 +123,7 @@
   position: relative;
   margin-left: auto;
   min-height: 2rem;
-  padding: 0 0.7rem;
+  padding: 0 0.4rem;
   border: none;
   background: none;
   color: var(--ink-faint);
@@ -129,11 +142,19 @@
 .dlg__skip:active,
 .dlg__skip.is-pressed { color: var(--ink-soft); }
 
-/* Fixed-height line area: the longest authored box (validator-capped at 220
-   chars) fits at 390px with zero scrolling and zero reflow (AAA 5.11). */
+/* CONTENT-FIT line area. It used to be a flat 7.2rem well sized for the
+   longest authored box, so Bramble's one-line reactions ("Mind the third
+   stair.") sat above ~70% empty paper — the box looked like it was waiting
+   for words that never came. The reserve now comes from the line itself:
+   TypewriterText lays an invisible full-text ghost under the reveal, so the
+   box claims the finished line's height on the first frame and does not
+   reflow while typing (still AAA 5.11: longest authored line, zero scroll).
+   The floor is two lines so short-line boxes still read as a speech plate
+   rather than a toast, and the bottom padding keeps the ❧ advance mark off
+   the last line. */
 .dlg__text-area {
-  min-height: 7.2rem;
-  padding: 0.35rem 0.1rem 0;
+  min-height: 3.2rem;
+  padding: 0.35rem 0.1rem 0.85rem;
   display: flex;
   align-items: flex-start;
 }
@@ -142,6 +163,21 @@
   margin: 0;
   font-size: var(--text-body);
   line-height: var(--leading-body);
+  width: 100%;
+}
+
+/* Ghost reserves the height; live paints over it. Both are the same text in
+   the same box, so they wrap identically. */
+.dlg-tw {
+  position: relative;
+  display: block;
+}
+.dlg-tw__ghost {
+  visibility: hidden;
+}
+.dlg-tw__live {
+  position: absolute;
+  inset: 0;
 }
 
 .dlg__text--narration {
@@ -231,7 +267,7 @@
     height: 7.2rem;
   }
   .dlg__plate-row { padding-left: 6rem; }
-  .dlg__text-area { min-height: 6rem; }
+  .dlg__text-area { min-height: 2.8rem; }
   .dlg__box { padding: 0.55rem 0.8rem 0.7rem; }
 }
 

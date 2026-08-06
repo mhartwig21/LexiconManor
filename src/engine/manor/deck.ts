@@ -13,6 +13,7 @@
  */
 
 import type { Dir, RoomCard } from '../types';
+import { KEY_SUPPLY } from '../economy/steps';
 
 const DEAD_END: Dir[] = ['N'];
 const CORRIDOR: Dir[] = ['N', 'S'];
@@ -173,9 +174,9 @@ export const CARD_PREVIEWS: Record<string, string> = {
   'strong-room': 'The ledger the auditors gave up on',
   'kitchen': '+6 steps · +2 per green room drafted after',
   'larder': '+5 steps',
-  'boot-room': '+3 steps',
+  'boot-room': `+3 steps · +${KEY_SUPPLY.bootRoomKeys} key`,
   'gem-vault': '+2 gems',
-  'key-cabinet': '+1 key',
+  'key-cabinet': `+${KEY_SUPPLY.cabinetKeys} keys · for the padlocks upstairs`,
   'dumbwaiter': '+1 step per room drafted after it',
   'still-room': '+1 gem · +2 steps',
   'reading-nook': 'Ellery keeps the lamps low',
@@ -212,14 +213,28 @@ export interface UtilityEffect {
   toast: string;
 }
 
-/** Applied once when the room is drafted; compounding hooks fire on later drafts. */
+/**
+ * Applied once when the room is drafted; compounding hooks fire on later drafts.
+ *
+ * KEY SOURCES (the padlock arc): the upper storeys are gated by `DOOR_LOCKS`,
+ * so the green deck is where an ascent is PREPARED. The two key-bearing cards
+ * are deliberately one deliberate and one incidental — the Key Cabinet is the
+ * unusual card you hope for when you mean to climb, the Boot Room is the
+ * common ground-floor hook you take anyway. Both counts live in A2's
+ * `KEY_SUPPLY` (engine/economy/steps.ts), the one tunable economy file, so the
+ * drop rate can be retuned without touching the deck's composition — rarity
+ * and category are untouched, which is what keeps `deckMixAt` (and therefore
+ * the 4.10b clock) calibrated exactly as it was.
+ */
 export const UTILITY_EFFECTS: Record<string, UtilityEffect> = {
   'kitchen': { steps: 6, compounding: 'utility', compoundSteps: 2,
     toast: 'Something warm from the oven. +6 steps' },
   'larder': { steps: 5, toast: 'Bread, cheese, and a stolen minute. +5 steps' },
-  'boot-room': { steps: 3, toast: 'Dry socks. Remarkable. +3 steps' },
+  'boot-room': { steps: 3, keys: KEY_SUPPLY.bootRoomKeys,
+    toast: 'Dry socks, and a spare key on the hook. +3 steps' },
   'gem-vault': { gems: 2, toast: 'Two gems, cold and bright' },
-  'key-cabinet': { keys: 1, toast: 'A key, filed under someday' },
+  'key-cabinet': { keys: KEY_SUPPLY.cabinetKeys,
+    toast: 'Keys, filed under someday. Two of them look upward' },
   'dumbwaiter': { compounding: 'any', compoundSteps: 1,
     toast: 'It rattles helpfully at every new room' },
   'still-room': { gems: 1, steps: 2, toast: 'Cordial and a gem. +2 steps' },

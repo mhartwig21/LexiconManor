@@ -6,10 +6,13 @@ import {
   PROFILE_DECENT, PROFILE_GREAT, PROFILE_SKILLED, PROFILE_SKIPPER,
 } from '../src/engine/economy/simulate';
 import {
-  doorLockedAt, ledgerTotal, BASE_DAY_BUDGET, DOOR_LOCKS, MOVE_COST_BY_ROW, TEA_BY_RANK,
+  doorLockedAt, fernMorningKeys, ledgerTotal, BASE_DAY_BUDGET, DOOR_LOCKS, KEY_SUPPLY,
+  MOVE_COST_BY_ROW, TEA_BY_RANK,
 } from '../src/engine/economy/steps';
 import { createRng } from '../src/engine/rng';
-import { BASE_DECK } from '../src/engine/manor/deck';
+import { BASE_DECK, deckFor, UTILITY_EFFECTS } from '../src/engine/manor/deck';
+import { rollCards } from '../src/engine/manor/drafting';
+import { createManor } from '../src/engine/manor/grid';
 import { getRoomAdapter, registeredRoomKinds } from '../src/engine/rooms/registry';
 
 /**
@@ -356,5 +359,67 @@ describe('ledger invariants over every simulated day (AAA 4.9)', () => {
     const b = simulateDays(PROFILE_DECENT, 50, 777);
     expect(a.map((r) => [r.rooms, r.maxRow, r.spent, r.refunded]))
       .toEqual(b.map((r) => [r.rooms, r.maxRow, r.spent, r.refunded]));
+  });
+});
+
+describe('the padlock is LIVE, and the live key supply can pay for it', () => {
+  it('bites: the gate refuses a real climb on a real share of days', () => {
+    const early = campaigns.flatMap((c) => c.days.slice(0, 5));
+    expect(share(early, (d) => d.lockedOut > 0)).toBeGreaterThan(0.25);
+    // …and it is never a wall: keys do arrive, and the top does open up.
+    expect(share(campaigns.flatMap((c) => c.days), (d) => d.keysFound > 0))
+      .toBeGreaterThan(0.3);
+  });
+
+  it('models the live refusal: a door she cannot open charges nothing for the storey above', () => {
+    // AAA 4.6, wired in app/slices/manor.ts: a padlocked door with no key does
+    // not open and does not charge. So no simulated day may ever contain a
+    // move priced for a storey it never actually stood on.
+    expect(MOVEMENT.lockoutDetourChance).toBeGreaterThan(0);
+    for (const r of [...decent.slice(0, 400), ...great.slice(0, 400)]) {
+      const highestPaid = Math.max(
+        ...r.ledger.entries
+          .filter((e) => e.reason === 'move')
+          .map((e) => Number(e.roomKey!.split(',')[1])),
+      );
+      expect(highestPaid).toBeLessThanOrEqual(r.maxRow - 1);   // rows are 1-based
+    }
+  });
+
+  it('the DECK supplies at least the key rate the simulation spends', () => {
+    // The gate is only a gate if the key exists. Measure the LIVE deck: what a
+    // draft offer on the floors she banks on actually contains, versus what
+    // the simulated player finds per room she drafts.
+    const deck = deckFor([]);
+    const liveKeysPerOffer = (row: number) => {
+      const N = 1500;
+      let keys = 0;
+      for (let seed = 0; seed < N; seed++) {
+        const cards = rollCards(deck, createManor(seed), { col: (seed % 5) as 0, row },
+          { gems: 2, declinedLastDraft: [], drawIndex: 0 });
+        keys += Math.max(0, ...cards.map((c) => UTILITY_EFFECTS[c.id]?.keys ?? 0));
+      }
+      return keys / N;
+    };
+    const banking = (liveKeysPerOffer(0) + liveKeysPerOffer(1) + liveKeysPerOffer(2)) / 3;
+
+    const simDays = campaigns.flatMap((c) => c.days);
+    const simKeysPerRoom =
+      simDays.reduce((s, d) => s + d.keysFound, 0) / simDays.reduce((s, d) => s + d.rooms, 0);
+
+    expect(banking).toBeGreaterThan(simKeysPerRoom);
+    // …and a padlock still costs a whole key, so the supply is a supply, not a
+    // giveaway: a single offer never hands her a full ascent's worth.
+    expect(banking).toBeLessThan(
+      [4, 5, 6].reduce((s, row) => s + DOOR_LOCKS.chanceByRow[row]!, 0));
+  });
+
+  it("Fern's morning key is an arc, not a bypass", () => {
+    expect(fernMorningKeys(0)).toBe(0);                      // day 1 is the gate
+    const mature = fernMorningKeys(KEY_SUPPLY.fernMorningKeys.length);
+    expect(mature).toBeGreaterThan(0);
+    // One gate shortened; the ascent still crosses roughly 1.7 of them.
+    expect(mature).toBeLessThan(
+      [4, 5, 6].reduce((s, row) => s + DOOR_LOCKS.chanceByRow[row]! * DOOR_LOCKS.keyCost, 0));
   });
 });

@@ -60,7 +60,7 @@
         {
           "speaker": "posy",
           "portrait": "amused",
-          "text": "Excellent attitude. Name, no fixed room — like everyone here. You'll have mail by morning; the house is a terrible gossip in writing."
+          "text": "Excellent attitude. Under 'permanent address' I shall put 'wherever the house sets them down' — same as everybody in this file. You'll have mail by morning; the house is a terrible gossip in writing."
         },
         {
           "speaker": "posy",
@@ -99,7 +99,7 @@
         {
           "speaker": "posy",
           "portrait": "warm",
-          "text": "You'll get used to it. Or you won't, and that's its own kind of fun."
+          "text": "You'll come to like it, or you'll come to like complaining about it. Both count as settling in, dear."
         }
       ]
     },
@@ -171,6 +171,11 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "Well — go on about your day. The post loves a busy addressee."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "And write back sometime. The house checks the outgoing tray every morning. It has never once found anything in it, and it looks anyway."
         }
       ]
     },
@@ -359,7 +364,7 @@
         {
           "speaker": "posy",
           "portrait": "warm",
-          "text": "A flawless room? First-class work. I'd frank you a commendation if I thought your head could take the extra weight."
+          "text": "A flawless room. Nothing returned, nothing queried, not one item mislaid. Fifty years at this counter, dear, and I know clean work when it crosses it."
         },
         {
           "speaker": "posy",
@@ -412,6 +417,11 @@
           "speaker": "posy",
           "portrait": "amused",
           "text": "The mail ran itself ragged once too. 1953. We don't speak of the Great Overdelivery, except to say: sit down, dear."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "There's a chair behind my counter with fifty years of sitting worn into it. Borrow it. It knows the job better than either of us."
         }
       ]
     },
@@ -710,12 +720,12 @@
         {
           "speaker": "posy",
           "portrait": "wistful",
-          "text": "Thirty years I've dusted around that drawer. You can wear a groove in a room just by not-looking at one spot in it."
+          "text": "Thirty years I've sorted round that drawer without once opening it. You can wear a groove in a room just by not-looking at one spot in it."
         },
         {
           "speaker": "posy",
           "portrait": "curious",
-          "text": "There. Now two of us know. Secrets keep better in pairs — they don't rattle so."
+          "text": "There. Now two of us know. A secret carried in pairs stops rattling — postal wisdom, that, and free with every delivery."
         }
       ],
       "effects": {
@@ -830,7 +840,7 @@
         {
           "speaker": "posy",
           "portrait": "warm",
-          "text": "A bookmark! For the postmistress! It's going straight in the ledger under 'valuables, sentimental, uninsurable.'"
+          "text": "For me? Oh, that's going straight in the ledger under 'valuables, sentimental, uninsurable.' Best heading I ever invented and I have waited years to use it."
         },
         {
           "speaker": "posy",
@@ -880,6 +890,11 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "I'll stamp you a spare on an envelope corner, if you like. Everyone should own proof their house exists."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Count the windows some morning. Count them again after tea. Don't come to me about the difference — I stopped counting in '74 and I sleep beautifully."
         }
       ]
     },
@@ -964,6 +979,11 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "There's a ball of it in my drawer from my first week here. Retired now. We've been through things, that string and I."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "wistful",
+          "text": "Six counties, and the local stuff had the best memory of the lot. I never told him. Some corrections are just unkindness with a footnote."
         }
       ]
     },
@@ -1066,7 +1086,7 @@
         {
           "speaker": "posy",
           "portrait": "warm",
-          "text": "Proper chat tomorrow, promise — the afternoon sort waits for no one."
+          "text": "The afternoon sort waits for no one, dear heart — not even you, and you're the best part of the day it's interrupting."
         },
         {
           "speaker": "posy",
@@ -1084,12 +1104,12 @@
         {
           "speaker": "posy",
           "portrait": "amused",
-          "text": "Off you pop. Some of us have a kingdom of brown paper to run."
+          "text": "Some of us have a kingdom of brown paper to run, and it does not run itself, whatever the string may claim."
         },
         {
           "speaker": "posy",
           "portrait": "warm",
-          "text": "Tomorrow, first thing. I'll save you the good stamp."
+          "text": "First thing tomorrow, mind. I'll save you the good stamp and the better half of the gossip."
         }
       ]
     },
@@ -1151,12 +1171,12 @@
         {
           "speaker": "posy",
           "portrait": "warm",
-          "text": "Mail's better since you came. Heavier. Houses write more when they're happy."
+          "text": "Shall I tell you what I do first now? Before the kettle, before the sort — I check your pigeonhole. Fifty years of routine, dear heart, rearranged round one square of brass."
         },
         {
           "speaker": "posy",
           "portrait": "warm",
-          "text": "Off with you, dear heart. The mail and I will mind the fort."
+          "text": "Shocking practice. A postmistress sorts by room, not by fondness. I have no intention whatever of correcting it."
         }
       ]
     },
@@ -1295,6 +1315,11 @@
           "speaker": "posy",
           "portrait": "curious",
           "text": "I've thought about staying up to catch it at the writing. Decided against. Some correspondents deserve their privacy."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "It writes better than it spells, mind. Or spells better than it writes. Depends entirely which floor you're standing on when you read it."
         }
       ]
     },
@@ -1341,6 +1366,11 @@
           "speaker": "posy",
           "portrait": "warm",
           "text": "I write the message down anyway. Every year. It's always just: STILL HERE. STOP. Good message, as they go."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "wistful",
+          "text": "I've drafted a reply eleven times. STILL HERE TOO. STOP. Never sent one. Wouldn't know where to send it, and that's the trouble with a good message."
         }
       ]
     },

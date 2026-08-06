@@ -510,7 +510,7 @@
         {
           "speaker": "ellery",
           "portrait": "wistful",
-          "text": "You found it. You said it — and every book in this room sat up an inch. I felt the spines straighten. Thirty years of slouching, undone in a word."
+          "text": "Every book in this room sat up an inch when that door opened. I felt the spines straighten. Thirty years of slouching, undone in one word."
         },
         {
           "speaker": "ellery",
@@ -794,6 +794,11 @@
           "speaker": "ellery",
           "portrait": "wistful",
           "text": "There — another knot out. He would be mortified, then grateful. In that order. Always in that order."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Bring the next one sooner, won't you. He reads easier while the last page is still warm in the hand."
         }
       ],
       "effects": {
@@ -965,7 +970,7 @@
         {
           "speaker": "ellery",
           "portrait": "warm",
-          "text": "A bookmark — for me? I have marked my place with regret for thirty years, and you hand me ribbon and gilt as if it were nothing."
+          "text": "Ribbon. Gilt. A tassel, even. I have marked my place with regret for thirty years, dear, and you hand me this as though it were nothing."
         },
         {
           "speaker": "ellery",
@@ -1114,7 +1119,7 @@
         {
           "speaker": "ellery",
           "portrait": "neutral",
-          "text": "He sat on the returns bin for a week once, until I apologized. I still don't know what for. Neither does he. It's the principle of the thing."
+          "text": "He occupied the returns bin for nine days once, until I apologized. I still don't know what for. Neither does he. It's the principle of the thing."
         },
         {
           "speaker": "ellery",
@@ -1138,12 +1143,12 @@
         {
           "speaker": "ellery",
           "portrait": "concerned",
-          "text": "Three of his pages now, is it? When his lines begin to finish each other in your head, go stand at the top door. Say nothing until you're sure. Then say it like you mean it."
+          "text": "Three of his pages now, is it? Read them together, in order, until one of them answers another. That is the signal, dear — not certainty. Correspondence. Then go up and say it like you mean it."
         },
         {
           "speaker": "ellery",
           "portrait": "wistful",
-          "text": "And don't fear the wrong answer. The door refuses gently — I have heard it. It learned refusal from him, and he only ever refused himself."
+          "text": "A wrong word does no harm up there, dear. The door refuses gently — I have heard it do it. It learned refusal from him, and he only ever refused himself."
         },
         {
           "speaker": "ellery",
@@ -1161,7 +1166,7 @@
         {
           "speaker": "ellery",
           "portrait": "warm",
-          "text": "Tomorrow, dear — the books do sulk if I chat past closing."
+          "text": "Closing, dear. Not the library — that never closes. Me. I have one good conversation in a day and you have just had it."
         },
         {
           "speaker": "ellery",
@@ -1179,7 +1184,12 @@
         {
           "speaker": "ellery",
           "portrait": "amused",
-          "text": "Shoo, gently. Even a ghost keeps hours."
+          "text": "I'll put myself back on the shelf now. Even a ghost keeps hours — eccentric ones, but firm."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Come tomorrow and I'll have finished the thought I started. Ghosts think slowly. The thoughts are worth the wait."
         },
         {
           "speaker": "ellery",
@@ -1241,12 +1251,12 @@
         {
           "speaker": "ellery",
           "portrait": "warm",
-          "text": "It's a better library with you in it. The books agree — I hear them lean."
+          "text": "I have catalogued this room down to its dust, dear, and there was never a card for the sound of somebody arriving on purpose. I have had to write one out fresh."
         },
         {
           "speaker": "ellery",
           "portrait": "amused",
-          "text": "Go on, now. The day's shelf-life is shorter than it looks."
+          "text": "Dreadful card. Wobbling letters, wrong hand entirely. I wrote it in a hurry, and I have not hurried since 1931."
         }
       ]
     },
@@ -1337,6 +1347,11 @@
           "speaker": "ellery",
           "portrait": "warm",
           "text": "It'll outlive the both of us. Well. You. It'll outlive you. I intend to check on it."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "Linen tape, wheat paste, and a weight of your own choosing. Everything I know about mending is in that sentence, dear — books or otherwise."
         }
       ]
     },
@@ -1382,7 +1397,12 @@
         {
           "speaker": "ellery",
           "portrait": "amused",
-          "text": "The feather duster and I have an understanding: ceremonial duties only."
+          "text": "The feather duster is kept for ceremonial duties only. We have both retired into pageantry."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "The Study's is deepest. I measured it once with a ribbon and then felt ashamed of myself, which is unusual, and which I did not enjoy."
         }
       ]
     },
@@ -1406,6 +1426,11 @@
           "speaker": "ellery",
           "portrait": "neutral",
           "text": "Sit under it whenever you like. It misses honest work."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "It flickered for him, at the end. I have never told a soul that, and now I have told you, so do mind the lamp."
         }
       ]
     },
@@ -1429,6 +1454,11 @@
           "speaker": "ellery",
           "portrait": "warm",
           "text": "You've been thinning it, for what it's worth. Whatever you're doing — it files under 'remedy'."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "Name them yourself as you go. A quiet you can name stops being a quiet you are stuck inside."
         }
       ]
     },
@@ -1452,6 +1482,11 @@
           "speaker": "ellery",
           "portrait": "warm",
           "text": "Yours, I haven't peeked at. Some books you'd rather read at the author's pace."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "Though if you insist on knowing how yours goes: badly, then well, then quietly, on a Thursday. All the good ones go about like that."
         }
       ]
     },

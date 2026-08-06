@@ -13,6 +13,12 @@
  * the caret and notify the parent). Because the reveal is time-derived, the
  * delivered cps stays accurate under Low Power Mode's 30fps rAF (AAA 9.3)
  * instead of silently halving the authored speed.
+ *
+ * Layout contract: the component renders the full line twice — an invisible
+ * `ghost` that reserves the finished line's exact height, and a `live` overlay
+ * the reveal writes into. That lets the dialogue box be CONTENT-FIT (no more
+ * fixed 7.2rem well behind a six-word reaction) while still never reflowing
+ * mid-reveal.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -81,10 +87,21 @@ export default function TypewriterText({
     return () => cancelAnimationFrame(raf);
   }, [text, skipAll]);
 
+  // The box fits its CONTENT (a one-line reaction no longer sits in a
+  // 7.2rem well of blank paper) WITHOUT reflowing while the line types: the
+  // ghost copy is the full text, laid out and invisible, so it claims the
+  // final height on the first frame; the live copy is painted over it and
+  // grows inside a box that never moves. One element pair, no measurement,
+  // no ResizeObserver.
   return (
     <p className={className} aria-label={text}>
-      <span ref={spanRef} aria-hidden="true" />
-      {!complete && <span className="dlg-caret" aria-hidden="true" />}
+      <span className="dlg-tw" aria-hidden="true">
+        <span className="dlg-tw__ghost">{text}</span>
+        <span className="dlg-tw__live">
+          <span ref={spanRef} />
+          {!complete && <span className="dlg-caret" />}
+        </span>
+      </span>
     </p>
   );
 }

@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { createRng, pick, shuffle } from '../src/engine/rng';
 import { loadPhonetics } from './lib/phonetics';
 import { toneOk } from './generate-gate';
-import type { Difficulty, Tier, WordWebPuzzle } from '../src/engine/types';
+import { tierLabel } from '../src/engine/rooms/adapters/tier-select';
+import type { Tier, WordWebPuzzle } from '../src/engine/types';
 
 /**
  * The Library's Word Web generator — the fairness pass Connections never had
@@ -14,8 +15,11 @@ import type { Difficulty, Tier, WordWebPuzzle } from '../src/engine/types';
  * THREE TIERS, MAPPED TO MANOR ROWS (owner directive, round 4: "tier-3 boards
  * use tighter red-herring budgets + subtler categories")
  * ---------------------------------------------------------------------------
- * `tier` (1|2|3 ⇢ rows 0–2 / 3–4 / 5–6) is authoritative; `difficulty` is the
- * legacy display label. Two structural knobs, both build-enforced:
+ * `tier` (1|2|3 ⇢ rows 0–2 / 3–4 / 5–6) is the one authoritative field. (The
+ * old `difficulty` display alias is retired — derive a word from the tier with
+ * `tierLabel()` if one is ever wanted; the per-board `difficulty` in
+ * authored/word-web-boards.json is authoring INTENT, a different thing.) Two
+ * structural knobs, both build-enforced:
  *
  *   1. THE HERRING BUDGET TIGHTENS AS YOU CLIMB. "Tighter" is read as *the
  *      traps get tighter*, not fewer: the solver scores every planted herring,
@@ -189,7 +193,16 @@ const SUBTLE_BANK = WORDPLAY_BANK.filter((b) => isSubtleTheme(b.theme));
 // ---------------------------------------------------------------------------
 
 interface RawGroup { theme: string; tier: 'yellow' | 'green' | 'blue' | 'purple'; words: string[] }
-interface RawBoard { id: string; difficulty: Difficulty; groups: RawGroup[] }
+/**
+ * Per-BOARD authoring tag in content/authored/word-web-boards.json: the tier
+ * the author was aiming at. It is authoring INTENT (INTENDED_TIER below turns
+ * it into a starting tier, and pass 2 demotes boards that don't earn it), not
+ * the retired puzzle-level `difficulty` alias — shipped boards carry `tier`
+ * and nothing else.
+ */
+type AuthoredDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
+
+interface RawBoard { id: string; difficulty: AuthoredDifficulty; groups: RawGroup[] }
 
 interface OutGroup extends RawGroup { type: GroupType; decoys: string[] }
 interface OutBoard extends WordWebPuzzle {
@@ -203,9 +216,6 @@ interface OutBoard extends WordWebPuzzle {
 // ---------------------------------------------------------------------------
 // The three manor tiers
 // ---------------------------------------------------------------------------
-
-/** Legacy display label per tier (engine/types.ts Difficulty stays frozen). */
-const TIER_LABEL: Record<Tier, Difficulty> = { 1: 'easy', 2: 'medium', 3: 'hard' };
 
 /** The authored difficulty is the *intent*; measured structure confirms it. */
 const INTENDED_TIER: Record<string, Tier> = {
@@ -606,7 +616,8 @@ function buildLayout(board: RawBoard, herrings: string[], seed: number): string[
 // 2.11 — decoy labels for the act of naming
 // ---------------------------------------------------------------------------
 
-function assignDecoys(finals: (RawBoard & { groups: OutGroup[] })[]): void {
+/** Needs only an id and the composed groups — asks for exactly that. */
+function assignDecoys(finals: { id: string; groups: OutGroup[] }[]): void {
   for (const board of finals) {
     const rng = createRng([...board.id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, SEED));
     const own = new Set(board.groups.map((g) => g.theme));
@@ -694,7 +705,6 @@ function main() {
     return {
       id: b.id,
       tier,
-      difficulty: TIER_LABEL[tier],
       groups: b.groups.map((g) => ({ ...g, type: typeOfTheme(g.theme), decoys: [] as string[] })),
       ambiguousWords: ship,
       layout,
@@ -710,7 +720,6 @@ function main() {
     .sort((a, b) => b.ambiguousWords.length - a.ambiguousWords.length || (a.id < b.id ? -1 : 1));
   for (const b of top.slice(TIER3_CAP)) {
     b.tier = 2;
-    b.difficulty = TIER_LABEL[2];
     b.ambiguousWords = b.ambiguousWords.slice(0, TIER_SPECS[2].maxHerrings);
   }
 
@@ -724,7 +733,7 @@ function main() {
     const arr = out.filter((b) => b.tier === t);
     const avgHerrings = arr.reduce((a, b) => a + b.ambiguousWords.length, 0) / Math.max(1, arr.length);
     const subtle = arr.reduce((a, b) => a + b.groups.filter((g) => isSubtleTheme(g.theme)).length, 0) / Math.max(1, arr.length);
-    return `t${t}: ${arr.length} boards (~${avgHerrings.toFixed(1)} traps, ~${subtle.toFixed(1)} subtle cats)`;
+    return `t${t} (${tierLabel(t)}): ${arr.length} boards (~${avgHerrings.toFixed(1)} traps, ~${subtle.toFixed(1)} subtle cats)`;
   }).join(', ');
   const trivia = out.filter((b) => b.groups.some((g) => g.type === 'trivia')).length;
   console.log(
@@ -748,7 +757,6 @@ function validate(puzzles: OutBoard[]): void {
 
     // 2.9 + the round-4 tier gates
     const spec = TIER_SPECS[p.tier];
-    if (p.difficulty !== TIER_LABEL[p.tier]) problems.push(`${p.id}: label/tier mismatch`);
     const trivia = p.groups.filter((g) => g.type === 'trivia');
     if (trivia.length > spec.maxTrivia) {
       problems.push(`${p.id}: ${trivia.length} trivia categories (tier ${p.tier} allows ${spec.maxTrivia})`);

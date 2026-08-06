@@ -86,10 +86,18 @@
 .anch-btn:active,
 .anch-btn.is-pressed { transform: translateY(1px); filter: brightness(0.94); }
 .anch-btn:disabled { opacity: 0.45; cursor: default; }
+/* The commit verb — ONE idiom game-wide (AAA 6.16). Enter / Guess / Submit
+   wore the ROOM ACCENT here, which meant the button that commits was a
+   different colour in every room (green in the Conservatory, slate in the
+   Gallery, blue in the Library…) and the accent stopped meaning "state".
+   It is now the ink seal pill every other commit in the house wears, so the
+   shape+colour teaches "this is the one that spends"; the room accent goes
+   back to being reserved for meaningful state only — centre cell, caret,
+   progress, verdicts (AAA 1.14). Folded in from index.css. */
 .anch-btn--primary {
-  background: var(--room-accent);
-  border-color: transparent;
-  color: var(--paper);
+  background: var(--commit-bg);
+  border-color: var(--commit-bg);
+  color: var(--commit-ink);
   font-weight: 600;
 }
 
@@ -438,11 +446,15 @@
    -------------------------------------------------------------------------- */
 
 /* Column count comes from the puzzle (--tw-size, set inline by TwistleView) so
-   a tier-3 6×6 Gallery lays itself out; 5 is the default board. */
+   a tier-3 6×6 Gallery lays itself out; 5 is the default board. Gap and glyph
+   size are divided by the same number rather than branched on it, so the 6×6
+   gives its extra column back out of the gutters instead of out of the tap
+   target: inside the 430px column a 5×5 cell is ~67px and a 6×6 cell ~55px,
+   both comfortably over the 44pt floor (AAA U.1). */
 .tw-grid {
   display: grid;
   grid-template-columns: repeat(var(--tw-size, 5), 1fr);
-  gap: 6px;
+  gap: calc(34px / var(--tw-size, 5));
   touch-action: none;                 /* board owns the gesture (AAA 7.11) */
 }
 .tw-cell {
@@ -454,7 +466,7 @@
   color: var(--ink);
   font-family: var(--font-body);
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: calc(6rem / var(--tw-size, 5));
   cursor: pointer;
   transition: transform 90ms ease, background-color 90ms ease, color 90ms ease;
   -webkit-tap-highlight-color: transparent;

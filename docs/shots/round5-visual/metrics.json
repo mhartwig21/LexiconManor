@@ -1,0 +1,131 @@
+{
+  "light": {
+    "errors": [],
+    "material": {
+      "vignette": "radial-gradient(125% 95% at 50% 40%, rgba(0, 0, 0, 0) 58%, rgba(43, 33, 24, 0.07) 100%)",
+      "vignetteZ": "120",
+      "grainImage": true,
+      "grainOpacity": "0.055",
+      "grainBlend": "multiply",
+      "grainSize": "96px 96px"
+    },
+    "sanctum": {
+      "placeholder": {
+        "text": "the forgotten word",
+        "renderedWidth": 105,
+        "contentWidth": 214,
+        "fits": true,
+        "transform": "none",
+        "family": "\"EB Garamond\""
+      },
+      "speak": {
+        "background": "rgb(43, 33, 24)",
+        "color": "rgb(240, 231, 216)",
+        "radius": "999px"
+      },
+      "nameplate": {
+        "textX": 32.3,
+        "textRight": 208,
+        "plateX": 16,
+        "plateRight": 224,
+        "overrunLeft": -16.3,
+        "overrunRight": -16,
+        "insidePlate": true,
+        "viewBoxRight": 240
+      }
+    },
+    "journal": {
+      "tabs": [
+        {
+          "label": "The Word",
+          "active": true,
+          "dot": false
+        },
+        {
+          "label": "Engravings",
+          "active": false,
+          "dot": false
+        },
+        {
+          "label": "Testimony",
+          "active": false,
+          "dot": false
+        },
+        {
+          "label": "Letters",
+          "active": false,
+          "dot": false
+        }
+      ],
+      "dotOnActiveTab": false,
+      "sealShadow": null,
+      "cardTexts": []
+    }
+  },
+  "dark": {
+    "errors": [],
+    "material": {
+      "vignette": "radial-gradient(125% 95% at 50% 40%, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, 0.2) 100%)",
+      "vignetteZ": "120",
+      "grainImage": true,
+      "grainOpacity": "0.05",
+      "grainBlend": "screen",
+      "grainSize": "96px 96px"
+    },
+    "sanctum": {
+      "placeholder": {
+        "text": "the forgotten word",
+        "renderedWidth": 105,
+        "contentWidth": 214,
+        "fits": true,
+        "transform": "none",
+        "family": "\"EB Garamond\""
+      },
+      "speak": {
+        "background": "rgb(231, 220, 198)",
+        "color": "rgb(36, 29, 21)",
+        "radius": "999px"
+      },
+      "nameplate": {
+        "textX": 32.3,
+        "textRight": 208,
+        "plateX": 16,
+        "plateRight": 224,
+        "overrunLeft": -16.3,
+        "overrunRight": -16,
+        "insidePlate": true,
+        "viewBoxRight": 240
+      }
+    },
+    "journal": {
+      "tabs": [
+        {
+          "label": "The Word",
+          "active": true,
+          "dot": false
+        },
+        {
+          "label": "Engravings",
+          "active": false,
+          "dot": false
+        },
+        {
+          "label": "Testimony",
+          "active": false,
+          "dot": false
+        },
+        {
+          "label": "Letters",
+          "active": false,
+          "dot": false
+        }
+      ],
+      "dotOnActiveTab": false,
+      "sealShadow": null,
+      "cardTexts": []
+    }
+  },
+  "scrim": {
+    "pureBlackRules": []
+  }
+}

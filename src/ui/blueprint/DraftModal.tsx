@@ -12,8 +12,10 @@
 import type { PointerEvent } from 'react';
 import type { Dir, DraftOffer, RoomCard } from '../../engine/types';
 import { neighbor, rowTier } from '../../engine/manor/grid';
+import { isDoorLocked, KEY_COST } from '../../engine/manor/locks';
 import { CARD_PREVIEWS } from '../../engine/manor/deck';
 import { draftCardStake } from '../../engine/economy/preview';
+import { useManorStore } from '../../app/store';
 import { RoomGlyph } from './CategoryGlyph';
 
 const TIER_LABELS = ['', 'the ground floors', 'the middle landings', 'the high floors'];
@@ -41,14 +43,28 @@ export function DoorDiagram({ doors }: { doors: readonly Dir[] }) {
 export interface DraftModalProps {
   offer: DraftOffer;
   gems: number;
+  /**
+   * Keys this door asks for on placement — 0 for an ordinary door. Optional:
+   * defaults to the live manor's padlock roll, so the price is stated even
+   * where the page has not been re-wired (AAA 4.6: never a surprise charge).
+   */
+  keyCost?: number;
   onChoose(cardId: string): void;
   onReroll(): void;
   onCancel(): void;
 }
 
-export default function DraftModal({ offer, gems, onChoose, onReroll, onCancel }: DraftModalProps) {
+export default function DraftModal({
+  offer, gems, keyCost: keyCostProp, onChoose, onReroll, onCancel,
+}: DraftModalProps) {
   const target = neighbor(offer.from, offer.atDoor);
   const tier = target ? rowTier(target.row) : 1;
+  const manor = useManorStore((s) => s.manor);
+  // She only ever gets to see this modal on a padlocked door if she already
+  // held the key (the slice refuses free, without charging a step) — so this
+  // line is a statement of what CHOOSING costs, not a warning she can fail.
+  const keyCost = keyCostProp
+    ?? (manor && target && isDoorLocked(manor, target) ? KEY_COST : 0);
 
   return (
     <div className="bp-modal" role="dialog" aria-modal="true" aria-label="Draft a room">
@@ -58,6 +74,22 @@ export default function DraftModal({ offer, gems, onChoose, onReroll, onCancel }
           <p className="bp-modal__sub">
             Three floorplans for {TIER_LABELS[tier]} · tier {ROMAN[tier]}
           </p>
+          {keyCost > 0 && (
+            <p className="bp-modal__lock">
+              <svg viewBox="0 0 14 16" width={12} height={14} aria-hidden="true">
+                <path
+                  d="M3.4 7.2V4.9a3.6 3.6 0 0 1 7.2 0v2.3"
+                  fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round"
+                />
+                <rect
+                  x={1.6} y={7.2} width={10.8} height={7.4} rx={1.6}
+                  fill="none" stroke="currentColor" strokeWidth={1.5}
+                />
+              </svg>
+              This door was padlocked · placing a room spends{' '}
+              {keyCost === 1 ? '1 key' : `${keyCost} keys`}
+            </p>
+          )}
         </header>
 
         <div className="bp-modal__cards">

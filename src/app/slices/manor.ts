@@ -6,6 +6,16 @@
  * Draft rng streams are per-cell (createRng(hash(daySeed, cellKey, drawIndex)))
  * so a reroll at door A never perturbs door B (AAA 4.8).
  *
+ * PADLOCKS (the arc the shipped game was missing — the simulated economy has
+ * always been gated on rows 4–6, the live one was not, which is precisely the
+ * owner's "way too easy, I reached the Forgotten Word on day one"): draft
+ * doors into the upper storeys can be locked (engine/manor/locks.ts, rates in
+ * engine/economy/steps.ts `DOOR_LOCKS`). Locked-door contract, end to end:
+ *   - the padlock is DRAWN before she walks to it (BlueprintSheet);
+ *   - no key → the door will not open and NO step is charged (AAA 4.6);
+ *   - a key → the draft opens for the usual step, and the key is spent on
+ *     placement, so cancelling still costs only that step.
+ *
  * Session bookkeeping (per-cell draw indices, the offered-and-declined set,
  * AAA 4.3/4.8) lives at module scope, deliberately NOT persisted: losing the
  * anti-repeat memory to a tab close is cosmetic; the save shape stays frozen.
@@ -21,7 +31,8 @@ import {
 } from '../../engine/manor/grid';
 import { deckFor, UTILITY_EFFECTS } from '../../engine/manor/deck';
 import { deweyProphecy, rollOffer } from '../../engine/manor/drafting';
-import { STEP_TABLE } from '../../engine/economy/steps';
+import { isDoorLocked, KEY_COST } from '../../engine/manor/locks';
+import { fernMorningKeys, STEP_TABLE } from '../../engine/economy/steps';
 import { getRoomAdapter } from '../../engine/rooms/registry';
 import { createRng } from '../../engine/rng';
 
@@ -32,9 +43,13 @@ export interface ManorSlice {
 
   /** Move one cell through a connecting door: −1 step via the ledger. */
   moveTo(cell: Cell): void;
-  /** Standing at a door into an empty in-bounds cell → roll a 3-card offer. */
+  /**
+   * Standing at a door into an empty in-bounds cell → roll a 3-card offer.
+   * A padlocked door (rows 4–6, `engine/manor/locks.ts`) needs a key: without
+   * one the offer does not open AND NO STEP IS CHARGED (AAA 4.6).
+   */
   openDraft(atDoor: Dir): void;
-  /** Place the card behind the door and step in. */
+  /** Place the card behind the door and step in (spends the key, if locked). */
   chooseDraftCard(cardId: string): void;
   /** 1 gem, once per draft. */
   rerollDraft(): void;
@@ -82,7 +97,21 @@ export function ensureManor(): void {
   const day = s.day;
   if (!day || (day.phase !== 'morning' && day.phase !== 'exploring')) return;
   sessionFor(day.daySeed);
-  if (!s.manor) storeSet({ manor: createManor(day.daySeed), draftOffer: null });
+  if (s.manor) return;
+  // Fern's arc (KEY_SUPPLY.fernMorningKeys): the padlock's answer to Bramble's
+  // tea. A friend of the groundskeeper finds a key left on the sill at dawn —
+  // affinity-gated, one conversation a day (AAA 5.9), and it does NOT carry
+  // over: the day slice still zeroes keys at night, so every ascent re-earns
+  // its way up (MANOR_DESIGN §9). Applied here because the manor slice owns
+  // `currencies`, and this is the one moment a fresh manor is built.
+  const morning = fernMorningKeys(s.affinities?.fern ?? 0);
+  storeSet((prev) => ({
+    manor: createManor(day.daySeed),
+    draftOffer: null,
+    currencies: morning > 0
+      ? { ...prev.currencies, keys: prev.currencies.keys + morning }
+      : prev.currencies,
+  }));
 }
 
 /** Has Dewey been petted today? (Derives his reveal state — no extra save shape.) */
@@ -176,6 +205,15 @@ export const createManorSlice =
         const target = draftTargets(manor).find((t) => t.dir === atDoor);
         if (!target) return;
         if (get().stepsRemaining() < 1) return; // no step left to reach the door
+        // ── The padlock (DOOR_LOCKS, AAA 4.10d). ────────────────────────────
+        // Checked BEFORE a single step is ledgered: with no key the door does
+        // not open and NOTHING is charged. She saw the padlock on the sheet
+        // before she walked (engine/manor/locks.ts `visibleLocks`), so a
+        // refusal is a decision she already made — never a surprise charge,
+        // never pay-for-nothing (AAA 4.6). The key itself is spent on
+        // PLACEMENT, below, so backing out of the offer still costs only the
+        // one step, exactly like an unlocked door.
+        if (isDoorLocked(manor, target.cell) && get().currencies.keys < KEY_COST) return;
         const sess = sessionFor(manor.daySeed);
         const key = cellKey(target.cell);
         const scripted =
@@ -205,7 +243,14 @@ export const createManorSlice =
         if (!card) return;
         const target = neighbor(draftOffer.from, draftOffer.atDoor);
         if (!target || roomAt(manor, target)) return;
+        // Padlocked door: the key is spent HERE, on placement — the draft
+        // itself was free to look at and free to walk away from (AAA 4.6).
+        // Affordability is settled before ANY currency moves, so a card she
+        // cannot fully pay for never half-charges her.
+        const needsKey = isDoorLocked(manor, target);
+        if (needsKey && get().currencies.keys < KEY_COST) return;
         if (card.gemCost > 0 && !get().spendGems(card.gemCost)) return;
+        if (needsKey && !get().spendKeys(KEY_COST)) return;
 
         const key = cellKey(target);
         const doorsRng = createRng(hashSeed(manor.daySeed, key, 0xd0025));

@@ -17,7 +17,7 @@ import {
   forgottenWordAdapter, FORGOTTEN_WORD_POOL, type ForgottenWordRoomState,
 } from '../../src/engine/rooms/adapters/forgotten-word';
 import { STEP_TABLE } from '../../src/engine/economy/steps';
-import { findPath } from '../../src/engine/twistle';
+import { findPath, puzzleSize } from '../../src/engine/twistle';
 import { definitionForLevel } from '../../src/engine/forgotten-word';
 import { hiveWordPoints } from '../../src/engine/scoring';
 import { bandOf, loadDictionary } from '../../content/lib/dictionary';
@@ -40,7 +40,7 @@ const eventsOfType = (events: RoomEvent[], type: RoomEvent['type']) =>
 
 const webPuzzle: WordWebPuzzle = {
   id: 'web-fixture',
-  difficulty: 'medium', tier: 2,
+  tier: 2,
   groups: [
     { theme: 'Breakfast', tier: 'yellow', words: ['WAFFLE', 'PANCAKE', 'TOAST', 'BAGEL'] },
     { theme: 'Basketball', tier: 'green', words: ['DUNK', 'BLOCK', 'ASSIST', 'REBOUND'] },
@@ -52,7 +52,7 @@ const webPuzzle: WordWebPuzzle = {
 
 const hivePuzzle: HivePuzzle = {
   id: 'hive-fixture',
-  difficulty: 'easy', tier: 1,
+  tier: 1,
   center: 'E',
   outer: ['S', 'T', 'A', 'R', 'N', 'I'],
   pangrams: ['RETAINS'],
@@ -63,7 +63,7 @@ const hivePuzzle: HivePuzzle = {
 
 const twistlePuzzle: TwistlePuzzle = {
   id: 'twistle-fixture',
-  difficulty: 'easy', tier: 1,
+  tier: 1,
   // S T O N E
   // A R A T S
   // L E X I C
@@ -697,6 +697,18 @@ describe('tier escalation — The Gallery (bigger asks, twistier paths)', () => 
     for (const tier of [1, 2, 3] as const) {
       expect(at(tier).length, `tier ${tier}`).toBeGreaterThanOrEqual(30);
     }
+  });
+
+  /**
+   * The "bigger" half of the round-4 directive: the board itself grows at the
+   * top of the manor. Full board contract (declared vs derived size, centre
+   * tile, per-board solvability) lives in tests/puzzles/twistle-boards.test.ts.
+   */
+  it('the board itself grows: tier 3 is a 6×6, tiers 1–2 stay 5×5', () => {
+    for (const tier of [1, 2] as const) {
+      for (const p of at(tier)) expect(puzzleSize(p), p.id).toBe(5);
+    }
+    for (const p of at(3)) expect(puzzleSize(p), p.id).toBe(6);
   });
 
   it('tier 3 raises the word-length floor and demands the centre tile', () => {

@@ -12,11 +12,8 @@
  * the generator ships both, round-trip-verified.
  */
 
-import type { Difficulty } from '../types';
-
 export interface CipherPuzzle {
   id: string;
-  difficulty: Difficulty;
   /** Encoded phrase: A–Z substituted, spaces/punctuation preserved. */
   ciphertext: string;
   plaintext: string;

@@ -5,6 +5,10 @@ import {
   draftTargets, deadDoors, placeRoom, orientationsOf, resolveDoors, hashSeed,
   roomSeed, deweyCell, roomAt, DIRS, ENTRANCE_KEY, SANCTUM_KEY,
 } from '../src/engine/manor/grid';
+import {
+  canOpenDoor, isDoorLocked, lockedDraftTargets, rowCanLock, visibleLocks, KEY_COST,
+} from '../src/engine/manor/locks';
+import { DOOR_LOCKS } from '../src/engine/economy/steps';
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCard } from '../src/engine/types';
 import { ENTRANCE_CELL, MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../src/engine/types';
 import { createRng } from '../src/engine/rng';
@@ -224,5 +228,127 @@ describe('a walkable manor end-to-end', () => {
     }
     // the landing connects to the sanctum's sealed S door
     expect(doorsConnect(m, m.playerCell, 'N')).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Padlocks (engine/manor/locks.ts) — AAA 4.6 / 4.10d
+// ---------------------------------------------------------------------------
+
+describe('padlocked doors: the gate on the upper storeys', () => {
+  it('never locks the lower half of the house, always can lock the top', () => {
+    for (const row of [0, 1, 2, 3]) expect(rowCanLock(row)).toBe(false);
+    for (const row of [4, 5, 6]) expect(rowCanLock(row)).toBe(true);
+    const m = createManor(2);
+    for (let seed = 0; seed < 120; seed++) {
+      const manor = { ...m, daySeed: seed };
+      for (let col = 0; col < MANOR_COLS; col++) {
+        for (const row of [0, 1, 2, 3]) {
+          expect(isDoorLocked(manor, { col: col as Cell['col'], row })).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('answers the same for a door all day long (never a surprise, AAA 4.6)', () => {
+    const manor = createManor(2);
+    for (const cell of [{ col: 0, row: 4 }, { col: 2, row: 5 }, { col: 4, row: 6 }] as Cell[]) {
+      const first = isDoorLocked(manor, cell);
+      for (let i = 0; i < 8; i++) expect(isDoorLocked(manor, cell)).toBe(first);
+    }
+  });
+
+  it('locks the DRAFT, never the corridor: a placed room is always open', () => {
+    let m = createManor(2);
+    const cell: Cell = { col: 2, row: 4 };
+    expect(isDoorLocked(m, cell)).toBe(true);       // seed 2 padlocks 2,4
+    m = placeRoom(m, room(cell, ['N', 'S']));
+    expect(isDoorLocked(m, cell)).toBe(false);      // …and once drafted, open
+  });
+
+  it('lands the published rates over many days (a tuning number, not an accident)', () => {
+    for (const row of [4, 5, 6]) {
+      let locked = 0, n = 0;
+      for (let seed = 0; seed < 400; seed++) {
+        const manor = { ...createManor(seed * 2654435761), daySeed: seed * 2654435761 };
+        for (let col = 0; col < MANOR_COLS; col++) {
+          const cell: Cell = { col: col as Cell['col'], row };
+          if (roomAt(manor, cell)) continue;   // the sealed sanctum sits at 2,6
+          n += 1;
+          if (isDoorLocked(manor, cell)) locked += 1;
+        }
+      }
+      expect(locked / n).toBeCloseTo(DOOR_LOCKS.chanceByRow[row]!, 1);
+    }
+  });
+
+  it('opens for a key and refuses without one', () => {
+    const manor = createManor(2);
+    const shut: Cell = { col: 2, row: 4 };
+    expect(isDoorLocked(manor, shut)).toBe(true);
+    expect(canOpenDoor(manor, shut, 0)).toBe(false);
+    expect(canOpenDoor(manor, shut, KEY_COST)).toBe(true);
+    // an ordinary ground-floor door never asks for anything
+    expect(canOpenDoor(manor, { col: 1, row: 2 }, 0)).toBe(true);
+  });
+
+  it('annotates the doors at her feet, so the draft flow can price them', () => {
+    let m = createManor(2);
+    m = placeRoom(m, room({ col: 2, row: 3 }, ['N', 'S']));
+    m = { ...m, playerCell: { col: 2, row: 3 } };
+    const targets = lockedDraftTargets(m);
+    expect(targets.map((t) => t.dir).sort()).toEqual(['N', 'S']);
+    const up = targets.find((t) => t.dir === 'N')!;
+    const down = targets.find((t) => t.dir === 'S')!;
+    expect(up.locked).toBe(true);
+    expect(up.keyCost).toBe(KEY_COST);
+    expect(down.locked).toBe(false);              // row 2 never locks
+    expect(down.keyCost).toBe(0);
+  });
+});
+
+describe('padlocks are VISIBLE before a step is spent toward them (AAA 4.6)', () => {
+  it('draws every gate on the frontier she is standing at', () => {
+    let m = createManor(2);
+    m = placeRoom(m, room({ col: 2, row: 3 }, ['N', 'S']));
+    m = { ...m, playerCell: { col: 2, row: 3 } };
+    const seen = visibleLocks(m).map((l) => cellKey(l.cell));
+    // she stands on row 3; the padlock on the row-4 cell above her is drawn
+    expect(seen).toContain('2,4');
+    for (const l of visibleLocks(m)) expect(l.locked).toBe(true);
+  });
+
+  it('opens up a whole storey once she has a room standing on it', () => {
+    let m = createManor(2);
+    m = placeRoom(m, room({ col: 2, row: 4 }, ['N', 'E', 'W']));
+    m = { ...m, playerCell: { col: 2, row: 4 } };
+    const seen = new Set(visibleLocks(m).map((l) => cellKey(l.cell)));
+    for (let col = 0; col < MANOR_COLS; col++) {
+      const cell: Cell = { col: col as Cell['col'], row: 4 };
+      if (col === 2) continue;                       // her own room
+      expect(seen.has(cellKey(cell))).toBe(isDoorLocked(m, cell));
+    }
+  });
+
+  it('never draws a padlock on a cell that already holds a room, or on a safe row', () => {
+    let m = createManor(2);
+    for (let row = 1; row <= 4; row++) m = placeRoom(m, room({ col: 2, row }, ['N', 'S']));
+    for (const l of visibleLocks(m)) {
+      expect(roomAt(m, l.cell)).toBeUndefined();
+      expect(l.cell.row).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  it('does not show the empty top of the house from the ground floor', () => {
+    // A fresh manor: entrance at the bottom, the sealed sanctum at the top,
+    // nothing else. Row 6 is 80% locked, but standing on the front step is no
+    // way to read that landing — the only padlock a new day can show is the
+    // one on the sanctum's own door, and only if it rolled locked.
+    for (let seed = 0; seed < 60; seed++) {
+      const m = createManor(seed);
+      const seen = visibleLocks(m).map((l) => cellKey(l.cell));
+      expect(seen.every((k) => k === '2,5')).toBe(true);
+      expect(seen.length).toBeLessThanOrEqual(1);
+    }
   });
 });

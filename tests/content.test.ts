@@ -51,7 +51,12 @@ describe('twistle bundle', () => {
 
   it('every target word is findable under the puzzle rules', () => {
     for (const p of twistle) {
-      expect(p.grid.length, p.id).toBe(25);
+      // Round 4: the board is square but no longer always 5×5 — tier 3 ships a
+      // 6×6 Gallery. The per-tier size contract is asserted in
+      // tests/puzzles/twistle-boards.test.ts; here we only insist the grid is a
+      // complete square of its declared size.
+      const size = p.size ?? 5;
+      expect(p.grid.length, p.id).toBe(size * size);
       expect(p.targetWords.length, p.id).toBeGreaterThanOrEqual(p.targetCount);
       for (const w of p.targetWords) {
         expect(findPath(p.grid, w, p.rules), `${p.id}: ${w}`).not.toBeNull();

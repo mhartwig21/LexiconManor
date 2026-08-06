@@ -5,7 +5,8 @@ import { loadDictionary, distinctLetters, bandOf, type Dictionary } from './lib/
 import { gateOk } from './generate-gate';
 import { createRng, shuffle } from '../src/engine/rng';
 import { hiveWordPoints } from '../src/engine/scoring';
-import type { HivePuzzle, Difficulty, Tier } from '../src/engine/types';
+import { tierLabel } from '../src/engine/rooms/adapters/tier-select';
+import type { HivePuzzle, Tier } from '../src/engine/types';
 
 /**
  * Hive Builder puzzle generator, done the NYT Spelling Bee way:
@@ -25,10 +26,11 @@ import type { HivePuzzle, Difficulty, Tier } from '../src/engine/types';
  * ---------------------------------------------------------------------------
  * THREE TIERS, MAPPED TO MANOR ROWS (owner directive, round 4)
  * ---------------------------------------------------------------------------
- * `tier` (1|2|3 ⇢ rows 0–2 / 3–4 / 5–6) is the authoritative field; the legacy
- * `difficulty` label rides along 1:1 for display. Tier differences here are
- * STRUCTURAL, not "more of the same" — every knob is a measured property of
- * the curated word list:
+ * `tier` (1|2|3 ⇢ rows 0–2 / 3–4 / 5–6) is the one authoritative field. (The
+ * old `difficulty` display alias is retired — derive a word from the tier with
+ * `tierLabel()` if one is ever wanted.) Tier differences here are STRUCTURAL,
+ * not "more of the same" — every knob is a measured property of the curated
+ * word list:
  *
  *   1. CURATED SIZE shrinks as you climb (T1 50–80 → T3 26–44 words). The
  *      round-3 fix, per owner: a tier-3 Conservatory must still FIT THE DAY,
@@ -50,9 +52,6 @@ const SEED = 20260701;
 const CURATION_MAX_RANK = 60_000;
 /** Pangrams may reach into 'advanced' — the hunt makes the obscurity fair. */
 const PANGRAM_MAX_RANK = 120_000;
-
-/** Legacy display label per tier (engine/types.ts Difficulty stays frozen). */
-const TIER_LABEL: Record<Tier, Difficulty> = { 1: 'easy', 2: 'medium', 3: 'hard' };
 
 interface TierSpec {
   /** Curated word-count band — shrinks with tier so a tier-3 hive fits a day. */
@@ -222,7 +221,7 @@ function threshold(c: Candidate, tier: Tier): number {
   return Math.max(15, Math.min(raw, Math.floor(c.totalPoints * 0.4)));
 }
 
-/** Generated-JSON shape: `tier` is authoritative, `difficulty` is the label. */
+/** Generated-JSON shape: `tier` is the one authoritative band field. */
 type TieredHivePuzzle = HivePuzzle & { tier: Tier };
 
 function main() {
@@ -275,7 +274,6 @@ function main() {
       byTier[tier].push({
         id: `hive-t${tier}-${byTier[tier].length + 1}`,
         tier,
-        difficulty: TIER_LABEL[tier],
         center: c.center.toUpperCase(),
         outer: outer.map((l) => l.toUpperCase()),
         pangrams: c.pangrams.map((w) => w.toUpperCase()).sort(),
@@ -287,7 +285,7 @@ function main() {
     const shares = eligible[tier].map(everydayShare);
     const avgShare = shares.length ? shares.reduce((a, b) => a + b, 0) / shares.length : 0;
     console.log(
-      `tier ${tier}: ${byTier[tier].length} shipped of ${eligible[tier].length} eligible ` +
+      `tier ${tier} (${tierLabel(tier)}): ${byTier[tier].length} shipped of ${eligible[tier].length} eligible ` +
       `(avg everyday point share ${(avgShare * 100).toFixed(0)}%)`,
     );
   }
@@ -311,7 +309,6 @@ function validate(puzzles: TieredHivePuzzle[]) {
   const dict = loadDictionary();
   for (const p of puzzles) {
     const spec = TIER_SPECS[p.tier];
-    if (p.difficulty !== TIER_LABEL[p.tier]) problems.push(`${p.id}: label/tier mismatch`);
     if (p.validWords.length < spec.minWords || p.validWords.length > spec.maxWords) {
       problems.push(`${p.id}: ${p.validWords.length} words outside tier ${p.tier} band ${spec.minWords}–${spec.maxWords}`);
     }

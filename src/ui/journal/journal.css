@@ -347,7 +347,11 @@
   height: 1.35rem;
   border-radius: 50%;
   background: var(--wax);
-  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.12);
+  /* The pressed rim of the seal. Was a pure-black inset (AAA 6.1 forbids
+     literal #000 in either theme, and on candlelit charcoal it read as a hole
+     rather than a stamped ring) — now a warm ink shade off the token palette,
+     which also flips correctly with the theme. */
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--ink) 16%, transparent);
 }
 .jrn-seal--broken {
   background: transparent;

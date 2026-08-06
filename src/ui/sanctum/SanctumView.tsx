@@ -33,6 +33,7 @@ import { getDialogueFile } from '../../engine/dialogue/content';
 import { selectDialogue } from '../../engine/dialogue/select';
 import DialogueScene from '../dialogue/DialogueScene';
 import { sfx } from '../../app/sound';
+import { quoted } from '../journal/quote';
 import PortraitFrame from './PortraitFrame';
 import './sanctum.css';
 
@@ -255,7 +256,7 @@ export default function SanctumView() {
             <div className="snc-epilogue__poem">
               {slots.map((s) =>
                 s.fragment ? (
-                  <span key={s.revealOrder}>“{s.fragment.text}”</span>
+                  <span key={s.revealOrder}>{quoted(s.fragment.text)}</span>
                 ) : (
                   <span key={s.revealOrder} style={{ letterSpacing: '0.3em' }}>— · —</span>
                 ),

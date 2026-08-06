@@ -12,8 +12,6 @@
  * "perfect".
  */
 
-import type { Difficulty } from '../types';
-
 export type CrosswordDir = 'across' | 'down';
 
 export interface CrosswordEntry {
@@ -27,7 +25,6 @@ export interface CrosswordEntry {
 
 export interface CrosswordPuzzle {
   id: string;
-  difficulty: Difficulty;
   size: number;            // grid is size×size; cells outside entries are linen
   entries: CrosswordEntry[]; // 3–5, solver-verified by the generator
 }

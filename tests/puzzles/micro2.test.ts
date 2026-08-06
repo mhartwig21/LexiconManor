@@ -32,7 +32,6 @@ const eventsOfType = (events: RoomEvent[], type: RoomEvent['type']) =>
 
 const cwPuzzle: CrosswordPuzzle = {
   id: 'cw-fixture',
-  difficulty: 'easy',
   size: 5,
   entries: [
     { id: '1D', dir: 'down', row: 1, col: 3, answer: 'BED', clue: 'Where the day ends' },

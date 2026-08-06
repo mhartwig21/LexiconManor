@@ -1,10 +1,23 @@
 import { describe, expect, it } from 'vitest';
+import { create } from 'zustand';
 import {
   affordabilityMultiplier, ANTI_REPEAT_SUPPRESSION, cardWeight, categoryWeight,
   deweyProphecy, eligibleCards, RARITY_WEIGHTS, rollCards, rollOffer,
   type DraftRollCtx,
 } from '../src/engine/manor/drafting';
-import { BASE_DECK, cardById, deckFor, SCRIPTED_FIRST_DRAFT } from '../src/engine/manor/deck';
+import {
+  BASE_DECK, cardById, deckFor, CARD_PREVIEWS, SCRIPTED_FIRST_DRAFT, UTILITY_EFFECTS,
+} from '../src/engine/manor/deck';
+import { isDoorLocked, KEY_COST } from '../src/engine/manor/locks';
+import { KEY_SUPPLY, moveAt } from '../src/engine/economy/steps';
+import { createEmptySaveV2 } from '../src/app/save';
+import type { ManorStore } from '../src/app/store';
+import { createDaySlice } from '../src/app/slices/day';
+import { createManorSlice, ensureManor } from '../src/app/slices/manor';
+import { createRoomSlice } from '../src/app/slices/room';
+import { createDialogueSlice } from '../src/app/slices/dialogue';
+import { createJournalSlice } from '../src/app/slices/journal';
+import { createMetaSlice } from '../src/app/slices/meta';
 import {
   cellKey, createManor, deweyCell, DIRS, opposite, placeRoom, resolveDoors, roomAt, rowTier,
 } from '../src/engine/manor/grid';
@@ -282,5 +295,181 @@ describe('economy shape smoke test (AAA 4.10 support)', () => {
     // leaving room for puzzle spends — the "one more room" tension holds.
     const moves = 6 + 6;
     expect(moves).toBeLessThan(40 * 0.4);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// THE PADLOCK, LIVE (app/slices/manor.ts) — AAA 4.6 / 4.10d
+//
+// The gate existed in the economy simulation long before it existed in the
+// shipped game, which is exactly the owner's "way too easy — I reached the
+// Forgotten Word on day one". These are the contract tests for the wiring:
+// a padlocked door BLOCKS without a key, spends EXACTLY ONE with, and charges
+// NOTHING when it refuses.
+// ---------------------------------------------------------------------------
+
+/** Store built from the real slices — the same harness tests/day.test.ts uses. */
+const makeStore = () => {
+  const save = createEmptySaveV2('Locksmith');
+  return create<ManorStore>()((...a) => ({
+    ...createDaySlice(save)(...a),
+    ...createManorSlice(save)(...a),
+    ...createRoomSlice(save)(...a),
+    ...createDialogueSlice(save)(...a),
+    ...createJournalSlice(save)(...a),
+    ...createMetaSlice(save)(...a),
+  }));
+};
+
+/** Day seed 2 padlocks the cell at 2,4; seed 1 leaves it open. */
+const LOCK_SEED = 2;
+const OPEN_SEED = 1;
+
+/**
+ * Out on the blueprint, standing in a row-3 room with two live doors: north
+ * into 2,4 (padlocked on LOCK_SEED) and south into 2,2 (never lockable).
+ */
+const atTheStairs = (daySeed: number, keys: number) => {
+  const store = makeStore();
+  store.getState().startDay();
+  store.getState().advanceDayPhase();
+  ensureManor();
+  const base = createManor(daySeed);
+  const landing: PlacedRoom = {
+    cardId: 'gallery', cell: { col: 2, row: 3 }, doors: ['N', 'S'],
+    solved: true, kind: 'twistle',
+  };
+  store.setState({
+    manor: { ...base, rooms: { ...base.rooms, '2,3': landing }, playerCell: { col: 2, row: 3 } },
+    day: { ...store.getState().day!, day: 4, daySeed },
+    currencies: { ...store.getState().currencies, keys, gems: 0 },
+    ledger: { budget: 18, entries: [] },
+  });
+  return store;
+};
+
+describe('a padlocked door blocks without a key — and charges nothing (AAA 4.6)', () => {
+  it('refuses to open, spends no step, and leaves the ledger untouched', () => {
+    const store = atTheStairs(LOCK_SEED, 0);
+    expect(isDoorLocked(store.getState().manor!, { col: 2, row: 4 })).toBe(true);
+    const stepsBefore = store.getState().stepsRemaining();
+    const entriesBefore = store.getState().ledger.entries.length;
+
+    store.getState().openDraft('N');
+
+    const s = store.getState();
+    expect(s.draftOffer).toBeNull();                     // no look at the cards
+    expect(s.ledger.entries.length).toBe(entriesBefore); // …and NO charge
+    expect(s.stepsRemaining()).toBe(stepsBefore);
+    expect(s.manor!.rooms['2,4']).toBeUndefined();
+  });
+
+  it('never a pay-for-nothing however many times she tries the handle', () => {
+    const store = atTheStairs(LOCK_SEED, 0);
+    const before = store.getState().stepsRemaining();
+    for (let i = 0; i < 6; i++) store.getState().openDraft('N');
+    expect(store.getState().stepsRemaining()).toBe(before);
+    expect(store.getState().ledger.entries).toHaveLength(0);
+  });
+
+  it('leaves the rest of the floor open — a shut door is not a shut day', () => {
+    const store = atTheStairs(LOCK_SEED, 0);
+    store.getState().openDraft('S');                     // row 2: never locked
+    expect(store.getState().draftOffer).not.toBeNull();
+    expect(store.getState().ledger.entries.at(-1)!.reason).toBe('move');
+  });
+
+  it('an unlocked upper door costs only the usual step, with no key at all', () => {
+    const store = atTheStairs(OPEN_SEED, 0);
+    expect(isDoorLocked(store.getState().manor!, { col: 2, row: 4 })).toBe(false);
+    store.getState().openDraft('N');
+    expect(store.getState().draftOffer).not.toBeNull();
+    expect(store.getState().ledger.entries).toHaveLength(1);
+  });
+});
+
+describe('a padlocked door spends EXACTLY ONE key — on placement', () => {
+  it('opens for the usual one step and does not touch the key to look', () => {
+    const store = atTheStairs(LOCK_SEED, 1);
+    store.getState().openDraft('N');
+    const s = store.getState();
+    expect(s.draftOffer).not.toBeNull();
+    expect(s.currencies.keys).toBe(1);                   // looking is free
+    const moves = s.ledger.entries.filter((e) => e.reason === 'move');
+    expect(moves).toHaveLength(1);
+    expect(moves[0]!.delta).toBe(moveAt(4));             // priced by the row
+  });
+
+  it('backing out keeps the key — only the step already spent is gone (AAA 4.6)', () => {
+    const store = atTheStairs(LOCK_SEED, 2);
+    store.getState().openDraft('N');
+    store.getState().cancelDraft();
+    const s = store.getState();
+    expect(s.draftOffer).toBeNull();
+    expect(s.currencies.keys).toBe(2);
+    expect(s.ledger.entries.filter((e) => e.reason === 'move')).toHaveLength(1);
+  });
+
+  it('consumes one key, and only one, when the room is placed', () => {
+    const store = atTheStairs(LOCK_SEED, 3);
+    store.getState().openDraft('N');
+    const card = store.getState().draftOffer!.cards.find((c) => c.gemCost === 0)!;
+    const refund = UTILITY_EFFECTS[card.id]?.keys ?? 0;  // green rooms may pay keys back
+
+    store.getState().chooseDraftCard(card.id);
+
+    const s = store.getState();
+    expect(s.currencies.keys).toBe(3 - KEY_COST + refund);
+    expect(s.manor!.rooms['2,4']).toBeDefined();
+    expect(s.manor!.playerCell).toEqual({ col: 2, row: 4 });
+  });
+
+  it('an unlocked door spends no key at all (the control)', () => {
+    const store = atTheStairs(OPEN_SEED, 2);
+    store.getState().openDraft('N');
+    const card = store.getState().draftOffer!.cards.find((c) => c.gemCost === 0)!;
+    const refund = UTILITY_EFFECTS[card.id]?.keys ?? 0;
+    store.getState().chooseDraftCard(card.id);
+    expect(store.getState().currencies.keys).toBe(2 + refund);
+  });
+
+  it('a door she can no longer pay for places nothing and charges nothing', () => {
+    // Belt and braces: the key is re-checked at placement, so a key spent
+    // elsewhere between opening and choosing cannot half-place a room.
+    const store = atTheStairs(LOCK_SEED, 1);
+    store.getState().openDraft('N');
+    store.getState().spendKeys(1);                       // Fern took it back
+    const card = store.getState().draftOffer!.cards.find((c) => c.gemCost === 0)!;
+    store.getState().chooseDraftCard(card.id);
+    const s = store.getState();
+    expect(s.manor!.rooms['2,4']).toBeUndefined();
+    expect(s.currencies.keys).toBe(0);
+    expect(s.manor!.playerCell).toEqual({ col: 2, row: 3 });
+  });
+});
+
+describe('the key supply the padlocks assume actually exists in the deck', () => {
+  it('names its key sources on the card face (AAA 1.17)', () => {
+    expect(UTILITY_EFFECTS['key-cabinet']!.keys).toBe(KEY_SUPPLY.cabinetKeys);
+    expect(UTILITY_EFFECTS['boot-room']!.keys).toBe(KEY_SUPPLY.bootRoomKeys);
+    expect(CARD_PREVIEWS['key-cabinet']).toContain(String(KEY_SUPPLY.cabinetKeys));
+    expect(CARD_PREVIEWS['key-cabinet']!.toLowerCase()).toContain('key');
+    expect(CARD_PREVIEWS['boot-room']!.toLowerCase()).toContain('key');
+  });
+
+  it('offers a key card often enough on the floors an ascent is prepared on', () => {
+    // A padlock is only a gate if the key exists. Rows 0–2 are where she banks
+    // for a climb; a key card must show up in a meaningful share of offers.
+    for (const row of [0, 1, 2]) {
+      let withKey = 0;
+      const N = 1200;
+      for (let seed = 0; seed < N; seed++) {
+        const cards = rollCards(
+          DECK, createManor(seed), { col: (seed % 5) as Cell['col'], row }, ctx({ gems: 2 }),
+        );
+        if (cards.some((c) => (UTILITY_EFFECTS[c.id]?.keys ?? 0) > 0)) withKey += 1;
+      }
+      expect(withKey / N).toBeGreaterThan(0.12);
+    }
   });
 });

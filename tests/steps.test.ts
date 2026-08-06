@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  appendEntry, createLedger, dayStartTotal, doorLockedAt, ledgerTotal, moveAt, priceEntry,
-  stepsRefunded, stepsRemaining, stepsSpent, teaBonus,
-  BASE_DAY_BUDGET, DOOR_LOCKS, MOVE_COST_BY_ROW, SANCTUM_GUESS_COST, STEP_TABLE, TEA_BY_RANK,
+  appendEntry, createLedger, dayStartTotal, doorLockedAt, fernMorningKeys, ledgerTotal, moveAt,
+  priceEntry, stepsRefunded, stepsRemaining, stepsSpent, teaBonus,
+  BASE_DAY_BUDGET, DOOR_LOCKS, KEY_SUPPLY, MOVE_COST_BY_ROW, SANCTUM_GUESS_COST, STEP_TABLE,
+  TEA_BY_RANK,
 } from '../src/engine/economy/steps';
 import { draftCardStake } from '../src/engine/economy/preview';
 import type { StepEntry, StepLedger } from '../src/engine/types';
@@ -264,5 +265,38 @@ describe('ledger invariants (AAA 4.9)', () => {
     l = appendEntry(l, entry('solve', 6));
     l = appendEntry(l, entry('move', -1));
     expect(dayStartTotal(l)).toBe(26);
+  });
+});
+
+describe('the key supply — the padlock arc (AAA 4.10d)', () => {
+  it('gives a locked door an answer at all: keys exist in more than one place', () => {
+    expect(KEY_SUPPLY.cabinetKeys).toBeGreaterThanOrEqual(DOOR_LOCKS.keyCost);
+    expect(KEY_SUPPLY.bootRoomKeys).toBeGreaterThanOrEqual(DOOR_LOCKS.keyCost);
+  });
+
+  it("mirrors Bramble's tea: nothing on the first mornings, a key once trusted", () => {
+    expect(fernMorningKeys(0)).toBe(0);
+    expect(fernMorningKeys(1)).toBe(0);
+    const table = KEY_SUPPLY.fernMorningKeys;
+    for (let i = 1; i < table.length; i++) {
+      expect(table[i]!).toBeGreaterThanOrEqual(table[i - 1]!);   // never regresses
+    }
+    expect(fernMorningKeys(table.length + 20)).toBe(table.at(-1));
+    expect(fernMorningKeys(-3)).toBe(0);
+    expect(fernMorningKeys(Number.NaN)).toBe(0);
+  });
+
+  it('shortens the climb and never buys it: dawn keys open fewer gates than an ascent needs', () => {
+    // A straight ascent drafts into rows 4, 5 and 6 once each, so it needs
+    // 0.35 + 0.55 + 0.8 ≈ 1.7 keys on average. Fern must never cover that on
+    // her own, or the padlock stops being a gate the day she warms up.
+    const expectedGates = [4, 5, 6]
+      .reduce((sum, row) => sum + DOOR_LOCKS.chanceByRow[row]! * DOOR_LOCKS.keyCost, 0);
+    expect(Math.max(...KEY_SUPPLY.fernMorningKeys)).toBeLessThan(expectedGates);
+  });
+
+  it('keeps the gate real on day one: no key arrives before the friendship does', () => {
+    expect(fernMorningKeys(0)).toBe(0);
+    expect(teaBonus(0)).toBe(0);
   });
 });

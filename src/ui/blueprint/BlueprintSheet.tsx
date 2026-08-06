@@ -13,8 +13,20 @@
  *   - tap an empty cell behind a door → onOpenDraft  (ghost room affordance)
  *   - tap the room you stand in       → onEnterRoom  (unsolved puzzle rooms)
  *   - tap the Sanctum from its landing→ onSanctum
+ *
+ * PADLOCKS (AAA 4.6 / 4.10d): doors into the upper storeys can be locked
+ * (engine/manor/locks.ts). The sheet draws a small brass padlock on every gate
+ * she can already see — the frontier and any storey already open to her — so
+ * she reads the gate BEFORE spending a step toward it. The lock's two states
+ * are carried by SHAPE first (shut shackle vs. shackle swung open), never by
+ * hue alone: with a key in her pocket the padlock lifts and takes the gilt
+ * that every other interactable on this sheet wears; without one it stays
+ * shut in quiet ink and the door's gilt handle is not drawn at all, because
+ * there is nothing there to invite her. Tapping a shut one nudges it rather
+ * than charging her a step (the slice refuses free — see openDraft).
  */
 
+import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent, ReactNode } from 'react';
 import type { Cell, Dir, ManorState, PlacedRoom } from '../../engine/types';
 import { MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../../engine/types';
@@ -22,6 +34,8 @@ import {
   cellKey, deadDoors, deweyCell, doorsConnect, draftTargets, ENTRANCE_CARD_ID,
   roomAt, sameCell, walkableNeighbors,
 } from '../../engine/manor/grid';
+import { isDoorLocked, visibleLocks, KEY_COST } from '../../engine/manor/locks';
+import { useManorStore } from '../../app/store';
 import { ROOM_KIND_GLYPH_PATHS } from './CategoryGlyph';
 
 const CELL = 64;
@@ -116,6 +130,36 @@ function graphCrosses(): string {
   return p.join('');
 }
 
+/**
+ * A small inked brass padlock, drawn at the centre of a locked cell.
+ *
+ * Legibility budget: the sheet's viewBox is 358 units wide, so on a 390px
+ * phone one unit ≈ 1.09 CSS px — this lock is ~19×23px there, with ~1.7px
+ * strokes. Colourblind-safe by construction: `ready` changes the SHAPE (the
+ * shackle swings open and the body's keyhole fills) as well as the hue, and
+ * the two states also differ in stroke weight.
+ */
+function Padlock({ x, y, ready }: { x: number; y: number; ready: boolean }) {
+  const cx = x + CELL / 2;
+  const cy = y + CELL / 2;
+  const shackle = ready
+    // swung open: the right leg lifts clear of the case
+    ? `M${cx - 5.4} ${cy - 2.2}V${cy - 6.6}A5.4 5.4 0 0 1 ${cx + 4.4} ${cy - 9.6}`
+    // shut: a plain staple through the case
+    : `M${cx - 5.4} ${cy - 2.2}V${cy - 6.6}A5.4 5.4 0 0 1 ${cx + 5.4} ${cy - 6.6}V${cy - 2.2}`;
+  return (
+    <g className={`bp-padlock${ready ? ' bp-padlock--ready' : ''}`} aria-hidden="true">
+      <path className="bp-padlock__shackle" d={shackle} />
+      <rect
+        className="bp-padlock__case"
+        x={cx - 8.6} y={cy - 2.2} width={17.2} height={12.8} rx={2.2}
+      />
+      <circle className="bp-padlock__hole" cx={cx} cy={cy + 3} r={1.9} />
+      <path className="bp-padlock__slot" d={`M${cx} ${cy + 4.4}v3`} />
+    </g>
+  );
+}
+
 const CAT_CLASS: Record<PlacedRoom['kind'] | 'puzzle', string> = {
   'parlor': 'bp-cat--parlor', 'utility': 'bp-cat--utility', 'mystery': 'bp-cat--mystery',
   'puzzle': 'bp-cat--puzzle',
@@ -135,6 +179,12 @@ export interface BlueprintSheetProps {
   /** Enterable right now: an unsolved puzzle room under the player's feet. */
   canEnterCurrent: boolean;
   interactive: boolean;
+  /**
+   * Keys in her pocket — decides whether a padlock reads as shut or as ready
+   * to open. Optional: it defaults to the live store, so the sheet is honest
+   * about the gates even where the page has not been re-wired.
+   */
+  keys?: number;
   onMove(cell: Cell): void;
   onOpenDraft(atDoor: Dir): void;
   onEnterRoom(): void;
@@ -142,12 +192,28 @@ export interface BlueprintSheetProps {
 }
 
 export default function BlueprintSheet({
-  manor, canEnterCurrent, interactive, onMove, onOpenDraft, onEnterRoom, onSanctum,
+  manor, canEnterCurrent, interactive, keys: keysProp,
+  onMove, onOpenDraft, onEnterRoom, onSanctum,
 }: BlueprintSheetProps) {
+  const liveKeys = useManorStore((s) => s.currencies.keys);
+  const keys = keysProp ?? liveKeys;
+  /** A padlock she just tried without a key: it shrugs, nothing is charged. */
+  const [refused, setRefused] = useState<string | null>(null);
+  const refuseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (refuseTimer.current) clearTimeout(refuseTimer.current); }, []);
+  const refuse = (key: string) => {
+    setRefused(key);
+    if (refuseTimer.current) clearTimeout(refuseTimer.current);
+    refuseTimer.current = setTimeout(() => setRefused(null), 900);
+  };
+
   const rooms = Object.values(manor.rooms);
   const player = manor.playerCell;
   const walkable = interactive ? walkableNeighbors(manor) : [];
   const targets = interactive ? draftTargets(manor) : [];
+  // Padlocks are information, not interaction: they are drawn whether or not
+  // the sheet is currently live (during a draft, at dusk, mid-scene).
+  const padlocks = visibleLocks(manor);
   const den = deweyCell(manor.daySeed);
   const deweyHome = roomAt(manor, den);
   const sanctumReachable = interactive &&
@@ -279,21 +345,33 @@ export default function BlueprintSheet({
       {targets.map(({ dir, cell }) => {
         const x = px(cell.col), y = py(cell.row);
         const from = doorPoint(px(player.col), py(player.row), dir);
+        const key = cellKey(cell);
+        const locked = isDoorLocked(manor, cell);
+        const canPay = !locked || keys >= KEY_COST;
         return (
           <g
-            key={`draft-${cellKey(cell)}`}
-            className="bp-hit bp-ghost"
+            key={`draft-${key}`}
+            className={`bp-hit bp-ghost${locked ? ' bp-ghost--locked' : ''}${canPay ? '' : ' bp-ghost--shut'}`}
             role="button"
-            aria-label="Draft a room here"
+            aria-disabled={canPay ? undefined : true}
+            aria-label={
+              locked
+                ? (canPay
+                  ? `Unlock this door and draft a room here — ${KEY_COST} key`
+                  : `Padlocked door — you will want ${KEY_COST} key`)
+                : 'Draft a room here'
+            }
             {...pressProps}
-            onClick={() => onOpenDraft(dir)}
+            onClick={() => (canPay ? onOpenDraft(dir) : refuse(key))}
           >
             <rect className="bp-hit__zone" x={x} y={y} width={CELL} height={CELL} />
             <rect
               className="bp-ghost__outline"
               x={x + 7} y={y + 7} width={CELL - 14} height={CELL - 14} rx={3}
             />
-            <circle className="bp-ghost__handle" cx={from.x} cy={from.y} r={3.6} />
+            {/* the gilt handle is the "this opens" promise — never drawn on a
+                door she cannot open today (no false affordance, AAA 6.5) */}
+            {canPay && <circle className="bp-ghost__handle" cx={from.x} cy={from.y} r={3.6} />}
           </g>
         );
       })}
@@ -344,6 +422,23 @@ export default function BlueprintSheet({
           <rect className="bp-hit__zone" x={px(player.col)} y={py(player.row)} width={CELL} height={CELL} />
         </g>
       )}
+
+      {/* PADLOCKS — every gate she can already see (AAA 4.6: never spend a
+          step toward a door you could not read). Drawn above the hit layers,
+          inert to pointers so the cell underneath stays one full tap target. */}
+      <g className="bp-padlocks">
+        {padlocks.map(({ cell }) => {
+          const key = cellKey(cell);
+          return (
+            <g
+              key={`lock-${key}`}
+              className={refused === key ? 'bp-padlock-slot bp-padlock-slot--refused' : 'bp-padlock-slot'}
+            >
+              <Padlock x={px(cell.col)} y={py(cell.row)} ready={keys >= KEY_COST} />
+            </g>
+          );
+        })}
+      </g>
 
       {/* the player token — glides on transform only */}
       <g

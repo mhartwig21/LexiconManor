@@ -37,6 +37,23 @@ export function tierOf(puzzle: TieredPuzzle): Tier {
   return puzzle.tier ?? 1;
 }
 
+/**
+ * Human-readable name for a tier.
+ *
+ * ROUND 4 CLEANUP: shipped puzzles used to carry a `difficulty` field that was
+ * a pure display alias for `tier` — 895 puzzles each storing a second copy of
+ * a number they already had, which could (and did, before tier-select) drift
+ * out of agreement with it. The field is gone from the generators, the JSON and
+ * engine/types.ts; anywhere a word is wanted instead of a number, DERIVE it
+ * here. The manor's own copy (DraftModal, CabinetSheet) derives from `tier`
+ * too — this is the same rule, one function.
+ */
+export const TIER_LABELS: Record<Tier, string> = { 1: 'easy', 2: 'medium', 3: 'hard' };
+
+export function tierLabel(tier: Tier): string {
+  return TIER_LABELS[tier];
+}
+
 /** Neighbour search order when a tier's pool is entirely missing. */
 export function neighbourTiers(tier: Tier): Tier[] {
   if (tier === 3) return [2, 1];

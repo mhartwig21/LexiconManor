@@ -567,7 +567,7 @@
         {
           "speaker": "bramble",
           "portrait": "neutral",
-          "text": "Either way, you're the best-rested soul under this roof, and I include the furniture. Use it on something lovely."
+          "text": "Either way, you're the best-rested soul under this roof, and I include the furniture. Spend it on something lovely."
         }
       ]
     },
@@ -862,7 +862,7 @@
         {
           "speaker": "bramble",
           "portrait": "wistful",
-          "text": "You said it. You actually said it out loud. I dusted that landing for years and never once — oh, sit down, dear, I'm going to cry into the marmalade."
+          "text": "The landing door stood open when I went up with the tea. Open, dear. I dusted past that thing for thirty years and — oh, sit down, I'm going to cry into the marmalade."
         },
         {
           "speaker": "bramble",
@@ -952,7 +952,7 @@
         {
           "speaker": "bramble",
           "portrait": "wistful",
-          "text": "He struck that word from every book in the house, you know. Ink over ink over ink. I thought it was scholarship. It wasn't. It was grief with a good vocabulary."
+          "text": "He took that word out of every volume under this roof, you know. Ink over ink over ink. I thought it was scholarship. It wasn't. It was grief with a good vocabulary."
         },
         {
           "speaker": "bramble",
@@ -1013,7 +1013,7 @@
         {
           "speaker": "bramble",
           "portrait": "warm",
-          "text": "A bookmark? For me? Oh — it's been a long time since anyone gave me something that wasn't a chore list."
+          "text": "Oh — hold on. That's for me? Thirty years of things handed across this table, pet, and every one of them was a list. Then a bookmark, out of nowhere, and me with no list at all."
         },
         {
           "speaker": "bramble",
@@ -1146,6 +1146,11 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "He sat on the master's last good pen for a week once. We only understood why after. I don't ask the cat questions anymore; I just thank him on a delay."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "And if he won't sit on a single thing all day, that's a plain day, pet. Rare as hen's teeth here. Put your feet up and enjoy the quiet."
         }
       ]
     },
@@ -1187,7 +1192,7 @@
         {
           "speaker": "bramble",
           "portrait": "warm",
-          "text": "You're gathering his scraps, I see. When they start to rhyme in your head — that's when you take the stairs to the top. Not before, and not alone: I'll have tea waiting either way."
+          "text": "You're gathering his scraps, I see. Don't take them up those stairs till they've stopped feeling like scraps — you'll know the moment, same as a kettle knows. I'll have tea waiting either way."
         },
         {
           "speaker": "bramble",
@@ -1216,6 +1221,11 @@
           "speaker": "bramble",
           "portrait": "wistful",
           "text": "I dust his frame Thursdays and tell him the news. He pretends the paint can't hear. We're both terrible liars, and it's the nicest hour of my week."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "He liked being disagreed with, mind. Nobody's dared since he went. Go up and disagree with him — it'll do the pair of you good."
         }
       ]
     },
@@ -1234,6 +1244,11 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "It asked me for a seven-letter word for 'housekeeper' once. I said 'BRAMBLE' and it's been sweet on me since."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "It has never once asked me a question it didn't already know the answer to. Nor will it ask you one. Crosswords have manners; it's the clues that don't."
         }
       ]
     },
@@ -1252,6 +1267,11 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "It ciphered my shopping list once. Took me two days to learn I'd bought twelve XQFFS. They were eggs. Lovely eggs, in fairness."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Pencil, mind, not pen. That room forgives a rubbed-out guess and sulks a full week at ink."
         }
       ]
     },
@@ -1339,6 +1359,11 @@
           "speaker": "bramble",
           "portrait": "amused",
           "text": "Spell them something long and they behave for a week. Spell them something rude and I hear about it, so kindly don’t."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "And say good morning to Fern on your way in. She'll not say it back. She'll be glad you did."
         }
       ]
     },
@@ -1397,7 +1422,7 @@
         {
           "speaker": "bramble",
           "portrait": "warm",
-          "text": "We'll talk properly tomorrow, dear — these floors won't scold themselves."
+          "text": "That's my talking spent for the day, pet. I ration it like the coal, and for the same reason — there's a tomorrow coming and it'll want warming too."
         },
         {
           "speaker": "bramble",
@@ -1415,7 +1440,12 @@
         {
           "speaker": "bramble",
           "portrait": "amused",
-          "text": "Off with you now. Daylight's a budget, and you've spent enough of it on an old housekeeper."
+          "text": "Half four already, and the day gone amber. You've spent a fair slice of a good one standing about with an old housekeeper."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Spend the rest of it tomorrow, mind. The pot'll be on and I'll have thought of a better story by then."
         }
       ]
     },
@@ -1526,12 +1556,12 @@
         {
           "speaker": "bramble",
           "portrait": "warm",
-          "text": "It's a better house with you in it, pet. Even the drafts think so."
+          "text": "Thirty years I've polished that banister for nobody in particular. Twice this week I've caught myself at it again, pet, and I know exactly whose hand it's meant for."
         },
         {
           "speaker": "bramble",
           "portrait": "amused",
-          "text": "Now shoo, before I say something soppier and the wallpaper starts talking."
+          "text": "Don't make me put it plainer. I'd go soppy, and then the wallpaper starts, and there's no stopping the pair of us before supper."
         }
       ]
     },

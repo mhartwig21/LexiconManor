@@ -67,7 +67,15 @@
 .m2-btn:active,
 .m2-btn.is-pressed { transform: translateY(1px); filter: brightness(0.94); }
 .m2-btn:disabled { opacity: 0.45; cursor: default; }
-.m2-btn--primary { background: var(--room-accent); border-color: transparent; color: var(--paper); font-weight: 600; }
+/* ONE commit idiom (AAA 6.16): the ink seal pill, identical in every room —
+   not the room accent, which is reserved for state (AAA 1.14). Folded in from
+   the index.css cross-module override. */
+.m2-btn--primary {
+  background: var(--commit-bg);
+  border-color: var(--commit-bg);
+  color: var(--commit-ink);
+  font-weight: 600;
+}
 
 /* Reserved toast slot — zero layout shift (AAA 1.5).
    Sized for TWO lines at 390px: toast copy is authored free-text with real

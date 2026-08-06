@@ -22,6 +22,7 @@ import { getDialogueFile } from '../../engine/dialogue/content';
 import { selectDialogue } from '../../engine/dialogue/select';
 import DialogueScene from '../dialogue/DialogueScene';
 import { sfx } from '../../app/sound';
+import { quoted } from './quote';
 import './journal.css';
 
 type Tab = 'word' | 'engravings' | 'testimony' | 'letters';
@@ -204,7 +205,7 @@ export default function JournalView() {
             {slots.map((s) =>
               s.fragment ? (
                 <div key={s.revealOrder} className="jrn-poem__line">
-                  “{s.fragment.text}”
+                  {quoted(s.fragment.text)}
                   {isInterpreted(volume, s.fragment.id) && s.fragment.interpretation && (
                     <div className="jrn-note">{s.fragment.interpretation}</div>
                   )}
@@ -278,10 +279,16 @@ export default function JournalView() {
 }
 
 function TabButton({ label, active, dot, onClick }: { label: string; active: boolean; dot: boolean; onClick: () => void }) {
+  // Wax has to mean something TRUE (AAA 6.15): the dot says "there is something
+  // here you have not looked at". On the tab she is currently reading, that is
+  // false by construction — the contents are on the glass in front of her — so
+  // the marker retires the moment the tab opens. (Unread letters keep their own
+  // unbroken wax seal per row inside the sheet, which stays honest.)
+  const showDot = dot && !active;
   return (
     <button className={`jrn-tab${active ? ' jrn-tab--active' : ''}`} onClick={onClick} aria-pressed={active}>
       {label}
-      {dot && <span className="jrn-tab__dot" aria-label="new" />}
+      {showDot && <span className="jrn-tab__dot" aria-label="new" />}
     </button>
   );
 }
@@ -297,7 +304,7 @@ function EngravingCard({ frag, isNew }: { frag: FragmentContent; isNew: boolean 
         {isNew && <span className="jrn-card__new" aria-label="filed today" />}
         {frag.source}
       </div>
-      <p className="jrn-card__text">“{frag.text}”</p>
+      <p className="jrn-card__text">{quoted(frag.text)}</p>
       {interpreted && frag.interpretation ? (
         <div className="jrn-note">{frag.interpretation}</div>
       ) : (
@@ -331,7 +338,11 @@ function TestimonyCard({ frag, isNew }: { frag: FragmentContent; isNew: boolean 
           </div>
         </div>
       </div>
-      <p className="jrn-card__text">{frag.text}</p>
+      {/* Testimony arrives from the volume file already wearing its own curly
+          quotes; the journal owns the quoting now (see ./quote.ts), so the
+          authored pair is stripped and re-set — one convention on every card,
+          and no doubling however the content is authored later. */}
+      <p className="jrn-card__text">{quoted(frag.text)}</p>
       {refs.length > 0 && (
         <div className="jrn-refs">
           {refs.map((r) => (

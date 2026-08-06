@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { createRng, shuffle, type Rng } from '../src/engine/rng';
 import { cipherLettersOf, decodeMap, type CipherPuzzle } from '../src/engine/puzzles/cipher';
 import { toneOk } from './generate-gate';
-import type { Difficulty, Tier } from '../src/engine/types';
+import { tierLabel } from '../src/engine/rooms/adapters/tier-select';
+import type { Tier } from '../src/engine/types';
 
 /**
  * Cipher generator for The Darkroom.
@@ -40,8 +41,6 @@ import type { Difficulty, Tier } from '../src/engine/types';
 const SEED = 20260807;
 /** Starting reveals by tier — the crib the Darkroom hands you, or doesn't. */
 const REVEALS: Record<Tier, number> = { 1: 3, 2: 1, 3: 0 };
-/** Legacy display label per tier (engine/types.ts Difficulty stays frozen). */
-const TIER_LABEL: Record<Tier, Difficulty> = { 1: 'easy', 2: 'medium', 3: 'hard' };
 /** Tier-1 phrases stay short — the crib plus a long phrase is no puzzle. */
 const TIER1_MAX_LETTERS = 34;
 /** Tier 3 is the long one: more cells to fill and no foothold to start from. */
@@ -247,13 +246,12 @@ function main() {
       puzzles.push({
         id: `cipher-t${tier}-${i + 1}`,
         tier,
-        difficulty: TIER_LABEL[tier],
         ciphertext,
         plaintext,
         reveals,
       });
     });
-    console.log(`tier ${tier}: ${byTier[tier].length} phrases`);
+    console.log(`tier ${tier} (${tierLabel(tier)}): ${byTier[tier].length} phrases`);
   }
 
   validate(puzzles);
@@ -273,7 +271,6 @@ function validate(puzzles: TieredCipherPuzzle[]) {
     ids.add(p.id);
 
     // Tier gates (round 4): the crib rule, the length floor, the reveal count.
-    if (p.difficulty !== TIER_LABEL[p.tier]) problems.push(`${p.id}: label/tier mismatch`);
     if (tierOf(p.plaintext) !== p.tier) problems.push(`${p.id}: phrase shape does not earn tier ${p.tier}`);
     if (p.reveals.length !== REVEALS[p.tier]) {
       problems.push(`${p.id}: ${p.reveals.length} reveals (tier ${p.tier} gives ${REVEALS[p.tier]})`);

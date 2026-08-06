@@ -1,0 +1,444 @@
+{
+  "light": {
+    "errors": [],
+    "dialogue": {
+      "lines": [
+        {
+          "when": "mid-reveal",
+          "mounted": true,
+          "chars": 162,
+          "textAreaHeight": 117.8,
+          "inkHeight": 95.9,
+          "fillRatio": 0.81,
+          "boxHeight": 174.9,
+          "livePosition": "absolute"
+        },
+        {
+          "when": "settled",
+          "mounted": true,
+          "chars": 162,
+          "textAreaHeight": 117.8,
+          "inkHeight": 95.9,
+          "fillRatio": 0.81,
+          "boxHeight": 174.9,
+          "livePosition": "absolute"
+        },
+        {
+          "when": "line2",
+          "mounted": true,
+          "chars": 162,
+          "textAreaHeight": 117.8,
+          "inkHeight": 95.9,
+          "fillRatio": 0.81,
+          "boxHeight": 174.9,
+          "livePosition": "absolute"
+        },
+        {
+          "when": "line3",
+          "mounted": true,
+          "chars": 132,
+          "textAreaHeight": 93.1,
+          "inkHeight": 71.3,
+          "fillRatio": 0.77,
+          "boxHeight": 150.3,
+          "livePosition": "absolute"
+        },
+        {
+          "when": "line4",
+          "mounted": true,
+          "chars": 132,
+          "textAreaHeight": 93.1,
+          "inkHeight": 71.3,
+          "fillRatio": 0.77,
+          "boxHeight": 150.3,
+          "livePosition": "absolute"
+        },
+        {
+          "when": "line5",
+          "mounted": true,
+          "chars": 134,
+          "textAreaHeight": 93.1,
+          "inkHeight": 71.3,
+          "fillRatio": 0.77,
+          "boxHeight": 150.3,
+          "livePosition": "absolute"
+        },
+        {
+          "when": "line6",
+          "mounted": true,
+          "chars": 134,
+          "textAreaHeight": 93.1,
+          "inkHeight": 71.3,
+          "fillRatio": 0.77,
+          "boxHeight": 243.9,
+          "livePosition": "absolute"
+        }
+      ],
+      "oldFixedWellPx": 115.2
+    },
+    "dayPhase": "exploring",
+    "scrim": {
+      "found": true,
+      "background": "color(srgb 0.168627 0.129412 0.0941177 / 0.35)",
+      "isPureBlack": false,
+      "warm": true
+    },
+    "journal": {
+      "perTab": {
+        "The Word": {
+          "tabs": [
+            {
+              "label": "The Word",
+              "active": true,
+              "dot": false
+            },
+            {
+              "label": "Engravings",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Testimony",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Letters",
+              "active": false,
+              "dot": true
+            }
+          ],
+          "dotOnActive": false,
+          "sealShadow": null,
+          "cardTexts": [],
+          "poemLines": [
+            "“Where a thing is missing, I am what remains: not nothing — the shape that nothing takes.”",
+            "“The copyist blinks above his candle, and his sentence steps mid-breath onto air. I am that step. I am that air.”",
+            "“In my mother Latin I was a little pool — a hollow where the rain remembered what the ground forgot.”",
+            "“The moth eats a word from the page and leaves me behind as the payment.”",
+            "“Seek me in ledgers, in memory, in a row of teeth: wherever something was, and is not, and is missed by its own outline.”",
+            "“A dictionary keeps my chair forever empty. Speak me at the door, and I will sit.”"
+          ]
+        },
+        "Engravings": {
+          "tabs": [
+            {
+              "label": "The Word",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Engravings",
+              "active": true,
+              "dot": false
+            },
+            {
+              "label": "Testimony",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Letters",
+              "active": false,
+              "dot": true
+            }
+          ],
+          "dotOnActive": false,
+          "sealShadow": null,
+          "cardTexts": [
+            "“Six candles burned on his desk at the end. ‘One for each letter,’ he told the house, ‘and I shall put them out myself.’”",
+            "“Call me WORDSMITH no longer. What I took shares not one letter with that name.”",
+            "“It begins as LULLABY and LANTERN begin — with the tall letter, the candlestick.”",
+            "“Its breath runs A, then U, then A — exhale, hollow, exhale. All the rest of it is consonant bone.”",
+            "“One letter enters it twice, like a guest who cannot keep away. Every other letter calls only once.”",
+            "“Somewhere in it, a hard C — cut like a keyhole. He carved this line the night the sixth candle went out.”"
+          ],
+          "poemLines": []
+        },
+        "Testimony": {
+          "tabs": [
+            {
+              "label": "The Word",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Engravings",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Testimony",
+              "active": true,
+              "dot": false
+            },
+            {
+              "label": "Letters",
+              "active": false,
+              "dot": true
+            }
+          ],
+          "dotOnActive": false,
+          "sealShadow": null,
+          "cardTexts": [
+            "“Six candles at his desk, always six. Near the end he let one gutter out each night — and I never dared relight them.”",
+            "“His last letter went out with one word cut clean from it — a little window in the paper. You could read the whole sentence around the hole. I believe that was rather the point.”",
+            "“There is a bed in the west garden where nothing grows. He would stand at it an hour at a time. Said there was a word for that exact shape of missing — and that he meant to see it filled again.”",
+            "“He told me once that in all the dictionary there is exactly one word that names the hole it would leave behind. Then he went and made it true.”",
+            "“I did not destroy it. I unhoused it. There is a difference — and the difference is the word.”"
+          ],
+          "poemLines": []
+        },
+        "Letters": {
+          "tabs": [
+            {
+              "label": "The Word",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Engravings",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Testimony",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Letters",
+              "active": true,
+              "dot": false
+            }
+          ],
+          "dotOnActive": false,
+          "sealShadow": "color(srgb 0.168627 0.129412 0.0941176 / 0.16) 0px 0px 0px 3px inset",
+          "cardTexts": [],
+          "poemLines": []
+        }
+      }
+    }
+  },
+  "dark": {
+    "errors": [],
+    "dialogue": {
+      "lines": [
+        {
+          "when": "mid-reveal",
+          "mounted": true,
+          "chars": 162,
+          "textAreaHeight": 117.8,
+          "inkHeight": 95.9,
+          "fillRatio": 0.81,
+          "boxHeight": 174.9,
+          "livePosition": "absolute"
+        },
+        {
+          "when": "settled",
+          "mounted": true,
+          "chars": 162,
+          "textAreaHeight": 117.8,
+          "inkHeight": 95.9,
+          "fillRatio": 0.81,
+          "boxHeight": 174.9,
+          "livePosition": "absolute"
+        },
+        {
+          "when": "line2",
+          "mounted": true,
+          "chars": 162,
+          "textAreaHeight": 117.8,
+          "inkHeight": 95.9,
+          "fillRatio": 0.81,
+          "boxHeight": 174.9,
+          "livePosition": "absolute"
+        },
+        {
+          "when": "line3",
+          "mounted": true,
+          "chars": 132,
+          "textAreaHeight": 93.1,
+          "inkHeight": 71.3,
+          "fillRatio": 0.77,
+          "boxHeight": 150.3,
+          "livePosition": "absolute"
+        },
+        {
+          "when": "line4",
+          "mounted": true,
+          "chars": 132,
+          "textAreaHeight": 93.1,
+          "inkHeight": 71.3,
+          "fillRatio": 0.77,
+          "boxHeight": 150.3,
+          "livePosition": "absolute"
+        },
+        {
+          "when": "line5",
+          "mounted": true,
+          "chars": 134,
+          "textAreaHeight": 93.1,
+          "inkHeight": 71.3,
+          "fillRatio": 0.77,
+          "boxHeight": 150.3,
+          "livePosition": "absolute"
+        },
+        {
+          "when": "line6",
+          "mounted": true,
+          "chars": 134,
+          "textAreaHeight": 93.1,
+          "inkHeight": 71.3,
+          "fillRatio": 0.77,
+          "boxHeight": 243.9,
+          "livePosition": "absolute"
+        }
+      ],
+      "oldFixedWellPx": 115.2
+    },
+    "dayPhase": "exploring",
+    "scrim": {
+      "found": true,
+      "background": "color(srgb 0.113725 0.0901961 0.0627451 / 0.78)",
+      "isPureBlack": false,
+      "warm": true
+    },
+    "journal": {
+      "perTab": {
+        "The Word": {
+          "tabs": [
+            {
+              "label": "The Word",
+              "active": true,
+              "dot": false
+            },
+            {
+              "label": "Engravings",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Testimony",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Letters",
+              "active": false,
+              "dot": true
+            }
+          ],
+          "dotOnActive": false,
+          "sealShadow": null,
+          "cardTexts": [],
+          "poemLines": [
+            "“Where a thing is missing, I am what remains: not nothing — the shape that nothing takes.”",
+            "“The copyist blinks above his candle, and his sentence steps mid-breath onto air. I am that step. I am that air.”",
+            "“In my mother Latin I was a little pool — a hollow where the rain remembered what the ground forgot.”",
+            "“The moth eats a word from the page and leaves me behind as the payment.”",
+            "“Seek me in ledgers, in memory, in a row of teeth: wherever something was, and is not, and is missed by its own outline.”",
+            "“A dictionary keeps my chair forever empty. Speak me at the door, and I will sit.”"
+          ]
+        },
+        "Engravings": {
+          "tabs": [
+            {
+              "label": "The Word",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Engravings",
+              "active": true,
+              "dot": false
+            },
+            {
+              "label": "Testimony",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Letters",
+              "active": false,
+              "dot": true
+            }
+          ],
+          "dotOnActive": false,
+          "sealShadow": null,
+          "cardTexts": [
+            "“Six candles burned on his desk at the end. ‘One for each letter,’ he told the house, ‘and I shall put them out myself.’”",
+            "“Call me WORDSMITH no longer. What I took shares not one letter with that name.”",
+            "“It begins as LULLABY and LANTERN begin — with the tall letter, the candlestick.”",
+            "“Its breath runs A, then U, then A — exhale, hollow, exhale. All the rest of it is consonant bone.”",
+            "“One letter enters it twice, like a guest who cannot keep away. Every other letter calls only once.”",
+            "“Somewhere in it, a hard C — cut like a keyhole. He carved this line the night the sixth candle went out.”"
+          ],
+          "poemLines": []
+        },
+        "Testimony": {
+          "tabs": [
+            {
+              "label": "The Word",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Engravings",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Testimony",
+              "active": true,
+              "dot": false
+            },
+            {
+              "label": "Letters",
+              "active": false,
+              "dot": true
+            }
+          ],
+          "dotOnActive": false,
+          "sealShadow": null,
+          "cardTexts": [
+            "“Six candles at his desk, always six. Near the end he let one gutter out each night — and I never dared relight them.”",
+            "“His last letter went out with one word cut clean from it — a little window in the paper. You could read the whole sentence around the hole. I believe that was rather the point.”",
+            "“There is a bed in the west garden where nothing grows. He would stand at it an hour at a time. Said there was a word for that exact shape of missing — and that he meant to see it filled again.”",
+            "“He told me once that in all the dictionary there is exactly one word that names the hole it would leave behind. Then he went and made it true.”",
+            "“I did not destroy it. I unhoused it. There is a difference — and the difference is the word.”"
+          ],
+          "poemLines": []
+        },
+        "Letters": {
+          "tabs": [
+            {
+              "label": "The Word",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Engravings",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Testimony",
+              "active": false,
+              "dot": true
+            },
+            {
+              "label": "Letters",
+              "active": true,
+              "dot": false
+            }
+          ],
+          "dotOnActive": false,
+          "sealShadow": "color(srgb 0.905882 0.862745 0.776471 / 0.16) 0px 0px 0px 3px inset",
+          "cardTexts": [],
+          "poemLines": []
+        }
+      }
+    }
+  }
+}

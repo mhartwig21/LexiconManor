@@ -31,7 +31,6 @@ const ofType = (events: RoomEvent[], type: RoomEvent['type']) => events.filter((
 // plain → cipher: A→B, C→D, E→F, H→I, S→T, T→U  (no fixed points)
 const cipherFixture: CipherPuzzle = {
   id: 'cipher-fixture',
-  difficulty: 'easy',
   plaintext: 'THE CAT SAT',
   ciphertext: 'UIF DBU TBU',
   reveals: ['U'], // cipher U = plain T, pre-developed
@@ -61,17 +60,22 @@ describe('select()', () => {
     expect(cipherAdapter.puzzleId(a)).toBe(cipherAdapter.puzzleId(b));
   });
 
-  it('cipher: tier 1 draws from the medium/easy band', () => {
+  /**
+   * ROUND 4 CLEANUP: these two used to assert on the `difficulty` alias — the
+   * field that duplicated `tier` and is now retired. The room's promise was
+   * always about the tier; assert it in the units that carry it.
+   */
+  it('cipher: tier 1 serves tier-1 phrases', () => {
     for (const seed of [1, 7, 99, 1234]) {
-      const p = cipherAdapter.select({ tier: 1, seed, seenIds: [] }) as { difficulty: string };
-      expect(['medium', 'easy']).toContain(p.difficulty);
+      const p = cipherAdapter.select({ tier: 1, seed, seenIds: [] });
+      expect(p.tier, `seed ${seed}`).toBe(1);
     }
   });
 
-  it('cipher: tier 3 draws from the expert/hard band', () => {
+  it('cipher: tier 3 serves tier-3 phrases', () => {
     for (const seed of [1, 7, 99, 1234]) {
-      const p = cipherAdapter.select({ tier: 3, seed, seenIds: [] }) as { difficulty: string };
-      expect(['expert', 'hard']).toContain(p.difficulty);
+      const p = cipherAdapter.select({ tier: 3, seed, seenIds: [] });
+      expect(p.tier, `seed ${seed}`).toBe(3);
     }
   });
 

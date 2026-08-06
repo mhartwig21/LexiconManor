@@ -58,6 +58,17 @@ export const SANCTUM_ROW = 7;
 export const MOVEMENT = {
   /** Hard cap so a runaway profile terminates. */
   maxRoomsPerDay: 60,
+  /**
+   * What a PADLOCKED climb actually costs when she has no key, modelled
+   * against the live wiring (app/slices/manor.ts `openDraft`): the door
+   * refuses free — no step is charged — because the padlock was already drawn
+   * on the blueprint and she never walks to a gate she cannot open (AAA 4.6).
+   * She drafts laterally instead, at THIS storey's price. The only extra cost
+   * is the detour: about half the time the other live door out of the room
+   * she is standing in is already spoken for, and she has to walk to another
+   * frontier door before she can draft at all.
+   */
+  lockoutDetourChance: 0.5,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -424,23 +435,34 @@ export function simulateDay(
       move(midRow0);
       if (ledgerTotal(ledger) <= 0) break outer; // dusk, out on the blueprint
     }
-    move(targetRow0);
-    if (ledgerTotal(ledger) <= 0) break outer;
 
     // --- The padlock (DOOR_LOCKS): the hard gate on the upper storeys. -----
+    // Rolled BEFORE the step is charged, because that is how the live game
+    // plays it (app/slices/manor.ts openDraft): the padlock is already drawn
+    // on the blueprint, so a door she cannot open is a door she declines to
+    // walk to — refused free, never a surprise charge (AAA 4.6). The key
+    // itself is spent on placement, i.e. only when the climb actually
+    // happens, which is exactly what the `keys -=` below models.
     if (wantsUp && (DOOR_LOCKS.chanceByRow[targetRow0] ?? 0) > 0) {
       if (rng() < DOOR_LOCKS.chanceByRow[targetRow0]!) {
         if (keys >= DOOR_LOCKS.keyCost) {
           keys -= DOOR_LOCKS.keyCost;
         } else {
-          // No key: the climb is refused. The step to the door is spent (she
-          // saw the padlock and the offer behind it, AAA 4.6) and the draft
-          // resolves laterally on this storey instead.
+          // No key: the climb is refused and she drafts laterally on this
+          // storey instead — at THIS storey's price, not the one above —
+          // plus the detour to a door that will actually open
+          // (MOVEMENT.lockoutDetourChance).
           lockedOut += 1;
           targetRow = row;
+          if (rng() < MOVEMENT.lockoutDetourChance) {
+            move(Math.max(0, row - 1));
+            if (ledgerTotal(ledger) <= 0) break outer;
+          }
         }
       }
     }
+    move(targetRow - 1);
+    if (ledgerTotal(ledger) <= 0) break outer;
 
     // --- Draft: three cards from the real deck mix, one taken. ------------
     seconds += TIME_TABLE.draft;

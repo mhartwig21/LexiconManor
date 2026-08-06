@@ -41,7 +41,7 @@ import {
 
 const webPuzzle: WordWebPuzzle = {
   id: 'web-1',
-  difficulty: 'medium', tier: 2,
+  tier: 2,
   groups: [
     { theme: 'Breakfast', tier: 'yellow', words: ['WAFFLE', 'PANCAKE', 'TOAST', 'BAGEL'] },
     { theme: 'Basketball', tier: 'green', words: ['DUNK', 'BLOCK', 'ASSIST', 'REBOUND'] },
@@ -52,7 +52,7 @@ const webPuzzle: WordWebPuzzle = {
 
 const hivePuzzle: HivePuzzle = {
   id: 'hive-1',
-  difficulty: 'easy', tier: 1,
+  tier: 1,
   center: 'E',
   outer: ['S', 'T', 'A', 'R', 'N', 'I'],
   pangrams: ['RETAINS'],
@@ -63,7 +63,7 @@ const hivePuzzle: HivePuzzle = {
 
 const twistlePuzzle: TwistlePuzzle = {
   id: 'twistle-1',
-  difficulty: 'easy', tier: 1,
+  tier: 1,
   // S T O N E
   // A R A T S
   // L E X I C

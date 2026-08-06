@@ -145,14 +145,19 @@
   opacity: 1;
 }
 
-/* The wax-seal commit button (AAA 6.16: seal = confirm). */
+/* The commit verb — the SAME ink seal pill as every other commit in the house
+   (AAA 6.16). It was wax red and square-cornered here, which made the single
+   most consequential button in the game the one button that looked like
+   nothing else; wax now means only state (mistakes, unread, the seal glyph
+   below, the struck guesses — AAA 6.15). Pill radius + --commit-bg matches the
+   blueprint's seal button and every room's Enter. */
 .snc-speak {
   min-height: var(--tap-target);
   min-width: 5.2rem;
-  border: none;
-  border-radius: var(--radius-card);
-  background: var(--wax);
-  color: var(--paper);
+  border: 1px solid var(--commit-bg);
+  border-radius: 999px;
+  background: var(--commit-bg);
+  color: var(--commit-ink);
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 1rem;
@@ -162,7 +167,7 @@
 /* U.1: pointerdown-driven press (app/platform/boot.ts delegate); :active is
    the desktop fallback only — iOS Safari applies it late or not at all. */
 .snc-speak:active,
-.snc-speak.is-pressed { transform: translateY(1px) scale(0.98); }
+.snc-speak.is-pressed { transform: translateY(1px) scale(0.98); filter: brightness(0.94); }
 .snc-speak:disabled { opacity: 0.45; cursor: default; }
 
 .snc-shake { animation: snc-shake 340ms ease-in-out; }
@@ -297,10 +302,11 @@
 }
 .snc-btn:active,
 .snc-btn.is-pressed { transform: translateY(1px); }
+/* Same one idiom (AAA 6.16) — violet was the room accent doing a verb's job. */
 .snc-btn--primary {
-  background: var(--cat-mystery);
-  border-color: transparent;
-  color: var(--paper);
+  background: var(--commit-bg);
+  border-color: var(--commit-bg);
+  color: var(--commit-ink);
   font-weight: 600;
 }
 

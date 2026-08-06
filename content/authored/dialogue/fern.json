@@ -702,7 +702,7 @@
         {
           "speaker": "fern",
           "portrait": "warm",
-          "text": "Rosebush opened this morning. First time in thirty years. White, with a temper of pink at the edges."
+          "text": "Rosebush opened this morning. Not bloomed since before he went. White, with a temper of pink at the edges."
         },
         {
           "speaker": "fern",
@@ -795,7 +795,7 @@
         {
           "speaker": "fern",
           "portrait": "warm",
-          "text": "A bookmark. For me. I press leaves, you know. Now they'll have company."
+          "text": "Oh. For me, is it. I press leaves — have since I was nine. Never once had something pretty handed me to press beside them."
         },
         {
           "speaker": "fern",
@@ -845,6 +845,11 @@
           "speaker": "fern",
           "portrait": "warm",
           "text": "Sit by it when the house feels loud. Nothing hurries near moss. Catching."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Take a cutting if you like. Won't take. Moss goes where moss decides. Good lesson in that."
         }
       ]
     },
@@ -895,7 +900,7 @@
         {
           "speaker": "fern",
           "portrait": "wistful",
-          "text": "Not a shrine. A tool waiting. There's a difference, and the difference is hope."
+          "text": "Not a shrine. A tool waiting. Different things entirely. One of them's hope."
         },
         {
           "speaker": "fern",
@@ -975,7 +980,7 @@
         {
           "speaker": "fern",
           "portrait": "wistful",
-          "text": "His papers you're gathering — seeds, those. When they all sprout in your head at once, that's harvest. Top of the stairs. Go gentle."
+          "text": "His papers you're gathering — seeds, those. Don't go up on a half-grown one. Wait till the whole bed comes ready at once. That's harvest. Top of the stairs, and go gentle."
         },
         {
           "speaker": "fern",
@@ -1003,7 +1008,7 @@
         {
           "speaker": "fern",
           "portrait": "neutral",
-          "text": "Tomorrow. Watering hour."
+          "text": "Watering hour. Can't talk through it. Plants count the gaps."
         },
         {
           "speaker": "fern",
@@ -1021,12 +1026,12 @@
         {
           "speaker": "fern",
           "portrait": "amused",
-          "text": "Enough of me. Go grow something."
+          "text": "That's me emptied. Fills again by morning, like the water butt."
         },
         {
           "speaker": "fern",
           "portrait": "amused",
-          "text": "Standing's growing, technically. Do it somewhere green."
+          "text": "Go stand somewhere green till then. Standing's growing, technically."
         }
       ]
     },
@@ -1101,12 +1106,12 @@
         {
           "speaker": "fern",
           "portrait": "warm",
-          "text": "House breathes easier with you in it. Plants said. Plants don't flatter."
+          "text": "That bed by the east glass. The unnamed one. Stopped saving it Tuesday."
         },
         {
           "speaker": "fern",
           "portrait": "warm",
-          "text": "Go on. Grow the day."
+          "text": "Wrote a name on the marker. Not telling you which. Come back in spring and read it yourself."
         }
       ]
     },
@@ -1165,6 +1170,11 @@
           "speaker": "fern",
           "portrait": "amused",
           "text": "Letters are pressed flowers with more words. Keep them flat and out of the sun."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Read it twice. Second read's the one that keeps."
         }
       ]
     },
@@ -1192,6 +1202,11 @@
           "speaker": "fern",
           "portrait": "warm",
           "text": "Means you're rooting here. Took me three winters. You're quicker."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Roots don't announce. You'll notice when something tries to move you and can't."
         }
       ],
       "summary": "The garden leans your way now. Fern does not correct it."
@@ -1243,6 +1258,11 @@
           "speaker": "fern",
           "portrait": "amused",
           "text": "The statues underneath look like shy ghosts. Ellery says it's crowded feeling. She'd know."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Sheets come off in March. Everything under them still there. Every year. Still gets me."
         }
       ]
     },
@@ -1279,6 +1299,11 @@
           "speaker": "fern",
           "portrait": "amused",
           "text": "I leave a shovel out anyway. Tradition. The shovel's never once been needed and never once been optional."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Stand in it if you find it. One night a year. Snow indoors is a thing you're allowed to have."
         }
       ]
     },
@@ -1325,6 +1350,11 @@
           "speaker": "fern",
           "portrait": "amused",
           "text": "Take the hint or don't. They'll dance it again tomorrow. Patient as sums."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "Came the spring he went quiet. Nobody sent for them. Never worked out who told them there was room."
         }
       ]
     },

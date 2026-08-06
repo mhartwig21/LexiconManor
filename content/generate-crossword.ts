@@ -7,7 +7,8 @@ import {
   type CrosswordDir, type CrosswordEntry, type CrosswordPuzzle,
 } from '../src/engine/puzzles/crossword';
 import { gateOk } from './generate-gate';
-import type { Difficulty, Tier } from '../src/engine/types';
+import { tierLabel } from '../src/engine/rooms/adapters/tier-select';
+import type { Tier } from '../src/engine/types';
 
 /**
  * Mini-crossword generator for The Linen Closet. OWNER: A5.
@@ -40,31 +41,37 @@ import type { Difficulty, Tier } from '../src/engine/types';
 const SEED = 20260806;
 const dir = dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Per-WORD authoring tag in content/authored/crossword-clues.json. This is a
+ * property of the word+clue pair (how hard that answer is to see), NOT the
+ * retired puzzle-level `difficulty` alias — a tier-3 closet is built FROM these
+ * tags, it does not carry one.
+ */
+type ClueDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
+
 interface ClueDef {
   word: string;
   clue: string;
   /** Optional harder clue style: misdirection / double meaning (tier 3). */
   wry?: string;
-  difficulty: Difficulty;
+  difficulty: ClueDifficulty;
 }
 
-const DIFFS: Difficulty[] = ['easy', 'medium', 'hard', 'expert'];
+const DIFFS: ClueDifficulty[] = ['easy', 'medium', 'hard', 'expert'];
 const TIERS: Tier[] = [1, 2, 3];
 
-/** Legacy display label per tier (engine/types.ts Difficulty stays frozen). */
-const TIER_LABEL: Record<Tier, Difficulty> = { 1: 'easy', 2: 'medium', 3: 'hard' };
 /** Grid side per tier — the closet itself grows. */
 const SIZES: Record<Tier, number> = { 1: 4, 2: 5, 3: 5 };
 const TARGET: Record<Tier, number> = { 1: 30, 2: 30, 3: 30 };
 const ENTRIES: Record<Tier, number> = { 1: 3, 2: 4, 3: 5 };
 /** Bank words a tier may draw on (by their authored difficulty). */
-const BANK_DIFFS: Record<Tier, Difficulty[]> = {
+const BANK_DIFFS: Record<Tier, ClueDifficulty[]> = {
   1: ['easy'],
   2: ['easy', 'medium'],
   3: ['easy', 'medium', 'hard', 'expert'],
 };
 /** Every puzzle must headline at least one word of one of these difficulties. */
-const HEADLINE_DIFFS: Record<Tier, Difficulty[]> = {
+const HEADLINE_DIFFS: Record<Tier, ClueDifficulty[]> = {
   1: ['easy'], 2: ['medium'], 3: ['hard', 'expert'],
 };
 /** Tier 3 must read at least this many clues in the harder, wry style. */
@@ -98,7 +105,7 @@ function toPuzzle(id: string, tier: Tier, placed: Placed[], useWry: boolean): Ti
       clue: useWry && p.word.wry ? p.word.wry : p.word.clue,
     };
   });
-  return { id, tier, difficulty: TIER_LABEL[tier], size: SIZE, entries };
+  return { id, tier, size: SIZE, entries };
 }
 
 /** Structural problems, ignoring the entry-count rule while mid-build. */
@@ -211,7 +218,7 @@ function main() {
       puzzles.push(puzzle);
       made++;
     }
-    console.log(`tier ${tier}: ${made} puzzles, ${size}×${size}, ${ENTRIES[tier]} entries (${attempts} attempts)`);
+    console.log(`tier ${tier} (${tierLabel(tier)}): ${made} puzzles, ${size}×${size}, ${ENTRIES[tier]} entries (${attempts} attempts)`);
   }
 
   // Final replay of the shipped pool + the tier gates.
@@ -220,7 +227,6 @@ function main() {
   for (const p of puzzles) {
     if (p.size !== SIZES[p.tier]) finalProblems.push(`${p.id}: ${p.size}×${p.size} is not tier ${p.tier}'s grid`);
     if (p.entries.length !== ENTRIES[p.tier]) finalProblems.push(`${p.id}: ${p.entries.length} entries, tier ${p.tier} wants ${ENTRIES[p.tier]}`);
-    if (p.difficulty !== TIER_LABEL[p.tier]) finalProblems.push(`${p.id}: label/tier mismatch`);
     if (p.tier === 3) {
       const wry = p.entries.filter((e) => wryTexts.has(e.clue)).length;
       if (wry < MIN_WRY_ENTRIES) finalProblems.push(`${p.id}: only ${wry} wry clues (tier 3 needs ${MIN_WRY_ENTRIES})`);

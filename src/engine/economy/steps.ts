@@ -142,14 +142,70 @@ export const STEP_TABLE = {
  * same answer all day (AAA 4.8 spirit) and the blueprint can draw the padlock
  * from the moment the row is visible — never a surprise charge (AAA 4.6).
  *
- * A1 wiring (requested): consult `doorLockedAt` in openDraft for the target
- * cell; a locked target needs `keyCost` keys, spent on placement.
+ * A1 WIRING (LIVE as of the padlock arc): `app/slices/manor.ts` consults
+ * `doorLockedAt` in `openDraft` for the target cell and `engine/manor/locks.ts`
+ * wraps it for the blueprint. The live contract, in the order the player meets
+ * it:
+ *   1. the padlock is DRAWN on the blueprint before she walks toward it;
+ *   2. with no key the door cannot be opened AND THE STEP IS NOT CHARGED —
+ *      never a surprise charge, never pay-for-nothing (AAA 4.6);
+ *   3. with a key the draft opens for the usual 1 step, and the key is spent
+ *      ON PLACEMENT, so backing out of the offer still costs only that step.
  */
 export const DOOR_LOCKS = {
   /** P(a door into this 0-based row is locked); rows 0–3 never lock. */
   chanceByRow: [0, 0, 0, 0, 0.35, 0.55, 0.8] as readonly number[],
   keyCost: 1,
 } as const;
+
+/**
+ * THE PADLOCK'S OTHER HALF — the key supply (AAA 4.10d, "Fern/Key-Cabinet
+ * access ... affinity-gated").
+ *
+ * A gate is only a gate if the key exists. The simulation's skilled player
+ * finds ≈0.5 keys on day 1 rising to ≈0.85 by day 10 (`SimProfile.keyLuck`
+ * + `CAMPAIGN_ARC.keyLuckPerDay`), and is locked out of a climb ≈0.6–1.2
+ * times a day. Measured against the LIVE deck, the Key Cabinet alone appears
+ * in only ~3.5% of offers — ≈0.2 keys a day even if she takes it every single
+ * time. That is not a gate, it is a wall, and it is the gap this block closes.
+ *
+ * These are drop RATES, so they live here in the one tunable economy file
+ * rather than in A1's deck: `engine/manor/deck.ts` reads them into
+ * `UTILITY_EFFECTS`, and `tests/economy-simulation.test.ts` measures the
+ * resulting live per-draft key rate against the simulated one.
+ *
+ * Keys still reset nightly (MANOR_DESIGN §9) — every ascent re-earns its way
+ * up. What the campaign buys is ACCESS, never a stockpile.
+ */
+export const KEY_SUPPLY = {
+  /** The Key Cabinet: the deliberate, unusual, "I am preparing a climb" card. */
+  cabinetKeys: 2,
+  /** The Boot Room hook: the common ground-floor key, tiers 1 only. */
+  bootRoomKeys: 1,
+  /**
+   * Fern's arc, indexed by her affinity POINTS (the same convention
+   * `TEA_BY_RANK`/`teaBonus` already use — the day slice passes raw points):
+   * a key left on the sill at dawn for a friend who tends the garden with
+   * her. This is the padlock's answer to Bramble's tea — the same shape, the
+   * same AAA 5.9 valve of one conversation a day, and the reason a skilled
+   * player's FIRST Sanctum reach still lands around day 6–10 however well she
+   * plays day 1. Deliberately flat at 1: it opens ONE gate, and the ascent
+   * needs ~1.7 on average, so Fern shortens the climb and never buys it.
+   */
+  fernMorningKeys: [0, 0, 0, 0, 1, 1, 1] as readonly number[],
+} as const;
+
+/**
+ * Keys Fern leaves out at dawn, from her affinity points. Granted when the
+ * day's manor is built (app/slices/manor.ts) and zeroed again at night with
+ * the rest of the purse — access is what the campaign buys, never a hoard.
+ */
+export function fernMorningKeys(fernAffinity: number): number {
+  if (!Number.isFinite(fernAffinity) || fernAffinity <= 0) return 0;
+  const points = Math.floor(fernAffinity);
+  const table = KEY_SUPPLY.fernMorningKeys;
+  return table[Math.min(points, table.length - 1)]!;
+}
 
 /** Deterministic lock roll for a draft target cell (0-based row). */
 export function doorLockedAt(daySeed: number, cellKey: string, row: number): boolean {

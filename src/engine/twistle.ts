@@ -25,9 +25,21 @@ export function gridSize(grid: string[]): number {
   return Math.round(Math.sqrt(grid.length));
 }
 
-/** Centre tile index of an n×n board (n is odd for a true centre). */
+/**
+ * Centre tile index of an n×n board.
+ *
+ * Odd n has a true centre and this returns it (n=5 → 12, n=7 → 24), so the
+ * default board is unchanged. Even n has no single centre tile, so we name one
+ * of the four middle tiles — the upper-left of them (n=6 → 14, i.e. row 2,
+ * col 2). The naive `floor(n²/2)` lands on the LEFT WALL for even n (n=6 → 18,
+ * row 3 col 0), which would turn tier 3's centre rule into an edge-hugging
+ * rule; this is the fix that makes a 6×6 `centerRequired` board honest.
+ * Generator, solver and view all read this one function, so the marked tile
+ * and the enforced tile can never disagree.
+ */
 export function centerIndex(n: number): number {
-  return Math.floor((n * n) / 2);
+  const mid = Math.floor((n - 1) / 2);
+  return mid * n + mid;
 }
 
 /** The board's side length: the declared `size`, else derived from the grid. */
