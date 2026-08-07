@@ -455,11 +455,32 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     it legible: `ui/blueprint/DraftModal.tsx` stamps "Opens onto the Sanctum" on
     exactly those cards, off the same predicate. That UI is load-bearing for
     this number.*
-  - **4.10e — the volume is typically won in 8–16 days** of daily play by **the
-    skilled player of 4.10d** (median; measured 11 on all four campaign seeds,
-    p10 8, p90 14), **<3% inside the first week** (measured 0.5–2.0%), 0% on day 1,
-    >99% by day 28. Winning requires **both** gates independently:
+  - **4.10e — the volume is typically won in 12–20 days** of daily play by **the
+    skilled player of 4.10d** (median; measured 15 on all four campaign seeds,
+    p10 13, p90 18), **<3% inside the first week** (measured 0%), 0% on day 1,
+    100% by day 28. Winning requires **both** gates independently:
     knowing the word (fragments) *and* reaching the door that day.
+    **Round 21 correction — 8–16 → 12–20, because THE CONTENT COMMISSION BELOW
+    WAS DELIVERED.** The round-19 note that follows closes with *"a four-week
+    horizon needs roughly 28 authored pages… it is the open item, not a knob."*
+    Volume 1 now authors **28** fragments (10 definition lines, 10 engravings,
+    8 testimonies) and the same arithmetic runs the other way: the deduction
+    floor is re-derived to **25** (`FRAGMENTS_TO_DEDUCE`, by the identical rule
+    — the ten engravings sit at revealOrder 2/5/8/11/14/17/20/22/24/26, the
+    chain runs 171755 → 15232 → 6575 → 208 → 146 → 56 → 11 → 5 → 3 → 2 → 1, so
+    the LACUNA/LAGUNA tie is in hand at the twenty-fourth page and the
+    tie-breaker at the twenty-sixth), and 25 ÷ 1 legible page a night is a
+    **twenty-five-evening deduction at the slow end**. Nothing was tuned: the
+    routing moved with the pages (the lintel channel stocks **16** of the 28
+    and the Study 3, against 7 and 2 before), and §5.1's own success metric
+    moved WITH the horizon rather than against it — the median player's
+    legible-day share over her first fortnight measures **95.9%** in the
+    campaign model (was 80.5%) and **0.896** through the stricter drip harness
+    over the real authored content (was 0.648). Measured now: he deduces at day
+    14 and wins at 15; she deduces at 18 and wins at 22 (p10 17, p90 29, 89.5%
+    inside 28 evenings, 0.4% inside a fortnight). The two profiles are further
+    apart than they were, not closer, so skill still buys knowledge. Her band
+    moves with his — see the round-21 note on the median-player clause below.
     **Round 19 correction — 14–28 → 8–16, AND THE REASON IS ARITHMETIC, NOT
     TASTE.** The 14–28 band was measured on a campaign whose length was set by
     ACCESS: 15 of volume 1's 17 fragments sat behind violet draws, a
@@ -527,14 +548,22 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     owner-playtest blocker. So **both bands are published and both are
     measured**:
     - **the skilled player** (4.10d's): first landing day 6–10, volume won at
-      median **8–16** (round 19; was 14–28), >99% by day 28.
+      median **12–20** (round 21; was 8–16, and 14–28 before that), 100% by
+      day 28.
     - **the median player** (`PROFILE_DECENT`, 4.10b's): first landing at median
-      day **12–20** (measured 14–15, 0% never inside 45 days), the word
-      deducible at median day **10–20** (round 19, was 16–24; measured 14–15),
-      the volume won at median day **14–24** (round 19, was 26–34; measured
-      17–18), <2% inside the first week (measured 0),
-      **>80% inside 45 evenings** (measured 100%), and her evening stays
-      inside 10–15 minutes start to finish (4.10f).
+      day **12–20** (measured 16–18, 0% never inside 45 days), the word
+      deducible at median day **14–24** (round 21, was 10–20; measured 18),
+      the volume won at median day **18–28** (round 21, was 14–24; measured
+      21–22 across the four campaign seeds, p10 17, p90 29), <2% inside the
+      first week (measured 0), **>80% inside 45 evenings** (measured 100%), and
+      her evening stays inside 10–15 minutes start to finish (4.10f).
+    *Round 21 — BOTH KNOWLEDGE BANDS MOVED AGAIN, AND THIS TIME THE CONTENT
+    MOVED THEM. Her two ACCESS bands are untouched for the third round running:
+    the climb did not change, the volume did. Volume 1 authors 28 pages against
+    17 and the deduction floor is 25 against 15, so she has a fortnight more of
+    him to read — and reads it, at 95.9% of her first fourteen evenings against
+    80.5% before. That is the review's §5.1 target and the four-week horizon
+    being met by the same change, which is what the commission was for.*
     *Round 19 — WHICH OF HER FOUR BANDS MOVED, AND WHICH DID NOT. Her two ACCESS
     bands (first landing, the day-1/day-2 floor) are untouched: §5.2 did not make
     the climb cheaper, it stopped the climb being the only mouth in the house.
@@ -756,14 +785,17 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   and journals the guess so she can see her own elimination history. **[COZY]**
 - 4.18 Volume solvable-in-principle from day 1 (answer fixed at volume start; no
   fragment mechanically required). **This criterion owns solvable-in-principle
-  ONLY.** The solve horizon belongs to 4.10e (8–16 days median for the skilled
-  player since round 19, 14–24 for the median player, <3% inside week one) — the pre-overhaul "median playtest solve lands in 2–4 evenings"
+  ONLY.** The solve horizon belongs to 4.10e (12–20 days median for the skilled
+  player since round 21, 18–28 for the median player, <3% inside week one) — the pre-overhaul "median playtest solve lands in 2–4 evenings"
   clause was deleted in round 6: it contradicted 4.10e outright, so no critic
   could pass or fail the mystery's pacing and the economy and mystery owners
   were optimising against opposite targets. The shipped fragment drip is built
   for 4.10e and is now measured against it by
   `tests/volume-pacing.test.ts` (seeded campaigns through the real deck mix,
-  letter grants and pity channel: median day-of-fragment-16 in 10–20, p10 ≥ 6).
+  letter grants and pity channel: median day-of-legible-TIE-BREAKER in 10–22,
+  p10 ≥ 8 — round 21, and the milestone is now DERIVED off the volume's own
+  reveal order rather than typed as "fragment 16", which stopped being the
+  tie-breaker the moment the volume grew to 28 pages).
 
 ### The floorplan is an argument (REVIEW_AA §5.7 / §7 — round 20)
 

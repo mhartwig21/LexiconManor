@@ -1399,7 +1399,7 @@
         },
         {
           "kind": "fragmentCount",
-          "gte": 9
+          "gte": 12
         }
       ],
       "lines": [
@@ -1425,6 +1425,45 @@
         ]
       },
       "summary": "Posy’s testimony: the letter with a window cut in it."
+    },
+    {
+      "id": "posy.arc.testimony-2",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "met.posy"
+        },
+        {
+          "kind": "fragmentCount",
+          "gte": 19
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "Third row down — the returns pigeonhole. Have a look in. No, go on. I have been not-mentioning that stack for thirty years and my nerve has finally gone."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "He franked one envelope a week to an address that is not anywhere. I sent every last one. We carry, we don’t decide — that is the whole oath, and I kept it."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "wistful",
+          "text": "They came back marked ‘no such place’, and he filed each one like proof. Proof of what, I never asked. Into the journal with it, love. That’s evidence."
+        }
+      ],
+      "effects": {
+        "grantsFragmentIds": [
+          "v1-t7"
+        ]
+      },
+      "summary": "Posy’s testimony: a weekly envelope to an address that is not anywhere."
     }
   ]
 }

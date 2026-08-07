@@ -1543,6 +1543,45 @@
       "summary": "Ellery’s testimony: one word names the hole it would leave."
     },
     {
+      "id": "ellery.arc.testimony-2",
+      "trigger": "parlor",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "met.ellery"
+        },
+        {
+          "kind": "fragmentCount",
+          "gte": 16
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "Come here a moment — to the catalogue, not the chair. There is one drawer in this room I have never let another soul open, and it is empty, which is rather the point."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "He asked me to reserve a shelf-mark for an entry he had not written yet. I did. It is still empty, still labelled, and I still dust it."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "stern",
+          "text": "That is not sentiment. That is cataloguing. Put it in the journal in those words, dear — the distinction is the whole of the evidence."
+        }
+      ],
+      "effects": {
+        "grantsFragmentIds": [
+          "v1-t6"
+        ]
+      },
+      "summary": "Ellery’s testimony: a shelf-mark reserved for an entry never written."
+    },
+    {
       "id": "ellery.react.landing",
       "trigger": "parlor",
       "priority": 720,
@@ -1575,7 +1614,7 @@
       "conditions": [
         {
           "kind": "fragmentsLegible",
-          "gte": 15
+          "gte": 25
         }
       ],
       "lines": [

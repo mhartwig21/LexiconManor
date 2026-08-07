@@ -49,13 +49,22 @@ const records4: DayRecord[] = [1, 2, 3, 4].map((day) => ({
 }));
 
 describe('definition poem — gaps keep the shape (— ? —)', () => {
-  it('always renders six slots, found lines in revealOrder, the rest gaps', () => {
+  // ROUND 21: the poem is ten lines, not six — volume 1 grew to 28 authored
+  // pages to carry the four-week horizon (engine/volume.FRAGMENTS_TO_DEDUCE).
+  // The slot count is READ off the volume rather than retyped, so the next
+  // volume moves this test instead of breaking it; the shape being asserted is
+  // "one slot per authored line, gaps kept in revealOrder", which never moved.
+  it('always renders one slot per line, found lines in revealOrder, the rest gaps', () => {
+    const lines = volume.fragments.filter((f) => f.kind === 'definition-line').length;
     const slots = definitionSlots(volume, withFound('v1-d3', 'v1-d1'));
-    expect(slots.length).toBe(6);
+    expect(slots.length).toBe(lines);
+    // v1-d1 is revealOrder 1 and v1-d3 revealOrder 9 — the second and third
+    // lines of the poem (v1-d2, v1-d7) sit between them and are still gaps.
     expect(slots[0]!.fragment?.id).toBe('v1-d1');
     expect(slots[1]!.fragment).toBeNull();
-    expect(slots[2]!.fragment?.id).toBe('v1-d3');
-    expect(slots.filter((s) => s.fragment === null).length).toBe(4);
+    expect(slots[2]!.fragment).toBeNull();
+    expect(slots[3]!.fragment?.id).toBe('v1-d3');
+    expect(slots.filter((s) => s.fragment === null).length).toBe(lines - 2);
   });
 
   it('groups by kind in revealOrder for the tabs', () => {

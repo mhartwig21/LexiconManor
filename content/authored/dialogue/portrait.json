@@ -503,7 +503,7 @@
         {
           "kind": "fragmentsLegible",
           "gte": 4,
-          "lte": 8
+          "lte": 10
         }
       ],
       "lines": [
@@ -522,8 +522,8 @@
       "conditions": [
         {
           "kind": "fragmentsLegible",
-          "gte": 9,
-          "lte": 12
+          "gte": 11,
+          "lte": 17
         }
       ],
       "lines": [
@@ -535,6 +535,26 @@
       ]
     },
     {
+      "id": "portrait.gate.closing",
+      "trigger": "sanctum-idle",
+      "priority": 0,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "fragmentsLegible",
+          "gte": 18,
+          "lte": 21
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "You have more of my alphabet than I am comfortable with, reader. The list you are holding is short enough to read aloud in one breath. Do not read it aloud in here."
+        }
+      ]
+    },
+    {
       "id": "portrait.gate.tie-breaker",
       "trigger": "sanctum-idle",
       "priority": 0,
@@ -542,8 +562,8 @@
       "conditions": [
         {
           "kind": "fragmentsLegible",
-          "gte": 13,
-          "lte": 14
+          "gte": 22,
+          "lte": 24
         }
       ],
       "lines": [
@@ -575,7 +595,7 @@
       "conditions": [
         {
           "kind": "fragmentsLegible",
-          "gte": 15
+          "gte": 25
         }
       ],
       "lines": [
@@ -666,7 +686,7 @@
         },
         {
           "kind": "fragmentCount",
-          "gte": 11
+          "gte": 14
         }
       ],
       "lines": [

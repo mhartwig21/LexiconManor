@@ -452,13 +452,45 @@ describe('4.10d — the SKILLED player first reaches the Sanctum landing on day 
  * still required, the first week is still not a walkover, the evening is still
  * 10–15 minutes, and the median player is still measured beside him and still
  * slower on every one of the five milestones.
+ *
+ * ═══ ROUND 21 — THE COMMISSION LANDED, SO THE BAND MOVES BACK ═════════════
+ *
+ * The open item above was *"a 28-evening median needs roughly 28 AUTHORED
+ * PAGES"*. Volume 1 now authors **28** — 10 definition lines, 10 engravings,
+ * 8 testimonies — and the SAME arithmetic runs the other way:
+ *
+ *     volume 1 authors 28 fragments
+ *     the deduction floor is 25 of them (engine/volume.FRAGMENTS_TO_DEDUCE,
+ *       re-derived off the reveal order by the identical rule: the ten
+ *       engravings sit at revealOrder 2/5/8/11/14/17/20/22/24/26, the chain
+ *       runs 171755 → 15232 → 6575 → 208 → 146 → 56 → 11 → 5 → 3 → 2 → 1, so
+ *       the LACUNA/LAGUNA tie is in hand at the twenty-fourth page and the
+ *       tie-breaker at the twenty-sixth)
+ *     REVIEW_AA §5.1's metric is still ">= 1 legible page a night"
+ *     => 25 / 1 per night = a TWENTY-FIVE-evening deduction at the slow end,
+ *        and the four-week horizon is a content fact again rather than a knob.
+ *
+ * Nothing was tuned to get there. The routing moved with the pages (the lintel
+ * channel stocks 16 of the 28 and the Study 3, against 7 and 2 before), and
+ * both instruments moved together: `npm run metrics:review` measures the
+ * median player's legible-day share over her first fortnight at 95.9% in the
+ * campaign model (was 80.5%) and 0.896 through the drip harness over the real
+ * authored content (was 0.648) — i.e. §5.1's own success metric is met at the
+ * same time as the horizon is restored, which is exactly what the extra pages
+ * were for. Measured now: he deduces at day 14 and wins at 15 (p10 13, p90 18,
+ * 15 on all four seeds); she deduces at 18 and wins at 22 (p10 17, p90 29,
+ * 21–22 across seeds, 89.5% inside 28 evenings).
+ *
+ * Bands re-published from that measurement: his 8–16 → **12–20**, hers 14–24 →
+ * **18–28**, her deduction 10–20 → **14–24**. The two profiles are further
+ * apart than they were, not closer, so skill still buys knowledge.
  */
-describe('4.10e — the SKILLED player wins the VOLUME in 8–16 days', () => {
+describe('4.10e — the SKILLED player wins the VOLUME in 12–20 days', () => {
   it('puts the median win inside the published band', () => {
-    // Measured 11 on every one of the four campaign seeds (p10 8, p90 14).
+    // Measured 15 on every one of the four campaign seeds (p10 13, p90 18).
     const m = medianOf(winOrNever);
-    expect(m, `median win day ${m}`).toBeGreaterThanOrEqual(8);
-    expect(m).toBeLessThanOrEqual(16);
+    expect(m, `median win day ${m}`).toBeGreaterThanOrEqual(12);
+    expect(m).toBeLessThanOrEqual(20);
   });
 
   it('needs BOTH gates: knowing the word and reaching the door', () => {
@@ -562,17 +594,21 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
     expect(share(decentReach, (d) => d <= 2)).toBeLessThan(0.04);
   });
 
-  it('wins the volume in 14–24 days at the median — the published second band', () => {
+  it('wins the volume in 18–28 days at the median — the published second band', () => {
     // ROUND 19 — 26–34 → 14–24. HER BAND WAS THE ONE MADE ALMOST ENTIRELY OF
     // THE ACCESS LOTTERY, so §5.2 moved it furthest. Round 13 measured the gap
     // between her knowing the word and being allowed to say it at median 9
     // evenings, p90 25, max 47; the speaking tube pays that whole gap back.
-    // Measured now: deduction median 15, win median 17–18 across the four
-    // campaign seeds (p10 13, p90 24), against a knowledge curve that only
-    // moved from 20 to 15. Nine of her old ~14 lost evenings were the walk.
+    // ROUND 21 — 14–24 → 18–28, and this time it is the CONTENT that moved:
+    // the volume authors 28 pages against 17 and the deduction floor is 25
+    // against 15 (see the arithmetic block above the skilled describe). Her
+    // walk is untouched; she simply has a fortnight more of him to read.
+    // Measured now: deduction median 18, win median 21–22 across the four
+    // campaign seeds (p10 17, p90 29), 89.5% inside 28 evenings, 0.4% inside
+    // a fortnight.
     const m = medianOf(decentWin);
-    expect(m, `median win day ${m}`).toBeGreaterThanOrEqual(14);
-    expect(m).toBeLessThanOrEqual(24);
+    expect(m, `median win day ${m}`).toBeGreaterThanOrEqual(18);
+    expect(m).toBeLessThanOrEqual(28);
     // Never a first-week walkover for her either (measured: still exactly 0).
     expect(share(decentWin, (d) => d <= 7)).toBeLessThan(0.02);
   });
@@ -612,9 +648,12 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
     // solving rather than by owning the deck's rarest room.
     // Band re-derived with it: 16–24 → 10–20 (measured 14–15 across seeds,
     // p10 11, p90 18).
+    // ROUND 21: 10–20 → 14–24. Same mechanism, more pages — the deduction
+    // floor moved 15 → 25 with the volume's page count and her reading rate
+    // did not, so the curve slid right by about four evenings. Measured 18.
     const m = medianOf(decentDeduce);
-    expect(m, `median deduction day ${m}`).toBeGreaterThanOrEqual(10);
-    expect(m).toBeLessThanOrEqual(20);
+    expect(m, `median deduction day ${m}`).toBeGreaterThanOrEqual(14);
+    expect(m).toBeLessThanOrEqual(24);
     expect(m).toBeGreaterThan(medianOf(campaigns.map((c) => c.deductionDay ?? NEVER)));
   });
 
@@ -636,11 +675,12 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
       const runs = simulateCampaigns(PROFILE_DECENT, 150, CAMPAIGN_LENGTH, seed);
       const reach = medianOf(runs.map((c) => c.firstSanctumReachDay ?? NEVER));
       const win = medianOf(runs.map((c) => c.volumeWinDay ?? NEVER));
-      // Measured across the four seeds: reach 14.5/15/15/15, win 17/18/18/18.
+      // Measured across the four seeds (round 21): reach 16/17/18/16.5,
+      // win 21/22/22/21.5.
       expect(reach, `seed ${seed}: reach ${reach}`).toBeGreaterThanOrEqual(12);
       expect(reach).toBeLessThanOrEqual(20);
-      expect(win, `seed ${seed}: win ${win}`).toBeGreaterThanOrEqual(14);
-      expect(win).toBeLessThanOrEqual(24);
+      expect(win, `seed ${seed}: win ${win}`).toBeGreaterThanOrEqual(18);
+      expect(win).toBeLessThanOrEqual(28);
     }
   }, HEAVY_MS);
 

@@ -63,11 +63,51 @@
       "interpretation": "Ellery smiles faintly. “Scribes had a word for a break in a manuscript — a passage the copyist lost. He is quoting his own trade at you.”"
     },
     {
+      "id": "v1-e7",
+      "kind": "engraving",
+      "group": "engravings",
+      "sourceRoomCategory": "puzzle",
+      "channel": "lintel",
+      "revealOrder": 5,
+      "source": "Pricked into the Linen Closet doorframe",
+      "text": "Somewhere inside it, an A — a tent pitched over nothing, a ladder with one rung. Where it stands I have not said, and shall not.",
+      "constraint": {
+        "kind": "contains-letter",
+        "letter": "A"
+      },
+      "interpretation": "Ellery inks a small green tick. “The letter A is in the word. Not first, not last, not how many times — only present. Generous and stingy in the same breath, which was entirely his way.”"
+    },
+    {
+      "id": "v1-d7",
+      "kind": "definition-line",
+      "group": "definition",
+      "sourceRoomCategory": "puzzle",
+      "channel": "lintel",
+      "revealOrder": 6,
+      "source": "Pinned in the Darkroom, above his case of type",
+      "text": "The compositor keeps one box of nothing at his elbow, and it is the busiest box on the bench. I am the letter he sets most often, and I have no face.",
+      "interpretation": "Ellery turns it to the lamp. “Printers call them quads and spaces — real metal, weighed, filed beside the alphabet. He is telling you a gap is a thing you can pick up. That is not a metaphor. That is a trade.”"
+    },
+    {
+      "id": "v1-t4",
+      "kind": "testimony",
+      "group": "testimony",
+      "sourceRoomCategory": "parlor",
+      "revealOrder": 7,
+      "speaker": "posy",
+      "source": "Posy, sorting the evening post",
+      "text": "“His last letter went out with one word cut clean from it — a little window in the paper. You could read the whole sentence around the hole. I believe that was rather the point.”",
+      "relatedIds": [
+        "v1-d4"
+      ]
+    },
+    {
       "id": "v1-e2",
       "kind": "engraving",
       "group": "engravings",
       "sourceRoomCategory": "mystery",
-      "revealOrder": 5,
+      "channel": "lintel",
+      "revealOrder": 8,
       "source": "Scratched inside the Library windowsill",
       "text": "Call me WORDSMITH no longer. What I took shares not one letter with that name.",
       "constraint": {
@@ -77,50 +117,22 @@
       "interpretation": "Ellery writes the name out and strikes it through. “Then W, O, R, D, S, M, I, T and H appear nowhere in the word. That is nine letters gone from your alphabet.”"
     },
     {
-      "id": "v1-t4",
-      "kind": "testimony",
-      "group": "testimony",
-      "sourceRoomCategory": "parlor",
-      "revealOrder": 6,
-      "speaker": "posy",
-      "source": "Posy, sorting the evening post",
-      "text": "“His last letter went out with one word cut clean from it — a little window in the paper. You could read the whole sentence around the hole. I believe that was rather the point.”",
-      "relatedIds": [
-        "v1-d4"
-      ]
-    },
-    {
       "id": "v1-d3",
       "kind": "definition-line",
       "group": "definition",
       "sourceRoomCategory": "puzzle",
       "channel": "study",
-      "revealOrder": 7,
+      "revealOrder": 9,
       "source": "Loose in the Study, among his unfinished entries",
       "text": "In my mother Latin I was a little pool — a hollow where the rain remembered what the ground forgot.",
       "interpretation": "Ellery goes very still. “Mother Latin. A little pool, a hollow. The word crossed into English still wearing its Latin dress — when you find it, it will look Latin. Hold that thought like a candle.”"
-    },
-    {
-      "id": "v1-e3",
-      "kind": "engraving",
-      "group": "engravings",
-      "sourceRoomCategory": "puzzle",
-      "channel": "lintel",
-      "revealOrder": 8,
-      "source": "Carved on the Gallery lintel",
-      "text": "It begins as LULLABY and LANTERN begin — with the tall letter, the candlestick.",
-      "constraint": {
-        "kind": "starts-with",
-        "letter": "L"
-      },
-      "interpretation": "Ellery: “The first letter is L. He did love an L — half his marginalia lean on one.”"
     },
     {
       "id": "v1-t3",
       "kind": "testimony",
       "group": "testimony",
       "sourceRoomCategory": "parlor",
-      "revealOrder": 9,
+      "revealOrder": 10,
       "speaker": "fern",
       "source": "Fern, by the west beds",
       "text": "“There is a bed in the west garden where nothing grows. He would stand at it an hour at a time. Said there was a word for that exact shape of missing — and that he meant to see it filled again.”",
@@ -129,11 +141,68 @@
       ]
     },
     {
+      "id": "v1-e8",
+      "kind": "engraving",
+      "group": "engravings",
+      "sourceRoomCategory": "puzzle",
+      "channel": "lintel",
+      "revealOrder": 11,
+      "source": "Notched along the Counting House measuring-rule",
+      "text": "There is an ell in it. Elbow to fingertip, the draper’s measure — he was pleased past all reason that a letter could also be a length.",
+      "constraint": {
+        "kind": "contains-letter",
+        "letter": "L"
+      },
+      "interpretation": "Ellery laughs once, briefly. “An ell is an L said aloud. So the word contains an L. Where, he does not say — only that it is in there somewhere, being measured out.”"
+    },
+    {
+      "id": "v1-d8",
+      "kind": "definition-line",
+      "group": "definition",
+      "sourceRoomCategory": "mystery",
+      "channel": "lintel",
+      "revealOrder": 12,
+      "source": "A torn leaf in the lexicographer’s hand",
+      "text": "Reach along a shelf in the dark. Your hand finds me before it finds one title, and you know at once which book is out.",
+      "interpretation": "Ellery does not look up. “Thirty years I have known this room by its gaps, and I resent him for saying it better. A shelf tells you what is absent long before it tells you what is there.”"
+    },
+    {
+      "id": "v1-t6",
+      "kind": "testimony",
+      "group": "testimony",
+      "sourceRoomCategory": "parlor",
+      "revealOrder": 13,
+      "speaker": "ellery",
+      "source": "Ellery, at the catalogue drawers",
+      "text": "“He asked me to reserve a shelf-mark for an entry he had not written yet. I did. It is still empty, still labelled, and I still dust it. That is not sentiment. That is cataloguing.”",
+      "relatedIds": [
+        "v1-d8"
+      ]
+    },
+    {
+      "id": "v1-e9",
+      "kind": "engraving",
+      "group": "engravings",
+      "sourceRoomCategory": "puzzle",
+      "channel": "lintel",
+      "revealOrder": 14,
+      "source": "Struck into the lead of the Conservatory rain-gauge",
+      "text": "It carries a U — the cup of the alphabet, the one letter built to hold what is poured into it. Something in this word is being kept.",
+      "constraint": {
+        "kind": "contains-letter",
+        "letter": "U"
+      },
+      "relatedIds": [
+        "v1-d3"
+      ],
+      "interpretation": "Ellery: “The word contains a U. That is all it says and all it means — though mind what he chose to say it on. A thing made to measure whatever collects in a hollow.”"
+    },
+    {
       "id": "v1-d4",
       "kind": "definition-line",
       "group": "definition",
       "sourceRoomCategory": "mystery",
-      "revealOrder": 10,
+      "revealOrder": 15,
       "source": "A torn leaf in the lexicographer’s hand",
       "text": "The moth eats a word from the page and leaves me behind as the payment.",
       "interpretation": "Ellery: “Moth-eaten pages, missing text. It is the scholar’s word for the gap the moth leaves behind — librarians grieve it by name.”",
@@ -143,25 +212,11 @@
       "channel": "lintel"
     },
     {
-      "id": "v1-e4",
-      "kind": "engraving",
-      "group": "engravings",
-      "sourceRoomCategory": "mystery",
-      "revealOrder": 14,
-      "source": "A rubbing from the Conservatory arch",
-      "text": "Its breath runs A, then U, then A — exhale, hollow, exhale. All the rest of it is consonant bone.",
-      "constraint": {
-        "kind": "vowel-sequence",
-        "vowels": "AUA"
-      },
-      "interpretation": "Ellery: “Its vowels, in order, are A, U, A — three, and no others. So no E, no I, no O anywhere in it.”"
-    },
-    {
       "id": "v1-t1",
       "kind": "testimony",
       "group": "testimony",
       "sourceRoomCategory": "parlor",
-      "revealOrder": 12,
+      "revealOrder": 16,
       "speaker": "ellery",
       "source": "Ellery, among the reading lamps",
       "text": "“He told me once that in all the dictionary there is exactly one word that names the hole it would leave behind. Then he went and made it true.”",
@@ -170,12 +225,72 @@
       ]
     },
     {
+      "id": "v1-e3",
+      "kind": "engraving",
+      "group": "engravings",
+      "sourceRoomCategory": "puzzle",
+      "channel": "lintel",
+      "revealOrder": 17,
+      "source": "Carved on the Gallery lintel",
+      "text": "It begins as LULLABY and LANTERN begin — with the tall letter, the candlestick.",
+      "constraint": {
+        "kind": "starts-with",
+        "letter": "L"
+      },
+      "relatedIds": [
+        "v1-e8"
+      ],
+      "interpretation": "Ellery: “The first letter is L. He did love an L — half his marginalia lean on one. And you already knew one was in there; now you know where it stands.”"
+    },
+    {
+      "id": "v1-d9",
+      "kind": "definition-line",
+      "group": "definition",
+      "sourceRoomCategory": "puzzle",
+      "channel": "study",
+      "revealOrder": 18,
+      "source": "Loose in the Study, among his unfinished entries",
+      "text": "A wall is only stubbornness until somebody cuts a door in it. I am the cut. Everything that ever came in, or went out, came through me.",
+      "interpretation": "Ellery reads it twice, slowly. “That is a defence, dear. A gap made on purpose is a doorway — and he entered it in his own dictionary years before anyone thought to accuse him of anything.”"
+    },
+    {
+      "id": "v1-t7",
+      "kind": "testimony",
+      "group": "testimony",
+      "sourceRoomCategory": "parlor",
+      "revealOrder": 19,
+      "speaker": "posy",
+      "source": "Posy, at the returns pigeonhole",
+      "text": "“He franked one envelope a week to an address that is not anywhere. I sent them all — we carry, we don’t decide. Every one came back marked ‘no such place’, and he filed every one like proof.”",
+      "relatedIds": [
+        "v1-t4"
+      ]
+    },
+    {
+      "id": "v1-e10",
+      "kind": "engraving",
+      "group": "engravings",
+      "sourceRoomCategory": "mystery",
+      "channel": "lintel",
+      "revealOrder": 20,
+      "source": "Inked on the flyleaf of the dictionary he never finished",
+      "text": "I began a FOREWORD to it once and got no further than the title. Not one letter of that word appears in this one. I saw to that.",
+      "constraint": {
+        "kind": "shares-no-letter",
+        "word": "FOREWORD"
+      },
+      "relatedIds": [
+        "v1-e2"
+      ],
+      "interpretation": "Ellery strikes the letters through. “F, O, R, E, W, D. Four of those went with WORDSMITH, so what this truly buys you is F and E — and at this stage of the plate, two letters is a great deal.”"
+    },
+    {
       "id": "v1-d5",
       "kind": "definition-line",
       "group": "definition",
       "sourceRoomCategory": "puzzle",
       "channel": "lintel",
-      "revealOrder": 13,
+      "revealOrder": 21,
       "source": "Blotted on the Study’s desk-pad, read back in the glass",
       "text": "Seek me in ledgers, in memory, in a row of teeth: wherever something was, and is not, and is missed by its own outline.",
       "interpretation": "Ellery: “Anatomists borrow it too — for small hollows in bone. One word, and every science of missing pays it rent.”"
@@ -185,7 +300,7 @@
       "kind": "engraving",
       "group": "engravings",
       "sourceRoomCategory": "mystery",
-      "revealOrder": 11,
+      "revealOrder": 22,
       "source": "Etched around the Study inkstand",
       "text": "One letter enters it twice, like a guest who cannot keep away. Every other letter calls only once.",
       "constraint": {
@@ -198,25 +313,50 @@
       "channel": "lintel"
     },
     {
-      "id": "v1-d6",
+      "id": "v1-t8",
+      "kind": "testimony",
+      "group": "testimony",
+      "sourceRoomCategory": "parlor",
+      "revealOrder": 23,
+      "speaker": "bramble",
+      "source": "Mrs. Bramble, in the doorway of his study",
+      "text": "“I turned out his study the week after. One drawer held nothing but a label in his own hand, gone over with the pen till the paper gave. I’ve kept that drawer empty since, pet. It seemed the only tidy thing left.”",
+      "relatedIds": [
+        "v1-t2"
+      ]
+    },
+    {
+      "id": "v1-e4",
+      "kind": "engraving",
+      "group": "engravings",
+      "sourceRoomCategory": "mystery",
+      "channel": "lintel",
+      "revealOrder": 24,
+      "source": "A rubbing from the Conservatory arch",
+      "text": "Its breath runs A, then U, then A — exhale, hollow, exhale. All the rest of it is consonant bone.",
+      "constraint": {
+        "kind": "vowel-sequence",
+        "vowels": "AUA"
+      },
+      "interpretation": "Ellery: “Its vowels, in order, are A, U, A — three, and no others. So no E, no I, no O anywhere in it.”"
+    },
+    {
+      "id": "v1-d10",
       "kind": "definition-line",
       "group": "definition",
-      "sourceRoomCategory": "puzzle",
-      "channel": "study",
-      "revealOrder": 15,
-      "source": "The last leaf in the Study’s word-book, face down",
-      "text": "A dictionary keeps my chair forever empty. Speak me at the door, and I will sit.",
-      "interpretation": "Ellery closes the journal softly. “He built the door to want the word itself. Name the gap, and it is a gap no longer. That is the whole of his apology, I think.”",
-      "relatedIds": [
-        "v1-t1"
-      ]
+      "sourceRoomCategory": "mystery",
+      "channel": "lintel",
+      "revealOrder": 25,
+      "source": "A torn leaf, folded small, in the pocket of a coat on the landing",
+      "text": "The house is not quieter without him. It is exactly as loud, and one voice short. Those are not the same thing, and I am the difference between them.",
+      "interpretation": "Ellery closes her eyes. “There it is. Not silence — a subtraction. He could define the ache and never once write the plain word for it, and I intend to stay cross about that for another thirty years.”"
     },
     {
       "id": "v1-e6",
       "kind": "engraving",
       "group": "engravings",
       "sourceRoomCategory": "mystery",
-      "revealOrder": 16,
+      "revealOrder": 26,
       "source": "Cut into the Sanctum door itself",
       "text": "Somewhere in it, a hard C — cut like a keyhole. He carved this line the night the sixth candle went out.",
       "constraint": {
@@ -226,14 +366,28 @@
       "relatedIds": [
         "v1-e1"
       ],
-      "interpretation": "Ellery: “It contains a C. Carved into the very door — he wanted it found, at the end.”"
+      "interpretation": "Ellery: “It contains a C. Carved into the very door — he wanted it found, at the end. Two words stood on your plate a moment ago. Now there is one.”"
+    },
+    {
+      "id": "v1-d6",
+      "kind": "definition-line",
+      "group": "definition",
+      "sourceRoomCategory": "puzzle",
+      "channel": "study",
+      "revealOrder": 27,
+      "source": "The last leaf in the Study’s word-book, face down",
+      "text": "A dictionary keeps my chair forever empty. Speak me at the door, and I will sit.",
+      "interpretation": "Ellery closes the journal softly. “He built the door to want the word itself. Name the gap, and it is a gap no longer. That is the whole of his apology, I think.”",
+      "relatedIds": [
+        "v1-t1"
+      ]
     },
     {
       "id": "v1-t5",
       "kind": "testimony",
       "group": "testimony",
       "sourceRoomCategory": "mystery",
-      "revealOrder": 17,
+      "revealOrder": 28,
       "speaker": "portrait",
       "source": "The Portrait, unprompted, just once",
       "text": "“I did not destroy it. I unhoused it. There is a difference — and the difference is the word.”"
@@ -279,6 +433,28 @@
         "v1-t4"
       ],
       "body": "I kept it. I oughtn’t have — post is post — but the last letter he ever gave me to send had a word cut out of it, neat as a stamp, and I could not bring myself to let it leave the house incomplete.\n\nI enclose it now. Hold it to the light: you can read the whole sentence around the hole. He wanted the hole read too, I think.\n\n— Posy"
+    },
+    {
+      "id": "the-empty-shelf-mark",
+      "from": "ellery",
+      "earliestDay": 13,
+      "minFragments": 12,
+      "subject": "Something for the hand, not the eye",
+      "grantsFragmentIds": [
+        "v1-d8"
+      ],
+      "body": "The returns tray again. I begin to think it is in league with you, and I have decided not to investigate.\n\nRead this one standing up, in the stacks, with the lamp off. He wrote it for the hand rather than the eye and it does not survive being read at a desk. I have tested this. Twice, and both times I had to sit down afterwards.\n\n— E."
+    },
+    {
+      "id": "the-coat-on-the-landing",
+      "from": "bramble",
+      "earliestDay": 17,
+      "minFragments": 20,
+      "subject": "Out of a coat pocket, of all places",
+      "grantsFragmentIds": [
+        "v1-d10"
+      ],
+      "body": "I have brushed that coat every spring for thirty years and never once put a hand in the pocket. Rules, pet. Then this morning there was a corner of paper showing, which I choose to read as the house running out of patience with me.\n\nIt has been folded small enough to be carried a long while. Sit down for it. There is fruit cake, and there is the window seat, and neither of them minds waiting.\n\n— Mrs. B."
     },
     {
       "id": "under-the-tray",

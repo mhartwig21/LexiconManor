@@ -39,8 +39,10 @@
  *
  * ROUND 7 (verifier) — THE SEAL IS THREADED THROUGH THIS MODEL.
  *
- * The measured quantity is the day the sixteenth fragment becomes **LEGIBLE**.
- * It used to be the day the sixteenth was *filed*, and this header used to
+ * The measured quantity is the day the TIE-BREAKING page becomes **LEGIBLE**
+ * (round 21: derived off the volume, see `TIE_BREAKER_PAGE` below — the 26th
+ * of 28 authored pages, not the 16th of 17 this file was written against).
+ * It used to be the day that page was *filed*, and this header used to
  * call that "the last engraving, after which the constraint set is a single
  * word" — which is false for a sealed engraving. Round 10 made a violet room
  * file a page that narrows NOTHING until a solve makes it out, so filing
@@ -57,7 +59,8 @@
  * instant she walks in" promise stays pinned too — both numbers matter, and
  * they are now different numbers.
  *
- * (The seventeenth fragment is the Portrait's confession, a scene, not a clue.)
+ * (The last two pages are the closing line of the definition and the
+ * Portrait's confession — a scene, not a clue.)
  */
 
 import { readFileSync } from 'node:fs';
@@ -274,7 +277,7 @@ function fragmentDays(seed: number, days: number): DripRun {
     // --- The solves make the backlog out (oldest first, as the engine does).
     // `pagesMadeOut` is computed inside simulateDay in real day order through
     // the live `decipherYield`, so tier is already priced in. Clamped to the
-    // queue we actually hold: the volume authors a fixed 17 fragments, so late
+    // queue we actually hold: the volume authors a fixed page count, so late
     // in a campaign the drip can run dry and file fewer than the sim expected.
     const madeOut = Math.min(result.pagesMadeOut, sealedQueue.length);
     if (madeOut > 0) {
@@ -302,10 +305,28 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
   const HORIZON = 60;
   const CAMPAIGNS = 240;
   const runs = Array.from({ length: CAMPAIGNS }, (_, i) => fragmentDays((0x51ce + i * 0x9e37) | 0, HORIZON));
-  /** THE horizon: the day the sixteenth fragment can actually be READ. */
-  const day16 = runs.map((r) => r.legible[16] ?? HORIZON + 1);
+  /**
+   * THE MILESTONE, DERIVED RATHER THAN TYPED (round 21).
+   *
+   * This file measured `legible[16]` and called it "the last engraving, after
+   * which the constraint set is a single word". That was true of a 17-page
+   * volume whose sixth and final engraving sat at revealOrder 16, and it
+   * silently stopped being true the moment the volume grew: volume 1 now runs
+   * 28 pages and ten engravings, and the tie-breaker (`contains C`, cut into
+   * the Sanctum door) sits at revealOrder 26. A hard-coded 16 would have gone
+   * on passing while measuring a milestone three-fifths of the way through the
+   * deduction — the round-6 "verified against a storey nobody enters" shape.
+   *
+   * So the page count is read off the authored volume: the highest revealOrder
+   * among the engravings IS the page on which the constraint set closes.
+   */
+  const TIE_BREAKER_PAGE = Math.max(
+    ...content.fragments.filter((f) => f.kind === 'engraving').map((f) => f.revealOrder),
+  );
+  /** THE horizon: the day the constraint set can actually be READ shut. */
+  const day16 = runs.map((r) => r.legible[TIE_BREAKER_PAGE] ?? HORIZON + 1);
   /** The cozy promise, kept as a secondary: the day it became hers. */
-  const day16Filed = runs.map((r) => r.filed[16] ?? HORIZON + 1);
+  const day16Filed = runs.map((r) => r.filed[TIE_BREAKER_PAGE] ?? HORIZON + 1);
 
   // Measured over 240 seeded campaigns, ROUND 7 (verifier), with the seal
   // threaded through and the round-11 violet retune live:
@@ -321,8 +342,8 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
   // (Round 8, the two solve channels live and no seal modelled: min 6, p10 10,
   // median 13, p90 17, max 23. Round 6, before the word games paid anything:
   // min 8, p10 10, median 13.5, p90 17, max 22. The horizon has stayed inside
-  // 4.10e's 14–28 day win window throughout — the volume authors a fixed 17
-  // fragments and the pity/letter channels carry the quiet days, so what these
+  // 4.10e's published win window throughout — the volume authors a fixed page
+  // count and the pity/letter channels carry the quiet days, so what these
   // rounds changed is WHERE pages come from and WHEN they speak, which is the
   // whole point of 4.14 and 4.10g respectively.)
   it('every campaign reaches the last engraving inside the horizon', () => {
@@ -339,17 +360,26 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
    * same instrument that measured 12–13 before the re-route measures 9 after
    * it, which is the change working, not the change breaking.
    *
+   * ROUND 21 — 6–16 → 10–22, BECAUSE THE MILESTONE MOVED, NOT THE PACE.
+   *
+   * The content commission landed: volume 1 authors 28 pages instead of 17, so
+   * the page on which the constraint set closes is the 26th and not the 16th
+   * (`TIE_BREAKER_PAGE` above, derived). The evening reads at very nearly the
+   * rate it did — the re-route stayed put and the drip is if anything smoother
+   * — but there are ten more pages to read before the plate shows one word.
+   * Measured over the same 240 seeded PROFILE_SKILLED campaigns: min 7, p10 11,
+   * median 14, p90 16, max 19. (For PROFILE_DECENT, whom AAA 4.10e's second
+   * band is about: p10 16, median 18, p90 21, max 25.)
+   *
    * It is pinned as a band and not as a decimal because the number that must
-   * not drift is the SHAPE: fragment 16 is the tie-breaking engraving, so the
-   * day it becomes legible is the day the constraint set closes to one word,
-   * and it has to stay a fortnight-ish story rather than a weekend or a month.
-   * Measured over 240 seeded PROFILE_SKILLED campaigns: p10 7, median 9,
-   * p90 11, max 14.
+   * not drift is the SHAPE: the day the tie-breaker becomes legible is the day
+   * the constraint set closes to one word, and it has to stay a two-to-three
+   * week story rather than a weekend or a month.
    */
-  it('the median campaign can READ fragment 16 between day 6 and day 16', () => {
+  it('the median campaign can READ the tie-breaker between day 10 and day 22', () => {
     const m = medianOf(day16);
-    expect(m, `median day-of-LEGIBLE-fragment-16 was ${m}`).toBeGreaterThanOrEqual(6);
-    expect(m, `median day-of-LEGIBLE-fragment-16 was ${m}`).toBeLessThanOrEqual(16);
+    expect(m, `median day-of-LEGIBLE-tie-breaker was ${m}`).toBeGreaterThanOrEqual(10);
+    expect(m, `median day-of-LEGIBLE-tie-breaker was ${m}`).toBeLessThanOrEqual(22);
   });
 
   /**
@@ -364,17 +394,19 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
       expect(day16Filed[i]!, `campaign ${i}: filed ${day16Filed[i]}, legible ${day16[i]}`)
         .toBeLessThanOrEqual(day16[i]!);
     }
-    // Same band as the legible one above, moved with it (round 19). Measured
-    // p10 6, median 9, p90 11, max 14 — the lag is still there and still
-    // nonzero on about half the campaigns, which is the seal doing its job.
+    // Same band as the legible one above, moved with it (round 21). Measured
+    // p10 11, median 13, max 19 — the lag is still there and still nonzero on
+    // about half the campaigns, which is the seal doing its job.
     const mFiled = medianOf(day16Filed);
-    expect(mFiled, `median day-of-FILED-fragment-16 was ${mFiled}`).toBeGreaterThanOrEqual(6);
-    expect(mFiled, `median day-of-FILED-fragment-16 was ${mFiled}`).toBeLessThanOrEqual(16);
+    expect(mFiled, `median day-of-FILED-tie-breaker was ${mFiled}`).toBeGreaterThanOrEqual(10);
+    expect(mFiled, `median day-of-FILED-tie-breaker was ${mFiled}`).toBeLessThanOrEqual(22);
   });
 
-  it('even a lucky tenth of campaigns needs a full week (p10 >= 6)', () => {
+  // ROUND 21: 6 → 8. Ten more authored pages stand between her and the closed
+  // plate, and the luckiest tenth of campaigns measured 11.
+  it('even a lucky tenth of campaigns needs more than a week (p10 >= 8)', () => {
     const p10 = quantileOf(day16, 0.1);
-    expect(p10, `p10 day-of-fragment-16 was ${p10}`).toBeGreaterThanOrEqual(6);
+    expect(p10, `p10 day-of-tie-breaker was ${p10}`).toBeGreaterThanOrEqual(8);
   });
 
   /**
@@ -458,7 +490,7 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
    */
   /**
    * The window the guarantee actually covers: days on which the volume still
-   * had a page to give. Once all seventeen are filed no channel owes her "one
+   * had a page to give. Once every page is filed no channel owes her "one
    * new fragment", so a dry run past that point measures nothing about mercy —
    * it measures a finished drip. (The old version of this test dodged the
    * question by stopping at the last event, which is the same thing said by
@@ -719,8 +751,8 @@ describe('the pity floor survives a player who cannot read her own pages (AAA 4.
 
     for (let day = 1; day <= HORIZON; day++) {
       let filed = 0;
-      // Only days the volume still owes her a page count: once all seventeen
-      // are filed the drip runs dry on its own and the pity channel fires for a
+      // Only days the volume still owes her a page count: once every page
+      // is filed the drip runs dry on its own and the pity channel fires for a
       // reason that has nothing to do with the seal.
       const owed = content.fragments.length - state.foundFragmentIds.length > 0;
       const droughtDays = fragmentDroughtDays(records);   // the OLD reading

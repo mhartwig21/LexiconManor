@@ -1210,8 +1210,9 @@ export const KNOWLEDGE = {
   lintelChannelStock: channelStock(VOLUME_1, LINTEL_CHANNEL),
   /**
    * The volume's whole authored supply — nothing can be learned past it.
-   * Volume 1 ships 17 fragments (the seventeenth is the Portrait's confession,
-   * a scene rather than a clue). Counted, for the same reason as above.
+   * Volume 1 ships 28 fragments since round 21 (the last of them is the
+   * Portrait's confession, a scene rather than a clue). Counted, never typed,
+   * for the same reason as above.
    */
   volumeFragments: VOLUME_1.fragments.length,
   /**
@@ -1223,15 +1224,21 @@ export const KNOWLEDGE = {
    * as knowledge outright. Wiring the channels in put five guaranteed early
    * fragments on the board, so the old floor no longer described the same
    * thing. Re-derived from what actually pins the answer instead of from the
-   * old number: tests/volume-solvability.test.ts proves volume 1's SIX
-   * engravings are individually soft and jointly sufficient — the chain runs
-   * 171755 → 15232 → 298 → 22 → 11 → 2 → 1, so five of them still leave two
-   * candidate words. Six engravings among seventeen fragments arriving in
-   * revealOrder means all six are inside the first k she holds with
-   * probability C(k,6)/C(17,6): 3.7% at k = 11, 13.9% at 13, 40% at 15. A
-   * floor of 11 was therefore claiming a deduction the constraint set does
-   * not support in nineteen campaigns out of twenty; 13 is the optimistic
-   * end (she guessed between the last two candidates), 17 the resistant one.
+   * old number: tests/volume-solvability.test.ts proves volume 1's engravings
+   * are individually soft and jointly sufficient, and the ORDERED chain is
+   * what fixes the band — every engraving must leave a strictly shorter
+   * shortlist than the state before it, and the last one is the tie-breaker.
+   *
+   * ROUND 21, the current derivation. Volume 1 authors 28 pages and TEN
+   * engravings at revealOrder 2/5/8/11/14/17/20/22/24/26; the chain runs
+   *
+   *   171755 → 15232 → 6575 → 208 → 146 → 56 → 11 → 5 → 3 → 2 → 1
+   *
+   * so the ninth (vowel-sequence A-U-A) still leaves LACUNA and LAGUNA and
+   * only the tenth (contains C, cut into the Sanctum door) parts them. The
+   * optimistic end is therefore "she holds all 25 pages before the tie-breaker
+   * and guesses between two words"; the resistant end is the whole 28-page
+   * file. Under the old 17-page volume the identical two rules gave [15, 17].
    */
   /* ROUND 16: IMPORTED, NOT RESTATED. This band is the mystery's property,
    * not the model's — it belongs to volume 1's constraint set, and

@@ -32,7 +32,7 @@
  *     play, a pity letter arrives overnight carrying the next fragment. The
  *     channel is renewable (AAA 4.14): when every authored pity letter is
  *     spent, the house synthesizes another from a small authored pool of
- *     Posy bodies — a 17-fragment volume can never outlast the mercy
+ *     Posy bodies — no volume, at any page count, can outlast the mercy
  *   - letter-constraint engravings are machine-readable (EngravingConstraint)
  *     so the journal can render them against the alphabet and the solvability
  *     test can prove the constraint set admits exactly one dictionary answer
@@ -225,8 +225,39 @@ export interface VolumeContent extends VolumeDef {
  * definition lines and 5 testimonies authored, holding five of six engravings
  * plus the surrounding prose IS fifteen pages. 13 was the old drip's number,
  * measured when a third of the volume was unreachable in a fortnight.
+ *
+ * ── ROUND 21 (THE CONTENT COMMISSION): 15 → 25, 17 → 28 ────────────────────
+ *
+ * The open item this block, `PITY_DROUGHT_DAYS` below, AAA 4.10e and
+ * MANOR_DESIGN §7 all recorded — *"a four-week horizon needs roughly 28
+ * authored pages"* — has been authored. Volume 1 now runs 28 fragments (10
+ * definition lines, 10 engravings, 8 testimonies) and the band is RE-DERIVED,
+ * by the same two rules as before, off the new reveal order:
+ *
+ *   [0] = (revealOrder of the TIE-BREAKING engraving) − 1
+ *   [1] = the authored page count (she reads the file all the way out)
+ *
+ * The ten engravings sit at revealOrder 2 / 5 / 8 / 11 / 14 / 17 / 20 / 22 /
+ * 24 / 26 and narrow the dictionary
+ *
+ *   171755 → 15232 → 6575 → 208 → 146 → 56 → 11 → 5 → 3 → 2 → 1
+ *
+ * so the NINTH engraving (`vowel-sequence AUA`, revealOrder 24) leaves LACUNA
+ * and LAGUNA both standing and only the tenth (`contains C`, cut into the
+ * Sanctum door, revealOrder 26) parts them. Holding everything before the
+ * tie-breaker is therefore 25 pages — the optimistic end, where she guesses
+ * between two words — and 28 is the resistant end, where the constraint set
+ * has to close all the way. Under the old 17-page volume those same two rules
+ * gave [16 − 1, 17] = [15, 17]; nothing about the derivation moved, only the
+ * volume it is read off.
+ *
+ * Everything downstream follows automatically: `journal.DEDUCTION_FLOOR` is
+ * `[0]`, A2's `KNOWLEDGE.fragmentsToDeduce` IS this constant, and the authored
+ * `portrait.gate.*` bands were re-tiled 0 → 25 in the same change (they must
+ * partition it — tests/journal.test.ts and tests/dialogue-content.test.ts
+ * prove the tiling from both sides).
  */
-export const FRAGMENTS_TO_DEDUCE: readonly [number, number] = [15, 17];
+export const FRAGMENTS_TO_DEDUCE: readonly [number, number] = [25, 28];
 
 // ---------------------------------------------------------------------------
 // Guessing at the Sanctum
@@ -381,7 +412,7 @@ export function nextFragmentForRoom(
  * The two channels above used to be defined by fragment KIND: the Study paid
  * definition lines, the lintel paid engravings, and nothing else was sayable.
  * That is a routing rule disguised as a taxonomy, and REVIEW_AA measured what
- * it cost. Volume 1 authors seventeen fragments; under the kind rule exactly
+ * it cost. Volume 1 authored seventeen fragments then; under the kind rule exactly
  * TWO were reachable by an ordinary evening's solve, three needed a `rare`
  * tier-3 two-gem room, eight needed a violet draw and four needed a character.
  * All six definition lines — the best prose in the repository — sat behind the
@@ -654,10 +685,19 @@ export function legibleDroughtDays(
  * not to do. So 2: two blank evenings in a row is a drought, one is a quiet
  * night the seal is allowed to make her sit through.
  *
- * (The remaining gap to 90% is not tunable — it is arithmetic. See
- * `scripts/review-metrics.ts`: 17 authored fragments cannot cover 14 days at
- * one a day AND still leave a four-week campaign. Volume 1 needs more authored
- * pages, not a smaller drought.)
+ * ROUND 21 — THE ARITHMETIC NOTE THAT USED TO LIVE HERE IS DISCHARGED.
+ *
+ * It read: *"the remaining gap to 90% is not tunable — it is arithmetic. 17
+ * authored fragments cannot cover 14 days at one a day AND still leave a
+ * four-week campaign. Volume 1 needs more authored pages, not a smaller
+ * drought."* The pages were authored. Volume 1 runs 28 fragments, the lintel
+ * channel stocks sixteen of them, and `npm run metrics:review` measures the
+ * median player's legible-day share over her first fortnight at **95.9%** in
+ * the campaign model (was 80.5%) and **0.896** through the stricter drip
+ * instrument over the real authored content (was 0.648) — with the win median
+ * back out at day 22 rather than 18. So 2 stays 2 on its own merits: two blank
+ * evenings is a drought, one is a quiet night the seal is allowed to make her
+ * sit through, and mercy is emphatically not the drip.
  */
 export const PITY_DROUGHT_DAYS = 2;
 

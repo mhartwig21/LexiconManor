@@ -146,9 +146,13 @@ describe('volume-1 content integrity', () => {
     }
   });
 
-  it('the definition poem is complete: 6 lines, each with an interpretation', () => {
+  /** ROUND 21: 6 → 10. The volume grew to 28 authored pages (10 definition
+   *  lines, 10 engravings, 8 testimonies) to restore the four-week horizon
+   *  AAA 4.10e publishes; the poem grew with it rather than being padded
+   *  around. The floor stays an equality so a line cannot be quietly dropped. */
+  it('the definition poem is complete: 10 lines, each with an interpretation', () => {
     const lines = volume.fragments.filter((f) => f.kind === 'definition-line');
-    expect(lines.length).toBe(6);
+    expect(lines.length).toBe(10);
     for (const l of lines) expect(l.interpretation, l.id).toBeTruthy();
   });
 

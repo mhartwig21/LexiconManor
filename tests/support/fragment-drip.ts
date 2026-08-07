@@ -283,9 +283,9 @@ export function legibleDayShare(run: DripRun, window: number): number {
  * reaching for. §5.1 wrote "≥0.90 of the first 14 days" against a channel two
  * fragments deep, where a dry day always meant *the game had something for her
  * and did not hand it over*. After the re-route the common dry day is the
- * opposite case: volume 1 authors seventeen fragments and a competent evening
- * now has them all by roughly day 12, so days 12–14 are dry because the mystery
- * is FINISHED, not because it is starved. Averaging those in measures the
+ * opposite case: the volume authors a finite number of pages and a competent
+ * evening can run them out, so a dry day late in the window can mean the
+ * mystery is FINISHED rather than starved. Averaging those in measures the
  * length of the volume, not the health of the channel.
  *
  * Both numbers are reported and both are pinned, because the raw one is the

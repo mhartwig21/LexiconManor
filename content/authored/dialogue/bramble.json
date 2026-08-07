@@ -1623,6 +1623,45 @@
       "summary": "Mrs. Bramble’s testimony: six candles, let out one by one."
     },
     {
+      "id": "bramble.arc.testimony-2",
+      "trigger": "morning",
+      "priority": 500,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "met.bramble"
+        },
+        {
+          "kind": "fragmentCount",
+          "gte": 21
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "concerned",
+          "text": "Sit down before you go up, pet. I’ve carried this since about the April of that year and it has got no lighter for the carrying."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "I turned out his study the week after. One drawer held nothing but a label in his own hand, gone over with the pen till the paper gave."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "I’ve kept that drawer empty since. It seemed the only tidy thing left. Write it down, pet — I shan’t manage the saying of it twice."
+        }
+      ],
+      "effects": {
+        "grantsFragmentIds": [
+          "v1-t8"
+        ]
+      },
+      "summary": "Mrs. Bramble’s testimony: the drawer with nothing in it but a label."
+    },
+    {
       "id": "bramble.recap.landing",
       "trigger": "morning",
       "priority": 730,

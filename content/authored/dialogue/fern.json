@@ -1437,7 +1437,7 @@
         },
         {
           "kind": "fragmentCount",
-          "gte": 7
+          "gte": 9
         }
       ],
       "lines": [

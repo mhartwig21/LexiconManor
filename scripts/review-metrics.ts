@@ -80,7 +80,7 @@ function campaignMetrics(profile: typeof PROFILE_DECENT, label: string) {
  * (b) and the volume horizon, through the REAL authored content and the real
  * channels — a second, stricter instrument than the campaign model's coarse
  * `KNOWLEDGE` abstraction above. It runs out of authored pages, which the
- * campaign model cannot: once the volume's 17 fragments are all filed, every
+ * campaign model cannot: once the volume's authored pages are all filed, every
  * later day is a legible-less day and the raw share falls. `...OWED` is the
  * same fraction restricted to days the volume still had something to give,
  * which is the number REVIEW_AA §5.1's target is actually about.

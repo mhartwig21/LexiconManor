@@ -199,23 +199,33 @@ Sanctum doesn't want a key — it wants the word *spoken* (typed).
   the true word has gone up the brass the house holds its padlocks open for the walk.
   Both bands are published and measured in AAA 4.10e:
   - the **skilled player** first stands at the landing on day 6–10, first *says a word*
-    on **day 1**, and wins at a median of **8–16 days** (measured 11);
+    on **day 1**, and wins at a median of **12–20 days** (measured 15);
   - the **median player** (`PROFILE_DECENT`, the owner) first lands at median day 12–20,
-    also speaks on **day 1**, can deduce the word at median day **10–20** (measured
-    14–15), and wins at median day **14–24** (measured 17–18).
+    also speaks on **day 1**, can deduce the word at median day **14–24** (measured
+    18), and wins at median day **18–28** (measured 21–22).
 
   *Round 19 moved both win bands (from 14–28 and 26–34) and her deduction band (from
   16–24). Two things moved them, both mandated by REVIEW_AA: §5.2's tube deleted the
   access lottery — round 13 measured the median player's gap between knowing the word and
   being allowed to say it at median 9 evenings, p90 25, max 47 — and §5.1 re-routed the
   mystery's spine through ordinary word-game solves, which lifted her from ~0.23 legible
-  pages an evening to 1.12 (his 1.54). What is left is a campaign bounded by the volume's
-  own page count: 17 authored fragments, a deduction floor of 15 of them, and a review
-  target of at least one legible page a night, is a fifteen-evening story at its slowest.
-  Restoring a four-week horizon is a content commission — **volume 1 needs roughly 28
-  authored pages** — not a tuning knob; it is the open item, recorded in
-  `engine/volume.ts` beside `PITY_DROUGHT_DAYS` and above the skilled block in
-  `tests/economy-simulation.test.ts`.*
+  pages an evening to 1.12 (his 1.54). What was left was a campaign bounded by the
+  volume's own page count, and 17 authored fragments against a deduction floor of 15 is a
+  fifteen-evening story at its slowest.*
+
+  ***Round 21 discharged that open item by writing the pages.** Volume 1 authors **28**
+  fragments — 10 definition lines, 10 engravings, 8 testimonies — and the deduction floor
+  is re-derived off the new reveal order to **25** (the ten engravings sit at revealOrder
+  2/5/8/11/14/17/20/22/24/26 and narrow the dictionary 171755 → 15232 → 6575 → 208 → 146
+  → 56 → 11 → 5 → 3 → 2 → 1, so the LACUNA/LAGUNA tie stands until the twenty-sixth
+  page parts it). Twenty-five pages at the review's own floor of one legible page a night
+  is a twenty-five-evening deduction, so the four-week horizon is a content fact again
+  rather than a knob — and it arrived WITH §5.1's target rather than against it: her
+  legible-day share over the first fortnight measures 95.9% in the campaign model (was
+  80.5%) and 0.896 through the drip harness over the real authored content (was 0.648).
+  The spine is routed for it: the lintel channel — every ordinary word game in the house
+  — stocks **16** of the 28 pages, the Study 3, the violet drip keeps 11 of its own and
+  the eight testimonies are spoken in person.*
   - *This bullet used to read "the moment she figures it out, she can march to the Sanctum
     and win, even on day one. Knowledge is the progression." Round 7 put `atSanctumDoor`
     inside `guessAtSanctum`, and a bare, perfectly efficient ascent costs 22
@@ -234,10 +244,11 @@ Sanctum doesn't want a key — it wants the word *spoken* (typed).
   and characters will nudge ("you might reread what the engraving in the Gallery said,
   dear") — the *deduction* is the player's, the *filing* is not. No wiki-bait obscurity.
   The nudge is banded, and the bands run all the way to the deduction floor
-  (`engine/volume.FRAGMENTS_TO_DEDUCE`, **15** readable pages for Volume 1): empty file,
-  thin file, "his shape but not his letters", "letters with holes between them", and —
-  new in round 19, the band the floor's move to 15 created — "two words, and one of them
-  is a stranger in his coat". Above
+  (`engine/volume.FRAGMENTS_TO_DEDUCE`, **25** readable pages for Volume 1 since round
+  21): empty file (≤0), thin file (1–3), "his shape but not his letters" (4–10),
+  "letters with holes between them" (11–17), "more of my alphabet than I am comfortable
+  with" (18–21, new in round 21 to keep the tiling gapless over the longer volume), and
+  "two words, and one of them is a stranger in his coat" (22–24). Above
   the floor the door stops nudging and the cast starts saying the other thing — that the
   reading is done and only the stairs are left (AAA 4.16 / 5.1).
 
@@ -317,8 +328,8 @@ micro-room engine modules + generators.
 2. Mistake cost: is −2 felt-but-fair in each mode? (Hive invalid words may need −1.)
 3. ~~Volume 1 mystery difficulty: target "solved in roughly 2–4 evenings of play."~~
    **Answered (round 6):** the 2–4 evening target was a pre-overhaul number that
-   contradicted the retuned campaign arc; AAA 4.10e owns the horizon (8–16 days median
-   for the skilled player since round 19, 14–24 for the median player, <3% inside week one) and AAA 4.18 now owns only solvable-in-principle-from-day-1.
+   contradicted the retuned campaign arc; AAA 4.10e owns the horizon (12–20 days median
+   for the skilled player since round 21, 18–28 for the median player, <3% inside week one) and AAA 4.18 now owns only solvable-in-principle-from-day-1.
    The drip is measured against 4.10e by `tests/volume-pacing.test.ts`.
 4. Dialogue volume: how many lines per character before Volume 1 needs a refresh?
 5. Do glyphs/perks return, and in what form?
