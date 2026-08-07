@@ -294,6 +294,167 @@
   cursor: pointer;
 }
 
+/* ── Start over (AAA 11.7) ────────────────────────────────────────────────
+   The most destructive pair of controls in the game. They are styled to be
+   READ, not to be pretty: the recognisable verb on its own line at body size,
+   the house's voice small and faint underneath, and no colour carrying any
+   meaning on its own (AAA 6.3/11.22 — the state survives grayscale, and the
+   grave scope is additionally marked by a rule and a word). Nothing here
+   animates. */
+.chron__restart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chron__restart-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: var(--tap-target);
+  padding: 9px 12px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--ink-soft);
+  border-radius: var(--radius-card);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.chron__restart-choice:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.chron__restart-choice--grave {
+  /* Doubled encoding: a heavier rule as well as the word "Erase". */
+  border-width: 2px;
+  border-style: double;
+}
+
+.chron__restart-verb {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-size: 1rem;
+}
+
+.chron__restart-note {
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+}
+
+/* The confirmation. Inline rather than modal: the export it offers lives one
+   section up, and a sheet over the top would hide the thing it recommends. */
+.chron__confirm {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--ink-soft);
+  border-left-width: 4px;
+  border-radius: var(--radius-card);
+  background: var(--paper-raised);
+}
+
+.chron__confirm-title {
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+
+.chron__confirm-caveat {
+  margin: 0 0 8px;
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.chron__confirm-ledger {
+  margin: 0 0 10px;
+  display: grid;
+  grid-template-columns: auto;
+  gap: 2px;
+}
+
+.chron__confirm-ledger dt {
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+}
+
+.chron__confirm-ledger dd {
+  margin: 0 0 8px;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.chron__confirm-export,
+.chron__confirm-cancel,
+.chron__confirm-go {
+  min-height: var(--tap-target);
+  border-radius: var(--radius-card);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.chron__confirm-export {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--ink-soft);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.chron__confirm-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* "Never mind" takes the larger share of the row on purpose: the safe way out
+   of a destructive panel should be the easier target (AAA 11.7). */
+.chron__confirm-cancel {
+  flex: 3;
+  border: 1px solid var(--ink-soft);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.chron__confirm-go {
+  flex: 2;
+  border: 1px solid var(--ink-soft);
+  background: transparent;
+  color: var(--ink-soft);
+}
+
+.chron__confirm-go.is-armed {
+  /* Armed reads as armed with the ink alone — weight and a solid rule, so a
+     grayscale screenshot and a colour-blind reader both get it. */
+  border-width: 2px;
+  border-color: var(--ink);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.chron__confirm-go:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.chron__confirm-foot {
+  margin: 8px 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+}
+
 /* Hidden debug panel (AAA 7.18) */
 .chron__debug {
   color: var(--ink-faint);

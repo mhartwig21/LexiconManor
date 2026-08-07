@@ -19,13 +19,19 @@
  */
 
 import { useManorStore, selectSave } from '../store';
-import { persistSave, SAVE_KEY, type SaveV2 } from '../save';
+import {
+  clearOwnedLocalKeys, persistSave, SAVE_KEY, saveWritesSuspended, suspendSaveWrites,
+  writeSaveNow, type SaveV2,
+} from '../save';
 import { showPlatformToast } from './toast';
 
-const DB_NAME = 'lexicon-manor';
+export const DB_NAME = 'lexicon-manor';
 const DB_STORE = 'kv';
-const MIRROR_KEY = 'save-mirror';
-const RESTORE_GUARD = 'll-mirror-restored';
+export const MIRROR_KEY = 'save-mirror';
+export const RESTORE_GUARD = 'll-mirror-restored';
+
+/** Every sessionStorage key the platform owns (see `resetPersistence`). */
+export const OWNED_SESSION_KEYS: readonly string[] = [RESTORE_GUARD];
 
 let started = false;
 let persistGranted: boolean | null = null;
@@ -123,8 +129,91 @@ function verifyWrite(json: string): void {
   }
 }
 
+/** Drop the IndexedDB mirror entirely. Resolves even where IDB is missing. */
+async function idbDeleteMirror(): Promise<void> {
+  if (typeof indexedDB === 'undefined') return;
+  await new Promise<void>((resolve) => {
+    try {
+      const req = indexedDB.deleteDatabase(DB_NAME);
+      req.onsuccess = () => resolve();
+      req.onerror = () => resolve();
+      // A live connection elsewhere blocks the delete. Fall through rather than
+      // hang: the caller clears the localStorage key regardless, and the
+      // per-key clear below is the belt for a blocked delete.
+      req.onblocked = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
+/** Belt for a blocked `deleteDatabase`: empty the one key we ever write. */
+async function idbClearMirrorKey(): Promise<void> {
+  const db = await openDb();
+  if (!db) return;
+  await new Promise<void>((resolve) => {
+    try {
+      const tx = db.transaction(DB_STORE, 'readwrite');
+      tx.objectStore(DB_STORE).delete(MIRROR_KEY);
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); resolve(); };
+      tx.onabort = () => { db.close(); resolve(); };
+    } catch {
+      db.close();
+      resolve();
+    }
+  });
+}
+
+/**
+ * THE FRESH START, AT THE STORAGE LAYER (owner request, round 14).
+ *
+ * Clears every key this app owns — the v2 save, the v1 backup blob, the
+ * mirror-restore session guard, and the IndexedDB mirror — then optionally lays
+ * down ONE deliberate replacement save (the new-volume scope) with the
+ * unconditional writer.
+ *
+ * ORDER IS LOAD-BEARING:
+ *  1. `suspendSaveWrites()` FIRST. The store persists per mutation and
+ *     `flushSave` runs on `pagehide` — the very event the caller's reload
+ *     fires. Suspending first is what stops the erased state being written
+ *     straight back from memory. The mirror timer is cancelled for the same
+ *     reason.
+ *  2. The IndexedDB mirror is dropped BEFORE we return, and awaited. Boot's
+ *     `maybeRestoreFromMirror` restores from it whenever localStorage looks
+ *     empty — which is exactly what an erase leaves behind — so a surviving
+ *     mirror would resurrect the whole save on the next load and look like the
+ *     reset silently failed.
+ *  3. The replacement save is written LAST, through `writeSaveNow`, because
+ *     `persistSave` is now (correctly) refusing to write anything.
+ *
+ * The caller reloads. Nothing here tries to re-initialise the live store: the
+ * moment queue, the notice rail, the manor slice's module-scope draft session
+ * and the watchers all hold state outside zustand, and a document reload is the
+ * only reset that is provably complete for all of them.
+ */
+export async function resetPersistence(next: SaveV2 | null): Promise<void> {
+  suspendSaveWrites();
+  if (mirrorTimer !== null) { clearTimeout(mirrorTimer); mirrorTimer = null; }
+
+  clearOwnedLocalKeys();
+  try {
+    for (const key of OWNED_SESSION_KEYS) sessionStorage.removeItem(key);
+  } catch {
+    /* no sessionStorage (private mode oddities) — nothing to clear */
+  }
+
+  await idbDeleteMirror();
+  await idbClearMirrorKey();
+
+  if (next) writeSaveNow(next);
+}
+
 /** Synchronous localStorage write + async IDB mirror. The flush-point path. */
 export function flushSave(): void {
+  // A reset is committed: this document's store is a ghost, and flushing it
+  // (pagehide fires on the reset's own reload) would undo the erase.
+  if (saveWritesSuspended()) return;
   const save = currentSave();
   persistSave(save); // architect-owned writer (already try/caught)
   const json = JSON.stringify(save);
@@ -134,9 +223,11 @@ export function flushSave(): void {
 }
 
 function scheduleMirror(): void {
+  if (saveWritesSuspended()) return;
   if (mirrorTimer !== null) return;
   mirrorTimer = setTimeout(() => {
     mirrorTimer = null;
+    if (saveWritesSuspended()) return;
     void idbWrite(JSON.stringify(currentSave()));
   }, 2000);
 }

@@ -16,10 +16,18 @@ import type { RoomPuzzleKind } from '../engine/rooms/room-puzzle';
 import { ROOM_PUZZLE_KINDS } from '../engine/rooms/room-puzzle';
 import type { RunRecord } from '../engine/types';
 import { VIEWED_BACKFILL_FLAG } from '../engine/journal';
+import { freshVolumeState } from '../engine/volume';
 import { migrate } from './migrations';
 
 export const SAVE_KEY = 'lexicon-loop-save-v2';
 export const V1_BACKUP_KEY = 'lexicon-loop-save-v1-backup';
+
+/**
+ * EVERY localStorage key the manor owns. The fresh-start path clears this list
+ * rather than a hand-written pair, so a key added here is erased by
+ * construction and cannot become the one ghost that survives a factory reset.
+ */
+export const OWNED_LOCAL_KEYS: readonly string[] = [SAVE_KEY, V1_BACKUP_KEY];
 
 export interface SettingsV2 {
   soundEnabled: boolean;
@@ -127,13 +135,113 @@ export function loadSave(): SaveV2 {
   }
 }
 
-export function persistSave(save: SaveV2): void {
+/**
+ * WRITE SUSPENSION — the lock that makes a reset survive its own teardown.
+ *
+ * The store persists after EVERY mutation (store.ts) and `platform/persistence`
+ * flushes on `pagehide`, which is exactly the event a reset's `location.reload()`
+ * fires. Without this lock the sequence is: clear the keys → reload → pagehide →
+ * flushSave writes the still-live in-memory store straight back into
+ * localStorage AND the IndexedDB mirror → the app boots with everything the
+ * player just erased. Suspension is deliberately ONE-WAY for the lifetime of the
+ * document (`resumeSaveWrites` exists for tests only): once a reset has been
+ * committed, nothing this page still holds is worth writing down.
+ */
+let writesSuspended = false;
+
+export function suspendSaveWrites(): void {
+  writesSuspended = true;
+}
+
+/** Tests only — a fresh document for each case. */
+export function resumeSaveWrites(): void {
+  writesSuspended = false;
+}
+
+export function saveWritesSuspended(): boolean {
+  return writesSuspended;
+}
+
+/**
+ * The unconditional writer. Used by the reset path to lay down the save it
+ * INTENDED (the fresh volume) after suspension has closed the ordinary door.
+ */
+export function writeSaveNow(save: SaveV2): void {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(save));
   } catch (err) {
     // A8: surface QuotaExceededError etc. with a visible degradation (AAA 7.20).
     console.error('Failed to persist save', err);
   }
+}
+
+export function persistSave(save: SaveV2): void {
+  if (writesSuspended) return;
+  writeSaveNow(save);
+}
+
+/** Remove every key the manor owns. The factory-reset half of a fresh start. */
+export function clearOwnedLocalKeys(): void {
+  try {
+    for (const key of OWNED_LOCAL_KEYS) localStorage.removeItem(key);
+  } catch (err) {
+    console.error('Failed to clear the save keys', err);
+  }
+}
+
+/**
+ * A FRESH MYSTERY ON THE SAME HOUSEHOLD (MANOR_DESIGN §9).
+ *
+ * The player-facing scope of the fresh-start control: roll onto a new volume,
+ * end the run, and keep everything §9 says persists forever. It is deliberately
+ * the SAME shape as the natural progression — `endDay('volume-solved')`'s
+ * nightly resets (manor, gems, keys, ledger, day, pacing valves) composed with
+ * the volume machine's own `freshVolumeState`, which is what `advanceVolume`
+ * delegates to. Nothing here is a parallel definition of "a new volume"; it is
+ * the existing two halves called on demand instead of at a ceremony.
+ *
+ * KEPT, per §9: character affinity and dialogue-seen · the floorplan cabinet ·
+ * chronicles/stats (day records, the v1 archive, parked perks) · keepsakes ·
+ * the lifetime event counters the keepsake shelf is derived from · household
+ * settings · profile name · bookmarks (gift currency crosses nights, day.ts) ·
+ * `seenPuzzleIds` (the house remembers which crosswords you have already done —
+ * a genuine volume roll does not forget them either).
+ *
+ * CLEARED: the volume itself, and every `vol.<nextVolumeId>.*` flag. That last
+ * filter is the ghost-marker guard: those flags carry sealed / legible /
+ * viewed / glanced / opened-letter / made-out-day / solved state keyed by
+ * fragment id, so re-opening a volume the player has closed before would
+ * otherwise inherit a journal already marked read and letters already opened.
+ * Flags for OTHER volumes survive untouched — a closed volume's archive is
+ * meant to stay readable forever.
+ */
+export function newVolumeSave(save: SaveV2, nextVolumeId: string): SaveV2 {
+  const volPrefix = `vol.${nextVolumeId}.`;
+  return {
+    version: 2,
+    profileName: save.profileName,
+    // The run is over (day.ts endDay's nightly resets, applied at once).
+    day: null,
+    manor: null,
+    ledger: { budget: 0, entries: [] },
+    currencies: { gems: 0, keys: 0, bookmarks: save.currencies.bookmarks },
+    volume: freshVolumeState(nextVolumeId, 0),
+    journal: {
+      seenNodeIds: [...save.journal.seenNodeIds],
+      flags: save.journal.flags.filter((f) => !f.startsWith(volPrefix)),
+      affinities: { ...save.journal.affinities },
+      dailyTalked: [],
+      dailyGifted: [],
+    },
+    // Day-stamped events are run state and go; the lifetime counters are the
+    // keepsake shelf's evidence and stay (endDay keeps them too).
+    events: { recent: [], counters: { ...save.events.counters } },
+    cabinet: { unlockedCardIds: [...save.cabinet.unlockedCardIds] },
+    chronicles: { ...save.chronicles, dayRecords: [...save.chronicles.dayRecords] },
+    earnedAchievementIds: [...save.earnedAchievementIds],
+    seenPuzzleIds: { ...save.seenPuzzleIds },
+    settings: { ...save.settings },
+  };
 }
 
 /** Export/import as a "save code" — also the Safari-tab ↔ installed-app bridge (AAA 7.19). */
