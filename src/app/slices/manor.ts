@@ -26,7 +26,7 @@ import type { Cell, Currencies, Dir, DraftOffer, ManorState, PlacedRoom } from '
 import type { ManorStore } from '../store';
 import type { SaveV2 } from '../save';
 import {
-  canMoveTo, cellKey, createManor, deweyCell, draftTargets, hashSeed, neighbor,
+  canMoveTo, cellKey, createManor, deweyCell, draftTargets, neighbor,
   resolveDoors, roomAt, roomSeed, rowTier, sameCell,
 } from '../../engine/manor/grid';
 import { carryOverFrom, deckFor, UTILITY_EFFECTS } from '../../engine/manor/deck';
@@ -36,7 +36,6 @@ import {
   climbKey, fernMorningKeys, keyAccessFor, moveAt, STEP_TABLE,
 } from '../../engine/economy/steps';
 import { getRoomAdapter } from '../../engine/rooms/registry';
-import { createRng } from '../../engine/rng';
 
 export interface ManorSlice {
   manor: ManorState | null;
@@ -312,8 +311,12 @@ export const createManorSlice =
         if (needsKey && !get().spendKeys(KEY_COST)) return;
 
         const key = cellKey(target);
-        const doorsRng = createRng(hashSeed(manor.daySeed, key, 0xd0025));
-        const doors = resolveDoors(card, draftOffer.atDoor, manor, target, doorsRng);
+        // ORIENTATION (round-9 owner defect): the card's 'N' is the door she
+        // walked in through, and the plan turns rigidly to suit — a pure
+        // function of the card, the day, the cell and her heading, with no rng
+        // at all. The draft card face drew this exact call before she chose
+        // (ui/blueprint/DraftModal.tsx), so what she saw is what is placed.
+        const doors = resolveDoors(card, draftOffer.atDoor, manor, target);
         const kind: PlacedRoom['kind'] = card.puzzleKind ?? (card.category as PlacedRoom['kind']);
 
         // Pin the puzzle at placement so re-entry is stable and seen-marking

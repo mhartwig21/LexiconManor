@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   cellKey, parseCellKey, sameCell, inBounds, opposite, rotateDir, neighbor,
   dirBetween, rowTier, createManor, doorsConnect, canMoveTo, walkableNeighbors,
-  draftTargets, deadDoors, placeRoom, orientationsOf, resolveDoors, hashSeed,
+  draftTargets, deadDoors, placeRoom, orientLayout, layoutFor, resolveDoors,
+  rotateDirBy, turnsBetween, sealsItself, hashSeed,
   roomSeed, deweyCell, roomAt, atSanctumDoor,
   DIRS, ENTRANCE_KEY, SANCTUM_DOOR_CELL, SANCTUM_DOOR_KEY, SANCTUM_KEY,
 } from '../src/engine/manor/grid';
+import { BASE_DECK, deckFor } from '../src/engine/manor/deck';
+import { rollCards } from '../src/engine/manor/drafting';
+import { createRng, randInt } from '../src/engine/rng';
 import {
   canOpenDoor, isDoorLocked, lockedDraftTargets, rowCanLock, visibleLocks, KEY_COST,
 } from '../src/engine/manor/locks';
@@ -18,7 +22,7 @@ import {
 import { DOOR_LOCKS, moveAt } from '../src/engine/economy/steps';
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCard } from '../src/engine/types';
 import { ENTRANCE_CELL, MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../src/engine/types';
-import { createRng } from '../src/engine/rng';
+import DraftModal from '../src/ui/blueprint/DraftModal';
 
 /** OWNER: A1 (Manor). The grid engine — MANOR_DESIGN §3, ARCHITECTURE §3. */
 
@@ -190,43 +194,338 @@ describe('dead doors', () => {
   });
 });
 
+/**
+ * ── ORIENTATION IS THE HEADING SHE WALKED IN ON (round-9 owner defect) ─────
+ *
+ * OWNER: "issues with the orientation of placement of rooms… they should be
+ * determined by the direction I'm facing when I enter the room."
+ *
+ * The convention (engine/manor/grid.ts THE ORIENTATION CONVENTION): the card's
+ * `'N'` is the door she walks in through; the whole plan turns rigidly to put
+ * it on that wall. Pure function of (layout, entryDir) — no rng, no scoring,
+ * no choosing among rotations.
+ *
+ * TWO ASSERTIONS WERE DELETED HERE, deliberately, and neither was coverage of
+ * anything that still exists:
+ *   - "orientationsOf sweeps all four walls without duplicates" — the helper
+ *     itself is gone. It existed only to ENUMERATE rotations so the resolver
+ *     could pick among them; with the turn determined there is nothing to
+ *     enumerate.
+ *   - "prefers rotations that keep paths flowing (most live doors)" — that IS
+ *     the defect. It asserted that a corner entered from the west comes out
+ *     opening north because south would have been dead, i.e. that the game
+ *     re-aims her room for her. It is now replaced by the far stronger
+ *     `orientLayout` table below, which pins all four headings exactly.
+ * The guarantee those tests were guarding — a door on the entry wall, always,
+ * from every cell (AAA 4.4) — is kept and widened below.
+ */
 describe('orientation at placement', () => {
-  it('orientationsOf sweeps all four walls without duplicates', () => {
-    expect(orientationsOf(['N'])).toHaveLength(4);
-    expect(orientationsOf(['N', 'S'])).toHaveLength(2);   // corridor symmetry
-    expect(orientationsOf(['N', 'E', 'S', 'W'])).toHaveLength(1);
-    for (const o of orientationsOf(['N', 'E'])) expect(o).toHaveLength(2);
+  it('turns the plan so the layout N meets the wall she came through', () => {
+    // The whole convention, in a table. A corner entered walking north always
+    // opens west; walking east, always north. Every time, on every day.
+    const CORNER: Dir[] = ['N', 'E'];
+    expect(orientLayout(CORNER, 'N')).toEqual(['S', 'W']);
+    expect(orientLayout(CORNER, 'E')).toEqual(['N', 'W']);
+    expect(orientLayout(CORNER, 'S')).toEqual(['N', 'E']);
+    expect(orientLayout(CORNER, 'W')).toEqual(['E', 'S']);
+
+    const TEE: Dir[] = ['N', 'E', 'W'];
+    expect(orientLayout(TEE, 'N')).toEqual(['E', 'S', 'W']);
+    expect(orientLayout(TEE, 'E')).toEqual(['N', 'S', 'W']);
+    expect(orientLayout(TEE, 'S')).toEqual(['N', 'E', 'W']);
+    expect(orientLayout(TEE, 'W')).toEqual(['N', 'E', 'S']);
+
+    // …and the degenerate shapes behave the same way.
+    expect(orientLayout(['N'], 'N')).toEqual(['S']);
+    expect(orientLayout(['N'], 'W')).toEqual(['E']);
+    expect(orientLayout(['N', 'S'], 'E')).toEqual(['E', 'W']);
+    expect(orientLayout(['N', 'E', 'S', 'W'], 'N')).toEqual(['N', 'E', 'S', 'W']);
   });
 
-  it('resolveDoors always keeps a door on the entry wall — every card placeable (AAA 4.4)', () => {
-    const layouts: Dir[][][] = [
-      [['N']], [['N', 'S']], [['N', 'E']], [['N', 'E', 'W']], [['N', 'E', 'S', 'W']],
-      [['N'], ['N', 'E']],
+  it('is a rigid turn: the shape is preserved, only the compass moves', () => {
+    const layouts: Dir[][] = [
+      ['N'], ['N', 'S'], ['N', 'E'], ['N', 'E', 'W'], ['N', 'E', 'S', 'W'],
     ];
-    const m = createManor(11);
-    const rng = createRng(5);
-    for (const doorLayouts of layouts) {
+    for (const layout of layouts) {
       for (const entryDir of DIRS) {
-        for (let col = 0; col < MANOR_COLS; col++) {
-          for (let row = 0; row < MANOR_ROWS; row++) {
-            const cell: Cell = { col: col as Cell['col'], row };
-            if (roomAt(m, cell)) continue;
-            const doors = resolveDoors(testCard(doorLayouts), entryDir, m, cell, rng);
-            expect(doors).toContain(opposite(entryDir));
+        const turned = orientLayout(layout, entryDir);
+        expect(turned).toHaveLength(layout.length);
+        // Every door moved by the SAME number of quarter-turns.
+        const turns = turnsBetween('N', opposite(entryDir));
+        expect(turned.slice().sort()).toEqual(
+          layout.map((d) => rotateDirBy(d, turns)).sort(),
+        );
+      }
+    }
+  });
+
+  it('is a PURE function: same inputs, same doors, no rng anywhere', () => {
+    const card = testCard([['N', 'E'], ['N', 'E', 'W']]);
+    const m = createManor(11);
+    for (const entryDir of DIRS) {
+      for (let col = 0; col < MANOR_COLS; col++) {
+        for (let row = 0; row < MANOR_ROWS; row++) {
+          const cell: Cell = { col: col as Cell['col'], row };
+          if (roomAt(m, cell)) continue;
+          const first = resolveDoors(card, entryDir, m, cell);
+          for (let i = 0; i < 5; i++) {
+            expect(resolveDoors(card, entryDir, m, cell)).toEqual(first);
+          }
+          // …and it does not depend on what is standing around it. The old
+          // resolver scored neighbours; this one must not even look.
+          let crowded = placeRoom(m, room({ col: 2, row: 1 }, ['N', 'E', 'S', 'W']));
+          if (!roomAt(crowded, { col: 1, row: 1 })) {
+            crowded = placeRoom(crowded, room({ col: 1, row: 1 }, ['N']));
+          }
+          if (!roomAt(crowded, cell)) {
+            expect(resolveDoors(card, entryDir, crowded, cell)).toEqual(first);
           }
         }
       }
     }
   });
 
-  it('prefers rotations that keep paths flowing (most live doors)', () => {
-    // Player drafts eastward from the entrance into (3,0): a corner room
-    // entered through W. Rotations with a door on W: [W,N] or [W,S].
-    // S faces the outer wall (dead) — the resolver must pick [N,W].
-    const m = createManor(9);
-    const doors = resolveDoors(testCard([['N', 'E']]), 'E', m, { col: 3, row: 0 }, createRng(1));
-    expect(doors).toContain('W');
-    expect(doors).toContain('N');
+  it('picks a multi-layout card deterministically, per day and per cell', () => {
+    const card = testCard([['N'], ['N', 'E'], ['N', 'E', 'W']]);
+    // Stable for a given (day, cell, card) — a reroll cannot reshape the room.
+    for (let seed = 0; seed < 30; seed++) {
+      for (const key of ['1,1', '3,4', '2,5']) {
+        const first = layoutFor(card, seed, key);
+        expect(layoutFor(card, seed, key)).toBe(first);
+        expect(card.doorLayouts).toContain(first);
+      }
+    }
+    // …and it is a real choice, not a constant: over the manor's cells and a
+    // spread of days every authored layout is used.
+    const used = new Set<string>();
+    for (let seed = 0; seed < 40; seed++) {
+      for (let col = 0; col < MANOR_COLS; col++) {
+        for (let row = 0; row < MANOR_ROWS; row++) {
+          used.add(layoutFor(card, seed, cellKey({ col: col as Cell['col'], row })).join(''));
+        }
+      }
+    }
+    expect(used.size).toBe(3);
+    // A single-layout card is that layout, always.
+    expect(layoutFor(testCard([['N', 'S']]), 99, '2,2')).toEqual(['N', 'S']);
+  });
+
+  it('always keeps a door on the entry wall — every card placeable (AAA 4.4)', () => {
+    const layouts: Dir[][][] = [
+      [['N']], [['N', 'S']], [['N', 'E']], [['N', 'E', 'W']], [['N', 'E', 'S', 'W']],
+      [['N'], ['N', 'E']],
+      // …and the defensive cases: a layout authored with no 'N' at all, and
+      // an empty one. Neither can happen from the shipped deck; both must
+      // still place, because an offer is never unplaceable.
+      [['E', 'S']], [[]],
+    ];
+    for (let seed = 0; seed < 8; seed++) {
+      const m = createManor(seed);
+      for (const doorLayouts of layouts) {
+        for (const entryDir of DIRS) {
+          for (let col = 0; col < MANOR_COLS; col++) {
+            for (let row = 0; row < MANOR_ROWS; row++) {
+              const cell: Cell = { col: col as Cell['col'], row };
+              if (roomAt(m, cell)) continue;
+              const doors = resolveDoors(testCard(doorLayouts), entryDir, m, cell);
+              expect(doors).toContain(opposite(entryDir));
+              // Placement itself must always succeed.
+              expect(() => placeRoom(m, room(cell, doors))).not.toThrow();
+            }
+          }
+        }
+      }
+    }
+  });
+
+  /**
+   * ── THE ACCEPTED CONSEQUENCE, MEASURED ───────────────────────────────────
+   *
+   * A rigid turn means a drafted room's other doors can land on the outer wall
+   * or on a neighbour's blank plaster, and the room seals itself. That is the
+   * Blue Prince tension the owner asked for and it is NOT a bug — it is what
+   * makes the draft a decision. But it is a design number, so it is measured
+   * and pinned rather than assumed. Three rates, because they say different
+   * things to a design owner:
+   *
+   *   (a) 41.5% — geometry: every card, every empty cell of a fresh manor,
+   *       every heading. Dominated by the deck's one-door plans, which seal by
+   *       definition. This is the shape of the DECK, not of a day.
+   *   (b) 37.3% — in play, choosing blind. What she would suffer if the card
+   *       face still lied.
+   *   (c) 13.6% — in play, reading the diagram and preferring an onward door.
+   *       This is the rate that ships, and it is almost exactly the rate at
+   *       which an offer contains NO onward-door card at all (13.0%) — i.e.
+   *       once the card tells the truth, she seals a room only when the house
+   *       gave her nothing else, which is the honest version of the tension.
+   *
+   * If (c) drifts far from (a)−(b), the card face has stopped informing the
+   * choice and something upstream has regressed.
+   */
+  it('THE ACCEPTED CONSEQUENCE (a): the deck seals ~41% of placements by shape', () => {
+    let sealed = 0, total = 0;
+    const byShape = new Map<number, { sealed: number; total: number }>();
+    for (let seed = 0; seed < 12; seed++) {
+      const m = createManor(seed);
+      for (const card of BASE_DECK) {
+        for (let col = 0; col < MANOR_COLS; col++) {
+          for (let row = 0; row < MANOR_ROWS; row++) {
+            const cell: Cell = { col: col as Cell['col'], row };
+            if (roomAt(m, cell)) continue;
+            if (rowTier(row) < card.tierRange[0] || rowTier(row) > card.tierRange[1]) continue;
+            for (const entryDir of DIRS) {
+              const doors = resolveDoors(card, entryDir, m, cell);
+              const seals = sealsItself(doors, entryDir, m, cell);
+              total += 1;
+              if (seals) sealed += 1;
+              const shape = layoutFor(card, seed, cellKey(cell)).length;
+              const bucket = byShape.get(shape) ?? { sealed: 0, total: 0 };
+              bucket.total += 1;
+              if (seals) bucket.sealed += 1;
+              byShape.set(shape, bucket);
+            }
+          }
+        }
+      }
+    }
+    expect(sealed / total).toBeCloseTo(0.415, 2);
+    // A one-door plan always seals — it has no other door to offer. A tee or a
+    // cross never can: at most two of its remaining walls are outer walls.
+    expect(byShape.get(1)!.sealed / byShape.get(1)!.total).toBe(1);
+    expect(byShape.get(3)!.sealed).toBe(0);
+    expect(byShape.get(4)!.sealed).toBe(0);
+  });
+
+  it('THE ACCEPTED CONSEQUENCE (b,c): reading the card face is what pays', () => {
+    /** One simulated day: draft from the room she stands in, `blind` or not. */
+    const play = (blind: boolean) => {
+      let sealed = 0, total = 0, starved = 0;
+      for (let seed = 0; seed < 200; seed++) {
+        let manor = createManor(seed);
+        const rng = createRng(seed ^ (blind ? 0xabcdef : 0x13579));
+        for (let draft = 0; draft < 10; draft++) {
+          const open = draftTargets(manor);
+          if (open.length === 0) break;
+          const at = open[randInt(rng, open.length)]!;
+          const cards = rollCards(deckFor([]), manor, at.cell, {
+            gems: 2, declinedLastDraft: [], drawIndex: 0,
+          });
+          if (cards.length === 0) break;
+          const onward = cards.find(
+            (c) => !sealsItself(resolveDoors(c, at.dir, manor, at.cell), at.dir, manor, at.cell));
+          if (!onward) starved += 1;
+          const card = blind ? cards[randInt(rng, cards.length)]! : (onward ?? cards[0]!);
+          const doors = resolveDoors(card, at.dir, manor, at.cell);
+          total += 1;
+          if (sealsItself(doors, at.dir, manor, at.cell)) sealed += 1;
+          manor = {
+            ...placeRoom(manor, room(at.cell, doors, { cardId: card.id })),
+            playerCell: { ...at.cell },
+          };
+        }
+      }
+      return { rate: sealed / total, starved: starved / total };
+    };
+    const blind = play(true);
+    const reading = play(false);
+    expect(blind.rate).toBeCloseTo(0.37, 1);
+    expect(reading.rate).toBeCloseTo(0.14, 1);
+    // The card face is worth roughly a third of the dead ends…
+    expect(reading.rate).toBeLessThan(blind.rate * 0.6);
+    // …and what is left is very nearly just the offers that held nothing else.
+    expect(reading.rate - reading.starved).toBeLessThan(0.03);
+  });
+});
+
+/**
+ * ── THE CARD MUST SHOW THE TRUTH (round-9) ────────────────────────────────
+ *
+ * The draft card's door diagram used to draw `card.doorLayouts[0]`,
+ * PRE-ROTATION — right at one door out of four by luck, and the wrong LAYOUT
+ * entirely for any card carrying more than one. A round-5 critic called it a
+ * lie by omission; with orientation now rigid it is the whole decision, so it
+ * is driven live here: render the real modal, read the ink back out of the
+ * DOM, and compare it to what `resolveDoors` will place.
+ */
+const DOOR_TICKS: Record<string, Dir> = {
+  'M12 1v5': 'N', 'M23 12h-5': 'E', 'M12 23v-5': 'S', 'M1 12h5': 'W',
+};
+
+/** Every door diagram in a rendered modal, as the Dirs it actually draws. */
+function diagramsIn(html: string): { doors: Dir[]; entry: Dir | null; label: string }[] {
+  return [...html.matchAll(/<svg[^>]*class="bp-doorsdiag"[\s\S]*?<\/svg>/g)].map((m) => {
+    const svg = m[0];
+    const label = /aria-label="([^"]*)"/.exec(svg)?.[1] ?? '';
+    const doors: Dir[] = [];
+    let entry: Dir | null = null;
+    for (const p of svg.matchAll(/<path([^>]*)\/?>/g)) {
+      const attrs = p[1]!;
+      const d = /\bd="([^"]*)"/.exec(attrs)?.[1] ?? '';
+      const dir = DOOR_TICKS[d];
+      if (!dir) continue;
+      doors.push(dir);
+      if (attrs.includes('bp-doorsdiag__door--entry')) entry = dir;
+    }
+    return { doors, entry, label };
+  });
+}
+
+describe('the draft card draws the room it will actually place', () => {
+  const from: Cell = { col: 2, row: 3 };
+
+  function modalFor(manor: ManorState, atDoor: Dir, cards: RoomCard[]): string {
+    // `manor` is handed in rather than pushed into the store: zustand's server
+    // snapshot reports the store's INITIAL state, so a static render would
+    // silently see `manor: null` and the diagrams would be measured against a
+    // house that is not the one under test. The live-store path is exercised
+    // for real by the Playwright pass in docs/shots/round9/orientation.
+    return renderToStaticMarkup(createElement(DraftModal, {
+      offer: { atDoor, from, cards, rerolled: false },
+      gems: 4,
+      keyCost: 0,
+      manor,
+      onChoose: () => {}, onReroll: () => {}, onCancel: () => {},
+    }));
+  }
+
+  it('matches resolveDoors exactly, from all four headings, for the real deck', () => {
+    const base = createManor(4242);
+    const manor: ManorState = {
+      ...base,
+      rooms: { ...base.rooms, [cellKey(from)]: room(from, ['N', 'E', 'S', 'W']) },
+      playerCell: { ...from },
+    };
+    // Multi-layout cards are the ones the old diagram got most wrong.
+    const cards = ['darkroom', 'linen-closet', 'counting-house']
+      .map((id) => BASE_DECK.find((c) => c.id === id)!);
+    for (const atDoor of DIRS) {
+      const target = neighbor(from, atDoor)!;
+      const drawn = diagramsIn(modalFor(manor, atDoor, cards));
+      expect(drawn).toHaveLength(cards.length);
+      cards.forEach((card, i) => {
+        // THE assertion: ink === placement, for the door she is standing at.
+        expect(drawn[i]!.doors).toEqual(resolveDoors(card, atDoor, manor, target));
+        // …and the door at her feet is the one picked out in gilt.
+        expect(drawn[i]!.entry).toBe(opposite(atDoor));
+        expect(drawn[i]!.label).toContain('you enter from the');
+      });
+    }
+  });
+
+  it('says out loud when a plan seals itself, and when it does not', () => {
+    const base = createManor(7);
+    const manor: ManorState = {
+      ...base,
+      rooms: { ...base.rooms, [cellKey(from)]: room(from, ['N', 'E', 'S', 'W']) },
+      playerCell: { ...from },
+    };
+    const deadEnd = BASE_DECK.find((c) => c.id === 'larder')!;      // ['N'] only
+    const cross = BASE_DECK.find((c) => c.id === 'long-gallery')!;  // all four
+    const drawn = diagramsIn(modalFor(manor, 'N', [deadEnd, cross]));
+    expect(drawn[0]!.doors).toEqual(['S']);
+    expect(drawn[0]!.label).toContain('seals itself');
+    expect(drawn[1]!.doors).toEqual(['N', 'E', 'S', 'W']);
+    expect(drawn[1]!.label).toContain('opens north and east and west');
   });
 });
 

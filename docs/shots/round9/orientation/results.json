@@ -1,0 +1,78 @@
+{
+  "expected": {
+    "N": {
+      "still-room": [
+        "S",
+        "W"
+      ],
+      "larder": [
+        "S"
+      ],
+      "boot-room": [
+        "N",
+        "S"
+      ]
+    },
+    "E": {
+      "still-room": [
+        "N",
+        "W"
+      ],
+      "larder": [
+        "W"
+      ],
+      "boot-room": [
+        "E",
+        "W"
+      ]
+    },
+    "S": {
+      "still-room": [
+        "N",
+        "E"
+      ],
+      "larder": [
+        "N"
+      ],
+      "boot-room": [
+        "N",
+        "S"
+      ]
+    },
+    "W": {
+      "still-room": [
+        "E",
+        "S"
+      ],
+      "larder": [
+        "E"
+      ],
+      "boot-room": [
+        "E",
+        "W"
+      ]
+    }
+  },
+  "plates": [
+    {
+      "dir": "N",
+      "drew": "SW",
+      "laid": "SW"
+    },
+    {
+      "dir": "E",
+      "drew": "NW",
+      "laid": "NW"
+    },
+    {
+      "dir": "S",
+      "drew": "NE",
+      "laid": "NE"
+    },
+    {
+      "dir": "W",
+      "drew": "ES",
+      "laid": "ES"
+    }
+  ]
+}

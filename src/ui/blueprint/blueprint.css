@@ -621,6 +621,17 @@
   color: var(--ink-soft);
 }
 
+/* How to read the door diagrams (round-9 orientation defect). Orientation is
+   rigid — the plan turns so its entry door meets the wall she is standing at —
+   so the diagram on each card is the room AS IT WILL BE LAID. This line is
+   what turns that ink into information she can act on; small and quiet,
+   because it is a caption, not a warning. */
+.bp-modal__orient {
+  margin: 0.3rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+}
+
 /* The padlock's price, stated up front on a locked door's offer (AAA 4.6).
    Gilt because it is a cost she has already covered — never wax red. */
 .bp-modal__lock {
@@ -723,6 +734,13 @@
   stroke: var(--ink-soft);
   stroke-width: 2;
   stroke-linecap: round;
+}
+/* The door at her feet — the wall the plan was turned to meet (round-9
+   orientation). Gilt AND heavier, so the "you are here" reading survives
+   grayscale and the 26px cabinet size (AAA 6.5: hue is never the only cue). */
+.bp-doorsdiag__door--entry {
+  stroke: var(--gilt);
+  stroke-width: 3;
 }
 .bp-card__cost {
   display: inline-flex;

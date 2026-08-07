@@ -7,9 +7,24 @@
  * base deck is static; floorplan-cabinet unlocks append ids from the meta
  * slice (deckFor).
  *
- * Door layout vocabulary (pre-rotation; orientation resolved at placement):
+ * ── DOOR LAYOUT VOCABULARY ────────────────────────────────────────────────
  *   dead-end ['N'] · corridor ['N','S'] · corner ['N','E'] ·
  *   tee ['N','E','W'] · cross ['N','E','S','W']
+ *
+ * These are CANONICAL plans, drawn as you stand at the threshold: **`'N'` is
+ * the door you walk in through.** Placement turns the whole plan rigidly so
+ * that `'N'` lands on the wall you came from, and every other door follows by
+ * the same quarter-turns — a pure function of (layout, entry direction), no
+ * rng and no choosing (engine/manor/grid.ts `orientLayout`). So a corner
+ * entered walking north ALWAYS opens west; entered walking east it always
+ * opens north. Author a layout with this in mind: the `'N'` is the entrance
+ * and the rest is what she finds once she is inside.
+ *
+ * A card may carry several plans. Which one arrives is a deterministic hash of
+ * (daySeed, target cell, card id) — `layoutFor` — so the shape behind a given
+ * door is fixed for the day and the draft card face can show it before she
+ * picks. Adding or removing a layout therefore changes what that card looks
+ * like at every door, but never *whether* it is placeable.
  */
 
 import type { Dir, RoomCard } from '../types';

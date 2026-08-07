@@ -24,7 +24,6 @@ import {
 } from '../src/engine/manor/grid';
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCategory } from '../src/engine/types';
 import { MANOR_COLS, MANOR_ROWS } from '../src/engine/types';
-import { createRng } from '../src/engine/rng';
 
 /** OWNER: A1 (Manor). The drafting engine — AAA 4.1–4.8, BENCHMARKS §4. */
 
@@ -39,7 +38,14 @@ describe('deck sanity', () => {
     expect(new Set(BASE_DECK.map((c) => c.id)).size).toBe(BASE_DECK.length);
     for (const c of BASE_DECK) {
       expect(c.doorLayouts.length).toBeGreaterThan(0);
-      for (const layout of c.doorLayouts) expect(layout.length).toBeGreaterThan(0);
+      for (const layout of c.doorLayouts) {
+        expect(layout.length).toBeGreaterThan(0);
+        // ORIENTATION CONVENTION (round-9, engine/manor/grid.ts): the layout's
+        // 'N' is the door she walks in through. A layout authored without one
+        // still places (the resolver anchors on its first door instead), but
+        // it would read wrong on the card face, so the deck must not have any.
+        expect(layout).toContain('N');
+      }
       expect(c.tierRange[0]).toBeLessThanOrEqual(c.tierRange[1]);
     }
   });
@@ -230,7 +236,7 @@ describe('never an unplaceable offer (AAA 4.4)', () => {
           if (roomAt(manor, cell)) continue;
           for (const entry of DIRS) {
             for (const card of rollCards(DECK, manor, cell, ctx({ gems: 4 }))) {
-              const doors = resolveDoors(card, entry, manor, cell, createRng(seed));
+              const doors = resolveDoors(card, entry, manor, cell);
               expect(doors).toContain(opposite(entry));
             }
           }

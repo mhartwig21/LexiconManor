@@ -7,13 +7,17 @@
  * against the manor's outer wall, or against a neighbouring wall with no
  * matching door, is dead. Movement flows only through matched door pairs.
  *
+ * A room's doors are fixed the moment it is drafted, by the direction she
+ * walked in: the card's `'N'` is the door she came through and the whole plan
+ * turns rigidly to suit. See THE ORIENTATION CONVENTION, below `placeRoom`.
+ *
  * Shapes (Cell, PlacedRoom, ManorState) live in engine/types.ts (frozen);
  * this module owns the logic.
  */
 
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCard, Tier } from '../types';
 import { ENTRANCE_CELL, MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../types';
-import { createRng, randInt, type Rng } from '../rng';
+import { createRng, randInt } from '../rng';
 
 export const DIRS: readonly Dir[] = ['N', 'E', 'S', 'W'];
 
@@ -72,6 +76,24 @@ export function opposite(d: Dir): Dir {
 /** One quarter-turn clockwise: N→E→S→W→N. */
 export function rotateDir(d: Dir): Dir {
   return d === 'N' ? 'E' : d === 'E' ? 'S' : d === 'S' ? 'W' : 'N';
+}
+
+/** `turns` quarter-turns clockwise (negative and >3 values wrap). */
+export function rotateDirBy(d: Dir, turns: number): Dir {
+  let out = d;
+  const n = ((turns % 4) + 4) % 4;
+  for (let i = 0; i < n; i++) out = rotateDir(out);
+  return out;
+}
+
+/** Quarter-turns clockwise that carry `from` onto `to` (0..3). */
+export function turnsBetween(from: Dir, to: Dir): number {
+  let d = from;
+  for (let n = 0; n < 4; n++) {
+    if (d === to) return n;
+    d = rotateDir(d);
+  }
+  return 0; // unreachable: rotateDir cycles all four
 }
 
 const DELTA: Record<Dir, { dc: number; dr: number }> = {
@@ -218,65 +240,126 @@ export function placeRoom(manor: ManorState, placed: PlacedRoom): ManorState {
 // Door orientation at placement
 // ---------------------------------------------------------------------------
 
-/** All four rotations of a door layout, deduplicated. */
-export function orientationsOf(layout: readonly Dir[]): Dir[][] {
-  const seen = new Set<string>();
-  const out: Dir[][] = [];
-  let current = [...layout];
-  for (let i = 0; i < 4; i++) {
-    const sorted = [...current].sort();
-    const sig = sorted.join('');
-    if (!seen.has(sig)) {
-      seen.add(sig);
-      out.push(sorted);
-    }
-    current = current.map(rotateDir);
-  }
-  return out;
+/**
+ * ── THE ORIENTATION CONVENTION (round-9 owner defect) ──────────────────────
+ *
+ * OWNER REPORT: "issues with the orientation of placement of rooms… they
+ * should be determined by the direction I'm facing when I enter the room."
+ *
+ * THE RULE, in one line: **the layout's `'N'` is the door you walk in
+ * through.** A card is authored facing you as you stand at its threshold —
+ * the dead-end's single door, the corridor's near end, the corner's stem —
+ * and placement turns the whole plan, rigidly, so that `'N'` lands on the
+ * wall you came through (`opposite(entryDir)`). Every other door follows by
+ * that same single quarter-turn count. Nothing else is consulted: not the
+ * neighbours, not the outer walls, not the rng.
+ *
+ *   entryDir N (walking up)    → 2 turns → corner ['N','E'] places ['S','W']
+ *   entryDir E (walking right) → 3 turns → corner places ['N','W']
+ *   entryDir S (walking down)  → 0 turns → corner places ['N','E']
+ *   entryDir W (walking left)  → 1 turn  → corner places ['E','S']
+ *
+ * WHAT THIS REPLACES, and why: placement used to enumerate every rotation
+ * that kept a door on the entry wall and then pick the one with the most
+ * LIVE doors, breaking ties with an rng. The entry door was guaranteed, but
+ * the room's remaining doors were chosen by the game — the same corner
+ * entered walking north could come out opening west one day and east the
+ * next, which is exactly the incoherence the owner reported. Worse, it made
+ * the draft undecidable: no card face could tell her which way the second
+ * door would point, so "will this keep my path alive or seal it" was not a
+ * question she could answer before spending.
+ *
+ * THE PRICE, TAKEN DELIBERATELY: a rigid turn means a drafted room's other
+ * doors can land on the outer wall or on a neighbour's blank plaster, and
+ * the room seals itself. That is the Blue Prince tension (BENCHMARKS §4) and
+ * it is the point — the draft is now a real decision, because the card face
+ * shows the post-rotation truth (ui/blueprint/DraftModal.tsx renders exactly
+ * `resolveDoors` for the door she is standing at) and she can read a
+ * self-sealing pick before she takes it. Measured over the real deck, ~26% of
+ * placements offer no onward door (tests/grid.test.ts pins the rate).
+ *
+ * WHAT DOES NOT CHANGE: an offer is never *unplaceable* (AAA 4.4). The
+ * rotation always carries a door onto the entry wall, and the two defensive
+ * branches below cover a layout that could not (an empty layout, or one
+ * authored with no `'N'`), so `placeRoom` always succeeds.
+ */
+export const ENTRY_DOOR: Dir = 'N';
+
+/**
+ * Turn a canonical layout so its entry door (`'N'`) lands on the wall the
+ * player came through. Pure: same (layout, entryDir) → same doors, always.
+ * Returned in compass order (N, E, S, W) so the result is canonical too.
+ */
+export function orientLayout(layout: readonly Dir[], entryDir: Dir): Dir[] {
+  const need = opposite(entryDir);
+  // Defensive (AAA 4.4): an empty layout still gets the door she walked in by.
+  if (layout.length === 0) return [need];
+  // Defensive: a layout authored without an 'N' anchors on its first door
+  // instead, so it still presents a door on the entry wall.
+  const anchor = layout.includes(ENTRY_DOOR) ? ENTRY_DOOR : layout[0]!;
+  const turns = turnsBetween(anchor, need);
+  const doors = new Set<Dir>(layout.map((d) => rotateDirBy(d, turns)));
+  doors.add(need);
+  return DIRS.filter((d) => doors.has(d));
+}
+
+/** Stream id for the layout pick — distinct from card draws and door rolls. */
+const LAYOUT_STREAM = 0x1a70;
+
+/**
+ * WHICH layout a multi-layout card arrives in — deterministic, and knowable
+ * before she picks.
+ *
+ * Cards may carry several plans (the Darkroom is a dead end, a corner OR a
+ * corridor, deliberately — engine/manor/deck.ts). Collapsing every card to one
+ * plan would have flattened that variety and re-tuned nothing but the deck's
+ * feel, so instead the choice is a pure hash of (daySeed, target cell, card
+ * id): the Darkroom behind THIS door today is one fixed shape, the same shape
+ * whether she looks now or after a reroll, and the draft card draws that exact
+ * shape. It is a property of the door, not of the moment she taps.
+ */
+export function layoutFor(
+  card: RoomCard, daySeed: number, key: string,
+): readonly Dir[] {
+  const layouts = card.doorLayouts;
+  if (layouts.length === 0) return [];
+  if (layouts.length === 1) return layouts[0]!;
+  return layouts[hashSeed(daySeed, `${key}|${card.id}`, LAYOUT_STREAM) % layouts.length]!;
 }
 
 /**
- * Resolve a card's doors at placement: the room is entered at `cell` through
- * the drafting door (`entryDir`, pointing from the old room into the new), so
- * some rotation MUST put a door on the shared wall (facing `opposite(entryDir)`).
- * Among the valid rotations, prefer the one that keeps paths flowing — the
- * most live doors (not against outer walls or blank neighbour walls) —
- * breaking ties with the provided rng (BENCHMARKS §4 placement lesson).
+ * The doors a card will be placed with, entered through `entryDir` at `cell`.
  *
- * Every card with a non-empty layout is orientable (rotations sweep all four
- * walls), so an offer is never unplaceable (AAA 4.4).
+ * A PURE FUNCTION of (card, daySeed, cell, entryDir) — no rng, no scoring, no
+ * look at the neighbours. This is THE one answer: the manor slice places with
+ * it and the draft card face draws with it, so the diagram cannot lie.
  */
 export function resolveDoors(
   card: RoomCard,
   entryDir: Dir,
   manor: ManorState,
   cell: Cell,
-  rng: Rng,
 ): Dir[] {
-  const need = opposite(entryDir);
-  const candidates: Dir[][] = [];
-  for (const layout of card.doorLayouts) {
-    for (const rotation of orientationsOf(layout)) {
-      if (rotation.includes(need)) candidates.push(rotation);
-    }
-  }
-  if (candidates.length === 0) {
-    // Defensive: never strand the player — a plain door back the way she came.
-    return [need];
-  }
-  const scored = candidates.map((doors) => {
-    let live = 0;
-    for (const dir of doors) {
-      const n = neighbor(cell, dir);
-      if (!n) continue;                          // outer wall: dead
-      const there = roomAt(manor, n);
-      if (!there || there.doors.includes(opposite(dir))) live++;
-    }
-    return { doors, live };
+  return orientLayout(layoutFor(card, manor.daySeed, cellKey(cell)), entryDir);
+}
+
+/**
+ * Would this placement seal itself? True when the room's only door is the one
+ * she walked in by — every other door lands on the outer wall or on a
+ * neighbour's blank plaster. The deliberate consequence of the rigid turn
+ * (see above); exported so the design owner can measure the rate.
+ */
+export function sealsItself(
+  doors: readonly Dir[], entryDir: Dir, manor: ManorState, cell: Cell,
+): boolean {
+  const came = opposite(entryDir);
+  return !doors.some((dir) => {
+    if (dir === came) return false;
+    const n = neighbor(cell, dir);
+    if (!n) return false;                                  // outer wall: dead
+    const there = roomAt(manor, n);
+    return !there || there.doors.includes(opposite(dir));   // empty = tomorrow's draft
   });
-  const best = Math.max(...scored.map((s) => s.live));
-  const top = scored.filter((s) => s.live === best);
-  return top[randInt(rng, top.length)]!.doors;
 }
 
 // ---------------------------------------------------------------------------
