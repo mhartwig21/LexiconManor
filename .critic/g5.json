@@ -1,6 +1,0 @@
-[
-  {"click":"[aria-label*='first landing']","after":2500},
-  {"click":".bp-card","has":"The Gallery","after":3500},
-  {"shot":"twistle"},
-  {"eval":"document.body.innerText.slice(0,1000)"}
-]

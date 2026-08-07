@@ -1,6 +1,0 @@
-[
-  {"click":"button.chr-scene__aside","has":"Journal","after":1000},
-  {"click":"button.jrn-tab","has":"Letters","after":900},
-  {"shot":"letters"},
-  {"dump":true}
-]

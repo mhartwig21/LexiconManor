@@ -1,8 +1,0 @@
-[
-  {"click":"button.bp-btn","has":"Call on Ellery","after":2000},
-  {"click":"button.dlg__skip","after":1200},
-  {"click":"button.dlg-choice","has":"ghost","after":1500},
-  {"dialogue":22},
-  {"shot":"ellery2"},
-  {"eval":"document.body.innerText.slice(0,900)"}
-]

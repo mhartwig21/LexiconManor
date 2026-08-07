@@ -1,7 +1,0 @@
-[
-  {"click":".lc-clue","has":"waits for a draft","after":600},
-  {"click":".m2-btn","has":"Smooth a crease","after":2000},
-  {"shot":"hint"},
-  {"eval":"document.body.innerText.slice(0,400)"},
-  {"eval":"Array.from(document.querySelectorAll('.lc-cell')).map(function(c){return (c.className.indexOf('void')>-1?'#':(c.querySelector('.lc-cell__ch')||{}).textContent||'.')})"}
-]

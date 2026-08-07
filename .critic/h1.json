@@ -1,6 +1,0 @@
-[
-  {"click":".chr-scene__aside","has":"Chronicles","after":2200},
-  {"click":"[data-testid=restart-erase]","after":1500},
-  {"shot":"erase-confirm"},
-  {"eval":"document.body.innerText.slice(0,1800)"}
-]

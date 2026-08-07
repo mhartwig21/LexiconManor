@@ -1,9 +1,0 @@
-[
-  {"click":"button.ww-tile","has":"TOWNS","after":250},
-  {"click":"button.ww-tile","has":"CLOWN","after":250},
-  {"click":"button.ww-tile","has":"DOWNY","after":250},
-  {"click":"button.ww-tile","has":"BROWN","after":250},
-  {"click":"button.anch-btn--primary","after":3000},
-  {"shot":"reward"},
-  {"eval":"document.body.innerText.slice(0,900)"}
-]

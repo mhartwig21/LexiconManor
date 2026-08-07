@@ -1,9 +1,0 @@
-[
-  {"text":"Step back out","after":2500},
-  {"click":"button","has":"Retire","after":2500},
-  {"shot":"dusk1"},
-  {"eval":"document.body.innerText.slice(0,1200)"},
-  {"wait":2000},
-  {"shot":"dusk2"},
-  {"eval":"document.body.innerText.slice(0,1500)"}
-]

@@ -1,5 +1,0 @@
-[
-  {"click":"button.chr-scene__aside","has":"Journal","after":1200},
-  {"shot":"journal"},
-  {"dump":true}
-]

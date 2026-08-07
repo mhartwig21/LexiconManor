@@ -1,8 +1,0 @@
-[
-  {"click":"[aria-label^='Draft a room on the ground floor']","n":0,"after":1800},
-  {"click":"button.bp-card","has":"The Reading Nook","after":3000},
-  {"shot":"nook"},
-  {"eval":"document.body.innerText.slice(0,900)"},
-  {"dialogue":20},
-  {"shot":"ellery"}
-]

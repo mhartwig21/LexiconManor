@@ -1,5 +1,0 @@
-[
-  {"click":"button","has":"Chronicles","after":2000},
-  {"shot":"chronicles"},
-  {"eval":"document.body.innerText.slice(0,2200)"}
-]

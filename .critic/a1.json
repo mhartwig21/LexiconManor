@@ -1,6 +1,0 @@
-[
-  {"shot":"boot"},
-  {"wait":2500},
-  {"shot":"boot2"},
-  {"dump":true}
-]

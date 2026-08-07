@@ -1,9 +1,0 @@
-[
-  {"click":"[aria-label*='half landing']","after":2200},
-  {"click":".bp-card","has":"Boot Room","after":3000},
-  {"eval":"document.body.innerText.slice(0,400)"},
-  {"eval":"Array.from(document.querySelectorAll('[role=button]')).map(function(e){return e.getAttribute('aria-label')})"},
-  {"click":"[aria-label*='first landing']","after":2500},
-  {"eval":"Array.from(document.querySelectorAll('.bp-card')).map(function(c){return c.innerText.split('\\n')[0]+' >> '+(c.querySelector('.bp-doorsdiag')||{}).ariaLabel})"},
-  {"shot":"d3-draft2"}
-]

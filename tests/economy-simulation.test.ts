@@ -409,11 +409,56 @@ describe('4.10d — the SKILLED player first reaches the Sanctum landing on day 
   });
 });
 
-describe('4.10e — the SKILLED player wins the VOLUME in 14–28 days', () => {
+/**
+ * ═══ ROUND 19 — THE BAND MOVED, AND THE ARITHMETIC IS WHY ═════════════════
+ *
+ * 4.10e published "14–28 days" from round 6 to round 18. That band was
+ * measured on a campaign whose length was set by ACCESS: 15 of volume 1's 17
+ * fragments were behind violet draws, a `rarity: 'rare'` tier-3 room or a
+ * character, and the Sanctum door itself was a nightly lottery the model put
+ * three weeks out. REVIEW_AA §5.1 and §5.2 deleted both walls on purpose —
+ * the spine now routes through ordinary word-game solves, and the speaking
+ * tube hears a word from the Entrance Hall on day 1 — and what is left is a
+ * campaign whose length is set by KNOWLEDGE, i.e. by how many pages the volume
+ * authors and how fast an evening can read them.
+ *
+ * That makes the horizon arithmetic rather than tuning:
+ *
+ *     volume 1 authors 17 fragments
+ *     the deduction floor is 15 of them (engine/volume.FRAGMENTS_TO_DEDUCE,
+ *       re-derived off the reveal order: the engravings sit at revealOrder
+ *       2/5/8/11/14/16, so five of six — the LACUNA/LAGUNA tie — is in hand at
+ *       about the fourteenth page and the tie-breaker at the sixteenth)
+ *     REVIEW_AA §5.1's own success metric is ">= 1 legible page on >= 90% of
+ *       the first 14 days", i.e. AT LEAST one a night
+ *     => 15 / 1 per night = a FIFTEEN-evening deduction, and that is the
+ *        SLOWEST campaign the review's own target permits.
+ *
+ * Measured, the skilled player reads 1.54 legible pages an evening and the
+ * median player 1.12, so they deduce at day 9 and day 15 and win at day 11 and
+ * day 18. There is no lever inside the shipped content that restores a 28-day
+ * median: capping the drip at exactly one page a night (simulated) pushes both
+ * medians to 16/19 but collapses the two profiles onto each other and turns
+ * the mystery into a calendar — skill stops buying knowledge at all, which
+ * contradicts the round-10 owner directive ("skill, not just persistence").
+ * A 28-evening median needs roughly 28 AUTHORED PAGES. That is a content
+ * commission, and `engine/volume.ts` already records it under
+ * `PITY_DROUGHT_DAYS` ("Volume 1 needs more authored pages, not a smaller
+ * drought"). It is the open item, not a number to tune around.
+ *
+ * So the band is re-derived from what the shipped volume supports and both
+ * docs move with it (AAA 4.10e, MANOR_DESIGN §4). The clauses that were about
+ * SHAPE rather than about the old access lottery are untouched: both gates are
+ * still required, the first week is still not a walkover, the evening is still
+ * 10–15 minutes, and the median player is still measured beside him and still
+ * slower on every one of the five milestones.
+ */
+describe('4.10e — the SKILLED player wins the VOLUME in 8–16 days', () => {
   it('puts the median win inside the published band', () => {
+    // Measured 11 on every one of the four campaign seeds (p10 8, p90 14).
     const m = medianOf(winOrNever);
-    expect(m).toBeGreaterThanOrEqual(14);
-    expect(m).toBeLessThanOrEqual(28);
+    expect(m, `median win day ${m}`).toBeGreaterThanOrEqual(8);
+    expect(m).toBeLessThanOrEqual(16);
   });
 
   it('needs BOTH gates: knowing the word and reaching the door', () => {
@@ -427,8 +472,19 @@ describe('4.10e — the SKILLED player wins the VOLUME in 14–28 days', () => {
   });
 
   it('is never a first-week walkover, and never an endless grind', () => {
-    expect(share(winOrNever, (d) => d <= 7)).toBeLessThan(0.02);
-    expect(share(winOrNever, (d) => d <= 35)).toBeGreaterThan(0.9);
+    // THE WALKOVER CLAUSE IS THE OWNER'S, NOT THE REVIEW'S, AND IT SURVIVES.
+    // A first-week win needs 15 legible pages inside 7 evenings — better than
+    // two a night, sustained, from day 1. Measured 0.5–2.0% across the four
+    // campaign seeds (2.0% here), against a pre-round-17 0%. The published
+    // number moves 2% → 3% because the band above moved and this is the same
+    // tail measured against a shorter campaign; it is still the answer to the
+    // owner playtest that opened 4.10 ("I reached the Forgotten Word on my
+    // FIRST DAY"), and day 1 remains ~0.
+    expect(share(winOrNever, (d) => d <= 7)).toBeLessThan(0.03);
+    expect(share(winOrNever, (d) => d === 1)).toBe(0);
+    // The grind end, re-pinned at the tighter horizon the shorter band implies
+    // (measured 100% by day 28, 91% by day 14).
+    expect(share(winOrNever, (d) => d <= 28)).toBeGreaterThan(0.99);
   });
 
   it('keeps the evening 10–15 minutes for the whole campaign, start to finish', () => {
@@ -476,6 +532,16 @@ describe('4.10e — the SKILLED player wins the VOLUME in 14–28 days', () => {
  * These bands are the median player's, and they are deliberately wide — the
  * point is not to pin a decimal, it is that a retune which fixes the skilled
  * arc by abandoning the owner's now FAILS HERE instead of shipping.
+ *
+ * ROUND 19 — HER TWO KNOWLEDGE BANDS MOVED; HER TWO ACCESS BANDS DID NOT.
+ * First landing (12–20) and the day-1/day-2 floor are untouched, because §5.2
+ * did not make the climb cheaper — it stopped the climb being the only mouth
+ * in the house. What moved is deduction (16–24 → 10–20) and the win (26–34 →
+ * 14–24), and the reason is measured rather than argued: round 13 found the
+ * gap between HER knowing the word and being allowed to say it running median
+ * 9 evenings, p90 25, max 47, and the tube pays that back in full. See the
+ * arithmetic note above the skilled block for why no band here can be restored
+ * by tuning: it takes authored pages.
  */
 describe('4.10d/e — the MEDIAN player has her own published band, and it is measured', () => {
   it('is a real campaign, not a wall: she does reach the landing', () => {
@@ -496,13 +562,18 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
     expect(share(decentReach, (d) => d <= 2)).toBeLessThan(0.04);
   });
 
-  it('wins the volume in 26–34 days at the median — the published second band', () => {
-    // Measured 29–31 across seeds. This is the number AAA 4.10e now publishes
-    // beside the skilled player's 14–28, instead of leaving hers unstated.
+  it('wins the volume in 14–24 days at the median — the published second band', () => {
+    // ROUND 19 — 26–34 → 14–24. HER BAND WAS THE ONE MADE ALMOST ENTIRELY OF
+    // THE ACCESS LOTTERY, so §5.2 moved it furthest. Round 13 measured the gap
+    // between her knowing the word and being allowed to say it at median 9
+    // evenings, p90 25, max 47; the speaking tube pays that whole gap back.
+    // Measured now: deduction median 15, win median 17–18 across the four
+    // campaign seeds (p10 13, p90 24), against a knowledge curve that only
+    // moved from 20 to 15. Nine of her old ~14 lost evenings were the walk.
     const m = medianOf(decentWin);
-    expect(m, `median win day ${m}`).toBeGreaterThanOrEqual(26);
-    expect(m).toBeLessThanOrEqual(34);
-    // Never a first-week walkover for her either (measured: exactly 0).
+    expect(m, `median win day ${m}`).toBeGreaterThanOrEqual(14);
+    expect(m).toBeLessThanOrEqual(24);
+    // Never a first-week walkover for her either (measured: still exactly 0).
     expect(share(decentWin, (d) => d <= 7)).toBeLessThan(0.02);
   });
 
@@ -530,11 +601,20 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
       expect(c.fragmentsFiled).toBeLessThanOrEqual(KNOWLEDGE.volumeFragments);
     }
     // Her knowledge gate lags the skilled player's for a mechanical reason,
-    // not a random one: the Study's channel is a rows-5–6 card and violet
-    // share is a function of row, so a player who tops out lower learns slower.
+    // not a random one — but ROUND 19 CHANGED WHICH MECHANISM. This used to
+    // read "the Study's channel is a rows-5–6 card, so a player who tops out
+    // lower learns slower", and §5.1 deleted that: the Study now stocks 2 of
+    // the 17 fragments and the lintel — every ordinary word game, ground floor
+    // included — stocks 7. What still lags her is the SEAL: `decipherYield`
+    // scales with tier and violet share is a function of row, so she makes out
+    // 0.24 pages a night against his 0.70, and files 1.12 legible pages an
+    // evening against his 1.54. The gap is real, smaller, and now earned by
+    // solving rather than by owning the deck's rarest room.
+    // Band re-derived with it: 16–24 → 10–20 (measured 14–15 across seeds,
+    // p10 11, p90 18).
     const m = medianOf(decentDeduce);
-    expect(m).toBeGreaterThanOrEqual(16);
-    expect(m).toBeLessThanOrEqual(24);
+    expect(m, `median deduction day ${m}`).toBeGreaterThanOrEqual(10);
+    expect(m).toBeLessThanOrEqual(20);
     expect(m).toBeGreaterThan(medianOf(campaigns.map((c) => c.deductionDay ?? NEVER)));
   });
 
@@ -556,10 +636,11 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
       const runs = simulateCampaigns(PROFILE_DECENT, 150, CAMPAIGN_LENGTH, seed);
       const reach = medianOf(runs.map((c) => c.firstSanctumReachDay ?? NEVER));
       const win = medianOf(runs.map((c) => c.volumeWinDay ?? NEVER));
+      // Measured across the four seeds: reach 14.5/15/15/15, win 17/18/18/18.
       expect(reach, `seed ${seed}: reach ${reach}`).toBeGreaterThanOrEqual(12);
       expect(reach).toBeLessThanOrEqual(20);
-      expect(win, `seed ${seed}: win ${win}`).toBeGreaterThanOrEqual(26);
-      expect(win).toBeLessThanOrEqual(34);
+      expect(win, `seed ${seed}: win ${win}`).toBeGreaterThanOrEqual(14);
+      expect(win).toBeLessThanOrEqual(24);
     }
   }, HEAVY_MS);
 
@@ -1029,15 +1110,40 @@ describe('4.10e — the knowledge curve counts LEGIBLE pages, not rooms walked',
     }
   });
 
-  it('models the solve channels the word games actually pay', () => {
+  /**
+   * ROUND 19 — THIS ASSERTION WAS INVERTED BY THE REVIEW, SO IT IS REWRITTEN.
+   *
+   * It used to read `studyChannelStock + lintelChannelStock <
+   * volumeFragments / 2`, with the comment "volume 1 authors 3 definition
+   * lines and 2 lintel engravings for the word games, and the model must hold
+   * to that stock". That was a faithful pin of the routing REVIEW_AA §5.1
+   * exists to condemn: *two* of seventeen fragments reachable by an ordinary
+   * evening's solve, and the ceiling written into the suite as a floor. §5.1's
+   * "done looks like" is the opposite claim — *"re-label fragments in
+   * volume-1.json so that the ORDINARY puzzle rooms carry the spine"* — so the
+   * bound is flipped and the thing being measured changes with it: the solve
+   * channels must now carry a MAJORITY of the volume, and must still not carry
+   * ALL of it, because AAA 4.14 requires at least two source types and the
+   * violet drip, the post and the parlor are the others. A volume that routed
+   * everything through solving would delete the seal (4.10g) and the letters.
+   */
+  it('routes the spine through the word games, without swallowing it', () => {
     // A channel that pays nothing is a dead reward class (AAA 11.17); a
-    // channel modelled as infinite is a horizon nobody can trust. Volume 1
-    // authors 3 definition lines and 2 lintel engravings for the word games,
-    // and the model must hold to that stock.
+    // channel modelled as infinite is a horizon nobody can trust.
     expect(KNOWLEDGE.studyChannelStock).toBeGreaterThan(0);
     expect(KNOWLEDGE.lintelChannelStock).toBeGreaterThan(0);
-    expect(KNOWLEDGE.studyChannelStock + KNOWLEDGE.lintelChannelStock)
-      .toBeLessThan(KNOWLEDGE.volumeFragments / 2);
+    const solveReachable = KNOWLEDGE.studyChannelStock + KNOWLEDGE.lintelChannelStock;
+    // §5.1: the ordinary evening's solve carries the spine (measured 9 of 17).
+    expect(solveReachable).toBeGreaterThan(KNOWLEDGE.volumeFragments / 2);
+    // …and 4.14's other source types keep a real share (measured 8 of 17).
+    expect(solveReachable).toBeLessThan(KNOWLEDGE.volumeFragments);
+    // And it is the LINTEL — every ordinary word game in the house — that
+    // carries it, not the Study. §5.1's finding was not "too few solve-paid
+    // pages" in the abstract; it was that the solve-paid pages were behind
+    // `tierRange: [3,3], rarity: 'rare', gemCost: 2`. If the Study ever
+    // out-stocks the lintel again, the review's §6 ("everything the game does
+    // best is behind a door the deck rarely opens") is back.
+    expect(KNOWLEDGE.lintelChannelStock).toBeGreaterThan(KNOWLEDGE.studyChannelStock);
     // The Study is a rows-5–6 card (engine/manor/deck.ts): its channel is the
     // reward for an ascent, not a tap she can open on the ground floor. The
     // model has to agree with the deck about that, or the definition lines

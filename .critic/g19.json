@@ -1,7 +1,0 @@
-[
-  {"click":".chr-scene__aside","has":"Journal","after":2000},
-  {"shot":"jrn-d3"},
-  {"eval":"document.body.innerText.slice(0,2000)"},
-  {"click":"button.jrn-tab","has":"Engravings","after":1200},
-  {"eval":"document.body.innerText.slice(0,2200)"}
-]

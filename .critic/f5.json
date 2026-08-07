@@ -1,7 +1,0 @@
-[
-  {"click":".chr-scene__aside","has":"Journal","after":1500},
-  {"click":"button.jrn-tab","has":"Letters","after":1000},
-  {"click":"button.jrn-letter__head","n":1,"after":1800},
-  {"eval":"document.body.innerText.slice(600,2200)"},
-  {"shot":"ellery-letter"}
-]

@@ -85,6 +85,25 @@ export default defineConfig((env) => {
       // Resolve the lazy content-pool registry (app/pools.ts) before any test
       // touches a pool-backed const — mirrors the app's App-level await.
       setupFiles: ['tests/setup-pools.ts'],
+      /**
+       * ROUND 19 — 5s WAS A FLAKE GENERATOR, NOT A BUDGET.
+       *
+       * A dozen suites in this repo walk a WHOLE SHIPPED POOL on purpose —
+       * every twistle trace, every sudoku technique tier, thousands of seeded
+       * campaign days — because "a sample of the pool passed" is not the claim
+       * any of them make. Several of those land at 1–7s alone and blow vitest's
+       * 5000ms default when the other 38 files have every core busy. Two
+       * different ones fell over during this round's verification and neither
+       * failure named anything real: "Test timed out in 5000ms" says the
+       * machine was loaded, not that the Gallery is unsolvable.
+       *
+       * So the budget is stated once, generously, at the level where the
+       * contention actually lives. It is not a licence for slow tests — a suite
+       * that genuinely needs 30s has a problem — it is the difference between a
+       * red tree that means something and a red tree that means "run it again".
+       */
+      testTimeout: 30_000,
+      hookTimeout: 30_000,
     },
     // Absolute base so service-worker scope resolution works (a relative './'
     // base breaks SW registration — ARCHITECTURE §9). GitHub Pages deploys under

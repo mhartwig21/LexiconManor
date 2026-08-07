@@ -10,6 +10,8 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { DayRecord, ManorState, PlacedRoom, VolumeState } from '../src/engine/types';
 import { cellKey, createManor, SANCTUM_DOOR_CELL } from '../src/engine/manor/grid';
+import { sanctumAnswered } from '../src/engine/manor/tube';
+import { ENTRANCE_CELL } from '../src/engine/types';
 import {
   decipherYield, freshVolumeState, fragmentsToDecipher, FRAGMENTS_TO_DEDUCE, legibleDayFlag,
   legibleDroughtDays, legibleFragmentFlag, openedLetterFlag, sealedFragmentFlag,
@@ -816,15 +818,75 @@ describe('journal slice through the real store', () => {
     });
   });
 
-  it('the door refuses a word spoken from anywhere but the landing', () => {
-    // The round-7 blocker in one case: from the Entrance Hall the guess is
-    // simply not heard — no attempt spent, nothing journaled, no penalty.
-    useManorStore.setState({ manor: createManor(1) });
+  /**
+   * ROUND 19 — RE-AIMED AT WHAT §5.2 ACTUALLY GATES.
+   *
+   * This asserted that a word from the Entrance Hall was "simply not heard",
+   * which is the round-7 rule the speaking tube exists to retire. The Entrance
+   * Hall IS the tube (`SPEAKING_TUBE_CELL === ENTRANCE_CELL`), so the case that
+   * still matters is a word spoken from a room that is neither mouth — and the
+   * guarantee that a right word said downstairs does not skip the ceremony.
+   */
+  it('the tube hears her downstairs; a room that is neither mouth does not', () => {
+    const base = createManor(1);
+    useManorStore.setState({ manor: { ...base, playerCell: { col: ENTRANCE_CELL.col, row: ENTRANCE_CELL.row + 1 } } });
     useManorStore.getState().guessAtSanctum('lacuna');
-    const st = useManorStore.getState();
+    let st = useManorStore.getState();
     expect(st.volume.status).toBe('active');
     expect(st.volume.guesses).toEqual([]);
     expect(st.counters['sanctum-guess-wrong']).toBeUndefined();
+
+    // Back at the brass, the same word is heard — and the volume stays open,
+    // because the seal and the monologue are four floors up (tube.ts).
+    useManorStore.setState({ manor: base });
+    useManorStore.getState().guessAtSanctum('lacuna');
+    st = useManorStore.getState();
+    expect(st.volume.guesses).toHaveLength(1);
+    expect(st.volume.status).toBe('active');
+    expect(sanctumAnswered(st.volume.volumeId, st.flags)).toBe(true);
+  });
+
+  /**
+   * ROUND 19 — THE ARRIVAL AFTER THE TUBE (REVIEW_AA §5.2).
+   *
+   * She said it downstairs on day 1; the volume stayed open because the seal
+   * and the monologue belong to the landing. The climb must then close it
+   * WITHOUT asking for the word again — a second `guessAtSanctum` would spend
+   * that day's one word on a word the door has already accepted, and on the
+   * same day `hasGuessedOnDay` would refuse outright and strand her at her own
+   * climax. That is the failure mode the ceremony action exists to prevent, so
+   * this drives the whole shape: tube, same day, walk up, ceremony.
+   */
+  it('the climb after a tube answer closes the volume without a second guess', () => {
+    useManorStore.setState({ manor: createManor(1) });     // the Entrance Hall
+    useManorStore.getState().guessAtSanctum('lacuna');
+    expect(useManorStore.getState().volume.status).toBe('active');
+    expect(useManorStore.getState().volume.guesses).toHaveLength(1);
+
+    // She climbs, the same evening, with her one word already spent.
+    useManorStore.setState({ manor: manorAtTheDoor() });
+    useManorStore.getState().finishSanctumCeremony();
+
+    const st = useManorStore.getState();
+    expect(st.volume.status).toBe('solved');
+    expect(st.flags).toContain(solvedFlag(st.volume.volumeId));
+    expect(st.counters['volume-solved']).toBe(1);
+    // No second word was spent on it.
+    expect(st.volume.guesses).toHaveLength(1);
+  });
+
+  it('the ceremony needs all three: the door, the answer, and an open volume', () => {
+    // At the door, never answered — nothing happens (she has to say it).
+    useManorStore.setState({ manor: manorAtTheDoor() });
+    useManorStore.getState().finishSanctumCeremony();
+    expect(useManorStore.getState().volume.status).toBe('active');
+
+    // Answered, but standing at the tube — the ceremony is upstairs.
+    useManorStore.setState({ manor: createManor(1) });
+    useManorStore.getState().guessAtSanctum('lacuna');
+    useManorStore.getState().finishSanctumCeremony();
+    expect(useManorStore.getState().volume.status).toBe('active');
+    expect(useManorStore.getState().counters['volume-solved']).toBeUndefined();
   });
 
   it('fileFragment files once, forever, and rings the event spine', () => {

@@ -455,10 +455,58 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     it legible: `ui/blueprint/DraftModal.tsx` stamps "Opens onto the Sanctum" on
     exactly those cards, off the same predicate. That UI is load-bearing for
     this number.*
-  - **4.10e — the volume is typically won in 14–28 days** of daily play by **the
-    skilled player of 4.10d** (median; measured 15–16), <2% inside the first week,
-    >90% by day 35 (measured >99%). Winning requires **both** gates independently:
+  - **4.10e — the volume is typically won in 8–16 days** of daily play by **the
+    skilled player of 4.10d** (median; measured 11 on all four campaign seeds,
+    p10 8, p90 14), **<3% inside the first week** (measured 0.5–2.0%), 0% on day 1,
+    >99% by day 28. Winning requires **both** gates independently:
     knowing the word (fragments) *and* reaching the door that day.
+    **Round 19 correction — 14–28 → 8–16, AND THE REASON IS ARITHMETIC, NOT
+    TASTE.** The 14–28 band was measured on a campaign whose length was set by
+    ACCESS: 15 of volume 1's 17 fragments sat behind violet draws, a
+    `rarity: 'rare'` tier-3 room or a character scene, and the Sanctum door was
+    a nightly lottery this model put three weeks out. REVIEW_AA §5.1 and §5.2
+    deleted both walls deliberately — the spine now routes through ordinary
+    word-game solves (7 lintel + 2 study of 17, against 2 before) and the
+    speaking tube hears a word from the Entrance Hall on day 1 — and what
+    remains is a campaign bounded by KNOWLEDGE. That bound is computable:
+    volume 1 authors **17** fragments, the deduction floor is **15** of them
+    (`FRAGMENTS_TO_DEDUCE`, re-derived off the reveal order — the six engravings
+    sit at revealOrder 2/5/8/11/14/16, so the LACUNA/LAGUNA tie is in hand at
+    about the fourteenth page and the tie-breaker at the sixteenth), and
+    REVIEW_AA §5.1's own success metric is *at least one legible page a night*.
+    15 ÷ 1 = a fifteen-evening deduction, and that is the **slowest** campaign
+    the review's target permits. Measured, he reads 1.54 legible pages an
+    evening and she 1.12, so they deduce at day 9 and day 15.
+    A one-page-a-night cap was simulated: it does push both medians to 16/19 and
+    both legible-day shares above 0.97, but it collapses the two profiles onto
+    each other (deduction day 16 for both) and makes the mystery a calendar —
+    skill stops buying knowledge at all, against the round-10 owner directive
+    *"skill, not just persistence, earns the campaign"*. **A four-week horizon
+    needs roughly 28 authored pages.** That is a content commission, recorded in
+    `engine/volume.ts` beside `PITY_DROUGHT_DAYS` (*"Volume 1 needs more
+    authored pages, not a smaller drought"*) and above the skilled block in
+    `tests/economy-simulation.test.ts`, and it is the open item — not a knob.
+    The clauses that were about SHAPE rather than about the deleted lottery are
+    untouched and still measured: both gates required, no first-week walkover,
+    no day-1 win, the 10–15 minute evening, and the median player measured
+    beside him and slower on every milestone.
+    **Round 19, the other half — THE TUBE WAS NEVER WIRED IN.** Round 17 built
+    the §5.2 mechanic in the engine (`engine/manor/tube.ts`,
+    `SPEAKING_TUBE_CELL`, `atSpeakingTube`, `canAddressSanctum`,
+    `sanctumAnsweredFlag`, `doorsHeldOpen`), re-tuned every band in this clause
+    against it, and connected it to **no live surface**:
+    `app/slices/journal.ts guessAtSanctum` still gated on `atSanctumDoor`,
+    `SanctumView` still rendered the mouthpiece only at the door, the journal's
+    rail still printed *"the door … only hears a word from someone standing at
+    it"* on the very cell the brass hangs in, and `lockViewFor` was passed to
+    no caller so `doorsHeldOpen` governed nothing. Every number above described
+    a build that did not exist — REVIEW_AA §0's finding, one level down, and the
+    exact reason §0.1.7 says to DRIVE the app rather than photograph it. Round 19
+    wired all four and proved it in a real tab:
+    `tests/tube-day1-live.mjs` says a word down the brass on **day 1**, for
+    **zero steps**, gets the Portrait's authored refusal, spends the day's one
+    word, and — with the true word — sets `vol.*.answered` while leaving the
+    volume OPEN, because the ceremony is still four floors up.
     **Round 12 correction — THIS CLAUSE HAD ONE NUMBER AND TWO PLAYERS.** Every
     campaign target in 4.10 was measured on `PROFILE_SKILLED` alone;
     `PROFILE_DECENT` — the profile whose own docstring calls it "the MEDIAN
@@ -479,13 +527,22 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     owner-playtest blocker. So **both bands are published and both are
     measured**:
     - **the skilled player** (4.10d's): first landing day 6–10, volume won at
-      median **14–28**, >90% by day 35.
+      median **8–16** (round 19; was 14–28), >99% by day 28.
     - **the median player** (`PROFILE_DECENT`, 4.10b's): first landing at median
-      day **12–20** (measured 16–17, <10% never inside 45 days), the word
-      deducible at median day **16–24** (measured 20), the volume won at median
-      day **26–34** (measured 29–31), <2% inside the first week (measured 0),
-      **>80% inside 45 evenings** (measured 85–89%), and her evening stays
+      day **12–20** (measured 14–15, 0% never inside 45 days), the word
+      deducible at median day **10–20** (round 19, was 16–24; measured 14–15),
+      the volume won at median day **14–24** (round 19, was 26–34; measured
+      17–18), <2% inside the first week (measured 0),
+      **>80% inside 45 evenings** (measured 100%), and her evening stays
       inside 10–15 minutes start to finish (4.10f).
+    *Round 19 — WHICH OF HER FOUR BANDS MOVED, AND WHICH DID NOT. Her two ACCESS
+    bands (first landing, the day-1/day-2 floor) are untouched: §5.2 did not make
+    the climb cheaper, it stopped the climb being the only mouth in the house.
+    Her two KNOWLEDGE bands moved, and the size of the move is itself the round-13
+    measurement paid back — the gap between her knowing the word and being allowed
+    to say it ran median 9 evenings, p90 25, max 47, and the tube returns all of
+    it. Her deduction moved only 20 → 14–15, i.e. §5.1's re-route is worth about
+    five evenings and §5.2's tube about nine.*
     Both are pinned in `tests/economy-simulation.test.ts`, which now plays
     `PROFILE_DECENT` campaigns beside the skilled ones, asserts her band is
     *slower* than his (if that ever inverts, a profile has stopped describing
@@ -699,8 +756,8 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   and journals the guess so she can see her own elimination history. **[COZY]**
 - 4.18 Volume solvable-in-principle from day 1 (answer fixed at volume start; no
   fragment mechanically required). **This criterion owns solvable-in-principle
-  ONLY.** The solve horizon belongs to 4.10e (14–28 days median, <2% inside
-  week one) — the pre-overhaul "median playtest solve lands in 2–4 evenings"
+  ONLY.** The solve horizon belongs to 4.10e (8–16 days median for the skilled
+  player since round 19, 14–24 for the median player, <3% inside week one) — the pre-overhaul "median playtest solve lands in 2–4 evenings"
   clause was deleted in round 6: it contradicted 4.10e outright, so no critic
   could pass or fail the mystery's pacing and the economy and mystery owners
   were optimising against opposite targets. The shipped fragment drip is built
@@ -1011,7 +1068,8 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
 2. ~~**Day length**: does 40 steps land 10–15 min?~~ **ANSWERED by the 2026-08 owner
    playtest + the economy overhaul**: 40 steps landed ~20 min *and* handed her the
    Sanctum on day 1. The budget is 18 with per-row movement pricing; simulation now
-   pins median 10–15 min, first Sanctum reach day 6–10, volume win 14–28 days (4.10).
+   pins median 10–15 min, first Sanctum reach day 6–10, volume win 8–16 days (4.10e,
+   re-derived in round 19 — it read 14–28 before REVIEW_AA §5.1/§5.2).
    Remaining playtest question is only whether the *felt* pace matches the model —
    `TIME_TABLE` in `engine/economy/simulate.ts` carries estimated durations and must be
    replaced with instrumented medians once 3.5's playtest lands.

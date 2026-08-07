@@ -1,6 +1,0 @@
-[
-  {"click":"button.dlg-choice","n":1,"after":2000},
-  {"click":"[aria-label*='half landing']","after":2200},
-  {"eval":"Array.from(document.querySelectorAll('.bp-card')).map(function(c){return c.innerText.split('\\n')[0]+' >> '+(c.querySelector('.bp-doorsdiag')||{}).ariaLabel})"},
-  {"shot":"d3-draft1"}
-]

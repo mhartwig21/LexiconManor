@@ -1,5 +1,0 @@
-[
-  {"text":"Leave it for tomorrow","after":2500},
-  {"eval":"Array.from(document.querySelectorAll('[role=button]')).map(function(e){return e.getAttribute('aria-label')})"},
-  {"shot":"after-sudoku"}
-]

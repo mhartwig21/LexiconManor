@@ -1,6 +1,0 @@
-[
-  {"click":"[aria-label^='Draft']","n":0,"after":2000},
-  {"click":"button.bp-card","has":"Linen Closet","after":3000},
-  {"shot":"crossword"},
-  {"eval":"document.body.innerText.slice(0,1400)"}
-]

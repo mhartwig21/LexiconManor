@@ -1,6 +1,0 @@
-[
-  {"click":"[aria-label^='Draft a room on the first landing']","after":1800},
-  {"click":"button.bp-card","has":"The Archive","after":3000},
-  {"shot":"archive"},
-  {"eval":"document.body.innerText.slice(0,1200)"}
-]

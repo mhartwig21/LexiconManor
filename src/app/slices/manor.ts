@@ -314,7 +314,12 @@ export const createManorSlice =
         // never pay-for-nothing (AAA 4.6). The key itself is spent on
         // PLACEMENT, below, so backing out of the offer still costs only the
         // one step, exactly like an unlocked door.
-        if (isDoorLocked(manor, target.cell) && get().currencies.keys < KEY_COST) return;
+        // ROUND 19: the padlock reads the LOCK VIEW, so a volume she has already
+        // named (down the tube, §5.2) walks up through open doors. `lockViewFor`
+        // has existed since round 17 and was passed to nobody — the third
+        // half-landed limb of the same mechanic, and the one that made the
+        // model's post-answer win days fiction.
+        if (isDoorLocked(manor, target.cell, lockViewFor(get())) && get().currencies.keys < KEY_COST) return;
         const sess = sessionFor(manor.daySeed);
         const key = cellKey(target.cell);
         const scripted =
@@ -364,7 +369,7 @@ export const createManorSlice =
         // itself was free to look at and free to walk away from (AAA 4.6).
         // Affordability is settled before ANY currency moves, so a card she
         // cannot fully pay for never half-charges her.
-        const needsKey = isDoorLocked(manor, target);
+        const needsKey = isDoorLocked(manor, target, lockViewFor(get()));
         if (needsKey && get().currencies.keys < KEY_COST) return;
         if (card.gemCost > 0 && !get().spendGems(card.gemCost)) return;
         if (needsKey && !get().spendKeys(KEY_COST)) return;

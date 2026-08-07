@@ -1,6 +1,0 @@
-[
-  {"click":"button.dlg-choice","n":0,"after":1200},
-  {"click":"button.dlg-choice","n":0,"after":1200},
-  {"shot":"blueprint-live"},
-  {"eval":"document.querySelector('svg.bp-sheet').outerHTML.replace(/<path[^>]*>/g,'').slice(0,6000)"}
-]

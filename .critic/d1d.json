@@ -1,4 +1,0 @@
-[
-  {"shot":"resume"},
-  {"eval":"document.body.innerText.slice(0,400)"}
-]

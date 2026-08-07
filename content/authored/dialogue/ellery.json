@@ -1575,7 +1575,7 @@
       "conditions": [
         {
           "kind": "fragmentsLegible",
-          "gte": 13
+          "gte": 15
         }
       ],
       "lines": [

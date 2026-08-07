@@ -1,6 +1,0 @@
-[
-  {"click":"[aria-label*='Unlock this door']","after":3000},
-  {"shot":"unlock"},
-  {"eval":"document.body.innerText.slice(0,900)"},
-  {"eval":"Array.from(document.querySelectorAll('.bp-card')).map(function(c){return c.innerText.split('\\n')[0]+' >> '+(c.querySelector('.bp-doorsdiag')||{}).ariaLabel})"}
-]

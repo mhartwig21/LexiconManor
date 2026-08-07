@@ -1,8 +1,0 @@
-[
-  {"click":"[aria-label^='Walk to the ground floor']","after":1400},
-  {"click":"[aria-label^='Draft a room on the ground floor']","n":0,"after":1800},
-  {"eval":"document.body.innerText.slice(150,800)"},
-  {"click":"button.bp-card","has":"Linen Closet","after":3000},
-  {"shot":"crossword"},
-  {"eval":"document.body.innerText.slice(0,1200)"}
-]

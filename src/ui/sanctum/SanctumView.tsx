@@ -66,6 +66,7 @@ import {
 } from '../../engine/journal';
 import { applyGuess, hasGuessedOnDay, sealedFragmentIds } from '../../engine/volume';
 import { sanctumStanding } from '../../engine/manor/grid';
+import { sanctumAnswered } from '../../engine/manor/tube';
 import type { GuessCloseness } from '../../engine/events';
 import type { PortraitExpression } from '../../engine/dialogue/schema';
 import { getDialogueFile } from '../../engine/dialogue/content';
@@ -81,6 +82,7 @@ type Phase =
   | 'idle'          // the door waits
   | 'listening'     // suspense beat after Speak
   | 'wrong'         // the sigh
+  | 'answered'      // said down the tube: heard, and the climb is still owed
   | 'won-reveal'    // seal cracks, letters come home
   | 'won-portrait'  // the Portrait softens (tap-through beats)
   | 'epilogue';     // the volume closes
@@ -117,7 +119,7 @@ const FALLBACK_ARRIVALS: Readonly<Record<ArrivalShade, string>> = {
  *  to be consulted and says plainly where the door is — never a scolding; the
  *  climb is the price, not a punishment (AAA 4.10e / R.3). */
 const FALLBACK_STAIRWELL =
-  'Consult me as often as you like. But the door hears one word a day, and only from the landing at the top of the stairs — you will have to climb to it.';
+  'Consult me as often as you like. And use the brass in the entrance hall: it carries one word a day to this door, from your first day. The climb is for the rest of it.';
 
 /** Read from the landing itself, when the room she drafted up there drew no
  *  north door (`sanctumStanding` → 'landing-sealed'). ROUND 15/16, AAA 4.16:
@@ -158,6 +160,23 @@ export default function SanctumView() {
    *  state the screen used to collapse into "away", which is why it told a
    *  player standing on the landing to climb (round-15 finding, AAA 4.16). */
   const sealedLanding = standing === 'landing-sealed';
+  /**
+   * ROUND 19 (REVIEW_AA §5.2) — THE OTHER MOUTH.
+   *
+   * The brass in the Entrance Hall (`engine/manor/tube.ts`) hears one word a
+   * day from day 1 at zero steps. Round 17 wrote that mechanic, re-tuned every
+   * published campaign band against it, and wired it to nothing: this screen
+   * still rendered the input only `atDoor`, so the "first SAYS A WORD median
+   * day 1" in the round-17 report described a build that did not exist.
+   *
+   * The ceremony is untouched. A right word here does not close the volume —
+   * he hears it, answers from four floors up, and asks her to come and say it
+   * to his face (`sanctumAnsweredFlag`; `finishSanctumCeremony` plays the
+   * arrival). What she buys by speaking early is his reaction, on day 2, which
+   * is 33 nodes and 43 lines the review measured almost nobody ever seeing.
+   */
+  const atTube = standing === 'at-tube';
+  const canSpeak = atDoor || atTube;
   const beginNextVolume = useManorStore((s) => s.beginNextVolume);
   const endDay = useManorStore((s) => s.endDay);
   const buildDialogueQuery = useManorStore((s) => s.buildDialogueQuery);
@@ -309,9 +328,28 @@ export default function SanctumView() {
     `portrait.arrive.${shade}`,
   );
 
+  /**
+   * ROUND 19 — THE ARRIVAL, FOR A WORD ALREADY SAID (REVIEW_AA §5.2).
+   *
+   * She named it down the tube; the volume stayed open because the ceremony is
+   * up here. When she finally arrives the door must NOT ask her to type it
+   * again: that would spend the day's one word on a word already accepted, and
+   * on a day she had spoken once already `hasGuessedOnDay` would refuse
+   * outright and strand her at her own climax. The store's
+   * `finishSanctumCeremony` closes the volume directly; this plays it.
+   */
+  const finishCeremony = useManorStore((s) => s.finishSanctumCeremony);
+  const answered = sanctumAnswered(volume.volumeId, flags);
+  useEffect(() => {
+    if (phase !== 'idle' || !atDoor || !answered || volume.status !== 'active') return;
+    finishCeremony();
+    sfx.victory();
+    setPhase('won-reveal');
+  }, [phase, atDoor, answered, volume.status, finishCeremony]);
+
   const speak = () => {
     if (phase !== 'idle' || guessedToday || !guess.trim()) return;
-    if (!atDoor) return;   // the second gate — see `atDoor` above (AAA 4.10e)
+    if (!canSpeak) return;  // the door or the brass — nothing else is a mouth
     // Pure preview of the outcome; the store applies the same transition.
     const { result } = applyGuess(content, volume, guess, day);
     if (result.kind === 'empty' || result.kind === 'gate') return;
@@ -323,7 +361,9 @@ export default function SanctumView() {
     later(() => {
       if (result.kind === 'solved') {
         sfx.victory();
-        setPhase('won-reveal');
+        // Down the tube it is an ANSWER, not a win: the seal, the reveal and
+        // the four-beat monologue play on the landing or not at all.
+        setPhase(atDoor ? 'won-reveal' : 'answered');
       } else if (result.kind === 'wrong') {
         sfx.dusk();
         // The 'sanctum-guess-wrong' event (with closeness metadata) is already
@@ -553,6 +593,11 @@ export default function SanctumView() {
   const portraitLine =
     phase === 'listening' ? null
     : phase === 'wrong' ? (sigh ?? '…')
+    // ROUND 19: the tube's own two beats. The answer beat is the one the
+    // review bought — he hears the word downstairs, and the climb becomes a
+    // ceremony she is owed rather than a lottery she has to win first.
+    : phase === 'answered'
+      ? 'A long pause in the pipe, and then, from four floors up: “Say it again to my face. The doors will not trouble you now.”'
     // Read from below (the journal's pointer, a returning visit): he is happy
     // to be consulted, and says plainly where the door is. Never a scolding —
     // the climb is the price, not a punishment (AAA 4.10e / R.3).
@@ -577,7 +622,9 @@ export default function SanctumView() {
             stairwell, and calling it the door was half of why the climax
             staged itself for a climb that had not happened. */}
         <h2 className="snc__title">
-          {atDoor ? 'The Sanctum Door' : sealedLanding ? 'The Top Landing' : 'The Stairwell'}
+          {atDoor ? 'The Sanctum Door'
+            : atTube ? 'The Speaking Tube'
+            : sealedLanding ? 'The Top Landing' : 'The Stairwell'}
         </h2>
 
         {phase === 'listening' ? (
@@ -594,8 +641,12 @@ export default function SanctumView() {
           <div className="snc-door__caption">
             {sealedLanding
               ? 'You are on the landing. This room does not open north — the door needs a plan that does.'
+              : atTube && !atDoor
+              ? (guessedToday
+                ? 'One word a day, brass or oak. Today’s has gone up.'
+                : 'A brass mouthpiece in the hall wall, and four floors of pipe above it. It will carry one word today.')
               : !atDoor
-              ? 'He hears one word a day — and only from the top of the stairs.'
+              ? 'He hears one word a day — from the brass in the hall, or from the top of the stairs.'
               : guessedToday ? 'One word a day. Today’s is spent.'
               : 'The door will hear one word today.'}
           </div>
@@ -604,7 +655,7 @@ export default function SanctumView() {
               than greyed: a disabled input on a screen she can legitimately
               read would look like a bug, and the caption above already says
               where the door is. Everything else here stays readable. */}
-          {atDoor && (
+          {canSpeak && (
           <div className="snc-row">
             <input
               className="snc-input"

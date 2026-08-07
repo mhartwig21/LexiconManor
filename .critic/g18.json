@@ -1,6 +1,0 @@
-[
-  {"click":".chr-retire","after":600},
-  {"click":".chr-retire","after":3500},
-  {"shot":"dusk-d3"},
-  {"eval":"document.body.innerText.slice(0,1400)"}
-]

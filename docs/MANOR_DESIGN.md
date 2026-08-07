@@ -79,6 +79,15 @@ from v2 carry over (see §10).
   Sanctum landing therefore costs 22 steps of pure walking against a day-1 pot of 21
   — the ascent is a campaign arc, not a day-1 option (AAA 4.10d/4.10e).
 
+  *(Round 19 — what the climb is FOR changed, and these numbers did not. The speaking
+  tube (§7, `engine/manor/tube.ts`) means the ascent no longer sells permission to guess:
+  it sells fragments, keys, tier-3 payouts, the Portrait's audience and the ceremony
+  itself. (Round 19 is where the tube reached the live surfaces at all — round 17 wrote
+  the engine and wired it to nothing; `tests/tube-day1-live.mjs` is the proof it is
+  reachable.) `MOVE_COST_BY_ROW`, `BASE_DAY_BUDGET` and `reserveToTop(1) = 22` are all
+  untouched, and so are 4.10d's first-landing bands. The volume bands in §7 moved; the
+  step economy did not.)*
+
   *(Round 16: the three cells above and this bullet had drifted from the live tables —
   the doc still quoted the pre-overhaul 40 / +6..+8 / −5, i.e. numbers the game has not
   had since round 4, while the refill row beside them HAD been maintained. The extremes
@@ -146,13 +155,30 @@ Sanctum doesn't want a key — it wants the word *spoken* (typed).
 - **Two gates, and the word is only the first one.** The answer is fixed for the whole
   **volume** and no fragment is ever mechanically required (AAA 4.18 — the constraint set
   gates nothing; `applyGuess` never consults it). The word is hers the moment she deduces
-  it. But the door only hears a word spoken *from the landing*, so the climb is the
-  second half — and it is the one that takes weeks. Both bands are published and measured
-  in AAA 4.10e: the **skilled player** first stands at the landing on day 6–10 and wins at
-  a median of 14–28 days; the **median player** (`PROFILE_DECENT`, the owner) first lands
-  at median day 12–20, can deduce the word at median day 16–24, and wins at median day
-  26–34. Between knowing it and being able to say it she spends a median of 7 evenings
-  (p90 17) — that gap is the game, not a fault in it.
+  it, and — since round 17 — she may *say* it the moment she has it, from the **speaking
+  tube** in the Entrance Hall, at zero steps, from day 1 (`engine/manor/tube.ts`). The
+  climb is still the second gate, but it now buys the **ceremony** rather than permission:
+  the seal, the reveal and the Portrait's monologue only ever play at the door, and once
+  the true word has gone up the brass the house holds its padlocks open for the walk.
+  Both bands are published and measured in AAA 4.10e:
+  - the **skilled player** first stands at the landing on day 6–10, first *says a word*
+    on **day 1**, and wins at a median of **8–16 days** (measured 11);
+  - the **median player** (`PROFILE_DECENT`, the owner) first lands at median day 12–20,
+    also speaks on **day 1**, can deduce the word at median day **10–20** (measured
+    14–15), and wins at median day **14–24** (measured 17–18).
+
+  *Round 19 moved both win bands (from 14–28 and 26–34) and her deduction band (from
+  16–24). Two things moved them, both mandated by REVIEW_AA: §5.2's tube deleted the
+  access lottery — round 13 measured the median player's gap between knowing the word and
+  being allowed to say it at median 9 evenings, p90 25, max 47 — and §5.1 re-routed the
+  mystery's spine through ordinary word-game solves, which lifted her from ~0.23 legible
+  pages an evening to 1.12 (his 1.54). What is left is a campaign bounded by the volume's
+  own page count: 17 authored fragments, a deduction floor of 15 of them, and a review
+  target of at least one legible page a night, is a fifteen-evening story at its slowest.
+  Restoring a four-week horizon is a content commission — **volume 1 needs roughly 28
+  authored pages** — not a tuning knob; it is the open item, recorded in
+  `engine/volume.ts` beside `PITY_DROUGHT_DAYS` and above the skilled block in
+  `tests/economy-simulation.test.ts`.*
   - *This bullet used to read "the moment she figures it out, she can march to the Sanctum
     and win, even on day one. Knowledge is the progression." Round 7 put `atSanctumDoor`
     inside `guessAtSanctum`, and a bare, perfectly efficient ascent costs 22
@@ -171,8 +197,10 @@ Sanctum doesn't want a key — it wants the word *spoken* (typed).
   and characters will nudge ("you might reread what the engraving in the Gallery said,
   dear") — the *deduction* is the player's, the *filing* is not. No wiki-bait obscurity.
   The nudge is banded, and the bands run all the way to the deduction floor
-  (`engine/volume.FRAGMENTS_TO_DEDUCE`, ~13 readable pages for Volume 1): empty file,
-  thin file, "his shape but not his letters", "letters with holes between them". Above
+  (`engine/volume.FRAGMENTS_TO_DEDUCE`, **15** readable pages for Volume 1): empty file,
+  thin file, "his shape but not his letters", "letters with holes between them", and —
+  new in round 19, the band the floor's move to 15 created — "two words, and one of them
+  is a stranger in his coat". Above
   the floor the door stops nudging and the cast starts saying the other thing — that the
   reading is done and only the stairs are left (AAA 4.16 / 5.1).
 
@@ -248,8 +276,8 @@ micro-room engine modules + generators.
 2. Mistake cost: is −2 felt-but-fair in each mode? (Hive invalid words may need −1.)
 3. ~~Volume 1 mystery difficulty: target "solved in roughly 2–4 evenings of play."~~
    **Answered (round 6):** the 2–4 evening target was a pre-overhaul number that
-   contradicted the retuned campaign arc; AAA 4.10e owns the horizon (14–28 days median,
-   <2% inside week one) and AAA 4.18 now owns only solvable-in-principle-from-day-1.
+   contradicted the retuned campaign arc; AAA 4.10e owns the horizon (8–16 days median
+   for the skilled player since round 19, 14–24 for the median player, <3% inside week one) and AAA 4.18 now owns only solvable-in-principle-from-day-1.
    The drip is measured against 4.10e by `tests/volume-pacing.test.ts`.
 4. Dialogue volume: how many lines per character before Volume 1 needs a refresh?
 5. Do glyphs/perks return, and in what form?

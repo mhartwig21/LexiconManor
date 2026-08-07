@@ -1,7 +1,0 @@
-[
-  {"text":"Leave it for tomorrow","after":2500},
-  {"click":".chr-retire","after":600},
-  {"click":".chr-retire","after":3500},
-  {"shot":"dusk-d2"},
-  {"eval":"document.body.innerText.slice(0,1200)"}
-]

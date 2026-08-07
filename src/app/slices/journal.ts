@@ -25,7 +25,8 @@ import {
   solveChannelFiledToday, solveChannelFor, solvedFlag,
 } from '../../engine/volume';
 import { glancedFragmentFlag, nextUninterpreted, viewedFragmentFlag } from '../../engine/journal';
-import { atSanctumDoor } from '../../engine/manor/grid';
+import { atSanctumDoor, canAddressSanctum } from '../../engine/manor/grid';
+import { sanctumAnsweredFlag, sanctumAnswered } from '../../engine/manor/tube';
 import { DIALOGUE_FILES } from '../../engine/dialogue/content';
 import { getVolumeContent, nextVolumeContent } from '../content/volumes';
 
@@ -55,6 +56,19 @@ export interface JournalSlice {
    * night sequence → advanceVolume. One guess per day, never a penalty.
    */
   guessAtSanctum(guess: string): void;
+  /**
+   * THE CEREMONY, FOR A WORD ALREADY SAID DOWN THE TUBE (round 19, §5.2).
+   *
+   * She named it in the Entrance Hall; the volume stayed open because the seal
+   * and the monologue belong to the landing. When she finally arrives, the door
+   * must not ask her to type it a second time — a second `guessAtSanctum` would
+   * spend that day's one word on a word the door has already accepted, and on a
+   * day she had spoken to it once already `hasGuessedOnDay` would refuse
+   * outright and strand her at her own climax. So the arrival closes the
+   * volume directly. No-op unless all three hold: at the door, answered, and
+   * the volume still active (`engine/manor/tube.ceremonyAwaits`).
+   */
+  finishSanctumCeremony(): void;
   /** Overnight letters from Posy: micro-puzzles + side-quest chains. */
   openLetter(letterId: string): void;
 
@@ -228,10 +242,40 @@ export const createJournalSlice =
       // it is enforced here, on the model, so a UI regression cannot reopen
       // it. (Reading /sanctum stays free: the Portrait, the elimination list
       // and the nudge are journal-class information, AAA 4.15/4.16.)
-      if (!atSanctumDoor(get().manor)) return;
+      // ── ROUND 19 (REVIEW_AA §5.2): THE TUBE IS WIRED IN. ────────────────
+      // Round 17 built the whole mechanic in the engine — `SPEAKING_TUBE_CELL`,
+      // `atSpeakingTube`, `canAddressSanctum`, `sanctumAnsweredFlag`,
+      // `doorsHeldOpen` — documented it at length in `engine/manor/tube.ts`,
+      // re-tuned every published campaign band against it in
+      // `economy/simulate.ts`, and then never connected it to a single live
+      // surface: this line still read `atSanctumDoor`, so the shipped game went
+      // on refusing every word not spoken from the top landing while the docs,
+      // the model and four AAA clauses described a game where she may speak on
+      // day 1. That is REVIEW_AA §0's finding in its purest form — the team
+      // measuring a build that does not exist — and it is why `firstSpeakDay`
+      // read "median 1" in a report about a game nobody could say a word to.
+      //
+      // The gate is now the predicate the mechanic was written around: the
+      // Sanctum door, or the brass in the Entrance Hall. Which of the two she
+      // used decides what a RIGHT word does, below.
+      if (!canAddressSanctum(get().manor)) return;
+      const atDoor = atSanctumDoor(get().manor);
       const day = get().day?.day ?? v.day;
       const { state, result } = applyGuess(content, v, guess, day);
       if (result.kind === 'gate' || result.kind === 'empty') return;
+      if (result.kind === 'solved' && !atDoor) {
+        // ── THE WORD WENT UP THE BRASS, AND THE CEREMONY IS STILL UPSTAIRS. ──
+        // `applyGuess` returns `status: 'solved'`, which is right at the door
+        // and wrong here: the seal, the reveal and the four-beat monologue play
+        // on the landing or not at all (tube.ts, clause 3). So the guess is
+        // journaled, the volume stays ACTIVE, and the house sets one write-once
+        // flag — from which moment it stops gambling with her: the padlocks
+        // between her and the top stand open (`doorsHeldOpen`, read by the
+        // manor slice) and the landing offer's mercy slot is armed outright.
+        set({ volume: { ...state, status: 'active' } });
+        get().setFlag(sanctumAnsweredFlag(content.id));
+        return;
+      }
       set({ volume: state });
       if (result.kind === 'wrong') {
         // Consumes only the daily guess; journaled so she can see her own
@@ -264,6 +308,22 @@ export const createJournalSlice =
         // beginNextVolume) is driven by the Sanctum UI so the ceremony plays
         // before anything rolls over.
       }
+    },
+
+    finishSanctumCeremony: () => {
+      const v = get().volume;
+      const content = getVolumeContent(v.volumeId);
+      if (!content) return;
+      if (v.status !== 'active') return;
+      if (!atSanctumDoor(get().manor)) return;
+      if (!sanctumAnswered(v.volumeId, get().flags)) return;
+      set({ volume: { ...v, status: 'solved' } });
+      get().setFlag(solvedFlag(content.id));
+      // Same closing rite as the door-typed win above: the backlog comes out
+      // everywhere at once so the archive cannot contradict the ceremony.
+      const stillSealed = sealedFragmentIds(v.volumeId, get().flags);
+      if (stillSealed.size > 0) get().decipherFragments(stillSealed.size);
+      get().recordEvent({ type: 'volume-solved', volumeId: content.id });
     },
 
     openLetter: (letterId) => {

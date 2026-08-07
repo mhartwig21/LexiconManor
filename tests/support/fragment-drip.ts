@@ -48,7 +48,7 @@ import { rowTier } from '../../src/engine/manor/grid';
 import type { DialogueFile } from '../../src/engine/dialogue/schema';
 
 // `import.meta.url`, not `__dirname`: vitest hands test files a CJS-ish
-// `__dirname` but `npx tsx scripts/measure-review-metrics.ts` loads this same
+// `__dirname` but `npx tsx scripts/review-metrics.ts` loads this same
 // module as real ESM, where that global does not exist. The report and the
 // suite share this instrument, so it has to load under both.
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');

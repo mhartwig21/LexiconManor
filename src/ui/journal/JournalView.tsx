@@ -68,6 +68,16 @@ export default function JournalView() {
    *  and the Sanctum (engine/manor/grid.ts `sanctumStanding`). */
   const standing = useManorStore((s) => sanctumStanding(s.manor));
   const atLanding = standing === 'at-door';
+  /**
+   * ROUND 19 (REVIEW_AA §5.2): the brass in the Entrance Hall is a mouth too.
+   * This rail printed "the door … only hears a word from someone standing at
+   * it" on the very cell the speaking tube hangs in — the copy was written
+   * before the tube and never revisited, so the one surface that tells her
+   * where to take her file was, from round 17 on, telling her the opposite of
+   * what the game does. `sanctumStanding` already answered 'at-tube'; nothing
+   * asked it.
+   */
+  const atTube = standing === 'at-tube';
 
   const content = getVolumeContent(volume.volumeId);
   const unread = useJournalUnread();
@@ -493,6 +503,12 @@ export default function JournalView() {
               <button className="jrn-nudge__link" onClick={() => navigate('/sanctum')}>
                 Take it to the Sanctum
               </button>
+            ) : atTube ? (
+              <button className="jrn-nudge__link" onClick={() => navigate('/sanctum')}>
+                {readiness.deducible
+                  ? 'Say it down the speaking tube'
+                  : 'Try a word down the speaking tube'}
+              </button>
             ) : standing === 'landing-sealed' ? (
               /* She is ON the landing already — "all that is left is the
                  climb" is false, and printing it was the round-15 defect.
@@ -504,13 +520,13 @@ export default function JournalView() {
               </span>
             ) : readiness.deducible ? (
               <span className="jrn-nudge__text">
-                This file can name a word. All that is left is the climb — the door is on the
-                top landing, and it only hears a word from someone standing at it.
+                This file can name a word. Say it to the brass tube in the entrance hall, any
+                day — or carry it up to the door itself, which is where he wants to hear it.
               </span>
             ) : (
               <span className="jrn-nudge__text">
-                Enough to take upstairs, when you can get up there — the door is on the top
-                landing, and it only hears a word from someone standing at it.
+                Enough to try. The speaking tube is in the entrance hall and it hears one word
+                a day; the door itself is on the top landing, for when you can get up there.
               </span>
             )}
           </div>

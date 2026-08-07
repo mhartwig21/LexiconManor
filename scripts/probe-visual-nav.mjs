@@ -1,5 +1,7 @@
 /**
- * scripts/r15-visualnav-probe.mjs — the round-15 visual-nav REPRODUCTION probe.
+ * scripts/probe-visual-nav.mjs — the visual-nav REPRODUCTION probe (round 15;
+ * renamed off its round number in round 19 because it is still referenced by
+ * `src/ui/moment/dock.ts` as the source of that file's measured numbers).
  *
  * Not a gate (the gates are tests/*.mjs). This is the measurement bench: it
  * reproduces, or refuses to reproduce, the three round-14 blockers before

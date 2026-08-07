@@ -12,8 +12,9 @@ import { CARRY_OVER_EFFECTS, carryOverFrom } from '../src/engine/manor/deck';
 import type { DayState, DraftOffer, PlacedRoom, StepLedger } from '../src/engine/types';
 import type { RecordedEvent } from '../src/engine/events';
 import {
-  atSanctumDoor, draftTargets, SANCTUM_DOOR_CELL, SANCTUM_DOOR_KEY,
+  atSanctumDoor, atSpeakingTube, draftTargets, SANCTUM_DOOR_CELL, SANCTUM_DOOR_KEY,
 } from '../src/engine/manor/grid';
+import { sanctumAnswered } from '../src/engine/manor/tube';
 import { ENTRANCE_CELL } from '../src/engine/types';
 import { getVolumeContent } from '../src/app/content/volumes';
 import { createEmptySaveV2 } from '../src/app/save';
@@ -261,22 +262,57 @@ describe('THE SECOND GATE: the word is spoken at the door (AAA 4.10e, round 7)',
   const answerFor = (store: ReturnType<typeof makeStore>) =>
     getVolumeContent(store.getState().volume.volumeId)!.answer;
 
-  it('refuses the guess from the ground floor, however much she knows', () => {
-    // THE BLOCKER, REPRODUCED AND CLOSED. Live repro on the shipped build: a
-    // fresh save, day 1, standing in the Entrance Hall with the ledger
-    // untouched at 21 steps — journal → "Take it to the Sanctum" → type the
-    // word → solved. Winning takes BOTH gates (knowing it AND reaching the
-    // door that day); only one of them existed.
+  /**
+   * ROUND 19 — WHAT THIS TEST MEASURES CHANGED, BECAUSE THE REVIEW CHANGED IT.
+   *
+   * It used to assert that a word spoken from the Entrance Hall was refused
+   * outright — the round-7 fix for "a fresh save could win on day 1 from the
+   * ground floor with 21 untouched steps". REVIEW_AA §5.2 asks for the exact
+   * opposite ("the Sanctum door is addressable from the Entrance Hall every
+   * day, at zero or near-zero step cost… being turned away is content, being
+   * unable to walk over is not"), and round 17 built the speaking tube to
+   * answer it. So the ground floor is now a MOUTH.
+   *
+   * The gate round 7 was really protecting is untouched and asserted below it:
+   * saying the word is not winning the volume. The ceremony is at the top of
+   * the house, the volume stays open, and the climb is still owed — what she
+   * buys by speaking is the Portrait's reaction on day 1 and a house that
+   * stops padlocking the way up.
+   */
+  it('hears the word from the Entrance Hall — but does not hand her the volume', () => {
     const store = exploringStore();
     const manor = store.getState().manor!;
     expect(manor.playerCell).toEqual(ENTRANCE_CELL);   // she has not climbed
     expect(atSanctumDoor(manor)).toBe(false);
+    expect(atSpeakingTube(manor)).toBe(true);
+    const stepsBefore = store.getState().stepsRemaining();
+
+    store.getState().guessAtSanctum(answerFor(store));
+
+    // Heard: journaled, and the day's one word is spent.
+    expect(store.getState().volume.guesses).toHaveLength(1);
+    // The house knows she has it…
+    expect(sanctumAnswered(store.getState().volume.volumeId, store.getState().flags)).toBe(true);
+    // …and the volume is still open, because the ceremony is upstairs.
+    expect(store.getState().volume.status).toBe('active');
+    // Free, as it always was (`SANCTUM_GUESS_COST` is 0).
+    expect(store.getState().stepsRemaining()).toBe(stepsBefore);
+  });
+
+  it('refuses a word from a room that is neither the door nor the tube', () => {
+    // The tube is a PLACE too — the brass hangs in the Entrance Hall, not in
+    // her pocket. One step off it and the house cannot hear her.
+    const store = exploringStore();
+    const manor = store.getState().manor!;
+    const elsewhere = { col: ENTRANCE_CELL.col, row: ENTRANCE_CELL.row + 1 };
+    store.setState({ manor: { ...manor, playerCell: elsewhere } });
     const stepsBefore = store.getState().stepsRemaining();
 
     store.getState().guessAtSanctum(answerFor(store));
 
     expect(store.getState().volume.status).not.toBe('solved');
     expect(store.getState().volume.guesses).toHaveLength(0);   // not even the daily guess
+    expect(sanctumAnswered(store.getState().volume.volumeId, store.getState().flags)).toBe(false);
     expect(store.getState().stepsRemaining()).toBe(stepsBefore);
   });
 

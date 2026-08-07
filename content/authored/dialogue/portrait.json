@@ -535,6 +535,26 @@
       ]
     },
     {
+      "id": "portrait.gate.tie-breaker",
+      "trigger": "sanctum-idle",
+      "priority": 0,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "fragmentsLegible",
+          "gte": 13,
+          "lte": 14
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "curious",
+          "text": "Two words, reader, and one of them is a stranger in his coat. I know which. I am forbidden the kindness of saying so. One more inscription parts them — or guess between them today, if the waiting galls."
+        }
+      ]
+    },
+    {
       "id": "portrait.stair.away",
       "trigger": "sanctum-idle",
       "priority": 0,
@@ -543,7 +563,7 @@
         {
           "speaker": "portrait",
           "portrait": "neutral",
-          "text": "Consult me as often as you like. But the door hears one word a day, and only from the landing at the top of the stairs — you will have to climb to it."
+          "text": "Consult me as often as you like. And use the brass in the entrance hall: it carries one word a day to this door from your first day, no stair required. The climb is for the rest — for being seen when you are right."
         }
       ]
     },
@@ -555,7 +575,7 @@
       "conditions": [
         {
           "kind": "fragmentsLegible",
-          "gte": 13
+          "gte": 15
         }
       ],
       "lines": [

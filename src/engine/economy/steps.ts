@@ -100,6 +100,7 @@
  */
 
 import type { StepEntry, StepLedger, Tier } from '../types';
+import { FRAGMENTS_TO_DEDUCE } from '../volume';
 
 /**
  * Start-of-day step budget (AAA 4.10). Owner retune: 40 → 18. Read this
@@ -541,10 +542,19 @@ export const SANCTUM_ARC = {
   maxPlanWeightGain: 6,
   /**
    * LEGIBLE fragments at which the access mercy is allowed to arm — the
-   * deduction band (`KNOWLEDGE.fragmentsToDeduce` opens at 13 of volume 1's
-   * 17). Sealed pages do not count: a smudge is not knowledge.
+   * optimistic end of the deduction band. Sealed pages do not count: a smudge
+   * is not knowledge.
+   *
+   * ROUND 19 — DERIVED, NOT TRANSCRIBED. This was the literal `13`, copied from
+   * `FRAGMENTS_TO_DEDUCE` when that band read [13, 17]. Round 18 moved the band
+   * to [15, 17] and this copy stayed behind, so the access mercy armed TWO
+   * PAGES BEFORE the player could possibly name the word — a floor opening
+   * under a door she had no word for. Exactly the shape of `KNOWLEDGE.pityDays`
+   * (round 18) and `KNOWLEDGE.studyChannelStock` (round 17): a constant
+   * transcribed instead of derived, going stale in the reassuring direction.
+   * `engine/volume.ts` owns the number; there is one of it now.
    */
-  mercyFragments: 13,
+  mercyFragments: FRAGMENTS_TO_DEDUCE[0],
   /**
    * Evenings already spent up there before the guarantee opens. One: she has
    * to have climbed to the top of the house and been turned away at least once

@@ -3,3 +3,18 @@ dist/
 content/data/*
 !content/data/dictionary.json
 *.log
+
+# ── Review / playtest scratch ──────────────────────────────────────────────
+# Rounds 6–18 each left a heap of screenshots, JSON dumps and one-off driver
+# scripts at the repo root, and three of them (.critic/, .playtest/,
+# volume-1.sweep-backup.json) survived into the tree because nothing ignored
+# them. A probe worth keeping gets a real name under scripts/; everything a
+# round produces WHILE it runs belongs here.
+.critic/
+.editor/
+.playtest/
+*.scratch.test.ts
+*.scratch.mjs
+*.sweep-backup.json
+vt-report.json
+/*.png

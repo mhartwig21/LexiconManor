@@ -1,9 +1,0 @@
-[
-  {"click":"button.bp-btn","has":"Journal","after":1500},
-  {"eval":"document.body.innerText.slice(0,1500)"},
-  {"click":"button.jrn-tab","has":"Engravings","after":1000},
-  {"shot":"engravings"},
-  {"eval":"document.body.innerText.slice(0,1800)"},
-  {"click":"button.jrn-tab","has":"Testimony","after":1000},
-  {"eval":"document.body.innerText.slice(0,1500)"}
-]

@@ -406,6 +406,67 @@ describe('§5.3 — in-room progress survives a reload', () => {
     expect(getRoomAdapter('twistle')!.puzzleId(resumed.session.puzzle)).toBe(board);
   });
 
+  /**
+   * ROUND 19 — THE TWO "NEVER DO THAT AGAIN" LISTS, DRIVEN RATHER THAN TRUSTED.
+   *
+   * The per-kind reload test above asserts whole-state identity, so every field
+   * IS covered — but only for the states its drill actually reaches, and two of
+   * the fields §5.3 names by hand are memory prostheses (AAA 3.3) that the
+   * drills never populate: the Gallery's struck-through misses and the Library's
+   * remembered wrong selection. A prosthesis that forgets on reload is worse
+   * than no prosthesis, because she re-derives a dead end she has already paid
+   * for, so both are driven to a non-empty state here and then reloaded.
+   */
+  it('the Gallery brings back the struck-through misses, not just the traced words', () => {
+    const store = seedStore('twistle');
+    const host = openHost(store);
+    const puzzle = host.session.puzzle as TwistlePuzzle;
+
+    // A miss is a REAL path that is not a target. Any proper prefix of a target
+    // traces the same cells, so it has a path by construction; the first one
+    // that is not itself a target is the miss we want. If a board ever ships
+    // with no such prefix this fails loudly rather than silently proving [] ≡ [].
+    let miss: string | null = null;
+    for (const target of puzzle.targetWords) {
+      for (let n = puzzle.rules.minLength; n < target.length && !miss; n++) {
+        const candidate = target.slice(0, n);
+        if (!puzzle.targetWords.includes(candidate)) miss = candidate;
+      }
+      if (miss) break;
+    }
+    expect(miss, 'no traceable non-target prefix on this board').toBeTruthy();
+
+    hostDispatch(store, host, { type: 'submit', word: puzzle.targetWords[0]! });
+    hostDispatch(store, host, { type: 'submit', word: miss! });
+    const before = host.session.state as TwistleRoomState;
+    expect(before.missedWords, 'the drill produced no miss').toContain(miss);
+    expect(before.twistle.foundWords).toContain(puzzle.targetWords[0]);
+
+    const resumed = openHost(reload(store));
+    const after = resumed.session.state as TwistleRoomState;
+    expect(after.missedWords).toEqual(before.missedWords);
+    expect(after.twistle.foundWords).toEqual(before.twistle.foundWords);
+    expect(after.attempts).toBe(before.attempts);
+  });
+
+  it('the Library brings back the wrong selection its hint reads from', () => {
+    const store = seedStore('word-web');
+    const host = openHost(store);
+    const puzzle = host.session.puzzle as WordWebPuzzleEx;
+
+    // One word from each thread: guaranteed wrong, and it is the selection
+    // `buy-hint` names an intruder out of.
+    const wrong = puzzle.groups.map((g) => g.words[0]!);
+    hostDispatch(store, host, { type: 'submit', selection: wrong });
+    const before = host.session.state as WordWebRoomState;
+    expect(before.lastWrongSelection).toEqual(wrong);
+
+    const after = openHost(reload(store)).session.state as WordWebRoomState;
+    expect(after.lastWrongSelection).toEqual(wrong);
+    expect(after.attempts).toBe(before.attempts);
+    expect(after.costedMistakes).toBe(before.costedMistakes);
+  });
+
   it('a solved room reopens finished — the verdict, not a fresh board', () => {
     const store = seedStore('twistle');
     const host = openHost(store);

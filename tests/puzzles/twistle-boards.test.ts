@@ -28,6 +28,19 @@ const POOL = twistleData as TwistlePuzzle[];
 /** Board side length per tier — the shipped contract. */
 const SIZE_BY_TIER: Record<number, number> = { 1: 5, 2: 5, 3: 6 };
 
+/**
+ * ROUND 19 — an explicit budget for the two whole-pool trace walks.
+ *
+ * Both of them re-run `findPath` over EVERY target of EVERY shipped board and
+ * assert on each hop, which is ~3.4s and ~6.6s of real work. Under vitest's
+ * default 5000ms they passed when run alone and timed out when the full suite
+ * had every core busy — a flake whose failure message ("Test timed out") says
+ * nothing about the Gallery and everything about the machine. The work is
+ * deliberate (the shipped pool is the thing under test, not a sample of it), so
+ * the budget is stated rather than the coverage reduced.
+ */
+const POOL_WALK_MS = 30_000;
+
 const byTier = (tier: number) => POOL.filter((p) => p.tier === tier);
 
 describe('twistle board sizes (the Gallery grows at the top of the manor)', () => {
@@ -80,7 +93,7 @@ describe('twistle board solvability (every shipped Gallery can be hung)', () => 
         for (const i of path!) expect(i, `${p.id}: ${w} off-board`).toBeLessThan(p.grid.length);
       }
     }
-  });
+  }, POOL_WALK_MS);
 
   it('tier-3 traces pass through the marked centre tile of the 6×6', () => {
     const centre = centerIndex(6);
@@ -141,7 +154,7 @@ describe('twistle board solvability (every shipped Gallery can be hung)', () => 
         }
       }
     }
-  });
+  }, POOL_WALK_MS);
 
   it('a 6×6 board played through the adapter solves and reports perfect', () => {
     const p = byTier(3)[0]!;

@@ -1,5 +1,0 @@
-[
-  {"click":".chr-scene__aside","has":"Chronicles","after":2200},
-  {"shot":"chronicles"},
-  {"eval":"document.body.innerText.slice(0,2500)"}
-]

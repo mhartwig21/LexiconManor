@@ -1,6 +1,0 @@
-[
-  {"eval":"Array.from(document.querySelectorAll('*')).map(function(e){return e.getAttribute('class')||''}).filter(function(c){return c.length&&c.length<45}).filter(function(v,i,a){return a.indexOf(v)===i}).slice(0,50)"},
-  {"type":"MOSS"},
-  {"wait":600},
-  {"eval":"document.body.innerText.slice(0,300)"}
-]

@@ -79,7 +79,7 @@ import { useEffect } from 'react';
  * draws row 6 at the TOP of the glass, so the moment she climbs, the manor's
  * own controls move INTO that band.
  *
- * MEASURED (scripts/r15-visualnav-probe.mjs, live Edge, plate grant on glass):
+ * MEASURED (scripts/probe-visual-nav.mjs, live Edge, plate grant on glass):
  *   390x844, standing at (2,5): "Approach the Sanctum" [177,157,64,64] —
  *   `elementFromPoint` at its centre returns `button.mom`.
  *   DRIVEN: a real mouse click at that centre left `location.hash` unchanged

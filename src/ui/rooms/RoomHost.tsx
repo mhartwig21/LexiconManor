@@ -54,7 +54,34 @@ export default function RoomHost() {
   const adapter = activeRoom ? getRoomAdapter(activeRoom.kind) : undefined;
   const View = activeRoom ? getRoomView(activeRoom.kind) : undefined;
 
-  const [session, setSession] = useState<Session | null>(null);
+  /**
+   * ROUND 19 — THE SESSION KNOWS WHICH ROOM IT BELONGS TO.
+   *
+   * The open effect below keys on `cellKey` ALONE, while the render picks
+   * `View`/`adapter` off `activeRoom.kind`. Those two disagree the moment a
+   * cell key is re-used for a different kind, and then this component renders
+   * one room's view against another room's puzzle — measured live, three
+   * different crashes in one walk (`puzzle.outer is not iterable` in the
+   * Conservatory, `Cannot read properties of undefined (reading 'status')` in
+   * the Counting House, `…(reading 'flatMap')` in the Library). The effect
+   * cannot save us on its own: effects run AFTER commit, so the bad render has
+   * already happened by the time it could re-open the board.
+   *
+   * The shipped game does not reach it today — the manor is rebuilt nightly and
+   * leaving a room unmounts the host — but "unreachable" is a property of
+   * today's call sites, not of this component, and it was one nightly reset
+   * with a surviving host away from being a crash on her phone. So the session
+   * carries the identity it was opened for, and a session that does not match
+   * the room on screen is simply not a session yet.
+   */
+  const [rawSession, setRawSession] = useState<Session | null>(null);
+  const [sessionFor, setSessionFor] = useState<string | null>(null);
+  const sessionKey = activeRoom ? `${activeRoom.cellKey}|${activeRoom.kind}` : null;
+  const session = rawSession && sessionFor === sessionKey ? rawSession : null;
+  const setSession = (next: Session | null) => {
+    setRawSession(next);
+    setSessionFor(next ? sessionKey : null);
+  };
 
   /**
    * RESUME, don't restart (REVIEW_AA §5.3).
@@ -95,8 +122,11 @@ export default function RoomHost() {
     if (!opened.restored) {
       saveRoomSession(activeRoom.cellKey, snapshotRoomSession(adapter, activeRoom.tier, opened.session));
     }
+    // Round 19: `kind` joins `cellKey` here. A cell re-used for a different
+    // room must re-open the board, not keep the old one — see the note on
+    // `sessionFor` above for why the render also has to guard.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- session restarts per cell entry only
-  }, [cellKey]);
+  }, [cellKey, activeRoom?.kind]);
 
   const dispatch = useMemo(
     () => (action: unknown) => {

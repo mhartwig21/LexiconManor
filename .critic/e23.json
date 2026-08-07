@@ -1,8 +1,0 @@
-[
-  {"eval":"Array.from(document.querySelectorAll('.lc-cell')).map(function(c){return c.className+':'+((c.querySelector('.lc-cell__ch')||{}).textContent||'.')})"},
-  {"click":".lc-cell","n":11,"after":500},
-  {"click":".lc-key","has":"U","after":900},
-  {"wait":1500},
-  {"shot":"xw-final"},
-  {"eval":"document.body.innerText.slice(0,600)"}
-]

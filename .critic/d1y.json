@@ -1,5 +1,0 @@
-[
-  {"click":"[aria-label^='Draft a room on the ground floor']","n":0,"after":1800},
-  {"eval":"document.body.innerText.slice(0,900)"},
-  {"shot":"draft3"}
-]

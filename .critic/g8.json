@@ -1,6 +1,0 @@
-[
-  {"click":".tw-cell","n":4,"after":250},{"click":".tw-cell","n":8,"after":250},{"click":".tw-cell","n":9,"after":250},{"click":".tw-cell","n":13,"after":250},
-  {"click":".anch-btn--primary","after":1600},
-  {"eval":"document.body.innerText.slice(0,700)"},
-  {"shot":"twistle3"}
-]

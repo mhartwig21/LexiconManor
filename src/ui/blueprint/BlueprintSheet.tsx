@@ -43,8 +43,9 @@ import {
   cellKey, deadDoors, deweyCell, doorsConnect, draftTargets, ENTRANCE_CARD_ID,
   roomAt, sameCell, sanctumStanding, walkableNeighbors, SANCTUM_DOOR_CELL,
 } from '../../engine/manor/grid';
-import { isDoorLocked, visibleLocks, KEY_COST } from '../../engine/manor/locks';
+import { isDoorLocked, visibleLocks, KEY_COST, type LockView } from '../../engine/manor/locks';
 import { useManorStore } from '../../app/store';
+import { lockViewFor } from '../../app/slices/manor';
 import { ROOM_KIND_GLYPH_PATHS } from './CategoryGlyph';
 import {
   draftLabel, draftStamp, landingRefusalAnnouncement, landingRefusalLine,
@@ -210,6 +211,20 @@ export default function BlueprintSheet({
   onMove, onOpenDraft, onEnterRoom, onSanctum,
 }: BlueprintSheetProps) {
   const liveKeys = useManorStore((s) => s.currencies.keys);
+  /**
+   * ROUND 19 (REVIEW_AA §5.2): the sheet draws the padlocks the SLICE would
+   * charge for. `lockViewFor` — one derivation, the round-17 answer to the
+   * round-13 `atSanctumDoor` lesson — was passed to nobody, so once she had
+   * named the word down the tube the draft gate opened (see slices/manor.ts)
+   * while this sheet went on drawing brass over every door above row 3.
+   */
+  // Selected as a PRIMITIVE and re-wrapped here. `useManorStore(lockViewFor)`
+  // returns a fresh object every call, which zustand's `getSnapshot` sees as
+  // a new value on every render — measured live as "Maximum update depth
+  // exceeded" and a blank app. The store must yield comparable values; the
+  // object shape belongs to the caller.
+  const heldOpen = useManorStore((s) => lockViewFor(s).heldOpen === true);
+  const lockView: LockView = { heldOpen };
   const keys = keysProp ?? liveKeys;
   /**
    * A padlock she just tried without a key: it shrugs, nothing is charged —
@@ -266,7 +281,7 @@ export default function BlueprintSheet({
   const targets = interactive ? draftTargets(manor) : [];
   // Padlocks are information, not interaction: they are drawn whether or not
   // the sheet is currently live (during a draft, at dusk, mid-scene).
-  const padlocks = visibleLocks(manor);
+  const padlocks = visibleLocks(manor, lockView);
   const den = deweyCell(manor.daySeed);
   const deweyHome = roomAt(manor, den);
   // The one predicate, shared (engine/manor/grid.ts). It used to be written out
@@ -423,7 +438,7 @@ export default function BlueprintSheet({
         const x = px(cell.col), y = py(cell.row);
         const from = doorPoint(px(player.col), py(player.row), dir);
         const key = cellKey(cell);
-        const locked = isDoorLocked(manor, cell);
+        const locked = isDoorLocked(manor, cell, lockView);
         const canPay = !locked || keys >= KEY_COST;
         return (
           <g

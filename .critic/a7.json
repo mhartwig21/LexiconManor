@@ -1,5 +1,0 @@
-[
-  {"click":"button.chr-scene__btn","has":"Begin the day","after":1800},
-  {"shot":"blueprint"},
-  {"dump":true}
-]

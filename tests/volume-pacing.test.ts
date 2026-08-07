@@ -329,10 +329,27 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
     expect(day16.every((d) => d <= HORIZON)).toBe(true);
   });
 
-  it('the median campaign can READ fragment 16 between day 10 and day 20', () => {
+  /**
+   * ROUND 19 — 10–20 → 6–16, FOR THE SAME REASON 4.10e's WIN BAND MOVED.
+   *
+   * This horizon is the knowledge curve seen from the content side, and
+   * REVIEW_AA §5.1 re-routed it deliberately: under the old kind-based routing
+   * exactly two of the seventeen fragments were payable by an ordinary
+   * evening's solve, and the volume now routes nine (7 lintel + 2 study). The
+   * same instrument that measured 12–13 before the re-route measures 9 after
+   * it, which is the change working, not the change breaking.
+   *
+   * It is pinned as a band and not as a decimal because the number that must
+   * not drift is the SHAPE: fragment 16 is the tie-breaking engraving, so the
+   * day it becomes legible is the day the constraint set closes to one word,
+   * and it has to stay a fortnight-ish story rather than a weekend or a month.
+   * Measured over 240 seeded PROFILE_SKILLED campaigns: p10 7, median 9,
+   * p90 11, max 14.
+   */
+  it('the median campaign can READ fragment 16 between day 6 and day 16', () => {
     const m = medianOf(day16);
-    expect(m, `median day-of-LEGIBLE-fragment-16 was ${m}`).toBeGreaterThanOrEqual(10);
-    expect(m, `median day-of-LEGIBLE-fragment-16 was ${m}`).toBeLessThanOrEqual(20);
+    expect(m, `median day-of-LEGIBLE-fragment-16 was ${m}`).toBeGreaterThanOrEqual(6);
+    expect(m, `median day-of-LEGIBLE-fragment-16 was ${m}`).toBeLessThanOrEqual(16);
   });
 
   /**
@@ -347,9 +364,12 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
       expect(day16Filed[i]!, `campaign ${i}: filed ${day16Filed[i]}, legible ${day16[i]}`)
         .toBeLessThanOrEqual(day16[i]!);
     }
+    // Same band as the legible one above, moved with it (round 19). Measured
+    // p10 6, median 9, p90 11, max 14 — the lag is still there and still
+    // nonzero on about half the campaigns, which is the seal doing its job.
     const mFiled = medianOf(day16Filed);
-    expect(mFiled, `median day-of-FILED-fragment-16 was ${mFiled}`).toBeGreaterThanOrEqual(10);
-    expect(mFiled, `median day-of-FILED-fragment-16 was ${mFiled}`).toBeLessThanOrEqual(20);
+    expect(mFiled, `median day-of-FILED-fragment-16 was ${mFiled}`).toBeGreaterThanOrEqual(6);
+    expect(mFiled, `median day-of-FILED-fragment-16 was ${mFiled}`).toBeLessThanOrEqual(16);
   });
 
   it('even a lucky tenth of campaigns needs a full week (p10 >= 6)', () => {
@@ -381,15 +401,41 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
       .toMatch(/const atDoor = standing === 'at-door'/);
     expect(view, 'the sealed landing must be a case of its own, not folded into "away"')
       .toMatch(/const sealedLanding = standing === 'landing-sealed'/);
-    expect(view, 'the guess row must be gated on standing at the door').toMatch(/\{atDoor && \(/);
+    // ── ROUND 19 (REVIEW_AA §5.2): THE MOUTH MOVED; THE CEREMONY DID NOT. ──
+    // This lint used to require `{atDoor && (` around the guess row, which is
+    // the round-7 rule the speaking tube retires: §5.2 asks for the door to be
+    // "addressable from the Entrance Hall every day, at zero or near-zero step
+    // cost". What must stay grepped is the pair of claims that outlive it —
+    // that the row is gated on a SHARED predicate rather than on nothing, and
+    // that the two mouths are the only two.
+    expect(view, "the tube must be a case of the shared standing predicate")
+      .toMatch(/const atTube = standing === 'at-tube'/);
+    expect(view, 'the guess row must be gated on the door-or-tube predicate')
+      .toMatch(/const canSpeak = atDoor \|\| atTube/);
+    expect(view, 'the guess row must be gated on canSpeak, never unconditional')
+      .toMatch(/\{canSpeak && \(/);
+    // …and the CEREMONY is still the landing's, which is the half of the
+    // round-7 gate §5.2 explicitly keeps ("it does not move the ceremony").
+    expect(view, 'a word said down the tube must not play the win')
+      .toMatch(/setPhase\(atDoor \? 'won-reveal' : 'answered'\)/);
     expect(view, "the Portrait's audience must be gated on the landing")
       .toMatch(/phase === 'idle' && atDoor && audienceButton/);
     expect(view, 'the arrival line must be keyed by arrivalShade').toMatch(/portrait\.arrive\.\$\{shade\}/);
   });
 
-  it('the store refuses a word spoken from anywhere else', () => {
+  it('the store refuses a word spoken from anywhere but a mouth', () => {
     const slice = readFileSync(join(root, 'src', 'app', 'slices', 'journal.ts'), 'utf8');
-    expect(slice, 'guessAtSanctum must not trust the screen').toMatch(/atSanctumDoor\(get\(\)\.manor\)/);
+    // Round 19: the gate is the tube's own predicate now (door OR the brass in
+    // the Entrance Hall), and it is still enforced on the MODEL so a UI
+    // regression cannot reopen it — which was always this lint's real point.
+    expect(slice, 'guessAtSanctum must not trust the screen')
+      .toMatch(/canAddressSanctum\(get\(\)\.manor\)/);
+    // And the volume still cannot be won from the hall: a right word away from
+    // the door sets the answered flag and leaves the volume ACTIVE.
+    expect(slice, 'a right word down the tube must not close the volume')
+      .toMatch(/status: 'active'/);
+    expect(slice, 'the tube must set the write-once answered flag')
+      .toMatch(/sanctumAnsweredFlag\(content\.id\)/);
   });
 
   it('the journal points at the door instead of teleporting to it', () => {

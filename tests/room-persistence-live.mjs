@@ -97,8 +97,16 @@ try {
   const page = await context.newPage();
   page.setDefaultTimeout(20000);
   const errors = [];
-  page.on('pageerror', (e) => errors.push(String(e)));
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  // Round 19: stamp WHICH ROOM was on screen when an error landed. A bare list
+  // of three TypeErrors at the end of a four-room walk names no room and no
+  // manoeuvre, which is the same "measured yesterday's game" shape REVIEW_AA §0
+  // opens with, one level down.
+  let phase = 'boot';
+  page.on('pageerror', (e) => {
+    const frames = String(e.stack || '').split('\n').slice(1, 5).map((f) => `        ${f.trim()}`);
+    errors.push([`[${phase}] ${e}`, ...frames].join('\n'));
+  });
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(`[${phase}] ${m.text()}`); });
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 90000 });
   await page.evaluate(() => localStorage.clear());
@@ -112,6 +120,29 @@ try {
    * not the placement pin quietly doing the work.
    */
   const enter = async (kind) => {
+    // ROUND 19: STAGE THE MANOR, THEN RELOAD INTO IT.
+    // This used to swap the manor out from under a mounted `RoomHost` and only
+    // flip the hash, which works for the first room and hangs for the second:
+    // the host is already mounted on `#/room`, so the hash does not change, and
+    // it holds an adapter for the OLD kind against an `activeRoom` of the new
+    // one. The stage unmounted and the driver waited twenty seconds for a room
+    // that had already gone. Reloading is what `reloadIntoRoom` does two
+    // functions down and it is the same door the player comes through after an
+    // eviction — it also proves the staged manor really did reach the save.
+    //
+    // Walk OUT to the blueprint before staging, too. A mounted `RoomHost` whose
+    // manor changes kind under it renders one kind's view against another
+    // kind's puzzle for a frame ("puzzle.outer is not iterable"), and the
+    // harness would then report its own manoeuvre as a page error. Nothing in
+    // the shipped game can change a placed room's kind, so this is the driver
+    // being honest about being a driver.
+    // (A hash flip alone is not enough: `RoomHost` survives it long enough to
+    // render one kind's view against the other kind's puzzle. Reloading ONTO
+    // the blueprint is what actually takes it down.)
+    await page.evaluate(() => { location.hash = '#/'; });
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 90000 });
+    await page.waitForFunction(() => !!window.__manorStore, null, { timeout: 60000 });
+    await sleep(300);
     await page.evaluate(([key, kindArg, seed, budget]) => {
       const store = window.__manorStore;
       const [col, row] = key.split(',').map(Number);
@@ -132,6 +163,9 @@ try {
       store.getState().enterRoom(key);
       location.hash = '#/room';
     }, [CELL_KEY, kind, DAY_SEED, BUDGET]);
+    await sleep(300);
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 90000 });
+    await page.waitForFunction(() => !!window.__manorStore, null, { timeout: 60000 });
     await page.waitForSelector('.room-host__stage', { timeout: 20000 });
     await sleep(400);
   };
@@ -151,7 +185,28 @@ try {
         state: JSON.stringify(placed?.session?.state ?? null),
         done: placed?.session?.done ?? null,
         solvedOnce: placed?.session?.solvedOnce ?? null,
-        text: (stage?.innerText || '').replace(/\s+/g, ' ').trim(),
+        // THE BOARD, NOT THE CHROME AROUND IT (round 19). Two things in the
+        // stage are functions of the SESSION rather than of the saved board,
+        // and comparing them across a reload asserts something no room
+        // promises:
+        //   · the toast slot — a restored `lastFeedback` legitimately
+        //     re-announces itself on mount ("Missing N · −1 step"), which is
+        //     the room telling her where she left off, not lost progress;
+        //   · the Counting House's eraser, whose face is "Lift" / "Rub out N" /
+        //     "Rub out" depending on the CURSOR — and the cursor is view-local
+        //     by design, exactly like a caret, so it resets on mount.
+        // Everything else — every tile, every banner, every found word, every
+        // rung, every figure and mark — is still compared character for
+        // character, which is the claim §5.3 actually makes.
+        text: (() => {
+          if (!stage) return '';
+          const clone = stage.cloneNode(true);
+          clone.querySelectorAll('[class*="toastslot"]').forEach((n) => n.remove());
+          return (clone.textContent || '')
+            .replace(/\s+/g, ' ')
+            .replace(/(?:Lift|Rub out(?:\s+\d)?)/g, '‹eraser›')
+            .trim();
+        })(),
         footer: (document.querySelector('.room-host__footer button')?.textContent || '').trim(),
       };
     }, CELL_KEY);
@@ -189,6 +244,7 @@ try {
      ====================================================================== */
   log('');
   log('— 1. The Library (word-web) —');
+  phase = 'library';
   await enter('word-web');
 
   const libraryId = (await snapshot()).puzzleId;
@@ -196,10 +252,39 @@ try {
   if (!libraryBoard) throw new Error(`word-web board ${libraryId} not in the shipped pool`);
 
   const tapTiles = async (words) => {
+    // ROUND 19: CLEAR FIRST. A wrong claim in the Library deliberately LEAVES
+    // the four tiles selected (WordWebView's `wrong`/`one-away` branches do not
+    // reset `selection`, so she can swap one word rather than re-tap four) —
+    // and this driver did not know that, so claim two tapped four MORE tiles
+    // onto a live selection of four. Every claim after the first was therefore
+    // a different guess than the script believed it was making: the run
+    // measured −6 where it asserted −4 and never wove a thread at all. Tapping
+    // the room's own Clear button between claims is what a player does, and it
+    // makes each claim independent.
+    //
+    // …and WAIT FOR THE BOARD TO BE IDLE first. `WordWebView` locks input for
+    // `RELEASE_MS` plus the merge animation after every claim (AAA 2.3), and
+    // taps that land inside that window are dropped — so on a loaded machine
+    // the next claim silently selected nothing and the run died twenty seconds
+    // later on a disabled Weave. Shuffle is `disabled={busy}` and nothing else,
+    // which makes it the board's own idle light.
+    const idle = () => page.waitForFunction(() => {
+      const btn = [...document.querySelectorAll('.anch-row .anch-btn')]
+        .find((b) => b.textContent.trim() === 'Shuffle');
+      return !!btn && !btn.disabled;
+    }, null, { timeout: 20000 });
+
+    await idle();
+    const clear = page.locator('.anch-row .anch-btn', { hasText: 'Clear' }).first();
+    if (await clear.isEnabled().catch(() => false)) {
+      await clear.click();
+      await sleep(120);
+    }
     for (const w of words) {
       await page.click(`.ww-tile:text-is("${w}")`, { timeout: 8000 });
       await sleep(90);
     }
+    await page.waitForSelector('.anch-btn--primary:not([disabled])', { timeout: 20000 });
     await page.click('.anch-btn--primary');
     await sleep(1400);                        // the merge/shake animation
   };
@@ -234,6 +319,7 @@ try {
      ====================================================================== */
   log('');
   log('— 2. The Conservatory (hive) —');
+  phase = 'conservatory';
   await enter('hive');
   const hiveId = (await snapshot()).puzzleId;
   const hiveBoard = HIVE.find((p) => p.id === hiveId);
@@ -265,6 +351,7 @@ try {
      ====================================================================== */
   log('');
   log('— 3. The Counting House (sudoku) —');
+  phase = 'counting-house';
   await enter('sudoku');
   const sudokuId = (await snapshot()).puzzleId;
   const sudokuBoard = SUDOKU.find((p) => p.id === sudokuId);
@@ -311,6 +398,7 @@ try {
      ====================================================================== */
   log('');
   log('— 4. §5.4: a room is paid for once —');
+  phase = 'resolve-exploit';
   await enter('word-web');
   const exploitId = (await snapshot()).puzzleId;
   const exploitBoard = WORD_WEB.find((p) => p.id === exploitId);

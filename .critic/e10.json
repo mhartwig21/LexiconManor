@@ -1,7 +1,0 @@
-[
-  {"cipher":{"X":"R","C":"O","S":"?","Q":"E","O":"?","Z":"?","K":"?","T":"?","G":"?","Y":"?"}},
-  {"eval":"Array.from(document.querySelectorAll('.dk-word')).map(function(w){return Array.from(w.querySelectorAll('.dk-cell__cipher')).map(function(c){return c.textContent}).join('')})"},
-  {"text":"Leave it for tomorrow","after":2500},
-  {"shot":"left-room"},
-  {"eval":"document.body.innerText.slice(0,700)"}
-]
