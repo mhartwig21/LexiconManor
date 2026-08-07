@@ -1,0 +1,5 @@
+[
+  {"click":".chr-scene__btn","has":"To tomorrow","after":3000},
+  {"shot":"day2-morning"},
+  {"eval":"document.body.innerText.slice(0,1400)"}
+]

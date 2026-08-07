@@ -1,0 +1,3 @@
+[
+  {"eval":"Array.from(document.querySelectorAll('.dk-word')).map(function(w){return Array.from(w.querySelectorAll('.dk-cell__cipher')).map(function(c){return c.textContent}).join('')})"}
+]

@@ -139,6 +139,16 @@
      is true for any surface is where the band actually ends. */
   --page-nav-floor: 0px;
 
+  /* THE BAND AT THE FOOT (AAA 11.4, round-15 blocker). The mirror of the
+     floor above, measured from the other edge. A surface that pins a
+     navigation row to the BOTTOM of the glass publishes its CEILING — the
+     distance from the viewport's bottom edge up to the band's top, measured
+     from the live element (app/platform/page-nav.ts), never a literal.
+     Bottom-pinned fixed layers take max(own margin, ceiling + gap).
+     0 = "nothing pinned at the foot", which is the default for every surface
+     that has not opted in, so consumers are inert until a page publishes. */
+  --page-foot-ceiling: 0px;
+
   /* --- Layering scale (published in ui/chrome/layers.ts; AAA 11.5) --------- */
   /* A rung is a decision about what may be TAPPED, not only what is seen.
      Three modules independently chose "40" and the day bar hit-tested above

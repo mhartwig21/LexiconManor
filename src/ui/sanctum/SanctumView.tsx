@@ -65,7 +65,7 @@ import {
   type ArrivalShade,
 } from '../../engine/journal';
 import { applyGuess, hasGuessedOnDay, sealedFragmentIds } from '../../engine/volume';
-import { atSanctumDoor } from '../../engine/manor/grid';
+import { sanctumStanding } from '../../engine/manor/grid';
 import type { GuessCloseness } from '../../engine/events';
 import type { PortraitExpression } from '../../engine/dialogue/schema';
 import { getDialogueFile } from '../../engine/dialogue/content';
@@ -113,6 +113,22 @@ const FALLBACK_ARRIVALS: Readonly<Record<ArrivalShade, string>> = {
   spent: 'You have nothing left in your legs and you spent it getting here. Say your word if you have one; the door is in no hurry either way.',
 };
 
+/** Read from below, when even `portrait.stair.*` selects nothing. He is happy
+ *  to be consulted and says plainly where the door is — never a scolding; the
+ *  climb is the price, not a punishment (AAA 4.10e / R.3). */
+const FALLBACK_STAIRWELL =
+  'Consult me as often as you like. But the door hears one word a day, and only from the landing at the top of the stairs — you will have to climb to it.';
+
+/** Read from the landing itself, when the room she drafted up there drew no
+ *  north door (`sanctumStanding` → 'landing-sealed'). ROUND 15/16, AAA 4.16:
+ *  the game used to print FALLBACK_STAIRWELL here — "you will have to climb
+ *  to it" — to a player who had just finished the climb, which reads as the
+ *  screen not knowing where she is. The refusal names what is wrong and what
+ *  fixes it, in his voice, and never scolds the walk. Same sentence the
+ *  blueprint's sealed Sanctum hit refuses with (ui/blueprint/pricing.ts). */
+const FALLBACK_SEALED_LANDING =
+  'You are up — I heard the last stair. But that room turns its back on my door, reader: whatever you take up here has to open north.';
+
 /** Fallback closing beats when portrait.react.victory cannot be selected
  *  (e.g. already seen on a later volume) — tapped through, each skippable. */
 const CLOSING_BEATS = [
@@ -136,7 +152,12 @@ export default function SanctumView() {
    * readable from anywhere: the Portrait, the struck-through list, the nudge
    * are journal-class information (AAA 4.15/4.16).
    */
-  const atDoor = useManorStore((s) => atSanctumDoor(s.manor));
+  const standing = useManorStore((s) => sanctumStanding(s.manor));
+  const atDoor = standing === 'at-door';
+  /** She is ON the landing and the room there drew no north door. A third
+   *  state the screen used to collapse into "away", which is why it told a
+   *  player standing on the landing to climb (round-15 finding, AAA 4.16). */
+  const sealedLanding = standing === 'landing-sealed';
   const beginNextVolume = useManorStore((s) => s.beginNextVolume);
   const endDay = useManorStore((s) => s.endDay);
   const buildDialogueQuery = useManorStore((s) => s.buildDialogueQuery);
@@ -244,15 +265,41 @@ export default function SanctumView() {
    * they were eligible in his ordinary rotation, so a parlor visit could serve
    * "your journal is empty" as small talk; the door screen is the only place
    * that sentence means anything.
+   *
+   * ROUND 14 (AAA 4.16 blocker): the suppression is `readiness.deducible`, not
+   * `readiness.enough`. `enough` is FOUR readable pages and deduction needs
+   * about THIRTEEN (engine/journal.DEDUCTION_FLOOR), so the nudge used to
+   * retire on median day 5 and leave her at the door in silence until median
+   * day 20 — most of the volume. The authored bands now tile the whole way up
+   * to the floor, and the floor is derived from the same constant the
+   * deduction model samples so the two cannot drift (engine/volume.ts
+   * `FRAGMENTS_TO_DEDUCE`).
    */
   const gateNode =
-    readiness.enough || guessedToday || volume.status === 'solved'
+    readiness.deducible || guessedToday || volume.status === 'solved'
       ? undefined
       : selectTaggedLine(
           getDialogueFile('portrait'),
           buildDialogueQuery('portrait', 'sanctum-idle'),
           'portrait.gate.',
         );
+
+  /**
+   * THE STAIRWELL LINE — read from below (AAA 5.1, round 14).
+   *
+   * Between knowing the word and getting back up to say it the median player
+   * spends 7 evenings (p90 17): she has the answer, the stairs are the whole
+   * remaining game, and this screen said the same flat sentence about the door
+   * hearing one word a day to a player with nothing and to a player with all of
+   * it. `portrait.stair.*` is keyed the same way every other family on this
+   * screen is — an authored band, selected by prefix, with the old hardcoded
+   * string kept as the never-silent fallback.
+   */
+  const stairNode = selectTaggedLine(
+    getDialogueFile('portrait'),
+    buildDialogueQuery('portrait', 'sanctum-idle'),
+    'portrait.stair.',
+  );
 
   /** His opening, keyed to the walk she actually had — rendered, not played,
    *  exactly like the gate lines above (no valve spent, nothing marked seen). */
@@ -509,7 +556,8 @@ export default function SanctumView() {
     // Read from below (the journal's pointer, a returning visit): he is happy
     // to be consulted, and says plainly where the door is. Never a scolding —
     // the climb is the price, not a punishment (AAA 4.10e / R.3).
-    : !atDoor ? 'Consult me as often as you like. But the door hears one word a day, and only from the landing at the top of the stairs — you will have to climb to it.'
+    : sealedLanding ? FALLBACK_SEALED_LANDING
+    : !atDoor ? (stairNode?.lines[0]?.text ?? FALLBACK_STAIRWELL)
     : guessedToday ? 'The door has heard today’s word. It is a patient door — come back with the morning.'
     // His opening now answers the walk she actually had: a first arrival, a
     // repeat visit, or an arrival on fumes (engine/journal.arrivalShade). The
@@ -528,7 +576,9 @@ export default function SanctumView() {
             the recognisable word leads). Read from the armchair this is the
             stairwell, and calling it the door was half of why the climax
             staged itself for a climb that had not happened. */}
-        <h2 className="snc__title">{atDoor ? 'The Sanctum Door' : 'The Stairwell'}</h2>
+        <h2 className="snc__title">
+          {atDoor ? 'The Sanctum Door' : sealedLanding ? 'The Top Landing' : 'The Stairwell'}
+        </h2>
 
         {phase === 'listening' ? (
           <p className="snc-line snc-listening">The door listens…</p>
@@ -542,7 +592,9 @@ export default function SanctumView() {
 
         <div className={`snc-door${shaking ? ' snc-shake' : ''}`}>
           <div className="snc-door__caption">
-            {!atDoor
+            {sealedLanding
+              ? 'You are on the landing. This room does not open north — the door needs a plan that does.'
+              : !atDoor
               ? 'He hears one word a day — and only from the top of the stairs.'
               : guessedToday ? 'One word a day. Today’s is spent.'
               : 'The door will hear one word today.'}

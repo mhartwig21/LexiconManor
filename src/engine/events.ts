@@ -11,7 +11,7 @@
  * variants are cheap; renames/removals are breaking.
  */
 
-import type { CharacterId, RoomCategory, Tier } from './types';
+import type { CharacterId, RoomCategory, SolveChannelId, Tier } from './types';
 import type { RoomPuzzleKind } from './rooms/room-puzzle';
 
 /** Why the day ended. Never a failure: "the day is over," not a defeat. */
@@ -32,7 +32,22 @@ export type GameEvent =
   | { type: 'room-abandoned'; cellKey: string; kind: RoomPuzzleKind }
   /** Big in-room moments characters react to (AAA 5.1): pangram, Full Bloom, … */
   | { type: 'room-notable'; kind: RoomPuzzleKind; note: string }
-  | { type: 'fragment-found'; fragmentId: string }
+  /**
+   * A page became hers. `via` names the SOLVE CHANNEL that paid for it, and is
+   * absent for every other faucet (a violet draw, a letter, a testimony scene).
+   *
+   * ── ROUND 18 DEFECT (verifier): THE VALVE COUNTED THE WRONG FAUCET ─────────
+   * `solveChannelFiledToday` used to ask "did a fragment BELONGING to this
+   * channel arrive today", which is a question about the page rather than about
+   * the tap. That was harmless only while the channel label was welded to the
+   * fragment kind. The moment REVIEW_AA §5.1's re-route put lintel-labelled
+   * pages into the violet drip, entering a mystery room CONSUMED the lintel
+   * channel's daily allowance — so on exactly the days the player drew the good
+   * room, solving every word game in the house paid nothing. That is §5.1's
+   * finding reintroduced through a side door, and silently. The valve now asks
+   * about the tap, which is what it always meant.
+   */
+  | { type: 'fragment-found'; fragmentId: string; via?: SolveChannelId }
   /**
    * A solve made sealed pages out (round 10's seal; `DECIPHER_YIELD_BY_TIER`
    * sets how many at once, so this is a batch, not one id). `fragment-found`

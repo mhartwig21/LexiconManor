@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ARTIFACT_BLOCKLIST, gateOk, NAME_BLOCKLIST, TONE_BLOCKLIST, toneOk,
+  ARTIFACT_BLOCKLIST, gateOk, NAME_BLOCKLIST, proseProblems, TONE_BLOCKLIST, toneOk,
 } from '../../content/generate-gate';
 import { BLOCKLIST } from '../../content/lib/dictionary';
 import type { CipherPuzzle } from '../../src/engine/puzzles/cipher';
 import type { CrosswordPuzzle } from '../../src/engine/puzzles/crossword';
-import type { HivePuzzle, TwistlePuzzle, WordWebPuzzle } from '../../src/engine/types';
+import type {
+  ForgottenWordPuzzle, HivePuzzle, TwistlePuzzle, WordWebPuzzle,
+} from '../../src/engine/types';
 import cipherData from '../../content/generated/cipher.json';
 import crosswordData from '../../content/generated/crossword.json';
+import forgottenWordData from '../../content/generated/forgotten-word.json';
 import hiveData from '../../content/generated/hive.json';
 import twistleData from '../../content/generated/twistle.json';
 import wordWebData from '../../content/generated/word-web.json';
@@ -49,6 +52,21 @@ describe('gate self-check', () => {
      */
     for (const w of ['midget', 'midgets', 'spastic', 'imbecile', 'mongoloid']) {
       expect(TONE_BLOCKLIST.has(w), w).toBe(true);
+    }
+    /**
+     * ROUND 9 — the escape this suite could not have caught, because it only
+     * ever asked whether a LEMMA was on a LIST. RETARDED shipped 9× to the
+     * Conservatory and once as a Gallery target with `retard` unlisted; the
+     * fix is families, in content/lib/safety.ts, and the whole battery lives
+     * in tests/content-safety.test.ts. These anchors keep the two suites
+     * honest about each other.
+     */
+    for (const w of [
+      'retard', 'retarded', 'retardation', 'retardant',   // the family, not the lemma
+      'coon', 'pedophile', 'queers', 'gimp', 'cripple', 'dildos', 'nazi',
+    ]) {
+      expect(gateOk(w), w).toBe(false);
+      expect(toneOk(w), w).toBe(false);
     }
     for (const w of ['cory', 'benny', 'jill', 'howe', 'rex', 'dirk', 'hank', 'jean', 'kays', 'mays', 'shaw']) {
       expect(NAME_BLOCKLIST.has(w), w).toBe(true);
@@ -107,6 +125,41 @@ describe('anchor + micro pool lint (the manor never prints a gated word)', () =>
   it('crossword answers all pass the cozy gate', () => {
     for (const p of crosswordData as CrosswordPuzzle[]) {
       for (const e of p.entries) expect(displayable(e.answer), `${p.id}: ${e.answer}`).toBe(true);
+    }
+  });
+
+  /**
+   * ROUND 9 (safety sweep) — the surfaces this suite could not see.
+   *
+   * Everything above lints WORDS. Three player-visible surfaces are SENTENCES
+   * and had no lint at all: the Library's category labels and its naming-act
+   * decoys (which the player reads as prose and picks between), and the whole
+   * of the Study — headword, three definitions, etymology and usage — whose
+   * generator called no gate whatsoever. Prose gets the absolute standard
+   * (`proseProblems`), never the tone list, so Ellery keeps her grief.
+   */
+  it('word-web category labels and decoys carry nothing on the absolute standard', () => {
+    for (const p of wordWebData as WordWebPuzzle[]) {
+      for (const g of p.groups) {
+        // `decoys` is a generator-side fairness field (AAA 2.11) that
+        // engine/types.ts does not model; read it structurally.
+        const decoys = (g as { decoys?: string[] }).decoys ?? [];
+        for (const label of [g.theme, ...decoys]) {
+          expect(proseProblems(label), `${p.id}: "${label}"`).toEqual([]);
+        }
+      }
+    }
+  });
+
+  it('forgotten-word headwords pass the cozy gate and their prose the absolute standard', () => {
+    for (const e of forgottenWordData as ForgottenWordPuzzle[]) {
+      expect(displayable(e.word), `${e.id}: ${e.word}`).toBe(true);
+      for (const text of [
+        e.definitions.plain, e.definitions.poetic, e.definitions.riddle,
+        e.etymology, e.usage,
+      ]) {
+        expect(proseProblems(text ?? ''), `${e.id}: ${text}`).toEqual([]);
+      }
     }
   });
 });

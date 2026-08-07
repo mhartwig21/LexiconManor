@@ -20,7 +20,8 @@ import { createDialogueSlice } from '../src/app/slices/dialogue';
 import { createJournalSlice } from '../src/app/slices/journal';
 import { createMetaSlice } from '../src/app/slices/meta';
 import {
-  cellKey, createManor, deweyCell, DIRS, opposite, placeRoom, resolveDoors, roomAt, rowTier,
+  cardOpensOntoSanctum, cellKey, createManor, deweyCell, DIRS, opposite, placeRoom, resolveDoors,
+  roomAt, rowTier, SANCTUM_DOOR_CELL,
 } from '../src/engine/manor/grid';
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCategory } from '../src/engine/types';
 import { MANOR_COLS, MANOR_ROWS } from '../src/engine/types';
@@ -544,5 +545,123 @@ describe("Fern's friendship is the padlock arc's supply side", () => {
 
   it('still leaves the upper storeys lean — preparation happens downstairs', () => {
     expect(keyRate(5, 1)).toBeLessThan(keyRate(0, 1));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND 13 — THE LANDING OFFER (AAA 4.1 / 4.6 / 4.10d/e / 4.14)
+// ---------------------------------------------------------------------------
+
+/**
+ * ═══ THE GATE WAS A CARD, AND NOTHING IN THE GAME KNEW IT ═════════════════
+ *
+ * `atSanctumDoor` needs the room drafted at (2,5) to draw a north door
+ * matching the Sanctum's sealed south one. Over the real deck and the rigid
+ * rotation, entering the landing from below, only ~28% of the plans eligible
+ * up there do — so a bare 3-card offer contains one on ~61% of draws, and two
+ * evenings in five the 22+ step climb arrived at an offer that could not open
+ * the door. The drafting engine now carries the two terms
+ * `engine/economy/steps.ts SANCTUM_ARC` supplies, and they are inert at every
+ * other cell in the manor, which is what keeps `deckMixAt` — and the whole
+ * 4.10b clock derived from it — untouched.
+ */
+describe('the landing offer leans toward the door (round 13)', () => {
+  const landingCtx = (over: Partial<DraftRollCtx> = {}): DraftRollCtx =>
+    ctx({ gems: 2, entryDir: 'N', ...over });
+
+  const opensNorth = (manor: ManorState, card: { id: string }) =>
+    cardOpensOntoSanctum(
+      BASE_DECK.find((c) => c.id === card.id) ?? cardById(card.id)!,
+      'N', manor, SANCTUM_DOOR_CELL,
+    );
+
+  const offerRate = (over: Partial<DraftRollCtx>, samples = 1200) => {
+    let hit = 0;
+    for (let seed = 0; seed < samples; seed++) {
+      const manor = createManor(seed);
+      const cards = rollCards(DECK, manor, SANCTUM_DOOR_CELL, landingCtx(over));
+      if (cards.some((c) => opensNorth(manor, c))) hit += 1;
+    }
+    return hit / samples;
+  };
+
+  it('leaves the bare offer exactly where the finding measured it', () => {
+    const bare = offerRate({});
+    expect(bare, `bare landing offer rate ${bare.toFixed(3)}`).toBeGreaterThan(0.5);
+    expect(bare).toBeLessThan(0.75);
+  });
+
+  it('raises it strictly with warmth, and never all the way to certainty', () => {
+    const cold = offerRate({ sanctumPlanWarmth: 0 });
+    const half = offerRate({ sanctumPlanWarmth: 0.5 });
+    const full = offerRate({ sanctumPlanWarmth: 1 });
+    expect(half).toBeGreaterThan(cold);
+    expect(full).toBeGreaterThan(half);
+    // The draft stays a decision (AAA 4.6): the arc shortens the wait, it
+    // never hands her the door.
+    expect(full).toBeLessThan(0.99);
+  });
+
+  it('guarantees the door in the FREE slot once the mercy is armed (AAA 4.14)', () => {
+    const armed = offerRate({ sanctumMercy: true });
+    expect(armed, `mercy offer rate ${armed.toFixed(3)}`).toBeGreaterThan(0.9);
+    // …and the guarantee rides the FREE slot rather than adding a fourth card,
+    // so AAA 4.1's promise is intact: with zero gems the card that opens the
+    // door is the guaranteed-takeable one, not a premium she cannot pay for.
+    let freeAndOpens = 0;
+    for (let seed = 0; seed < 400; seed++) {
+      const manor = createManor(seed);
+      const cards = rollCards(
+        DECK, manor, SANCTUM_DOOR_CELL, landingCtx({ gems: 0, sanctumMercy: true }));
+      expect(cards[0]!.gemCost).toBe(0);
+      if (opensNorth(manor, cards[0]!)) freeAndOpens += 1;
+    }
+    expect(freeAndOpens / 400, `free slot opens north on ${freeAndOpens}/400`)
+      .toBeGreaterThan(0.9);
+  });
+
+  it('is INERT at every other cell in the manor', () => {
+    // The landing terms may not touch one other draft in the game — otherwise
+    // they move `deckMixAt`, and with it the 4.10b clock every campaign number
+    // is calibrated against.
+    for (let seed = 0; seed < 200; seed++) {
+      const manor = createManor(seed);
+      for (const cell of [
+        { col: 2, row: 1 }, { col: 0, row: 4 }, { col: 4, row: 5 },
+        { col: 1, row: SANCTUM_DOOR_CELL.row },
+      ] as Cell[]) {
+        const plain = rollCards(DECK, manor, cell, landingCtx()).map((c) => c.id);
+        const warmed = rollCards(DECK, manor, cell, landingCtx({
+          sanctumPlanWarmth: 1, sanctumMercy: true,
+        })).map((c) => c.id);
+        expect(warmed).toEqual(plain);
+      }
+    }
+  });
+
+  it('keeps the per-cell stream: the landing arc is not a reroll', () => {
+    // AAA 4.8 — the offer behind a door is a property of the door, so warming
+    // the arc must not perturb any OTHER door's stream, and the same warmth on
+    // the same day must give the same three cards every time it is asked.
+    const manor = createManor(77);
+    const a = rollCards(DECK, manor, SANCTUM_DOOR_CELL,
+      landingCtx({ sanctumPlanWarmth: 0.5 })).map((c) => c.id);
+    const b = rollCards(DECK, manor, SANCTUM_DOOR_CELL,
+      landingCtx({ sanctumPlanWarmth: 0.5 })).map((c) => c.id);
+    expect(a).toEqual(b);
+    const other: Cell = { col: 0, row: 2 };
+    const before = rollCards(DECK, manor, other, landingCtx()).map((c) => c.id);
+    rollCards(DECK, manor, SANCTUM_DOOR_CELL, landingCtx({ sanctumPlanWarmth: 1 }));
+    expect(rollCards(DECK, manor, other, landingCtx()).map((c) => c.id)).toEqual(before);
+  });
+
+  it('rollOffer supplies the heading, so a caller cannot forget to', () => {
+    // The door she stands at IS her heading through it. Without this the
+    // landing terms would silently ask the question for the wrong wall.
+    const manor = createManor(4242);
+    const from: Cell = { col: SANCTUM_DOOR_CELL.col, row: SANCTUM_DOOR_CELL.row - 1 };
+    const offer = rollOffer(
+      DECK, manor, from, 'N', SANCTUM_DOOR_CELL, ctx({ gems: 2, sanctumMercy: true }));
+    expect(offer.cards.some((c) => opensNorth(manor, c))).toBe(true);
   });
 });

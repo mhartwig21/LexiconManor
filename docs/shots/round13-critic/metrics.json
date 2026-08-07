@@ -1,0 +1,211 @@
+{
+  "library": {
+    "boardId": "web-d13",
+    "tier": 1,
+    "themes": [
+      "yellow:Types of Cake",
+      "blue:Things That Can Be Rich",
+      "green:Rhymes with “CARROT”",
+      "purple:___ TOP"
+    ],
+    "namings": [
+      {
+        "theme": "Types of Cake",
+        "none": true
+      },
+      {
+        "theme": "Things That Can Be Rich",
+        "none": true
+      },
+      {
+        "theme": "Rhymes with “CARROT”",
+        "none": true
+      },
+      {
+        "theme": "___ TOP",
+        "words": [
+          "BLACK",
+          "TABLE",
+          "HILL",
+          "DESK"
+        ],
+        "cls": "anch-card ww-name anch-pop",
+        "prompt": "The last four fall togetherBLACK · TABLE · HILL · DESKWhat thread binds them?Things in a CinemaCan Follow “HONEY”___ TOP",
+        "opts": [
+          {
+            "text": "Things in a Cinema",
+            "w": 328.8,
+            "h": 44,
+            "clipped": false,
+            "lines": null
+          },
+          {
+            "text": "Can Follow “HONEY”",
+            "w": 328.8,
+            "h": 44,
+            "clipped": false,
+            "lines": null
+          },
+          {
+            "text": "___ TOP",
+            "w": 328.8,
+            "h": 44,
+            "clipped": false,
+            "lines": null
+          }
+        ]
+      }
+    ],
+    "endscreen": "The Library\n\nWeave the sixteen words.\n\nFour threads of four.\n\nTypes of Cake\nSPONGE · MADEIRA · CARROT · MARBLE\n●\nThings That Can Be Rich\nSOIL · SAUCE · HISTORY · UNCLE\n●●●\nRhymes with “CARROT”\nPARROT · CLARET · GARRET · KARAT\n●●\n___ TOP\nBLACK · TABLE · HILL · DESK\n●●●●\nPerfect!\n\nPerfect! Every thread true.",
+    "banners": [
+      {
+        "text": "Types of Cake SPONGE · MADEIRA · CARROT · MARBLE ●",
+        "h": 75.5,
+        "clipped": false
+      },
+      {
+        "text": "Things That Can Be Rich SOIL · SAUCE · HISTORY · UNCLE ●●●",
+        "h": 75.5,
+        "clipped": false
+      },
+      {
+        "text": "Rhymes with “CARROT” PARROT · CLARET · GARRET · KARAT ●●",
+        "h": 75.5,
+        "clipped": false
+      },
+      {
+        "text": "___ TOP BLACK · TABLE · HILL · DESK ●●●●",
+        "h": 75.5,
+        "clipped": false
+      }
+    ]
+  },
+  "library375": {
+    "tiles": [
+      {
+        "t": "HIGH",
+        "w": 80.5,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "STRAWBERRY",
+        "w": 80.6,
+        "h": 68,
+        "fs": "16px",
+        "overflow": false
+      },
+      {
+        "t": "WARRIOR",
+        "w": 80.5,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "COBRA",
+        "w": 80.6,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "LIME",
+        "w": 80.5,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "EAGLE",
+        "w": 80.6,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "FLASH",
+        "w": 80.5,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "AGREE",
+        "w": 80.6,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "DECREE",
+        "w": 80.5,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "CHERRY",
+        "w": 80.6,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "APPLE",
+        "w": 80.5,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "SPOT",
+        "w": 80.6,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "TREE",
+        "w": 80.5,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "TOMATO",
+        "w": 80.6,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "DEGREE",
+        "w": 80.5,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      },
+      {
+        "t": "MARQUEE",
+        "w": 80.6,
+        "h": 68,
+        "fs": "14.72px",
+        "overflow": false
+      }
+    ],
+    "boardBottom": 451.3,
+    "vh": 667,
+    "inView": true
+  },
+  "study": {
+    "text": "The Study\n\nAn entry in his hand. The headword is torn away.\n\n9 letters — whisper it back.\n\nA HEADWORD IS MISSING\n\n“The line a house draws between itself and the weather.”\n\nThe strip of floor beneath a doorway; the point where something begins.\n\n9 letters · 5 whispers left\nETYMOLOGY\nWhere it came from.\nUnseal · −2 steps\nUSAGE\nThe word in a sentence.\nUnseal · −2 steps\nWhisper\nWHISPERED · HIS LETTERS · IN PLACE\nNothing whispered yet.",
+    "buttons": [
+      "Unseal · −2 steps",
+      "Unseal · −2 steps",
+      "Whisper",
+      "Leave it for tomorrow"
+    ]
+  }
+}

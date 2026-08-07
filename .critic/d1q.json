@@ -1,0 +1,5 @@
+[
+  {"text":"Things That Can Be Fresh","after":3000},
+  {"shot":"exploit2"},
+  {"eval":"document.body.innerText.slice(0,900)"}
+]

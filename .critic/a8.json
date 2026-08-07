@@ -1,0 +1,9 @@
+[
+  {"click":"button.chr-scene__btn","has":"Begin the day","after":2500},
+  {"shot":"bramble1"},
+  {"click":".dlg","after":900},
+  {"shot":"bramble2"},
+  {"click":".dlg","after":900},
+  {"shot":"bramble3"},
+  {"dump":true}
+]

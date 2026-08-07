@@ -1541,6 +1541,56 @@
         ]
       },
       "summary": "Ellery’s testimony: one word names the hole it would leave."
+    },
+    {
+      "id": "ellery.react.landing",
+      "trigger": "parlor",
+      "priority": 720,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "vol.volume-1.landing-reached"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "You stood at his door. Oh, don’t be modest, dear — the house told me before you did. It rearranges the stairs afterward, the way one plumps a cushion when a guest has finally gone home."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "He will have been unbearable. He is unbearable in exact proportion to how glad he is; I have thirty years of readings and the curve is remarkably clean."
+        }
+      ],
+      "summary": "Ellery: the house rearranges the stairs after someone reaches his door."
+    },
+    {
+      "id": "ellery.arc.knows",
+      "trigger": "parlor",
+      "priority": 530,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "fragmentsLegible",
+          "gte": 13
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "Every page in that journal is readable now, dear. Not filed — readable. I have watched people carry a great deal less than that up those stairs and come back down with the word anyway."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "So the reading is done, and what is left is only the climbing, which is the one part of this I was never any use at. Go on a day your legs can afford it. He has waited; he can wait for a Tuesday."
+        }
+      ],
+      "summary": "Ellery: the reading is done. What is left is the climb."
     }
   ]
 }

@@ -1,0 +1,7 @@
+[
+  {"text":"Leave it for tomorrow","after":2500},
+  {"eval":"Array.from(document.querySelectorAll('[role=button]')).map(function(e){return e.getAttribute('aria-label')})"},
+  {"click":"[aria-label*='Draft']","n":0,"after":2500},
+  {"eval":"Array.from(document.querySelectorAll('.bp-card')).map(function(c){return c.innerText.split('\\n')[0]+' >> '+(c.querySelector('.bp-doorsdiag')||{}).ariaLabel})"},
+  {"shot":"d3-draft3"}
+]

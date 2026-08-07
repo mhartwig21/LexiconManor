@@ -11,19 +11,21 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { DayRecord, ManorState, PlacedRoom, VolumeState } from '../src/engine/types';
 import { cellKey, createManor, SANCTUM_DOOR_CELL } from '../src/engine/manor/grid';
 import {
-  decipherYield, freshVolumeState, fragmentsToDecipher, legibleDayFlag, legibleDroughtDays,
-  legibleFragmentFlag, openedLetterFlag, sealedFragmentFlag, sealedFragmentIds, solvedFlag,
+  decipherYield, freshVolumeState, fragmentsToDecipher, FRAGMENTS_TO_DEDUCE, legibleDayFlag,
+  legibleDroughtDays, legibleFragmentFlag, openedLetterFlag, sealedFragmentFlag,
+  sealedFragmentIds, solvedFlag,
   DECIPHER_YIELD_BY_TIER,
   type VolumeContent,
 } from '../src/engine/volume';
 import {
-  alphabetFacts, arrivalShade, crossRefs, definitionSlots, displayedFragmentIds, foundByKind,
-  glancedFragmentFlag, glancedFragmentIds, guessHistory, guessVerdict, hasSeen, isLegible,
-  journalNudge, journalUnread, landingFlag, letterBoxes, nextUninterpreted, NOTHING_UNREAD,
-  sanctumReadiness, sealedCount, SPENT_ARRIVAL_STEPS, THIN_FILE_THRESHOLD,
+  alphabetFacts, arrivalShade, crossRefs, DEDUCTION_FLOOR, definitionSlots, displayedFragmentIds,
+  foundByKind, glancedFragmentFlag, glancedFragmentIds, guessHistory, guessVerdict, hasSeen,
+  isLegible, journalNudge, journalUnread, landingFlag, letterBoxes, nextUninterpreted,
+  NOTHING_UNREAD, sanctumReadiness, sealedCount, SPENT_ARRIVAL_STEPS, THIN_FILE_THRESHOLD,
   VERDICT_TOKENS, viewedFragmentFlag, viewedFragmentIds,
   type GuessVerdict, type JournalTab,
 } from '../src/engine/journal';
+import { KNOWLEDGE } from '../src/engine/economy/simulate';
 import { solveKeys } from '../src/engine/economy/steps';
 import { FLAG_REGEX } from '../src/engine/dialogue/validate';
 import { getDialogueFile } from '../src/engine/dialogue/content';
@@ -248,28 +250,85 @@ describe('nudges — sympathetic, never silence (AAA 4.16)', () => {
         expect(line.text.toLowerCase()).not.toMatch(/\bdear\b/);
       }
     }
-    // Every fragment count below the threshold has a line waiting; the first
-    // count at or above it has none (the signal stands down, AAA 4.16).
+    // ── ROUND-14 BLOCKER: THE NUDGE RETIRED AT 4 AND DEDUCTION NEEDED 13. ──
+    // The bands used to stop at THIN_FILE_THRESHOLD, and SanctumView suppressed
+    // the whole nudge there, so from four readable pages to about thirteen —
+    // measured median day 5 to median day 20 for PROFILE_DECENT, most of the
+    // volume — she stood at the door and got the silence 4.16 forbids. The
+    // bands now tile 0 → DEDUCTION_FLOOR with no gap and no overlap, and the
+    // ceiling is DERIVED (engine/volume.FRAGMENTS_TO_DEDUCE) rather than
+    // retyped, so this cannot come apart again by editing one number.
+    //
     // ROUND 11: the gates count pages she can READ, not pages she is carrying
     // (engine/journal.sanctumReadiness) — four sealed smudges used to retire
     // the one AAA 4.16 signal in the game for a player with no constraint on
     // the alphabet plate at all.
-    const covers = (count: number) =>
-      gates.some((g) =>
+    const covering = (count: number) =>
+      gates.filter((g) =>
         (g.conditions ?? []).every((c) =>
           c.kind === 'fragmentsLegible' &&
           (c.gte === undefined || count >= c.gte) &&
           (c.lte === undefined || count <= c.lte)));
-    for (let n = 0; n < THIN_FILE_THRESHOLD; n++) {
-      expect(covers(n), `no authored gate line for ${n} fragments`).toBe(true);
+    for (let n = 0; n < DEDUCTION_FLOOR; n++) {
+      expect(covering(n).length, `no authored gate line for ${n} legible fragments`)
+        .toBeGreaterThanOrEqual(1);
+      // Two eligible bands at one count is a coin toss between two sentences
+      // about the same file — the tiling has to be a partition, not a pile.
+      expect(covering(n).map((g) => g.id), `overlapping gate bands at ${n}`).toHaveLength(1);
     }
-    expect(covers(THIN_FILE_THRESHOLD)).toBe(false);
+    // ...and the signal stands down exactly where deduction becomes possible.
+    expect(covering(DEDUCTION_FLOOR)).toEqual([]);
+    // The old edge is still a real edge, and it is INSIDE the nudged range now.
+    expect(covering(THIN_FILE_THRESHOLD).length).toBe(1);
+    expect(THIN_FILE_THRESHOLD).toBeLessThan(DEDUCTION_FLOOR);
+  });
+
+  /**
+   * THE TWO NUMBERS ARE ONE NUMBER (round 14). `DEDUCTION_FLOOR` and the
+   * campaign model's `KNOWLEDGE.fragmentsToDeduce` described the same
+   * quantity — how many readable pages pin the word — from opposite sides of
+   * the codebase, and neither doc named the other. They are pinned to each
+   * other here, in the mystery's own suite, so a re-derivation in either place
+   * goes red instead of silently re-opening the silent band.
+   */
+  it('the deduction floor is the same number the campaign model samples', () => {
+    expect(DEDUCTION_FLOOR).toBe(FRAGMENTS_TO_DEDUCE[0]);
+    expect(FRAGMENTS_TO_DEDUCE[0]).toBe(KNOWLEDGE.fragmentsToDeduce[0]);
+    expect(FRAGMENTS_TO_DEDUCE[1]).toBe(KNOWLEDGE.fragmentsToDeduce[1]);
+    // Sanity on the band itself: optimistic end below resistant end, and the
+    // resistant end inside the volume's authored supply.
+    expect(FRAGMENTS_TO_DEDUCE[0]).toBeLessThan(FRAGMENTS_TO_DEDUCE[1]);
+    expect(FRAGMENTS_TO_DEDUCE[1]).toBeLessThanOrEqual(volume.fragments.length);
+  });
+
+  it('readiness reports both bands, and they are not the same band', () => {
+    const ids = (n: number) => volume.fragments.slice(0, n).map((f) => f.id);
+    const at = (n: number) => sanctumReadiness(volume, withFound(...ids(n)));
+    expect(at(THIN_FILE_THRESHOLD).enough).toBe(true);
+    expect(at(THIN_FILE_THRESHOLD).deducible).toBe(false);
+    expect(at(DEDUCTION_FLOOR).deducible).toBe(true);
+    expect(at(DEDUCTION_FLOOR - 1).deducible).toBe(false);
+  });
+
+  /**
+   * The screen that suppresses the nudge must suppress it on the DEDUCTION
+   * band, not on the thin-file one. This is a source lint because the defect
+   * was a single identifier: `readiness.enough` where `readiness.deducible`
+   * belonged, and every test in this file stayed green through it.
+   */
+  it('the Sanctum door retires the nudge only once she can deduce', () => {
+    const src = readFileSync(
+      join(__dirname, '..', 'src', 'ui', 'sanctum', 'SanctumView.tsx'), 'utf8',
+    );
+    expect(src).toMatch(/readiness\.deducible \|\| guessedToday/);
+    expect(src, 'the thin-file edge must not gate the nudge again')
+      .not.toMatch(/readiness\.enough \|\| guessedToday/);
   });
 
   // The engine must not have quietly regrown the strings.
   it('sanctumReadiness carries counts only — no prose', () => {
     const r = sanctumReadiness(volume, fresh());
-    expect(Object.keys(r).sort()).toEqual(['enough', 'filed', 'legible', 'total']);
+    expect(Object.keys(r).sort()).toEqual(['deducible', 'enough', 'filed', 'legible', 'total']);
   });
 
   // ── ROUND-11 BLOCKER: THE GATES COUNTED PAGES SHE CANNOT READ. ────────────
@@ -1095,10 +1154,19 @@ describe('solving matters — the live channel, end to end', () => {
 
     const st = useManorStore.getState();
     expect(sealedNow().has('v1-d1')).toBe(false);          // made out by the solve
-    // …and the room's own channel paid a lintel engraving, already legible.
-    const engravings = st.volume.foundFragmentIds.filter((id) => id.startsWith('v1-e'));
-    expect(engravings.length).toBe(1);
-    expect(sealedNow().has(engravings[0]!)).toBe(false);
+
+    // …AND the room's own channel paid a second page, already legible.
+    //
+    // ROUND 17 (REVIEW_AA §5.1): this used to look for an id starting `v1-e`,
+    // because the lintel channel could only ever pay an engraving. The re-route
+    // means the lintel now pays whatever the volume routes to it — on a fresh
+    // file that is a definition line — so the assertion is about the CHANNEL
+    // paying exactly once and paying legibly, which is what the spine wiring is
+    // actually responsible for. Which page it is belongs to the volume JSON and
+    // is asserted there (tests/volume-channels.test.ts).
+    const paid = st.volume.foundFragmentIds.filter((id) => id !== 'v1-d1');
+    expect(paid.length, 'the lintel channel did not pay the solve').toBe(1);
+    expect(sealedNow().has(paid[0]!), 'a page earned by solving arrived sealed').toBe(false);
   });
 
   it('KEYS ACCRUE FROM SOLVES — the climb is bought with skill (owner directive 3)', () => {

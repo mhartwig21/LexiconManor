@@ -67,6 +67,12 @@ export const crosswordAdapter: RoomPuzzleAdapter<CrosswordPuzzleEx, CrosswordRoo
 
   select: (opts) => selectByTier(CROSSWORD_POOL, opts),
 
+  // §5.3 — filled squares, revealed cells and the charged-check signatures are
+  // plain JSON data. (`letters` is a Record<number,string>; JSON stringifies
+  // the keys, and JS reads them back the same either way.)
+  find: (id) => CROSSWORD_POOL.find((p) => p.id === id),
+  stateVersion: 1,
+
   start(puzzle, ctx): CrosswordRoomState {
     return { cw: startCrossword(puzzle), tier: ctx.tier, attempts: 0, lastFeedback: null };
   },

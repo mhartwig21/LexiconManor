@@ -1,0 +1,7 @@
+[
+  {"click":"[aria-label*='Draft']","n":0,"after":2200},
+  {"eval":"Array.from(document.querySelectorAll('.bp-card')).map(function(c){return c.innerText.split('\\n')[0]+' >> '+(c.querySelector('.bp-doorsdiag')||{}).ariaLabel})"},
+  {"click":".bp-card","has":"Conservatory","after":3500},
+  {"shot":"hive"},
+  {"eval":"document.body.innerText.slice(0,900)"}
+]

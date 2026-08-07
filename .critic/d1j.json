@@ -1,0 +1,10 @@
+[
+  {"eval":"document.body.innerText.slice(0,300)"},
+  {"click":"button.ww-tile","has":"HELMET","after":400},
+  {"click":"button.ww-tile","has":"TURBAN","after":400},
+  {"click":"button.ww-tile","has":"VISOR","after":400},
+  {"click":"button.ww-tile","has":"CROWN","after":400},
+  {"eval":"Array.from(document.querySelectorAll('.ww-tile')).map(t=>t.textContent+(t.className.includes('sel')?'*':''))"},
+  {"click":"button.anch-btn--primary","after":2000},
+  {"eval":"document.body.innerText.slice(0,400)"}
+]

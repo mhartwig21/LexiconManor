@@ -1,0 +1,8 @@
+[
+  {"click":"button.chr-scene__btn","has":"Begin the day","after":2500},
+  {"dialogue":25},
+  {"click":"button.dlg-choice","has":"Rooms","after":1200},
+  {"dialogue":25},
+  {"shot":"post-dlg"},
+  {"eval":"Array.from(document.querySelectorAll('svg [role], svg g, svg button, [class*=cell]')).filter(e=>e.getAttribute('aria-label')).map(e=>e.tagName+'|'+(e.getAttribute('class')||'')+'|'+e.getAttribute('aria-label')).slice(0,60)"}
+]

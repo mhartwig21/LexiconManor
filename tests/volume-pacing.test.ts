@@ -72,7 +72,8 @@ import {
   type VolumeContent,
 } from '../src/engine/volume';
 import {
-  campaignProfileForDay, deckMixAt, medianOf, PROFILE_SKILLED, quantileOf, simulateDay,
+  campaignProfileForDay, deckMixAt, medianOf, PROFILE_DECENT, PROFILE_SKILLED, quantileOf,
+  simulateCampaigns, simulateDay,
 } from '../src/engine/economy/simulate';
 import { BASE_DECK } from '../src/engine/manor/deck';
 import { categoryWeight, RARITY_WEIGHTS } from '../src/engine/manor/drafting';
@@ -369,7 +370,17 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
    */
   it('the guess, the audience and the arrival lines live at the landing', () => {
     const view = readFileSync(join(root, 'src', 'ui', 'sanctum', 'SanctumView.tsx'), 'utf8');
-    expect(view, 'SanctumView no longer consults atSanctumDoor').toMatch(/atSanctumDoor\(s\.manor\)/);
+    // ROUND 16: the screen reads the THREE-VALUED `sanctumStanding` (a
+    // boolean collapsed 'landing-sealed' into 'away' and told a player
+    // standing on the landing to climb — AAA 4.16). `atDoor` is still the
+    // gate; it is now derived from the shared predicate rather than from a
+    // second one, and the sealed case must have its own branch.
+    expect(view, 'SanctumView no longer consults the shared standing predicate')
+      .toMatch(/sanctumStanding\(s\.manor\)/);
+    expect(view, "atDoor must BE the 'at-door' standing, not a parallel predicate")
+      .toMatch(/const atDoor = standing === 'at-door'/);
+    expect(view, 'the sealed landing must be a case of its own, not folded into "away"')
+      .toMatch(/const sealedLanding = standing === 'landing-sealed'/);
     expect(view, 'the guess row must be gated on standing at the door').toMatch(/\{atDoor && \(/);
     expect(view, "the Portrait's audience must be gated on the landing")
       .toMatch(/phase === 'idle' && atDoor && audienceButton/);
@@ -445,6 +456,100 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
     for (const run of runs) {
       expect(worstDryRun(owedDays(run), 'filed')).toBeLessThanOrEqual(PITY_DROUGHT_DAYS + 1);
     }
+  });
+});
+
+/**
+ * ═══ THE SEAL'S BITE, FOR BOTH PLAYERS (AAA 4.10g, round 14) ═══════════════
+ *
+ * 4.10g published the overnight clause explicitly for "a skilled player's
+ * days" and stated NOTHING for the median player — the owner, the evening
+ * 4.10b clocks — so the criterion had no row a critic could pass or fail for
+ * the person the mechanic was built for ("solving needs to matter"). That is
+ * the round-6/11/12 escape shape exactly: a number verified against a player
+ * the game is not describing.
+ *
+ * Her rates are now measured here, beside his, and the ASYMMETRY is asserted
+ * rather than assumed — violet share is a function of ROW (`deckMixAt`: ≈2.0%
+ * at row 0, ≈10.5% at row 6), she tops out around the third landing and he
+ * climbs past it, so his numbers must stay strictly above hers. If that ever
+ * inverts, a profile has stopped describing the player it is named for.
+ *
+ * These live in the MYSTERY's suite because the seal is the mystery's
+ * mechanic; A2's tests/economy-simulation.test.ts holds the same shape for the
+ * skilled player and owns the economy side of it (see the report's
+ * cross-agent request).
+ */
+describe('the seal bites for the median player too, and the split is measured (AAA 4.10g)', () => {
+  const N = 200;
+  const DAYS = 45;
+  const daysOf = (profile: typeof PROFILE_DECENT) =>
+    simulateCampaigns(profile, N, DAYS, 31).flatMap((c) => c.days);
+  const share = (days: ReturnType<typeof daysOf>, f: (d: (typeof days)[number]) => boolean) =>
+    days.filter(f).length / days.length;
+
+  const decent = daysOf(PROFILE_DECENT);
+  const skilled = daysOf(PROFILE_SKILLED);
+
+  const metViolet = (d: (typeof decent)[number]) => d.fragmentsFound > 0;
+  const madeOut = (d: (typeof decent)[number]) => d.pagesMadeOut > 0;
+  const overnight = (d: (typeof decent)[number]) => d.sealedBacklog > 0;
+
+  /**
+   * HER OVERNIGHT RATE, PUBLISHED. Measured 13.6–14.9% across seeds and
+   * campaign counts; the band is wide enough to survive a re-seed and narrow
+   * enough that a retune has to come and change this line on purpose.
+   */
+  it('a sealed page survives to the median player’s next dawn on 10–20% of her days', () => {
+    const r = share(decent, overnight);
+    expect(r, `median-player overnight rate was ${(100 * r).toFixed(1)}%`)
+      .toBeGreaterThanOrEqual(0.10);
+    expect(r, `median-player overnight rate was ${(100 * r).toFixed(1)}%`)
+      .toBeLessThanOrEqual(0.20);
+  });
+
+  it('and on 25–50% of a skilled player’s days — the clause 4.10g already published', () => {
+    const r = share(skilled, overnight);
+    expect(r).toBeGreaterThanOrEqual(0.25);
+    expect(r).toBeLessThanOrEqual(0.50);
+  });
+
+  it('a solve makes a page out on ≥1 day in 5 for her, ≥1 in 3 for him', () => {
+    expect(share(decent, madeOut)).toBeGreaterThanOrEqual(0.20);
+    expect(share(skilled, madeOut)).toBeGreaterThanOrEqual(0.33);
+  });
+
+  /**
+   * THE PREMISE OF THE QUALIFICATION, PINNED. 4.10g qualifies her made-out
+   * clause rather than tuning it, on the grounds that the ceiling is
+   * ARITHMETIC: a page can only be made out if she is holding one, and her
+   * overnight backlog median is 0 — so her made-out rate is pinned to how often
+   * she MEETS a violet room. If the backlog median ever rises, that argument
+   * has expired and the clause owes a retune instead of a footnote.
+   */
+  it('her made-out rate is pinned to her violet-met rate (backlog median 0)', () => {
+    expect(medianOf(decent.map((d) => d.sealedBacklog))).toBe(0);
+    const met = share(decent, metViolet);
+    const out = share(decent, madeOut);
+    expect(out).toBeLessThanOrEqual(met);
+    // ...and she meets one often enough to be a mechanic, rarely enough to
+    // stay a rare room (4.10g's own two bounds).
+    expect(met).toBeGreaterThan(0.15);
+    expect(met).toBeLessThan(0.50);
+  });
+
+  it('the climb is what separates the two profiles — his rates strictly exceed hers', () => {
+    expect(share(skilled, metViolet)).toBeGreaterThan(share(decent, metViolet));
+    expect(share(skilled, madeOut)).toBeGreaterThan(share(decent, madeOut));
+    expect(share(skilled, overnight)).toBeGreaterThan(share(decent, overnight));
+  });
+
+  /** The tripwire 4.10g names: solve nothing, make out nothing, all campaign. */
+  it('a player who solves nothing makes out nothing', () => {
+    const idle = simulateCampaigns(
+      { ...PROFILE_DECENT, attemptRate: 0, solveRate: 0, perfectRate: 0 }, 40, DAYS, 9,
+    ).flatMap((c) => c.days);
+    expect(idle.some((d) => d.pagesMadeOut > 0)).toBe(false);
   });
 });
 

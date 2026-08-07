@@ -101,13 +101,27 @@ import { createRng } from '../rng';
 import type { Cell, RoomCard, Tier } from '../types';
 import { BASE_DECK, deckFor, isKeyBearing, UTILITY_EFFECTS } from '../manor/deck';
 import { categoryWeight, rollCards, RARITY_WEIGHTS } from '../manor/drafting';
-import { createManor, rowTier } from '../manor/grid';
+import {
+  canAddressSanctum, cardOpensOntoSanctum, createManor, rowTier, SANCTUM_DOOR_CELL,
+} from '../manor/grid';
 import { getRoomAdapter } from '../rooms/registry';
-import { decipherYield } from '../volume';
+import {
+  channelStock, decipherYield, FRAGMENTS_TO_DEDUCE, LINTEL_CHANNEL, PITY_DROUGHT_DAYS,
+  STUDY_CHANNEL,
+} from '../volume';
+import type { VolumeDef } from '../types';
+// The authored volume itself, so the knowledge model below is DERIVED from the
+// content rather than transcribed from it (see `channelStock`). This module is
+// a dev/test instrument — nothing under src/app or src/ui imports it — so the
+// static JSON import cannot reach the eager bundle the 300KB budget guards.
+import volume1 from '../../../content/authored/volumes/volume-1.json';
+
+const VOLUME_1 = volume1 as unknown as VolumeDef;
 import {
   appendEntry, createLedger, ledgerTotal, stepsRemaining, stepsRefunded, stepsSpent,
   fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, moveAt, solveKeys,
-  teaArcPoints, teaBonus, DOOR_LOCKS, STEP_TABLE,
+  sanctumMercyArmed, sanctumPlanWarmth, teaArcPoints, teaBonus,
+  DOOR_LOCKS, SANCTUM_ARC, STEP_TABLE,
 } from './steps';
 import type { StepLedger } from '../types';
 
@@ -120,6 +134,75 @@ import type { StepLedger } from '../types';
  * two (the old name was `SANCTUM_ROW` and it meant row 7).
  */
 export const SANCTUM_LANDING_ROW = 6;
+
+/**
+ * ═══ ROUND-13 CORRECTION — THE MILESTONE WAS THE STOREY, NOT THE DOOR ══════
+ *
+ * Third recurrence of the round-6/7/11 escape, and the deepest: `simulateDay`
+ * returned `reachedSanctum: maxRow >= SANCTUM_LANDING_ROW` — merely standing on
+ * the storey. The gate the live game enforces is `atSanctumDoor`
+ * (engine/manor/grid.ts, consumed by the blueprint, the journal's guess flow
+ * and the Sanctum screen): the landing cell AND a north door on the room
+ * drafted there, matching the Sanctum's sealed south one.
+ *
+ * Measured over the real deck and the rigid rotation: entering the landing
+ * from below, only **27.7%** of tier-3-eligible plans place with a north door,
+ * and a real 3-card `rollCards` offer at (2,5) contains one on **60.8%** of
+ * offers. So roughly two evenings in five she paid 22+ steps to arrive at an
+ * offer that could not open the door — and every 4.10d/e number retuned across
+ * rounds 6–12 was measured against a storey, not a door.
+ *
+ * The model now DRAFTS THE LANDING FOR REAL: `landingDraft` below rolls the
+ * offer through the same `rollCards` the slice calls, at the same
+ * `SANCTUM_DOOR_CELL`, and asks the same `cardOpensOntoSanctum` the card face
+ * draws. `SimDayResult.reachedSanctum` IS `atSanctumDoor`; the storey is
+ * reported separately as `reachedLanding`, and the two can never be conflated
+ * again because `tests/economy-simulation.test.ts` pins the identity the way
+ * it already pins `SANCTUM_LANDING_ROW === SANCTUM_DOOR_CELL.row + 1`.
+ *
+ * ONE MODELLING CHOICE, STATED: when the offer contains a plan that opens
+ * north, the model assumes she takes it (p = the offer rate, 0.61 bare). That
+ * is the OPTIMISTIC bound, and it is only honest because round 13 also made it
+ * legible — `ui/blueprint/DraftModal.tsx` stamps "opens onto the Sanctum" on
+ * exactly those cards, off the same predicate. Without that stamp the right
+ * number would be the per-card 27.7%, and the arc below would be tuned against
+ * a decision the player cannot see. The UI change is load-bearing for this
+ * number; if it is ever removed, this model is wrong again.
+ */
+export const LANDING_ENTRY_DIR = 'N' as const;
+
+/** The live deck, memoised — `landingDraft` rolls a real offer per landing. */
+let landingDeck: readonly RoomCard[] | null = null;
+
+/**
+ * Roll the REAL offer at the Sanctum landing and answer the only question that
+ * matters up there: does any plan in it open onto the sealed door?
+ *
+ * Not modelled (documented, small, and both conservative): the live manor has
+ * more rooms placed by the time she gets up here, so `eligibleCards`' deck
+ * thinning differs slightly; and taking the north plan constrains which ROOM
+ * she ends up in, which the day model still draws from `deckMixAt`. Neither
+ * moves the door rate this function exists to measure.
+ */
+export function landingDraft(
+  seed: number,
+  arc: { planWarmth?: number; mercy?: boolean; keyAccess?: number } = {},
+): boolean {
+  landingDeck ??= deckFor([]);
+  const manor = createManor(seed);
+  const cards = rollCards(landingDeck, manor, SANCTUM_DOOR_CELL, {
+    gems: 2,
+    declinedLastDraft: [],
+    drawIndex: 0,
+    keyAccess: arc.keyAccess ?? 0,
+    entryDir: LANDING_ENTRY_DIR,
+    sanctumPlanWarmth: arc.planWarmth ?? 0,
+    sanctumMercy: arc.mercy ?? false,
+  });
+  return cards.some(
+    (c) => cardOpensOntoSanctum(c, LANDING_ENTRY_DIR, manor, SANCTUM_DOOR_CELL),
+  );
+}
 
 /**
  * THE REFILLS THE LIVE DECK CAN ACTUALLY PAY — read off `UTILITY_EFFECTS`
@@ -492,8 +575,21 @@ export interface SimDayResult {
   rooms: number;            // new rooms drafted + entered
   roomsSolved: number;
   maxRow: number;           // 1-based; 6 = the Sanctum landing (the live door)
-  /** Stood on the Sanctum landing — the second gate of AAA 4.10e. */
+  /**
+   * **The live second gate of AAA 4.10e — `atSanctumDoor`, not the storey.**
+   * She stood on the landing AND the plan she drafted there opened north onto
+   * the Sanctum's sealed door. Round 13: this used to be
+   * `maxRow >= SANCTUM_LANDING_ROW`, i.e. the storey alone, which the live game
+   * has never accepted as reaching anything.
+   */
   reachedSanctum: boolean;
+  /**
+   * Stood on the landing CELL — the climb, paid for, whatever it opened onto.
+   * Reported apart from `reachedSanctum` on purpose: conflating the two is the
+   * round-13 defect, and the gap between these two numbers is the thing the
+   * landing arc (`SANCTUM_ARC`) exists to close.
+   */
+  reachedLanding: boolean;
   /**
    * Violet rooms entered today. ROUND 11: these file SEALED pages — entering
    * gets the document, solving renders it legible (engine/volume.ts) — so this
@@ -526,9 +622,37 @@ export interface SimDayResult {
   stepsLeft: number;        // stepsRemaining at day end (0 for exhausted days)
   spent: number;
   refunded: number;
+  /**
+   * ROUND 17 (REVIEW_AA §5.2) — could she SAY A WORD to the Sanctum today, at
+   * all, at zero step cost? Read off the live predicate against a dawn manor
+   * (`canAddressSanctum(createManor(...))`), never asserted: the day begins in
+   * the Entrance Hall and the speaking tube is bolted to its wall, so this is
+   * true on day 1 of a fresh save — and it goes false the moment somebody
+   * deletes the tube, which is the point of measuring it rather than stating it.
+   */
+  couldSpeak: boolean;
   /** Estimated wall-clock length of the day (TIME_TABLE model), in minutes. */
   minutes: number;
   ledger: StepLedger;
+  /**
+   * Pages she could actually READ today, from every faucet (round 18). Written
+   * by `simulateCampaign` after the drip resolves — absent on a bare
+   * `simulateDay`, which knows nothing about a volume's stock. This is the
+   * numerator of REVIEW_AA's *"legible fragment on ≥90% of the first 14 days"*.
+   */
+  legibleToday?: number;
+  /** Pages FILED today, legible or not — the cozy half of the same promise. */
+  filedToday?: number;
+}
+
+/**
+ * Can the player address the Sanctum from where a day BEGINS? A fresh manor
+ * puts her in the Entrance Hall (`createManor`), and the tube is there
+ * (`SPEAKING_TUBE_CELL`), so this is the model's whole account of §5.2's
+ * headline metric: the day she first says a word at the door.
+ */
+export function canSpeakAtDawn(): boolean {
+  return canAddressSanctum(createManor(1));
 }
 
 const randInt = (rng: () => number, min: number, max: number) =>
@@ -575,7 +699,34 @@ export function simulateDay(
   rng: () => number,
   profile: SimProfile,
   timeRng?: () => number,
-  carry?: { sealedBacklog?: number },
+  carry?: {
+    sealedBacklog?: number;
+    /**
+     * Evenings she has ALREADY spent on the top storeys — `maxRow` at or above
+     * `SANCTUM_ARC.surveyRow0` — which is the landing arc's only fuel. Live
+     * source: `chronicles.dayRecords[].highestRow`, written every dusk and
+     * persisted forever (`surveyEveningsIn`). 0 on an isolated day, which is
+     * correct: an isolated day has no campaign behind it.
+     */
+    surveyEvenings?: number;
+    /** LEGIBLE fragments on the desk at dawn — the mercy's knowledge half. */
+    legibleFragments?: number;
+    /** Fern's key access, so the landing offer rolls the weights she really has. */
+    keyAccess?: number;
+    /**
+     * ROUND 17 (REVIEW_AA §5.2) — THE WORD HAS ALREADY BEEN SPOKEN, down the
+     * Entrance Hall's speaking tube, and the house is holding its doors for the
+     * walk up (engine/manor/tube.ts `sanctumAnswered` / `doorsHeldOpen`).
+     *
+     * Two effects, both live: the landing offer's mercy slot is armed outright
+     * (so the storey she pays for is the door she gets), and the padlocks on
+     * the upper rows stand open (so the last climb is a climb and not a key
+     * lottery). Both are inert on every day before the answer, which is why
+     * this cannot touch 4.10d's day-1 landing reach — it cannot be true on a
+     * day she has not already won the deduction.
+     */
+    sanctumAnswered?: boolean;
+  },
 ): SimDayResult {
   let ledger = createLedger(STEP_TABLE.dayStart);
   const tea = teaBonus(profile.brambleAffinity);
@@ -601,6 +752,21 @@ export function simulateDay(
   let row = 1;              // 1-based; the entrance
   let maxRow = 1;
   let seconds = 0;
+  // THE LANDING DRAFT (round 13). She gets exactly one at (2,5) per evening —
+  // the cell is drafted once and the manor resets at dawn — so this is rolled
+  // on the first arrival and never again today.
+  let landingDrafted = false;
+  let atSanctumDoor = false;
+  const surveyEvenings = carry?.surveyEvenings ?? 0;
+  // ROUND 17: once the word is answered the house stops gambling with her —
+  // the mercy slot is armed and the plans of the top storey are as good as they
+  // will ever get. Before that, both terms are exactly what they always were.
+  const answered = carry?.sanctumAnswered ?? false;
+  const landingArc = {
+    planWarmth: answered ? 1 : sanctumPlanWarmth(surveyEvenings),
+    mercy: answered || sanctumMercyArmed(surveyEvenings, carry?.legibleFragments ?? 0),
+    keyAccess: carry?.keyAccess ?? 0,
+  };
 
   /** Charge one move into 0-based `intoRow0`. */
   const move = (intoRow0: number) => {
@@ -647,7 +813,7 @@ export function simulateDay(
     // walk to — refused free, never a surprise charge (AAA 4.6). The key
     // itself is spent on placement, i.e. only when the climb actually
     // happens, which is exactly what the `keys -=` below models.
-    if (wantsUp && (DOOR_LOCKS.chanceByRow[targetRow0] ?? 0) > 0) {
+    if (wantsUp && !answered && (DOOR_LOCKS.chanceByRow[targetRow0] ?? 0) > 0) {
       if (rng() < DOOR_LOCKS.chanceByRow[targetRow0]!) {
         if (keys >= DOOR_LOCKS.keyCost) {
           keys -= DOOR_LOCKS.keyCost;
@@ -690,6 +856,18 @@ export function simulateDay(
     maxRow = Math.max(maxRow, row);
     const tier: Tier = rowTier(row - 1);
     const roomKey = `sim-${rooms}`;
+
+    // ── THE SECOND GATE, DRAFTED FOR REAL (round 13, AAA 4.10d/e). ─────────
+    // Arriving on the landing is the CLIMB; opening the door is the GATE, and
+    // the gate is a card. Roll the offer she really gets at (2,5), through the
+    // same `rollCards` the slice calls, and take the plan that opens north if
+    // one is there — which she can now see on the card face (DraftModal stamps
+    // it). One roll per evening: the cell is drafted once and the manor resets
+    // at dawn, so an evening that lands on a sealed plan is an evening spent.
+    if (row === SANCTUM_LANDING_ROW && !landingDrafted) {
+      landingDrafted = true;
+      atSanctumDoor = landingDraft(Math.floor(rng() * 2 ** 31), landingArc);
+    }
 
     // --- Resolve the room. -------------------------------------------------
     if (kind === 'micro' || kind === 'anchor') {
@@ -789,7 +967,8 @@ export function simulateDay(
     rooms,
     roomsSolved,
     maxRow,
-    reachedSanctum: maxRow >= SANCTUM_LANDING_ROW,
+    reachedSanctum: atSanctumDoor,
+    reachedLanding: maxRow >= SANCTUM_LANDING_ROW,
     fragmentsFound,
     pagesMadeOut,
     sealedBacklog: sealed,
@@ -799,6 +978,7 @@ export function simulateDay(
     stepsLeft: stepsRemaining(ledger),
     spent: stepsSpent(ledger),
     refunded: stepsRefunded(ledger),
+    couldSpeak: canSpeakAtDawn(),
     minutes: seconds / 60,
     ledger,
   };
@@ -919,25 +1099,38 @@ export const KNOWLEDGE = {
   /** P(character testimony yields a fragment), ramping as affinities warm. */
   testimonyChance: 0.16,
   testimonyRampDays: 8,
-  /** AAA 4.14: never 3 consecutive days with no new fragment. */
-  pityDays: 3,
+  /**
+   * AAA 4.14's floor, DERIVED from the shipped rule rather than transcribed
+   * (round 18 — the §0 lesson applied to one more constant). This was the
+   * literal `3`; when `PITY_DROUGHT_DAYS` moved to 2 the model would have gone
+   * on measuring the old mercy channel while the game shipped the new one, and
+   * every band below would have been quietly wrong in the reassuring direction.
+   */
+  pityDays: PITY_DROUGHT_DAYS,
   /**
    * THE SOLVE CHANNELS (engine/volume.ts `STUDY_CHANNEL`/`LINTEL_CHANNEL`):
-   * a solved Study hands over a definition line, any other solved word game a
-   * lintel engraving — valved to one per day per channel, and STRICT, so a
-   * channel only pays while the volume still authors something labelled for
-   * it. Volume 1 authors 3 `puzzle/definition-line` and 2 `puzzle/engraving`
-   * fragments, which is why wiring the word games into the mystery moved the
-   * horizon by days rather than weeks. Arrives LEGIBLE: she solved for it.
+   * the Study's channel and the lintel channel, valved to one per day per
+   * channel and STRICT, so a channel only pays while the volume still authors
+   * something labelled for it. Arrives LEGIBLE: she solved for it.
+   *
+   * ROUND 17 — DERIVED, NOT TRANSCRIBED (REVIEW_AA §5.1 + §0's lesson). These
+   * were the literals `3` and `2`, copied from the volume's pre-re-route
+   * routing: under the old kind-based rule exactly TWO fragments in the whole
+   * volume were reachable by an ordinary evening's solve. §5.1 re-routed the
+   * spine through the word games — the authored counts are now 2 and 11 — and
+   * a transcribed constant would have left this model measuring the starved
+   * channel while the game shipped the fixed one. `channelStock` reads the same
+   * authored JSON the live game routes on, so the re-route moved the model with
+   * it and a future re-route cannot leave it behind.
    */
-  studyChannelStock: 3,
-  lintelChannelStock: 2,
+  studyChannelStock: channelStock(VOLUME_1, STUDY_CHANNEL),
+  lintelChannelStock: channelStock(VOLUME_1, LINTEL_CHANNEL),
   /**
    * The volume's whole authored supply — nothing can be learned past it.
    * Volume 1 ships 17 fragments (the seventeenth is the Portrait's confession,
-   * a scene rather than a clue).
+   * a scene rather than a clue). Counted, for the same reason as above.
    */
-  volumeFragments: 17,
+  volumeFragments: VOLUME_1.fragments.length,
   /**
    * Fragments she needs LEGIBLE before the word is deducible for her. Sampled
    * per campaign — some volumes click early, some resist.
@@ -957,17 +1150,61 @@ export const KNOWLEDGE = {
    * not support in nineteen campaigns out of twenty; 13 is the optimistic
    * end (she guessed between the last two candidates), 17 the resistant one.
    */
-  fragmentsToDeduce: [13, 17] as const,
+  /* ROUND 16: IMPORTED, NOT RESTATED. This band is the mystery's property,
+   * not the model's — it belongs to volume 1's constraint set, and
+   * engine/volume.ts owns it (`FRAGMENTS_TO_DEDUCE`). It used to be a literal
+   * `[13, 17]` here, held equal to the engine's copy only by a test in
+   * tests/journal.test.ts, which fails loudly on drift but cannot prevent it.
+   * Now there is one number and drift is impossible. */
+  fragmentsToDeduce: FRAGMENTS_TO_DEDUCE,
 } as const;
 
 export interface SimCampaignResult {
   days: SimDayResult[];
-  /** 1-based day she first stood on the Sanctum row. null = never, in window. */
+  /**
+   * 1-based day she first stood AT THE SANCTUM DOOR — the live `atSanctumDoor`
+   * gate. null = never, in window. (Round 13: this used to mean the storey.)
+   */
   firstSanctumReachDay: number | null;
+  /**
+   * 1-based day she first stood on the landing CELL, door or no door. The
+   * climb's own milestone, reported apart from the gate's so the cost of the
+   * gate is a measured number rather than a story.
+   */
+  firstLandingDay: number | null;
+  /** Evenings spent on the landing across the campaign. */
+  landingEvenings: number;
+  /** Evenings that surveyed the top storeys — the landing arc's fuel. */
+  surveyEvenings: number;
+  /**
+   * ROUND 17 (REVIEW_AA §5.2) — THE HEADLINE METRIC: the 1-based day she could
+   * first SAY A WORD to the Sanctum. Before the speaking tube this was
+   * `firstSanctumReachDay` by construction (the door was the only mouth in the
+   * game), i.e. median day 9 skilled / 19 median-player, with a 7–14% tail that
+   * never spoke at all. With the tube it is the first day she plays.
+   */
+  firstSpeakDay: number | null;
   /** 1-based day she had enough LEGIBLE fragments to name the word. */
   deductionDay: number | null;
-  /** 1-based day she both KNEW it and REACHED the door. The volume win. */
+  /**
+   * 1-based day she NAMED it — spoke the true word, at the door or down the
+   * tube. The deduction plus one evening: the model has her fragments landing
+   * during the day and the file read that night, so the tube hears it at the
+   * next dawn. The volume is NOT closed here (see `volumeWinDay`).
+   */
+  answeredDay: number | null;
+  /**
+   * 1-based day she both KNEW it and REACHED the door. The volume win — the
+   * ceremony is at the top of the house and always has been.
+   */
   volumeWinDay: number | null;
+  /**
+   * Evenings between naming the word and being let in to say it to his face.
+   * The quantity REVIEW_AA §5.2 is about, and the one `SANCTUM_ARC`'s mercy was
+   * built to bound: measured median 9 / p90 25 before that arc, median 7 / p90
+   * 17 after it, and it is what the answered-door hold collapses.
+   */
+  answeredToWinDays: number | null;
   /** Fragments she can actually read (sealed pages excluded until made out). */
   fragments: number;
   /** Documents filed, legible or not — the AAA 4.14 drought is measured here. */
@@ -1005,17 +1242,54 @@ export function simulateCampaign(
   let sealedOvernightDays = 0;
   let dryStreak = 0;
   let firstSanctumReachDay: number | null = null;
+  let firstLandingDay: number | null = null;
+  let landingEvenings = 0;
+  let surveyEvenings = 0;
   let deductionDay: number | null = null;
+  let answeredDay: number | null = null;
+  let firstSpeakDay: number | null = null;
   let volumeWinDay: number | null = null;
 
   for (let day = 1; day <= days; day++) {
     const profile = campaignProfileForDay(base, day);
+    /**
+     * ROUND 17 (REVIEW_AA §5.2). Two independent facts, kept apart on purpose:
+     *
+     *   `answered` — the true word is already spoken and the house is holding
+     *     its doors (yesterday's fact, read at dawn like every other carry).
+     *   `speaks today` — she has the word and has not said it yet. The model
+     *     has fragments landing DURING an evening and the file read that night,
+     *     so the earliest she can name it is the morning after `deductionDay`.
+     *     That is deliberately the conservative reading: a real player who
+     *     deduces it mid-evening simply walks back down to the hall and says it
+     *     the same day, which this model never credits her for.
+     */
+    if (answeredDay === null && deductionDay !== null && day > deductionDay) answeredDay = day;
+    const answered = answeredDay !== null && day >= answeredDay;
     // Yesterday's unread pages are still on the desk at dawn — the seal is a
     // save flag, not a day-scoped counter (engine/volume.ts).
-    const result = simulateDay(rng, profile, timeRng, { sealedBacklog });
+    const result = simulateDay(rng, profile, timeRng, {
+      sealedBacklog,
+      // THE LANDING ARC (round 13, `SANCTUM_ARC`) — the campaign's one lever
+      // that is still moving after day 12. Both terms are yesterday's, read at
+      // dawn: the evenings already spent on that landing (live source:
+      // `chronicles.dayRecords[].highestRow`, which persists forever) and the
+      // pages she can actually READ (sealed smudges arm nothing).
+      surveyEvenings,
+      legibleFragments: fragments,
+      keyAccess: keyAccessFor(fernPointsOnDay(day)),
+      sanctumAnswered: answered,
+    });
     results.push(result);
+    if (firstSpeakDay === null && result.couldSpeak) firstSpeakDay = day;
     sealedBacklog = result.sealedBacklog;
     if (sealedBacklog > 0) sealedOvernightDays += 1;
+    // `maxRow` is 1-based here, `SANCTUM_ARC.surveyRow0` is a 0-based grid row.
+    if (result.maxRow - 1 >= SANCTUM_ARC.surveyRow0) surveyEvenings += 1;
+    if (result.reachedLanding) {
+      landingEvenings += 1;
+      if (firstLandingDay === null) firstLandingDay = day;
+    }
 
     if (result.reachedSanctum && firstSanctumReachDay === null) firstSanctumReachDay = day;
 
@@ -1054,22 +1328,38 @@ export function simulateCampaign(
     dryStreak = legible > 0 ? 0 : dryStreak + 1;
     if (dryStreak >= KNOWLEDGE.pityDays) { filed += 1; legible += 1; dryStreak = 0; }
 
+    /**
+     * ROUND 18 (REVIEW_AA §5.1's success metric, made readable).
+     *
+     * The review asks for *"a legible fragment on ≥ 90% of the first 14 days"*
+     * and names `simulateCampaigns(PROFILE_DECENT, …)` as the instrument. The
+     * quantity existed only as a local in this loop, so nobody outside could
+     * measure it without reimplementing the loop — which is how the two
+     * reviewers ended up with opposite journals and no shared number. It is
+     * recorded on the day now, and `scripts/review-metrics.ts` reads it.
+     */
+    result.legibleToday = legible;
+    result.filedToday = filed;
+
     // Nothing can be learned past the volume's authored supply.
     filed = Math.min(filed, KNOWLEDGE.volumeFragments - fragmentsFiled);
     fragmentsFiled += filed;
     fragments = Math.min(fragments + legible, fragmentsFiled);
 
     if (deductionDay === null && fragments >= fragmentsNeeded) deductionDay = day;
-    if (
-      volumeWinDay === null && deductionDay !== null && day >= deductionDay &&
-      result.reachedSanctum
-    ) {
-      volumeWinDay = day;
-    }
+    // THE WIN IS STILL AT THE DOOR (REVIEW_AA §5.2's "keep the ceremony of
+    // actually reaching the Sanctum meaningful"). The tube carries the word;
+    // the seal, the reveal and the monologue only ever play on the landing. So
+    // winning needs BOTH gates exactly as 4.10e always said — what changed is
+    // that the second one is no longer a lottery once the first is won.
+    if (volumeWinDay === null && answered && result.reachedSanctum) volumeWinDay = day;
   }
 
   return {
-    days: results, firstSanctumReachDay, deductionDay, volumeWinDay,
+    days: results, firstSanctumReachDay, firstLandingDay, landingEvenings, surveyEvenings,
+    firstSpeakDay, deductionDay, answeredDay, volumeWinDay,
+    answeredToWinDays:
+      answeredDay !== null && volumeWinDay !== null ? volumeWinDay - answeredDay : null,
     fragments, fragmentsFiled, sealedOvernightDays, fragmentsNeeded,
   };
 }

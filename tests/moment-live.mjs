@@ -93,17 +93,103 @@ if (await clickText('begin the first day')) {
   rows.push(['morning card / dialogue overlay', 'SKIPPED — no "begin the first day" button']);
 }
 
-// Tap-to-dismiss.
+/* ROUND 16 — MEASURE TAP-TO-DISMISS WHERE THE TAP IS A TAP.
+ *
+ * Round 15 docked the seal over the PLAYFIELD (the blueprint and the rooms)
+ * and made it inert there: `pointer-events: none`, rendered as a plain box
+ * rather than a button, retiring on its own clock (ui/moment/dock.ts). So a
+ * probe that pushes a seal while standing on /manor and then clicks it is
+ * measuring the wrong surface — it either clicks through onto the board and
+ * navigates (which is what destroyed this script's execution context) or it
+ * clicks a div with no handler and reports a false "does not dismiss".
+ *
+ * The journal is a SHEET screen: no cells, no doors, the seal is a control
+ * there and tap-to-dismiss is exactly what 11.12 asks of it. Both facts are
+ * now recorded — the tap works where it is offered, and the playfield's card
+ * is inert on purpose. */
+await page.goto(BASE + '#/journal');
+await page.waitForTimeout(500);
+
+// Tap-to-dismiss, on a sheet screen.
 const dismissed = await page.evaluate(async () => {
   const m = await import('/LexiconManor/src/ui/moment/queue.ts');
   m.momentQueue.reset();
   m.momentQueue.push({ key: 'dismiss-me', kind: 'letter', sigil: 'L', title: 'A letter', where: 'Journal' });
   await new Promise((r) => setTimeout(r, 300));
-  document.querySelector('.mom')?.click();
+  const el = document.querySelector('.mom');
+  const tappable = el ? getComputedStyle(el).pointerEvents !== 'none' : null;
+  const tag = el?.tagName ?? null;
+  el?.click();
   await new Promise((r) => setTimeout(r, 200));
-  return { gone: !document.querySelector('.mom') };
+  return { route: location.hash, tag, tappable, gone: !document.querySelector('.mom') };
 });
-rows.push(['tap-to-dismiss', JSON.stringify(dismissed)]);
+rows.push(['tap-to-dismiss (sheet screen)', JSON.stringify(dismissed)]);
+if (!dismissed.tappable || dismissed.tag !== 'BUTTON' || !dismissed.gone) {
+  console.error('[moment] FAIL: on a sheet screen the seal must be a tappable button that dismisses — '
+    + JSON.stringify(dismissed));
+  process.exitCode = 1;
+}
+
+/* …and the same seal over the PLAYFIELD is inert, by design (AAA 11.27b).
+ *
+ * The overlay exception is real and has to be excluded here: while a
+ * full-screen scene covers the board there is nothing underneath to protect,
+ * so the seal goes back to being a tappable card (MomentLayer, round 16). The
+ * walk above leaves the morning card / dialogue overlay mounted, and a
+ * `page.goto` to another HASH on the same document does not tear it down — so
+ * reload the route rather than hash-hopping to it, and assert the precondition
+ * instead of assuming it. */
+await page.goto(BASE + '#/manor');
+await page.reload({ waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(900);
+// Clear the boot-time scenes (the morning card, then Bramble) so the board is
+// genuinely uncovered — otherwise the exception above swallows the check and
+// it silently proves nothing.
+for (let i = 0; i < 40; i++) {
+  const gone = await page.evaluate(() => !document.querySelector('.chr-scene, .dlg'));
+  if (gone) break;
+  const clicked = await page.evaluate(() => {
+    const b = document.querySelector('.chr-scene__btn, .dlg-choice--primary, .dlg-choices .dlg-choice');
+    if (b) { b.click(); return true; }
+    const sheet = document.querySelector('.dlg__sheet');
+    if (sheet) { sheet.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); return true; }
+    return false;
+  });
+  if (!clicked) break;
+  await page.waitForTimeout(250);
+}
+await page.waitForTimeout(400);
+const overBoard = await page.evaluate(async () => {
+  const m = await import('/LexiconManor/src/ui/moment/queue.ts');
+  m.momentQueue.reset();
+  m.momentQueue.push({ key: 'inert-me', kind: 'letter', sigil: 'L', title: 'A letter', where: 'Journal' });
+  await new Promise((r) => setTimeout(r, 350));
+  const el = document.querySelector('.mom');
+  if (!el) return { present: false };
+  const b = el.getBoundingClientRect();
+  const at = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
+  return {
+    present: true,
+    tag: el.tagName,
+    pointerEvents: getComputedStyle(el).pointerEvents,
+    answeredBy: at ? `${at.tagName}.${String(at.className).split(' ')[0]}` : null,
+    dockToken: document.documentElement.getAttribute('data-seal-dock'),
+    overlayOpen: document.documentElement.hasAttribute('data-overlay-open'),
+  };
+});
+rows.push(['over the playfield (inert by design)', JSON.stringify(overBoard)]);
+if (overBoard.present && overBoard.overlayOpen) {
+  console.error('[moment] FAIL: could not clear the boot scenes, so the playfield check proved nothing — '
+    + JSON.stringify(overBoard));
+  process.exitCode = 1;
+} else if (overBoard.present && overBoard.dockToken
+  && (overBoard.pointerEvents !== 'none' || overBoard.tag !== 'DIV')) {
+  console.error('[moment] FAIL: over the blueprint the seal must be an inert box, not a button — '
+    + JSON.stringify(overBoard));
+  process.exitCode = 1;
+}
+await page.goto(BASE + '#/journal');
+await page.waitForTimeout(400);
 
 // Queue: two grants in quick succession, both seen.
 const queued = await page.evaluate(async () => {
@@ -133,13 +219,28 @@ const real = await page.evaluate(async () => {
   await new Promise((r) => setTimeout(r, 400));
   const el = document.querySelector('.mom');
   const b = el?.getBoundingClientRect();
+  const at = b ? document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2) : null;
   return {
-    onGlass: Boolean(el) && document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2) !== null
-      && el.contains(document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2)),
+    // ROUND 16: "on glass" is a QUESTION ABOUT PIXELS, not about who takes the
+    // tap. In a room the seal is deliberately inert (round 15), so the old
+    // `elementFromPoint === the card` test now reports false for a card that
+    // is plainly visible and doing its job. What 11.12 needs is that the
+    // announcement is mounted, has a real box inside the viewport, and carries
+    // its words — and that nothing MODAL is over it.
+    mounted: Boolean(el),
+    onGlass: Boolean(b) && b.width > 0 && b.height > 0
+      && b.top >= 0 && b.bottom <= window.innerHeight,
+    inert: el ? getComputedStyle(el).pointerEvents === 'none' : null,
+    answeredBy: at ? `${at.tagName}.${String(at.className).split(' ')[0]}` : null,
     text: el?.textContent ?? null,
   };
 });
 rows.push(['REAL grant (fileFragment) seen from /room', JSON.stringify(real)]);
+if (!real.mounted || !real.onGlass || !real.text) {
+  console.error('[moment] FAIL: a real store grant did not announce itself in the room — '
+    + JSON.stringify(real));
+  process.exitCode = 1;
+}
 await page.screenshot({ path: 'moment-live.png' });
 
 console.log(rows.map(([a, b]) => `${a}\n   ${b}`).join('\n'));

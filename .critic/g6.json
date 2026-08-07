@@ -1,0 +1,3 @@
+[
+  {"eval":"Array.from(document.querySelectorAll('button')).map(function(b){return b.className+':'+b.textContent}).slice(0,30)"}
+]

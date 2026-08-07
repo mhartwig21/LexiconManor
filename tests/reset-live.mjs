@@ -245,7 +245,19 @@ try {
         r.onsuccess = r.onerror = r.onblocked = () => res();
       });
     });
-    await page.reload({ waitUntil: 'domcontentloaded', timeout: 90000 });
+    /* ROUND 16 — a reload issued in the same tick as an IndexedDB teardown can
+     * be ABORTED by the service worker's own update navigation (dist/sw.js is
+     * built by `build:pages`, so the previewed build has one). `ERR_ABORTED`
+     * here says "someone else navigated first", not "the page is broken" — so
+     * retry once, and fall back to an explicit goto, which cannot be raced by
+     * a navigation that has already happened. */
+    try {
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 90000 });
+    } catch (err) {
+      if (!/ERR_ABORTED|frame was detached/.test(String(err))) throw err;
+      await page.waitForTimeout(500);
+      await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 90000 });
+    }
   };
 
   /** Reach /chronicles through the UI (AAA 11.23 — two taps from the sheet). */

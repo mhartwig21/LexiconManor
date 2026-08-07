@@ -3,9 +3,19 @@
  *
  * The manor's meta-puzzle (MANOR_DESIGN §7, ARCHITECTURE §7): a word was
  * struck from every dictionary, its definition survives as fragments, and the
- * Sanctum door wants the word *typed*. Knowledge is the progression — the
- * answer is fixed at volume start and no fragment is mechanically required
- * (AAA 4.18): a sharp player can win on day one.
+ * Sanctum door wants the word *typed*.
+ *
+ * TWO GATES, NOT ONE (AAA 4.10e; MANOR_DESIGN §7 was rewritten to match in
+ * round 14). The answer is fixed at volume start and no fragment is ever
+ * mechanically required — 4.18's solvable-in-principle promise is intact, and
+ * this module is where it is kept: `applyGuess` asks the constraint set
+ * nothing. But knowing the word is only the FIRST gate; the second is standing
+ * at the door, and since round 7 `guessAtSanctum` refuses a word spoken from
+ * anywhere but the landing. A bare, perfectly efficient day-1 ascent costs 22
+ * against a day-1 pot of 21 (`reserveToTop(1)` vs `BASE_DAY_BUDGET +
+ * FIRST_MORNING_POT`), so the climb is bought with refunds and the measured
+ * day-1 landing reach is 3.3–6.5%. "Solvable on day one" is a statement about
+ * the ANSWER, never a prediction about the evening.
  *
  * This module is pure: content (VolumeContent) flows in as a parameter, state
  * (VolumeState, frozen in engine/types.ts) flows through. The journal slice
@@ -107,6 +117,30 @@ export function solveConstraints(
 // ---------------------------------------------------------------------------
 
 export interface FragmentContent extends FragmentDef {
+  /**
+   * WHICH SOLVE CHANNEL PAYS THIS PAGE (round 17 — REVIEW_AA §5.1).
+   *
+   * Authored routing, and the one thing that decides whether the best writing
+   * in the volume is reachable by playing the game. Absent, the channel is
+   * INFERRED from `(sourceRoomCategory, kind)` exactly as it was before this
+   * field existed — see `isChannelFragment`.
+   *
+   * The two labels used to be welded together, and that weld is what REVIEW_AA
+   * §5.1 measured: `kind: 'definition-line'` implied "only the Study pays this",
+   * and the Study is `tierRange: [3,3], rarity: 'rare', gemCost: 2`. So all six
+   * lines of the definition — the best prose in the repository — were behind the
+   * rarest room in the deck, and the ordinary word games could pay exactly two
+   * fragments in the whole volume. Solving every board in the manor moved the
+   * mystery by nothing from about day 2 onward.
+   *
+   * Splitting them separates two questions that were never the same question:
+   *   - `sourceRoomCategory` — WHERE THE FICTION PUTS IT, and therefore which
+   *     room the violet drip prefers to hand it over in (`nextFragmentForRoom`);
+   *   - `channel` — WHICH SOLVE PAYS FOR IT.
+   * A torn leaf in the lexicographer's hand can be a page the violet rooms keep
+   * AND a page an ordinary evening's solve earns. Before, it had to be one.
+   */
+  channel?: SolveChannelId;
   /** Engravings only: the machine-readable form of the inscription. */
   constraint?: EngravingConstraint;
   /** Testimony only: whose memory this is (journal cameo + grouping). */
@@ -142,6 +176,57 @@ export interface VolumeContent extends VolumeDef {
    *  back to DEFAULT_PITY_TEMPLATES (see synthesizedPityLetter). */
   pityTemplates?: PityTemplate[];
 }
+
+// ---------------------------------------------------------------------------
+// The deduction band — how many READABLE pages actually pin the word
+// ---------------------------------------------------------------------------
+
+/**
+ * ── ROUND-14 DEFECT: TWO NUMBERS FOR ONE CONCEPT, AND NEITHER NAMED THE OTHER.
+ *
+ * `THIN_FILE_THRESHOLD` (engine/journal.ts) is 4, and it retired the Portrait's
+ * insufficient-info nudge — the one AAA 4.16 signal in the game. The campaign
+ * model's `KNOWLEDGE.fragmentsToDeduce` is [13, 17], and
+ * tests/volume-solvability.test.ts proves why: volume 1's six engravings run
+ * 171755 → 15232 → 298 → 22 → 11 → 2 → 1, so FIVE of them still leave two
+ * candidate words. Between those two numbers — measured, median day 5 to
+ * median day 20 for PROFILE_DECENT, the majority of the volume's duration —
+ * the player stood at the door, spent her one word a day and got silence,
+ * because the nudge had already stood down.
+ *
+ * This band is the one place that number lives on the mystery's side of the
+ * fence. `engine/journal.DEDUCTION_FLOOR` is `[0]` of it, the authored
+ * `portrait.gate.*` bands tile up to it, and tests/journal.test.ts pins all
+ * three to each other AND to `KNOWLEDGE.fragmentsToDeduce` in A2's model, so
+ * the two cannot drift apart again in either direction.
+ *
+ *   [0] the optimistic end — she guesses between the last two candidates
+ *   [1] the resistant end — the constraint set has to close all the way
+ *
+ * It is a property of the CONSTRAINT SET, not a difficulty knob: re-derive it
+ * from tests/volume-solvability.test.ts's chain when a volume's engravings
+ * change, never by feel.
+ *
+ * ── ROUND 18 (REVIEW_AA §5.1/§5.2 fallout): 13 → 15 ────────────────────────
+ *
+ * Not a difficulty knob after all — a correction forced by the other two
+ * changes. §5.1 routed the spine through the word games and §5.2 bolted a
+ * speaking tube to the Entrance Hall, and together they removed both walls at
+ * once: knowledge arrived daily AND the door stopped being a lottery, so the
+ * skilled player closed the volume in ten evenings and 7% of her campaigns
+ * ended inside the first week. A game that publishes a 14–28 day volume cannot
+ * be finished in six.
+ *
+ * 15 is still read off the chain, not off feel. tests/volume-solvability.test.ts
+ * filters the dictionary by the six engravings in reveal order: the fifth
+ * leaves LACUNA and LAGUNA both standing, and only the sixth (`contains C`)
+ * separates them. The optimistic end is therefore "she holds everything except
+ * the tie-breaker and guesses between two words" — with 6 engravings, 6
+ * definition lines and 5 testimonies authored, holding five of six engravings
+ * plus the surrounding prose IS fifteen pages. 13 was the old drip's number,
+ * measured when a third of the volume was unreachable in a fortnight.
+ */
+export const FRAGMENTS_TO_DEDUCE: readonly [number, number] = [15, 17];
 
 // ---------------------------------------------------------------------------
 // Guessing at the Sanctum
@@ -282,20 +367,47 @@ export function nextFragmentForRoom(
  * games is an authoring decision visible in the volume JSON.
  *
  *   - THE STUDY (`forgotten-word`, MANOR_DESIGN §6 "feeds the meta-mystery
- *     directly") hands over a DEFINITION LINE. Its own puzzles are the
- *     lexicographer's unfinished entries (tests/volume-premise.test.ts), so
- *     finishing one and being handed a line of the entry he *unfinished on
- *     purpose* is the room's whole point, paid out.
- *   - EVERY OTHER PUZZLE ROOM hands over an ENGRAVING — the lintel/plate
- *     inscriptions, which are cut into the fabric of the rooms themselves.
+ *     directly"). Its own puzzles are the lexicographer's unfinished entries
+ *     (tests/volume-premise.test.ts), so finishing one and being handed a line
+ *     of the entry he *unfinished on purpose* is the room's whole point.
+ *   - THE LINTEL — every other word game in the house.
  *
  * Both are valved to once per day per channel by the caller (see
  * `solveChannelFiledToday`), so a five-room evening is not a fragment
  * firehose and `tests/volume-pacing.test.ts` keeps measuring 4.10e.
+ *
+ * ── ROUND-17 (REVIEW_AA §5.1): WHICH CHANNEL IS AUTHORED, NOT DEDUCED ───────
+ *
+ * The two channels above used to be defined by fragment KIND: the Study paid
+ * definition lines, the lintel paid engravings, and nothing else was sayable.
+ * That is a routing rule disguised as a taxonomy, and REVIEW_AA measured what
+ * it cost. Volume 1 authors seventeen fragments; under the kind rule exactly
+ * TWO were reachable by an ordinary evening's solve, three needed a `rare`
+ * tier-3 two-gem room, eight needed a violet draw and four needed a character.
+ * All six definition lines — the best prose in the repository — sat behind the
+ * deck's rarest doors, and the game's own simulation measured a solve making a
+ * page out on 0.23 of the median player's days.
+ *
+ * So a fragment now NAMES its channel (`FragmentContent.channel`), and the
+ * (category, kind) pair below is only the default when it does not. The channel
+ * definitions keep their `kind` because that default is still the right one for
+ * an unlabelled volume — but the number of fragments a volume routes through
+ * the word games is now an authoring decision visible on one line of the volume
+ * JSON, which is what this header claimed all along and could not deliver.
  */
+// Declared in ./types so `events.ts` (which volume.ts imports) can stamp it on
+// `fragment-found` without importing upward. Re-exported here because this is
+// the module that owns what a channel *is*.
+export type { SolveChannelId } from './types';
+import type { SolveChannelId } from './types';
+
 export interface SolveChannel {
-  /** Stable name — used by the daily valve, the tests and nothing else. */
-  id: 'study' | 'lintel';
+  /** Stable name — the authored `FragmentContent.channel` label, the daily
+   *  valve, and the tests. */
+  id: SolveChannelId;
+  /** The (category, kind) pair a fragment falls into when it declares no
+   *  `channel` of its own. Inference only — never a second gate on top of an
+   *  explicit label (see `isChannelFragment`). */
   category: RoomCategory;
   kind: FragmentKind;
 }
@@ -312,8 +424,24 @@ export function solveChannelFor(kind: RoomPuzzleKind): SolveChannel {
   return kind === 'forgotten-word' ? STUDY_CHANNEL : LINTEL_CHANNEL;
 }
 
-/** Does this fragment belong to that channel? (Also the valve's predicate.) */
+/**
+ * Does this fragment belong to that channel? (Also the valve's predicate.)
+ *
+ * An explicit `FragmentContent.channel` WINS OUTRIGHT — it is not an extra
+ * condition layered on the inferred one, or the whole point of the field would
+ * be lost the moment an authored label disagreed with the fragment's kind,
+ * which is exactly the case §5.1 exists to make expressible (a definition line
+ * paid by an ordinary word game). Fragments with no label keep the pre-round-17
+ * inference, so a volume that never uses the field behaves exactly as before.
+ *
+ * A fragment still belongs to at most ONE channel either way: labels are a
+ * single id, and the two inferred pairs are disjoint (same category, different
+ * kinds). `tests/volume-channels.test.ts` pins that as a property of the
+ * authored volume rather than trusting the argument.
+ */
 export function isChannelFragment(f: FragmentDef, channel: SolveChannel): boolean {
+  const declared = (f as FragmentContent).channel;
+  if (declared) return declared === channel.id;
   return f.sourceRoomCategory === channel.category && f.kind === channel.kind;
 }
 
@@ -338,6 +466,28 @@ export function fragmentForSolveChannel(
 }
 
 /**
+ * HOW MANY PAGES THIS VOLUME ROUTES THROUGH THIS CHANNEL.
+ *
+ * ── ROUND-17 DEFECT (verifier): THE MODEL WAS STILL MEASURING THE OLD ROUTING.
+ *
+ * `KNOWLEDGE.studyChannelStock`/`lintelChannelStock` in economy/simulate.ts were
+ * LITERALS — `3` and `2` — with a docstring naming the authored counts they were
+ * copied from. The §5.1 re-route changed those counts to 2 and 11 in the volume
+ * JSON and the literals stayed, so `simulateCampaigns` — the instrument REVIEW_AA
+ * §8 says to re-run to check the work — went on modelling the starved channel it
+ * was written against. That is the review's own §0 finding one level down: the
+ * team measuring yesterday's game, this time because a constant was transcribed
+ * instead of derived.
+ *
+ * So the count is computed from the authored volume now, through the same
+ * `isChannelFragment` predicate the live game routes on. A re-route moves the
+ * simulation automatically, and the two can no longer disagree.
+ */
+export function channelStock(def: VolumeDef, channel: SolveChannel): number {
+  return def.fragments.filter((f) => isChannelFragment(f, channel)).length;
+}
+
+/**
  * The daily valve, derived off the audited spine rather than stored: has this
  * channel already paid today? `recentEvents` are day-stamped and live in the
  * save, so this survives a screen change, a reload and a force-quit, and it
@@ -345,7 +495,7 @@ export function fragmentForSolveChannel(
  * that a refresh could hand back (the AAA 11.20 lesson, applied to a valve).
  */
 export function solveChannelFiledToday(
-  def: VolumeDef,
+  _def: VolumeDef,
   channel: SolveChannel,
   recentEvents: readonly RecordedEvent[],
   day: number,
@@ -353,9 +503,11 @@ export function solveChannelFiledToday(
   return recentEvents.some((r) => {
     if (r.day !== day) return false;
     const ev = r.event;
-    if (ev.type !== 'fragment-found') return false;
-    const frag = def.fragments.find((f) => f.id === ev.fragmentId);
-    return !!frag && isChannelFragment(frag, channel);
+    // ROUND 18: `via` — the TAP, not the page. See events.ts `fragment-found`.
+    // Asking `isChannelFragment(theFragment, channel)` here made a violet draw
+    // spend the solve channel's daily allowance as soon as §5.1's re-route put
+    // lintel-labelled pages into the drip.
+    return ev.type === 'fragment-found' && ev.via === channel.id;
   });
 }
 
@@ -490,7 +642,24 @@ export function legibleDroughtDays(
   return fragmentDroughtDays(dayRecords, { legibleDays: legibleDays(volumeId, flags) });
 }
 
-export const PITY_DROUGHT_DAYS = 3;
+/**
+ * ROUND 18 (REVIEW_AA §5.1): 3 → 2.
+ *
+ * The review's success metric is *"a legible fragment on ≥90% of the first 14
+ * days"*, and its caution in the same breath is *"keep the mercy system as a
+ * floor, but it should stop being the primary path"*. Those pull opposite ways,
+ * and the measurement says where the line is: at 3 the median player learned
+ * something on 75% of her first fortnight; at 2 it is 80%; at 1 it is 100% —
+ * but at 1 the pity letter IS the drip, which is the thing the review told us
+ * not to do. So 2: two blank evenings in a row is a drought, one is a quiet
+ * night the seal is allowed to make her sit through.
+ *
+ * (The remaining gap to 90% is not tunable — it is arithmetic. See
+ * `scripts/review-metrics.ts`: 17 authored fragments cannot cover 14 days at
+ * one a day AND still leave a four-week campaign. Volume 1 needs more authored
+ * pages, not a smaller drought.)
+ */
+export const PITY_DROUGHT_DAYS = 2;
 
 /** Should the pity channel fire? (Also exported for A1's violet-offer seeding.) */
 export function pityDue(

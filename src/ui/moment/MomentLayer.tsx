@@ -26,6 +26,7 @@ import { sfx } from '../../app/sound';
 import { momentDwellMs } from './moments';
 import { momentQueue } from './queue';
 import { sealDock } from './dock';
+import { useOverlayOpen } from '../chrome/overlay-watch';
 import { retireBootstrapLayer } from './mount';
 import { installMomentWatch } from './watch';
 import './moment.css';
@@ -47,8 +48,12 @@ export default function MomentLayer({ bootstrap = false }: { bootstrap?: boolean
   );
   const reduced = useManorStore((s) => s.settings.reducedMotion);
   const soundOn = useManorStore((s) => s.settings.soundEnabled);
-  /** Is the surface underneath a room? (ui/moment/dock.ts — see the render.) */
+  /** Is the surface underneath a playfield? (ui/moment/dock.ts — see render.) */
   const docked = useSyncExternalStore(sealDock.subscribe, sealDock.get, sealDock.get);
+  /** …and is a full-screen scene covering that playfield right now? Declared
+   *  HERE, with the other hooks, because `if (!current) return null` sits below
+   *  and a hook after an early return is React error #310. */
+  const overlayOpen = useOverlayOpen();
 
   // The watch belongs to the session, not to this component: it is installed
   // here as a safety net (idempotent) so the layer is never live without it.
@@ -80,14 +85,32 @@ export default function MomentLayer({ bootstrap = false }: { bootstrap?: boolean
 
   if (!current) return null;
 
-  /* ROUND 12 (AAA 11.2 / 11.27) — IN A ROOM THE SEAL IS NOT A CONTROL.
-     A room's glass is all playfield, so a tappable card over it swallows the
-     taps aimed at what it covers ("Row 1, column 1" dismissed the notice and
-     moved no cursor). Docked, the card is `pointer-events: none` (moment.css)
-     and is rendered as a plain box rather than a button — a button nobody can
-     press, still announcing "Tap to put it away", would be a label that lies.
-     Everything else about it is identical. See ui/moment/dock.ts. */
-  const inRoom = docked;
+  /* ROUND 12 / ROUND 15 (AAA 11.2 / 11.27) — OVER A PLAYFIELD THE SEAL IS NOT
+     A CONTROL. A room's glass is all playfield, and so is the BLUEPRINT's once
+     she climbs: a tappable card over either swallows the taps aimed at what it
+     covers ("Row 1, column 1" dismissed the notice and moved no cursor; a tap
+     at "Approach the Sanctum" dismissed it and did not open the door). Docked,
+     the card is `pointer-events: none` (moment.css) and is rendered as a plain
+     box rather than a button — a button nobody can press, still announcing
+     "Tap to put it away", would be a label that lies. Everything else about it
+     is identical. See ui/moment/dock.ts. */
+  /* ROUND 16 — THE DOCK IS ABOUT THE PLAYFIELD, NOT ABOUT THE ROUTE.
+   *
+   * Round 15 made the seal inert wherever a playfield is docked, which was
+   * right for the board and the rooms and WRONG the moment a full-screen scene
+   * is up over one. /manor keeps its dock token while a DialogueScene runs, so
+   * a grant made inside a conversation announced itself on a card that could
+   * not be tapped — measured live: `elementFromPoint` at the seal's centre
+   * returned `DIV.dlg`, so a tap on the notice fell through and ADVANCED the
+   * conversation underneath it. That is the round-15 defect with the roles
+   * swapped: a tap doing something she did not aim at.
+   *
+   * There is no board to protect while an overlay covers it, so the seal goes
+   * back to being an ordinary tappable card there. The signal is the one the
+   * chrome already publishes for exactly this question (ui/chrome/overlay-watch),
+   * and moment.css's inert rules carry the matching
+   * `:not([data-overlay-open])`. */
+  const inRoom = docked !== null && !overlayOpen;
   const body = (
     <>
       <span className="mom__seal" aria-hidden="true">{current.sigil}</span>

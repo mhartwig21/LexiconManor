@@ -31,8 +31,16 @@ import './sealed.css';
 export interface SealedMarkProps {
   /** How many filed-but-unmade-out pages sit behind this affordance. 0 renders nothing. */
   count: number;
-  /** Screen-reader phrase, already in the right number: "3 pages not yet made out". */
+  /** Screen-reader phrase, PLURAL: "3 pages not yet made out". */
   noun?: string;
+  /**
+   * The SINGULAR of `noun`, for count === 1. ROUND 16 (AAA 11.7/11.19): the
+   * tabs passed a hard-coded plural, so at one sealed page the mark announced
+   * "1 lines not yet made out". The default pair below always got this right;
+   * only an overriding caller could get it wrong, which is why the choice now
+   * lives here rather than at four call sites.
+   */
+  nounSingular?: string;
   /** Pin to the host's bottom-right corner; the host needs `.unread-host`. */
   corner?: boolean;
   /** Print the exact count inside the mark (AAA 11.21 — never an estimate). */
@@ -48,10 +56,14 @@ export function SealedPip({ label = 'not yet made out' }: { label?: string }) {
   return <span className="sealed sealed--pip" role="img" aria-label={label} />;
 }
 
-export default function SealedMark({ count, noun, corner = false, showCount = false }: SealedMarkProps) {
+export default function SealedMark({
+  count, noun, nounSingular, corner = false, showCount = false,
+}: SealedMarkProps) {
   // Truthful in both directions (AAA 11.21): no mark when nothing is sealed.
   if (count <= 0) return null;
-  const phrase = noun ?? (count === 1 ? 'page not yet made out' : 'pages not yet made out');
+  const phrase = count === 1
+    ? (nounSingular ?? noun ?? 'page not yet made out')
+    : (noun ?? 'pages not yet made out');
   return (
     <span
       className={`sealed${corner ? ' sealed--corner' : ''}${showCount ? ' sealed--count' : ''}`}

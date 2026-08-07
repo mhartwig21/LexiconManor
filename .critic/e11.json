@@ -1,0 +1,8 @@
+[
+  {"click":"button.bp-btn","has":"Journal","after":1600},
+  {"shot":"word-tab"},
+  {"eval":"document.body.innerText.slice(0,1600)"},
+  {"click":"button.jrn-tab","has":"Engravings","after":1200},
+  {"shot":"eng-tab"},
+  {"eval":"document.body.innerText.slice(0,2200)"}
+]

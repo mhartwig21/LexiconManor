@@ -661,6 +661,31 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   /* z: veil (55) — over the bar, because dusk falls on the whole house. */
   z-index: var(--z-veil, 55);
   pointer-events: none; /* the walking grace — taps pass through the veil */
+
+  /* ROUND 15 (blocker, AAA 11.2 / 11.4 / 11.5) — THE VEIL'S OWN FLOOR.
+     This layer is pointer-transparent by design so the blueprint stays live
+     through the ≤4s fade (4.12's walk-but-no-interact grace), and
+     `.chr-dusk__skip` is the ONE thing on it that takes taps. It was pinned
+     28px off the bottom, i.e. straight on top of the blueprint's nav row.
+     Measured live: skip [129,772,133,44] over Journal [114,788,120,44] at
+     390x844 and [121,595,133,44] over [109,611,115,44] at 375x667;
+     `elementFromPoint` at the Journal button's centre returned
+     `.chr-dusk__skip` at both viewports, reduced motion on and off, and a
+     DRIVEN click there left `location.hash` unchanged. The digest four seconds
+     later prints "A letter waits unopened in the post tray", so the one
+     screen-second she is most likely to reach for the journal was the one
+     second the control was not hers.
+
+     `--page-foot-ceiling` is published by whichever surface is underneath,
+     from its LIVE element (app/platform/page-nav.ts) — the blueprint's
+     `.bp-foot__actions`, the journal's `.jrn-rail`, a room's footer — never a
+     pixel copy of somebody else's layout living in this file, which is the
+     drift 11.4 exists to forbid. It defaults to 0, so a surface that pins
+     nothing at the bottom leaves this geometry byte-for-byte what it was. */
+  --chr-dusk-floor: max(
+    calc(28px + env(safe-area-inset-bottom, 0px)),
+    calc(var(--page-foot-ceiling, 0px) + 12px)
+  );
   background:
     radial-gradient(ellipse at 50% 20%, rgba(36, 29, 21, 0.0) 0%, rgba(36, 29, 21, 0.55) 100%),
     rgba(36, 29, 21, 0.0);
@@ -697,7 +722,8 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  /* The line rides above the skip, so it moves with it (round 15). */
+  bottom: calc(var(--chr-dusk-floor) + 56px);
   text-align: center;
   font-family: var(--font-display);
   font-size: var(--text-display-sm);
@@ -715,7 +741,7 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  bottom: var(--chr-dusk-floor); /* clears the surface's nav row — see above */
   pointer-events: auto; /* the one interactive island on the veil */
   min-height: var(--tap-target);
   padding: 8px 18px;

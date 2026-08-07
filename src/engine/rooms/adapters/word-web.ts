@@ -247,6 +247,11 @@ export const wordWebAdapter: RoomPuzzleAdapter<WordWebPuzzleEx, WordWebRoomState
 
   select: (opts) => selectByTier(WORD_WEB_POOL, opts),
 
+  // §5.3 — the board a saved session was played on, found by id rather than
+  // re-rolled. `WordWebRoomState` is plain JSON data, so restore is identity.
+  find: (id) => WORD_WEB_POOL.find((p) => p.id === id),
+  stateVersion: 1,
+
   start(puzzle: WordWebPuzzleEx, _ctx: RoomContext): WordWebRoomState {
     return {
       web: startWordWeb(puzzle),

@@ -491,6 +491,36 @@
 }
 
 /* --------------------------------------------------------------------------
+   The build stamp (REVIEW_AA §0). A colophon, not a control: the last line on
+   the last surface, set faint and small enough to read as printer's marks
+   rather than as UI. It exists so a reviewer — human or agent — can state
+   which build they played, and it is deliberately NOT inside the collapsed
+   debug panel: it has to be readable without knowing to look for it.
+   -------------------------------------------------------------------------- */
+.chron__build {
+  margin: 12px 0 4px;
+  padding-top: 8px;
+  border-top: var(--rule);
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  color: var(--ink-faint);
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+  /* The one place in the app worth selecting and pasting into a report. */
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.chron__build b {
+  font-weight: 600;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  letter-spacing: 0;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
    Short glass (375×667 and any compact standalone frame) — round-7 pass.
 
    AAA 11.23 wants audio, reduced motion and the save trunk two taps from the

@@ -29,11 +29,29 @@ export type ForgottenWordGuess =
    */
   | { kind: 'invalid'; reason: 'empty' | 'repeat' | 'wrong-length' | 'finished' };
 
-/** Guess allowance shrinks as levels rise. */
+/**
+ * ROUND 14 (AAA 3.5 / 3.8) — THE HELP NO LONGER SHRINKS AS THE WORD GETS
+ * HARDER.
+ *
+ * The Study's 113 entries are the best writing in the game and the DELIVERY was
+ * broken. All 43 tier-3 entries are rare-or-archaic — median frequency rank
+ * 157,866 against `content/data/count_1w.txt`, 31 of the 43 past rank 100k, and
+ * 15 (SMEUSE, SELCOUTH, CLINQUANT, APRICITY, BRUMOUS, NOCTAMBULIST,
+ * TARADIDDLE, LUCUBRATION, PILCROW, YESTREEN, OVERMORROW, ANTIMACASSAR,
+ * SENNIGHT, HANDSEL, LIMNER) absent from a 333k-word corpus entirely. Against
+ * that, tier 3 headlined the RIDDLE, withheld the plain gloss, pre-revealed
+ * nothing, and gave THREE guesses. SMEUSE in three blind guesses off "A door in
+ * a wall of thorns, cut by nothing but habit" is not a puzzle, it is a reveal
+ * with a step bill attached. Wordle gives six guesses on a word everybody
+ * knows.
+ *
+ * 3.8 says a difficulty knob CONSTRAINS the player; it does not remove
+ * solvability. So the knob moved off the guess allowance entirely. What still
+ * makes a tier-3 Study hard is the riddle in the headline, the rarity of the
+ * word itself, and the higher price of a clue — not a shorter rope.
+ */
 export function maxGuessesForLevel(level: number): number {
-  if (level <= 1) return 5;
-  if (level === 2) return 4;
-  return 3;
+  return level <= 1 ? 6 : 5;
 }
 
 /**
@@ -63,17 +81,71 @@ export function definitionForLevel(puzzle: ForgottenWordPuzzle, level: number): 
 }
 
 /**
- * The free second register, shown under the headline. Tier 1 — the bottom of
- * the house, the first Study anyone meets — gets the plain gloss for nothing:
- * the poetry leads, the dictionary follows, and the easiest room is the one
- * that hands over the most. Tiers 2 and 3 get the image alone.
+ * The free second register, shown under the headline: the dictionary reading
+ * of the same word, at every tier.
  *
- * Between this and `definitionForLevel`, all three authored registers now
- * reach glass across the shipped pool (plain at tier 1, poetic at tiers 1–2,
- * riddle at tier 3) — nothing authored to the 3.7 standard is unreachable.
+ * ROUND 14 (AAA 3.5 / 3.8) — this used to return the gloss at tier 1 only, so
+ * the room withheld the plain meaning exactly where the word was least likely
+ * to be known. Rarity and help were coupled the wrong way round. The gloss is
+ * free everywhere now; what tier 3 pays for its difficulty is the riddle in the
+ * headline (`definitionForLevel`) and the obscurity of the word itself, both of
+ * which constrain the player without taking the puzzle away from her.
+ *
+ * Between this and `definitionForLevel`, all three authored registers reach
+ * glass across the shipped pool — nothing authored to the 3.7 standard is
+ * unreachable.
  */
 export function glossForLevel(puzzle: ForgottenWordPuzzle, level: number): string | null {
-  return level <= 1 ? puzzle.definitions.plain : null;
+  void level;
+  return puzzle.definitions.plain;
+}
+
+/**
+ * ROUND 14 (AAA 3.5 / 3.8) — THE CRIB: letters already in place, in proportion
+ * to how unlikely the word is to be known.
+ *
+ * The other half of breaking the rarity/help coupling, and the half that
+ * constrains rather than explains. A cryptic hands you crossers; an archaic
+ * twelve-letter word opens with three or four of its letters standing. Keyed on
+ * the WORD's obscurity and not on the room's tier, because obscurity is the
+ * thing that made the guess blind — a rare word met at tier 2 is just as blind.
+ *
+ * Deterministic, so AAA 3.3's promise holds across a force-quit: the same entry
+ * always opens with the same letters showing.
+ */
+/**
+ * `medium` is not 0. The generator's solvability gate measures every headword
+ * against `content/data/count_1w.txt`, and seventeen entries the pool calls
+ * `medium` are past rank 100k or absent from the corpus outright — PETRICHOR,
+ * SUSURRUS, MURMURATION and HOARFROST are not in it at all, RIGMAROLE sits at
+ * 213,053. A tag is an author's estimate; the corpus is a measurement, and the
+ * measurement says the middle of the house needs a crosser too. A twelve-letter
+ * archaic word opens with three or four letters standing, a nine-letter middling
+ * one with one.
+ */
+const CRIB_SHARE: Record<ForgottenWordPuzzle['obscurity'], number> = {
+  common: 0, medium: 0.15, rare: 0.25, archaic: 0.3,
+};
+
+export function cribIndices(puzzle: ForgottenWordPuzzle): number[] {
+  const share = CRIB_SHARE[puzzle.obscurity] ?? 0;
+  const n = Math.round(puzzle.word.length * share);
+  if (n <= 0) return [];
+  const out: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const at = Math.round((i * puzzle.word.length) / n);
+    if (at < puzzle.word.length && !out.includes(at)) out.push(at);
+  }
+  return out;
+}
+
+/**
+ * The crib as a display row: the letter at each revealed position, `null`
+ * everywhere she still has to supply one.
+ */
+export function cribLetters(puzzle: ForgottenWordPuzzle): (string | null)[] {
+  const shown = new Set(cribIndices(puzzle));
+  return [...puzzle.word].map((ch, i) => (shown.has(i) ? ch : null));
 }
 
 /**

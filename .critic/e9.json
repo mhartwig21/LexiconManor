@@ -1,0 +1,8 @@
+[
+  {"text":"Step back out","after":2500},
+  {"click":"button.bp-btn","has":"Journal","after":1500},
+  {"shot":"word-tab"},
+  {"eval":"document.body.innerText.slice(0,1600)"},
+  {"click":"button.jrn-tab","has":"Engravings","after":1000},
+  {"eval":"document.body.innerText.slice(0,2000)"}
+]

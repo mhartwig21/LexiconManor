@@ -94,7 +94,7 @@ export const TRIGGER_MOUNTS: Readonly<Record<CharacterId, Partial<Record<Trigger
     idle:
       'engine/dialogue/select.ts (valve retarget off the Sanctum audience)',
     'sanctum-idle':
-      'src/ui/sanctum/SanctumView.tsx (door-screen insufficient-info nudge, AAA 4.16 — RENDERED via selectTaggedLine, never played: no valve spent, nothing marked seen)',
+      'src/ui/sanctum/SanctumView.tsx (door-screen families RENDERED via selectTaggedLine, never played — no valve spent, nothing marked seen: portrait.gate.* the insufficient-info bands AAA 4.16, portrait.arrive.* the arrival shades, portrait.stair.* read from below)',
     'sanctum-after-guess':
       'src/ui/sanctum/SanctumView.tsx (wrong/won-portrait phases → slot="sanctum-after-guess")',
   },
@@ -122,8 +122,13 @@ export const CODE_SET_FLAGS: readonly string[] = [
   'sys.dewey.first-pet',
   'vol.volume-1.solved',
   // ui/sanctum/SanctumView.tsx writes this the first time she stands on the
-  // Sanctum landing. Listed so authored dialogue MAY condition on the climb
-  // (the arrival variants are selected by node id, so nothing does yet).
+  // Sanctum landing. Round 14: this used to be listed with the note "so
+  // authored dialogue MAY condition on the climb… nothing does yet", and that
+  // note survived three rounds — the biggest single event in the campaign
+  // (AAA 4.10c: "a campaign event, not a Tuesday") went unremarked by the whole
+  // cast. `bramble.recap.landing`, `ellery.react.landing` and
+  // `fern.react.landing` condition on it now, and tests/dialogue-content.test.ts
+  // asserts a reacting node is actually SELECTED for it (AAA 5.1).
   'vol.volume-1.landing-reached',
   // app/slices/dialogue.ts giveGift() sets sys.first-gift.<character>.
   ...CHARACTER_IDS.map((c) => `sys.first-gift.${c}`),

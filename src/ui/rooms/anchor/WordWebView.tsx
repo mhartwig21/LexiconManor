@@ -66,6 +66,9 @@ function hashStr(s: string): number {
 }
 
 const TIER_DOTS: Record<string, string> = { yellow: '●', green: '●●', blue: '●●●', purple: '●●●●' };
+/** The same ranking the dots print, as a number — so the finished board can be
+ *  sorted into a ladder (AAA 2.3/2.15) instead of into solve order. */
+const TIER_RANK: Record<string, number> = { yellow: 0, green: 1, blue: 2, purple: 3 };
 
 /** The merge travel, and the input lock that covers it (AAA 2.3). */
 const HOLD_MS = 950;      // hop (600) + 350ms suspense hold → verdict
@@ -74,7 +77,12 @@ const RELEASE_MS = 620;   // input unlocks; total ceremony stays under ~1.6s
 
 /** Warm, never shame-adjacent (AAA 2.14). */
 function endCopy(mistakes: number): string {
-  if (mistakes === 0) return 'Perfect! Every thread true.';
+  // ROUND 16 (AAA 2.14): this used to read 'Perfect! Every thread true.' and
+  // sat directly under the title 'Perfect!', so the perfect solve — and ONLY
+  // the perfect solve — printed the grade twice, stacked. It read as a copy
+  // bug rather than a grade. The title carries the word; the line carries the
+  // reason, exactly like the other three.
+  if (mistakes === 0) return 'Every thread true, first time.';
   if (mistakes === 1) return 'Splendid weaving.';
   if (mistakes === 2) return 'Well pieced-together.';
   return 'Got there — the web holds.';
@@ -126,7 +134,19 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
   );
   // While the naming act is up, the final banner stays unstamped — its label
   // is the question (AAA 2.11), so it must not land early as a spoiler.
-  const shownGroups = naming ? solvedGroups.slice(0, -1) : solvedGroups;
+  //
+  // ROUND 16 (AAA 2.3/2.15) — THE FINISHED BOARD IS A LADDER. During play the
+  // banners keep SOLVE order, because the newest one is the one that animates
+  // in and `isLast` below is how it is found. The moment the board is won they
+  // re-sort to yellow → green → blue → purple, so the rank dots read 1,2,3,4
+  // down the column instead of the solve order's 1,3,2,4. Connections re-sorts
+  // on reveal for exactly this reason: the finished grid is the thing she
+  // looks at, and a difficulty ladder that does not ascend means nothing.
+  const shownGroups = useMemo(() => {
+    const shown = naming ? solvedGroups.slice(0, -1) : solvedGroups;
+    const rank = (t: string) => TIER_RANK[t] ?? 99;
+    return won ? [...shown].sort((a, b) => rank(a.tier) - rank(b.tier)) : shown;
+  }, [solvedGroups, naming, won]);
   const remaining = order.filter((w) => state.web.remainingWords.includes(w));
 
   const toggle = (word: string) => {

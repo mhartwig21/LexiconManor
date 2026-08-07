@@ -1,0 +1,6 @@
+[
+  {"goto":"/sanctum"},
+  {"wait":2000},
+  {"shot":"sanctum"},
+  {"eval":"document.body.innerText.slice(0,1600)"}
+]

@@ -39,19 +39,53 @@ export function rowCanLock(row: number): boolean {
 }
 
 /**
+ * ── THE HOUSE HOLDS ITS DOORS (round 17, REVIEW_AA §5.2) ───────────────────
+ *
+ * One optional term, threaded through every lock question, false everywhere
+ * until a single irreversible thing has happened: **she has named the word.**
+ * `engine/manor/tube.ts doorsHeldOpen` is the only thing that ever supplies it,
+ * and it reads the write-once `vol.<id>.answered` flag the speaking tube sets.
+ *
+ * WHY IT IS THE PADLOCK AND NOT SOMETHING CHEAPER. Measured on 600
+ * `PROFILE_DECENT` campaigns with the tube fitted but the padlocks left in
+ * place — i.e. the answer spoken, the landing mercy armed, and nothing else
+ * changed — the gap between naming the word and being let in ran **median 7,
+ * p90 20 evenings**, the volume was won at median day 29 and **11.5% of
+ * campaigns never finished at all**. That is the wall REVIEW_AA §5.2 measured,
+ * surviving the fix that was supposed to remove it: she knew the word, she was
+ * allowed to say it, and the house still would not let her upstairs to finish.
+ * With the doors held: median 2, p90 6, won at median day 24, 0–0.5% unfinished.
+ * The hold is load-bearing, and it is only honest because of when it fires.
+ *
+ * WHAT IT COSTS. Nothing before the answer — and the answer is the last thing
+ * that happens in a volume, so every one of the ~20 evenings the padlock arc is
+ * designed for pays it in keys exactly as before. AAA 4.10d's "<8% day-1
+ * landing reach" is untouched **by construction**: the flag cannot be set on a
+ * day she has not already deduced the word, and the model measures the day-1
+ * rate unchanged at 0.0–6.0%.
+ */
+export interface LockView {
+  /** True once she has named the word and the house is holding the stairs. */
+  heldOpen?: boolean;
+}
+
+/**
  * Is the door into `cell` padlocked today? Deterministic per (daySeed, cell),
  * and false for any cell that already holds a room — a placed room's doors
  * are open; the padlock is on the DRAFT, not on the corridor. (This is what
  * keeps movement free: `moveTo` only ever walks into rooms that exist.)
  */
-export function isDoorLocked(manor: ManorState, cell: Cell): boolean {
+export function isDoorLocked(manor: ManorState, cell: Cell, view?: LockView): boolean {
+  if (view?.heldOpen) return false;
   if (roomAt(manor, cell)) return false;
   return doorLockedAt(manor.daySeed, cellKey(cell), cell.row);
 }
 
 /** Can she open this door right now — i.e. is it unlocked, or can she pay? */
-export function canOpenDoor(manor: ManorState, cell: Cell, keys: number): boolean {
-  return !isDoorLocked(manor, cell) || keys >= KEY_COST;
+export function canOpenDoor(
+  manor: ManorState, cell: Cell, keys: number, view?: LockView,
+): boolean {
+  return !isDoorLocked(manor, cell, view) || keys >= KEY_COST;
 }
 
 export interface DraftTargetLock {
@@ -62,9 +96,11 @@ export interface DraftTargetLock {
 }
 
 /** The player's own doors, annotated with their padlocks (drafting surface). */
-export function lockedDraftTargets(manor: ManorState): (DraftTargetLock & { dir: Dir })[] {
+export function lockedDraftTargets(
+  manor: ManorState, view?: LockView,
+): (DraftTargetLock & { dir: Dir })[] {
   return draftTargets(manor).map((t) => {
-    const locked = isDoorLocked(manor, t.cell);
+    const locked = isDoorLocked(manor, t.cell, view);
     return { ...t, locked, keyCost: locked ? KEY_COST : 0 };
   });
 }
@@ -85,7 +121,11 @@ export function lockedDraftTargets(manor: ManorState): (DraftTargetLock & { dir:
  * of the house is not a corridor she has any way to look down yet, and 15
  * padlocks on a 390px sheet is noise, not information.
  */
-export function visibleLocks(manor: ManorState): DraftTargetLock[] {
+export function visibleLocks(manor: ManorState, view?: LockView): DraftTargetLock[] {
+  // Held open: there is nothing to draw. The blueprint must not keep printing
+  // padlocks on doors that will open for free — a lock drawn where none bites
+  // is exactly the "chrome that lies" 4.6 forbids, in the other direction.
+  if (view?.heldOpen) return [];
   const rooms = Object.values(manor.rooms);
   // The Sanctum is pre-placed and sealed from dawn on day 1: it does not make
   // its landing legible, or every fresh manor would open with the whole top
@@ -100,7 +140,7 @@ export function visibleLocks(manor: ManorState): DraftTargetLock[] {
     const key = cellKey(cell);
     if (seen.has(key)) return;
     seen.add(key);
-    if (!isDoorLocked(manor, cell)) return;
+    if (!isDoorLocked(manor, cell, view)) return;
     out.push({ cell, locked: true, keyCost: KEY_COST });
   };
 

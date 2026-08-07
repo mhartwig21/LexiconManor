@@ -18,6 +18,7 @@ import type { GuessCloseness } from './events';
 import { BASE_DAY_BUDGET, moveAt } from './economy/steps';
 import {
   computeCloseness,
+  FRAGMENTS_TO_DEDUCE,
   type EngravingConstraint,
   type FragmentContent,
   type VolumeContent,
@@ -658,8 +659,14 @@ export interface SanctumReadiness {
   /** Pages she can actually READ — what she knows (round 11, see below). */
   legible: number;
   total: number;
-  /** Enough on the desk that a guess is an act of deduction, not a dart throw. */
+  /** Past the thin-file band: the case file is worth carrying upstairs. */
   enough: boolean;
+  /**
+   * Enough READABLE pages that the constraint set can actually pin a word
+   * (`DEDUCTION_FLOOR`). Only here does the insufficient-info nudge stand
+   * down — see the round-14 note on that constant.
+   */
+  deducible: boolean;
 }
 
 /**
@@ -676,6 +683,30 @@ export interface SanctumReadiness {
  * tests/journal.test.ts pins them together.
  */
 export const THIN_FILE_THRESHOLD = 4;
+
+/**
+ * ── ROUND-14 DEFECT: THE 4.16 NUDGE RETIRED AT 4 AND DEDUCTION NEEDED 13. ───
+ *
+ * `enough` used to be `legible >= THIN_FILE_THRESHOLD`, and SanctumView
+ * suppressed the WHOLE nudge on it. The Portrait's authored gate lines covered
+ * ≤0 and 1–3 and stopped. So from four readable pages to about thirteen — the
+ * majority of the volume's duration, measured median day 5 to median day 20 for
+ * PROFILE_DECENT — she stood at the door, spent her one word a day, and got
+ * exactly the silence AAA 4.16 forbids ("an explicit sympathetic nudge, never
+ * silence"). Two numbers existed for one concept and neither doc named the
+ * other, which is the §0.5 escape shape: a criterion no critic can fail.
+ *
+ * The band edge is now the mystery's own constant (`FRAGMENTS_TO_DEDUCE`,
+ * engine/volume.ts) rather than a second literal, the authored bands tile
+ * 0 → DEDUCTION_FLOOR with no gap and no overlap, and tests/journal.test.ts
+ * pins the JSON, this constant and A2's `KNOWLEDGE.fragmentsToDeduce` to each
+ * other — exactly as the thin-file pair was already pinned.
+ *
+ * THIN_FILE_THRESHOLD keeps its own, smaller job: below it the file is *thin*
+ * (the journal rail's "worth taking upstairs"), which is a different sentence
+ * to "this file cannot yet name a word".
+ */
+export const DEDUCTION_FLOOR = FRAGMENTS_TO_DEDUCE[0];
 
 /**
  * ROUND-11 DEFECT: EVERY FRAGMENT GATE COUNTED PAGES SHE CANNOT READ.
@@ -708,6 +739,7 @@ export function sanctumReadiness(
     legible,
     total: content.fragments.length,
     enough: legible >= THIN_FILE_THRESHOLD,
+    deducible: legible >= DEDUCTION_FLOOR,
   };
 }
 

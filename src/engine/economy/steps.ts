@@ -467,6 +467,131 @@ export const KEY_SUPPLY = {
 } as const;
 
 /**
+ * ═══ THE LANDING ARC (round 13) — THE ACCESS GATE FINALLY HAS AN ARC ═══════
+ *
+ * TWO FINDINGS, ONE MECHANIC. Both were about the same hole: the second gate
+ * of AAA 4.10e — ACCESS — had no arc and no floor of any kind.
+ *
+ *  1. **The arc was spent on day 12.** Tea hits `TEA_ARC.maxPoints` at day 12,
+ *     Fern's dawn key at day 9, and both `CAMPAIGN_ARC` familiarity terms cap
+ *     by day ~9. From day 13 the median player's evening was statistically
+ *     identical forever — the game's answer to a player who keeps stopping a
+ *     storey short was "roll again, nightly, with the same dice, indefinitely".
+ *  2. **No mercy on the gate that binds.** Over 400 PROFILE_DECENT campaigns,
+ *     EVERY unfinished campaign belonged to a player who already knew the
+ *     word: `deductionDay` was never null, and the gap between knowing and
+ *     winning ran median 9 evenings, p90 25, max 47. AAA 4.14 gives the
+ *     KNOWLEDGE gate a guaranteed pity floor (`PITY_DROUGHT_DAYS`, synthesized
+ *     letters that never exhaust); ACCESS had none, so the endgame for the
+ *     owner's own profile was three-plus weeks of "I solved the mystery and
+ *     the house will not let me say it".
+ *
+ * THE MECHANIC, in one sentence: **the more of the top storey she has
+ * surveyed, the better her plans of it.** Every evening she stands on the
+ * Sanctum landing is an evening she has seen that storey with her own eyes,
+ * and the floorplan cabinet keeps what she saw — so the plans offered up there
+ * lean, more and more, toward the ones that open onto the sealed door.
+ *
+ * WHY THIS SHAPE AND NOT A CHEAPER ONE:
+ *   - it is EARNED, not clocked: the counter only moves on an evening she
+ *     actually paid the 22+ step climb, so it cannot ramp on the calendar the
+ *     way `teaArcFloor` deliberately can;
+ *   - it is STRICTLY PROGRESSIVE and it cannot touch the early campaign at
+ *     all — `landingEvenings` is 0 until her first landing, which the same
+ *     model puts around day 8 (skilled) / day 16 (median), so AAA 4.10d's
+ *     "<8% on day 1" is untouched by construction rather than by tuning;
+ *   - it is a WEIGHT, not a guarantee, so the landing draft stays a decision
+ *     (AAA 4.6) instead of becoming a formality.
+ *
+ * THE MERCY is the one hard guarantee, and it is gated on BOTH halves so it
+ * can only ever bite where the finding found it biting: she must be at the
+ * deduction band (`mercyFragments` LEGIBLE pages — sealed smudges taught her
+ * nothing and must not arm mercy, exactly as `legibleDroughtDays` rules for
+ * the knowledge gate) AND have already stood on that landing `mercyEvenings`
+ * times. After that the landing offer always contains a plan that opens north.
+ * She still has to climb; she is no longer told to climb again.
+ */
+export const SANCTUM_ARC = {
+  /**
+   * WHAT COUNTS AS SURVEYING THE TOP, as a 0-based grid row: the third landing
+   * (`ROW_NAMES[4]`), the storey the Sanctum stair is visible from, and the
+   * first one `DOOR_LOCKS` padlocks. It is `SANCTUM_DOOR_CELL.row - 1`, and
+   * tests/economy-simulation.test.ts pins the identity so the two cannot drift.
+   *
+   * Deliberately NOT the landing itself. Fuelled by landing evenings alone the
+   * arc barely existed for the player it was built for: the median player
+   * stands on that landing about one evening in twelve, so full warmth would
+   * have been a three-month player and the late campaign would have stayed the
+   * nightly coin flip the finding measured. The storey below is a real climb
+   * (−7 a step, padlocked at 0.9) that she reaches often enough for the arc to
+   * be an arc, and still one she cannot reach on day 1.
+   */
+  surveyRow0: 4,
+  /**
+   * Evenings surveying the top at which the plan bonus is fully warmed.
+   * Deliberately slow — this is the LAST lever in the campaign and it has to
+   * still be moving at day 30, which is the whole finding.
+   */
+  planEveningsToFull: 30,
+  /**
+   * Draft-weight multiplier ADDED to north-opening plans at the landing, at
+   * full warmth. Raises the realised P(the 3-card landing offer contains a
+   * plan that opens onto the Sanctum) from ~0.61 (bare deck) toward ~0.9.
+   */
+  maxPlanWeightGain: 6,
+  /**
+   * LEGIBLE fragments at which the access mercy is allowed to arm — the
+   * deduction band (`KNOWLEDGE.fragmentsToDeduce` opens at 13 of volume 1's
+   * 17). Sealed pages do not count: a smudge is not knowledge.
+   */
+  mercyFragments: 13,
+  /**
+   * Evenings already spent up there before the guarantee opens. One: she has
+   * to have climbed to the top of the house and been turned away at least once
+   * before the house starts helping, which is what keeps this off day 1
+   * without any tuning at all.
+   */
+  mercyEvenings: 1,
+} as const;
+
+/**
+ * 0..1 warmth of the surveyed-plan bonus, from evenings already spent on the
+ * top storeys (`SANCTUM_ARC.surveyRow0` or above). Live source:
+ * `chronicles.dayRecords`, whose `highestRow` is written every dusk and
+ * persists forever — no save-schema change, and the same audited spine
+ * `carryOverFrom` already reads.
+ */
+export function sanctumPlanWarmth(surveyEvenings: number): number {
+  if (!Number.isFinite(surveyEvenings) || surveyEvenings <= 0) return 0;
+  return Math.min(1, surveyEvenings / SANCTUM_ARC.planEveningsToFull);
+}
+
+/** Evenings in a persisted day-record list that surveyed the top storeys. */
+export function surveyEveningsIn(
+  records: readonly { highestRow?: number }[],
+): number {
+  return records.filter((r) => (r.highestRow ?? 0) >= SANCTUM_ARC.surveyRow0).length;
+}
+
+/** Draft-weight multiplier for a plan that opens onto the Sanctum. */
+export function sanctumPlanWeightMultiplier(warmth: number): number {
+  const w = Math.max(0, Math.min(1, warmth));
+  return 1 + SANCTUM_ARC.maxPlanWeightGain * w;
+}
+
+/**
+ * THE ACCESS MERCY (AAA 4.14's floor, for the gate that never had one).
+ * Both halves required — she knows the word, and she has been up there and
+ * been turned away. Either alone leaves the gate exactly as it was.
+ */
+export function sanctumMercyArmed(
+  surveyEvenings: number, legibleFragments: number,
+): boolean {
+  return surveyEvenings >= SANCTUM_ARC.mercyEvenings
+    && legibleFragments >= SANCTUM_ARC.mercyFragments;
+}
+
+/**
  * THE LIVE FERN ARC — what her affinity can actually reach, and when.
  *
  * These are not wishes: `meetPoints`/`questPoints` mirror the authored

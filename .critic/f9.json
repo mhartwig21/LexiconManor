@@ -1,0 +1,6 @@
+[
+  {"click":"[aria-label*='half landing']","after":2000},
+  {"click":".bp-card","has":"Counting House","after":3000},
+  {"shot":"sudoku"},
+  {"eval":"document.body.innerText.slice(0,900)"}
+]

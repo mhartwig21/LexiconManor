@@ -85,7 +85,7 @@ const table = [];
 
 const server = spawn(
   process.execPath,
-  [resolve(ROOT, 'node_modules/vite/bin/vite.js'), '--port', String(PORT), '--strictPort'],
+  [resolve(ROOT, 'node_modules/vite/bin/vite.js'), '--config', resolve(ROOT, 'scripts/gate-vite.config.ts'), '--port', String(PORT), '--strictPort'],
   { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] },
 );
 const serverUp = new Promise((res, rej) => {
@@ -371,10 +371,18 @@ try {
   //     loudly if no seal mounts, so it can never pass by having nothing on the
   //     glass to collide with.
   {
+    /* ROUND 15: over a playfield (a room, and now the blueprint) the seal is
+       `pointer-events: none` on purpose, so a click at its centre falls
+       through onto the board and walks the player somewhere. Wait out the
+       dwell there instead of tapping. */
     const drainMoments = async () => {
-      for (let i = 0; i < 25; i++) {
+      for (let i = 0; i < 60; i++) {
         const b = await boxOf('.mom');
         if (!b) return;
+        const inert = await page.evaluate(
+          () => getComputedStyle(document.querySelector('.mom')).pointerEvents === 'none',
+        ).catch(() => true);
+        if (inert) { await page.waitForTimeout(300); continue; }
         await page.mouse.click(b.x + b.w / 2, b.y + b.h / 2);
         await page.waitForTimeout(160);
       }
@@ -560,6 +568,144 @@ try {
   await page.setViewportSize({ width: 375, height: 667 });
   await page.waitForTimeout(300);
   await assertBarHeight('375x667 (short-screen token)');
+
+  // 9. THE DUSK VEIL (round-15 blocker, AAA 11.2 / 11.4 / 11.5).
+  //
+  //    This file enumerated the morning card, the morning conversation, the
+  //    bare blueprint, the cabinet, a draft, a parlor conversation, the journal
+  //    with a seal up and the victory ceremony — every overlay in the app
+  //    except the one that ships its own TAPPABLE CONTROL over a live surface.
+  //    `.chr-dusk` is deliberately `pointer-events: none` so the blueprint
+  //    stays walkable through the ≤4s fade (4.12's grace), and
+  //    `.chr-dusk__skip` is the single interactive island on that layer. It was
+  //    pinned 28px off the bottom — on top of the blueprint's nav row.
+  //    Measured: skip [129,772,133,44] over Journal [114,788,120,44] at
+  //    390x844 and [121,595,133,44] over [109,611,115,44] at 375x667;
+  //    `elementFromPoint` at the Journal button's centre returned
+  //    `.chr-dusk__skip` at both, reduced motion on and off, and a DRIVEN click
+  //    there left `location.hash` unchanged. The digest four seconds later
+  //    prints "A letter waits unopened in the post tray".
+  //
+  //    §0.4's walk list names "dusk veil" explicitly. This row is why the list
+  //    and the gate now agree.
+  {
+    for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {
+      await page.setViewportSize(vp);
+      await page.evaluate(() => { location.hash = '#/'; });
+      await page.waitForSelector('.bp-foot__actions', { timeout: 8000 });
+      await page.waitForTimeout(350);
+
+      const phase = await page.evaluate(() => window.__manorStore.getState().day?.phase ?? null);
+      if (phase !== 'exploring') {
+        fail(`dusk veil ${vp.width}x${vp.height}: the day is in "${phase}", not "exploring" — the veil cannot be provoked and this row must be repaired, not skipped`);
+        continue;
+      }
+      // The real edge: exploring→dusk always goes through endDay (day slice).
+      await page.evaluate(() => window.__manorStore.getState().endDay('steps-exhausted'));
+      const veil = await page.waitForSelector('.chr-dusk', { timeout: 5000 }).catch(() => null);
+      if (!veil) {
+        fail(`dusk veil ${vp.width}x${vp.height}: .chr-dusk never mounted after endDay() — nothing to hit-test`);
+        continue;
+      }
+
+      const probe = await page.evaluate(() => {
+        const skip = document.querySelector('.chr-dusk__skip');
+        const sr = skip?.getBoundingClientRect();
+        const rows = [];
+        for (const b of document.querySelectorAll('.bp-foot__actions button')) {
+          const r = b.getBoundingClientRect();
+          if (r.width < 1 || r.height < 1) continue;
+          // Centre AND the four inset corners — AAA 11.2 asks for all five.
+          const points = [
+            ['centre', r.x + r.width / 2, r.y + r.height / 2],
+            ['top-left', r.x + 5, r.y + 5],
+            ['top-right', r.x + r.width - 5, r.y + 5],
+            ['bottom-left', r.x + 5, r.y + r.height - 5],
+            ['bottom-right', r.x + r.width - 5, r.y + r.height - 5],
+          ];
+          const bad = [];
+          for (const [where, x, y] of points) {
+            const el = document.elementFromPoint(x, y);
+            if (!el || !(el === b || b.contains(el))) {
+              const cls = el && typeof el.className === 'string' ? el.className : '';
+              bad.push(`${where}→${el ? el.tagName.toLowerCase() : 'nothing'}${cls ? '.' + cls.split(' ')[0] : ''}`);
+            }
+          }
+          rows.push({
+            label: (b.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 18),
+            box: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)],
+            bad,
+          });
+        }
+        return {
+          skip: sr ? [Math.round(sr.x), Math.round(sr.y), Math.round(sr.width), Math.round(sr.height)] : null,
+          skipItself: (() => {
+            if (!skip || !sr) return false;
+            const el = document.elementFromPoint(sr.x + sr.width / 2, sr.y + sr.height / 2);
+            return Boolean(el && (el === skip || skip.contains(el)));
+          })(),
+          rows,
+        };
+      });
+
+      log(`  dusk veil ${vp.width}x${vp.height}: skip ${JSON.stringify(probe.skip)}; nav row ${probe.rows.map((r) => r.label).join(', ')}`);
+      check(probe.rows.length >= 2,
+        `dusk veil ${vp.width}x${vp.height}: the blueprint's nav row is on the glass under the veil (${probe.rows.length} controls)`,
+        `dusk veil ${vp.width}x${vp.height}: only ${probe.rows.length} nav controls found — this row is probing the wrong band`);
+      for (const r of probe.rows) {
+        check(r.bad.length === 0,
+          `dusk veil ${vp.width}x${vp.height}: "${r.label}" ${JSON.stringify(r.box)} answers as itself at its centre and four inset corners`,
+          `dusk veil ${vp.width}x${vp.height}: "${r.label}" ${JSON.stringify(r.box)} — ${r.bad.join(', ')} (AAA 11.2/11.4: the veil's skip control is over the nav row)`);
+      }
+      // The skip must still be a control itself — a fix that buries it under
+      // something else is the same defect with the roles swapped (11.1).
+      check(probe.skipItself,
+        `dusk veil ${vp.width}x${vp.height}: "And so, to bed" answers at its own centre`,
+        `dusk veil ${vp.width}x${vp.height}: the veil's own skip control is covered — moving it out of the nav row buried it (AAA 11.1/11.2)`);
+
+      // DRIVEN: the tap the digest is about to ask her to make.
+      const journal = probe.rows.find((r) => /^Journal/i.test(r.label));
+      if (!journal) {
+        fail(`dusk veil ${vp.width}x${vp.height}: no "Journal" entrance in the nav row — the driven half cannot run`);
+      } else {
+        const before = await page.evaluate(() => location.hash);
+        await page.mouse.click(journal.box[0] + journal.box[2] / 2, journal.box[1] + journal.box[3] / 2);
+        await page.waitForTimeout(500);
+        const after = await page.evaluate(() => location.hash);
+        check(/journal/.test(after),
+          `dusk veil ${vp.width}x${vp.height}: a tap at the Journal entrance reached ${after}`,
+          `dusk veil ${vp.width}x${vp.height}: a tap at the Journal entrance left the hash at "${after}" (was "${before}") — the veil's skip control ate it (AAA 11.2/11.5)`);
+        table.push({
+          surface: `dusk veil ${vp.width}x${vp.height}`,
+          overlay: '.chr-dusk',
+          hit: journal.bad.length ? '.chr-dusk__skip' : 'the nav row (itself)',
+          retireMounted: false,
+          dayEnded: true,
+        });
+      }
+
+      // Let the veil finish and roll the day forward so the second viewport
+      // starts from a live `exploring` again.
+      await page.evaluate(() => { location.hash = '#/'; });
+      await page.waitForTimeout(300);
+      for (let i = 0; i < 8; i++) {
+        const p = await page.evaluate(() => window.__manorStore.getState().day?.phase ?? null);
+        if (p === 'exploring') break;
+        await page.evaluate(() => window.__manorStore.getState().advanceDayPhase());
+        await page.waitForTimeout(400);
+        if (await page.$('.chr-scene__btn')) {
+          await page.click('.chr-scene__btn').catch(() => {});
+          await page.waitForTimeout(300);
+          await playScene();
+        }
+      }
+      await page.waitForFunction(
+        () => window.__manorStore.getState().day?.phase === 'exploring', null, { timeout: 15000 },
+      ).catch(() => {});
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(250);
+  }
 
   if (errors.length) fail('console/page errors: ' + errors.slice(0, 4).join(' | '));
 

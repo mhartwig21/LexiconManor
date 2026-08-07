@@ -1,0 +1,4 @@
+[
+  {"eval":"document.body.innerText.slice(0,300)"},
+  {"shot":"where"}
+]

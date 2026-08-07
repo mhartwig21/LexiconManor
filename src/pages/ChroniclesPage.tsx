@@ -47,6 +47,49 @@ import HouseSoFar from '../ui/chrome/HouseSoFar';
 import { keepsakeSeenFlag, unseenKeepsakes } from '../ui/moment/mantel';
 import './chronicles.css';
 
+/**
+ * The build stamp, compiled in by vite.config.ts (`define`) from the same
+ * object written to dist/build-stamp.json. REVIEW_AA §0: two hostile reviews
+ * were written against a stale dist and nobody — including the reviewers —
+ * could tell. A report that names its edition is auditable; one that doesn't
+ * is a rumour. This costs one line at the foot of Chronicles.
+ *
+ * `id` is the first 7 of a sha256 over every source file that can affect the
+ * bundle, so it changes on any real edit, committed or not — which a git SHA
+ * alone would not. Always defined: dev and vitest get DEV_STAMP.
+ */
+declare const __MANOR_BUILD__: {
+  id: string;
+  source: string;
+  git: string | null;
+  builtAt: string;
+  via: string;
+  base: string;
+  files: number;
+};
+
+function BuildStampLine() {
+  const b = __MANOR_BUILD__;
+  const dev = b.via === 'dev';
+  const when = b.builtAt ? b.builtAt.slice(0, 16).replace('T', ' ') + ' UTC' : 'not built';
+  return (
+    <p
+      className="chron__build"
+      data-testid="build-stamp"
+      data-build-id={b.id}
+      data-build-git={b.git ?? ''}
+      data-build-at={b.builtAt}
+      title={`source ${b.source}\ngit ${b.git ?? 'unknown'}\nvia ${b.via}\n${b.files} watched files`}
+    >
+      {dev ? (
+        <>Edition <b>dev</b> · running from source, unbuilt</>
+      ) : (
+        <>Edition <b>{b.id}</b>{b.git ? ` · ${b.git}` : ''} · {when}</>
+      )}
+    </p>
+  );
+}
+
 const CAUSE_COPY: Record<string, string> = {
   'steps-exhausted': 'the dusk came softly',
   'retired-early': 'retired early, tea in hand',
@@ -134,6 +177,31 @@ function FreshStart({ onExport, exported }: { onExport: () => void; exported: bo
   const [working, setWorking] = useState(false);
   const disarm = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (disarm.current) clearTimeout(disarm.current); }, []);
+
+  /**
+   * THE PANEL ANSWERS WHERE THE TAP WAS (AAA 11.3/11.11, round 16).
+   *
+   * `.chron__confirm` mounts INLINE inside the `.chron__ledger` scroller, and
+   * the restart controls sit at the bottom of a long ledger. Measured at
+   * 390x844 immediately after the tap, with no manual scrolling: the ledger
+   * clipped at y=816 while the confirm spanned y=562..974 — the heading showed,
+   * and all three of its controls ("Pack a copy first", "Never mind", "Erase
+   * everything") sat below the clip and hit-tested null. Nothing was
+   * unreachable, but the answer to her tap — INCLUDING the cancel, and
+   * including the export the copy itself recommends taking first — was off
+   * glass at the moment it appeared. "Never mind" being the invisible one is
+   * the wrong half to hide on a destructive path.
+   *
+   * `block: 'nearest'` rather than 'center': it scrolls the minimum needed, so
+   * on a viewport where the panel already fits nothing moves at all.
+   */
+  const confirmEl = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (scope === null) return;
+    const node = confirmEl.current;
+    if (!node || typeof node.scrollIntoView !== 'function') return;
+    node.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+  }, [scope]);
 
   /**
    * The volume to roll onto. The Chronicles page also renders UNDER the boot
@@ -248,6 +316,7 @@ function FreshStart({ onExport, exported }: { onExport: () => void; exported: bo
 
       {scope !== null && (
         <div
+          ref={confirmEl}
           className="chron__confirm"
           data-scope={scope}
           data-testid="restart-confirm"
@@ -503,6 +572,14 @@ export default function ChroniclesPage() {
         <h3 className="chron__section">The house, so far</h3>
         <HouseSoFar />
 
+        {/* Above the ledger deliberately — see the ROUND 9 note at the top of
+            this file. The ledger is the one UNBOUNDED section, so anything
+            placed after it sinks a row deeper every day played. A build stamp
+            that is three screens down on day 30 is a build stamp nobody quotes,
+            which defeats the entire point of having one (REVIEW_AA §0). Here
+            its depth is constant for the life of the campaign. */}
+        <BuildStampLine />
+
         <h3 className="chron__section">Days in the manor</h3>
         {records.length === 0 ? (
           <p className="chron__empty">The ledger waits for your first day.</p>
@@ -533,6 +610,10 @@ export default function ChroniclesPage() {
             <dd>{debug ? `${Math.round(debug.saveBytes / 1024)} KB` : '…'}</dd>
             <dt>mirror</dt>
             <dd>{debug ? (debug.mirrorHealthy ? 'healthy' : 'empty') : '…'}</dd>
+            <dt>source</dt>
+            <dd>{__MANOR_BUILD__.source.slice(0, 16)}</dd>
+            <dt>built via</dt>
+            <dd>{__MANOR_BUILD__.via}</dd>
           </dl>
         </details>
       </div>

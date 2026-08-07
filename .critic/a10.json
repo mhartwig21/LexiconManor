@@ -1,0 +1,6 @@
+[
+  {"click":"button.chr-scene__btn","has":"Begin the day","after":2500},
+  {"dialogue":25},
+  {"shot":"after-bramble"},
+  {"dump":true}
+]

@@ -1,0 +1,3 @@
+[
+  {"eval":"({overlayAttr:document.documentElement.hasAttribute('data-overlay-open'), matches:Array.from(document.querySelectorAll('.dlg,.bp-modal,.chr-scene,[data-overlay]')).map(function(e){return e.tagName+'.'+e.className}), pe:getComputedStyle(document.querySelector('.chr-header')).pointerEvents})"}
+]

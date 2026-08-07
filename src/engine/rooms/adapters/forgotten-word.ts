@@ -137,6 +137,12 @@ export const forgottenWordAdapter: RoomPuzzleAdapter<ForgottenWordPuzzleEx, Forg
 
   select: (opts) => selectByTier(FORGOTTEN_WORD_POOL, opts),
 
+  // §5.3 — whispers spent, unsealed clues and the closeness history are plain
+  // JSON data. Restoring by id also keeps a REVEALED word from being re-rolled
+  // into a fresh one at the same cell.
+  find: (id) => FORGOTTEN_WORD_POOL.find((p) => p.id === id),
+  stateVersion: 1,
+
   start(puzzle: ForgottenWordPuzzleEx, ctx: RoomContext): ForgottenWordRoomState {
     return {
       fw: startForgottenWord(puzzle, ctx.tier),

@@ -266,6 +266,24 @@
 .bp-walk[data-pressed] .bp-walk__wash,
 .bp-sanctumhit[data-pressed] .bp-walk__wash { opacity: 0.13; }
 
+/* THE SEALED SEAM (round-13 blocker, AAA 4.6/4.16). She is on the Sanctum
+   landing and the plan she drafted there drew no north door, so the wall
+   between her and the sealed door is blank plaster. The same bricked dash
+   every other dead door on the sheet wears — one vocabulary, so a player who
+   has learned what a bricked door means anywhere has already learned this one
+   (AAA 6.16). Heavier than a room's own dead door because this is the one wall
+   in the manor the whole campaign is about, and never hue-only: it is a SHAPE
+   on an otherwise unbroken wall line (AAA 6.3, grayscale-safe). */
+.bp-sealedseam {
+  stroke: var(--ink-soft);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+/* The refusing tap gets a press state like every other control — it responds,
+   it simply responds with words (AAA U.1: feedback within one frame). */
+.bp-sanctumhit--sealed[data-pressed] .bp-hit__zone { fill: var(--ink); fill-opacity: 0.06; }
+
 /* ghost rooms behind draftable doors */
 .bp-ghost__outline {
   fill: none;
@@ -711,6 +729,30 @@
   color: var(--ink-soft);
   letter-spacing: 0.02em;
 }
+/* THE SANCTUM STAMP (round 13, AAA 4.6/4.16/6.3). The one draft in the game
+   whose door choice is the campaign, said in words on every card of the offer.
+   Double-encoded: the WORDS carry the answer ("Opens onto" vs "Turns its back
+   on"), so a grayscale screenshot and a colour-blind reader lose nothing; the
+   gilt on the opening one is the same "this is the way through" ink the sheet
+   already uses for a live door handle, never wax red — nothing here is a
+   mistake or a loss. */
+.bp-card__sanctum {
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+.bp-card__sanctum--opens {
+  color: var(--gilt);
+  font-weight: 600;
+}
+/* The rule said once, above the three cards that answer it. */
+.bp-modal__sanctum {
+  margin: 0.45rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+.bp-modal__sanctum strong { color: var(--gilt); font-weight: 600; }
+
 .bp-card__meta {
   font-size: var(--text-sm);
   color: var(--ink-faint);

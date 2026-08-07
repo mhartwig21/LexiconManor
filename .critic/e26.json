@@ -1,0 +1,4 @@
+[
+  {"eval":"Array.from(document.querySelectorAll('.lc-cell')).map(function(c,i){return i+':'+(c.className.indexOf('void')>-1?'#':'_')}).join(' ')"},
+  {"eval":"document.querySelector('.lc-grid').getAttribute('style')||document.querySelector('.lc-grid').className"}
+]

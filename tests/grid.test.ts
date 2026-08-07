@@ -4,7 +4,8 @@ import {
   dirBetween, rowTier, createManor, doorsConnect, canMoveTo, walkableNeighbors,
   draftTargets, deadDoors, placeRoom, orientLayout, layoutFor, resolveDoors,
   rotateDirBy, turnsBetween, sealsItself, hashSeed,
-  roomSeed, deweyCell, roomAt, atSanctumDoor,
+  roomSeed, deweyCell, roomAt, atSanctumDoor, cardOpensOntoSanctum, onSanctumLanding,
+  opensOntoSanctum, sanctumStanding, canAddressSanctum, atSpeakingTube, SPEAKING_TUBE_CELL,
   DIRS, ENTRANCE_KEY, SANCTUM_DOOR_CELL, SANCTUM_DOOR_KEY, SANCTUM_KEY,
 } from '../src/engine/manor/grid';
 import { BASE_DECK, deckFor } from '../src/engine/manor/deck';
@@ -17,7 +18,9 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import BlueprintSheet from '../src/ui/blueprint/BlueprintSheet';
 import {
-  draftLabel, draftTotal, priceStamp, priceWords, stampsDraftPrice, stampsPrice, walkLabel,
+  draftLabel, draftTotal, landingRefusalAnnouncement, landingRefusalLine, priceStamp, priceWords,
+  sanctumDraftStamp, stampsDraftPrice, stampsPrice, walkLabel,
+  LANDING_REFUSAL_LINES, LANDING_SEALED_LABEL,
 } from '../src/ui/blueprint/pricing';
 import { DOOR_LOCKS, moveAt } from '../src/engine/economy/steps';
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCard } from '../src/engine/types';
@@ -143,6 +146,129 @@ describe('the Sanctum door is a PLACE (AAA 4.10e — the second gate)', () => {
     expect(atSanctumDoor({ ...open, playerCell: { ...SANCTUM_DOOR_CELL } })).toBe(true);
     // …and it is the same fact the blueprint's approach is drawn from.
     expect(doorsConnect(open, SANCTUM_DOOR_CELL, 'N')).toBe(true);
+  });
+
+  /**
+   * ROUND-13 BLOCKER: the boolean only ever spoke two of its three meanings.
+   * `landing-sealed` — she is standing on (2,5) and the plan she drafted there
+   * drew no north door — rendered as nothing at all: no hit target on the
+   * blueprint, no ink, and both `/sanctum` and the journal telling her to climb
+   * to the landing she was already standing on. The standing is three-valued
+   * now, exported once, so no surface can invent a fourth answer.
+   */
+  it('distinguishes the sealed landing from being anywhere else (round 13)', () => {
+    const base = createManor(11);
+    // ROUND 17 (REVIEW_AA §5.2): a fresh manor stands her in the Entrance Hall,
+    // and the Entrance Hall is where the speaking tube is bolted to the wall —
+    // so the fresh standing is 'at-tube', not 'away'. That is the whole change:
+    // she can address the Sanctum from the first cell of the first day. 'away'
+    // still means what it always meant, and is asserted on a real elsewhere
+    // below.
+    expect(sanctumStanding(base)).toBe('at-tube');
+    expect(sanctumStanding(null)).toBe('away');
+    expect(onSanctumLanding(base)).toBe(false);
+    // The tube is a mouth, not a door: it never makes her stand at the door.
+    expect(atSanctumDoor(base)).toBe(false);
+    expect(canAddressSanctum(base)).toBe(true);
+
+    const sealed = placeRoom(base, room(SANCTUM_DOOR_CELL, ['S', 'E']));
+    const standingSealed = { ...sealed, playerCell: { ...SANCTUM_DOOR_CELL } };
+    expect(sanctumStanding(standingSealed)).toBe('landing-sealed');
+    expect(onSanctumLanding(standingSealed)).toBe(true);
+    expect(atSanctumDoor(standingSealed)).toBe(false);
+
+    const open = placeRoom(base, room(SANCTUM_DOOR_CELL, ['S', 'N']));
+    const standingOpen = { ...open, playerCell: { ...SANCTUM_DOOR_CELL } };
+    expect(sanctumStanding(standingOpen)).toBe('at-door');
+    expect(onSanctumLanding(standingOpen)).toBe(true);
+
+    // Standing one storey down in a room that opens north is NOT the door:
+    // the fact is about the landing cell, and only about it.
+    const below = placeRoom(base, room({ col: 2, row: 4 }, ['N']));
+    expect(sanctumStanding({ ...below, playerCell: { col: 2, row: 4 } })).toBe('away');
+  });
+
+  /**
+   * ═══ REVIEW_AA §5.2, AS A TEST — THE SPEAKING TUBE ════════════════════════
+   *
+   * The review's measurement: *"first landing median day 18–21, 10–14% never
+   * inside 45 days… Reviewer A deduced LACUNA on day 1 and was still stranded
+   * at row 5 on day 3. SANCTUM_GUESS_COST is already 0 — the guess is free; the
+   * walk is the wall."* Its "done looks like": *"The Sanctum door is addressable
+   * from the Entrance Hall every day, at zero or near-zero step cost."*
+   *
+   * So: the tube IS the Entrance Hall — the cell a fresh manor already stands
+   * her in, on day 1, before she has moved or drafted anything. No step is
+   * charged because no move is made.
+   */
+  it('§5.2 — she can address the Sanctum from the hall on day 1, having walked nowhere', () => {
+    const base = createManor(11);
+    expect(SPEAKING_TUBE_CELL, 'the tube must be where every day already begins')
+      .toEqual(ENTRANCE_CELL);
+    expect(base.playerCell).toEqual(ENTRANCE_CELL);
+    expect(atSpeakingTube(base)).toBe(true);
+    expect(canAddressSanctum(base)).toBe(true);
+
+    // …and it is still not the door. The climb keeps the ceremony: standing at
+    // the tube is never 'at-door', so the win gate is untouched by this change.
+    expect(atSanctumDoor(base)).toBe(false);
+    expect(sanctumStanding(base)).toBe('at-tube');
+
+    // Walk one cell off the hall and the tube is behind her — the mouth is a
+    // PLACE, which is the ruling round 7 made about the door itself.
+    const elsewhere = { ...base, playerCell: { col: 2, row: 4 } as Cell };
+    expect(atSpeakingTube(elsewhere)).toBe(false);
+    expect(canAddressSanctum(elsewhere)).toBe(false);
+    expect(sanctumStanding(elsewhere)).toBe('away');
+
+    // Both mouths answer to the one predicate, so "can she speak" cannot come
+    // to mean two things (the defect that kept the door unreachable in r13).
+    const open = placeRoom(base, room(SANCTUM_DOOR_CELL, ['S', 'N']));
+    expect(canAddressSanctum({ ...open, playerCell: { ...SANCTUM_DOOR_CELL } })).toBe(true);
+    const sealed = placeRoom(base, room(SANCTUM_DOOR_CELL, ['S', 'E']));
+    expect(canAddressSanctum({ ...sealed, playerCell: { ...SANCTUM_DOOR_CELL } })).toBe(false);
+  });
+
+  it('shares ONE predicate for "this plan opens onto the Sanctum"', () => {
+    // The card face, the blueprint and the economy simulation all read this,
+    // so "this plan opens the door" cannot come to mean three things.
+    expect(opensOntoSanctum(['S', 'N'], SANCTUM_DOOR_CELL)).toBe(true);
+    expect(opensOntoSanctum(['S', 'E'], SANCTUM_DOOR_CELL)).toBe(false);
+    // Only the landing can open onto the Sanctum, whatever else draws north.
+    for (const cell of [{ col: 2, row: 4 }, { col: 0, row: 5 }, ENTRANCE_CELL] as Cell[]) {
+      expect(opensOntoSanctum(['N', 'E', 'S', 'W'], cell)).toBe(false);
+    }
+    // …and the card-level form is exactly `resolveDoors` + that predicate, so
+    // the stamp on the card and the doors the room ends up with are one
+    // computation, never two.
+    const manor = createManor(4242);
+    for (const card of BASE_DECK) {
+      for (const entry of DIRS) {
+        expect(cardOpensOntoSanctum(card, entry, manor, SANCTUM_DOOR_CELL)).toBe(
+          resolveDoors(card, entry, manor, SANCTUM_DOOR_CELL).includes('N'),
+        );
+      }
+    }
+  });
+
+  /**
+   * THE NUMBER THE WHOLE ROUND TURNED ON. Entering the landing from below,
+   * only ~28% of the plans eligible up there place with a north door — so
+   * "she stood on the landing" and "she reached the Sanctum" are not the same
+   * event, and every 4.10d/e figure measured against the storey overstated
+   * the reach by ~40%. Pinned here so a rotation or deck change moves a test.
+   */
+  it('measures how rarely a landing plan opens onto the Sanctum', () => {
+    const manor = createManor(4242);
+    const eligible = BASE_DECK.filter(
+      (c) => c.tierRange[0] <= 3 && 3 <= c.tierRange[1]);
+    expect(eligible.length).toBeGreaterThan(5);
+    const opens = eligible.filter(
+      (c) => cardOpensOntoSanctum(c, 'N', manor, SANCTUM_DOOR_CELL));
+    const rate = opens.length / eligible.length;
+    expect(rate, `unweighted P(opens north from below) = ${rate.toFixed(3)}`)
+      .toBeGreaterThan(0.05);
+    expect(rate).toBeLessThan(0.6);
   });
 });
 
@@ -817,5 +943,168 @@ describe('the blueprint names its prices (AAA 4.6 / 4.9 / 4.10)', () => {
         }
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND 13 — THE REFUSAL AT THE TOP WAS NOT SILENT, IT WAS WRONG
+// ---------------------------------------------------------------------------
+
+/**
+ * ═══ THE BLOCKER, AS A SUITE (AAA 4.6 / 4.16 / 11.7) ══════════════════════
+ *
+ * Driven at 390×844: standing at (2,5) in a room whose doors were S+E,
+ * `.bp-sanctumhit` was ABSENT — the Sanctum was untappable with nothing drawn
+ * to say why — while `/sanctum` printed "…only from the landing at the top of
+ * the stairs — you will have to climb to it" and the journal said the same, on
+ * the arrival she had just paid 22+ steps for. Nothing in the game — copy,
+ * blueprint, or card face — had ever stated that the landing ROOM must open
+ * north, and the decision point was unarmed: the draft modal named door
+ * DIRECTIONS and carried no Sanctum stamp at all.
+ *
+ * Three fixes, all pinned below: the sheet answers instead of vanishing, the
+ * blank north wall is drawn as the bricked seam it is, and every card in a
+ * landing offer says which side of the question it is on.
+ */
+
+/** A sheet with the player standing on the landing, sealed or open. */
+function landingSheet(opts: { northDoor: boolean }): string {
+  const base = createManor(0xBEEF);
+  const doors: Dir[] = opts.northDoor ? ['S', 'N', 'E'] : ['S', 'E'];
+  const manor: ManorState = {
+    ...base,
+    rooms: {
+      ...base.rooms,
+      [SANCTUM_DOOR_KEY]: {
+        cardId: 'gallery', cell: SANCTUM_DOOR_CELL, doors, solved: true, kind: 'twistle',
+      },
+    },
+    playerCell: { ...SANCTUM_DOOR_CELL },
+  };
+  return renderToStaticMarkup(createElement(BlueprintSheet, {
+    manor, canEnterCurrent: false, interactive: true, keys: 2,
+    onMove: () => {}, onOpenDraft: () => {}, onEnterRoom: () => {}, onSanctum: () => {},
+  }));
+}
+
+describe('the sealed landing answers instead of vanishing (round 13)', () => {
+  it('keeps the Sanctum tappable on a landing that does not open onto it', () => {
+    const sealed = landingSheet({ northDoor: false });
+    // THE DEFECT IN ONE ASSERTION: the control existed only in the `at-door`
+    // case, so the most expensive arrival in the campaign answered a tap with
+    // nothing at all — indistinguishable, to a real finger, from a dead app.
+    expect(sealed).toContain('bp-sanctumhit');
+    expect(sealed).toContain('bp-sanctumhit--sealed');
+    expect(labelsOf(sealed)).toContain(LANDING_SEALED_LABEL);
+    // …and it does NOT promise an approach it cannot give (AAA 11.7: the
+    // label is the meaning, and no false affordance — the walk wash that says
+    // "this opens" is drawn only on the real door).
+    expect(labelsOf(sealed)).not.toContain('Approach the Sanctum');
+  });
+
+  it('still opens for real when the landing room drew its north door', () => {
+    const open = landingSheet({ northDoor: true });
+    expect(labelsOf(open)).toContain('Approach the Sanctum');
+    expect(open).not.toContain('bp-sanctumhit--sealed');
+    expect(open).not.toContain('bp-sealedseam');
+  });
+
+  it('draws the blank north wall as the bricked seam it is (AAA 6.3)', () => {
+    // The wall between her and the Sanctum was plain unbroken ink, identical
+    // to every other wall in the manor — so the one fact that mattered was
+    // the one fact the drawing did not carry. It wears the same bricked dash
+    // as every dead door on the sheet (one vocabulary, AAA 6.16), and it is a
+    // SHAPE on an otherwise unbroken line, so grayscale loses nothing.
+    const sealed = landingSheet({ northDoor: false });
+    expect(sealed).toContain('bp-sealedseam');
+    expect(sealed).toContain('bp-room__dead bp-sealedseam');
+  });
+
+  it('says the true thing, briefly, and never charges for saying it', () => {
+    expect(LANDING_REFUSAL_LINES.length).toBeGreaterThanOrEqual(2);
+    for (const line of LANDING_REFUSAL_LINES) {
+      // The drawn note ground is 324 user units at ~1 unit per CSS px, so a
+      // line over ~48 characters clips (AAA 1.5: zero layout shift, ever).
+      expect(line.length).toBeLessThanOrEqual(48);
+      expect(line.trim().length).toBeGreaterThan(0);
+      // Never shame-adjacent, never a loss (AAA R.3 / 4.12 string lint).
+      expect(line.toLowerCase()).not.toMatch(/fail|lose|lost|death|damage|defeat/);
+    }
+    // A repeat tap is answered, never parroted back.
+    expect(landingRefusalLine(0)).not.toBe(landingRefusalLine(1));
+    // The spoken form states the whole gate, because a screen-reader user
+    // cannot see the seam at all — and it names the remedy, which is the
+    // sentence the entire game was missing.
+    const spoken = landingRefusalAnnouncement(0).toLowerCase();
+    expect(spoken).toContain('landing');
+    expect(spoken).toContain('north');
+    expect(spoken).toContain('nothing was spent');
+  });
+});
+
+describe('the landing draft names the Sanctum on every card (round 13)', () => {
+  const from: Cell = { col: SANCTUM_DOOR_CELL.col, row: SANCTUM_DOOR_CELL.row - 1 };
+
+  function landingModal(cards: RoomCard[]): string {
+    const base = createManor(4242);
+    const manor: ManorState = {
+      ...base,
+      rooms: {
+        ...base.rooms,
+        [cellKey(from)]: room(from, ['N', 'E', 'S', 'W']),
+      },
+      playerCell: { ...from },
+    };
+    return renderToStaticMarkup(createElement(DraftModal, {
+      offer: { atDoor: 'N' as Dir, from, cards, rerolled: false },
+      gems: 4, keyCost: 0, manor,
+      onChoose: () => {}, onReroll: () => {}, onCancel: () => {},
+    }));
+  }
+
+  it('stamps every plan with whether it opens onto the Sanctum', () => {
+    const manor = createManor(4242);
+    const cards = ['darkroom', 'linen-closet', 'counting-house']
+      .map((id) => BASE_DECK.find((c) => c.id === id)!);
+    const html = landingModal(cards);
+    // The rule, said once, above the three cards that answer it.
+    expect(html).toContain('bp-modal__sanctum');
+    expect(html).toContain('Sanctum landing');
+    // …and the answer, said on every card — both answers, because a card that
+    // says nothing beside two that do reads as a rendering gap, not as a plan
+    // that seals the door.
+    const stamps = [...html.matchAll(/class="bp-card__sanctum[^"]*"[^>]*>([^<]*)</g)]
+      .map((m) => m[1]!);
+    expect(stamps).toHaveLength(cards.length);
+    cards.forEach((card, i) => {
+      const opens = cardOpensOntoSanctum(card, 'N', manor, SANCTUM_DOOR_CELL);
+      // THE assertion: the stamp is the same computation as the placement,
+      // through the same `resolveDoors` the diagram beside it already draws.
+      expect(stamps[i]).toBe(sanctumDraftStamp(opens));
+      if (opens) expect(html).toContain('bp-card__sanctum--opens');
+    });
+  });
+
+  it('says nothing about the Sanctum at any other door in the manor', () => {
+    // The stamp is a landing fact. Everywhere else it would be noise, and
+    // noise is how a real signal stops being read (the same rule the price
+    // stamps follow).
+    const base = createManor(4242);
+    const elsewhere: Cell = { col: 2, row: 2 };
+    const manor: ManorState = {
+      ...base,
+      rooms: { ...base.rooms, [cellKey(elsewhere)]: room(elsewhere, ['N', 'E', 'S', 'W']) },
+      playerCell: { ...elsewhere },
+    };
+    const html = renderToStaticMarkup(createElement(DraftModal, {
+      offer: {
+        atDoor: 'N' as Dir, from: elsewhere,
+        cards: [BASE_DECK.find((c) => c.id === 'darkroom')!], rerolled: false,
+      },
+      gems: 4, keyCost: 0, manor,
+      onChoose: () => {}, onReroll: () => {}, onCancel: () => {},
+    }));
+    expect(html).not.toContain('bp-card__sanctum');
+    expect(html).not.toContain('bp-modal__sanctum');
   });
 });

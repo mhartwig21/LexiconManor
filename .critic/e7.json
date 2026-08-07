@@ -1,0 +1,4 @@
+[
+  {"eval":"(function(){var out=[];document.querySelectorAll('.dk-word').forEach(function(w){w.querySelectorAll('.dk-cell__cipher').forEach(function(c){out.push(c.parentElement.tagName+'.'+c.parentElement.className)})});return out.slice(0,4)})()"},
+  {"eval":"Array.from(document.querySelectorAll('.mic-keys button')).map(function(b){return b.textContent}).join('')"}
+]

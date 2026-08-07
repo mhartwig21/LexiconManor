@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   appendEntry, climbKey, createLedger, dayStartTotal, doorLockedAt, fernMorningKeys,
   firstMorningPot, highestRowVisited, keyAccessFor, keyCardWeightMultiplier, ledgerTotal,
   moveAt, moveRowOf, priceEntry, rowName, solveKeys, stepsRefunded, stepsRemaining, stepsSpent,
+  sanctumMercyArmed, sanctumPlanWarmth, sanctumPlanWeightMultiplier, surveyEveningsIn,
   teaArcFloor, teaArcPoints, teaBonus,
   BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, FIRST_MORNING_POT, KEY_SUPPLY, MOVE_COST_BY_ROW,
-  SANCTUM_GUESS_COST, STEP_TABLE, TEA_ARC, TEA_BY_POINTS,
+  SANCTUM_ARC, SANCTUM_GUESS_COST, STEP_TABLE, TEA_ARC, TEA_BY_POINTS,
 } from '../src/engine/economy/steps';
 import { draftCardStake } from '../src/engine/economy/preview';
 import { REFILL_PAYOUTS } from '../src/engine/economy/simulate';
@@ -103,6 +106,46 @@ describe('STEP_TABLE (the one tunable const)', () => {
     expect(STEP_TABLE.snack.max).toBe(6);
     // A refill extends a day; it never doubles it.
     expect(STEP_TABLE.snack.max).toBeLessThan(BASE_DAY_BUDGET / 2);
+  });
+
+  /**
+   * ROUND-16 — THE DOC TABLE IS A CONTRACT TOO.
+   *
+   * MANOR_DESIGN §4 shipped numbers the game has not had since the round-4
+   * overhaul: "Start-of-day budget | 40" against a live BASE_DAY_BUDGET of 18,
+   * "Solve a large room (anchor mode) | +6 to +8" against a live `7 − tier`
+   * (+6/+5/+4, deliberately inverted BY that overhaul), and a movement bullet
+   * reading "−1 on the ground floor rising to −5 up top" against a
+   * MOVE_COST_BY_ROW that has topped out at −9 since round 10. The refill row
+   * in the SAME table had been updated — the drift was selective, which is
+   * exactly the shape round 7 wrote a whole clause about after three places
+   * quoted the ascent sum and only one was corrected.
+   *
+   * So the doc's quoted extremes are now read out of the file and asserted
+   * against the live tables, the same treatment `STEP_TABLE.snack` gets above.
+   * A retune that does not touch the doc fails here instead of misleading the
+   * next agent who reads §4 to find out what the game costs.
+   */
+  it('CONTRACT: MANOR_DESIGN §4 quotes the numbers the game actually has', () => {
+    const doc = readFileSync(join(process.cwd(), 'docs', 'MANOR_DESIGN.md'), 'utf8');
+    const table = doc.slice(doc.indexOf('## 4. Step economy'), doc.indexOf('**Other currencies**'));
+    expect(table).toContain('## 4. Step economy');
+
+    // Budget: the doc must name the live number, and must NOT still name 40.
+    expect(table).toContain(`| Start-of-day budget | ${BASE_DAY_BUDGET}`);
+    expect(table).not.toMatch(/\| Start-of-day budget \| 40/);
+    expect(table).toContain(`+${FIRST_MORNING_POT}`);
+
+    // Movement: both extremes of the live curve, and no trace of the old −5.
+    const top = -Math.min(...MOVE_COST_BY_ROW);   // 9
+    const ground = -Math.max(...MOVE_COST_BY_ROW); // 1
+    expect(table).toContain(`−${ground} on the ground floor rising to −${top} up top`);
+    expect(table).toContain(MOVE_COST_BY_ROW.map((n) => `−${-n}`).join(', '));
+
+    // Anchor solve: the live triple, not the retired range.
+    const solves = ([1, 2, 3] as Tier[]).map((t) => STEP_TABLE.solve('anchor', t));
+    expect(table).toContain(solves.map((n) => `+${n}`).join(' / '));
+    expect(table).not.toMatch(/anchor mode\) \| \+6 to \+8/);
   });
 
   /**
@@ -679,5 +722,87 @@ describe('key ACCESS is a live ramp, not a flat line (AAA 4.10d)', () => {
 
   it('is fully warmed by the points her authored dialogue can actually reach', () => {
     expect(keyAccessFor(FERN_ARC.meetPoints + FERN_ARC.questPoints)).toBe(1);
+  });
+});
+
+/**
+ * ═══ ROUND 13 — THE LANDING ARC, THE LAST LEVER IN THE CAMPAIGN ═══════════
+ *
+ * Two findings, one mechanic. Every arc in this file capped by day 12 — tea at
+ * `TEA_ARC.maxPoints`, Fern's dawn key at `FERN_ARC.questDay`, both
+ * `CAMPAIGN_ARC` familiarity terms by day ~9 — so from day 13 the median
+ * player's evening was statistically identical forever. And the ACCESS gate
+ * (standing at the Sanctum's sealed door, not merely on its landing) had no
+ * mercy of any kind, while AAA 4.14 gives the KNOWLEDGE gate a guaranteed pity
+ * floor: measured over 400 median-player campaigns, EVERY unfinished one
+ * belonged to a player who already knew the word.
+ *
+ * `SANCTUM_ARC` is both answers: warmth earned by surveying the top storeys
+ * (weight, so the draft stays a decision) plus a hard floor that arms only for
+ * a player who can already name the word.
+ */
+describe('SANCTUM_ARC — the access gate finally has an arc and a floor', () => {
+  it('is fuelled by the storey below the landing, tied to the live geometry', () => {
+    // Pinned as an IDENTITY (round 7's lesson: a hand-typed copy of somebody
+    // else's row is exactly how a milestone drifts off the thing it measures).
+    expect(SANCTUM_ARC.surveyRow0).toBe(SANCTUM_DOOR_CELL.row - 1);
+    expect(SANCTUM_ARC.surveyRow0).toBe(SANCTUM_CELL.row - 2);
+    // It is a real climb: the first storey `DOOR_LOCKS` padlocks, and priced
+    // well above the ground floor — so warmth cannot be farmed downstairs.
+    expect(DOOR_LOCKS.chanceByRow[SANCTUM_ARC.surveyRow0]!).toBeGreaterThan(0.5);
+    expect(moveAt(SANCTUM_ARC.surveyRow0)).toBeLessThan(moveAt(0) * 3);
+  });
+
+  it('warms monotonically from zero and clamps at one', () => {
+    expect(sanctumPlanWarmth(0)).toBe(0);
+    expect(sanctumPlanWarmth(-5)).toBe(0);
+    expect(sanctumPlanWarmth(Number.NaN)).toBe(0);
+    let prev = -1;
+    for (let e = 0; e <= SANCTUM_ARC.planEveningsToFull * 2; e++) {
+      const w = sanctumPlanWarmth(e);
+      expect(w).toBeGreaterThanOrEqual(prev);
+      expect(w).toBeLessThanOrEqual(1);
+      prev = w;
+    }
+    expect(sanctumPlanWarmth(SANCTUM_ARC.planEveningsToFull)).toBe(1);
+    // Deliberately slow: this is the LAST lever in the campaign and it has to
+    // still be moving well past the day every other arc has capped on.
+    expect(SANCTUM_ARC.planEveningsToFull).toBeGreaterThan(TEA_ARC.maxPoints * 2);
+    expect(SANCTUM_ARC.planEveningsToFull).toBeGreaterThan(FERN_ARC.questDay * 2);
+  });
+
+  it('is a WEIGHT, never a certainty — the landing draft stays a decision', () => {
+    expect(sanctumPlanWeightMultiplier(0)).toBe(1);
+    expect(sanctumPlanWeightMultiplier(1)).toBeGreaterThan(1);
+    expect(sanctumPlanWeightMultiplier(1)).toBe(1 + SANCTUM_ARC.maxPlanWeightGain);
+    expect(sanctumPlanWeightMultiplier(9)).toBe(sanctumPlanWeightMultiplier(1));  // clamped
+    expect(sanctumPlanWeightMultiplier(-3)).toBe(1);
+  });
+
+  it('arms the mercy only for a player who already KNOWS the word', () => {
+    const band = SANCTUM_ARC.mercyFragments;
+    expect(sanctumMercyArmed(0, 0)).toBe(false);
+    // Climbing alone never opens it: this is an ACCESS floor, never a shortcut
+    // through the mystery (AAA 4.18 stays untouched — the word is still hers
+    // to work out, and the pity floor for THAT gate is the letters').
+    expect(sanctumMercyArmed(99, band - 1)).toBe(false);
+    // Knowing alone never opens it either: she has to have been up there and
+    // been turned away, which is what keeps it off day 1 by construction.
+    expect(sanctumMercyArmed(SANCTUM_ARC.mercyEvenings - 1, band + 5)).toBe(false);
+    expect(sanctumMercyArmed(SANCTUM_ARC.mercyEvenings, band)).toBe(true);
+    expect(SANCTUM_ARC.mercyEvenings).toBeGreaterThan(0);
+  });
+
+  it('reads its fuel off the day records the save already keeps', () => {
+    // No save-schema change: `DayRecord.highestRow` is written every dusk and
+    // `chronicles.dayRecords` persists forever, which is the same trick
+    // `carryOverFrom` uses to cross a night off the audited spine.
+    expect(surveyEveningsIn([])).toBe(0);
+    expect(surveyEveningsIn([{}, { highestRow: 0 }, { highestRow: 3 }])).toBe(0);
+    expect(surveyEveningsIn([
+      { highestRow: SANCTUM_ARC.surveyRow0 },
+      { highestRow: SANCTUM_DOOR_CELL.row },
+      { highestRow: SANCTUM_ARC.surveyRow0 - 1 },
+    ])).toBe(2);
   });
 });

@@ -495,6 +495,78 @@
       ]
     },
     {
+      "id": "portrait.gate.gathering",
+      "trigger": "sanctum-idle",
+      "priority": 0,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "fragmentsLegible",
+          "gte": 4,
+          "lte": 8
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "You have his shape now, reader, and not one letter of it. A shape is a silhouette in a doorway; the door wants spelling. The engravings are cut into the lintels, and they narrow."
+        }
+      ]
+    },
+    {
+      "id": "portrait.gate.narrowing",
+      "trigger": "sanctum-idle",
+      "priority": 0,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "fragmentsLegible",
+          "gte": 9,
+          "lte": 12
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "curious",
+          "text": "Closer. The plate has letters on it and holes between them, and a hole is where the wrong word gets in. One or two more inscriptions made out and you will stop needing me. Speak today regardless."
+        }
+      ]
+    },
+    {
+      "id": "portrait.stair.away",
+      "trigger": "sanctum-idle",
+      "priority": 0,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "Consult me as often as you like. But the door hears one word a day, and only from the landing at the top of the stairs — you will have to climb to it."
+        }
+      ]
+    },
+    {
+      "id": "portrait.stair.knows",
+      "trigger": "sanctum-idle",
+      "priority": 10,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "fragmentsLegible",
+          "gte": 13
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "wistful",
+          "text": "You know it. I can hear that you know it — you have stopped asking me things. The stairs are all that stand between you and saying it, and stairs are a matter of steps, not of cleverness."
+        }
+      ]
+    },
+    {
       "id": "portrait.idle.regard",
       "trigger": "idle",
       "priority": 0,

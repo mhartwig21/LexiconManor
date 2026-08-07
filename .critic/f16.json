@@ -1,0 +1,5 @@
+[
+  {"click":".bp-card","has":"The Conservatory","after":3500},
+  {"shot":"hive"},
+  {"eval":"document.body.innerText.slice(0,900)"}
+]

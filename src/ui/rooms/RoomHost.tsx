@@ -17,6 +17,13 @@ import { useManorStore } from '../../app/store';
 // slice's puzzleId pinning at placement (integration: replaced the private
 // bit-identical copy that lived here).
 import { roomSeed } from '../../engine/manor/grid';
+// §5.3 — the board and the work done on it survive a reload. The decision of
+// "restore what was saved / open the pinned board / select a new one" is a pure
+// function so it can be tested without a browser; the host only wires it up.
+import {
+  advanceRoomSession, openRoomSession, sessionSnapshotOf, snapshotRoomSession,
+  type RoomSession,
+} from '../../engine/rooms/room-session';
 // Read-only: the room needs to know a campaign seal is on glass so it can get
 // its own celebration out from under it (see --room-moment-clear below).
 import { momentQueue } from '../moment/queue';
@@ -24,19 +31,15 @@ import { momentQueue } from '../moment/queue';
 // no double-counted safe areas). See room-host.css for the why.
 import './room-host.css';
 
-interface Session {
-  puzzle: unknown;
-  state: unknown;
-  done: boolean;
-  /**
-   * A `solved` event has been applied at least once this session, even though
-   * the adapter may still be running (the Conservatory keeps the hive on the
-   * table after Full Bloom — AAA 1.12). The footer's PRIMARY "step back out"
-   * hangs off this, not off `done`: once the room has paid, leaving is the
-   * finished action, not an abandonment.
-   */
-  solvedOnce: boolean;
-}
+/**
+ * The live session. `solvedOnce` — a `solved` event has been applied at least
+ * once even though the adapter may still be running (the Conservatory keeps the
+ * hive on the table after Full Bloom, AAA 1.12) — drives the footer's PRIMARY
+ * "step back out": once the room has paid, leaving is the finished action, not
+ * an abandonment. Both flags are part of the saved snapshot, so a reload lands
+ * on the same footer she left.
+ */
+type Session = RoomSession;
 
 export default function RoomHost() {
   const activeRoom = useManorStore((s) => s.day?.activeRoom ?? null);
@@ -46,13 +49,24 @@ export default function RoomHost() {
   const applyRoomEvents = useManorStore((s) => s.applyRoomEvents);
   const abandonRoom = useManorStore((s) => s.abandonRoom);
   const leaveRoom = useManorStore((s) => s.leaveRoom);
+  const saveRoomSession = useManorStore((s) => s.saveRoomSession);
 
   const adapter = activeRoom ? getRoomAdapter(activeRoom.kind) : undefined;
   const View = activeRoom ? getRoomView(activeRoom.kind) : undefined;
 
   const [session, setSession] = useState<Session | null>(null);
 
-  // (Re)start a session when the player enters a room.
+  /**
+   * RESUME, don't restart (REVIEW_AA §5.3).
+   *
+   * The old body of this effect ran `select()` + `start()` unconditionally, so
+   * every entry — including the one after a reload — threw away the board and
+   * everything done on it while the step penalties it had charged stayed in the
+   * ledger. Now: restore the snapshot parked on the PlacedRoom, else open the
+   * board PINNED at placement, else select. `openRoomSession` owns that order
+   * and is unit-tested; the host's job is to write the result straight back so
+   * that even a reload before the first tap returns the same board.
+   */
   const cellKey = activeRoom?.cellKey;
   useEffect(() => {
     if (!activeRoom || !adapter) {
@@ -60,25 +74,42 @@ export default function RoomHost() {
       return;
     }
     const seed = roomSeed(daySeed, activeRoom.cellKey);
-    const puzzle = adapter.select({ tier: activeRoom.tier, seed, seenIds: seenIds ?? [] });
-    const state = adapter.start(puzzle, { tier: activeRoom.tier, seed, volumeId });
-    setSession({ puzzle, state, done: false, solvedOnce: false });
+    // Read non-reactively: the snapshot is wanted once, at open. Subscribing to
+    // it would re-render the room on every keystroke it writes back.
+    const placed = useManorStore.getState().manor?.rooms[activeRoom.cellKey];
+    const opened = openRoomSession({
+      adapter,
+      snapshot: sessionSnapshotOf(placed),
+      pinnedPuzzleId: activeRoom.puzzleId || undefined,
+      ctx: { tier: activeRoom.tier, seed, volumeId },
+      seenIds: seenIds ?? [],
+    });
+    if (!opened) {
+      setSession(null);
+      return;
+    }
+    setSession(opened.session);
+    // Park the freshly-opened board immediately: a tab evicted before the first
+    // move must come back to THIS puzzle, not to whatever `select()` would pick
+    // once the seen-set has moved on.
+    if (!opened.restored) {
+      saveRoomSession(activeRoom.cellKey, snapshotRoomSession(adapter, activeRoom.tier, opened.session));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- session restarts per cell entry only
   }, [cellKey]);
 
   const dispatch = useMemo(
     () => (action: unknown) => {
-      if (!adapter || !session || session.done) return;
-      const { state, events, outcome } = adapter.reduce(session.puzzle, session.state, action);
-      setSession({
-        puzzle: session.puzzle,
-        state,
-        done: outcome.status !== 'active',
-        solvedOnce: session.solvedOnce || events.some((e) => e.type === 'solved'),
-      });
+      if (!adapter || !session || session.done || !activeRoom) return;
+      const { session: next, events, outcome } = advanceRoomSession(adapter, session, action);
+      setSession(next);
+      // Economy first, then the snapshot: `applyRoomEvents` may mark the room
+      // solved on the manor, and this write must land on top of that, not be
+      // overwritten by it.
       applyRoomEvents(events, outcome);
+      saveRoomSession(activeRoom.cellKey, snapshotRoomSession(adapter, activeRoom.tier, next));
     },
-    [adapter, session, applyRoomEvents],
+    [adapter, session, activeRoom, applyRoomEvents, saveRoomSession],
   );
 
   /**

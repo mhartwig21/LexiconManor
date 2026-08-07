@@ -14,7 +14,7 @@
  */
 
 import type { StateCreator } from 'zustand';
-import type { RoomCategory, Tier, VolumeState } from '../../engine/types';
+import type { RoomCategory, SolveChannelId, Tier, VolumeState } from '../../engine/types';
 import type { RoomPuzzleKind } from '../../engine/rooms/room-puzzle';
 import type { ManorStore } from '../store';
 import type { SaveV2 } from '../save';
@@ -42,7 +42,10 @@ export interface JournalSlice {
    * read until a solved word game makes it out. Default is legible, so every
    * existing caller (letters, testimony, the solve channel) is unchanged.
    */
-  fileFragment(fragmentId: string, opts?: { sealed?: boolean }): void;
+  fileFragment(
+    fragmentId: string,
+    opts?: { sealed?: boolean; via?: SolveChannelId },
+  ): void;
   /** Ellery's affinity service. Accepts a fragment id or 'next' (the first
    *  found-but-uninterpreted fragment) — DialogueEffects.interpretFragment. */
   interpretFragment(fragmentId: string): void;
@@ -191,7 +194,9 @@ export const createJournalSlice =
       // for both (the chronicles print the filed count, correctly); only the
       // legible arrival marks the day. See engine/volume.legibleDayFlag.
       if (!opts?.sealed) get().setFlag(legibleDayFlag(v.volumeId, get().day?.day ?? v.day));
-      get().recordEvent({ type: 'fragment-found', fragmentId });
+      // `via` stamps WHICH TAP paid, so the daily valve can tell a page earned
+      // by solving from one the violet drip handed over (engine/events.ts).
+      get().recordEvent({ type: 'fragment-found', fragmentId, ...(opts?.via ? { via: opts.via } : {}) });
     },
 
     interpretFragment: (fragmentId) => {
@@ -385,7 +390,7 @@ export const createJournalSlice =
       );
       const frag = fragmentForSolveChannel(content, v, channel, { reservedIds });
       if (!frag) return null;
-      get().fileFragment(frag.id);
+      get().fileFragment(frag.id, { via: channel.id });
       return frag.id;
     },
 

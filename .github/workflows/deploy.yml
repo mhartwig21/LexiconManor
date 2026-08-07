@@ -4,6 +4,15 @@
 # pins it explicitly here), then scripts/build-sw-precache.ts injects the SW
 # precache manifest, stamps the webmanifest, and HARD-FAILS the build if any
 # artifact lacks the base prefix (AAA 7.5).
+#
+# BUILD INTEGRITY (REVIEW_AA §0 / §5.5). The whole build runs through
+# `npm run build:pages` → scripts/build.ts, which clears dist/ first and clears
+# it again on any failure, so a red step can never leave a half-built or
+# previous artifact for upload-pages-artifact to pick up. The build writes
+# dist/build-stamp.json (source fingerprint + git SHA) and compiles the same
+# edition id into the app; the explicit verify step below re-derives the
+# fingerprint from the checkout and fails the deploy if the artifact does not
+# match the tree it claims to come from.
 
 name: deploy
 
@@ -38,17 +47,24 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Fails in ~15s before the slower gates — build:pages typechecks again.
       - name: Typecheck
         run: npm run check
 
       - name: Test
         run: npm test
 
-      - name: Build
-        run: npx vite build
+      # Gates + typecheck + vite build + SW precache, clean-first. Any failure
+      # removes dist/ entirely — there is nothing stale to fall back on.
+      - name: Build (clean · typechecked · stamped)
+        run: npm run build:pages
+        env:
+          MANOR_GIT_SHA: ${{ github.sha }}
 
-      - name: Inject SW precache + verify base-path integrity (AAA 7.5)
-        run: npx tsx scripts/build-sw-precache.ts
+      # Independent re-verification: recompute the source fingerprint from the
+      # checkout and refuse to deploy an artifact that does not match it.
+      - name: Verify dist matches this commit
+        run: npm run check:dist
 
       - uses: actions/upload-pages-artifact@v3
         with:

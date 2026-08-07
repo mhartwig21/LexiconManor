@@ -66,6 +66,32 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 const shot = (n) => page.screenshot({ path: resolve(SHOTS, n + '.png') });
 
 /**
+ * ROUND 16 — DRAIN A SEAL WITHOUT TAPPING THROUGH IT.
+ *
+ * Round 15 docked the campaign seal over the BLUEPRINT as well as over rooms,
+ * so on /manor `.mom` is `pointer-events: none` on purpose (ui/moment/dock.ts:
+ * a tap aimed at the Sanctum door used to be eaten by the seal). A script that
+ * clicks `.mom` to clear it therefore either times out or falls through onto
+ * the board and walks the player somewhere. Same three lines the maintained
+ * gates use (tests/modal-hit-test.mjs, tests/critic-round12-seal-overlap.mjs):
+ * if the card is inert, wait out its dwell instead of clicking it.
+ */
+const drainMoments = async (budgetMs = 30000) => {
+  const until = Date.now() + budgetMs;
+  while (Date.now() < until) {
+    if (!(await page.$('.mom'))) return true;
+    const inert = await page.evaluate(() => {
+      const el = document.querySelector('.mom');
+      return !el || getComputedStyle(el).pointerEvents === 'none';
+    }).catch(() => true);
+    if (inert) { await page.waitForTimeout(300); continue; }
+    await page.click('.mom', { timeout: 2000 }).catch(() => {});
+    await page.waitForTimeout(220);
+  }
+  return !(await page.$('.mom'));
+};
+
+/**
  * THE ONLY ADMISSIBLE PROOF that something is on the glass (AAA 11.2): ask the
  * document who answers a tap at the control's own centre. A DOM query proves
  * the node exists; it does not prove a finger can reach it.
@@ -161,9 +187,7 @@ try {
   await page.waitForTimeout(400);
   // Clear the three setup moments off the glass so what we measure is the one
   // grant made inside the conversation, not a queue left over from staging.
-  for (let i = 0; i < 8 && (await page.$('.mom')); i++) {
-    await page.click('.mom'); await page.waitForTimeout(250);
-  }
+  if (!await drainMoments(30000)) fail('the staging seals never retired — the queue is stuck');
 
   // EXACTLY ONE LAYER. The layer moved into App.tsx this round (it used to
   // bootstrap itself into its own body root from ManorPage's mount effect, so
@@ -288,7 +312,7 @@ try {
   }
 
   // Close the scene out (the seal first, then the rest of the conversation).
-  await page.click('.mom').catch(() => {});
+  await drainMoments(20000);
   await page.waitForTimeout(300);
   if (await page.$('.dlg')) await playScene();
   await page.waitForSelector('.bp-sheet');
@@ -392,12 +416,40 @@ try {
   else ok(`the shelf gained ${JSON.stringify(unlocked.keepsakes)}`);
   if (!unlocked.unlocked.length) fail('a completed quest flag unlocked no cabinet plate');
   else ok(`the cabinet gained ${JSON.stringify(unlocked.unlocked)}`);
+  /*
+   * ROUND 16 — THIS ASSERTION CHANGED SHAPE, ON PURPOSE.
+   *
+   * It used to demand `elementFromPoint` at the seal's centre return the seal
+   * itself. On a DIALOGUE screen (check A above) that is still exactly right
+   * and is still asserted there. On the BLUEPRINT it is now wrong by design:
+   * round 15 docked the seal over the playfield and made it inert
+   * (`pointer-events: none`, ui/moment/dock.ts), because a tap aimed at the
+   * Sanctum door was being eaten by it. So the board answering here is the FIX
+   * reporting for duty, not a regression — and AAA 11.27(b) blesses it,
+   * because the card retires on its own clock and 11.12's persistent trace is
+   * carried by the Chronicles mark measured immediately below.
+   *
+   * What 11.12 still requires, and what is asserted instead: the seal is on
+   * glass, in the viewport, with a real box and a title — announced where she
+   * is standing. A covered-by-another-OVERLAY failure is still caught, because
+   * the answering element must be the board (or the seal), never a modal.
+   */
   if (!sealNow) fail('a permanent unlock announced nothing on the screen the player is on (AAA 11.12)');
-  else if (!sealNow.self) fail(`the unlock seal is covered — ${sealNow.answeredBy} answers`);
-  else ok(`the unlock announced itself on glass: "${sealTitle}"`);
+  else if (!sealNow.inViewport || sealNow.zeroBox) {
+    fail(`the unlock seal is not on glass — ${JSON.stringify(sealNow.box)}`);
+  } else if (!sealNow.self && !/bp-sheet|bp-page|BP-|SVG/i.test(String(sealNow.answeredBy))) {
+    fail(`the unlock seal is covered by something that is not the board — ${sealNow.answeredBy} answers`);
+  } else if (!sealTitle) {
+    fail('the unlock seal carries no title');
+  } else if (sealNow.self) {
+    ok(`the unlock announced itself on glass and takes its own tap: "${sealTitle}"`);
+  } else {
+    ok(`the unlock announced itself on glass: "${sealTitle}" `
+      + `(inert over the playfield by design — ${sealNow.answeredBy} answers, AAA 11.27b)`);
+  }
 
   // Its persistent trace: the marked Chronicles entrance.
-  await page.click('.mom').catch(() => {});
+  await drainMoments(30000);
   await page.waitForTimeout(400);
   const chronMark = await page.evaluate(() => {
     const btn = [...document.querySelectorAll('.bp-btn--quiet')]

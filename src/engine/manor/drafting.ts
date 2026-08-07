@@ -21,9 +21,12 @@
 import type { Cell, Dir, DraftOffer, ManorState, RoomCard, RoomCategory, Tier } from '../types';
 import { MANOR_COLS } from '../types';
 import { createRng, pickWeighted, type Rng } from '../rng';
-import { cellKey, deweyCell, hashSeed, roomAt, rowTier } from './grid';
+import {
+  cardOpensOntoSanctum, cellKey, deweyCell, hashSeed, roomAt, rowTier, sameCell,
+  SANCTUM_DOOR_CELL,
+} from './grid';
 import { cardById, isKeyBearing, SCRIPTED_FIRST_DRAFT } from './deck';
-import { keyCardWeightMultiplier } from '../economy/steps';
+import { keyCardWeightMultiplier, sanctumPlanWeightMultiplier } from '../economy/steps';
 
 /** Mutable-state snapshot the slice passes into every roll. */
 export interface DraftRollCtx {
@@ -43,6 +46,32 @@ export interface DraftRollCtx {
    * clock calibrated against it — is untouched by this term.
    */
   keyAccess?: number;
+  /**
+   * The direction she is WALKING as she steps through this door. Only the
+   * Sanctum landing reads it (below): orientation is rigid, so which doors a
+   * plan ends up with depends on the wall she came in by, and "does this plan
+   * open onto the Sanctum" cannot be asked without it. Omitted, the landing
+   * terms fall back to the canonical climb (entered from below, `'N'`), which
+   * is how she arrives there in every ascent the economy prices.
+   */
+  entryDir?: Dir;
+  /**
+   * 0..1 — THE LANDING ARC (engine/economy/steps.ts `SANCTUM_ARC`). Warmth of
+   * the surveyed-plan bonus: every evening she has stood on the Sanctum
+   * landing is a plan of that storey the floorplan cabinet keeps, so plans
+   * that open onto the sealed door surface more often up there. Reads ONLY at
+   * `SANCTUM_DOOR_CELL`; 0/omitted leaves every weight in the game exactly as
+   * it was, which is why `deckMixAt` and the 4.10b clock are untouched by it.
+   */
+  sanctumPlanWarmth?: number;
+  /**
+   * THE ACCESS MERCY (AAA 4.14, round 13). When armed, the landing offer's
+   * guaranteed-free slot is drawn from plans that open onto the Sanctum, so an
+   * offer up there always contains one. Armed only when she can already name
+   * the word AND has been turned away on that landing before
+   * (`sanctumMercyArmed`), so it cannot touch 4.10d's day-1 reach.
+   */
+  sanctumMercy?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -150,8 +179,45 @@ export function eligibleCards(
   return fresh.length >= 3 ? fresh : open;
 }
 
-function drawOne(rng: Rng, pool: RoomCard[], row: number, ctx: DraftRollCtx): RoomCard {
-  return pickWeighted(rng, pool.map((c) => ({ item: c, weight: cardWeight(c, row, ctx) })));
+function drawOne(
+  rng: Rng, pool: RoomCard[], row: number, ctx: DraftRollCtx,
+  boost: (card: RoomCard) => number = () => 1,
+): RoomCard {
+  return pickWeighted(
+    rng, pool.map((c) => ({ item: c, weight: cardWeight(c, row, ctx) * boost(c) })),
+  );
+}
+
+/**
+ * ── THE LANDING OFFER (round-13 blocker, AAA 4.10d/e + 4.14) ───────────────
+ *
+ * THE MILESTONE IS THE DOOR, NOT THE STOREY. `atSanctumDoor` needs the landing
+ * room to have drawn a north door matching the Sanctum's sealed south one, and
+ * over the real deck and the rigid rotation only ~27.7% of tier-3-eligible
+ * plans do when the landing is entered from below — so a bare 3-card offer up
+ * there contains one on just 60.8% of draws. Roughly two evenings in five, she
+ * paid 22+ steps to arrive at an offer that CANNOT open the door, and nothing
+ * in the game had ever told her the landing room needed to open north.
+ *
+ * Three things answer it, and only the third is here: the card face now stamps
+ * which plans open onto the Sanctum (ui/blueprint/DraftModal.tsx), the
+ * blueprint answers the refusal instead of going quiet (BlueprintSheet), and
+ * this function gives the gate the arc and the floor it never had
+ * (engine/economy/steps.ts `SANCTUM_ARC`).
+ *
+ * Returns a per-card weight multiplier, and it is exactly 1 everywhere except
+ * `SANCTUM_DOOR_CELL` with a warmed arc — no other cell in the manor can be
+ * affected by any of this, which is what keeps `deckMixAt` (and the 4.10b
+ * clock derived from it) untouched.
+ */
+function landingBoost(
+  manor: ManorState, target: Cell, ctx: DraftRollCtx,
+): (card: RoomCard) => number {
+  const warmth = ctx.sanctumPlanWarmth ?? 0;
+  if (warmth <= 0 || !sameCell(target, SANCTUM_DOOR_CELL)) return () => 1;
+  const entry = ctx.entryDir ?? 'N';
+  const gain = sanctumPlanWeightMultiplier(warmth);
+  return (card) => (cardOpensOntoSanctum(card, entry, manor, target) ? gain : 1);
 }
 
 /**
@@ -172,16 +238,28 @@ export function rollCards(
   const row = target.row;
   const pool = eligibleCards(deck, manor, row);
   const cards: RoomCard[] = [];
+  const boost = landingBoost(manor, target, ctx);
 
   // Slot 1: guaranteed free (AAA 4.1 / the BP slot-1 rule).
   const free = pool.filter((c) => c.gemCost === 0);
-  cards.push(drawOne(rng, free.length > 0 ? free : pool, row, ctx));
+  let first = free.length > 0 ? free : pool;
+  // THE ACCESS MERCY (AAA 4.14, round 13) rides on the free slot rather than
+  // adding a fourth card, so the offer keeps its shape and slot 1 keeps its
+  // promise: the guaranteed-takeable card is the one that opens the door. It
+  // narrows the pool only if something is left in it — affordability outranks
+  // mercy, because an offer she cannot take is the one thing 4.1 forbids.
+  if (ctx.sanctumMercy && sameCell(target, SANCTUM_DOOR_CELL)) {
+    const entry = ctx.entryDir ?? 'N';
+    const opens = first.filter((c) => cardOpensOntoSanctum(c, entry, manor, target));
+    if (opens.length > 0) first = opens;
+  }
+  cards.push(drawOne(rng, first, row, ctx, boost));
 
   // Slots 2–3: full pool, minus what this offer already holds.
   for (let slot = 1; slot < 3; slot++) {
     const rest = pool.filter((c) => !cards.some((p) => p.id === c.id));
     if (rest.length === 0) break; // pathological end-of-deck; offer runs short
-    cards.push(drawOne(rng, rest, row, ctx));
+    cards.push(drawOne(rng, rest, row, ctx, boost));
   }
   return cards;
 }
@@ -194,7 +272,10 @@ export function rollOffer(
   return {
     atDoor,
     from,
-    cards: rollCards(deck, manor, target, ctx),
+    // The door she is standing at IS her heading through it, so the offer can
+    // ask "does this plan open onto the Sanctum" without the caller having to
+    // remember to say so twice (engine/manor/grid.ts THE ORIENTATION CONVENTION).
+    cards: rollCards(deck, manor, target, { ...ctx, entryDir: ctx.entryDir ?? atDoor }),
     rerolled: ctx.drawIndex > 0,
   };
 }

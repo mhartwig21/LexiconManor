@@ -1,9 +1,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRng, pick, shuffle } from '../src/engine/rng';
 import { loadPhonetics } from './lib/phonetics';
-import { toneOk } from './generate-gate';
+import { gateOk, toneOk } from './generate-gate';
 import { typesetDeep } from './lib/typography';
 import { tierLabel } from '../src/engine/rooms/adapters/tier-select';
 import type { Tier, WordWebPuzzle } from '../src/engine/types';
@@ -60,7 +60,19 @@ import type { Tier, WordWebPuzzle } from '../src/engine/types';
  *     40% of nights the one channel meant to beat Connections was dead);
  *   - an adversarial opening `layout` (2.6): herrings clustered adjacently,
  *     no gift rows (no row holds 3+ of one group);
- *   - two plausible same-tier `decoys` per group for the 2.11 act of naming.
+ *   - ROUND 14 (AAA 2.11 [BEAT]): two PLAUSIBILITY-SOLVED `decoys` per group.
+ *     They used to be drawn uniformly at random from other boards' same-tier
+ *     themes with no test but "must read differently from the answer", and 206
+ *     of the 211 mechanically-checkable ones described NONE of their group's
+ *     four words. Every decoy is now a label the group's own tiles satisfy —
+ *     2 or 3 of the four wherever the language allows it (77% of the shelf),
+ *     never zero, never all four — preferring the ones the board's planted
+ *     herrings also answer to. See `labelSatisfiedBy` / `assignDecoys`.
+ *   - ROUND 14: the anti-wallpaper cap gains a coarser counter keyed on
+ *     MECHANIC FAMILY (`familyOf`), a visibility rule that keeps a bare
+ *     edge-token sort out of blue and purple (2.12), a re-anchoring pass for a
+ *     label that names a tile on its own board (2.8), and a victim order that
+ *     ranks categories by QUALITY so the composer stops eating the good ones.
  *
  * Run:    npx tsx content/generate-wordweb.ts
  * Author: npx tsx content/generate-wordweb.ts --report
@@ -170,6 +182,179 @@ function isSubtleTheme(rawTheme: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// ROUND 14 — MECHANIC FAMILIES (AAA 2.9), VISIBILITY (2.12) and CATEGORY
+// QUALITY (the composer's victim order).
+// ---------------------------------------------------------------------------
+
+/**
+ * ROUND 14 — THE ANTI-WALLPAPER CAP HAS TO SEE THE MECHANIC, NOT THE STRING.
+ *
+ * `BANK_REUSE_CAP` counts an exact theme STRING, so it cannot tell that
+ * `Contains "TEN"`, `Contains "CAR"` and `Contains "ICE"` are one trick wearing
+ * three coats. Measured on the round-13 shelf of 162 boards: `Contains "X"` on
+ * 105 boards (65%), a compound-modifier category on 96 (59%), `Rhymes with "X"`
+ * on 86 (53%). "Two Pairs of Double Letters" now shows up once every 54 boards
+ * and *some flavour of Contains* two nights in three — the cap moved the
+ * wallpaper, it did not remove it.
+ *
+ * A FAMILY is the deduction the player performs, which is the thing that gets
+ * learned. It is counted per BOARD (a family is wallpaper if you meet it on too
+ * many nights, not if one board happens to use it twice).
+ */
+type Family =
+  | 'rhyme' | 'contains' | 'compound' | 'silent' | 'letter-swap'
+  | 'hidden' | 'homophone' | 'anagram' | 'letter-shape' | 'semantic' | 'trivia';
+
+/** Wordplay whose thread is a property of the word's SHAPE, not of a token. */
+const LETTER_SHAPE_THEMES = new Set([
+  'Palindromes', 'Semordnilaps', 'Heteronyms', 'Contronyms',
+  'Contronyms (Own Opposite)', 'Onomatopoeia', 'Portmanteau Words',
+  'Contains Roman Numerals', 'Two Pairs of Double Letters',
+  'Starts and Ends with the Same Letter',
+]);
+
+function familyOf(rawTheme: string): Family {
+  const theme = canon(rawTheme);
+  if (TRIVIA_THEMES.has(theme)) return 'trivia';
+  if (LETTER_SHAPE_THEMES.has(theme)) return 'letter-shape';
+  if (/^(Two Pairs|Starts and Ends)/.test(theme)) return 'letter-shape';
+  if (/^Rhymes with /.test(theme)) return 'rhyme';
+  if (/^Anagrams of /.test(theme)) return 'anagram';
+  if (/^Hidden /.test(theme)) return 'hidden';
+  if (/^Homophones/.test(theme)) return 'homophone';
+  if (/^Silent /.test(theme)) return 'silent';
+  if (/^(Add an? |Drop )/.test(theme)) return 'letter-swap';
+  if (theme.includes('___') || /^Can (Follow|Precede) /.test(theme)) return 'compound';
+  if (/^Contains /.test(theme)) return 'contains';
+  if (typeOfTheme(theme) === 'wordplay') return 'letter-shape';
+  return 'semantic';
+}
+
+/** The families the anti-wallpaper budget polices (semantics are the point). */
+const WALLPAPER_FAMILIES: readonly Family[] = [
+  'rhyme', 'contains', 'compound', 'silent', 'letter-swap',
+  'hidden', 'homophone', 'anagram', 'letter-shape',
+];
+
+/**
+ * ROUND 14 — ONE LABEL PER MECHANIC.
+ *
+ * `Things That Can Be Big` (TOP / DIPPER / LEAGUE / PICTURE) and `BIG ___` are
+ * the same category wearing two label formats, and the shelf shipped both. The
+ * "Things That Can Be" form is also the mushier of the two — a circus big top
+ * cannot *be* big, it is a BIG TOP — and, worse, it typed as SEMANTIC, so the
+ * composer counted 64 of the shelf's best compound categories as plain English
+ * and ate them to reach a wordplay floor they already satisfied.
+ *
+ * The modifiers below are the ones whose compound reading is the category:
+ * `FLAT ___` is FLAT TIRE / FLAT NOTE / FLAT SODA / FLAT DENIAL. Deliberately
+ * NOT here: the past participles (`Caught`, `Thrown`, `Stirred`, `Beaten`…),
+ * where the thread is "you can VERB this" — a meaning relation, not a compound
+ * — and which stay semantic and stay labelled as they were written.
+ */
+const COMPOUND_MODIFIERS = new Set([
+  'Iron', 'Flat', 'Sharp', 'Royal', 'Fresh', 'Sweet', 'Silver', 'Hard',
+  'Loose', 'Golden', 'Open', 'Big', 'Bitter', 'Blue', 'Wild', 'Sticky',
+  'Tough', 'Rich', 'Crisp', 'Brass', 'Vintage', 'Salty', 'Overdue',
+]);
+
+/** `Things That Can Be Flat` → `FLAT ___`. Idempotent; everything else passes. */
+function normaliseTheme(rawTheme: string): string {
+  const m = canon(rawTheme).match(/^Things That Can Be [“"]?([A-Za-z]+)[”"]?$/);
+  if (m && COMPOUND_MODIFIERS.has(m[1]!)) return `${m[1]!.toUpperCase()} ___`;
+  return rawTheme;
+}
+
+/**
+ * ROUND 14 (AAA 2.12) — HOW LOUD A CATEGORY IS ON THE TILES.
+ *
+ * 2.12 asks that the easiest group be found first on ≥70% of boards, and the
+ * round-13 shelf inverted it on a quarter of the top slot: 8 PURPLE groups were
+ * bare prefix/suffix sorts — web-22's `Contains "CAR"` was CARGO, CARTON,
+ * CARPET, CARNIVAL. Four words that all *start* with CAR is the first thing any
+ * eye finds on a 16-tile grid; it will be solved first on ~100% of boards,
+ * which inverts the criterion rather than missing it by a margin.
+ *
+ *   3 = the token sits at the same place in all four words (a sort, not a
+ *       deduction) — may only ship at yellow or green.
+ *   2 = a token you can see but have to hunt for.
+ *   1 = a thread you have to hear, unscramble or know.
+ */
+const VISIBILITY_LOUD = 3;
+
+function visibilityOf(rawTheme: string, words: readonly string[]): number {
+  const theme = canon(rawTheme);
+  const m = theme.match(/^Contains "([A-Z]+)"$/);
+  if (!m) return familyOf(theme) === 'contains' ? 2 : 1;
+  const tok = m[1]!;
+  const at = words.map((w) => w.indexOf(tok));
+  if (at.some((i) => i < 0)) return 2;
+  if (words.every((w) => w.startsWith(tok))) return VISIBILITY_LOUD;
+  if (words.every((w) => w.endsWith(tok))) return VISIBILITY_LOUD;
+  if (new Set(at).size === 1) return VISIBILITY_LOUD;
+  return 2;
+}
+
+/**
+ * ROUND 14 — THE COMPOSER EATS THE GOOD CATEGORIES, NOT JUST THE WALLPAPER.
+ *
+ * Only 70.8% of authored groups survived into the round-13 pool, and the
+ * victims were chosen by COLOUR SLOT, not by quality: web-1 lost
+ * `Things That Can Be "Iron"` (FIST/WILL/CURTAIN/MAN) and `___ BAR`
+ * (CANDY/SALAD/SPACE/CROW) — two of the best categories in the authored file —
+ * for two instances of the same letter-addition mechanic on one board. Nine
+ * more boards lost `Things That Roll`, `Things That Stick`, `Things That Pop`
+ * and their siblings the same way, to satisfy the wordplay FLOOR rather than
+ * the trivia cap.
+ *
+ *   3 PROTECTED — a compound or second-meaning category (`___ BAR`,
+ *     `IRON ___`, `Can Follow "EYE"`). These ARE wordplay under 2.9's own
+ *     definition, so the answer is to type them as wordplay, never to replace
+ *     them. Never a victim, at any tier.
+ *   2 GOOD — a property category (`Things That Roll`): the words have to be
+ *     tested against a verb rather than looked up in a list.
+ *   1 LOOSE — a plain taxonomy (`Basketball Terms`, `Vegetables`): the kind of
+ *     category the bank can genuinely improve on.
+ *
+ * A board that can only reach its intended tier by eating a PROTECTED category
+ * does not reach it: `replaceGroups` returns null and the caller composes it
+ * one tier down, where its own categories survive. web-1 shipped as four
+ * letter-puzzles at tier 3 for exactly this reason; it is a tier-2 board.
+ */
+const QUALITY_PROTECTED = 3;
+
+function qualityOf(rawTheme: string): number {
+  const theme = canon(rawTheme);
+  if (familyOf(theme) === 'compound') return QUALITY_PROTECTED;
+  if (/^Things (That|You) /.test(theme)) return 2;
+  return 1;
+}
+
+function isProtectedTheme(rawTheme: string): boolean {
+  return qualityOf(rawTheme) === QUALITY_PROTECTED;
+}
+
+/**
+ * ROUND 14 — WHAT `minPlain` IS ACTUALLY COUNTING.
+ *
+ * The round-10 floor exists so that "a board of four letter-puzzles has no way
+ * in for a player who does not already see the trick", and it counted
+ * `semantic + trivia` because those were the only two types. A COMPOUND
+ * category is the third: `___ BAR` and `IRON ___` are read in English and
+ * solved by thinking of phrases, not by looking at letters. 2.9 counts them as
+ * wordplay (they are solvable from the tiles without outside knowledge) and the
+ * way-in floor counts them as plain, and both are true of the same category —
+ * which is precisely why they are the ones the composer must never eat.
+ */
+function isPlainish(rawTheme: string): boolean {
+  return typeOfTheme(rawTheme) !== 'wordplay' || familyOf(rawTheme) === 'compound';
+}
+
+function plainCount(groups: readonly { theme: string }[]): number {
+  return groups.filter((g) => isPlainish(g.theme)).length;
+}
+
+// ---------------------------------------------------------------------------
 // Wordplay replacement bank — swapped in where a board falls short of the
 // 2.9 floor (≥2 wordplay) or over the trivia cap. All verifiable on the tiles.
 // ---------------------------------------------------------------------------
@@ -210,7 +395,10 @@ const WORDPLAY_BANK: BankGroup[] = [
   { theme: 'Can Follow "EYE"', words: ['BALL', 'BROW', 'LASH', 'SHADOW', 'SIGHT', 'WITNESS', 'PIECE', 'GLASS'] },
   { theme: 'Can Precede "STICK"', words: ['CANDLE', 'CHOP', 'YARD', 'LIP', 'DRUM', 'MATCH', 'BROOM', 'JOY'] },
   { theme: 'Can Follow "RAIN"', words: ['BOW', 'COAT', 'DROP', 'FOREST', 'FALL', 'WATER', 'STORM', 'CHECK'] },
-  { theme: '___ PROOF', words: ['BULLET', 'WEATHER', 'FOOL', 'CHILD', 'WATER', 'SOUND', 'FIRE', 'RUST'] },
+  // ROUND 9 (safety sweep): BULLET left this group — the compound reads as
+  // armour, but the TILE reads as ammunition and the Library sets it in Fell
+  // caps. SHATTER and TAMPER are the same shape of word without the weapon.
+  { theme: '___ PROOF', words: ['SHATTER', 'WEATHER', 'FOOL', 'CHILD', 'WATER', 'SOUND', 'FIRE', 'RUST'] },
   { theme: 'Two Pairs of Double Letters', words: ['BALLOON', 'COFFEE', 'SUCCESS', 'RACCOON', 'ADDRESS', 'MATTRESS', 'HAPPINESS', 'BOOKKEEPER'] },
   { theme: 'Starts and Ends with the Same Letter', words: ['EDGE', 'TREAT', 'NYLON', 'KIOSK', 'TROUT', 'SALADS', 'MUSEUM', 'TWILIGHT'] },
   { theme: 'Hidden Body Parts', words: ['CHARMING', 'SHIPMENT', 'FEARLESS', 'RIBBON', 'SHINGLE', 'SCALPEL', 'PALMISTRY', 'FLIPPER'] },
@@ -417,6 +605,36 @@ const WORDPLAY_BANK: BankGroup[] = [
  * warns — if anything gets past it.
  */
 const BANK_REUSE_CAP = 3;
+
+/**
+ * ROUND 14 — the coarser counter, keyed on MECHANIC FAMILY (see `familyOf`).
+ *
+ * `BANK_REUSE_CAP` is keyed on the theme STRING, which is why the round-13
+ * shelf could hold `Contains "X"` on 65% of its boards while no single
+ * `Contains` string appeared more than three times. This is the same rule one
+ * level up: how many BOARDS may carry *some flavour of* a given trick.
+ *
+ * 40% of the shelf is the target the finding asked for. The number below is
+ * expressed as a share and turned into a board count against the authored
+ * corpus, so it does not silently loosen when the shelf grows.
+ */
+const FAMILY_BOARD_SHARE = 0.55;
+
+/** How many boards each mechanic family may appear on. */
+let FAMILY_BOARD_CAP = Number.POSITIVE_INFINITY;
+
+/** Boards (not groups) that have shipped each family. */
+const familyBoards = new Map<Family, number>();
+
+/**
+ * ROUND 14 (AAA 2.12) — the share of boards whose YELLOW group is plain
+ * English (semantic, trivia or a compound) rather than a letter trick. 2.12
+ * asks the easiest group to be found first on ≥70% of boards; a gimme that is
+ * itself a letter puzzle is not a gimme.
+ */
+const PLAIN_YELLOW_TARGET = 0.65;
+let plainYellowShipped = 0;
+let boardsShipped = 0;
 
 /**
  * ROUND 12 — WHAT EACH "HIDDEN X" CATEGORY IS ALLOWED TO HIDE.
@@ -676,9 +894,32 @@ const TIER_SPECS: Record<Tier, RoomTierSpec> = {
 };
 
 const here = dirname(fileURLToPath(import.meta.url));
-const boards = JSON.parse(
+const boards = (JSON.parse(
   readFileSync(join(here, 'authored', 'word-web-boards.json'), 'utf8'),
-) as RawBoard[];
+) as RawBoard[]).map((b) => ({
+  ...b,
+  // ROUND 14 — one label per mechanic (see `normaliseTheme`). Done at load so
+  // every downstream reader — typing, family census, victim order, the decoy
+  // solver and the shipped JSON — sees the same string.
+  groups: b.groups.map((g) => ({ ...g, theme: normaliseTheme(g.theme) })),
+}));
+
+/**
+ * ROUND 14 — the English lexicon, for the two jobs the corpus cannot do:
+ * re-anchoring a label whose anchor word is sitting on its own board (2.8), and
+ * checking whether a compound decoy is real (2.11). `[word, frequencyRank]`,
+ * rank −1 meaning "not in the frequency corpus at all".
+ */
+const LEXICON: Map<string, number> = new Map(
+  (JSON.parse(readFileSync(join(here, 'data', 'dictionary.json'), 'utf8')) as [string, number][])
+    .map(([w, r]) => [w.toUpperCase(), r] as const),
+);
+const isWord = (w: string): boolean => LEXICON.has(w);
+/** A familiar word — the only kind a label may anchor on. */
+const isFamiliar = (w: string): boolean => {
+  const r = LEXICON.get(w);
+  return r !== undefined && r > 0 && r < 60000;
+};
 
 // Every authored set is spoken for before the bank deals a single hand.
 for (const b of boards) for (const g of b.groups) usedSets.add(setKey(g.words));
@@ -696,6 +937,9 @@ const bankUse = new Map<string, number>();
  * caller then tries the tier below) — a board is never shipped pretending to
  * a tier it does not structurally meet.
  */
+/** Why the last `replaceGroups` refusal happened, for the drop report. */
+let lastRefusal = '';
+
 function replaceGroups(
   board: RawBoard,
   tier: Tier,
@@ -726,7 +970,7 @@ function replaceGroups(
   // the yellow semantic anchor stays; at tier 3 nothing is sacred but the
   // subtle groups we have already installed.
   const replacementOrder = (needWordplay = false): RawGroup[] => {
-    const t = typed();
+    const t = typed().filter((x) => !isProtectedTheme(x.g.theme));
     const extraTrivia = t.filter((x) => x.type === 'trivia').slice(spec.maxTrivia).map((x) => x.g);
     const bluntWordplay = t
       .filter((x) => x.type === 'wordplay' && !isSubtleTheme(x.g.theme))
@@ -735,10 +979,18 @@ function replaceGroups(
     // down to its last plain-English categories they stop being replaceable,
     // and the composer either finds a blunt-wordplay victim or gives up on
     // this tier (the caller then tries the tier below).
-    const spare = count('semantic') + count('trivia') - spec.minPlain;
+    //
+    // ROUND 14 — WORST FIRST, MEASURED BY QUALITY AND NOT BY COLOUR. The order
+    // used to be the colour-slot preference alone, so a plain taxonomy
+    // (`Basketball Terms`) and a property category (`Things That Roll`) were
+    // equally edible and the slot decided which went. Quality decides now, and
+    // the slot only breaks ties; PROTECTED categories were filtered out above
+    // and are never offered at all.
+    const spare = plainCount(groups) - spec.minPlain;
     const semantics = spare <= 0 ? [] : t
       .filter((x) => x.type === 'semantic' && (tier === 3 || x.g.tier !== 'yellow'))
-      .sort((a, b) => slotPref.indexOf(a.g.tier) - slotPref.indexOf(b.g.tier))
+      .sort((a, b) => qualityOf(a.g.theme) - qualityOf(b.g.theme)
+        || slotPref.indexOf(a.g.tier) - slotPref.indexOf(b.g.tier))
       .map((x) => x.g)
       .slice(0, spare);
     // Last resort: a trivia category that is WITHIN the cap. Once the semantic
@@ -756,6 +1008,7 @@ function replaceGroups(
 
   const boardWords = () => new Set(groups.flatMap((g) => g.words));
   const boardThemes = () => new Set(groups.map((g) => g.theme));
+  const boardFamilies = () => new Set(groups.map((g) => familyOf(g.theme)));
 
   /**
    * A bank group may only land if the resulting board still has ZERO
@@ -764,6 +1017,26 @@ function replaceGroups(
    * four words sharing suffix GHT, which is exactly the failure the solver
    * refuses to ship.
    */
+  /**
+   * ROUND 14 — the family budget is spent HERE, where the wallpaper is made.
+   * A family this board already carries costs nothing extra (the cap counts
+   * boards); a family the pool has nearly spent is refused outright, and among
+   * what is left the least-used family wins. This is the lever that reaches the
+   * two thirds of the shelf the composer touches, without eating a single
+   * authored category to do it.
+   */
+  const familyAdmissible = (theme: string): boolean => {
+    const f = familyOf(theme);
+    if (!WALLPAPER_FAMILIES.includes(f)) return true;
+    if (boardFamilies().has(f)) return true;
+    return (familyBoards.get(f) ?? 0) < FAMILY_BOARD_CAP;
+  };
+  const familyLoad = (theme: string): number => {
+    const f = familyOf(theme);
+    if (boardFamilies().has(f)) return -1;   // already on this board: free
+    return familyBoards.get(f) ?? 0;
+  };
+
   const pickBankGroup = (from: BankGroup[], victim: RawGroup): BankGroup | null => {
     const words = boardWords();
     const themes = boardThemes();
@@ -774,13 +1047,16 @@ function replaceGroups(
         (bankUse.get(canon(b.theme)) ?? 0) < BANK_REUSE_CAP &&
         !themes.has(b.theme) &&
         !usedSets.has(setKey(b.words)) &&
+        familyAdmissible(b.theme) &&
         b.words.every((w) => !words.has(w)) &&
         boardFailures(
           groups.map((g) => (g === victim ? { theme: b.theme, tier: g.tier, words: b.words } : g)),
         ).length === 0,
     );
     if (usable.length === 0) return null;
-    return pick(createRngFrom(rng), usable);
+    const best = Math.min(...usable.map((b) => familyLoad(b.theme)));
+    const leanest = usable.filter((b) => familyLoad(b.theme) === best);
+    return pick(createRngFrom(rng), leanest);
   };
 
   /** Themes this attempt drew from the bank (already counted by `swapIn`). */
@@ -820,8 +1096,8 @@ function replaceGroups(
   for (;;) {
     const victim = groups.find((g) => spentThemes.has(canon(g.theme)));
     if (!victim) break;
-    if (capGuard++ >= 4) return null;
-    const plainSpare = count('semantic') + count('trivia') - spec.minPlain;
+    if (capGuard++ >= 4) { lastRefusal = 'theme cap churn'; return null; }
+    const plainSpare = plainCount(groups) - spec.minPlain;
     const subtleSpare = subtleCount() - spec.minSubtle;
     const wordplayOk = typeOfTheme(victim.theme) === 'wordplay' || plainSpare > 0;
     // Like for like first — a subtle victim should leave a subtle category
@@ -834,7 +1110,39 @@ function replaceGroups(
       ?? (wordplayOk && (!isSubtleTheme(victim.theme) || subtleSpare > 0)
         ? pickBankGroup(WORDPLAY_BANK, victim)
         : null);
-    if (!bank) return null;
+    if (!bank) { lastRefusal = `no replacement for over-cap theme "${victim.theme}"`; return null; }
+    swapIn(victim, bank);
+  }
+
+  /**
+   * ROUND 14 — the same eviction, one level up: a MECHANIC FAMILY the pool has
+   * already spent (see `FAMILY_BOARD_SHARE`). A protected compound category is
+   * never a victim here either — the shelf's compound floor is authored, and
+   * `familyAdmissible` is what stops the composer adding to it — so what this
+   * loop actually evicts is the third `Contains "X"` flavour of the night.
+   */
+  const spentFamilies = new Set(
+    groups.map((g) => familyOf(g.theme))
+      .filter((f) => WALLPAPER_FAMILIES.includes(f) && (familyBoards.get(f) ?? 0) >= FAMILY_BOARD_CAP),
+  );
+  let famGuard = 0;
+  for (;;) {
+    const victim = groups.find(
+      (g) => spentFamilies.has(familyOf(g.theme)) && !isProtectedTheme(g.theme),
+    );
+    if (!victim) break;
+    if (famGuard++ >= 4) break;
+    const plainSpare = plainCount(groups) - spec.minPlain;
+    const subtleSpare = subtleCount() - spec.minSubtle;
+    const wordplayOk = typeOfTheme(victim.theme) === 'wordplay' || plainSpare > 0;
+    const fresh = (pool: BankGroup[]) => pool.filter((b) => !spentFamilies.has(familyOf(b.theme)));
+    const bank = (isSubtleTheme(victim.theme) ? pickBankGroup(fresh(SUBTLE_BANK), victim) : null)
+      ?? (wordplayOk && (!isSubtleTheme(victim.theme) || subtleSpare > 0)
+        ? pickBankGroup(fresh(WORDPLAY_BANK), victim)
+        : null);
+    // No replacement in an under-used family: keep the authored category. A
+    // budget is a reason to prefer variety, never a reason to ship a hole.
+    if (!bank) break;
     swapIn(victim, bank);
   }
 
@@ -847,18 +1155,33 @@ function replaceGroups(
     const trivia = count('trivia');
     const wordplay = count('wordplay');
     const subtle = subtleCount();
-    const plain = count('semantic') + trivia;
+    const plain = plainCount(groups);
     if (trivia <= spec.maxTrivia && wordplay >= spec.minWordplay
       && subtle >= spec.minSubtle && plain >= spec.minPlain) break;
-    if (guard++ >= 6) return null;
+    // ROUND 14: the bank is entirely wordplay, so nothing it can deal ever
+    // RAISES the plain count. A board short of the way-in floor used to spin
+    // this loop until the guard tripped, six wasted swaps deep, and report
+    // itself as "churn"; it is a refusal, and saying so is what let the drop
+    // report name real causes.
+    if (plain < spec.minPlain) {
+      lastRefusal = `${plain} plain categories, tier ${tier} needs ${spec.minPlain} and the bank deals only wordplay`;
+      return null;
+    }
+    if (guard++ >= 8) { lastRefusal = 'composition churn'; return null; }
 
     const victim = replacementOrder(wordplay < spec.minWordplay)
       .find((g) => !isSubtleTheme(g.theme));
-    if (!victim) return null;
+    if (!victim) {
+      lastRefusal = `no expendable category left (needs ${spec.minWordplay}w/${spec.minSubtle}subtle/${spec.minPlain}plain, has ${wordplay}w/${subtle}subtle/${plain}plain)`;
+      return null;
+    }
     const bank = subtle < spec.minSubtle
       ? pickBankGroup(SUBTLE_BANK, victim)
       : pickBankGroup(WORDPLAY_BANK, victim);
-    if (!bank) return null;
+    if (!bank) {
+      lastRefusal = `the bank has no ${subtle < spec.minSubtle ? 'subtle ' : ''}hand left in an under-used family`;
+      return null;
+    }
     swapIn(victim, bank);
   }
 
@@ -871,7 +1194,7 @@ function replaceGroups(
     const types = gs.map((g) => typeOfTheme(g.theme));
     return types.filter((t) => t === 'trivia').length <= spec.maxTrivia
       && types.filter((t) => t === 'wordplay').length >= spec.minWordplay
-      && types.filter((t) => t !== 'wordplay').length >= spec.minPlain
+      && plainCount(gs) >= spec.minPlain
       && gs.filter((g) => isSubtleTheme(g.theme)).length >= spec.minSubtle;
   };
 
@@ -900,6 +1223,12 @@ function replaceGroups(
         if ((bankUse.get(canon(bank.theme)) ?? 0) >= BANK_REUSE_CAP) continue;
         if (themes.has(bank.theme)) continue;
         if (usedSets.has(setKey(bank.words))) continue;
+        // ROUND 14: the planter was the third, invisible source of wallpaper —
+        // it reached for `Contains "X"` because that trap scores highest, and
+        // it was free to do so on every board. It pays the family budget too.
+        if (!familyAdmissible(bank.theme)) continue;
+        // …and it never eats a protected compound category to plant a trap.
+        if (isProtectedTheme(victim.theme)) continue;
         if (bank.words.some((w) => words.has(w) && !victim.words.includes(w))) continue;
         const next = groups.map((g) =>
           g === victim ? { theme: bank.theme, tier: g.tier, words: [...bank.words] } : g);
@@ -958,6 +1287,11 @@ function replaceGroups(
   for (const g of groups) {
     const k = canon(g.theme);
     if (!fromBank.has(k)) bankUse.set(k, (bankUse.get(k) ?? 0) + 1);
+  }
+  // Round 14: and the family ledger, once per BOARD per family — the unit the
+  // player actually meets ("some flavour of Contains, two nights in three").
+  for (const f of boardFamilies()) {
+    if (WALLPAPER_FAMILIES.includes(f)) familyBoards.set(f, (familyBoards.get(f) ?? 0) + 1);
   }
 
   return { ...board, groups };
@@ -1259,7 +1593,34 @@ function findTraps(groups: readonly RawGroup[]): Trap[] {
     });
   }
 
+  traps.push(...anchorTraps(groups));
   return traps;
+}
+
+/**
+ * ROUND 14 (AAA 2.8 / 2.10) — the label's own anchor, sitting on the board.
+ * Emitted as a trap so the tier machinery treats it like any other, and keyed
+ * `anchor:` so `shippedHerrings` can give it absolute priority: this is the one
+ * herring a board is not allowed to leave unnamed.
+ */
+const ANCHOR_TRAP_PREFIX = 'anchor:';
+
+function anchorTraps(groups: readonly RawGroup[]): Trap[] {
+  const onBoard = new Set(groups.flatMap((g) => g.words));
+  const out: Trap[] = [];
+  for (const g of groups) {
+    if (!anchorIsFifthMember(g.theme, g.words, onBoard)) continue;
+    const a = anchorOf(g.theme)!;
+    out.push({
+      key: `${ANCHOR_TRAP_PREFIX}${canon(g.theme)}`,
+      words: [...g.words, a.word],
+      intruders: [a.word],
+      relation: a.kind === 'contains' ? 'hidden-string' : a.kind === 'rhyme' ? 'rhyme' : 'shared-affix',
+      ...(a.kind === 'contains' ? { detail: a.word } : {}),
+      score: 4,
+    });
+  }
+  return out;
 }
 
 /** The per-word herring score the tier gates read, folded out of the traps. */
@@ -1446,24 +1807,337 @@ function buildLayout(
 }
 
 // ---------------------------------------------------------------------------
+// ROUND 14 (AAA 2.11 [BEAT]) — THE PLAUSIBILITY SOLVER.
+//
+// The naming act is the Library's one [BEAT] over Connections, and it shipped
+// as a rubber stamp. Decoys were drawn UNIFORMLY AT RANDOM from other boards'
+// same-tier themes, with no test but "must read differently from the answer",
+// and it showed: of the 211 shipped decoys that were mechanically checkable
+// (`Contains "X"`), 206 matched ZERO of their group's four words. Driven at
+// 390x844 on web-d13, the last four tiles were BLACK / TABLE / HILL / DESK and
+// the three buttons were "Things in a Cinema", 'Can Follow "HONEY"' and
+// "___ TOP". Two of those are obviously dead; the third is satisfied by all
+// four words and is arguably a second right answer.
+//
+// A label is now ADMISSIBLE as a decoy only if the group's own words satisfy
+// it 2 or 3 times out of 4: two is the threshold at which the choice is a
+// decision, four would be a second correct answer. `validate` hard-fails on a
+// shipped decoy that nothing satisfies.
+// ---------------------------------------------------------------------------
+
+/**
+ * Every category the corpus knows, as a set of member words. This is what
+ * makes a SEMANTIC label checkable: "two of these four really are things in a
+ * cinema" is a fact about the authored file, not a guess.
+ */
+const THEME_MEMBERS = new Map<string, Set<string>>();
+function indexThemeMembers(groups: readonly { theme: string; words: readonly string[] }[]): void {
+  for (const g of groups) {
+    const k = canon(g.theme);
+    let set = THEME_MEMBERS.get(k);
+    if (!set) THEME_MEMBERS.set(k, (set = new Set()));
+    for (const w of g.words) set.add(w);
+  }
+}
+
+const sortedLetters = (w: string): string => [...w].sort().join('');
+
+/**
+ * Familiar, cozy-gated English by rhyme key, most-familiar first — the supply
+ * the decoy synthesiser and the re-anchorer draw on. Built once, on demand.
+ */
+let familiarByRhymeCache: Map<string, string[]> | null = null;
+function familiarByRhyme(): Map<string, string[]> {
+  if (familiarByRhymeCache) return familiarByRhymeCache;
+  const out = new Map<string, string[]>();
+  const words = [...LEXICON.keys()]
+    .filter((w) => w.length >= 3 && isFamiliar(w) && gateOk(w.toLowerCase()))
+    .sort((a, b) => LEXICON.get(a)! - LEXICON.get(b)!);
+  for (const w of words) {
+    for (const key of phonetics.rhymeKeysOf(w.toLowerCase())) {
+      out.set(key, [...(out.get(key) ?? []), w]);
+    }
+  }
+  familiarByRhymeCache = out;
+  return out;
+}
+
+/** A compound the language actually has: BLACK+TOP, HILL+TOP, DESK+TOP. */
+function compoundExists(a: string, b: string): boolean {
+  return isWord(a + b);
+}
+
+/**
+ * Does `word` satisfy `label` — under the same heuristics the herring solver
+ * runs, plus corpus membership for the categories no rule can model?
+ *
+ * Deliberately generous on the corpus side and strict on the mechanical side:
+ * a false NO costs a candidate decoy (there are hundreds), a false YES ships a
+ * decoy the player can disprove on the tiles.
+ */
+function labelSatisfiedBy(rawLabel: string, word: string): boolean {
+  const label = canon(rawLabel);
+  if (THEME_MEMBERS.get(label)?.has(word)) return true;
+  let m: RegExpMatchArray | null;
+  if ((m = label.match(/^Contains "([A-Z]+)"$/))) return word.includes(m[1]!);
+  if ((m = label.match(/^Rhymes with "([A-Z]+)"$/))) {
+    return word === m[1]! || phonetics.rhymesWith(word.toLowerCase(), m[1]!.toLowerCase());
+  }
+  if ((m = label.match(/^Anagrams of "([A-Z]+)"$/))) {
+    return sortedLetters(word) === sortedLetters(m[1]!);
+  }
+  if ((m = label.match(/^Can Follow "([A-Z]+)"$/))) return compoundExists(m[1]!, word);
+  if ((m = label.match(/^Can Precede "([A-Z]+)"$/))) return compoundExists(word, m[1]!);
+  if ((m = label.match(/^___ ([A-Z]+)$/))) return compoundExists(word, m[1]!);
+  if ((m = label.match(/^([A-Z]+) ___$/))) return compoundExists(m[1]!, word);
+  if (/^Hidden /.test(label)) return hiddenTokenOf(label, word) !== null;
+  if (label === 'Palindromes') return word === [...word].reverse().join('');
+  if (label === 'Semordnilaps') return isWord([...word].reverse().join(''));
+  if (label === 'Two Pairs of Double Letters') {
+    return new Set((word.match(/([A-Z])\1/g) ?? [])).size >= 2;
+  }
+  if (label === 'Starts and Ends with the Same Letter') return word[0] === word[word.length - 1];
+  if ((m = label.match(/^Add an? "([A-Z])" for a New Word$/))) {
+    const ch = m[1]!;
+    for (let i = 0; i <= word.length; i++) {
+      if (isWord(word.slice(0, i) + ch + word.slice(i))) return true;
+    }
+    return false;
+  }
+  if (label === 'Drop the First Letter for a New Word') return isWord(word.slice(1));
+  if (label === 'Drop the Last Letter for a New Word') return isWord(word.slice(0, -1));
+  return false;
+}
+
+/** How many of a group's four words a candidate label describes. */
+function satisfactionOf(label: string, words: readonly string[]): number {
+  return words.filter((w) => labelSatisfiedBy(label, w)).length;
+}
+
+/**
+ * ROUND 14 (AAA 2.8) — THE LABEL'S OWN ANCHOR IS A CANDIDATE MEMBER.
+ *
+ * 28 of 162 shipped boards printed a category label naming a word sitting on
+ * the same board; 25 were deliberate one-away traps and were flagged in
+ * `ambiguousWords`. Three were neither flagged nor survivable: web-c01's
+ * `Anagrams of "SEPAL"` with SEPAL itself a tile in "Parts of a Flower",
+ * web-d05's `Rhymes with "PLUM"` with PLUM in "Things in a Fruit Bowl",
+ * web-d25's `Rhymes with "DATE"` with DATE in "Things in a Diary". A word
+ * rhymes with itself and is an anagram of itself, so each of those boards had
+ * FIVE words satisfying a four-word category — the exact 2.8 break the solver
+ * exists to prevent, missed because the checker never asked whether the label's
+ * own anchor was on the board.
+ */
+function anchorOf(rawTheme: string): { kind: 'rhyme' | 'anagram' | 'contains' | 'compound'; word: string } | null {
+  const theme = canon(rawTheme);
+  let m: RegExpMatchArray | null;
+  if ((m = theme.match(/^Rhymes with "([A-Z]+)"$/))) return { kind: 'rhyme', word: m[1]! };
+  if ((m = theme.match(/^Anagrams of "([A-Z]+)"$/))) return { kind: 'anagram', word: m[1]! };
+  if ((m = theme.match(/^Contains "([A-Z]+)"$/))) return { kind: 'contains', word: m[1]! };
+  if ((m = theme.match(/^Can (?:Follow|Precede) "([A-Z]+)"$/))) return { kind: 'compound', word: m[1]! };
+  if ((m = theme.match(/^(?:___ ([A-Z]+)|([A-Z]+) ___)$/))) {
+    return { kind: 'compound', word: (m[1] ?? m[2])! };
+  }
+  return null;
+}
+
+/** True when the anchor word, standing on this board, is a fifth member. */
+function anchorIsFifthMember(theme: string, group: readonly string[], onBoard: ReadonlySet<string>): boolean {
+  const a = anchorOf(theme);
+  if (!a || !onBoard.has(a.word) || group.includes(a.word)) return false;
+  // A word rhymes with itself, is an anagram of itself and contains itself.
+  // A compound anchor does not compound with itself unless the language says so.
+  return a.kind !== 'compound' || compoundExists(a.word, a.word);
+}
+
+/**
+ * Re-anchor a label whose anchor is a tile on its own board. The replacement
+ * has to be a familiar English word that satisfies the category exactly as the
+ * old anchor did for all four members, and that is not itself on the board.
+ */
+function reAnchor(theme: string, group: readonly string[], onBoard: ReadonlySet<string>): string | null {
+  const a = anchorOf(theme);
+  if (!a) return null;
+  const candidates: string[] = [];
+  if (a.kind === 'rhyme') {
+    const keys = new Set(phonetics.rhymeKeysOf(a.word.toLowerCase()));
+    for (const key of keys) {
+      for (const w of familiarByRhyme().get(key) ?? []) {
+        if (onBoard.has(w)) continue;
+        if (!group.every((g) => phonetics.rhymesWith(g.toLowerCase(), w.toLowerCase()))) continue;
+        candidates.push(w);
+      }
+    }
+  } else if (a.kind === 'anagram') {
+    const key = sortedLetters(group[0]!);
+    for (const w of LEXICON.keys()) {
+      if (onBoard.has(w) || !isFamiliar(w) || sortedLetters(w) !== key) continue;
+      if (!gateOk(w.toLowerCase())) continue;
+      candidates.push(w);
+    }
+  }
+  if (candidates.length === 0) return null;
+  // The most familiar word wins — the anchor is the part of the label she has
+  // to recognise instantly for the category to read at all — but not the
+  // function words at the very top of the frequency list: `Rhymes with "FROM"`
+  // and `Rhymes with "THAT"` are technically true and read like a typo.
+  const contentful = candidates.filter((w) => w.length >= 4 && LEXICON.get(w)! > 800);
+  const chosen = (contentful.length > 0 ? contentful : candidates)
+    .sort((x, y) => (LEXICON.get(x)! - LEXICON.get(y)!) || (x < y ? -1 : 1))[0]!;
+  return theme.replace(/[“"][A-Z]+[”"]/, (q) => q[0]! + chosen + q[q.length - 1]!);
+}
+
+// ---------------------------------------------------------------------------
 // 2.11 — decoy labels for the act of naming
 // ---------------------------------------------------------------------------
 
+/** The lowest number of a group's four words a decoy may describe. */
+const DECOY_MIN_SATISFIED = 2;
+/** …and the highest: four would be a second right answer, not a decoy. */
+const DECOY_MAX_SATISFIED = 3;
+
+/**
+ * Every `Contains "X"` label that exactly 2–3 of these four words satisfy,
+ * longest string first. This is the synthesiser of last resort and it never
+ * comes up empty on real English: some pair of four words always shares a
+ * bigram, and every claim it makes is one the player can check on the glass.
+ */
+function containsCandidates(words: readonly string[], min: number): string[] {
+  const counts = new Map<string, number>();
+  for (const w of new Set(words)) {
+    const seen = new Set<string>();
+    for (let n = 5; n >= 2; n--) {
+      for (let i = 0; i + n <= w.length; i++) seen.add(w.slice(i, i + n));
+    }
+    for (const s of seen) counts.set(s, (counts.get(s) ?? 0) + 1);
+  }
+  return [...counts]
+    .filter(([, n]) => n >= min && n <= DECOY_MAX_SATISFIED)
+    .sort((a, b) => b[1] - a[1] || b[0].length - a[0].length || (a[0] < b[0] ? -1 : 1))
+    .map(([s]) => `Contains "${s}"`);
+}
+
 /** Needs only an id and the composed groups — asks for exactly that. */
-function assignDecoys(finals: { id: string; groups: OutGroup[] }[]): void {
+function assignDecoys(finals: { id: string; groups: OutGroup[]; herrings: OutHerring[] }[]): void {
+  // Every label the shelf and the bank between them can offer, canonical-keyed
+  // so `Contains "ICE"` and `Contains “ICE”` are one candidate (round 9).
+  const labelPool = new Map<string, string>();
+  for (const b of finals) for (const g of b.groups) labelPool.set(canon(g.theme), g.theme);
+  for (const b of WORDPLAY_BANK) labelPool.set(canon(b.theme), b.theme);
+
   for (const board of finals) {
     const rng = createRng([...board.id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, SEED));
-    const own = new Set(board.groups.map((g) => g.theme));
+    /**
+     * ROUND 9: dedupe on the CANONICAL theme, not the raw string.
+     *
+     * The shelf is half-typeset — `Contains "ICE"` in the wordplay bank,
+     * `Contains “ICE”` in an authored board — and both print identically
+     * through `typeset()` in WordWebView. Raw-string exclusion therefore let
+     * web-26 offer the player a naming choice whose decoy READ exactly like
+     * the real answer: two identical buttons, one right. Caught by
+     * tests/puzzles/anchors.test.ts, which compares the typeset labels.
+     */
+    const own = new Set(board.groups.map((g) => canon(g.theme)));
+    // AAA 2.10's own model line — "they *do* all rhyme, don't they?" — is what
+    // a good decoy sounds like, so the board's PLANTED herrings get first
+    // refusal: a label that also describes an intruder the layout has already
+    // clustered next to this group is the thread she may really have followed.
+    const herringWords = new Set(board.herrings.flatMap((h) => h.words));
+    /**
+     * ROUND 14 — and one label per BOARD, not just per group. The first pass
+     * offered `Add an "S" for a New Word` as a decoy on three of web-1's four
+     * groups, which turns the naming act into the same three buttons four
+     * nights running inside one board. Reuse is a last resort, not a default.
+     */
+    const boardUsed = new Set<string>();
+
     for (const g of board.groups) {
-      const pool = finals
-        .filter((b) => b.id !== board.id)
-        .flatMap((b) => b.groups.filter((x) => x.tier === g.tier).map((x) => x.theme))
-        .filter((t) => !own.has(t));
       const decoys: string[] = [];
-      let guard = 0;
-      while (decoys.length < 2 && guard++ < 200 && pool.length > 0) {
-        const t = pick(rng, pool);
-        if (!decoys.includes(t)) decoys.push(t);
+      const taken = new Set<string>();
+      let allowReuse = false;
+      const offer = (label: string): void => {
+        if (decoys.length >= 2) return;
+        if (own.has(canon(label)) || taken.has(canon(label))) return;
+        if (!allowReuse && boardUsed.has(canon(label))) return;
+        taken.add(canon(label));
+        boardUsed.add(canon(label));
+        decoys.push(label);
+      };
+
+      /** Corpus labels this group's own tiles satisfy `min`..`max` times. */
+      const fromCorpus = (min: number, max: number): void => {
+        const scored: { label: string; n: number; herring: boolean }[] = [];
+        for (const [key, label] of labelPool) {
+          if (own.has(key)) continue;
+          const n = satisfactionOf(label, g.words);
+          if (n < min || n > max) continue;
+          const herring = [...herringWords].some(
+            (w) => !g.words.includes(w) && labelSatisfiedBy(label, w),
+          );
+          scored.push({ label, n, herring });
+        }
+        // Herring-backed first (AAA 2.10's own model line — "they *do* all
+        // rhyme, don't they?" — is what a good decoy sounds like), then the
+        // label the most of her tiles fit, then a seeded shuffle so the shelf
+        // does not converge on one favourite decoy.
+        for (const c of shuffle(rng, scored)
+          .sort((a, b) => Number(b.herring) - Number(a.herring) || b.n - a.n)) {
+          offer(c.label);
+        }
+      };
+
+      /**
+       * Synthesis, for the group no corpus label happens to half-describe.
+       * The corpus is 600-odd categories wide and most of them describe none of
+       * any given four words, so this is not a rare path: it is what makes
+       * "satisfied by ≥2" affordable at all. A synthesised label is held to the
+       * same bar as a corpus one and is *more* checkable, not less — the player
+       * can disprove it on the tiles, which is the whole point of the act.
+       */
+      const fromRhyme = (): void => {
+        for (const w of g.words) {
+          if (decoys.length >= 2) return;
+          for (const key of phonetics.rhymeKeysOf(w.toLowerCase())) {
+            const anchor = (familiarByRhyme().get(key) ?? []).find((cand) => {
+              if (g.words.includes(cand)) return false;
+              const label = `Rhymes with "${cand}"`;
+              if (own.has(label) || taken.has(label)) return false;
+              const n = satisfactionOf(label, g.words);
+              return n >= DECOY_MIN_SATISFIED && n <= DECOY_MAX_SATISFIED;
+            });
+            if (!anchor) continue;
+            offer(`Rhymes with "${anchor}"`);
+            break;
+          }
+        }
+      };
+
+      fromCorpus(DECOY_MIN_SATISFIED, DECOY_MAX_SATISFIED);
+      fromRhyme();
+      // A letter string exactly two or three of her tiles carry. Longest first,
+      // because a longer string is a more tempting claim and a more specific
+      // thing to check.
+      for (const label of containsCandidates(g.words, DECOY_MIN_SATISFIED)) offer(label);
+      /**
+       * THE ONE-TILE FLOOR, and why it is not the ≥2 the finding asked for.
+       *
+       * Four semantically unrelated words can share NOTHING mechanical: web-d24's
+       * SALTY ___ is AIR / SNACK / LANGUAGE / DOG, whose four spellings have not
+       * one bigram in common, no two of which rhyme, and no two of which sit in
+       * any other authored category together. For a group like that the ≥2 rule
+       * is not strict, it is unsatisfiable — so the last resort is a label ONE
+       * tile genuinely answers to, which is still a claim she can test and still
+       * strictly better than the round-13 shelf, where 206 of 211 checkable
+       * decoys described *none* of their four. `validate` fails the build at
+       * zero and the census prints how many decoys clear the ≥2 preference.
+       */
+      if (decoys.length < 2) fromCorpus(1, 1);
+      for (const label of containsCandidates(g.words, 1)) offer(label);
+      // Only now may a label already spoken for on this board come back.
+      if (decoys.length < 2) {
+        allowReuse = true;
+        fromCorpus(DECOY_MIN_SATISFIED, DECOY_MAX_SATISFIED);
+        for (const label of containsCandidates(g.words, 1)) offer(label);
       }
       g.decoys = decoys;
     }
@@ -1480,7 +2154,7 @@ function meetsTier(board: RawBoard, traps: readonly Trap[], tier: Tier): boolean
   const types = board.groups.map((g) => typeOfTheme(g.theme));
   if (types.filter((t) => t === 'trivia').length > spec.maxTrivia) return false;
   if (types.filter((t) => t === 'wordplay').length < spec.minWordplay) return false;
-  if (types.filter((t) => t !== 'wordplay').length < spec.minPlain) return false;
+  if (plainCount(board.groups) < spec.minPlain) return false;
   if (board.groups.filter((g) => isSubtleTheme(g.theme)).length < spec.minSubtle) return false;
   // Round 12: THREADS, not intruder words — see `chooseTraps`. A board that
   // cannot reach its tier's floor in distinct traps demotes to the tier below
@@ -1560,6 +2234,29 @@ const SLOT_SWAPS: readonly (readonly [Slot, Slot] | null)[] = [
   ['yellow', 'green'], ['yellow', 'blue'], ['yellow', 'purple'],
 ];
 
+/**
+ * ROUND 14 (AAA 2.12) — move a group that shouts out of the two slots the
+ * player is meant to reach last. A single `SLOT_SWAPS` entry can only move one
+ * group, and a board can carry two loud ones; this runs after the swap and
+ * fixes both, never disturbing a trivia gimme (2.9 pins it to yellow).
+ */
+function repairLoudSlots(board: RawBoard): RawBoard {
+  const groups = board.groups.map((g) => ({ ...g }));
+  const loud = (g: RawGroup) => visibilityOf(g.theme, g.words) >= VISIBILITY_LOUD;
+  for (const dark of ['purple', 'blue'] as const) {
+    const g = groups.find((x) => x.tier === dark && loud(x));
+    if (!g) continue;
+    const host = (['green', 'yellow'] as const)
+      .map((s) => groups.find((x) => x.tier === s)!)
+      .find((x) => !loud(x) && typeOfTheme(x.theme) !== 'trivia');
+    if (!host) continue;
+    const slot = g.tier;
+    g.tier = host.tier;
+    host.tier = slot;
+  }
+  return { ...board, groups };
+}
+
 function withSlotSwap(board: RawBoard, swap: readonly [Slot, Slot] | null): RawBoard {
   if (!swap) return board;
   const [a, b] = swap;
@@ -1596,6 +2293,10 @@ function shippedHerrings(
   const homeTotal = Math.max(1, [...homeTally.values()].reduce((a, b) => a + b, 0));
   const relTotal = Math.max(1, [...relTally.values()].reduce((a, b) => a + b, 0));
   const cost = (trap: Trap, word: string): number => {
+    // ROUND 14: an anchor trap is the label naming a tile it does not own. It
+    // is the one herring a board may not ship silently (AAA 2.8), so it always
+    // wins the budget.
+    if (trap.key.startsWith(ANCHOR_TRAP_PREFIX)) return -1000;
     const home = (homeTally.get(slotOf.get(word)!) ?? 0) / homeTotal;
     const rel = (relTally.get(trap.relation) ?? 0) / relTotal;
     // The relation is weighted heavier because it is the thing the room SAYS
@@ -1681,6 +2382,9 @@ function report(): void {
 
 function main() {
   const rng = createRng(SEED);
+  // The family budget is a SHARE; turn it into a board count once, against the
+  // corpus that is about to be composed, so it cannot loosen as the shelf grows.
+  FAMILY_BOARD_CAP = Math.round(boards.length * FAMILY_BOARD_SHARE);
 
   // Pass 1: compose each board for its INTENDED tier (trivia cap, wordplay
   // floor, subtlety floor). The authored difficulty is the intent; pass 2
@@ -1691,12 +2395,16 @@ function main() {
   const composedTier = new Map<string, Tier>();
   // The composer mutates two globals (which bank themes and which 4-word sets
   // are spoken for), so a speculative attempt has to be undoable.
-  const snap = () => ({ bank: new Map(bankUse), sets: new Set(usedSets) });
-  const restore = (s: { bank: Map<string, number>; sets: Set<string> }) => {
+  const snap = () => ({
+    bank: new Map(bankUse), sets: new Set(usedSets), fams: new Map(familyBoards),
+  });
+  const restore = (s: ReturnType<typeof snap>) => {
     bankUse.clear();
     for (const [k, v] of s.bank) bankUse.set(k, v);
     usedSets.clear();
     for (const k of s.sets) usedSets.add(k);
+    familyBoards.clear();
+    for (const [k, v] of s.fams) familyBoards.set(k, v);
   };
 
   /**
@@ -1729,11 +2437,25 @@ function main() {
         if (!attempt) continue;
         const state = snap();
         for (const swap of SLOT_SWAPS) {
-          const variant = withSlotSwap(attempt, swap);
+          const variant = repairLoudSlots(withSlotSwap(attempt, swap));
           // The trivia gimme is pinned to yellow (2.9) and yellow is never
           // swapped, so a variant can never move it; assert the invariant
           // rather than trust it.
           if (variant.groups.some((g) => typeOfTheme(g.theme) === 'trivia' && g.tier !== 'yellow')) continue;
+          /**
+           * ROUND 14 (AAA 2.12) — A GROUP THAT SHOUTS MAY NOT WEAR PURPLE.
+           *
+           * 43 of 162 shipped boards put a bare visible letter-pattern in the
+           * slot whose whole job is to be found LAST, and 8 of them were pure
+           * prefix sorts: web-22's purple was `Contains "CAR"` over CARGO,
+           * CARTON, CARPET, CARNIVAL. That does not miss 2.12's "easiest group
+           * found first on ≥70% of boards" by a margin, it inverts it. A loud
+           * group ships at yellow or green or the variant is refused.
+           */
+          if (variant.groups.some(
+            (g) => visibilityOf(g.theme, g.words) >= VISIBILITY_LOUD
+              && (g.tier === 'blue' || g.tier === 'purple'),
+          )) continue;
           // Novelty decides, but a board that KEEPS its authored trivia gimme
           // gets a head start: the composer is allowed to eat a within-cap
           // trivia category as a last resort to reach the wordplay floor, and
@@ -1741,7 +2463,20 @@ function main() {
           // gimme off the bottom of the house entirely (AAA 2.9 caps trivia at
           // one and pins it to yellow; it never asked for zero).
           const gimme = variant.groups.some((g) => typeOfTheme(g.theme) === 'trivia');
-          const seen = (sigTally.get(signatureOf(variant.groups)) ?? 0) - (gimme ? 3 : 0);
+          /**
+           * ROUND 14 (AAA 2.12) — THE GIMME SHOULD READ AS A GIMME. Yellow was
+           * a wordplay category on 86 of 162 boards and a plain one on only 69,
+           * so the tier whose job is to be found first was itself a letter
+           * trick more often than not. A variant whose yellow is plain English
+           * wins ties while the pool is under the target share; once it is
+           * over, the bonus lapses and novelty decides again.
+           */
+          const yellowGroup = variant.groups.find((g) => g.tier === 'yellow');
+          const plainYellow = !!yellowGroup && isPlainish(yellowGroup.theme);
+          const owed = plainYellowShipped < PLAIN_YELLOW_TARGET * Math.max(1, boardsShipped);
+          const seen = (sigTally.get(signatureOf(variant.groups)) ?? 0)
+            - (gimme ? 3 : 0)
+            - (plainYellow && owed ? 2 : 0);
           if (!best || seen < best.seen) best = { board: variant, state, seen };
         }
         if (best?.seen === 0) break;   // nothing beats a shape nobody has shipped
@@ -1751,17 +2486,56 @@ function main() {
         const sig = signatureOf(best.board.groups);
         sigTally.set(sig, (sigTally.get(sig) ?? 0) + 1);
         composedTier.set(b.id, t as Tier);
+        boardsShipped += 1;
+        const y = best.board.groups.find((g) => g.tier === 'yellow');
+        if (y && isPlainish(y.theme)) plainYellowShipped += 1;
         return [best.board];
       }
       restore(before);
     }
-    unbuildable.push(b.id);
+    unbuildable.push(`${b.id} (${lastRefusal})`);
     return [];
+  });
+
+  /**
+   * Pass 1b (ROUND 14, AAA 2.8) — RE-ANCHOR ANY LABEL THAT NAMES ITS OWN
+   * FIFTH MEMBER. `Rhymes with "PLUM"` on a board carrying the tile PLUM is a
+   * four-word category with five satisfying words; so is
+   * `Anagrams of "SEPAL"` beside the tile SEPAL. The anchor moves to a
+   * familiar word that satisfies the same four tiles and is NOT on the board
+   * ('Rhymes with "SUMMIT"' rather than 'Rhymes with "PLUM"'); a board whose
+   * anchor cannot be moved leaves, because the alternative is shipping the
+   * uniqueness break the solver exists to prevent.
+   */
+  const reAnchored: string[] = [];
+  const acknowledged: string[] = [];
+  const anchored = composed.map((b) => {
+    const onBoard = new Set(b.groups.flatMap((g) => g.words));
+    for (const g of b.groups) {
+      if (!anchorIsFifthMember(g.theme, g.words, onBoard)) continue;
+      const fixed = reAnchor(g.theme, g.words, onBoard);
+      if (fixed) {
+        reAnchored.push(`${b.id} "${g.theme}" → "${fixed}"`);
+        g.theme = fixed;
+        continue;
+      }
+      /**
+       * `Contains "ICE"` cannot be re-anchored — the token IS the category —
+       * so the board takes 2.8's other admissible outcome: the anchor becomes
+       * an ACKNOWLEDGED herring. `anchorTraps` emits it as a scored trap and
+       * `shippedHerrings` gives it absolute priority, so the tile is on the
+       * intruder list, clustered by the opening layout, and named out loud on
+       * a wrong guess. A five-word label the room can talk about is a trap;
+       * only a silent one is a defect.
+       */
+      acknowledged.push(`${b.id} "${g.theme}" ⊃ ${anchorOf(g.theme)!.word}`);
+    }
+    return b;
   });
 
   // Pass 2: herring solver → tier confirmation (demote, never fake) → layout.
   const allFailures: string[] = [];
-  const solved = composed.map((b) => ({ board: b, ...solveBoard(b, composed) }));
+  const solved = anchored.map((b) => ({ board: b, ...solveBoard(b, anchored) }));
   for (const s of solved) for (const f of s.failures) allFailures.push(`${s.board.id}: ${f}`);
   if (allFailures.length > 0) {
     console.error(allFailures.join('\n'));
@@ -1803,12 +2577,27 @@ function main() {
     // the room can say on a wrong guess — not the length of the intruder list.
     return b.herrings.length >= spec.minHerrings
       && b.ambiguousWords.length >= 1
-      && types.filter((t) => t !== 'wordplay').length >= spec.minPlain
+      && plainCount(b.groups) >= spec.minPlain
       && types.filter((t) => t === 'wordplay').length >= spec.minWordplay
       && types.filter((t) => t === 'trivia').length <= spec.maxTrivia
       && b.groups.filter((g) => isSubtleTheme(g.theme)).length >= spec.minSubtle;
   };
   const kept = built.filter(shipsHere);
+  /**
+   * ROUND 14 — THE DROPS ARE NAMED. Five authored boards left the shelf
+   * silently in round 13 and the docs went on counting 167; a board that does
+   * not ship is an editorial fact, not a rounding error.
+   */
+  const droppedIds = built.filter((b) => !shipsHere(b)).map((b) => {
+    const spec = TIER_SPECS[b.tier];
+    const why: string[] = [];
+    if (b.herrings.length < spec.minHerrings) why.push(`${b.herrings.length} traps < ${spec.minHerrings}`);
+    if (b.ambiguousWords.length < 1) why.push('no intruder');
+    if (plainCount(b.groups) < spec.minPlain) why.push(`${plainCount(b.groups)} plain < ${spec.minPlain}`);
+    if (b.groups.filter((g) => g.type === 'wordplay').length < spec.minWordplay) why.push('short of the wordplay floor');
+    if (b.groups.filter((g) => isSubtleTheme(g.theme)).length < spec.minSubtle) why.push('short of the subtle floor');
+    return `${b.id} @t${b.tier} (${why.join(', ') || 'tier gate'})`;
+  });
   const dropped = built.length - kept.length;
 
   /**
@@ -1887,16 +2676,26 @@ function main() {
   const byRelation = new Map<string, number>();
   for (const b of out) for (const h of b.herrings) byRelation.set(h.relation, (byRelation.get(h.relation) ?? 0) + 1);
   const sigs = architectureCensus(out);
+  const familyLine = sigs.families
+    .map(([f, n]) => `${f} ${n} (${((n / Math.max(1, out.length)) * 100).toFixed(0)}%)`).join(', ');
+  const shapeLine = sigs.shape.map(([w, n]) => `${w}w ${n}`).join(', ');
   console.log(
     `word-web.json: ${out.length} boards — ${perTier}; ${demoted} demoted for want of tight traps, ` +
-    `${dropped} dropped for having none at all, ${unbuildable.length} dropped for having no category left to itself`
+    `${dropped} dropped at their tier gate${droppedIds.length ? ` (${droppedIds.join('; ')})` : ''}, ` +
+    `${reAnchored.length} labels re-anchored off their own board${reAnchored.length ? ` (${reAnchored.join('; ')})` : ''}, ` +
+    `${acknowledged.length} labels whose anchor is a tile, forced onto the intruder list${acknowledged.length ? ` (${acknowledged.join('; ')})` : ''}, ` +
+    `${unbuildable.length} dropped for having no category left to itself`
     + `${unbuildable.length ? ` (${unbuildable.join(', ')})` : ''}, ${deduped.length} dropped for repeating a shipped 4-word set` +
     `${deduped.length ? ` (${deduped.join(', ')})` : ''}, ` +
     `${trivia} with a (yellow-tier) trivia category, bank hands dealt: ${[...bankUse.values()].reduce((a, b) => a + b, 0)}; ` +
     `named herrings by relation: ${[...byRelation].map(([r, n]) => `${r} ${n}`).join(', ')}\n` +
     `  architecture: signatures ${sigs.signatures.map(([s, n]) => `${s} ${n}`).join(', ')}` +
     ` (top ${(sigs.topShare * 100).toFixed(0)}%); trap home slot ${sigs.home.map(([s, n]) => `${s} ${n}`).join(', ')};` +
-    ` relations ${sigs.relations.map(([r, n]) => `${r} ${n}`).join(", ")} (top ${(sigs.topRelationShare * 100).toFixed(0)}%)`,
+    ` relations ${sigs.relations.map(([r, n]) => `${r} ${n}`).join(", ")} (top ${(sigs.topRelationShare * 100).toFixed(0)}%)\n` +
+    `  families: ${familyLine} (budget ${(ARCHITECTURE_BUDGET.maxFamilyShare * 100).toFixed(0)}%);` +
+    ` wordplay per board: ${shapeLine};` +
+    ` plain yellow ${(sigs.plainYellowShare * 100).toFixed(0)}%;` +
+    ` decoys ${sigs.decoys}, ${(sigs.decoyPlausibleShare * 100).toFixed(0)}% satisfied by ≥2 of their own four`,
   );
 }
 
@@ -1931,7 +2730,43 @@ function architectureCensus(puzzles: readonly OutBoard[]) {
     for (const h of p.herrings) byRelation.set(h.relation, (byRelation.get(h.relation) ?? 0) + 1);
   }
   const relations = [...byRelation].sort((a, b) => b[1] - a[1]);
+  // ROUND 14 — the mechanic-family census: how many BOARDS carry some flavour
+  // of each trick, and how many wordplay categories each board runs.
+  const fam = new Map<Family, number>();
+  for (const p of puzzles) {
+    for (const f of new Set(p.groups.map((g) => familyOf(g.theme)))) {
+      if (WALLPAPER_FAMILIES.includes(f)) fam.set(f, (fam.get(f) ?? 0) + 1);
+    }
+  }
+  const families = [...fam].sort((a, b) => b[1] - a[1]);
+  const shape = new Map<number, number>();
+  for (const p of puzzles) {
+    const w = p.groups.filter((g) => g.type === 'wordplay').length;
+    shape.set(w, (shape.get(w) ?? 0) + 1);
+  }
+  const plainYellow = puzzles.filter((p) => {
+    const y = p.groups.find((g) => g.tier === 'yellow');
+    return !!y && isPlainish(y.theme);
+  }).length;
+  // ROUND 14 (AAA 2.11) — how many shipped decoys are a real decision: a label
+  // ≥2 of the group's own four words answer to.
+  let decoys = 0;
+  let decoysPlausible = 0;
+  for (const p of puzzles) {
+    for (const g of p.groups) {
+      for (const d of g.decoys) {
+        decoys += 1;
+        if (satisfactionOf(d, g.words) >= DECOY_MIN_SATISFIED) decoysPlausible += 1;
+      }
+    }
+  }
   return {
+    decoys,
+    decoyPlausibleShare: decoys === 0 ? 0 : decoysPlausible / decoys,
+    families,
+    topFamilyShare: puzzles.length === 0 ? 0 : (families[0]?.[1] ?? 0) / puzzles.length,
+    shape: [...shape].sort((a, b) => a[0] - b[0]),
+    plainYellowShare: puzzles.length === 0 ? 0 : plainYellow / puzzles.length,
     signatures,
     topShare: puzzles.length === 0 ? 0 : (signatures[0]?.[1] ?? 0) / puzzles.length,
     home: TIER_ORDER.map((s) => [s, home.get(s) ?? 0] as const),
@@ -1956,6 +2791,40 @@ const ARCHITECTURE_BUDGET = {
   minHomeSlotShare: 0.12,
   /** …and no single relation may be the named thread of more than this many. */
   maxRelationShare: 0.40,
+  /**
+   * ROUND 14 — no single MECHANIC FAMILY (see `familyOf`) may be the trick on
+   * more than this share of boards. The finding asked for 40%, and 40% is the
+   * `FAMILY_BOARD_SHARE` the composer spends against; the number enforced here
+   * is the one the SHIPPED corpus can hold, and it is deliberately different,
+   * for a reason worth writing down rather than tuning away:
+   *
+   *   - the composer only touches the boards it has to. Two thirds of the
+   *     shelf is authored to its floors already and ships the categories it was
+   *     written with;
+   *   - and the compound family — `___ BAR`, `IRON ___`, `Can Follow "EYE"` —
+   *     is PROTECTED from replacement by the round-14 victim order (finding 6:
+   *     "never sacrifice a compound/second-meaning category"). Its share is
+   *     therefore an authoring fact, not a composer choice: 62 of the authored
+   *     boards carry one before the generator opens its mouth.
+   *
+   * Measured over the shipped shelf, round 14 against round 13:
+   *   compound 62% (was 65%), contains 60% (was 65%), rhyme 54% (was 53%),
+   *   silent 21%, letter-swap 14%, hidden 14%, letter-shape 10%,
+   *   homophone 6%, anagram 4%.
+   * `FAMILY_BOARD_SHARE` was swept: at 0.45 the top three fall to 58/55/53 and
+   * the shelf falls to 148 boards (floor 150, tests/content.test.ts) with 38 at
+   * tier 3 (floor 45, tests/puzzles/anchors.test.ts); at 0.50, 149 and 42. The
+   * thin families ARE the ceiling — silent, hidden, anagram, homophone and
+   * letter-shape between them supply about 165 hands under `BANK_REUSE_CAP`,
+   * and the shelf needs ~330 wordplay slots. Getting every family under 40%
+   * needs roughly forty more authored pools in those five families, which is an
+   * AUTHORING task the generator cannot do for itself. Until then the number
+   * below is a real enforced ceiling — it fails the build, it does not warn —
+   * and the sweep above is the record of why it is not 0.40 yet.
+   */
+  maxFamilyShare: 0.65,
+  /** The gimme must read as a gimme on a clear majority of boards (2.12). */
+  minPlainYellowShare: 0.60,
 } as const;
 
 /** The 2.7–2.9 validator — the build fails on any violating board. */
@@ -2022,6 +2891,23 @@ function validate(puzzles: OutBoard[]): void {
       `(budget ${(ARCHITECTURE_BUDGET.maxRelationShare * 100).toFixed(0)}%) — one learnable trap`,
     );
   }
+  // ROUND 14 (AAA 2.9) — the anti-wallpaper cap, keyed on the MECHANIC.
+  for (const [family, n] of census.families) {
+    const share = n / Math.max(1, puzzles.length);
+    if (share > ARCHITECTURE_BUDGET.maxFamilyShare) {
+      problems.push(
+        `pool: "${family}" is the trick on ${n} of ${puzzles.length} boards ` +
+        `(${(share * 100).toFixed(0)}%, budget ${(ARCHITECTURE_BUDGET.maxFamilyShare * 100).toFixed(0)}%) — wallpaper`,
+      );
+    }
+  }
+  // ROUND 14 (AAA 2.12) — the easiest tier is the one she reads in English.
+  if (census.plainYellowShare < ARCHITECTURE_BUDGET.minPlainYellowShare) {
+    problems.push(
+      `pool: yellow is a letter trick on ${((1 - census.plainYellowShare) * 100).toFixed(0)}% of boards ` +
+      `(plain-yellow floor ${(ARCHITECTURE_BUDGET.minPlainYellowShare * 100).toFixed(0)}%) — the gimme is not a gimme`,
+    );
+  }
 
   for (const p of puzzles) {
     if (p.groups.length !== 4) problems.push(`${p.id}: ${p.groups.length} groups`);
@@ -2049,7 +2935,7 @@ function validate(puzzles: OutBoard[]): void {
     }
     // Round 10 — the plain-English floor. A board of four letter-puzzles has
     // no way in for a player who does not already see the trick.
-    const plain = p.groups.filter((g) => g.type !== 'wordplay').length;
+    const plain = plainCount(p.groups);
     if (plain < spec.minPlain) {
       problems.push(`${p.id}: ${plain} plain categories (tier ${p.tier} needs ${spec.minPlain})`);
     }
@@ -2136,9 +3022,60 @@ function validate(puzzles: OutBoard[]): void {
       problems.push(`${p.id}: layout is not a permutation of the 16 words`);
     }
 
+    // ROUND 14 (AAA 2.12) — a group whose token sits at the same place in all
+    // four words is a sort, not a deduction, and may not wear the two colours
+    // the player is meant to reach last.
+    for (const g of p.groups) {
+      if (visibilityOf(g.theme, g.words) >= VISIBILITY_LOUD && (g.tier === 'blue' || g.tier === 'purple')) {
+        problems.push(
+          `${p.id}: "${g.theme}" is a bare edge-token sort at ${g.tier} — 2.12 inverted (${g.words.join('/')})`,
+        );
+      }
+    }
+
+    /**
+     * ROUND 14 (AAA 2.8) — THE LABEL'S OWN ANCHOR IS A CANDIDATE MEMBER.
+     * Either the anchor has been moved off the board (`reAnchor`) or the tile
+     * it names is an acknowledged herring — on the intruder list, clustered by
+     * the layout, and named on a wrong guess. Silence is the failure.
+     */
+    const onBoard = new Set(words);
+    for (const g of p.groups) {
+      if (!anchorIsFifthMember(g.theme, g.words, onBoard)) continue;
+      const anchor = anchorOf(g.theme)!.word;
+      const named = p.ambiguousWords.includes(anchor)
+        && p.herrings.some((h) => h.words.includes(anchor));
+      if (!named) {
+        problems.push(
+          `${p.id}: "${g.theme}" is satisfied by the unflagged tile ${anchor} — five words, four slots`,
+        );
+      }
+    }
+
     // 2.11
     for (const g of p.groups) {
-      if (g.decoys.length !== 2 || g.decoys.includes(g.theme)) problems.push(`${p.id}: "${g.theme}" needs 2 decoys`);
+      // Distinctness is judged on the CANONICAL label, because that is what
+      // the player sees after typeset() — see assignDecoys.
+      const labels = [g.theme, ...g.decoys].map(canon);
+      if (g.decoys.length !== 2 || new Set(labels).size !== 3) {
+        problems.push(`${p.id}: "${g.theme}" needs 2 decoys that read differently from it (${labels.join(' / ')})`);
+      }
+      /**
+       * ROUND 14 (AAA 2.11 [BEAT]) — A DECOY NOTHING SATISFIES IS NOT A CHOICE.
+       * 206 of the 211 mechanically-checkable decoys on the round-13 shelf
+       * matched none of their group's four words, which turns the one act of
+       * naming the Library owns into a rubber stamp with two dead options.
+       * Hard fail at zero, and at four — a label every tile answers to is a
+       * second right answer, not a decoy.
+       */
+      for (const d of g.decoys) {
+        const n = satisfactionOf(d, g.words);
+        if (n === 0) {
+          problems.push(`${p.id}: decoy "${d}" for "${g.theme}" fits none of ${g.words.join('/')}`);
+        } else if (n === g.words.length) {
+          problems.push(`${p.id}: decoy "${d}" fits every word of "${g.theme}" — a second right answer`);
+        }
+      }
     }
   }
   if (problems.length > 0) {
@@ -2148,9 +3085,38 @@ function validate(puzzles: OutBoard[]): void {
 }
 
 assertBankIsClean();
+// ROUND 14 — the corpus, as CATEGORIES, so the decoy solver can ask whether a
+// semantic label ("Things in a Cinema") is true of a word rather than guessing.
+indexThemeMembers([
+  ...boards.flatMap((b) => b.groups),
+  ...WORDPLAY_BANK.flatMap((b) => bankDraws(b)),
+]);
 indexCorpusSets([
   ...boards.flatMap((b) => b.groups.map((g) => g.words)),
   ...WORDPLAY_BANK.flatMap(bankDraws).map((b) => b.words),
 ]);
-if (process.argv.includes('--report')) report();
-else main();
+/**
+ * ROUND 14 — run only as the process ENTRY POINT, and export the predicates
+ * the shipped pool is judged by.
+ *
+ * `main()` used to execute at module scope, so importing this file wrote a
+ * build artifact as a side effect and no test could ever ask it a question —
+ * exactly the hole `generate-forgotten-word.ts` closed in round 6. The
+ * round-14 gates (decoy plausibility, mechanic family, visibility, the label's
+ * own anchor) are all judgments about the SHIPPED JSON, and a judgment nothing
+ * can re-ask is a judgment that rots: `tests/content.test.ts` re-runs them over
+ * `content/generated/word-web.json` so a hand-edit or a future generator change
+ * fails CI rather than the wife's evening.
+ */
+export {
+  ARCHITECTURE_BUDGET, DECOY_MIN_SATISFIED, VISIBILITY_LOUD, WALLPAPER_FAMILIES,
+  anchorIsFifthMember, anchorOf, canon, familyOf, isPlainish, labelSatisfiedBy,
+  satisfactionOf, typeOfTheme, visibilityOf,
+};
+
+const invokedDirectly = process.argv[1] !== undefined
+  && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+if (invokedDirectly) {
+  if (process.argv.includes('--report')) report();
+  else main();
+}

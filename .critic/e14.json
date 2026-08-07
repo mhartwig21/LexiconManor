@@ -1,0 +1,8 @@
+[
+  {"eval":"Array.from(document.querySelectorAll('[role=button]')).map(function(e){return e.getAttribute('aria-label')})"},
+  {"click":"[aria-label^='Draft']","n":0,"after":2000},
+  {"eval":"document.body.innerText.slice(150,800)"},
+  {"click":"button.bp-card","has":"Linen Closet","after":3000},
+  {"shot":"crossword"},
+  {"eval":"document.body.innerText.slice(0,1400)"}
+]

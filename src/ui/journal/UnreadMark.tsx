@@ -26,6 +26,16 @@ export interface UnreadMarkProps {
   count: number;
   /** Plural noun for the screen reader: "3 unread fragments". */
   noun: string;
+  /**
+   * The SINGULAR of `noun`, for count === 1. ROUND 16 (AAA 11.7/11.19): the
+   * entrance and lifecycle levels of this chain computed a singular before
+   * calling in ("1 unread thing in the journal"); the tabs passed a hard-coded
+   * plural, so the innermost level — the one a screen-reader user navigates by
+   * — announced "1 unread letters". Same chain, same derivation, two grammars.
+   * Omitted, the plural is used at every count, which is the old behaviour and
+   * is correct for nouns that do not inflect.
+   */
+  nounSingular?: string;
   /** Pin to the host's top-right corner; the host needs `.unread-host`. */
   corner?: boolean;
   /** Print the exact count inside the mark (AAA 11.21 — never an estimate). */
@@ -41,14 +51,19 @@ export function UnreadPip({ label = 'not yet read' }: { label?: string }) {
   return <span className="unread unread--pip" role="img" aria-label={label} />;
 }
 
-export default function UnreadMark({ count, noun, corner = false, showCount = false }: UnreadMarkProps) {
+export default function UnreadMark({
+  count, noun, nounSingular, corner = false, showCount = false,
+}: UnreadMarkProps) {
   // Truthful in both directions (AAA 11.21): no mark when nothing is unread.
   if (count <= 0) return null;
+  // …and grammatical in both directions too (11.7). The choice is made HERE,
+  // once, so no caller can get it wrong at one level of the chain.
+  const phrase = count === 1 ? (nounSingular ?? noun) : noun;
   return (
     <span
       className={`unread${corner ? ' unread--corner' : ''}${showCount ? ' unread--count' : ''}`}
       role="img"
-      aria-label={`${count} unread ${noun}`}
+      aria-label={`${count} unread ${phrase}`}
     >
       {showCount && <span className="unread__n" aria-hidden>{count}</span>}
     </span>

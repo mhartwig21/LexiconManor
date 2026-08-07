@@ -18,6 +18,7 @@ import type { SaveV2 } from '../save';
 // identical: weight 1 → −2 (tier 3 −3), weight 2 doubles; micro +3,
 // anchor +6/+7/+8 by tier; perfect +2. Hints price through the mistake row.
 import { solveKeys, STEP_TABLE } from '../../engine/economy/steps';
+import type { RoomSessionSnapshot } from '../../engine/rooms/room-session';
 
 export interface RoomSlice {
   /** Enter the room at cellKey: sets day.activeRoom (puzzleId pinned at placement). */
@@ -36,6 +37,14 @@ export interface RoomSlice {
    * emit 'room-solved' / 'fragment-found' onto the spine.
    */
   applyRoomEvents(events: RoomEvent[], outcome: RoomOutcome): void;
+  /**
+   * Park the room host's live session on the PlacedRoom at `cellKey`, so a
+   * reload (or an iOS tab eviction) returns the exact board, the exact
+   * progress, and the steps already paid for it (REVIEW_AA §5.3). Called on
+   * every dispatch; the store persists after every mutation, so "saved" means
+   * saved, not "saved on the way out".
+   */
+  saveRoomSession(cellKey: string, snapshot: RoomSessionSnapshot): void;
 }
 
 export const createRoomSlice =
@@ -76,6 +85,20 @@ export const createRoomSlice =
       if (day) set({ day: { ...get().day!, activeRoom: null } });
     },
 
+    /**
+     * In-room progress rides on the PlacedRoom it belongs to, inside `manor`,
+     * which `store.selectSave` already persists whole — so this needs no new
+     * top-level save field, is keyed by cellKey by construction, and is cleared
+     * by the nightly `manor: null` reset without a sweeper. The reasoning, and
+     * the reason the snapshot is opaque, are in engine/rooms/room-session.ts.
+     */
+    saveRoomSession: (cellKey, snapshot) => {
+      const manor = get().manor;
+      const placed = manor?.rooms[cellKey];
+      if (!manor || !placed) return;
+      set({ manor: { ...manor, rooms: { ...manor.rooms, [cellKey]: { ...placed, session: snapshot } } } });
+    },
+
     applyRoomEvents: (events, outcome) => {
       const active = get().day?.activeRoom;
       if (!active) return;
@@ -106,6 +129,24 @@ export const createRoomSlice =
             break;
           }
           case 'solved': {
+            // ── §5.4 — A ROOM IS PAID FOR ONCE. ──────────────────────────
+            // This branch used to SET `solved: true` four lines below and
+            // never READ it, which made the room re-payable for ever. The
+            // loop the editor drove: solve (+8 and a key) → `markPuzzleSeen`
+            // → reload → `selectByTier` filters the board it has just seen
+            // out of the pool → the same cell, same seed, restocks with a
+            // DIFFERENT board → solve → paid again. Keys are the padlock
+            // currency gating the entire climb, so the exploit did not merely
+            // print steps: it unlocked a Sanctum the review measures at three
+            // weeks away.
+            //
+            // Two things now close it, and both are wanted independently:
+            // §5.3 restores the solved board instead of restocking the cell,
+            // and this guard makes a second payout unexpressible even if some
+            // future path manages to hand the room a fresh puzzle. Emit
+            // NOTHING — not the steps, not the perfect bonus, not the key, not
+            // the spine event that would file a second fragment for one solve.
+            if (get().manor?.rooms[cellKey]?.solved) break;
             get().applyStepEntry({
               reason: 'solve',
               delta: STEP_TABLE.solve(size, tier),

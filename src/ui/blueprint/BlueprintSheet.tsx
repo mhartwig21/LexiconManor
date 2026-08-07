@@ -40,15 +40,16 @@ import type { PointerEvent, ReactNode } from 'react';
 import type { Cell, Dir, ManorState, PlacedRoom } from '../../engine/types';
 import { MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../../engine/types';
 import {
-  atSanctumDoor, cellKey, deadDoors, deweyCell, doorsConnect, draftTargets, ENTRANCE_CARD_ID,
-  roomAt, sameCell, walkableNeighbors,
+  cellKey, deadDoors, deweyCell, doorsConnect, draftTargets, ENTRANCE_CARD_ID,
+  roomAt, sameCell, sanctumStanding, walkableNeighbors, SANCTUM_DOOR_CELL,
 } from '../../engine/manor/grid';
 import { isDoorLocked, visibleLocks, KEY_COST } from '../../engine/manor/locks';
 import { useManorStore } from '../../app/store';
 import { ROOM_KIND_GLYPH_PATHS } from './CategoryGlyph';
 import {
-  draftLabel, draftStamp, lockedDraftLabel, lockedRefusalAnnouncement, lockedRefusalLine,
-  priceStamp, stampsDraftPrice, stampsPrice, walkLabel,
+  draftLabel, draftStamp, landingRefusalAnnouncement, landingRefusalLine,
+  lockedDraftLabel, lockedRefusalAnnouncement, lockedRefusalLine,
+  priceStamp, stampsDraftPrice, stampsPrice, walkLabel, LANDING_SEALED_LABEL,
 } from './pricing';
 
 const CELL = 64;
@@ -225,21 +226,38 @@ export default function BlueprintSheet({
   /** Consecutive taps per door, so a second try is answered, never parroted. */
   const refuseCount = useRef(new Map<string, number>());
   useEffect(() => () => { if (refuseTimer.current) clearTimeout(refuseTimer.current); }, []);
-  const refuse = (key: string, row: number) => {
-    const attempt = refuseCount.current.get(key) ?? 0;
-    refuseCount.current.set(key, attempt + 1);
-    setRefused({
-      key,
-      row,
-      line: lockedRefusalLine(attempt),
-      spoken: lockedRefusalAnnouncement(attempt, row, KEY_COST),
-    });
+  const showRefusal = (key: string, row: number, line: string, spoken: string) => {
+    setRefused({ key, row, line, spoken });
     if (refuseTimer.current) clearTimeout(refuseTimer.current);
     // Long enough to read a short line without becoming furniture. The lock's
     // own shrug is 420ms; the words outlast it deliberately (AAA 11.13 —
     // transience is capped by attention, and this one fires on the very
     // surface she is looking at).
     refuseTimer.current = setTimeout(() => setRefused(null), 2600);
+  };
+  /** The padlock's answer: brass, a key, and nothing charged. */
+  const refuse = (key: string, row: number) => {
+    const attempt = refuseCount.current.get(key) ?? 0;
+    refuseCount.current.set(key, attempt + 1);
+    showRefusal(
+      key, row, lockedRefusalLine(attempt), lockedRefusalAnnouncement(attempt, row, KEY_COST),
+    );
+  };
+  /**
+   * THE LANDING'S ANSWER (round-13 blocker). She is on (2,5) and the plan she
+   * drafted here drew no north door. Before this the Sanctum simply had no hit
+   * target and the sheet said nothing at all, while `/sanctum` and the journal
+   * both told her to climb to the landing she was standing on. Same channel as
+   * the padlock, one storey up, and the same price: nothing.
+   */
+  const refuseLanding = () => {
+    const key = 'sanctum-landing';
+    const attempt = refuseCount.current.get(key) ?? 0;
+    refuseCount.current.set(key, attempt + 1);
+    showRefusal(
+      key, SANCTUM_DOOR_CELL.row, landingRefusalLine(attempt),
+      landingRefusalAnnouncement(attempt),
+    );
   };
 
   const rooms = Object.values(manor.rooms);
@@ -251,11 +269,20 @@ export default function BlueprintSheet({
   const padlocks = visibleLocks(manor);
   const den = deweyCell(manor.daySeed);
   const deweyHome = roomAt(manor, den);
-  // The one predicate, shared (engine/manor/grid.ts `atSanctumDoor`). It used
-  // to be written out here and nowhere else, so the journal and the Sanctum
-  // screen each had their own idea of "reached the door" — which was none at
-  // all (AAA 4.10e, round-7 blocker).
-  const sanctumReachable = interactive && atSanctumDoor(manor);
+  // The one predicate, shared (engine/manor/grid.ts). It used to be written out
+  // here and nowhere else, so the journal and the Sanctum screen each had their
+  // own idea of "reached the door" — which was none at all (AAA 4.10e, round-7
+  // blocker).
+  //
+  // ROUND 13: three-valued, because the boolean only ever spoke two of its
+  // three meanings. `landing-sealed` — she is ON the landing and the room she
+  // drafted there drew no north door — used to render as NOTHING AT ALL: no
+  // hit target, no ink, no words, on the single most expensive arrival in the
+  // campaign. It is now a real control that refuses out loud (AAA 4.16), and
+  // the blank wall is drawn as the bricked seam it is.
+  const standing = interactive ? sanctumStanding(manor) : 'away';
+  const sanctumReachable = standing === 'at-door';
+  const landingSealed = standing === 'landing-sealed';
 
   const roomNodes: ReactNode[] = rooms.map((room) => {
     const x = px(room.cell.col), y = py(room.cell.row);
@@ -469,17 +496,38 @@ export default function BlueprintSheet({
         );
       })}
 
-      {/* the Sanctum, tappable only from its landing */}
-      {sanctumReachable && (
+      {/* THE SEALED SEAM (round-13 blocker, AAA 4.6/4.16). The landing room
+          drew no north door, so the wall between her and the Sanctum is blank
+          plaster — the one fact the whole game never drew. Same bricked-dash
+          ink as every other dead door on the sheet (`bp-room__dead`), laid on
+          the shared wall so it reads as one seam with the Sanctum's own dead
+          south door above it. Inert to pointers: the tap belongs to the hit
+          layer below. */}
+      {landingSealed && (
+        <path
+          className="bp-room__dead bp-sealedseam"
+          aria-hidden="true"
+          d={deadDoorBar(px(SANCTUM_DOOR_CELL.col), py(SANCTUM_DOOR_CELL.row), 'N')}
+        />
+      )}
+
+      {/* The Sanctum, tappable from its landing — and, since round 13, tappable
+          from the landing that does NOT open onto it, because a control that
+          silently vanishes is indistinguishable from a bug on the arrival she
+          spent 22+ steps to make. It refuses in words instead (AAA 4.16), the
+          same way a keyless padlock does, and charges exactly as much: nothing. */}
+      {(sanctumReachable || landingSealed) && (
         <g
-          className="bp-hit bp-sanctumhit"
+          className={`bp-hit bp-sanctumhit${landingSealed ? ' bp-sanctumhit--sealed' : ''}`}
           role="button"
-          aria-label="Approach the Sanctum"
+          aria-label={sanctumReachable ? 'Approach the Sanctum' : LANDING_SEALED_LABEL}
           {...pressProps}
-          onClick={onSanctum}
+          onClick={() => (sanctumReachable ? onSanctum() : refuseLanding())}
         >
           <rect className="bp-hit__zone" x={px(SANCTUM_CELL.col)} y={py(SANCTUM_CELL.row)} width={CELL} height={CELL} />
-          <rect className="bp-walk__wash" x={px(SANCTUM_CELL.col) + INSET + 1} y={py(SANCTUM_CELL.row) + INSET + 1} width={CELL - 2 * INSET - 2} height={CELL - 2 * INSET - 2} rx={2} />
+          {sanctumReachable && (
+            <rect className="bp-walk__wash" x={px(SANCTUM_CELL.col) + INSET + 1} y={py(SANCTUM_CELL.row) + INSET + 1} width={CELL - 2 * INSET - 2} height={CELL - 2 * INSET - 2} rx={2} />
+          )}
         </g>
       )}
 

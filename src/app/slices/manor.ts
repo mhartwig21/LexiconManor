@@ -31,10 +31,13 @@ import {
 } from '../../engine/manor/grid';
 import { carryOverFrom, deckFor, UTILITY_EFFECTS } from '../../engine/manor/deck';
 import { deweyProphecy, rollOffer } from '../../engine/manor/drafting';
-import { isDoorLocked, KEY_COST } from '../../engine/manor/locks';
+import { isDoorLocked, KEY_COST, type LockView } from '../../engine/manor/locks';
+import { doorsHeldOpen, sanctumAnswered } from '../../engine/manor/tube';
 import {
-  climbKey, fernMorningKeys, keyAccessFor, moveAt, STEP_TABLE,
+  climbKey, fernMorningKeys, keyAccessFor, moveAt, sanctumMercyArmed, sanctumPlanWarmth,
+  surveyEveningsIn, STEP_TABLE,
 } from '../../engine/economy/steps';
+import { sealedFragmentIds } from '../../engine/volume';
 import { getRoomAdapter } from '../../engine/rooms/registry';
 
 export interface ManorSlice {
@@ -150,6 +153,60 @@ export function dawnCarryOverLines(
   s: Pick<ManorStore, 'day' | 'recentEvents'>,
 ): string[] {
   return dawnCarryOver(s).lines;
+}
+
+/**
+ * ── THE LANDING ARC, LIVE (round-13 blocker; engine/economy/steps.ts) ──────
+ *
+ * The second gate of AAA 4.10e is ACCESS, and it had neither an arc nor a
+ * floor: `atSanctumDoor` needs the plan drafted at (2,5) to draw a north door,
+ * ~28% of the plans eligible up there do, and nothing in the game moved that
+ * number across a six-week campaign. Measured over 400 median-player
+ * campaigns, EVERY unfinished one belonged to a player who already knew the
+ * word, median 9 evenings and p90 25 between knowing and being let in.
+ *
+ * Two terms, both derived from state the save ALREADY keeps — no schema change,
+ * the same trick `carryOverFrom` uses to cross a night off the event spine:
+ *
+ *   - WARMTH: evenings she has spent on the top storeys, off
+ *     `chronicles.dayRecords[].highestRow` (written every dusk, kept forever).
+ *     Earned, strictly progressive, and exactly 0 until she has climbed —
+ *     which is why it cannot touch 4.10d's day-1 reach by construction rather
+ *     than by tuning.
+ *   - MERCY: the access side of AAA 4.14's pity floor. Arms only when she can
+ *     already NAME the word (legible pages, never sealed smudges) and has been
+ *     up there and turned away before.
+ *
+ * Both are inert everywhere except `SANCTUM_DOOR_CELL` (engine/manor/drafting.ts
+ * reads them only there), so no other draft in the manor changes at all.
+ */
+export function landingArcFor(
+  s: Pick<ManorStore, 'chronicles' | 'volume' | 'flags'>,
+): { sanctumPlanWarmth: number; sanctumMercy: boolean } {
+  const surveyed = surveyEveningsIn(s.chronicles.dayRecords);
+  const sealed = sealedFragmentIds(s.volume.volumeId, s.flags);
+  const legible = s.volume.foundFragmentIds.filter((id) => !sealed.has(id)).length;
+  // ROUND 17 (REVIEW_AA §5.2): once the word has been SPOKEN — down the hall's
+  // speaking tube or at the door — the house stops gambling with her. The
+  // landing's mercy slot is armed outright and its plans are as good as they
+  // ever get, because the only thing left in the volume is the walk up to say
+  // it to his face. Inert on every day before that, so 4.10d is untouched.
+  const answered = sanctumAnswered(s.volume.volumeId, s.flags);
+  return {
+    sanctumPlanWarmth: answered ? 1 : sanctumPlanWarmth(surveyed),
+    sanctumMercy: answered || sanctumMercyArmed(surveyed, legible),
+  };
+}
+
+/**
+ * THE PADLOCK VIEW (round 17). One derivation, read by every surface that
+ * draws or charges a lock — the draft gate below, the blueprint's drawn
+ * padlocks, ManorPage's key line and the draft modal's — so a door cannot be
+ * shut in one place and open in another (the round-13 `atSanctumDoor` lesson,
+ * applied before the same defect gets a second chance).
+ */
+export function lockViewFor(s: Pick<ManorStore, 'volume' | 'flags'>): LockView {
+  return { heldOpen: doorsHeldOpen(s.volume.volumeId, s.flags) };
 }
 
 /** Has Dewey been petted today? (Derives his reveal state — no extra save shape.) */
@@ -274,6 +331,8 @@ export const createManorSlice =
             // Fern's arc, supply side (AAA 4.10d): key-bearing cards surface
             // more often as her friendship warms. 0 → weights unchanged.
             keyAccess: keyAccessFor(get().affinities?.fern ?? 0),
+            // The landing arc (round 13). Inert at every cell but (2,5).
+            ...landingArcFor(get()),
           },
         );
         // ── THE WALK TO THE DOOR, PRICED AT *HER* ROW (AAA 4.6). ──────────
@@ -397,6 +456,7 @@ export const createManorSlice =
             {
               gems: get().currencies.gems, declinedLastDraft: sess.declined, drawIndex,
               keyAccess: keyAccessFor(get().affinities?.fern ?? 0),
+              ...landingArcFor(get()),
             },
           ),
         });

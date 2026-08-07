@@ -21,7 +21,7 @@ import {
   type FragmentContent,
 } from '../../engine/volume';
 import type { CharacterId } from '../../engine/types';
-import { atSanctumDoor } from '../../engine/manor/grid';
+import { sanctumStanding } from '../../engine/manor/grid';
 import { getDialogueFile } from '../../engine/dialogue/content';
 import { selectDialogue } from '../../engine/dialogue/select';
 import DialogueScene from '../dialogue/DialogueScene';
@@ -60,8 +60,14 @@ export default function JournalView() {
   const openLetter = useManorStore((s) => s.openLetter);
   const markFragmentsViewed = useManorStore((s) => s.markFragmentsViewed);
   const buildDialogueQuery = useManorStore((s) => s.buildDialogueQuery);
-  /** Is she actually standing at the door? (See the Word tab's nudge.) */
-  const atLanding = useManorStore((s) => atSanctumDoor(s.manor));
+  /** Where is she actually standing? (See the Word tab's nudge.) THREE-VALUED
+   *  on purpose: as a boolean this collapsed 'landing-sealed' into 'away' and
+   *  told a player already on the landing that "all that is left is the
+   *  climb", which is false and reads as the screen not knowing where she is
+   *  (round-15 finding, AAA 4.16). One predicate, shared with the blueprint
+   *  and the Sanctum (engine/manor/grid.ts `sanctumStanding`). */
+  const standing = useManorStore((s) => sanctumStanding(s.manor));
+  const atLanding = standing === 'at-door';
 
   const content = getVolumeContent(volume.volumeId);
   const unread = useJournalUnread();
@@ -167,12 +173,12 @@ export default function JournalView() {
             tab can carry either, both, or neither, and each number is exactly
             the number of items of ITS kind behind that tab (AAA 11.21). */}
         <nav className="jrn-tabs" aria-label="Journal tabs">
-          <TabButton label="The Word" noun="lines of the definition" sealedNoun="lines not yet made out" active={tab === 'word'} unread={unread.word.length} sealed={unread.sealed.word.length} onClick={() => switchTab('word')} />
-          <TabButton label="Engravings" noun="engravings" sealedNoun="engravings not yet made out" active={tab === 'engravings'} unread={unread.engravings.length} sealed={unread.sealed.engravings.length} onClick={() => switchTab('engravings')} />
-          <TabButton label="Testimony" noun="pieces of testimony" sealedNoun="pieces not yet made out" active={tab === 'testimony'} unread={unread.testimony.length} sealed={unread.sealed.testimony.length} onClick={() => switchTab('testimony')} />
+          <TabButton label="The Word" noun="lines of the definition" nounSingular="line of the definition" sealedNoun="lines not yet made out" sealedNounSingular="line not yet made out" active={tab === 'word'} unread={unread.word.length} sealed={unread.sealed.word.length} onClick={() => switchTab('word')} />
+          <TabButton label="Engravings" noun="engravings" nounSingular="engraving" sealedNoun="engravings not yet made out" sealedNounSingular="engraving not yet made out" active={tab === 'engravings'} unread={unread.engravings.length} sealed={unread.sealed.engravings.length} onClick={() => switchTab('engravings')} />
+          <TabButton label="Testimony" noun="pieces of testimony" nounSingular="piece of testimony" sealedNoun="pieces not yet made out" sealedNounSingular="piece not yet made out" active={tab === 'testimony'} unread={unread.testimony.length} sealed={unread.sealed.testimony.length} onClick={() => switchTab('testimony')} />
           {/* Letters arrive whole or not at all — there is no sealed-letter
               state, so the seal chain has nothing to say here. */}
-          <TabButton label="Letters" noun="letters" active={tab === 'letters'} unread={unread.letters.length} sealed={0} onClick={() => switchTab('letters')} />
+          <TabButton label="Letters" noun="letters" nounSingular="letter" active={tab === 'letters'} unread={unread.letters.length} sealed={0} onClick={() => switchTab('letters')} />
         </nav>
 
         <div className="jrn-sheet">
@@ -450,7 +456,18 @@ export default function JournalView() {
    */
   function FooterRail() {
     if (solved) return null;
-    const showSanctum = sanctumReadiness(content!, volume, { sealedIds }).enough;
+    /**
+     * ROUND 14 (AAA 4.16): the rail speaks in the same two bands the door
+     * does. `enough` is the thin-file edge — the file is worth carrying
+     * upstairs — and `deducible` is the point at which the constraint set can
+     * actually pin a word (engine/journal.DEDUCTION_FLOOR, derived from the
+     * mystery's own `FRAGMENTS_TO_DEDUCE`). The rail used to say "Enough to
+     * take upstairs" from four readable pages and say exactly that same
+     * sentence at sixteen, which is the flat version of the silence the
+     * Portrait's nudge bands were built to end.
+     */
+    const readiness = sanctumReadiness(content!, volume, { sealedIds });
+    const showSanctum = readiness.enough;
     return (
       <div className="jrn-rail">
         {stillSealed > 0 && (
@@ -476,6 +493,20 @@ export default function JournalView() {
               <button className="jrn-nudge__link" onClick={() => navigate('/sanctum')}>
                 Take it to the Sanctum
               </button>
+            ) : standing === 'landing-sealed' ? (
+              /* She is ON the landing already — "all that is left is the
+                 climb" is false, and printing it was the round-15 defect.
+                 Name the real obstacle instead (AAA 4.16). */
+              <span className="jrn-nudge__text">
+                {readiness.deducible
+                  ? 'This file can name a word, and you are on the landing. But this room does not open north — the door needs a plan that does.'
+                  : 'You are on the landing, but this room does not open north — the door needs a plan that does.'}
+              </span>
+            ) : readiness.deducible ? (
+              <span className="jrn-nudge__text">
+                This file can name a word. All that is left is the climb — the door is on the
+                top landing, and it only hears a word from someone standing at it.
+              </span>
             ) : (
               <span className="jrn-nudge__text">
                 Enough to take upstairs, when you can get up there — the door is on the top
@@ -604,9 +635,10 @@ function PostTrayMark() {
 }
 
 function TabButton({
-  label, noun, sealedNoun, active, unread, sealed, onClick,
+  label, noun, nounSingular, sealedNoun, sealedNounSingular, active, unread, sealed, onClick,
 }: {
-  label: string; noun: string; sealedNoun?: string;
+  label: string; noun: string; nounSingular?: string;
+  sealedNoun?: string; sealedNounSingular?: string;
   active: boolean; unread: number; sealed: number; onClick: () => void;
 }) {
   /**
@@ -640,8 +672,14 @@ function TabButton({
           ring landed on the descender of "The Word". A mark that has to sit
           on top of the word it qualifies is a layout to fix, not a corner to
           pick: inline participates in layout, so it can never overlap. */}
-      <UnreadMark count={unread} noun={noun} corner />
-      <SealedMark count={sealed} noun={sealedNoun} />
+      {/* ROUND 16 (AAA 11.7/11.19): both nouns come in as a singular/plural
+          PAIR. The entrance and lifecycle levels of this chain already computed
+          one; the tabs passed a bare plural, so at a count of 1 the control
+          that tells her which tab to open announced "1 unread letters". The
+          marks themselves now choose, so this is the last place it can be got
+          wrong and the pair is right here. */}
+      <UnreadMark count={unread} noun={noun} nounSingular={nounSingular} corner />
+      <SealedMark count={sealed} noun={sealedNoun} nounSingular={sealedNounSingular} />
     </button>
   );
 }

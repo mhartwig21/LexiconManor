@@ -1070,6 +1070,27 @@
   border-radius: 2px 2px 0 0;
   border-bottom: 2px solid var(--ink-faint);
   background: var(--paper-shade);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: clamp(13px, 4.6vw, 19px);
+  line-height: 1;
+  color: var(--ink);
+}
+/* ROUND 14 (AAA 3.5/3.8) — THE CRIB. A letter that survived the tear is ink,
+   not a blank: it is the help the Study owes an archaic twelve-letter word, so
+   it reads as writing on the page rather than as a filled box. */
+.fw-slot--given {
+  background: var(--paper);
+  border-bottom-color: var(--ink);
+}
+.fw-slots__cap {
+  margin: 0.15rem 0 0;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
 }
 
 /* ROUND 8 (AAA 11.4 [PARITY] + 6.6) — THE SEALED DRAWER, ON ONE LINE.
@@ -1243,7 +1264,11 @@
          rule line states in words two lines above them.
        · the toast reserve — two 15px lines instead of two and a half. */
   .anch--study .anch__title { display: none; }
-  .anch--study .fw-slots { display: none; }
+  /* ROUND 14: the slot row is decoration only while it is EMPTY. Once it
+     carries a crib (`.fw-slots--crib`) it is the room's help, and the one
+     surface AAA 3.3 forbids collapsing — so the SE-class saving comes out of
+     its height instead. */
+  .anch--study .fw-slots:not(.fw-slots--crib) { display: none; }
   .anch--study .anch-toastslot { min-height: 2.1rem; }
   .anch--study { gap: 0.25rem; }
   .fw-clue { min-height: var(--tap-target); padding: 0.3rem 0.5rem; }
@@ -1263,7 +1288,8 @@
    platform has to apply (--kb-shift), so the entry row rides up with far less
    of the room moving under her thumb (AAA 7.9). */
 html.kb-open .anch .fw-def__meta,
-html.kb-open .anch .fw-slots,
+html.kb-open .anch .fw-slots:not(.fw-slots--crib),
+html.kb-open .anch .fw-slots__cap,
 html.kb-open .anch .fw-tried__cap {
   display: none;
 }

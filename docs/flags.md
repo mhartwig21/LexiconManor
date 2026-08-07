@@ -60,7 +60,12 @@ such as `sys.dewey.first-pet`.)
 - `vol.volume-1.solved` — set by the volume machine on the winning guess.
 - `vol.volume-1.landing-reached` — set by the Sanctum screen the first time she
   stands on the landing. Listed in `CODE_SET_FLAGS`, so authored dialogue may
-  condition on the climb.
+  condition on the climb. **Read as well as written** since round 15: three
+  authored files condition on it (`bramble.recap.landing`,
+  `ellery.react.landing`, `fern.react.landing`), so it is no longer a
+  write-only flag and the orphan rule sees it from both ends. A code-set flag
+  that nothing conditions on is a smell, not an error — this one stopped being
+  one when the cast learned to react to the climb.
 
 ### Viewed / unread bookkeeping (code-set families, round 6)
 

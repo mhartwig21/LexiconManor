@@ -1,0 +1,8 @@
+[
+  {"click":"[aria-label^='Walk to the ground floor']","n":0,"after":1400},
+  {"click":"[aria-label^='Walk to the ground floor']","n":1,"after":1400},
+  {"eval":"document.body.innerText.slice(0,120)"},
+  {"eval":"Array.from(document.querySelectorAll('[role=button]')).map(function(e){return e.getAttribute('aria-label')})"},
+  {"click":"[aria-label^='Draft']","n":0,"after":2000},
+  {"eval":"document.body.innerText.slice(150,800)"}
+]

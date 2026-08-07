@@ -125,6 +125,11 @@ export const hiveAdapter: RoomPuzzleAdapter<HivePuzzleEx, HiveRoomState, HiveAct
 
   select: (opts) => selectByTier(HIVE_POOL, opts),
 
+  // §5.3 — found words, score and the rank ladder all live in `HiveRoomState`,
+  // which is plain JSON data; the hive itself is found by id.
+  find: (id) => HIVE_POOL.find((p) => p.id === id),
+  stateVersion: 1,
+
   start(puzzle: HivePuzzleEx, _ctx: RoomContext): HiveRoomState {
     // The v1 win gate (puzzle.pointThreshold) is retired: raise the engine's
     // threshold to the full total so it never blocks play; the manor's solve

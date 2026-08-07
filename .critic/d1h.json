@@ -1,0 +1,22 @@
+[
+  {"eval":"document.body.innerText.slice(0,300)"},
+  {"click":"button.ww-tile","has":"BLUE","after":250},
+  {"click":"button.ww-tile","has":"JELLY","after":250},
+  {"click":"button.ww-tile","has":"MAIL","after":250},
+  {"click":"button.ww-tile","has":"FLUSH","after":250},
+  {"click":"button.anch-btn--primary","after":1600},
+  {"click":"button.ww-tile","has":"MADAM","after":250},
+  {"click":"button.ww-tile","has":"REFER","after":250},
+  {"click":"button.ww-tile","has":"NOON","after":250},
+  {"click":"button.ww-tile","has":"ROTOR","after":250},
+  {"click":"button.anch-btn--primary","after":1600},
+  {"click":"button.ww-tile","has":"HELMET","after":250},
+  {"click":"button.ww-tile","has":"TURBAN","after":250},
+  {"click":"button.ww-tile","has":"VISOR","after":250},
+  {"click":"button.ww-tile","has":"CROWN","after":250},
+  {"click":"button.anch-btn--primary","after":1200},
+  {"shot":"win-a"},
+  {"wait":2500},
+  {"shot":"win-b"},
+  {"eval":"document.body.innerText.slice(0,900)"}
+]

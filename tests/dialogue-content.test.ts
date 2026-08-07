@@ -4,10 +4,11 @@ import { CHARACTER_IDS } from '../src/engine/types';
 import type { DialogueQuery, GameEvent, RecordedEvent } from '../src/engine/events';
 import type { DialogueNode } from '../src/engine/dialogue/schema';
 import { isSubstantive, MAX_LINE_CHARS } from '../src/engine/dialogue/schema';
-import { selectDialogue, findNode } from '../src/engine/dialogue/select';
+import { selectDialogue, findNode, selectTaggedLine } from '../src/engine/dialogue/select';
 import { validateDialogueSet } from '../src/engine/dialogue/validate';
 import { DIALOGUE_FILES, getDialogueFile } from '../src/engine/dialogue/content';
 import { deriveLegibleFragmentCount } from '../src/engine/dialogue/conditions';
+import { DEDUCTION_FLOOR } from '../src/engine/journal';
 import { ROW_NAMES } from '../src/engine/economy/steps';
 
 /**
@@ -229,6 +230,194 @@ describe('authored content passes the build validator', () => {
     // A lint that matches nothing passes forever (the round-12 lesson): the
     // celebrated climb line must actually be in the corpus for this to bite.
     expect(sawAny, 'the storey-count lint matched no authored line at all').toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AAA 5.1 — REACTION LATENCY: the system sees you, at the NEXT opportunity.
+// ---------------------------------------------------------------------------
+
+/**
+ * ═══ ROUND 14: THE TWO BIGGEST THINGS THAT HAPPEN, AND NOBODY MENTIONED THEM ═
+ *
+ * 5.1 asks for a scripted test over ten event types. There was none — the
+ * corpus's reaction coverage was only ever checked in aggregate by the 15-day
+ * greedy sim, which cannot tell "somebody said something" from "somebody said
+ * something ABOUT THAT". Two states slipped through the gap, and they are the
+ * two the player spends the most time in:
+ *
+ *   1. `vol.<id>.landing-reached` — written by SanctumView the first time she
+ *      stands at the Sanctum door, whitelisted in the validator's CODE_SET_FLAGS
+ *      *with a comment inviting authored content to condition on it*, and gated
+ *      by NOT ONE NODE in any of the six files. 4.10c calls that arrival "a
+ *      campaign event, not a Tuesday"; the morning after, the house said
+ *      nothing.
+ *   2. A FULL, LEGIBLE FILE. Nothing anywhere was gated above
+ *      `portrait.arc.read` at `fragmentsLegible >= 6`, so the knowing-but-
+ *      locked-out stretch — measured median 7 evenings, p90 17 for
+ *      PROFILE_DECENT — had no line in it either.
+ *
+ * Every row below is scripted: one state, one character, one slot, and an
+ * assertion that the node selected POSITIVELY REQUIRES that state. "A node was
+ * returned" is not a pass — the never-silence fallback always returns one.
+ */
+describe('reaction latency: every notable state is spoken to (AAA 5.1)', () => {
+  /** Warmed-up save: the forced first-meeting chain is behind her, so what
+   *  wins is the reaction and not the introduction. */
+  const meetsSeen = (id: CharacterId): Set<string> =>
+    new Set(DIALOGUE_FILES[id].nodes.filter((n) => /\.meet\./.test(n.id)).map((n) => n.id));
+
+  interface Shape {
+    what: string;
+    character: CharacterId;
+    slot: DialogueQuery['slot'];
+    events?: GameEvent[];
+    flags?: string[];
+    fragments?: number;
+    /**
+     * The valve is already spent with this character today. Gifting HAPPENS
+     * inside a conversation, so the next opportunity after a gift is the
+     * retargeted idle pool — which is exactly where the thank-you beats live.
+     */
+    talkedToday?: CharacterId[];
+    /** Does the picked node positively require the thing that just happened? */
+    requires: (n: DialogueNode) => boolean;
+  }
+
+  const requiresEvent = (type: GameEvent['type']) => (n: DialogueNode) =>
+    (n.conditions ?? []).some((c) => c.kind === 'event' && c.event === type);
+  const requiresFlag = (flag: string) => (n: DialogueNode) =>
+    (n.conditions ?? []).some((c) => c.kind === 'flag' && c.flag === flag);
+  const requiresLegible = (gte: number) => (n: DialogueNode) =>
+    (n.conditions ?? []).some((c) => c.kind === 'fragmentsLegible' && (c.gte ?? 0) >= gte);
+
+  const LANDING = 'vol.volume-1.landing-reached';
+
+  const SHAPES: Shape[] = [
+    // ── the ten event types (5.1's scripted list) ──────────────────────────
+    { what: 'a fragment filed', character: 'bramble', slot: 'morning',
+      events: [{ type: 'fragment-found', fragmentId: 'v1-d1' }],
+      requires: requiresEvent('fragment-found') },
+    { what: 'the day ran out of steps', character: 'bramble', slot: 'morning',
+      events: [{ type: 'day-ended', day: 1, cause: 'steps-exhausted' }],
+      requires: requiresEvent('day-ended') },
+    { what: 'a room left for tomorrow', character: 'bramble', slot: 'morning',
+      events: [{ type: 'room-abandoned', cellKey: '1,1', kind: 'word-web' }],
+      requires: requiresEvent('room-abandoned') },
+    { what: 'a pangram', character: 'bramble', slot: 'morning',
+      events: [{ type: 'room-notable', kind: 'hive', note: 'pangram' }],
+      requires: requiresEvent('room-notable') },
+    { what: 'a perfect solve', character: 'bramble', slot: 'morning',
+      events: [{ type: 'room-solved', cellKey: '1,1', kind: 'word-web', tier: 1, perfect: true }],
+      requires: requiresEvent('room-solved') },
+    { what: 'a wrong word at the door', character: 'portrait', slot: 'sanctum-after-guess',
+      events: [{ type: 'sanctum-guess-wrong', guess: 'CANDLE',
+        closeness: { sharedLetters: 0, rightLength: false, repeat: false } }],
+      requires: requiresEvent('sanctum-guess-wrong') },
+    { what: 'the volume won', character: 'portrait', slot: 'sanctum-after-guess',
+      events: [{ type: 'volume-solved', volumeId: 'volume-1' }],
+      requires: requiresEvent('volume-solved') },
+    // The letter aside plays on its own slot, mounted by the journal the
+    // instant the seal is broken — the next opportunity is immediate.
+    { what: 'a letter opened', character: 'posy', slot: 'letter',
+      events: [{ type: 'letter-opened', letterId: 'l1' }],
+      requires: requiresEvent('letter-opened') },
+    { what: 'a bookmark gifted', character: 'fern', slot: 'parlor',
+      events: [{ type: 'gift-given', character: 'fern' }],
+      talkedToday: ['fern'], requires: requiresEvent('gift-given') },
+    { what: 'the cat petted', character: 'fern', slot: 'parlor',
+      events: [{ type: 'dewey-petted' }],
+      requires: requiresEvent('dewey-petted') },
+    { what: 'an affinity rank-up', character: 'ellery', slot: 'parlor',
+      events: [{ type: 'affinity-rank-up', character: 'ellery', rank: 2 }],
+      requires: requiresEvent('affinity-rank-up') },
+    { what: 'a fragment interpreted', character: 'ellery', slot: 'parlor',
+      events: [{ type: 'fragment-interpreted', fragmentId: 'v1-d1' }],
+      requires: requiresEvent('fragment-interpreted') },
+
+    // ── the two round-14 shapes ────────────────────────────────────────────
+    { what: 'she stood at the Sanctum door (morning after)',
+      character: 'bramble', slot: 'morning', flags: [LANDING],
+      requires: requiresFlag(LANDING) },
+    { what: 'she stood at the Sanctum door (the librarian heard)',
+      character: 'ellery', slot: 'parlor', flags: [LANDING],
+      requires: requiresFlag(LANDING) },
+    { what: 'she stood at the Sanctum door (the groundskeeper heard)',
+      character: 'fern', slot: 'parlor', flags: [LANDING],
+      requires: requiresFlag(LANDING) },
+    { what: 'a full, legible file — she knows it', character: 'ellery', slot: 'parlor',
+      fragments: DEDUCTION_FLOOR, requires: requiresLegible(DEDUCTION_FLOOR) },
+  ];
+
+  const queryFor = (s: Shape): DialogueQuery => {
+    const flags = new Set<string>([`met.${s.character}`, ...(s.flags ?? [])]);
+    const seen = meetsSeen(s.character);
+    return {
+      day: 12, slot: s.slot, character: s.character,
+      seen, flags,
+      affinities: { bramble: 4, ellery: 4, posy: 4, fern: 4, dewey: 0, portrait: 4 },
+      counters: {},
+      recentEvents: (s.events ?? []).map((event) => ({ day: 12, at: 0, event })),
+      talkedToday: new Set<CharacterId>(s.talkedToday ?? []),
+      giftedToday: new Set<CharacterId>(),
+      volumeId: 'volume-1',
+      fragmentsFound: s.fragments ?? 0,
+      fragmentsLegible: deriveLegibleFragmentCount('volume-1', flags, s.fragments ?? 0),
+    };
+  };
+
+  for (const s of SHAPES) {
+    it(`${s.character} speaks to it: ${s.what}`, () => {
+      const picked = selectDialogue(getDialogueFile(s.character), queryFor(s));
+      expect(picked, `${s.character} said nothing at all`).toBeDefined();
+      expect(
+        s.requires(picked!),
+        `${s.character} picked "${picked!.id}", which is not conditioned on ${s.what}`,
+      ).toBe(true);
+    });
+  }
+
+  it('covers at least the ten event types 5.1 asks for', () => {
+    const evented = new Set(SHAPES.flatMap((s) => (s.events ?? []).map((e) => e.type)));
+    expect(evented.size).toBeGreaterThanOrEqual(10);
+  });
+
+  /**
+   * The Portrait's half of the knowing-but-locked-out shape. His line is
+   * RENDERED on the stairwell rather than played (selectTaggedLine, no valve
+   * spent), so it is selected the way the screen selects it, not by proxy.
+   */
+  it('the Portrait speaks to a player who knows the word and is downstairs', () => {
+    const portrait = getDialogueFile('portrait');
+    const q = (legible: number): DialogueQuery => ({
+      ...queryFor({ what: '', character: 'portrait', slot: 'sanctum-idle', requires: () => true }),
+      fragmentsFound: legible, fragmentsLegible: legible,
+    });
+    expect(selectTaggedLine(portrait, q(0), 'portrait.stair.')?.id).toBe('portrait.stair.away');
+    expect(selectTaggedLine(portrait, q(DEDUCTION_FLOOR), 'portrait.stair.')?.id)
+      .toBe('portrait.stair.knows');
+  });
+
+  /**
+   * AAA 4.16 on the live selection path, not just on the JSON: the door has a
+   * sympathetic line for EVERY count below the deduction floor and stands down
+   * exactly at it. (The band-tiling proof lives in tests/journal.test.ts; this
+   * is the same claim made through `selectTaggedLine`, which is what the screen
+   * actually calls.)
+   */
+  it('the door is never silent below the deduction floor (AAA 4.16)', () => {
+    const portrait = getDialogueFile('portrait');
+    const q = (legible: number): DialogueQuery => ({
+      ...queryFor({ what: '', character: 'portrait', slot: 'sanctum-idle', requires: () => true }),
+      fragmentsFound: legible, fragmentsLegible: legible,
+    });
+    for (let n = 0; n < DEDUCTION_FLOOR; n++) {
+      expect(
+        selectTaggedLine(portrait, q(n), 'portrait.gate.'),
+        `nothing to say to a player holding ${n} readable pages`,
+      ).toBeDefined();
+    }
+    expect(selectTaggedLine(portrait, q(DEDUCTION_FLOOR), 'portrait.gate.')).toBeUndefined();
   });
 });
 

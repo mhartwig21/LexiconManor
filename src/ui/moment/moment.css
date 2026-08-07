@@ -66,7 +66,8 @@
 }
 
 /* ==========================================================================
-   THE ROOM DOCK (round 12, AAA 11.2 / 11.27 — §0.5 escape 4, now in the rooms)
+   THE PLAYFIELD DOCK (round 12 the rooms, round 15 the blueprint;
+   AAA 11.2 / 11.27 — §0.5 escape 4, twice)
 
    The clearance above adds a back row, because every SHEET screen puts one
    under the bar. A ROOM has no back row, so the seal parked on the playfield:
@@ -86,7 +87,11 @@
    do it, and the second one is the fix:
    ========================================================================== */
 
-/* 1. It sits in the band under the bar; there is no back row here to clear. */
+/* 1. In a ROOM it sits in the band under the bar; there is no back row here to
+      clear. The blueprint (`data-seal-dock='board'`, round 15) does NOT take
+      this branch: its glass is sheet all the way up to the same place, so
+      moving the card would only cover a different row of cells for nothing.
+      It keeps the shell's ordinary clearance and changes only rule 2. */
 :root[data-seal-dock='room'] .mom-layer {
   top: calc(var(--chrome-h, 52px) + env(safe-area-inset-top, 0px) + 12px);
 }
@@ -104,18 +109,36 @@
       the persistent trace it is promising (11.12), and the wax disc, raised
       sheet and display face keep it unmistakably not flavour (11.14). The
       reward's own words are one tap away at the address the card just gave her,
-      which is what the trace is FOR. On the sheet screens nothing changes. */
-:root[data-seal-dock='room'] .mom {
+      which is what the trace is FOR. On the sheet screens nothing changes.
+
+      ROUND 15 — AND THE BLUEPRINT IS THE SAME SHAPE. The selectors below are
+      attribute-presence, not `='room'`, because /manor declares itself a board
+      too. Measured, standing on the Sanctum landing at 390x844 with a plate
+      grant on glass: "Approach the Sanctum" [177,157,64,64] answered
+      `button.mom` at its centre and a driven click there put the notice away
+      instead of opening the door; at 375x667 both padlocked-door controls were
+      covered as well, and those are COSTED. /manor read clean in round 11 only
+      because the probe stood on the ground floor, where this band is empty
+      parchment — the sheet draws the upper storeys at the TOP of the glass.
+      See ui/moment/dock.ts. */
+/* ROUND 16 — …UNLESS A FULL-SCREEN SCENE IS OVER THE PLAYFIELD. The dock token
+      belongs to the ROUTE, so /manor still carries it while a DialogueScene is
+      up — and there the card went inert over an overlay that has no cells to
+      protect, so a tap on the notice fell through and advanced the
+      conversation. `data-overlay-open` is stamped by ui/chrome/overlay-watch
+      for precisely this question, and MomentLayer reads the same signal so the
+      button branch and these rules can never disagree. */
+:root[data-seal-dock]:not([data-overlay-open]) .mom {
   pointer-events: none;
   cursor: default;
   gap: 10px;
   padding: 7px 14px;
 }
-:root[data-seal-dock='room'] .mom__seal {
+:root[data-seal-dock]:not([data-overlay-open]) .mom__seal {
   width: 34px;
   height: 34px;
 }
-:root[data-seal-dock='room'] .mom__quote {
+:root[data-seal-dock]:not([data-overlay-open]) .mom__quote {
   display: none;
 }
 

@@ -1621,6 +1621,31 @@
         ]
       },
       "summary": "Mrs. Bramble’s testimony: six candles, let out one by one."
+    },
+    {
+      "id": "bramble.recap.landing",
+      "trigger": "morning",
+      "priority": 730,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "vol.volume-1.landing-reached"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "You were at the top of the house yesterday. At his door, pet. Nobody has stood on that landing since the year the word went missing, and I found the stair-runner scuffed this morning and had to sit down."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "I shan’t make a fuss of it. I have put an extra spoon in the pot, and the fuss can live in there where it belongs."
+        }
+      ],
+      "summary": "Bramble found the stair-runner scuffed. You reached his door."
     }
   ]
 }

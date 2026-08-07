@@ -1,0 +1,8 @@
+[
+  {"click":".chr-scene__btn","has":"To tomorrow","after":3000},
+  {"shot":"day3-morning"},
+  {"eval":"document.body.innerText.slice(0,1000)"},
+  {"click":".chr-scene__btn","has":"Begin the day","after":2500},
+  {"dialogue":20},
+  {"shot":"d3-dlg"}
+]

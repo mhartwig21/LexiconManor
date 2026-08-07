@@ -157,6 +157,38 @@ re-tests their shape:
    the rooms, because the journal was the surface that had been wrong. → **11.27**. When
    a fixed layer is retuned for one surface, re-probe *every* surface it can appear over,
    including the ones that were clean before the retune.
+   **It came back a THIRD time in round 15, on the BLUEPRINT, because that sentence
+   was read as a list of SCREENS and it is a list of STATES.** Round 11 recorded
+   "/manor was clean under the same probe" and it was — *on the ground floor*, where
+   the seal's band (12,108,366×91 at 390×844) is empty parchment. The sheet draws the
+   upper storeys at the TOP of the glass, so the moment she climbs, the manor's own
+   controls move into it. Measured standing on the Sanctum landing (2,5) with a plate
+   grant on glass: `elementFromPoint` at the centre of "Approach the Sanctum"
+   [177,157,64,64] returned `.mom`; at 375×667 both "Padlocked door onto the Sanctum
+   landing" controls were covered at centre too, and those are **costed** (2 keys plus
+   the row's move price), which 6.19 exempts nothing from. Driven, both viewports: a
+   real click at the Sanctum door left `location.hash` unchanged and flipped the seal
+   from present to absent. Grants queue at 5.6s (4.0s behind a queue) and arriving at
+   the landing is exactly when a plate, a keepsake or a fragment lands, so it fired at
+   the campaign's milestone moment (4.10d) rather than at random. → the walk is now
+   parameterised by the player's **position**, not only by which screen she is on
+   (`tests/critic-round12-seal-overlap.mjs` walks /manor at rows 0, 3 and 5 at both
+   viewports). Two screenshots of the same route can be a pass and a blocker.
+   **And the same round found the mirror image at the other end of the glass.** A
+   fixed layer can also carry its own TAPPABLE control over a live surface, and
+   exactly one does: `.chr-dusk` is deliberately pointer-transparent so the blueprint
+   stays walkable through the ≤4s fade (4.12's grace), and `.chr-dusk__skip` was
+   pinned 28px off the bottom — on top of the blueprint's navigation row. Measured:
+   skip [129,772,133,44] over Journal [114,788,120,44] at 390×844, and
+   [121,595,133,44] over [109,611,115,44] at 375×667; driven at both viewports with
+   reduced motion on and off, a click at the Journal entrance's centre left the hash
+   unchanged. The digest four seconds later prints "A letter waits unopened in the
+   post tray". → **11.4's clearance now has a foot as well as a head**: a surface that
+   pins a navigation band at the BOTTOM publishes its ceiling (`--page-foot-ceiling`,
+   measured from the live element in `app/platform/page-nav.ts`) and fixed layers take
+   `max(own margin, ceiling + gap)`. Suspect every fixed layer that ships an
+   interactive island, and hit-test that island against the surface underneath rather
+   than eyeballing the layout.
 5. **The scene with one door** (round 11). The morning card and the night digest are
    full-screen scenes the player stands on every day, and their only controls were the
    primary advance and the Chronicles aside. The journal cost **nine** taps from the
@@ -243,6 +275,25 @@ re-tests their shape:
 - 2.8 Solver-verified uniqueness: exactly one valid membership assignment per board.
 - 2.9 ≤1 trivia-knowledge category per board (always the easiest tier); ≥2 categories
   solvable purely from letters/wordplay visible on the tiles. **[BEAT]**
+  - **RULING (round 16, verifier — the clause was read two ways in round 15 and a
+    critic could neither pass nor fail it while both readings stood).** The "≥2"
+    half is a **per-board floor and stays one**: it is what guarantees that any
+    board she opens can be entered without trivia she may not have, which is the
+    fairness promise the clause exists to make. It is NOT to be re-read as a
+    pool-level distribution target, and no fix agent may lower it. The round-15
+    request for tier-1 boards at 1 and 0 wordplay categories is therefore
+    **declined as written** — but the concern behind it is real and is answered by
+    a different lever: a category may be *plain English* and still be solvable
+    from the tiles (`___ BAR`, `IRON ___` — a compound is read, not decoded), and
+    `isPlainish()` already counts those toward the floor. Tier 1 gets its warm,
+    semantic feel from **plain-yellow steering and the quality ordering**
+    (`qualityOf`, ≥60% plain yellow), not from starving the floor. The 2.9 census
+    to watch is the **mechanic-family cap** (`FAMILY_BOARD_SHARE`), which is the
+    measurement that actually tracks "the shelf feels like the same puzzle twice";
+    the sweep to 0.45 that costs the shelf 8 boards and 7 tier-3 boards is
+    recorded in `ARCHITECTURE_BUDGET`'s docstring and is not worth paying today.
+    Getting the top families under 40% needs ~40 more authored pools — an
+    **authoring** task for a future round, filed under 2.15, not a generator bug.
 - 2.10 Every wrong guess yields ≥1 bit of usable information: "one away" equivalents,
   escalating intruder hints (priced in steps), and **acknowledged herrings** — a wrong
   guess matching a planted herring gets a knowing line ("they *do* all rhyme, don't
@@ -378,6 +429,32 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
        rate** (days 1–3 vs days 15–21), which is the ramp itself, asserted in
        `tests/economy-simulation.test.ts`.
     Skill buys the keys; the meta arcs are what make the keys enough.
+    **Round 13 correction — THE MILESTONE WAS THE STOREY, NOT THE DOOR.** Third
+    recurrence of the round-6/7/11 escape, and the deepest. `simulateDay`
+    returned `reachedSanctum: maxRow >= SANCTUM_LANDING_ROW` — *standing on the
+    landing storey*. The gate the live game enforces is `atSanctumDoor`
+    (`engine/manor/grid.ts`, consumed by the blueprint, the journal's guess flow
+    and the Sanctum screen): the landing cell **and** a north door on the room
+    drafted there, matching the Sanctum's sealed south one. Measured over the
+    real deck and the rigid rotation, entering the landing from below only
+    **27.7%** of tier-3-eligible plans place with a north door, and a real
+    3-card `rollCards` offer at (2,5) contains one on **60.8%** of offers — so
+    roughly two evenings in five she paid 22+ steps to arrive at an offer that
+    *could not* open the door, and every 4.10d/e number retuned across rounds
+    6–12 was measured against a storey. `simulateDay` now **drafts the landing
+    for real** (`landingDraft`, through the same `rollCards` and the same
+    `cardOpensOntoSanctum` the card face draws), `SimDayResult.reachedSanctum`
+    **is** `atSanctumDoor`, the storey is reported separately as
+    `reachedLanding`, and `tests/economy-simulation.test.ts` pins the identity
+    the way it already pins `SANCTUM_LANDING_ROW === SANCTUM_DOOR_CELL.row + 1`.
+    Both published bands below were re-tuned against the door and hold
+    (measured: skilled first door median 9, 2.0% on day 1, 98% by day 21;
+    median player first door median 19, 7.3% never inside 45 days).
+    *The model's optimistic assumption — that when an offer contains a plan
+    which opens north she takes it — is only honest because the same round made
+    it legible: `ui/blueprint/DraftModal.tsx` stamps "Opens onto the Sanctum" on
+    exactly those cards, off the same predicate. That UI is load-bearing for
+    this number.*
   - **4.10e — the volume is typically won in 14–28 days** of daily play by **the
     skilled player of 4.10d** (median; measured 15–16), <2% inside the first week,
     >90% by day 35 (measured >99%). Winning requires **both** gates independently:
@@ -471,7 +548,29 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     on the deck mix. Both rates, the backlog-median-0 premise and the
     violet-met bound are pinned in `tests/economy-simulation.test.ts`, so the
     split is a measured fact a future retune can argue with rather than a
-    sentence someone chose. The supply side is the
+    sentence someone chose.
+    **Round 14 — HER OVERNIGHT RATE IS PUBLISHED TOO.** The overnight clause
+    above is explicitly scoped to "a skilled player's days" and said **nothing**
+    about the median player, so the one clause that answers the owner's
+    *"solving needs to matter"* had no row a critic could pass or fail for the
+    exact evening 4.10b clocks. Measured over 200 `PROFILE_DECENT` campaigns ×
+    45 days: **she meets a violet room on 24.6% of evenings, a solve makes a
+    page out on 24.0%, and a page survives to her next dawn on 13.6%**
+    (10–20% band across seeds; backlog median 0, p90 1), against his 54.9% /
+    51.0% / 37.2%. **A sealed page survives to the MEDIAN player's next dawn on
+    10–20% of her days** is the published row, pinned — beside his, and with the
+    asymmetry itself asserted — in `tests/volume-pacing.test.ts` (the mystery's
+    suite; the seal is the mystery's mechanic). So the mechanic bites in her
+    evening roughly once a week.
+    **Once a week is a measured fact, not yet an accepted one.** The lever that
+    would raise it without touching violet share — *decoupling bite from row*: a
+    page still smudged at dusk seeds one guaranteed violet offer on the lower
+    floors tomorrow, so the backlog she carries is what puts the next violet room
+    in front of her — needs `engine/manor/drafting.ts` + `app/slices/manor.ts`
+    (A1) and is filed as a cross-agent request rather than half-built here. The
+    two alternatives are both already ruled out above: lifting violet share
+    collides with this clause's own `<50%` rarity bound, and lifting her climb
+    collides with the 4.10b clock. The supply side is the
     *realised* violet share per row (`deckMixAt`), not the category weight: `6 + row*7`
     read like a ramp while `RARITY_WEIGHTS[1]` scored tier 1's only two mystery cards 9
     and 1, for a realised **0.16%** of ground-floor draws. It is ≈2.0% at row 0 rising
@@ -491,6 +590,29 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     simulated that closed most of the median player's 4.10e gap without moving a
     single one of the skilled player's published numbers and without touching
     days 1–5 at all; the three rejected levers are recorded in `steps.ts`).
+    **Round 13 — THE SIXTH LEVER, AND THE FIRST ONE THAT IS STILL MOVING AT DAY 30.**
+    Every lever above caps early: tea at day 12, Fern's dawn key at day 9, both
+    `CAMPAIGN_ARC` familiarity terms by day ~9. Measured through
+    `campaignProfileForDay`, the median player's evening was therefore statistically
+    identical from day 13 to day 60 — P(she stands at the top) flat at 7–8%, i.e. the
+    game's answer to a player who keeps stopping a storey short was "roll again,
+    nightly, with the same dice, indefinitely". `SANCTUM_ARC` is the sixth lever and
+    it is deliberately the slowest: **every evening she spends on the top storeys
+    (`surveyRow0`, the storey below the landing) is a plan of that storey the
+    floorplan cabinet keeps**, and plans that open onto the Sanctum surface more often
+    up there as it warms (`planEveningsToFull` 30, `maxPlanWeightGain` 6 — raising the
+    landing offer rate from ~0.63 bare toward ~0.96). It is EARNED (the counter moves
+    only on an evening she paid the climb), STRICTLY PROGRESSIVE, exactly 0 until her
+    first ascent — so 4.10d's "<8% on day 1" is protected by construction, not by
+    tuning — and it is a WEIGHT, so the landing draft stays a decision (4.6). It reads
+    `chronicles.dayRecords[].highestRow`, which the save already keeps, so there is no
+    schema change. Measured across four seeds: the median player's door rate rises
+    10–24% between the day-11–20 window and the day-26–45 one, while the CLIMB rate
+    stays flat — which is the design, not a shortfall. The climb is the
+    constant-difficulty push-your-luck 4.10c caps at "<25% of even great days"; what
+    grows is the house's willingness to show its own door. Asserted as a
+    strictly-increasing gate in `tests/economy-simulation.test.ts` ("does not flatten
+    after day 12"), so an arc that flattens has to fail somewhere.
     **Round 6 correction:** this clause read "snack +3..+7", which described a
     distribution the deck cannot produce — refills are fixed authored numbers
     on the green cards (Kitchen +6, Larder +5, Boot Room +3, Still Room +2),
@@ -515,11 +637,63 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
 - 4.14 Every clue-fragment class reachable via ≥2 distinct source types (violet rooms,
   character testimony, letters); pity system guarantees ≥1 new fragment within any 3
   consecutive days of normal play (simulation over seeded volumes). **[BEAT]**
+  **Round 13 — THE MERCY NOW COVERS THE OTHER GATE TOO.** This clause floored the
+  KNOWLEDGE gate (`PITY_DROUGHT_DAYS`, synthesized letters that never exhaust) and
+  the ACCESS gate had no floor of any kind — while measured over 400
+  `PROFILE_DECENT` campaigns, **every** unfinished campaign (30/30) belonged to a
+  player who already knew the word, with median 9 evenings, p75 16, p90 25 and max
+  47 between knowing and being let in. `SANCTUM_ARC` (engine/economy/steps.ts) adds
+  the access side: once she holds `mercyFragments` **legible** pages (sealed smudges
+  arm nothing, same rule as `legibleDroughtDays`) *and* has already climbed to the
+  top storeys and been turned away, the landing offer's guaranteed-free slot is drawn
+  from plans that open onto the Sanctum. Both halves are required, so it cannot touch
+  4.10d's day-1 reach (neither term can be non-zero on day 1) and it is never a
+  shortcut through the mystery — 4.18 is untouched. Measured after: the median
+  player's knowing→winning gap is median 7, p90 17, and her never-finished share
+  falls from 15.3% to 7.3%. Pinned in `tests/economy-simulation.test.ts`.
 - 4.15 Journal: any document ever seen is re-readable in ≤2 taps from anywhere;
   fragments auto-grouped; zero information exists only in a transient scene. **[BEAT]**
 - 4.16 Insufficient-info signaling: attempting the Sanctum with < X fragments gets an
   explicit sympathetic nudge, never silence; false leads are impossible to chase for
   more than one room without a character wrongness signal. **[BEAT]**
+  **Round 13 — THE REFUSAL AT THE TOP WAS NOT SILENT, IT WAS WRONG.** The clause
+  above is about the KNOWLEDGE gate; the ACCESS gate answered worse than silence.
+  Driven at 390×844, standing at (2,5) in a room with doors S+E: `.bp-sanctumhit`
+  was **absent** — the Sanctum untappable, with nothing drawn to say why — while
+  `/sanctum` and the journal both printed "…only from the landing at the top of the
+  stairs — you will have to climb to it", on the exact landing she had just paid
+  22+ steps to reach. Nothing in the game — copy, blueprint, or card face — had
+  ever stated that the landing ROOM must open north, and the decision point was
+  unarmed: `DraftModal` named door *directions* and carried no Sanctum stamp, and
+  `sealsItself` shipped with zero UI callers. Fixed in three places, all pinned by
+  `tests/grid.test.ts`: `sanctumStanding` (engine/manor/grid.ts) makes the standing
+  three-valued — `at-door` / `landing-sealed` / `away` — exported once so no surface
+  can invent a fourth answer; the blueprint keeps the Sanctum **tappable** on a
+  sealed landing and refuses in words through the same channel a keyless padlock
+  uses ("This room turns its back on the Sanctum", plus a live-region restatement
+  naming the remedy and "Nothing was spent"), and draws the blank north wall as the
+  bricked seam it is; and every card in a landing offer is stamped **"Opens onto the
+  Sanctum" / "Turns its back on the Sanctum"** off the same `resolveDoors` the
+  diagram beside it already draws. *The last of those is load-bearing for 4.10d/e:
+  the simulation's landing model assumes she takes the plan that opens north, which
+  is only honest because the card now says which one that is.*
+  **Round 14 — X IS NAMED, AND IT WAS TWO DIFFERENT NUMBERS.** "X" was
+  `THIN_FILE_THRESHOLD` = 4 *legible* fragments in `engine/journal.ts`, and the
+  Portrait's authored `portrait.gate.*` lines covered ≤0 and 1–3 only, while
+  `KNOWLEDGE.fragmentsToDeduce` — the count at which the constraint set actually
+  admits one word, and `tests/volume-solvability.test.ts` proves five of the six
+  engravings still leave TWO candidates — is [13, 17]. So from four readable pages
+  to about thirteen (measured median day 5 → median day 20 for `PROFILE_DECENT`:
+  the majority of the volume) she stood at the door, spent her one word a day and
+  got exactly the silence this clause forbids. Two numbers for one concept, and
+  neither doc named the other — §0.5's unfalsifiable shape.
+  **X is now the deduction floor**, one constant on the mystery's side
+  (`engine/volume.FRAGMENTS_TO_DEDUCE`, read by `engine/journal.DEDUCTION_FLOOR`),
+  the authored bands **tile 0 → X with no gap and no overlap** (empty · thin ·
+  4–8 · 9–12), and `SanctumView` retires the nudge on `readiness.deducible`, never
+  on the thin-file edge. `tests/journal.test.ts` pins the JSON bands, the constant
+  and A2's `KNOWLEDGE.fragmentsToDeduce` to each other; `tests/dialogue-content.test.ts`
+  re-proves it through the live `selectTaggedLine` path the screen actually calls.
 - 4.17 Wrong Sanctum guess: consumes only the daily guess, plays a sympathetic Portrait
   reaction (variant-keyed to closeness: shared letters / right length / repeat guess),
   and journals the guess so she can see her own elimination history. **[COZY]**
@@ -542,6 +716,22 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
 - 5.1 **Reaction latency**: every notable event (wrong guess, dry day, first fragment,
   quest step, pangram, perfect day) is referenced by at least one character at the next
   interaction opportunity — scripted test over 10 event types. **[BEAT]**
+  **Round 14 — THE SCRIPTED TEST EXISTS NOW, AND IT COVERS STATE AS WELL AS EVENTS.**
+  There was no such test: coverage was only ever checked in aggregate by the 15-day
+  greedy-talker sim (5.3), which cannot tell "somebody said something" from "somebody
+  said something ABOUT THAT". Two states fell through the gap, and they are the two
+  the player spends the longest in. (a) `vol.<id>.landing-reached` — written by
+  SanctumView on her first arrival at the door, whitelisted in the dialogue validator
+  *with a comment inviting authored content to condition on it*, and gated by NOT ONE
+  node in any of the six files: the morning after the event 4.10c calls "a campaign
+  event, not a Tuesday", nobody said a word. (b) A **full, legible file** — nothing
+  anywhere was gated above `portrait.arc.read`'s `fragmentsLegible >= 6`, so the
+  knowing-but-locked-out stretch (median 7 evenings, p90 17 for `PROFILE_DECENT`) had
+  no line in it. Both are authored now (Bramble's morning recap, Ellery's and Fern's
+  parlor beats, the Portrait's stairwell band) and both are rows in
+  `tests/dialogue-content.test.ts`'s scripted table, which asserts the selected node
+  **positively requires** the state — "a node was returned" is not a pass, because the
+  never-silence fallback always returns one.
 - 5.2 **The Hypnos test**: Bramble (morning recap) ships ≥12 distinct
   cause-of-day-end reactions, including one per room archetype the player went dry in.
 - 5.3 **No repeat before day 15**: simulated 15-day greedy-talker playthrough hits zero
@@ -892,7 +1082,21 @@ player cannot reach by tapping is not shipped, however complete the code is.*
   opt in are untouched. A surface with **no** band to publish — a room, whose glass is
   playfield from the top of the stage to the sticky key deck — is 11.27's case, not this
   one: there is no clearance that fits, so the layer stops taking taps instead.
-  **[PARITY]**
+  **Round 15 — the clearance has a FOOT as well as a head.** The clause above describes
+  a band a surface stacks at the top and nothing else, so the one fixed layer that pins
+  its own interactive island to the BOTTOM of the glass had nothing to clear: the dusk
+  veil's `.chr-dusk__skip` sat 28px off the bottom, on top of the blueprint's navigation
+  row (measured: skip [129,772,133,44] over Journal [114,788,120,44] at 390×844;
+  `elementFromPoint` at the Journal button's centre returned `.chr-dusk__skip`; driven,
+  the tap did not reach the journal). A surface that **pins a navigation band at the
+  bottom publishes its ceiling** — `--page-foot-ceiling`, the distance from the
+  viewport's bottom edge to the band's top, measured from the live element
+  (`app/platform/page-nav.ts`) for the same reason the floor is: it stays true whatever
+  the surface stacks *below* it (its own safe-area padding, a hint line, the home
+  indicator). Bottom-pinned fixed layers take `max(own margin, ceiling + gap)`, and the
+  token defaults to 0 so a surface that pins nothing is untouched. The published
+  surfaces today: the blueprint's `.bp-foot__actions`, the journal's `.jrn-rail`, a
+  room's `.room-host__footer`. **[PARITY]**
 - 11.5 **Chrome does not reach through an overlay.** While any modal or full-screen
   overlay is up, controls belonging to the persistent chrome are either raised above it
   deliberately (documented, e.g. the day candle staying readable) or made
@@ -1027,6 +1231,17 @@ rooms for two rounds and no critic could pass or fail it.*
   glass is playfield from the top of its stage to the sticky key deck; there is no spare
   band to clear (measured, all seven kinds — the Linen Closet's grid starts 7px below the
   top of the stage) and no way to give one back without taking it from the board itself.
+  **Round 15 — THE BLUEPRINT IS A PLAYFIELD TOO.** It reads like a sheet screen and it
+  is a board: every cell on it is a control, or will be one when she reaches it, from
+  the top of the sheet to the footer. The seal's band is empty parchment on the ground
+  floor — which is why round 11 recorded /manor clean — and the sheet draws the upper
+  storeys at the TOP of the glass, so the moment she climbs, the manor's own controls
+  move into it (measured: "Approach the Sanctum" [177,157,64,64] answering `.mom` at
+  its centre on the Sanctum landing; the two padlocked-door controls at 375×667, which
+  are **costed**). Declared once, unconditionally — a guard that asked "is a live cell
+  inside the band right now?" would be a condition on a layout evaluated in a second
+  file, i.e. the drift 11.4 forbids, and it would read green on every screen a critic
+  happens to look at.
   So the rule is not about position, it is about **agency**: while a transient notice is
   over a playfield, `document.elementFromPoint` at every cell and every key returns that
   CONTROL, and a driven tap aimed at a control the notice covers performs that control's
@@ -1051,9 +1266,28 @@ rooms for two rounds and no critic could pass or fail it.*
     arrived, the address of the trace, and a form that shares nothing with flavour. It
     may drop the reward's own words, which are one tap away at the address it just named;
     it may not drop the address.
-  - **(d) Every surface, every round.** The gate is
+  - **(d) Every surface, every round — and every STATE of every surface.** The gate is
     `tests/critic-round12-seal-overlap.mjs`: it walks all seven room kinds with a
     **distinct** grant each — re-filling an already-unlocked plate announces nothing,
     which is how a first pass silently measured six rooms with no notice on the glass at
     all — asserts zero covered controls, and then drives one tap at a cell under the
-    notice to prove the tap is not eaten. **[PARITY]**
+    notice to prove the tap is not eaten.
+    **Round-15 correction: it was parameterised by ROOM KIND and nothing else**, so
+    `/manor` — a board that reads like a sheet screen — was never in the table at any
+    player row, and the seal sat on the Sanctum door for four rounds with the gate
+    green. The walk now takes `/manor` at rows **0, 3 and 5** at both viewports
+    (the ground floor where the band is empty, a middle storey, and the landing), each
+    with its own distinct grant, and drives one tap at "Approach the Sanctum".
+    **A surface parameterised by the wrong variable is a surface the gate does not
+    name.** Round 15 also gave this file back its exit code: it ended
+    `process.exit(0)` unconditionally, so it could count its own failures out loud and
+    still report green.
+    **And the dusk veil belongs in the same family, in the sibling gate.** It is the
+    only fixed layer in the app that renders a *tappable* control over a live surface,
+    and `tests/modal-hit-test.mjs` — which enumerates the morning card, the morning
+    conversation, the bare blueprint, the cabinet, a draft, a parlor conversation, the
+    journal-with-a-seal and the victory ceremony — did not enumerate it. It does now,
+    at both viewports, hit-testing every control in the blueprint's nav row at its
+    centre and four inset corners and driving one tap at the Journal entrance. §0.4's
+    walk list has named "dusk veil" since it was written; the gate and the list now
+    agree. **[PARITY]**

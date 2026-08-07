@@ -19,7 +19,7 @@ import type { RoomViewProps } from '../registry';
 import type { ForgottenWordPuzzle } from '../../../engine/types';
 import type { ForgottenWordAction, ForgottenWordRoomState } from '../../../engine/rooms/adapters/forgotten-word';
 import {
-  definitionForLevel, glossForLevel, unshownDefinitions, type ClueId,
+  cribLetters, definitionForLevel, glossForLevel, unshownDefinitions, type ClueId,
 } from '../../../engine/forgotten-word';
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
@@ -113,6 +113,14 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
   const clueCost = tier === 3 ? 3 : 2;
   const gloss = glossForLevel(puzzle, state.tier);
   const rest = unshownDefinitions(puzzle, state.tier);
+  /**
+   * ROUND 14 (AAA 3.5 / 3.8, 3.3) — the crib. Letters already standing, in
+   * proportion to how unlikely the word is to be known; empty for a common
+   * word. It is drawn into the slot row the room already had, so nothing moves
+   * and no height is spent (AAA 1.5).
+   */
+  const crib = cribLetters(puzzle);
+  const cribCount = crib.filter(Boolean).length;
 
   const submit = () => {
     if (!playing || !guess.trim()) return;
@@ -229,11 +237,24 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
           and AAA §0.1: the freed height in a room with no board has to become
           ink, not a taller empty card. */}
       {playing && (
-        <div className="fw-slots" aria-hidden="true">
-          {Array.from({ length: puzzle.word.length }, (_, i) => (
-            <span key={i} className="fw-slot" />
-          ))}
-        </div>
+        <>
+          <div
+            className={`fw-slots${cribCount > 0 ? ' fw-slots--crib' : ''}`}
+            role="img"
+            aria-label={cribCount > 0
+              ? `${puzzle.word.length} letters, ${cribCount} already in place: ${crib.map((c) => c ?? 'blank').join(', ')}`
+              : `${puzzle.word.length} letters`}
+          >
+            {crib.map((ch, i) => (
+              <span key={i} className={`fw-slot${ch ? ' fw-slot--given' : ''}`}>{ch ?? ''}</span>
+            ))}
+          </div>
+          {cribCount > 0 && (
+            <p className="fw-slots__cap">
+              {cribCount === 1 ? 'One letter of his' : `${cribCount} letters of his`} survived the tear.
+            </p>
+          )}
+        </>
       )}
 
       {won && state.lastFeedback?.kind === 'correct' ? (

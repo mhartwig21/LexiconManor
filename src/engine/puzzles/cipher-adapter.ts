@@ -70,6 +70,11 @@ export const cipherAdapter: RoomPuzzleAdapter<CipherPuzzleEx, CipherRoomState, C
 
   select: (opts) => selectByTier(CIPHER_POOL, opts),
 
+  // §5.3 — developed letters, the penciled mapping and every paid print are
+  // plain JSON data on `CipherRoomState`.
+  find: (id) => CIPHER_POOL.find((p) => p.id === id),
+  stateVersion: 1,
+
   start(puzzle: CipherPuzzleEx, _ctx: RoomContext): CipherRoomState {
     return {
       engine: startCipher(puzzle),

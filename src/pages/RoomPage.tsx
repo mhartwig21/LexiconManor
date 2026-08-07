@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import RoomHost from '../ui/rooms/RoomHost';
 import { useManorStore } from '../app/store';
 import { useSealDock } from '../ui/moment/dock';
+import { usePageFootBand } from '../app/platform/page-nav';
 
 /**
  * The /room route: renders RoomHost for day.activeRoom. Architect-owned glue;
@@ -28,6 +29,17 @@ export default function RoomPage() {
   const [, navigate] = useLocation();
   const hasActiveRoom = useManorStore((s) => Boolean(s.day?.activeRoom));
   useSealDock();
+  /**
+   * ROUND 15 — the room's pinned bottom band, published for the same reason the
+   * blueprint's is (app/platform/page-nav.ts): `.room-host__footer` holds this
+   * surface's only exit, and the dusk veil's skip control is a fixed island
+   * pinned to the bottom of the glass. 4.12 says dusk never fires INSIDE an
+   * active puzzle, so this is belt-and-braces rather than a measured collision —
+   * but a band that is only sometimes published is a band nobody can rely on,
+   * and the whole point of the token is that the layer above never has to know
+   * which surface it is standing on.
+   */
+  usePageFootBand('.room-host__footer');
 
   useEffect(() => {
     if (!hasActiveRoom) navigate('/manor', { replace: true });

@@ -44,7 +44,34 @@ import { useEffect } from 'react';
 export const PAGE_NAV_FLOOR = '--page-nav-floor';
 
 /**
- * Publish `selector`'s bottom edge as `--page-nav-floor` for as long as the
+ * THE SAME CONTRACT, AT THE OTHER END OF THE GLASS (round-15 blocker,
+ * AAA 11.2 / 11.4 / 11.5).
+ *
+ * `--page-nav-floor` describes a band a surface stacks at the TOP. The dusk
+ * veil found the band nothing described: the one at the BOTTOM. `.chr-dusk` is
+ * deliberately `pointer-events: none` so the blueprint stays live through the
+ * ≤4s fade (4.12's walk-but-no-interact grace), and its own `.chr-dusk__skip`
+ * is the single interactive island on that layer — pinned 28px off the bottom,
+ * i.e. straight on top of the blueprint's nav row. Measured live:
+ * skip [129,772,133,44] over Journal [114,788,120,44] at 390x844, and
+ * [121,595,133,44] over [109,611,115,44] at 375x667; `elementFromPoint` at the
+ * Journal button's centre returned `.chr-dusk__skip` at both, and a DRIVEN
+ * click there left `location.hash` unchanged. The digest that follows four
+ * seconds later prints "A letter waits unopened in the post tray", so the one
+ * screen-second she is most likely to reach for the journal is the one second
+ * the control is not hers.
+ *
+ * The value is the band's CEILING measured up from the viewport's bottom edge
+ * — `innerHeight - top` — which is the mirror of the floor's `bottom`, and for
+ * the same reason: it is the one number that is true whatever the surface
+ * stacks *below* it (its own safe-area padding, a hint line, a home
+ * indicator). A fixed layer that wants to stay clear takes
+ * `max(own margin, ceiling + gap)`.
+ */
+export const PAGE_FOOT_CEILING = '--page-foot-ceiling';
+
+/**
+ * Publish one edge of `selector`'s live box as `token`, for as long as the
  * calling surface is mounted, and clear it on the way out.
  *
  * Re-measures on: the band resizing (ResizeObserver), the band appearing or
@@ -55,7 +82,11 @@ export const PAGE_NAV_FLOOR = '--page-nav-floor';
  * `querySelector` + one `getBoundingClientRect` per frame, and an unchanged
  * measurement writes nothing at all.
  */
-export function usePageNavBand(selector: string): void {
+function useBandToken(
+  selector: string,
+  token: string,
+  edge: (box: DOMRect) => number,
+): void {
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
@@ -81,10 +112,10 @@ export function usePageNavBand(selector: string): void {
       // band: publish 0 so the fixed layers fall back to their own clearance
       // rather than holding a stale floor from the last render (AAA 11.21's
       // "truthful in both directions", applied to geometry).
-      const floor = box && box.width > 0 && box.height > 0 ? Math.ceil(box.bottom) : 0;
-      if (floor === published) return;
-      published = floor;
-      root.style.setProperty(PAGE_NAV_FLOOR, `${floor}px`);
+      const value = box && box.width > 0 && box.height > 0 ? Math.max(0, edge(box)) : 0;
+      if (value === published) return;
+      published = value;
+      root.style.setProperty(token, `${value}px`);
     };
 
     function schedule() {
@@ -105,7 +136,37 @@ export function usePageNavBand(selector: string): void {
       observer?.disconnect();
       window.removeEventListener('resize', schedule);
       window.visualViewport?.removeEventListener('resize', schedule);
-      root.style.removeProperty(PAGE_NAV_FLOOR);
+      root.style.removeProperty(token);
     };
-  }, [selector]);
+  }, [selector, token, edge]);
+}
+
+/** The floor of a TOP band: the viewport-y of its bottom edge. */
+const bottomEdge = (box: DOMRect) => Math.ceil(box.bottom);
+
+/**
+ * The ceiling of a BOTTOM band, measured UP from the viewport's bottom edge.
+ * Deliberately not `top`: a fixed layer pinned with `bottom:` needs the
+ * distance from the same origin it is pinned to, and reading it this way means
+ * the number stays true whatever the surface stacks *below* the band (its own
+ * safe-area padding, a hint line, the home indicator).
+ */
+const bottomBandCeiling = (box: DOMRect) =>
+  Math.ceil((typeof window === 'undefined' ? 0 : window.innerHeight) - box.top);
+
+/**
+ * Publish `selector`'s bottom edge as `--page-nav-floor` — a navigation band
+ * this surface stacks at the TOP, below the back row (AAA 11.4, round 11).
+ */
+export function usePageNavBand(selector: string): void {
+  useBandToken(selector, PAGE_NAV_FLOOR, bottomEdge);
+}
+
+/**
+ * Publish `selector`'s ceiling as `--page-foot-ceiling` — a navigation band
+ * this surface pins at the BOTTOM of the glass (round 15; see the token's own
+ * comment above for the dusk veil that landed on the blueprint's).
+ */
+export function usePageFootBand(selector: string): void {
+  useBandToken(selector, PAGE_FOOT_CEILING, bottomBandCeiling);
 }

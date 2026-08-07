@@ -385,6 +385,65 @@ try {
       fail(`[${tag}] day roll changed the sealed set ${r.model.sealed.length}→${n.model.sealed.length}`);
     }
 
+    /* ================= STATE E — THE GRAMMAR AT COUNT 1 ===================
+     * ROUND 16 (AAA 11.7/11.19). Every state above is measured at counts > 1,
+     * which is exactly the band where a hard-coded plural is invisible. The
+     * entrance and the day-transition levels of this chain compute a singular
+     * ("1 unread thing in the journal", "1 new floorplan"); the journal's tab
+     * buttons passed a hard-coded plural, so at one page the accessible name
+     * of the control that tells her WHICH tab to open read "1 unread letters",
+     * "1 engravings not yet made out", "1 lines not yet made out" — measured
+     * live off the rendered aria-label. Same chain, same derivation, two
+     * grammars, and the level that got it wrong is the innermost one, which is
+     * the level a screen-reader user navigates by.
+     *
+     * So: wipe to a backlog of exactly ONE page on ONE tab, and read the label
+     * off the glass. No plural may survive a count of 1, at any level. */
+    await page.evaluate(() => {
+      const s = window.__manorStore.getState();
+      // Clear every fragment flag and start again from a single sealed page.
+      const keep = s.flags.filter((f) => !/^vol\.[^.]+\.(sealed|legible|viewed|glanced)-/.test(f));
+      window.__manorStore.setState({
+        flags: keep,
+        volume: { ...s.volume, foundFragmentIds: [] },
+      });
+      window.__manorStore.getState().fileFragment('v1-e1', { sealed: true });
+    });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => { location.hash = '#/journal'; });
+    await page.waitForSelector('.jrn-tabs', { timeout: 8000 });
+    await page.waitForTimeout(400);
+    const oneLabels = await page.evaluate(() => {
+      const out = [];
+      for (const el of document.querySelectorAll('.jrn-tab .unread, .jrn-tab .sealed, .unread, .sealed')) {
+        const a = el.getAttribute('aria-label');
+        if (a && /^\s*1\b/.test(a)) out.push(a);
+      }
+      return [...new Set(out)];
+    });
+    log(`[${tag}] E: every count-1 accessible name on glass: ${JSON.stringify(oneLabels)}`);
+    if (oneLabels.length === 0) {
+      fail(`[${tag}] E: nothing on the journal reported a count of 1 — the probe measured nothing`);
+    } else {
+      // "1 engravings", "1 letters", "1 lines not yet made out", "1 pieces…" —
+      // a plural head noun immediately after the numeral 1.
+      // No allowlist on purpose: every noun this chain uses is singular in a
+      // form that does not end in -s at count 1 ("thing", "engraving",
+      // "letter", "piece of testimony", "line of the definition"), so an
+      // exception here would only be a place for the next plural to hide.
+      const bad = oneLabels.filter((a) => /^\s*1\s+(?:unread\s+)?[a-z]+(?:s|ies)\b/.test(a));
+      // The check must be able to FAIL: prove the matcher on the exact strings
+      // that were measured live before the fix.
+      for (const wrong of ['1 unread letters', '1 engravings not yet made out',
+        '1 lines not yet made out', '1 pieces not yet made out']) {
+        if (!/^\s*1\s+(?:unread\s+)?[a-z]+(?:s|ies)\b/.test(wrong)) {
+          fail(`[${tag}] E: the grammar check cannot see "${wrong}" — it proves nothing`);
+        }
+      }
+      if (bad.length) fail(`[${tag}] E: a plural survived a count of 1 — ${JSON.stringify(bad)}`);
+      else ok(`[${tag}] E: every count-1 label is singular — ${JSON.stringify(oneLabels)}`);
+    }
+
     if (errors.length) fail(`[${tag}] console/page errors: ${errors.slice(0, 3).join(' | ')}`);
     await page.close();
   }

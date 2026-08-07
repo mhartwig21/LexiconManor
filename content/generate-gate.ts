@@ -2,11 +2,46 @@
  * Shared word gate for content generators — OWNER: A5 (micro-rooms).
  *
  * NOT a runnable script despite the generate-* name (module territory rule);
- * it is imported by generate-rhyme.ts / generate-ladder.ts and by the
- * content-lint test (tests/puzzles/micro-content-lint.test.ts) so CI fails
- * if a gated word ever reappears in shipped JSON.
+ * it is imported by every generator and by the content-lint tests
+ * (tests/puzzles/micro-content-lint.test.ts, tests/content-safety.test.ts) so
+ * CI fails if a gated word ever reappears in shipped JSON.
  *
- * Two lists, two purposes (AAA COZY pillar, 4.12 string-lint spirit,
+ * ==========================================================================
+ * ROUND 9 (safety sweep): THE BLOCKLIST IS NOW A LEXICON, NOT A LIST.
+ * ==========================================================================
+ * The categorised, family-based, Scunthorpe-proofed rules live in
+ * `content/lib/safety.ts` and are the authority. That file explains the
+ * standard, the word-in-isolation/word-in-a-sentence split, and every
+ * borderline call. Read it before adding anything here.
+ *
+ * What survives in THIS file is the residue the lexicon deliberately does not
+ * model: the manor's PROPER-NOUN gate and its CORPUS-ARTIFACT gate, plus the
+ * historical TONE_WORDS list, which is now a redundant belt beside the
+ * lexicon's braces — kept because eight rounds of shipped-content review are
+ * encoded in it and because `tests/puzzles/micro-content-lint.test.ts` pins
+ * its regression anchors.
+ *
+ * Three exported predicates, three surfaces:
+ *   `gateOk(word)`  — DISPLAY words (hive validWords, twistle targets,
+ *                     crossword answers, headwords): safety + tone + names
+ *                     + artifacts. The strictest.
+ *   `toneOk(word)`  — DISPLAY words where a proper noun is legitimate
+ *                     (word-web tiles carry authored trivia groups):
+ *                     safety + tone.
+ *   `proseOk(text)` — authored SENTENCES (dialogue, definitions, clues,
+ *                     volume fragments): the absolute safety standard only.
+ *                     GRIEF belongs in a mystery about a grieving
+ *                     lexicographer; a slur never belongs anywhere.
+ *
+ * Historical note, kept because it is the reason this file was rebuilt: on
+ * 2026-08-06 the slur RETARDED shipped live — nine times in hive.json and once
+ * as a twistle TARGET WORD. An earlier round's agent found it and left it,
+ * reasoning that gating it would red the lint without a regeneration it could
+ * not run. A red build is the correct outcome. The gate now fails loudly and
+ * `npm run content:verify` runs it over every generated pool AND every
+ * authored file, so the trade that agent thought it faced cannot recur.
+ *
+ * Two legacy lists, two purposes (AAA COZY pillar, 4.12 string-lint spirit,
  * 3.7 editorial bar, wife-test 0.1.6):
  *
  *  - TONE_BLOCKLIST — vulgarity, violence, illness, death, crude bodily
@@ -131,6 +166,48 @@ const TONE_WORDS = [
   'midget', 'midgets', 'midgety',
   'spastic', 'spastics', 'imbecile', 'imbeciles', 'mongoloid', 'mongoloids',
   'retard', 'retards', 'retarded', 'retarding', 'retardate', 'retardates',
+  // ------------------------------------------------------------------------
+  // ROUND 14 — THE EMOTIONAL-HARSHNESS HOLE (COZY pillar).
+  //
+  // The gate was not lax here, it was INCONSISTENT. It already blocks 'loss',
+  // 'moan', 'dread', 'grim', 'cruel', 'lament' and 'hurt' as tone offences —
+  // and had no rule at all for lose/loser, hate/hatred, rage, anger, doom,
+  // terror, panic, revenge, torment or spite, none of which appear in
+  // ALLOWED_WITH_RATIONALE either. They were oversights, not judgments, and
+  // they shipped as findable, scored, REVEALED answers: twistle.json's
+  // authored target sets carried LOSER ×9, RAGE ×12, ANGER ×8, HATE ×7,
+  // HATES ×5, LOSE ×11, CURSE ×6, PANIC ×4, FATAL ×3, TERROR ×2, HATRED ×2,
+  // SPITE ×2, SORROW; hive.json's validWords added DOOM/DOOMED ×15,
+  // TERROR ×13, RAGE ×14, REVENGE ×3, TORMENT. src/engine/twistle.ts:153
+  // prints the unfound targets back on exit, so the Gallery could tell her at
+  // the end of a cozy afternoon that the word she missed was LOSER.
+  //
+  // Families, not lemmas (the round-6 rule). Whole words, so CLOSE, CLOSER,
+  // DANGER, HANGER, COURAGE, STORAGE, GARAGE, DESPITE and DOOMSDAY-free
+  // compounds are all untouched.
+  //
+  // DELIBERATELY NOT GATED, and both are on the record in
+  // `content/lib/safety.ts`'s ALLOWED_WITH_RATIONALE: DEVIL (deviled eggs; the
+  // folkloric devil is furniture in a haunted manor) and KNIFE (cutlery beside
+  // SPOON and LADLE). CURSE is the same call and owes the same entry — see
+  // the round-14 note in the fix report.
+  'lose', 'loses', 'losing', 'loser', 'losers',
+  'hate', 'hates', 'hated', 'hating', 'hateful', 'hatred',
+  'rage', 'rages', 'raged', 'raging',
+  'anger', 'angers', 'angered', 'angering', 'angry', 'angrily',
+  'doom', 'dooms', 'doomed', 'dooming',
+  'terror', 'terrors', 'terrorize', 'terrorized', 'terrify', 'terrified',
+  'panic', 'panics', 'panicked', 'panicking', 'panicky',
+  'revenge', 'revenges', 'revenged', 'vengeance', 'vengeful',
+  'torment', 'torments', 'tormented', 'tormenting', 'tormentor',
+  'spite', 'spites', 'spited', 'spiteful',
+  'fatal', 'fatally', 'fatality', 'fatalities',
+  'sorrow', 'sorrows', 'sorrowful',
+  // VILE/VILEST were on the finding's evidence list (hive ×2) though not on its
+  // fix list. Gated anyway: it is the same family as CRUEL, which this list
+  // already blocks, and it has no cozy reading. Whole word — EVIL, VILLAGE and
+  // VIOLET are untouched.
+  'vile', 'viler', 'vilest', 'vilely', 'vileness',
 ];
 
 const NAME_WORDS = [
@@ -163,6 +240,32 @@ const NAME_WORDS = [
   'tom', 'toms', 'marge', 'marges', 'sabine', 'sabines',
   'matt', 'matts', 'carr', 'carrs', 'spence', 'spences', 'lutz', 'lutzes',
   'greek', 'greeks',
+  // ROUND 9 (safety sweep). Surnames and given names of REAL LIVING OR RECENT
+  // PEOPLE that enable1 admits and that the generated pools were drawing.
+  // Word-web's authored trivia groups are allowed proper nouns by design
+  // (AAA 2.9 permits one trivia category per board), which is why this list is
+  // consulted by `gateOk` and not by `toneOk`: the Conservatory and the
+  // Gallery must never hand the player a stranger's surname to spell.
+  // Celebrity surnames — a specific living-or-recent PERSON, not a word.
+  'aniston', 'beckham', 'deniro', 'einstein', 'hemsworth', 'lennon',
+  'madonna', 'phelps', 'redford', 'shatner', 'travolta', 'tyson', 'lopez',
+  'hogan', 'napoleon', 'caesar', 'caesars', 'shakespeare',
+  // Given names with no everyday-noun cover.
+  'rachel', 'monica', 'phoebe', 'colleen', 'sheila', 'donna', 'ursula',
+  'tammy', 'tiffany', 'daphne', 'bertha', 'stella', 'regina', 'carmen',
+  'abigail', 'riley', 'kerry', 'colin', 'nelly', 'chico', 'charlie', 'romeo',
+  'rolf', 'snider',
+  // Not a name — juvenile as a bare tile, which is the same failure mode.
+  'weiner', 'wiener', 'weiners', 'wieners',
+  //
+  // DELIBERATELY NOT LISTED, per this list's own rule (an everyday-noun
+  // reading that dominates): HARPER, PALMER, FOWLER, THATCHER, SPENCER,
+  // CHAPMAN, BAILEY, MORRIS, LEWIS, SANDERS, WARNER, BURTON, DALTON, BRENT,
+  // LOGAN, NELSON, HOMER, HECTOR, MADDEN, WALLACE, WATSON, LAWRENCE,
+  // HAMILTON, BOWIE, JACKSON, JORDAN, WAYNE, DERRY, RIDLEY. Each is a trade,
+  // a tool, a verb, a goose or a wrestling hold before it is anybody, and
+  // half of them are the manor's own vocabulary (a THATCHER and a FOWLER work
+  // grounds like Fern's).
 ];
 
 /**
@@ -187,6 +290,12 @@ function clean(list: string[]): Set<string> {
   return new Set(list.filter((w) => /^[a-z']+$/.test(w)));
 }
 
+export {
+  ALLOWED_WITH_RATIONALE, offenceOf, proseOffenceOf, RULES, safetyOffenceOf,
+  safetyOk, scanProse, type Category, type Rule, type Standard,
+} from './lib/safety';
+import { safeAndCozy, scanProse } from './lib/safety';
+
 /** Vulgarity / violence / illness / death — lowercase. */
 export const TONE_BLOCKLIST: ReadonlySet<string> = clean(TONE_WORDS);
 
@@ -196,13 +305,39 @@ export const NAME_BLOCKLIST: ReadonlySet<string> = clean(NAME_WORDS);
 /** Abbreviation/slang corpus artifacts — lowercase, display surfaces only. */
 export const ARTIFACT_BLOCKLIST: ReadonlySet<string> = clean(ARTIFACT_WORDS);
 
-/** True when a word passes the tone, proper-noun, and artifact gates. */
+/**
+ * True when a word passes the safety lexicon, the tone gate, the proper-noun
+ * gate and the artifact gate — i.e. may be printed as a bare word in the
+ * manor's own voice.
+ */
 export function gateOk(word: string): boolean {
   const w = word.toLowerCase();
+  if (!safeAndCozy(w)) return false;
   return !TONE_BLOCKLIST.has(w) && !NAME_BLOCKLIST.has(w) && !ARTIFACT_BLOCKLIST.has(w);
 }
 
-/** True when a word passes the tone gate alone (names allowed). */
+/**
+ * True when a word passes the safety lexicon and the tone gate. Proper nouns
+ * are allowed: word-web's authored trivia groups are proper nouns by design.
+ */
 export function toneOk(word: string): boolean {
-  return !TONE_BLOCKLIST.has(word.toLowerCase());
+  const w = word.toLowerCase();
+  return safeAndCozy(w) && !TONE_BLOCKLIST.has(w);
+}
+
+/**
+ * Authored PROSE gate — the absolute safety standard only.
+ *
+ * Returns the offending tokens (empty when clean). Tone words are the author's
+ * to use: a mystery about a grieving lexicographer needs GRIEF, and Ellery
+ * says "thirty years dead" in her own voice. What no sentence anywhere may
+ * carry is a slur, hard profanity, or sexual crudity.
+ */
+export function proseProblems(text: string): { word: string; why: string }[] {
+  return scanProse(text).map(({ word, rule }) => ({ word, why: rule.category }));
+}
+
+/** True when an authored passage carries nothing on the absolute standard. */
+export function proseOk(text: string): boolean {
+  return scanProse(text).length === 0;
 }

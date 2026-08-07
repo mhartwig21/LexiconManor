@@ -2,6 +2,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ForgottenWordPuzzle, Tier } from '../src/engine/types';
+import { gateOk, proseProblems } from './generate-gate';
+import {
+  cribIndices, glossForLevel, maxGuessesForLevel,
+} from '../src/engine/forgotten-word';
 
 /**
  * The Study's Forgotten Word pool — fully hand-authored (AAA 3.7: the best
@@ -1291,6 +1295,26 @@ export function lint(entries: Entry[]): string[] {
     if (e.usage.split('___').length !== 2) problems.push(`${id}: usage needs exactly one blank`);
     if (!/[.!?][’”]?$/.test(e.usage.trim())) problems.push(`${id}: usage is not a finished sentence`);
 
+    /**
+     * ROUND 9 (safety sweep) — THIS GENERATOR HAD NO GATE AT ALL.
+     *
+     * Every other generator called `gateOk`/`toneOk`; the Study called
+     * neither, on the reasoning that a hand-authored pool needs no machine
+     * check. That reasoning is what let RETARDED reach the deployed site from
+     * a pool that DID have a gate — an unchecked surface is an unchecked
+     * surface however it was written. The headword is a DISPLAY word (it is
+     * printed back in the reveal, in Fell caps); the three definitions, the
+     * etymology and the usage are authored PROSE and get the absolute
+     * standard only, so this file keeps GRIEF, MOURN and "a household slave
+     * who served at the hand".
+     */
+    if (!gateOk(e.word.toLowerCase())) problems.push(`${id}: headword "${e.word}" fails the display gate`);
+    for (const field of ['plain', 'poetic', 'riddle', 'etymology', 'usage'] as const) {
+      for (const bad of proseProblems(e[field] ?? '')) {
+        problems.push(`${id}: ${field} carries "${bad.word}" (${bad.why}) — never, in any voice`);
+      }
+    }
+
     // Three genuinely distinct registers (AAA 3.7 clarity scaling).
     if (e.plain === e.poetic || e.poetic === e.riddle || e.plain === e.riddle) {
       problems.push(`${id}: definition registers are not distinct`);
@@ -1302,6 +1326,71 @@ export function lint(entries: Entry[]): string[] {
     }
   }
   problems.push(...repetitionProblems(entries));
+  problems.push(...solvabilityProblems(entries));
+  return problems;
+}
+
+// ---------------------------------------------------------------------------
+// ROUND 14 (AAA 3.5 / 3.8) — THE SOLVABILITY GATE
+// ---------------------------------------------------------------------------
+
+/**
+ * The rarity of a headword against `content/data/count_1w.txt` (333,333 words
+ * of web frequency). `null` means the corpus has never seen it.
+ *
+ * Measured before the round-14 pass: the 43 tier-3 entries had a MEDIAN rank of
+ * 157,866 and fifteen of them — SMEUSE, SELCOUTH, CLINQUANT, APRICITY,
+ * BRUMOUS, NOCTAMBULIST, TARADIDDLE, LUCUBRATION, PILCROW, YESTREEN,
+ * OVERMORROW, ANTIMACASSAR, SENNIGHT, HANDSEL, LIMNER — do not appear in it at
+ * all. Against that the room gave three blind guesses, headlined the riddle,
+ * withheld the plain gloss and pre-revealed no letters. The writing was never
+ * the problem; the delivery was, and nothing measured it.
+ */
+let rankCache: Map<string, number> | null = null;
+function corpusRank(word: string): number | null {
+  if (!rankCache) {
+    rankCache = new Map();
+    const path = join(dirname(fileURLToPath(import.meta.url)), 'data', 'count_1w.txt');
+    const lines = readFileSync(path, 'utf-8').split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const w = lines[i]!.split('\t')[0]?.trim();
+      if (w) rankCache.set(w.toUpperCase(), i + 1);
+    }
+  }
+  return rankCache.get(word.toUpperCase()) ?? null;
+}
+
+/** Past this rank a word is not one the player can be expected to know. */
+const RARE_RANK = 100_000;
+/** …and below this many guesses, a rare word is a reveal with a step bill. */
+const MIN_GUESSES_FOR_RARE = 5;
+
+/**
+ * AAA 3.8 — a difficulty knob CONSTRAINS the player, it does not remove
+ * solvability. An entry the corpus barely knows may not ship with the room's
+ * help turned down: it owes the plain gloss, at least five whispers, and at
+ * least one letter already standing. This is the assertion that ties the pool
+ * to the engine, so lowering either one fails the build rather than quietly
+ * making the Study unwinnable again.
+ */
+function solvabilityProblems(entries: Entry[]): string[] {
+  const problems: string[] = [];
+  for (const e of entries) {
+    const rank = corpusRank(e.word);
+    if (rank !== null && rank <= RARE_RANK) continue;
+    const tier = TIER_OF_OBSCURITY[e.obscurity];
+    const puzzle = buildPuzzles([e])[0]!;
+    const where = `fw-${e.word.toLowerCase()} (rank ${rank ?? 'unranked'}, tier ${tier})`;
+    if (glossForLevel(puzzle, tier) === null) {
+      problems.push(`${where}: ships with no plain gloss — see AAA 3.5/3.8`);
+    }
+    if (maxGuessesForLevel(tier) < MIN_GUESSES_FOR_RARE) {
+      problems.push(`${where}: ${maxGuessesForLevel(tier)} whispers, floor ${MIN_GUESSES_FOR_RARE}`);
+    }
+    if (cribIndices(puzzle).length < 1) {
+      problems.push(`${where}: no letters pre-revealed — an unranked word needs a crib`);
+    }
+  }
   return problems;
 }
 

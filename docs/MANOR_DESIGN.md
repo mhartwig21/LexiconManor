@@ -58,11 +58,11 @@ from v2 carry over (see §10).
 
 | Event | Steps |
 |---|---|
-| Start-of-day budget | 40 |
-| Enter a room (move one cell) | −1 |
+| Start-of-day budget | 18 (`BASE_DAY_BUDGET`; day 1 adds a scripted `FIRST_MORNING_POT` of +3) |
+| Enter a room (move one cell) | priced per row (`MOVE_COST_BY_ROW`): −1, −1, −2, −3, −7, −9, −9 |
 | Puzzle mistake (wrong guess / invalid word) | −2 (tier 3 rooms: −3) |
 | Solve a small room (micro-puzzle) | +3 |
-| Solve a large room (anchor mode) | +6 to +8 |
+| Solve a large room (anchor mode) | `7 − tier` = +6 / +5 / +4 — deliberately INVERTED from the old +6..+8 in the round-4 overhaul, so a tier-3 solve softens the next mistake instead of bankrolling the next storey |
 | Perfect solve (no mistakes) | +2 bonus |
 | Kitchen snack / Bramble's tea | green-room refills +2..+6 (Kitchen +6, Larder +5, Boot Room +3, Still Room +2; compounding hooks +1..+2) · tea 0 → +13 across the friendship |
 | Petting Dewey (the cat) | −1 (worth it) |
@@ -74,8 +74,17 @@ from v2 carry over (see §10).
   visits **5–8 rooms** and solves 2–4 puzzles in **10–15 minutes**; a great day reaches
   row 5–6, and the Sanctum row is a *campaign* event (first reached around day 6–10),
   not something refills buy on a Tuesday. Base budget is **18 steps**, and movement is
-  priced per row (−1 on the ground floor rising to −5 up top), so the climb — not the
-  puzzle count — is what a day is spent on.
+  priced per row (−1 on the ground floor rising to −9 up top), so the climb — not the
+  puzzle count — is what a day is spent on. A single minimum-length ascent to the
+  Sanctum landing therefore costs 22 steps of pure walking against a day-1 pot of 21
+  — the ascent is a campaign arc, not a day-1 option (AAA 4.10d/4.10e).
+
+  *(Round 16: the three cells above and this bullet had drifted from the live tables —
+  the doc still quoted the pre-overhaul 40 / +6..+8 / −5, i.e. numbers the game has not
+  had since round 4, while the refill row beside them HAD been maintained. The extremes
+  are now pinned against `BASE_DAY_BUDGET`, `MOVE_COST_BY_ROW` and `STEP_TABLE.solve` by
+  `tests/steps.test.ts`, the same contract treatment `STEP_TABLE.snack` already had, so
+  the table cannot drift selectively again.)*
 
 **Other currencies** (secondary, all reset nightly except keys' meta-variants):
 - **Gems** — spent to draft premium room cards and reroll a draft offer (1 gem).
@@ -134,8 +143,24 @@ Sanctum doesn't want a key — it wants the word *spoken* (typed).
   word's poetic definition (the Forgotten Word content — the best writing in the game —
   now *is* the meta-puzzle), letter-constraint engravings ("the word shares no letter
   with CANDLE"), and character testimony.
-- The answer is fixed for the whole **volume** — the moment she figures it out, she can
-  march to the Sanctum and win, even on day one. Knowledge is the progression.
+- **Two gates, and the word is only the first one.** The answer is fixed for the whole
+  **volume** and no fragment is ever mechanically required (AAA 4.18 — the constraint set
+  gates nothing; `applyGuess` never consults it). The word is hers the moment she deduces
+  it. But the door only hears a word spoken *from the landing*, so the climb is the
+  second half — and it is the one that takes weeks. Both bands are published and measured
+  in AAA 4.10e: the **skilled player** first stands at the landing on day 6–10 and wins at
+  a median of 14–28 days; the **median player** (`PROFILE_DECENT`, the owner) first lands
+  at median day 12–20, can deduce the word at median day 16–24, and wins at median day
+  26–34. Between knowing it and being able to say it she spends a median of 7 evenings
+  (p90 17) — that gap is the game, not a fault in it.
+  - *This bullet used to read "the moment she figures it out, she can march to the Sanctum
+    and win, even on day one. Knowledge is the progression." Round 7 put `atSanctumDoor`
+    inside `guessAtSanctum`, and a bare, perfectly efficient ascent costs 22
+    (`reserveToTop(1)`) against a day-1 pot of 21 (`BASE_DAY_BUDGET + FIRST_MORNING_POT`),
+    so a day-1 win is bought with refunds if at all — measured day-1 landing reach is
+    3.3–6.5%. The doc and the shipped game disagreed about what the mystery is FOR, which
+    is the exact unfalsifiable condition AAA §0.5 records; "even on day one" is deleted
+    rather than softened, because it described an economy that no longer exists.*
 - **One guess per day** at the Sanctum door (prevents brute force; a wrong guess gets a
   sympathetic sigh from the Portrait, never a penalty).
 - Solving a volume rolls the manor to a **new volume**: next forgotten word, new fragment
@@ -145,6 +170,11 @@ Sanctum doesn't want a key — it wants the word *spoken* (typed).
 - **Cozy-detective tuning:** the journal groups fragments, cross-references automatically,
   and characters will nudge ("you might reread what the engraving in the Gallery said,
   dear") — the *deduction* is the player's, the *filing* is not. No wiki-bait obscurity.
+  The nudge is banded, and the bands run all the way to the deduction floor
+  (`engine/volume.FRAGMENTS_TO_DEDUCE`, ~13 readable pages for Volume 1): empty file,
+  thin file, "his shape but not his letters", "letters with holes between them". Above
+  the floor the door stops nudging and the cast starts saying the other thing — that the
+  reading is done and only the stairs are left (AAA 4.16 / 5.1).
 
 ## 8. Characters & dialogue (Hades 2 style, cozy cast)
 

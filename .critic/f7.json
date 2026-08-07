@@ -1,0 +1,7 @@
+[
+  {"click":"button.dlg-choice","n":1,"after":1800},
+  {"eval":"Array.from(document.querySelectorAll('[role=button]')).map(function(e){return e.getAttribute('aria-label')})"},
+  {"click":"[aria-label*='Draft a room on the half landing']","after":2000},
+  {"eval":"Array.from(document.querySelectorAll('.bp-card')).map(function(c){return c.innerText.replace(/\\n/g,' | ')+' >> '+(c.querySelector('.bp-doorsdiag')||{}).ariaLabel})"},
+  {"shot":"d2-draft1"}
+]

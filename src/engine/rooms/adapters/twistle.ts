@@ -58,6 +58,10 @@ export const twistleAdapter: RoomPuzzleAdapter<TwistlePuzzleEx, TwistleRoomState
 
   select: (opts) => selectByTier(TWISTLE_POOL, opts),
 
+  // §5.3 — traced words and the struck-through misses are plain JSON data.
+  find: (id) => TWISTLE_POOL.find((p) => p.id === id),
+  stateVersion: 1,
+
   start(_puzzle: TwistlePuzzleEx, _ctx: RoomContext): TwistleRoomState {
     return {
       twistle: startTwistle(_puzzle),

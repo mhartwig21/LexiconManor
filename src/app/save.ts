@@ -63,6 +63,14 @@ export interface SaveV2 {
   version: 2;
   profileName: string;
   day: DayState | null;                           // null = between days
+  /**
+   * The night's floorplan — and, since REVIEW_AA §5.3, the work done inside it.
+   * In-room progress is parked on `manor.rooms[cellKey].session` (see
+   * engine/rooms/room-session.ts) rather than in a top-level field, so it is
+   * keyed by cellKey by construction and is cleared by the nightly `manor: null`
+   * reset without a sweeper. `migrations.migrateRoomSessions` prunes any
+   * snapshot this build can no longer honour before the app ever reads one.
+   */
   manor: ManorState | null;                       // resets nightly
   ledger: StepLedger;
   currencies: Currencies;

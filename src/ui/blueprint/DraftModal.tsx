@@ -21,14 +21,15 @@
 import type { PointerEvent } from 'react';
 import type { Dir, DraftOffer, ManorState, RoomCard } from '../../engine/types';
 import {
-  layoutFor, neighbor, opposite, orientLayout, resolveDoors, rowTier,
+  layoutFor, neighbor, opensOntoSanctum, opposite, orientLayout, resolveDoors, rowTier, sameCell,
+  SANCTUM_DOOR_CELL,
 } from '../../engine/manor/grid';
 import { isDoorLocked, KEY_COST } from '../../engine/manor/locks';
 import { CARD_PREVIEWS } from '../../engine/manor/deck';
 import { draftCardStake } from '../../engine/economy/preview';
 import { useManorStore } from '../../app/store';
 import { RoomGlyph } from './CategoryGlyph';
-import { draftPriceWords, priceWords } from './pricing';
+import { draftPriceWords, priceWords, sanctumDraftStamp } from './pricing';
 
 const TIER_LABELS = ['', 'the ground floors', 'the middle landings', 'the high floors'];
 const ROMAN = ['', 'I', 'II', 'III'];
@@ -141,6 +142,20 @@ export default function DraftModal({
       ? resolveDoors(card, offer.atDoor, manor, target)
       : orientLayout(layoutFor(card, 0, ''), offer.atDoor);
 
+  // ── THE LANDING DRAFT (round-13 blocker, AAA 4.6/4.16). ─────────────────
+  // This is the one door in the game whose choice decides whether a 22-step
+  // climb reaches anything: `atSanctumDoor` needs the room laid HERE to draw a
+  // north door matching the Sanctum's sealed south one, and over the real deck
+  // only ~28% of the plans eligible up here do. The modal named door
+  // DIRECTIONS and never once named the Sanctum, so the most expensive tap in
+  // the campaign was made blind — and 60.8% of offers even contain a plan that
+  // opens it, so it is a real choice being hidden, not a coin the player
+  // cannot influence. Every card in a landing offer now says which it is, off
+  // the same `resolveDoors` the diagram beside it already draws.
+  const atLanding = Boolean(target && sameCell(target, SANCTUM_DOOR_CELL));
+  const opensSanctum = (card: RoomCard): boolean =>
+    Boolean(target && opensOntoSanctum(doorsOf(card), target));
+
   return (
     <div className="bp-modal" role="dialog" aria-modal="true" aria-label="Draft a room">
       <div className="bp-modal__sheet">
@@ -165,6 +180,16 @@ export default function DraftModal({
           <p className="bp-modal__orient">
             Each plan is turned to the gilt door — the one at your feet
           </p>
+          {/* The rule nothing in the game had ever stated (round 13): standing
+              on the landing is not reaching the Sanctum — the room you lay here
+              has to open north onto its sealed door. Said once, at the top,
+              before the three cards that answer it. */}
+          {atLanding && (
+            <p className="bp-modal__sanctum">
+              This door opens onto the Sanctum landing. Only a plan that opens
+              {' '}<strong>north</strong> from there reaches the sealed door.
+            </p>
+          )}
           {keyCost > 0 && (
             <p className="bp-modal__lock">
               <svg viewBox="0 0 14 16" width={12} height={14} aria-hidden="true">
@@ -203,6 +228,21 @@ export default function DraftModal({
                   {(() => {
                     const stake = draftCardStake(card, tier);
                     return stake ? <span className="bp-card__stake">{stake.label}</span> : null;
+                  })()}
+                  {/* THE SANCTUM STAMP (round 13). Double-encoded per AAA 6.3:
+                      the words carry it, the modifier class only tints them,
+                      and BOTH answers are printed — a card that says nothing
+                      beside two that do would read as a rendering gap, not as
+                      a plan that seals the door. */}
+                  {atLanding && (() => {
+                    const opens = opensSanctum(card);
+                    return (
+                      <span
+                        className={`bp-card__sanctum${opens ? ' bp-card__sanctum--opens' : ''}`}
+                      >
+                        {sanctumDraftStamp(opens)}
+                      </span>
+                    );
                   })()}
                   <span className="bp-card__meta">
                     <span className="bp-card__rarity">{card.rarity}</span>

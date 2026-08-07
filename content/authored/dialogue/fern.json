@@ -1463,6 +1463,31 @@
         ]
       },
       "summary": "Fern’s testimony: the empty bed in the west garden."
+    },
+    {
+      "id": "fern.react.landing",
+      "trigger": "parlor",
+      "priority": 720,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "vol.volume-1.landing-reached"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Heard you got to the top. Long climb. Legs’ll tell you about it tomorrow, and they’ll be right."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "Put a cutting under that landing window years back. No sun up there worth the name. Still going. Take the hint and go back up."
+        }
+      ],
+      "summary": "Fern: the cutting under the landing window manages without sun."
     }
   ]
 }

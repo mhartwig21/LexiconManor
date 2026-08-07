@@ -21,7 +21,10 @@ import {
 import { fernLine, fernKeys } from '../../src/engine/rooms/fern-lines';
 import { STEP_TABLE } from '../../src/engine/economy/steps';
 import { findPath, puzzleSize } from '../../src/engine/twistle';
-import { definitionForLevel, glossForLevel, unshownDefinitions } from '../../src/engine/forgotten-word';
+import {
+  cribIndices, cribLetters, definitionForLevel, glossForLevel,
+  maxGuessesForLevel, unshownDefinitions,
+} from '../../src/engine/forgotten-word';
 import { hiveWordPoints } from '../../src/engine/scoring';
 import { bandOf, loadDictionary } from '../../content/lib/dictionary';
 import { typeset } from '../../content/lib/typography';
@@ -603,10 +606,19 @@ describe('forgotten-word adapter', () => {
   const guess = (s: ForgottenWordRoomState, word: string) =>
     forgottenWordAdapter.reduce(fwPuzzle, s, { type: 'guess', word });
 
-  it('guess allowance scales with tier (5 / 4 / 3)', () => {
-    expect(start(1).fw.maxGuesses).toBe(5);
-    expect(start(2).fw.maxGuesses).toBe(4);
-    expect(start(3).fw.maxGuesses).toBe(3);
+  /**
+   * ROUND 14 (AAA 3.5 / 3.8) — the allowance used to run 5 / 4 / 3, shrinking
+   * as the words got harder: every tier-3 entry is rare-or-archaic (median
+   * corpus rank 157,866 against content/data/count_1w.txt; 15 of 43 absent from
+   * a 333k-word corpus), and the top of the house answered that with THREE
+   * blind guesses, no gloss and no crib. Wordle gives six on a word everybody
+   * knows. Difficulty now constrains rather than starves: five whispers
+   * everywhere, six at the bottom of the house.
+   */
+  it('never gives fewer than five whispers, however rare the word', () => {
+    expect(start(1).fw.maxGuesses).toBe(6);
+    expect(start(2).fw.maxGuesses).toBe(5);
+    expect(start(3).fw.maxGuesses).toBe(5);
   });
 
   it('a first-breath correct guess is a perfect solve', () => {
@@ -618,7 +630,7 @@ describe('forgotten-word adapter', () => {
   it('a wrong guess (of an announced-plausible length) is a deliberate claim: weight 1', () => {
     const r = guess(start(1), 'RAINSTORM'); // 9 letters, same as PETRICHOR
     expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
-    expect(r.state.lastFeedback).toMatchObject({ kind: 'wrong', guess: 'RAINSTORM', guessesLeft: 4 });
+    expect(r.state.lastFeedback).toMatchObject({ kind: 'wrong', guess: 'RAINSTORM', guessesLeft: 5 });
   });
 
   it('a wrong-LENGTH guess is malformed input: free, no whisper consumed (AAA 3.2)', () => {
@@ -644,10 +656,12 @@ describe('forgotten-word adapter', () => {
   });
 
   it('out of whispers auto-abandons — never a fail — and reveals for closure', () => {
-    let s = start(3); // 3 guesses
+    let s = start(3); // five whispers (round 14)
     s = guess(s, 'RAINSTORM').state;
     s = guess(s, 'DOWNPOURS').state;
-    const r = guess(s, 'SPLASHING');
+    s = guess(s, 'SPLASHING').state;
+    s = guess(s, 'RAINDROPS').state;
+    const r = guess(s, 'SPRINKLED');
     expect(r.outcome).toEqual({ status: 'abandoned', perfect: false });
     expect(r.state.lastFeedback).toEqual({ kind: 'slipped', word: 'PETRICHOR' });
     expect(r.events.some((e) => e.type === 'progress' && e.detail === 'slipped-away')).toBe(true);
@@ -683,7 +697,7 @@ describe('forgotten-word adapter', () => {
     expect(r.state.lastFeedback).toEqual({
       kind: 'wrong',
       guess: 'RAINSTORM',
-      guessesLeft: 4,
+      guessesLeft: 5,
       shared: 5,
       exact: 0,
       rightLength: true,
@@ -1190,14 +1204,74 @@ describe('tier escalation — The Study (three registers, riddle-only at the top
    * read; the top of the house still gets the riddle and nothing gentler; the
    * plain gloss is what tier 1 gets EXTRA, for free.
    */
+  /**
+   * ROUND 14 (AAA 3.5 / 3.8) — HARD MODE CONSTRAINS THE PLAYER, IT DOES NOT
+   * REMOVE SOLVABILITY.
+   *
+   * The Study's writing was never the problem; the delivery was. Every tier-3
+   * entry is rare-or-archaic — median corpus rank 157,866 against
+   * `content/data/count_1w.txt`, 31 of 43 past rank 100k, and 15 (SMEUSE,
+   * SELCOUTH, CLINQUANT, APRICITY, BRUMOUS, NOCTAMBULIST, TARADIDDLE,
+   * LUCUBRATION, PILCROW, YESTREEN, OVERMORROW, ANTIMACASSAR, SENNIGHT,
+   * HANDSEL, LIMNER) absent from a 333k-word corpus entirely — and against
+   * that the room headlined the riddle, withheld the plain gloss, pre-revealed
+   * nothing and gave THREE guesses. Wordle gives six on a word everybody knows.
+   *
+   * The knobs are off the rarity axis now. `content/generate-forgotten-word.ts`
+   * measures every headword and fails the build if a rare one ships without all
+   * three; this is the same claim asked of the SHIPPED pool.
+   */
+  it('a rare word never ships with the help turned down (gloss, five whispers, a crib)', () => {
+    const thin: string[] = [];
+    for (const p of FORGOTTEN_WORD_POOL) {
+      const level = p.tier ?? 1;
+      if (glossForLevel(p, level) !== p.definitions.plain) thin.push(`${p.id}: no gloss`);
+      if (maxGuessesForLevel(level) < 5) thin.push(`${p.id}: ${maxGuessesForLevel(level)} whispers`);
+      if (p.obscurity !== 'common' && cribIndices(p).length < 1) thin.push(`${p.id}: no crib`);
+    }
+    expect(thin, thin.join(' ; ')).toEqual([]);
+  });
+
+  it('the crib is proportional, deterministic, and empty for a word everybody knows', () => {
+    for (const p of FORGOTTEN_WORD_POOL) {
+      const idx = cribIndices(p);
+      // Never more than a third of the word, and never the whole shape.
+      expect(idx.length, p.id).toBeLessThan(Math.ceil(p.word.length / 2));
+      expect(new Set(idx).size, p.id).toBe(idx.length);
+      for (const i of idx) expect(i, p.id).toBeLessThan(p.word.length);
+      // Deterministic across calls — AAA 3.3 survives a force-quit.
+      expect(cribIndices(p), p.id).toEqual(idx);
+      if (p.obscurity === 'common') expect(idx, p.id).toEqual([]);
+      const letters = cribLetters(p);
+      expect(letters.length, p.id).toBe(p.word.length);
+      for (let i = 0; i < letters.length; i++) {
+        expect(letters[i], `${p.id}@${i}`).toBe(idx.includes(i) ? p.word[i] : null);
+      }
+    }
+    // The finding's own worked example: an archaic twelve-letter word opens
+    // with three or four letters standing, the way a cryptic gives crossers.
+    const long = FORGOTTEN_WORD_POOL.filter(
+      (p) => p.obscurity === 'archaic' && p.word.length >= 12,
+    );
+    expect(long.length).toBeGreaterThan(0);
+    for (const p of long) {
+      expect(cribIndices(p).length, p.id).toBeGreaterThanOrEqual(3);
+    }
+  });
+
   it('a tier-3 Study shows the RIDDLE and nothing gentler; the poetry leads below it', () => {
     for (const p of FORGOTTEN_WORD_POOL) {
       expect(definitionForLevel(p, 3), p.id).toBe(p.definitions.riddle);
       expect(definitionForLevel(p, 2), p.id).toBe(p.definitions.poetic);
       expect(definitionForLevel(p, 1), p.id).toBe(p.definitions.poetic);
-      expect(glossForLevel(p, 1), p.id).toBe(p.definitions.plain);
-      expect(glossForLevel(p, 2), p.id).toBeNull();
-      expect(glossForLevel(p, 3), p.id).toBeNull();
+      // ROUND 14 (AAA 3.5/3.8): the gloss is free at EVERY tier. It used to
+      // be tier 1 only, which coupled the help to the rarity the wrong way
+      // round — all 43 tier-3 entries are rare-or-archaic (median corpus rank
+      // 157,866; 15 of them absent from a 333k-word corpus), and that was the
+      // tier the room withheld the plain meaning from.
+      for (const level of [1, 2, 3] as const) {
+        expect(glossForLevel(p, level), `${p.id} @${level}`).toBe(p.definitions.plain);
+      }
     }
     // …and the adapter hands the room's tier straight through.
     const puzzle = forgottenWordAdapter.select({ tier: 3, seed: 3, seenIds: [] });

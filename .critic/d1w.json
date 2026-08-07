@@ -1,0 +1,6 @@
+[
+  {"eval":"Array.from(document.querySelectorAll('[role=button],button')).map(e=>(e.getAttribute('aria-label')||e.textContent).slice(0,70))"},
+  {"click":"[aria-label='Enter this room']","after":2500},
+  {"shot":"archive-in"},
+  {"eval":"document.body.innerText.slice(0,1400)"}
+]

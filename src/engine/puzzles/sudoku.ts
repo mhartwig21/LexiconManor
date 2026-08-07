@@ -123,9 +123,9 @@ export interface SudokuEngineState {
    * Exactly mirrors `pencil` (a digit is in the trail iff its bit is set), and
    * exists for ONE reason: the eraser has to be able to take back the LAST
    * mark rather than the whole cell (AAA 3.3 — the room may not throw away
-   * derived work in one tap). Session-only, like the rest of the engine state:
-   * the room session lives in RoomHost's React state and never reaches the
-   * save file.
+   * derived work in one tap). It rides the save with the rest of the room
+   * state as of REVIEW_AA §5.3 — pencil work IS the solve, and an evicted iOS
+   * tab may not be allowed to throw it away either.
    */
   pencilOrder: number[][];
   /** Cells filled via a purchased reveal (view styles them as 'developed'). */

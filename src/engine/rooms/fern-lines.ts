@@ -102,7 +102,10 @@ const LINES: Record<string, readonly string[]> = {
   ],
   'tier-up:Bower': [
     'Fern: “That’s a bower. You could sit under that.”',
-    'Fern: “Bower. Somewhere to hide from Mrs Bramble.”',
+    // ROUND 16 (COZY pillar): was "Somewhere to hide from Mrs Bramble" — one
+    // resident telling the player to avoid another, in a cast she is meant to
+    // be warming to. Affection, not avoidance.
+    'Fern: “Bower. Somewhere to sit when the house gets loud.”',
     'Fern: “Arched right over. Lovely bit of work.”',
     'Fern: “Bower now. I’d put a bench there.”',
   ],

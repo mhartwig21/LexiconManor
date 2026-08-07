@@ -74,4 +74,35 @@ export interface RoomPuzzleAdapter<P = unknown, S = unknown, A = unknown> {
   start(puzzle: P, ctx: RoomContext): S;
   reduce(puzzle: P, state: S, action: A): { state: S; events: RoomEvent[]; outcome: RoomOutcome };
   puzzleId(puzzle: P): string;
+
+  // ── SESSION PERSISTENCE (REVIEW_AA §5.3) ─────────────────────────────────
+  // Added to the frozen contract by the §5.3/§5.4 pass; see the rationale in
+  // engine/rooms/room-session.ts. Both members below are REQUIRED on purpose:
+  // a room kind registered tomorrow cannot compile without deciding how it is
+  // restored, which is the compile-time half of "cannot silently forget".
+
+  /**
+   * Look a puzzle up BY ID — the board a saved session was actually played on.
+   * `select()` cannot serve here: it is seen-aware and seeded, so it re-rolls
+   * as soon as the old board is marked seen (and that re-roll is the second
+   * half of the §5.4 re-solve exploit). Usually one line over the kind's pool.
+   * `undefined` when the pool no longer ships it — the room then opens fresh.
+   */
+  find(id: string): P | undefined;
+
+  /**
+   * Bump when `S` changes shape in a way that makes an OLD saved state unsafe
+   * to feed back into `reduce`. Snapshots at any other version are discarded on
+   * load, and the player gets a fresh board rather than a crash.
+   */
+  stateVersion: number;
+
+  /**
+   * Optional rehydration hook. State is stored as verbatim JSON, so the default
+   * is identity and every adapter shipped today wants exactly that — the
+   * invariant `tests/room-session.test.ts` pins is that adapter state IS JSON
+   * data. Implement this ONLY if a kind must hold something JSON cannot carry
+   * (a Set, a Map, a Date), and expect that test to tell you when you do.
+   */
+  restore?(puzzle: P, raw: unknown, ctx: RoomContext): S;
 }

@@ -1,23 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import {
-  campaignProfileForDay, climbStepCost, deckMixAt, keyLuckFor, measuredKeyRate, median, medianOf,
-  microShareAt, quantile, quantileOf, share, studySolveShareAt,
+  campaignProfileForDay, climbStepCost, deckMixAt, keyLuckFor, landingDraft, measuredKeyRate,
+  median, medianOf, microShareAt, quantile, quantileOf, share, studySolveShareAt,
   reserveToTop, simulateDay, simulateDays, simulateCampaigns,
-  KNOWLEDGE, MOVEMENT, SANCTUM_LANDING_ROW, TIME_TABLE,
+  KNOWLEDGE, LANDING_ENTRY_DIR, MOVEMENT, SANCTUM_LANDING_ROW, TIME_TABLE,
   PROFILE_DECENT, PROFILE_GREAT, PROFILE_SKILLED, PROFILE_SKIPPER,
 } from '../src/engine/economy/simulate';
 import {
   doorLockedAt, fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, ledgerTotal,
-  solveKeys, teaArcPoints, teaBonus, BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, KEY_SUPPLY,
-  MOVE_COST_BY_ROW, TEA_ARC, TEA_BY_POINTS,
+  sanctumMercyArmed, sanctumPlanWarmth, solveKeys, surveyEveningsIn, teaArcPoints, teaBonus,
+  BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, KEY_SUPPLY,
+  MOVE_COST_BY_ROW, SANCTUM_ARC, TEA_ARC, TEA_BY_POINTS,
 } from '../src/engine/economy/steps';
 import { createRng } from '../src/engine/rng';
 import {
   BASE_DECK, carryOverFrom, deckFor, CARRY_OVER_EFFECTS, UTILITY_EFFECTS,
 } from '../src/engine/manor/deck';
-import { rollCards } from '../src/engine/manor/drafting';
+import { categoryWeight, rollCards, RARITY_WEIGHTS } from '../src/engine/manor/drafting';
 import {
-  atSanctumDoor, cellKey, createManor, SANCTUM_DOOR_CELL, SANCTUM_DOOR_KEY,
+  atSanctumDoor, cardOpensOntoSanctum, cellKey, createManor, opensOntoSanctum, placeRoom,
+  resolveDoors, rowTier, sanctumStanding, SANCTUM_DOOR_CELL, SANCTUM_DOOR_KEY,
 } from '../src/engine/manor/grid';
 import { SANCTUM_CELL } from '../src/engine/types';
 import { getRoomAdapter, registeredRoomKinds } from '../src/engine/rooms/registry';
@@ -357,7 +359,12 @@ describe('4.10c — a great single day still only flirts with the Sanctum landin
     expect(m).toBeGreaterThanOrEqual(5);
     expect(m).toBeLessThanOrEqual(6);
     // A one-off great day is NOT a Sanctum run: the top is a campaign event.
-    expect(share(great, (r) => r.reachedSanctum)).toBeLessThan(0.25);
+    // BOTH milestones are pinned since round 13, because 4.10c's clause is
+    // about the LANDING (the storey) and 4.10d/e's gate is the DOOR, and
+    // conflating them is the defect this round closed.
+    expect(share(great, (r) => r.reachedLanding)).toBeLessThan(0.25);
+    expect(share(great, (r) => r.reachedSanctum))
+      .toBeLessThanOrEqual(share(great, (r) => r.reachedLanding));
   });
 
   it('still ends — the economy is not infinite even played sharply', () => {
@@ -575,6 +582,251 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
       expect(teaBonus(teaArcPoints(day))).toBe(TEA_BY_POINTS[teaArcPoints(day)]);
     }
     expect(TEA_BY_POINTS.slice(0, 3)).toEqual([0, 4, 6]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND-13 — THE MILESTONE IS THE DOOR, AND THE DOOR FINALLY HAS AN ARC
+// ---------------------------------------------------------------------------
+
+/**
+ * ═══ THE ROUND-13 BLOCKER, AS A SUITE ═════════════════════════════════════
+ *
+ * Third recurrence of the round-6/7/11 escape. `simulateDay` returned
+ * `reachedSanctum: maxRow >= SANCTUM_LANDING_ROW` — merely standing on the
+ * storey — while the gate the live game enforces is `atSanctumDoor`: the
+ * landing cell AND a north door on the room drafted there, matching the
+ * Sanctum's sealed south one. Measured over the real deck and the rigid
+ * rotation, only ~27.7% of tier-3-eligible plans place with a north door when
+ * the landing is entered from below, and a real 3-card offer at (2,5) contains
+ * one on ~61% of draws. So roughly two evenings in five she paid 22+ steps to
+ * arrive at an offer that could not open the door, and EVERY 4.10d/e number
+ * retuned across rounds 6–12 had been measured against a storey, not a door.
+ *
+ * The block below pins the identity the way round 7 pinned
+ * `SANCTUM_LANDING_ROW === SANCTUM_DOOR_CELL.row + 1`, so the two can never
+ * drift again — and then pins the arc and the floor the gate never had.
+ */
+describe('4.10d/e — the milestone is the DOOR the live game enforces', () => {
+  it('pins the sim milestone to the live predicate, not to the storey', () => {
+    // The identity, both directions. A room on the landing with no north door
+    // is a landing she has to draft again tomorrow…
+    const bare = createManor(4242);
+    const sealedLanding = placeRoom(bare, {
+      cardId: 'x', cell: SANCTUM_DOOR_CELL, doors: ['S', 'E'], solved: false, kind: 'utility',
+    });
+    const standingSealed = { ...sealedLanding, playerCell: { ...SANCTUM_DOOR_CELL } };
+    expect(atSanctumDoor(standingSealed)).toBe(false);
+    expect(sanctumStanding(standingSealed)).toBe('landing-sealed');
+    // …and the same cell with the north door IS the gate.
+    const openLanding = placeRoom(bare, {
+      cardId: 'x', cell: SANCTUM_DOOR_CELL, doors: ['S', 'N'], solved: false, kind: 'utility',
+    });
+    const standingOpen = { ...openLanding, playerCell: { ...SANCTUM_DOOR_CELL } };
+    expect(atSanctumDoor(standingOpen)).toBe(true);
+    expect(sanctumStanding(standingOpen)).toBe('at-door');
+    // A bare manor stands her in the Entrance Hall, which is the speaking tube
+    // (REVIEW_AA §5.2) — so the fresh standing is 'at-tube'. What this test is
+    // pinning is unaffected: the tube is a MOUTH and the door is a GATE, and
+    // only the gate closes the volume, so `atSanctumDoor` is false at the tube
+    // and the milestone below is still the door.
+    expect(sanctumStanding(bare)).toBe('at-tube');
+    expect(atSanctumDoor(bare)).toBe(false);
+    // The predicate the card face and the drafting engine share agrees, and it
+    // is false everywhere else in the house however many north doors are drawn.
+    expect(opensOntoSanctum(['S', 'N'], SANCTUM_DOOR_CELL)).toBe(true);
+    expect(opensOntoSanctum(['S', 'E'], SANCTUM_DOOR_CELL)).toBe(false);
+    expect(opensOntoSanctum(['N'], { col: 2, row: 3 })).toBe(false);
+  });
+
+  it('measures the gate the finding measured: the landing is not the door', () => {
+    // The two numbers the finding published, re-derived here so a deck edit or
+    // a rotation change moves a TEST rather than the owner's campaign.
+    const tier = rowTier(SANCTUM_DOOR_CELL.row);
+    let weight = 0;
+    let northWeight = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const manor = createManor(seed);
+      for (const card of BASE_DECK) {
+        if (card.tierRange[0] > tier || tier > card.tierRange[1]) continue;
+        const w = categoryWeight(card.category, SANCTUM_DOOR_CELL.row)
+          * RARITY_WEIGHTS[tier][card.rarity];
+        weight += w;
+        if (cardOpensOntoSanctum(card, LANDING_ENTRY_DIR, manor, SANCTUM_DOOR_CELL)) {
+          northWeight += w;
+        }
+      }
+    }
+    const perCard = northWeight / weight;
+    expect(perCard, `weighted P(a landing plan opens north) = ${perCard.toFixed(3)}`)
+      .toBeLessThan(0.4);
+    expect(perCard).toBeGreaterThan(0.15);
+
+    // …and the offer rate, through the REAL rollCards, with no arc warmth.
+    let offers = 0;
+    for (let seed = 0; seed < 2000; seed++) if (landingDraft(seed)) offers += 1;
+    const bareOffer = offers / 2000;
+    expect(bareOffer, `bare landing offer rate ${bareOffer.toFixed(3)}`).toBeGreaterThan(0.5);
+    expect(bareOffer).toBeLessThan(0.75);
+    // The gate is therefore a REAL cost, not a formality: a day model that
+    // treats the storey as the milestone overstates every reach by ~40%.
+  });
+
+  it('never reports a door she did not stand on the landing for', () => {
+    for (const c of [...campaigns, ...decentCampaigns]) {
+      for (const d of c.days) {
+        if (d.reachedSanctum) expect(d.reachedLanding).toBe(true);
+      }
+      if (c.firstSanctumReachDay !== null) {
+        expect(c.firstLandingDay).not.toBeNull();
+        expect(c.firstSanctumReachDay).toBeGreaterThanOrEqual(c.firstLandingDay!);
+      }
+      expect(c.landingEvenings).toBeLessThanOrEqual(c.surveyEvenings);
+    }
+    // And at campaign scale the gap is a real, measured quantity — the thing
+    // the arc below exists to close, not a rounding error.
+    const days = decentCampaigns.flatMap((c) => c.days);
+    expect(share(days, (d) => d.reachedSanctum))
+      .toBeLessThan(share(days, (d) => d.reachedLanding));
+  });
+});
+
+/**
+ * ═══ THE ACCESS GATE HAS AN ARC AND A FLOOR (round 13) ════════════════════
+ *
+ * Two findings, one mechanic (engine/economy/steps.ts `SANCTUM_ARC`):
+ *
+ *  - **the arc was spent on day 12.** Tea caps at day 12, Fern's dawn key at
+ *    day 9, both `CAMPAIGN_ARC` familiarity terms by day ~9. From day 13 the
+ *    median player's evening was statistically identical forever — the game's
+ *    answer to a player who keeps stopping a storey short was "roll again,
+ *    nightly, with the same dice, indefinitely";
+ *  - **no mercy on the gate that binds.** Over 400 median-player campaigns
+ *    EVERY unfinished one belonged to a player who already knew the word;
+ *    the gap between knowing and winning ran median 9, p90 25, max 47. AAA
+ *    4.14 gives the KNOWLEDGE gate a pity floor and ACCESS had none.
+ *
+ * WHAT IS DELIBERATELY *NOT* FIXED, so nobody re-opens it as a bug: the CLIMB
+ * rate stays flat late (measured ~7–8% of the median player's evenings, ~25%
+ * of the skilled player's). The climb is the constant-difficulty push-your-luck
+ * the whole economy is built on — 4.10c requires a great single day to reach
+ * the landing on <25% of days, at every point in the campaign. What grows is
+ * the house's willingness to show its own door, which is the quantity 4.10d/e
+ * actually gate on.
+ */
+describe('4.10d/e + 4.14 — the landing arc: earned, progressive, and floored', () => {
+  it('ties the arc to the live geometry, not to a hand-typed row', () => {
+    // The storey the Sanctum stair is visible from, and the first `DOOR_LOCKS`
+    // padlocks. Pinned as an IDENTITY (round-7's lesson) so a grid change
+    // cannot leave the arc measuring a floor that has moved.
+    expect(SANCTUM_ARC.surveyRow0).toBe(SANCTUM_DOOR_CELL.row - 1);
+    expect(DOOR_LOCKS.chanceByRow[SANCTUM_ARC.surveyRow0]!).toBeGreaterThan(0);
+    // The mercy's knowledge half is the deduction band the model uses, so the
+    // floor cannot open before she could possibly name the word.
+    expect(SANCTUM_ARC.mercyFragments).toBeGreaterThanOrEqual(KNOWLEDGE.fragmentsToDeduce[0]);
+    expect(SANCTUM_ARC.mercyFragments).toBeLessThanOrEqual(KNOWLEDGE.volumeFragments);
+  });
+
+  it('is monotone, bounded, and exactly nothing before she has climbed', () => {
+    expect(sanctumPlanWarmth(0)).toBe(0);
+    expect(sanctumPlanWarmth(-3)).toBe(0);
+    let prev = -1;
+    for (const evenings of [0, 1, 3, 6, 12, 30, 90]) {
+      const w = sanctumPlanWarmth(evenings);
+      expect(w).toBeGreaterThanOrEqual(prev);
+      expect(w).toBeLessThanOrEqual(1);
+      prev = w;
+    }
+    expect(sanctumPlanWarmth(SANCTUM_ARC.planEveningsToFull)).toBe(1);
+    // Live source: the persisted day records, read the same way every dusk.
+    expect(surveyEveningsIn([])).toBe(0);
+    expect(surveyEveningsIn([
+      { highestRow: 0 }, { highestRow: SANCTUM_ARC.surveyRow0 }, {},
+      { highestRow: SANCTUM_DOOR_CELL.row },
+    ])).toBe(2);
+  });
+
+  it('raises the landing offer rate strictly with warmth, and never to 1', () => {
+    const rateAt = (warmth: number, mercy = false) => {
+      let hit = 0;
+      for (let seed = 0; seed < 1200; seed++) {
+        if (landingDraft(seed, { planWarmth: warmth, mercy })) hit += 1;
+      }
+      return hit / 1200;
+    };
+    const cold = rateAt(0);
+    const warm = rateAt(0.5);
+    const full = rateAt(1);
+    expect(warm, `warm ${warm.toFixed(3)} vs cold ${cold.toFixed(3)}`).toBeGreaterThan(cold);
+    expect(full).toBeGreaterThan(warm);
+    // Still a draft, never a formality — the arc shortens the wait, it does not
+    // hand her the door (AAA 4.6: the offer stays a decision).
+    expect(full).toBeLessThan(0.99);
+    // THE FLOOR (AAA 4.14, access side): armed, an offer up there essentially
+    // always contains a plan that opens onto the Sanctum.
+    expect(rateAt(0, true)).toBeGreaterThan(0.9);
+  });
+
+  it('cannot arm the mercy without BOTH halves — so day 1 is untouched', () => {
+    const band = SANCTUM_ARC.mercyFragments;
+    // Knowing the word alone is not enough: she has to have been up there.
+    expect(sanctumMercyArmed(0, band + 4)).toBe(false);
+    expect(sanctumMercyArmed(SANCTUM_ARC.mercyEvenings - 1, band + 4)).toBe(false);
+    // Climbing alone is not enough either — this is an ACCESS floor for a
+    // player already holding the answer, never a shortcut through the mystery.
+    expect(sanctumMercyArmed(50, band - 1)).toBe(false);
+    expect(sanctumMercyArmed(SANCTUM_ARC.mercyEvenings, band)).toBe(true);
+    // Day 1 has no campaign behind it, so neither term can be non-zero: the
+    // <8% day-1 reach of 4.10d is protected by construction, not by tuning.
+    const day1 = simulateDay(createRng(11), campaignProfileForDay(PROFILE_SKILLED, 1));
+    expect(day1.reachedSanctum === false || day1.reachedLanding).toBe(true);
+    expect(sanctumMercyArmed(0, 0)).toBe(false);
+    expect(sanctumPlanWarmth(0)).toBe(0);
+  });
+
+  it('does not flatten after day 12 — the finding, as a gate', () => {
+    // THE CLAUSE THE FINDING WAS ABOUT. Before round 13 the median player's
+    // evening was statistically identical from day 13 to day 60: P(door) flat
+    // at 7–8%, because every arc in the game had already capped. Measured
+    // after, across four independent seeds: the day-26–45 door rate is 10–24%
+    // higher than the day-11–20 one, and the lift is the arc plus the mercy.
+    for (const seed of [0x1234, 0x9911, 0x2f2f, 0xabc1]) {
+      const runs = simulateCampaigns(PROFILE_DECENT, 250, CAMPAIGN_LENGTH, seed);
+      const early = runs.flatMap((c) => c.days.slice(10, 20));
+      const late = runs.flatMap((c) => c.days.slice(25, 45));
+      const e = share(early, (d) => d.reachedSanctum);
+      const l = share(late, (d) => d.reachedSanctum);
+      expect(l, `seed ${seed}: door rate ${(100 * e).toFixed(2)}% → ${(100 * l).toFixed(2)}%`)
+        .toBeGreaterThan(e);
+      // …and it is the DOOR that moved, not the climb: the ceiling on the
+      // climb is 4.10c's "<25% of even great days", which must stay put.
+      const lateLanding = share(late, (d) => d.reachedLanding);
+      expect(l / lateLanding).toBeGreaterThan(share(early, (d) => d.reachedSanctum)
+        / share(early, (d) => d.reachedLanding));
+    }
+  }, HEAVY_MS);
+
+  it('closes the knowing-but-locked-out gap the finding measured', () => {
+    // "I solved the mystery and the house will not let me say it." Before
+    // round 13: median 9 evenings, p75 16, p90 25, max 47 — with no channel
+    // that ever tilted. The gap is the ACCESS gate's whole cost, so it is the
+    // number the mercy is pinned by. (Truncated at the campaign window, which
+    // is conservative: the campaigns that never finish are excluded here and
+    // measured by the never-win share in the block above.)
+    const gapsFor = (runs: typeof decentCampaigns) => runs
+      .filter((c) => c.volumeWinDay !== null && c.deductionDay !== null)
+      .map((c) => c.volumeWinDay! - c.deductionDay!);
+    const decentGaps = gapsFor(decentCampaigns);
+    expect(medianOf(decentGaps), `median-player gap median ${medianOf(decentGaps)}`)
+      .toBeLessThanOrEqual(8);
+    expect(quantileOf(decentGaps, 0.9), `p90 ${quantileOf(decentGaps, 0.9)}`)
+      .toBeLessThanOrEqual(20);
+    const skilledGaps = gapsFor(campaigns);
+    expect(medianOf(skilledGaps)).toBeLessThanOrEqual(4);
+    expect(quantileOf(skilledGaps, 0.9)).toBeLessThanOrEqual(12);
+    // And the gate is still a gate: winning is never the same day as knowing
+    // for everybody — the climb is what the volume is actually paid for.
+    expect(share(decentGaps, (g) => g > 0)).toBeGreaterThan(0.5);
   });
 });
 

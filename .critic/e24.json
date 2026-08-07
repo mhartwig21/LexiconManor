@@ -1,0 +1,14 @@
+[
+  {"click":".lc-cell","n":1,"after":400},{"click":".lc-key","has":"D","after":400},
+  {"click":".lc-cell","n":5,"after":400},{"click":".lc-key","has":"O","after":400},
+  {"click":".lc-cell","n":9,"after":400},{"click":".lc-key","has":"O","after":400},
+  {"click":".lc-cell","n":13,"after":400},{"click":".lc-key","has":"R","after":400},
+  {"click":".lc-cell","n":4,"after":400},{"click":".lc-key","has":"M","after":400},
+  {"click":".lc-cell","n":6,"after":400},{"click":".lc-key","has":"S","after":400},
+  {"click":".lc-cell","n":7,"after":400},{"click":".lc-key","has":"S","after":400},
+  {"click":".lc-cell","n":11,"after":400},{"click":".lc-key","has":"U","after":400},
+  {"click":".lc-cell","n":15,"after":400},{"click":".lc-key","has":"N","after":400},
+  {"wait":2500},
+  {"shot":"xw-solved"},
+  {"eval":"document.body.innerText.slice(0,700)"}
+]

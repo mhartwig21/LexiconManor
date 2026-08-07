@@ -3,13 +3,17 @@
   "title": "The Unfinished Dictionary",
   "epigraph": "Every dictionary is a house. I closed one door.",
   "answer": "LACUNA",
-  "accepted": ["LACUNA", "LACUNAE"],
+  "accepted": [
+    "LACUNA",
+    "LACUNAE"
+  ],
   "fragments": [
     {
       "id": "v1-d1",
       "kind": "definition-line",
       "group": "definition",
       "sourceRoomCategory": "mystery",
+      "channel": "lintel",
       "revealOrder": 1,
       "source": "A torn leaf in the lexicographer’s hand",
       "text": "Where a thing is missing, I am what remains: not nothing — the shape that nothing takes.",
@@ -20,11 +24,18 @@
       "kind": "engraving",
       "group": "engravings",
       "sourceRoomCategory": "puzzle",
+      "channel": "lintel",
       "revealOrder": 2,
       "source": "Brass plate beneath the Entrance Hall clock",
       "text": "Six candles burned on his desk at the end. “One for each letter,” he told the house, “and I shall put them out myself.”",
-      "constraint": { "kind": "length", "length": 6 },
-      "relatedIds": ["v1-t2", "v1-e6"],
+      "constraint": {
+        "kind": "length",
+        "length": 6
+      },
+      "relatedIds": [
+        "v1-t2",
+        "v1-e6"
+      ],
       "interpretation": "Ellery taps the plate. “Plainly: the word has six letters. He was never careless with a number.”"
     },
     {
@@ -36,13 +47,16 @@
       "speaker": "bramble",
       "source": "Mrs. Bramble, over morning tea",
       "text": "“Six candles at his desk, always six. Near the end he let one gutter out each night — and I never dared relight them.”",
-      "relatedIds": ["v1-e1"]
+      "relatedIds": [
+        "v1-e1"
+      ]
     },
     {
       "id": "v1-d2",
       "kind": "definition-line",
       "group": "definition",
       "sourceRoomCategory": "mystery",
+      "channel": "lintel",
       "revealOrder": 4,
       "source": "A torn leaf in the lexicographer’s hand",
       "text": "The copyist blinks above his candle, and his sentence steps mid-breath onto air. I am that step. I am that air.",
@@ -56,7 +70,10 @@
       "revealOrder": 5,
       "source": "Scratched inside the Library windowsill",
       "text": "Call me WORDSMITH no longer. What I took shares not one letter with that name.",
-      "constraint": { "kind": "shares-no-letter", "word": "WORDSMITH" },
+      "constraint": {
+        "kind": "shares-no-letter",
+        "word": "WORDSMITH"
+      },
       "interpretation": "Ellery writes the name out and strikes it through. “Then W, O, R, D, S, M, I, T and H appear nowhere in the word. That is nine letters gone from your alphabet.”"
     },
     {
@@ -68,13 +85,16 @@
       "speaker": "posy",
       "source": "Posy, sorting the evening post",
       "text": "“His last letter went out with one word cut clean from it — a little window in the paper. You could read the whole sentence around the hole. I believe that was rather the point.”",
-      "relatedIds": ["v1-d4"]
+      "relatedIds": [
+        "v1-d4"
+      ]
     },
     {
       "id": "v1-d3",
       "kind": "definition-line",
       "group": "definition",
       "sourceRoomCategory": "puzzle",
+      "channel": "study",
       "revealOrder": 7,
       "source": "Loose in the Study, among his unfinished entries",
       "text": "In my mother Latin I was a little pool — a hollow where the rain remembered what the ground forgot.",
@@ -85,10 +105,14 @@
       "kind": "engraving",
       "group": "engravings",
       "sourceRoomCategory": "puzzle",
+      "channel": "lintel",
       "revealOrder": 8,
       "source": "Carved on the Gallery lintel",
       "text": "It begins as LULLABY and LANTERN begin — with the tall letter, the candlestick.",
-      "constraint": { "kind": "starts-with", "letter": "L" },
+      "constraint": {
+        "kind": "starts-with",
+        "letter": "L"
+      },
       "interpretation": "Ellery: “The first letter is L. He did love an L — half his marginalia lean on one.”"
     },
     {
@@ -100,7 +124,9 @@
       "speaker": "fern",
       "source": "Fern, by the west beds",
       "text": "“There is a bed in the west garden where nothing grows. He would stand at it an hour at a time. Said there was a word for that exact shape of missing — and that he meant to see it filled again.”",
-      "relatedIds": ["v1-d3"]
+      "relatedIds": [
+        "v1-d3"
+      ]
     },
     {
       "id": "v1-d4",
@@ -111,7 +137,10 @@
       "source": "A torn leaf in the lexicographer’s hand",
       "text": "The moth eats a word from the page and leaves me behind as the payment.",
       "interpretation": "Ellery: “Moth-eaten pages, missing text. It is the scholar’s word for the gap the moth leaves behind — librarians grieve it by name.”",
-      "relatedIds": ["v1-t4"]
+      "relatedIds": [
+        "v1-t4"
+      ],
+      "channel": "lintel"
     },
     {
       "id": "v1-e4",
@@ -121,7 +150,10 @@
       "revealOrder": 14,
       "source": "A rubbing from the Conservatory arch",
       "text": "Its breath runs A, then U, then A — exhale, hollow, exhale. All the rest of it is consonant bone.",
-      "constraint": { "kind": "vowel-sequence", "vowels": "AUA" },
+      "constraint": {
+        "kind": "vowel-sequence",
+        "vowels": "AUA"
+      },
       "interpretation": "Ellery: “Its vowels, in order, are A, U, A — three, and no others. So no E, no I, no O anywhere in it.”"
     },
     {
@@ -133,13 +165,16 @@
       "speaker": "ellery",
       "source": "Ellery, among the reading lamps",
       "text": "“He told me once that in all the dictionary there is exactly one word that names the hole it would leave behind. Then he went and made it true.”",
-      "relatedIds": ["v1-d6"]
+      "relatedIds": [
+        "v1-d6"
+      ]
     },
     {
       "id": "v1-d5",
       "kind": "definition-line",
       "group": "definition",
       "sourceRoomCategory": "puzzle",
+      "channel": "lintel",
       "revealOrder": 13,
       "source": "Blotted on the Study’s desk-pad, read back in the glass",
       "text": "Seek me in ledgers, in memory, in a row of teeth: wherever something was, and is not, and is missed by its own outline.",
@@ -153,20 +188,28 @@
       "revealOrder": 11,
       "source": "Etched around the Study inkstand",
       "text": "One letter enters it twice, like a guest who cannot keep away. Every other letter calls only once.",
-      "constraint": { "kind": "one-letter-twice" },
-      "relatedIds": ["v1-e4"],
-      "interpretation": "Ellery: “Exactly one letter is doubled somewhere in the word; the rest appear a single time each. That halves what is left of your list, and it is the half with the pool in it.”"
+      "constraint": {
+        "kind": "one-letter-twice"
+      },
+      "relatedIds": [
+        "v1-e4"
+      ],
+      "interpretation": "Ellery: “Exactly one letter is doubled somewhere in the word; the rest appear a single time each. That halves what is left of your list, and it is the half with the pool in it.”",
+      "channel": "lintel"
     },
     {
       "id": "v1-d6",
       "kind": "definition-line",
       "group": "definition",
       "sourceRoomCategory": "puzzle",
+      "channel": "study",
       "revealOrder": 15,
       "source": "The last leaf in the Study’s word-book, face down",
       "text": "A dictionary keeps my chair forever empty. Speak me at the door, and I will sit.",
       "interpretation": "Ellery closes the journal softly. “He built the door to want the word itself. Name the gap, and it is a gap no longer. That is the whole of his apology, I think.”",
-      "relatedIds": ["v1-t1"]
+      "relatedIds": [
+        "v1-t1"
+      ]
     },
     {
       "id": "v1-e6",
@@ -176,8 +219,13 @@
       "revealOrder": 16,
       "source": "Cut into the Sanctum door itself",
       "text": "Somewhere in it, a hard C — cut like a keyhole. He carved this line the night the sixth candle went out.",
-      "constraint": { "kind": "contains-letter", "letter": "C" },
-      "relatedIds": ["v1-e1"],
+      "constraint": {
+        "kind": "contains-letter",
+        "letter": "C"
+      },
+      "relatedIds": [
+        "v1-e1"
+      ],
       "interpretation": "Ellery: “It contains a C. Carved into the very door — he wanted it found, at the end.”"
     },
     {
@@ -205,7 +253,9 @@
       "earliestDay": 2,
       "minFragments": 1,
       "subject": "A loose leaf, returned",
-      "grantsFragmentIds": ["v1-d2"],
+      "grantsFragmentIds": [
+        "v1-d2"
+      ],
       "body": "I found this tucked into the returns tray, in his hand, torn from the same leaf as the fragment you filed. I have taken the liberty of pressing it flat.\n\nHe wrote his definitions like letters to someone who had already forgotten him. Read this one aloud, slowly — his meanings live in the pauses.\n\n— E.",
       "afterSolved": false
     },
@@ -214,7 +264,9 @@
       "from": "fern",
       "earliestDay": 4,
       "subject": "From between the pages of my flower book",
-      "grantsFragmentIds": ["v1-e4"],
+      "grantsFragmentIds": [
+        "v1-e4"
+      ],
       "body": "Found this pressed between the campion and the sweet-pea — a charcoal rubbing he took of the Conservatory arch, years back. The arch has weathered; the rubbing hasn’t.\n\nHe rubbed it the way you’d take a keepsake of a face. Whatever is written on it mattered to him. Mind the charcoal on your cuffs.\n\n— Fern"
     },
     {
@@ -223,7 +275,9 @@
       "earliestDay": 6,
       "minFragments": 4,
       "subject": "The letter with the window in it",
-      "grantsFragmentIds": ["v1-t4"],
+      "grantsFragmentIds": [
+        "v1-t4"
+      ],
       "body": "I kept it. I oughtn’t have — post is post — but the last letter he ever gave me to send had a word cut out of it, neat as a stamp, and I could not bring myself to let it leave the house incomplete.\n\nI enclose it now. Hold it to the light: you can read the whole sentence around the hole. He wanted the hole read too, I think.\n\n— Posy"
     },
     {

@@ -196,6 +196,121 @@ export function atSanctumDoor(manor: ManorState | null | undefined): boolean {
 }
 
 /**
+ * ── THE THIRD STATE (round-13 blocker, AAA 4.6/4.16/11.7) ──────────────────
+ *
+ * `atSanctumDoor` is a boolean, and the game only ever spoke two of its three
+ * meanings. Driven at 390×844: standing at (2,5) in a room whose doors are
+ * S+E, the Sanctum was untappable with nothing drawn to say why, and both
+ * `/sanctum` and the journal answered "…only from the landing at the top of
+ * the stairs — you will have to climb to it" — while she was standing on that
+ * exact landing, having just paid 22+ steps for it. Nothing in the game ever
+ * stated that the landing ROOM must open north.
+ *
+ * So the standing is now a three-valued fact, exported once and consumed by
+ * every surface that has to speak about it (the blueprint's refusal, the
+ * Sanctum screen's copy, the journal's guess button), exactly the way
+ * `atSanctumDoor` itself was hoisted out of BlueprintSheet in round 7:
+ *
+ *   'at-door'        — on the landing, and the room opens onto the Sanctum.
+ *   'landing-sealed' — on the landing, and the room turns its back on it. She
+ *                      climbed; what she took up here does not open north.
+ *   'away'           — anywhere else in the house.
+ */
+export type SanctumStanding = 'at-door' | 'landing-sealed' | 'at-tube' | 'away';
+
+export function sanctumStanding(manor: ManorState | null | undefined): SanctumStanding {
+  if (!manor) return 'away';
+  if (sameCell(manor.playerCell, SPEAKING_TUBE_CELL)) return 'at-tube';
+  if (!sameCell(manor.playerCell, SANCTUM_DOOR_CELL)) return 'away';
+  return doorsConnect(manor, manor.playerCell, 'N') ? 'at-door' : 'landing-sealed';
+}
+
+/**
+ * ── THE SPEAKING TUBE (round 17, REVIEW_AA §5.2) ───────────────────────────
+ *
+ * THE DEFECT, in the reviewer's words: *"knowledge is available on day 1 by
+ * design (AAA 4.18) but ACCESS to the door is a compounding lottery… one
+ * reviewer deduced the answer on day 1 and was still stranded three days
+ * later, 15 steps against a door costing 2 keys and 16 steps. Neither reviewer
+ * ever saw the Sanctum. The guess itself is already free; the walk is the
+ * wall."* Measured on `PROFILE_DECENT`: first door median day 19, 7–14% never
+ * inside 45 evenings — so the Portrait's 33 authored nodes and 43 lines of
+ * reaction were, for most players, content that did not exist.
+ *
+ * THE FIX IS A PLACE, NOT A MENU ITEM — the same ruling round 7 made about the
+ * door itself, applied to its other end. Every servants' manor of the period
+ * ran brass speaking tubes between the hall and the upper floors, and this one
+ * runs from the Entrance Hall to the landing outside the Sanctum. She unhooks
+ * the whistle where every single day already begins, at a cost of **zero
+ * steps**, and the house answers.
+ *
+ * WHAT THE TUBE MOVES AND WHAT IT DOES NOT:
+ *   - it carries A WORD, once a day, the same single daily guess the door
+ *     hears (`hasGuessedOnDay` is unchanged and shared);
+ *   - a WRONG word gets his whole authored reaction — the closeness variants,
+ *     the two thaw beats — downstairs, on day 2, which is the content this
+ *     change exists to release;
+ *   - a RIGHT word does NOT close the volume. He hears it, the seal answers,
+ *     and he asks her up: the ceremony is the climb, and the climb is still
+ *     paid in steps. See `app/slices/journal.ts guessAtSanctum` and
+ *     `vol.<id>.answered`.
+ *
+ * So the climb no longer buys PERMISSION TO SPEAK. It buys what it always
+ * should have: fragments (violet supply and `decipherYield` both scale with
+ * the row), keys, tier-3 solves, the Portrait's audience — and the ending.
+ */
+export const SPEAKING_TUBE_CELL: Cell = ENTRANCE_CELL;
+
+/** Is she standing at the Entrance Hall's speaking tube right now? */
+export function atSpeakingTube(manor: ManorState | null | undefined): boolean {
+  return Boolean(manor && sameCell(manor.playerCell, SPEAKING_TUBE_CELL));
+}
+
+/**
+ * May she say a word to the Sanctum at all right now — through the tube in the
+ * hall, or at the door itself? THE one predicate the guess flow and the Sanctum
+ * screen consult, so "can she speak" cannot mean two things (the same hoisting
+ * `atSanctumDoor` got in round 7, which is why the door could not be reached
+ * from a menu).
+ */
+export function canAddressSanctum(manor: ManorState | null | undefined): boolean {
+  const standing = sanctumStanding(manor);
+  return standing === 'at-door' || standing === 'at-tube';
+}
+
+/**
+ * Is she standing on the landing cell at all, whatever it opens onto? The
+ * storey, not the gate — kept separate from `atSanctumDoor` on purpose, since
+ * conflating the two is the round-13 defect this pair exists to close.
+ */
+export function onSanctumLanding(manor: ManorState | null | undefined): boolean {
+  return Boolean(manor && sameCell(manor.playerCell, SANCTUM_DOOR_CELL));
+}
+
+/**
+ * Would a room with these doors, laid in THIS cell, open onto the Sanctum?
+ *
+ * The one predicate the draft card face, the blueprint and the simulation all
+ * read, so "this plan opens the door" cannot mean three things. Only the
+ * landing can: everywhere else the answer is no, however many north doors the
+ * plan draws.
+ */
+export function opensOntoSanctum(doors: readonly Dir[], cell: Cell): boolean {
+  return sameCell(cell, SANCTUM_DOOR_CELL) && doors.includes('N');
+}
+
+/**
+ * Would THIS card, taken at THIS door, open onto the Sanctum? Pure, and the
+ * same `resolveDoors` the card face already draws with — so the stamp on the
+ * card and the door the room ends up with are the same computation, never two.
+ */
+export function cardOpensOntoSanctum(
+  card: RoomCard, entryDir: Dir, manor: ManorState, cell: Cell,
+): boolean {
+  return opensOntoSanctum(resolveDoors(card, entryDir, manor, cell), cell);
+}
+
+/**
  * Doors of the player's current room that open into an EMPTY in-bounds cell —
  * the only places a draft may be offered (MANOR_DESIGN §3).
  */

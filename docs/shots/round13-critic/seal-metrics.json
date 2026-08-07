@@ -1,0 +1,21 @@
+{
+  "tiles": [
+    "POSE",
+    "BALER",
+    "PLOW",
+    "DEAL",
+    "TRACTOR",
+    "COMBINE",
+    "PROSE",
+    "MATCH",
+    "GLOWS",
+    "ORACLE",
+    "EMBRACE",
+    "THOSE",
+    "GOLD",
+    "MIRACLE",
+    "DOZE",
+    "CHARACTER"
+  ],
+  "board": "web-a22"
+}

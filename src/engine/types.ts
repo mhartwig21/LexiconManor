@@ -372,6 +372,16 @@ export interface DayState {
 
 export type FragmentKind = 'definition-line' | 'engraving' | 'testimony';
 
+/**
+ * The two room-solve channels (defined in engine/volume.ts, which owns the
+ * `SolveChannel` records themselves). The *name* lives here because two modules
+ * below volume.ts need it and neither may import upward: `events.ts` stamps it
+ * on `fragment-found` so the daily valve can tell a page EARNED BY SOLVING from
+ * a page handed over by a violet draw, and `FragmentContent.channel` uses it as
+ * the authored routing label.
+ */
+export type SolveChannelId = 'study' | 'lintel';
+
 export interface FragmentDef {
   id: string;
   kind: FragmentKind;

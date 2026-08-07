@@ -1,0 +1,7 @@
+[
+  {"click":"[aria-label^='Walk to the half landing']","after":1500},
+  {"eval":"Array.from(document.querySelectorAll('[role=button]')).map(e=>e.getAttribute('aria-label'))"},
+  {"click":"[aria-label^='Walk to the ground floor']","after":1500},
+  {"eval":"Array.from(document.querySelectorAll('[role=button]')).map(e=>e.getAttribute('aria-label'))"},
+  {"shot":"back-down"}
+]

@@ -1,0 +1,6 @@
+[
+  {"eval":"location.hash='#/sanctum'; history.pushState({}, '', '/LexiconManor/sanctum'); window.dispatchEvent(new PopStateEvent('popstate')); 'nav'"},
+  {"wait":2500},
+  {"shot":"sanctum"},
+  {"eval":"document.body.innerText.slice(0,1400)"}
+]

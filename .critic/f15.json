@@ -1,0 +1,8 @@
+[
+  {"click":"[aria-label*='Walk to the ground floor']","after":1600},
+  {"click":"[aria-label*='Draft']","n":0,"after":2200},
+  {"click":".bp-btn","has":"Reroll","after":2200},
+  {"click":".bp-card","has":"The Gallery","after":3500},
+  {"shot":"twistle"},
+  {"eval":"document.body.innerText.slice(0,900)"}
+]

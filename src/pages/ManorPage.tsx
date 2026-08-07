@@ -23,6 +23,8 @@ import CabinetSheet from '../ui/blueprint/CabinetSheet';
 import DraftModal from '../ui/blueprint/DraftModal';
 import DialogueScene from '../ui/dialogue/DialogueScene';
 import { plateSeenFlag, unseenKeepsakes, unseenPlates } from '../ui/moment/mantel';
+import { useSealDock } from '../ui/moment/dock';
+import { usePageFootBand } from '../app/platform/page-nav';
 import UnreadMark from '../ui/journal/UnreadMark';
 import SealedMark from '../ui/journal/SealedMark';
 import { useJournalUnread } from '../ui/journal/useJournalUnread';
@@ -152,6 +154,53 @@ export default function ManorPage() {
   const cancelDraft = useManorStore((s) => s.cancelDraft);
   const petDewey = useManorStore((s) => s.petDewey);
   const enterRoom = useManorStore((s) => s.enterRoom);
+
+  /**
+   * ROUND 15 (blocker, AAA 11.2 / 11.27 / 6.19 — §0.5 escape 4, a fourth time).
+   *
+   * THE BLUEPRINT IS A BOARD. The moment seal is fixed and clears the shell by
+   * `--chrome-h` + `--tap-target` + 12, which puts it at 12,108,366x91 at
+   * 390x844 — empty parchment while she is on the ground floor, which is
+   * exactly why round 11 recorded "/manor was clean under the same probe". But
+   * the sheet draws row 6 at the TOP of the glass, so the moment she reaches
+   * the landing the manor's own controls move into that band. Measured live
+   * with a plate grant up, standing at (2,5): "Approach the Sanctum"
+   * [177,157,64,64] answered `button.mom` at its centre, and a DRIVEN click
+   * there left `location.hash` unchanged and put the notice away — the tap was
+   * eaten, on the campaign's milestone screen (4.10d). At 375x667 both
+   * padlocked-door controls were covered too, and those are COSTED (2 keys plus
+   * the row's move price), which 6.19 exempts nothing from.
+   *
+   * One line, the same one RoomPage carries, with the kind that says the shell's
+   * ordinary clearance is right here and only the AGENCY is wrong:
+   * `ui/moment/dock.ts` makes the card `pointer-events: none` so every cell,
+   * ghost door and padlock answers as itself and a tap performs its action; the
+   * notice retires on its own clock (11.27b) and its words stay one tap away at
+   * the address it names (11.12). Declared before the no-day early return, so
+   * the front-step branch cannot quietly opt out.
+   */
+  useSealDock('board');
+
+  /**
+   * ROUND 15 (blocker, AAA 11.2 / 11.4 / 11.5) — AND THE OTHER HALF OF THE
+   * SAME MEASUREMENT, at the bottom of the glass.
+   *
+   * `.chr-dusk` is deliberately pointer-transparent so the blueprint stays live
+   * during the ≤4s fade (4.12's walk-but-no-interact grace), and its own
+   * `.chr-dusk__skip` is the one thing on that layer that takes taps. It was
+   * pinned 28px off the bottom — straight on top of this footer's nav row.
+   * Measured: skip [129,772,133,44] over Journal [114,788,120,44] at 390x844
+   * (and over Chronicles' top-left inset corner); DRIVEN, a click at the
+   * Journal entrance's centre left `location.hash` unchanged. The sting is the
+   * timing: the digest four seconds later prints "A letter waits unopened in
+   * the post tray".
+   *
+   * The band's ceiling is published from the LIVE element here, exactly as
+   * `usePageNavBand` publishes the journal ribbon's floor at the top, so the
+   * veil clears whatever this footer actually is rather than a pixel copy of it
+   * living in chrome.css (11.4's real requirement).
+   */
+  usePageFootBand('.bp-foot__actions');
 
   /** A character scene on this page: parlor visit or a moment with Dewey. */
   const [visiting, setVisiting] = useState<CharacterId | null>(null);

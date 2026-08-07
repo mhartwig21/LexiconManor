@@ -385,7 +385,12 @@ export default function SudokuView({
           <p className="ch-done__title">The ledger balances</p>
           <p className="ch-done__line">
             {state.costedMistakes === 0 && state.hintsBought === 0
-              ? 'Not one figure struck out. The lexicographer would have hated how easy you made that look.'
+              // ROUND 16 (COZY pillar): her best moment used to be delivered
+              // as the dead man's hatred — "would have hated how easy you made
+              // that look" — which routes praise through someone's contempt
+              // and uses the exact register the tone gate blocks in display
+              // words. The compliment belongs to her now.
+              ? 'Not one figure struck out. He kept his ledgers exactly this clean, and it took him thirty years.'
               : 'Every column carries its nine. The house is square again.'}
           </p>
           {peak && (

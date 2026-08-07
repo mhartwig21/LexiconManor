@@ -82,7 +82,21 @@ function testimonyNodeFor(fragmentId: string) {
 // ---------------------------------------------------------------------------
 
 describe('solve channels — strict, authored, never a silent fallback', () => {
-  it('the Study pays definition lines; every other puzzle room pays engravings', () => {
+  /**
+   * ROUND 17 (REVIEW_AA §5.1) — THIS TEST USED TO BE TITLED AFTER THE BUG.
+   *
+   * It read "the Study pays definition lines; every other puzzle room pays
+   * engravings", which is what the code did and what the review measured the
+   * cost of: welding the channel to the fragment KIND put all six definition
+   * lines — the best prose in the repository — behind a `rarity: 'rare'`,
+   * `gemCost: 2`, tier-3-only room, and left the ordinary word games able to
+   * pay exactly two fragments in the whole volume.
+   *
+   * The mapping asserted below never was about kinds; it is ROOM KIND → CHANNEL,
+   * and it is unchanged. WHAT each channel pays is now the volume's authoring
+   * decision, asserted against the authored JSON further down this file.
+   */
+  it('the Study solves into its own channel; every other word game into the lintel', () => {
     expect(solveChannelFor('forgotten-word')).toBe(STUDY_CHANNEL);
     for (const kind of ['hive', 'twistle', 'word-web', 'cipher', 'crossword', 'sudoku'] as const) {
       expect(solveChannelFor(kind)).toBe(LINTEL_CHANNEL);
@@ -111,12 +125,41 @@ describe('solve channels — strict, authored, never a silent fallback', () => {
 
   it('the daily valve reads the spine, so it survives a reload and resets at dawn', () => {
     const line = volume.fragments.find((f) => isChannelFragment(f, STUDY_CHANNEL))!;
-    const spine = [{ day: 3, at: 0, event: { type: 'fragment-found', fragmentId: line.id } as const }];
+    const spine = [{
+      day: 3, at: 0,
+      event: { type: 'fragment-found', fragmentId: line.id, via: 'study' } as const,
+    }];
     expect(solveChannelFiledToday(volume, STUDY_CHANNEL, spine, 3)).toBe(true);
     expect(solveChannelFiledToday(volume, STUDY_CHANNEL, spine, 4)).toBe(false);
     // Channels are valved independently — a solved Library does not silence
     // the Study for the rest of the evening.
     expect(solveChannelFiledToday(volume, LINTEL_CHANNEL, spine, 3)).toBe(false);
+  });
+
+  /**
+   * ═══ ROUND-18 REGRESSION: THE VALVE COUNTS THE TAP, NOT THE PAGE ═══════════
+   *
+   * REVIEW_AA §5.1's re-route put lintel-labelled pages into the violet drip so
+   * the ordinary word games would carry the spine. That silently broke the
+   * valve, which asked "did a page BELONGING to this channel arrive today?" —
+   * so *entering a mystery room* spent the lintel's daily allowance, and on
+   * exactly the days the player drew the good room, solving every board in the
+   * house paid nothing. §5.1's own finding, reintroduced through a side door.
+   *
+   * The valve asks about the FAUCET now (`fragment-found.via`), which is what
+   * "has this channel paid today" always meant.
+   */
+  it('a violet draw does NOT spend the solve channel it happens to be labelled with', () => {
+    const drip = volume.fragments.find(
+      (f) => isChannelFragment(f, LINTEL_CHANNEL) && f.sourceRoomCategory === 'mystery',
+    );
+    expect(drip, 'volume-1 must still route a lintel page through the violet drip').toBeTruthy();
+    // Filed by walking into a violet room: no `via`, because no channel paid.
+    const spine = [{
+      day: 3, at: 0, event: { type: 'fragment-found', fragmentId: drip!.id } as const,
+    }];
+    expect(solveChannelFiledToday(volume, LINTEL_CHANNEL, spine, 3)).toBe(false);
+    expect(solveChannelFiledToday(volume, STUDY_CHANNEL, spine, 3)).toBe(false);
   });
 });
 
@@ -136,8 +179,14 @@ const DRIVERS: Record<RoomCategory, (fragmentId: string) => void> = {
     store().collectFragmentForRoom('mystery');
   },
   puzzle: (fragmentId) => {
+    // Which room has to be solved to file this page is the fragment's CHANNEL,
+    // not its kind. Before §5.1 the two were the same fact and this line read
+    // `frag.kind === 'definition-line' ? 'forgotten-word' : 'hive'` — which
+    // silently stopped driving the real emitter the moment a definition line
+    // was routed to the lintel, and would have reported "no puzzle channel can
+    // file it" for a page an ordinary solve now files on day 1.
     const frag = volume.fragments.find((f) => f.id === fragmentId)!;
-    const kind = frag.kind === 'definition-line' ? 'forgotten-word' : 'hive';
+    const kind = isChannelFragment(frag, STUDY_CHANNEL) ? 'forgotten-word' : 'hive';
     store().recordEvent({ type: 'room-solved', cellKey: '2,1', kind, tier: 1, perfect: false });
   },
   parlor: (fragmentId) => {
@@ -257,13 +306,52 @@ describe('the Study feeds the meta-mystery directly', () => {
     expect(frag.kind).toBe('definition-line');
   });
 
-  it('a solved word game other than the Study hands over an engraving', () => {
+  /**
+   * ═══ REVIEW_AA §5.1, AS A TEST ════════════════════════════════════════════
+   *
+   * This assertion used to read `.kind).toBe('engraving')` — i.e. it pinned the
+   * defect. The review's finding, verbatim: *"All six definition lines — the
+   * best prose in the repository, the 'In my mother Latin I was a little pool'
+   * register — are behind violet draws and a rare tier-3 room. The game is
+   * choosing not to give the player its best writing."*
+   *
+   * Its "done looks like" is one sentence — *"at least one definition line
+   * reachable by a normal anchor solve on day 1"* — so that is what is asserted
+   * here, on the real store, on day 1, from a tier-1 Library on the ground
+   * floor: the cheapest, commonest room in the house, solved once.
+   */
+  it('§5.1 — a day-1 anchor solve hands over a line of the definition', () => {
     store().recordEvent({
       type: 'room-solved', cellKey: '1,1', kind: 'word-web', tier: 1, perfect: false,
     });
     const filed = found();
     expect(filed.length).toBe(1);
-    expect(volume.fragments.find((f) => f.id === filed[0])!.kind).toBe('engraving');
+    const frag = volume.fragments.find((f) => f.id === filed[0])!;
+    expect(
+      frag.kind,
+      `a day-1 Library solve filed ${frag.id} (${frag.kind}); §5.1 wants a definition line`,
+    ).toBe('definition-line');
+    // …and it is legible the instant it lands. A page the lintel pays is one
+    // she solved for, never one of the violet rooms' sealed leaves.
+    expect(store().volume.foundFragmentIds).toContain(frag.id);
+  });
+
+  /**
+   * The counterweight, so §5.1 cannot be "fixed" by routing the whole volume
+   * through one channel: the lintel must carry the SPINE, not the lot. The
+   * violet rooms and the parlor keep authored stock of their own, or the seal
+   * mechanic and the testimony channel become decoration.
+   */
+  it('the re-route did not empty the other channels', () => {
+    const byChannel = (id: string) => volume.fragments.filter(
+      (f) => (f as { channel?: string }).channel === id,
+    ).length;
+    const violet = volume.fragments.filter((f) => f.sourceRoomCategory === 'mystery').length;
+    const parlor = volume.fragments.filter((f) => f.sourceRoomCategory === 'parlor').length;
+    expect(byChannel('lintel'), 'the lintel channel is starved again').toBeGreaterThanOrEqual(6);
+    expect(byChannel('study'), 'the Study pays nothing').toBeGreaterThanOrEqual(2);
+    expect(violet, 'the violet rooms have nothing of their own to keep').toBeGreaterThanOrEqual(6);
+    expect(parlor, 'the characters have nothing to say').toBeGreaterThanOrEqual(4);
   });
 
   it('one per day per channel — a five-room evening is not a firehose', () => {

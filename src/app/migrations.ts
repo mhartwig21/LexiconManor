@@ -24,6 +24,10 @@ import type { SaveV2 } from './save';
 import { createEmptySaveV2, emptySeenPuzzleIds, V1_BACKUP_KEY } from './save';
 import { VIEWED_BACKFILL_FLAG, viewedFragmentFlag } from '../engine/journal';
 import { checkKeepsakes, keepsakeFacts, pruneUnknownKeepsakeIds } from '../engine/achievements';
+import { getRoomAdapter } from '../engine/rooms/registry';
+import { isUsableSnapshot } from '../engine/rooms/room-session';
+import type { PlacedRoom } from '../engine/types';
+import { ROOM_PUZZLE_KINDS, type RoomPuzzleKind } from '../engine/rooms/room-puzzle';
 
 const V1_MODES: readonly GameMode[] = ['word-web', 'hive', 'twistle', 'forgotten-word'];
 
@@ -131,11 +135,59 @@ function backfillKeepsakes(save: SaveV2): SaveV2 {
 }
 
 /**
+ * IN-ROOM PROGRESS (REVIEW_AA §5.3), on every load.
+ *
+ * The schema step for room sessions. `PlacedRoom.session` was added inside the
+ * v2 envelope rather than as a new top-level field (engine/rooms/room-session.ts
+ * says why), so a save written before it exists needs no filling in — the field
+ * is optional and absent means "no board in progress". What a load DOES owe is
+ * the other direction: a save that carries a session the running build can no
+ * longer honour.
+ *
+ * Three ways that happens, all real:
+ *   - the build changed an adapter's state shape and bumped its `stateVersion`
+ *     (a wrong-shaped state fed back into `reduce` is a crash on her phone);
+ *   - the envelope itself changed version;
+ *   - the room kind is not registered in this build at all (an agent's adapter
+ *     landed, wrote sessions, and was reverted).
+ *
+ * All three are pruned HERE, once, at the door, rather than being caught
+ * defensively at every read: after `migrate()` the app never holds a session
+ * record it would refuse to use. The room then opens fresh — a board lost to a
+ * version bump is a bad evening; a half-parsed board is a bug report.
+ *
+ * Idempotent, and it never touches anything else on the PlacedRoom.
+ */
+function migrateRoomSessions(save: SaveV2): SaveV2 {
+  const manor = save.manor;
+  if (!manor?.rooms) return save;
+
+  const kinds = new Set<string>(ROOM_PUZZLE_KINDS);
+  let changed = false;
+  const rooms: Record<string, PlacedRoom> = {};
+  for (const [key, placed] of Object.entries(manor.rooms)) {
+    if (!placed || placed.session === undefined) {
+      if (placed) rooms[key] = placed;
+      continue;
+    }
+    const adapter = kinds.has(placed.kind) ? getRoomAdapter(placed.kind as RoomPuzzleKind) : undefined;
+    if (isUsableSnapshot(placed.session, adapter)) {
+      rooms[key] = placed;
+      continue;
+    }
+    const { session: _dropped, ...rest } = placed;
+    rooms[key] = rest;
+    changed = true;
+  }
+  return changed ? { ...save, manor: { ...manor, rooms } } : save;
+}
+
+/**
  * Normalize any raw parsed save (v1, v2, partial, or garbage) into a SaveV2.
  * Every load path — localStorage AND importSaveCode — runs through here.
  */
 export function migrate(raw: unknown): SaveV2 {
-  return backfillKeepsakes(backfillViewedFragments(migrateShape(raw)));
+  return migrateRoomSessions(backfillKeepsakes(backfillViewedFragments(migrateShape(raw))));
 }
 
 function migrateShape(raw: unknown): SaveV2 {

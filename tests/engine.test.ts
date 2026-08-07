@@ -6,8 +6,11 @@ import {
   computeChronicleStats,
   computeLifetimeTotals,
   createRng,
+  cribIndices,
+  cribLetters,
   definitionForLevel,
   glossForLevel,
+  maxGuessesForLevel,
   findPath,
   foundWordScores,
   gainMindPoints,
@@ -265,10 +268,32 @@ describe('forgotten word', () => {
     expect(definitionForLevel(fwPuzzle, 3)).toBe(fwPuzzle.definitions.riddle);
   });
 
-  it('the plain gloss is free at tier 1 and nowhere else', () => {
+  // ROUND 14 (AAA 3.5 / 3.8) — the help no longer shrinks as the word gets
+  // harder. The gloss used to be tier 1's alone, so the plain meaning was
+  // withheld exactly where the word was least likely to be known; and the
+  // whisper allowance ran 5/4/3 against a tier-3 shelf whose median headword
+  // sits at corpus rank 157,866. Both knobs are off the rarity axis now: the
+  // riddle headline and the crib carry the difficulty instead.
+  it('the plain gloss is free at every tier', () => {
     expect(glossForLevel(fwPuzzle, 1)).toBe(fwPuzzle.definitions.plain);
-    expect(glossForLevel(fwPuzzle, 2)).toBeNull();
-    expect(glossForLevel(fwPuzzle, 3)).toBeNull();
+    expect(glossForLevel(fwPuzzle, 2)).toBe(fwPuzzle.definitions.plain);
+    expect(glossForLevel(fwPuzzle, 3)).toBe(fwPuzzle.definitions.plain);
+  });
+
+  it('never gives fewer than five whispers, however rare the word', () => {
+    for (const level of [1, 2, 3]) {
+      expect(maxGuessesForLevel(level), `tier ${level}`).toBeGreaterThanOrEqual(5);
+    }
+    expect(maxGuessesForLevel(1)).toBeGreaterThan(maxGuessesForLevel(3));
+  });
+
+  it('pre-reveals letters in proportion to obscurity, and none for a common word', () => {
+    const rare = { ...fwPuzzle, word: 'ANTIMACASSAR', obscurity: 'archaic' as const };
+    expect(cribIndices(rare).length).toBeGreaterThanOrEqual(3);
+    expect(cribLetters(rare).filter(Boolean).join('')).toBe('AICS');
+    expect(cribIndices({ ...fwPuzzle, obscurity: 'common' as const })).toEqual([]);
+    // Deterministic: the same entry always opens with the same letters (3.3).
+    expect(cribIndices(rare)).toEqual(cribIndices(rare));
   });
 
   it('accepts the word case/punctuation-insensitively', () => {
@@ -278,10 +303,12 @@ describe('forgotten word', () => {
     expect(state.status).toBe('won');
   });
 
-  it('loses after maxGuesses wrong answers, fewer at higher levels', () => {
+  it('loses after maxGuesses wrong answers — five of them, even at the top', () => {
     let s = startForgottenWord(fwPuzzle, 3);
-    expect(s.maxGuesses).toBe(3);
-    for (const g of ['RAINSTORM', 'DOWNPOURS', 'SPLASHING']) s = submitGuess(fwPuzzle, s, g).state;
+    expect(s.maxGuesses).toBe(5);
+    for (const g of ['RAINSTORM', 'DOWNPOURS', 'SPLASHING', 'RAINDROPS', 'SPRINKLED']) {
+      s = submitGuess(fwPuzzle, s, g).state;
+    }
     expect(s.status).toBe('lost');
   });
 

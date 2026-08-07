@@ -79,8 +79,9 @@ export interface SudokuRoomState {
   engine: SudokuEngineState;
   /**
    * Board states before each undoable edit, oldest first — the room's UNDO
-   * (round 6). Bounded at UNDO_DEPTH; session-only (RoomHost holds room state
-   * in memory, so this never reaches the save file).
+   * (round 6). Bounded at UNDO_DEPTH, which is now also a save-size bound:
+   * as of §5.3 the whole room state IS persisted, so undo survives a reload
+   * along with the board it can walk back.
    */
   history: SudokuEngineState[];
   /** Charged balances — the room's only costed claim. */
@@ -154,6 +155,15 @@ export const sudokuAdapter: RoomPuzzleAdapter<SudokuPuzzle, SudokuRoomState, Sud
     const anyFresh = SUDOKU_POOL.filter((p) => !seen.has(p.id));
     return anyFresh.length > 0 ? pick(rng, anyFresh) : pick(rng, SUDOKU_POOL);
   },
+
+  // §5.3 — pencil marks, their write order, inked figures and the undo stack
+  // are all plain JSON data (numbers and arrays of numbers), so the whole
+  // `SudokuRoomState` — history included — rides the save verbatim. The
+  // "session-only, never reaches the save file" note on `history` and on
+  // `SudokuEngineState.pencilOrder` was true of the old build and is not now:
+  // an evicted tab used to cost the player a 20-minute expert board.
+  find: (id) => SUDOKU_POOL.find((p) => p.id === id),
+  stateVersion: 1,
 
   start(puzzle: SudokuPuzzle, _ctx: RoomContext): SudokuRoomState {
     return {

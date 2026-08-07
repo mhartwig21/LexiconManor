@@ -1,0 +1,8 @@
+[
+  {"cipher":{"C":"A","F":"B","X":"R","U":"D","K":"N","Q":"E","L":"S","Y":"W","N":"O","Z":"U"}},
+  {"shot":"cipher-filled"},
+  {"eval":"document.body.innerText.slice(0,600)"},
+  {"text":"Develop the print","after":3000},
+  {"shot":"cipher-solved"},
+  {"eval":"document.body.innerText.slice(0,900)"}
+]

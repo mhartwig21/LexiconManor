@@ -1,0 +1,5 @@
+[
+  {"click":"[aria-label^='Draft a room on the first landing']","after":1800},
+  {"shot":"draft2"},
+  {"eval":"document.body.innerText.slice(0,900)"}
+]

@@ -1,0 +1,7 @@
+[
+  {"click":"[aria-label*='half landing']","after":2200},
+  {"click":".bp-card","has":"Still Room","after":3000},
+  {"eval":"document.body.innerText.slice(0,600)"},
+  {"eval":"Array.from(document.querySelectorAll('[role=button]')).map(function(e){return e.getAttribute('aria-label')})"},
+  {"shot":"stillroom"}
+]

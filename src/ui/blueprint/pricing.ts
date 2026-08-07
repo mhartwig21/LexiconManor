@@ -140,3 +140,54 @@ export function lockedRefusalAnnouncement(attempt: number, toRow: number, keyCos
   return `${lockedRefusalLine(attempt)} The door onto ${rowName(toRow)} stays padlocked — ` +
     `it opens with ${key}. Nothing was spent.`;
 }
+
+/**
+ * ── THE LANDING'S ANSWER (round-13 blocker, AAA 4.6 / 4.16 / 11.7) ─────────
+ *
+ * THE REFUSAL AT THE TOP WAS NOT SILENT — IT WAS WRONG. Driven at 390×844:
+ * standing at (2,5) in a room whose doors are S+E, the Sanctum was simply not
+ * tappable — `.bp-sanctumhit` was absent, with nothing drawn to say why — and
+ * `/sanctum` printed "…only from the landing at the top of the stairs — you
+ * will have to climb to it" while she was standing on that exact landing,
+ * having just paid 22+ steps for it. Nothing in the game — copy, blueprint or
+ * card face — had ever stated that the LANDING ROOM must open north.
+ *
+ * So the most expensive tap in the campaign now answers, on the surface she is
+ * looking at, and it answers the true thing: the climb was not wasted, the
+ * PLAN was wrong, and the remedy is a plan that opens north — which the draft
+ * card now stamps (`sanctumDraftStamp`). Same shape as the padlock's answer
+ * above, and deliberately so: one metaphor per verb (AAA 6.16). Nothing is
+ * spent here either.
+ */
+/**
+ * Length budget, same as `LOCKED_REFUSAL_LINES`: the drawn note ground is 324
+ * user units and the sheet lays out ~1 unit per CSS px, so a line must stay
+ * inside ~48 characters at the 16px body serif or it clips (AAA 1.5/6.6).
+ * `tests/grid.test.ts` pins it.
+ */
+export const LANDING_REFUSAL_LINES: readonly string[] = [
+  'This room turns its back on the Sanctum.',
+  'Still no door north out of this one.',
+  'Up here, take a plan that opens north.',
+];
+
+export function landingRefusalLine(attempt: number): string {
+  const lines = LANDING_REFUSAL_LINES;
+  return lines[Math.max(0, Math.floor(attempt)) % lines.length]!;
+}
+
+/** The accessible name for the Sanctum when the landing room seals it off. */
+export const LANDING_SEALED_LABEL =
+  'The Sanctum — this room has no north door, so it cannot be reached from here';
+
+/** What assistive tech hears; the drawn line is terse, this one states the gate. */
+export function landingRefusalAnnouncement(attempt: number): string {
+  return `${landingRefusalLine(attempt)} You are on the Sanctum landing, but the room ` +
+    'you drafted here drew no north door, so its sealed door stays shut. ' +
+    'A plan that opens north will reach it. Nothing was spent.';
+}
+
+/** The card-face stamp for a plan drafted into the Sanctum landing (AAA 4.6). */
+export function sanctumDraftStamp(opensNorth: boolean): string {
+  return opensNorth ? 'Opens onto the Sanctum' : 'Turns its back on the Sanctum';
+}

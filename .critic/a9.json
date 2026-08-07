@@ -1,0 +1,12 @@
+[
+  {"click":"button.chr-scene__btn","has":"Begin the day","after":2500},
+  {"click":".dlg__box","after":1600},
+  {"shot":"b2"},
+  {"click":".dlg__box","after":1600},
+  {"shot":"b3"},
+  {"click":".dlg__box","after":1600},
+  {"shot":"b4"},
+  {"click":".dlg__box","after":1600},
+  {"shot":"b5"},
+  {"dump":true}
+]

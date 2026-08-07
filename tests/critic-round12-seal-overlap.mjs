@@ -1,6 +1,6 @@
 /**
- * tests/critic-round12-seal-overlap.mjs — the round-12 live critic's evidence
- * for two findings the per-route walk cannot see.
+ * tests/critic-round12-seal-overlap.mjs — THE NOTICE-OVER-A-PLAYFIELD GATE
+ * (AAA 11.27, and 11.27(d) in particular: "every surface, every round").
  *
  * A. THE SEAL LANDS ON THE BOARD. `.mom-layer`'s clearance is
  *    chrome-h + tap-target + 12 (plus `--page-nav-floor` where a surface
@@ -10,6 +10,25 @@
  *    a covered control dismisses the seal instead of doing what it says
  *    (AAA 11.2, and the §0.5 escape #4 shape, in a surface nobody re-probed).
  *
+ * A2. ROUND 15 — AND THE SAME THING ON THE BLUEPRINT, WHICH THIS FILE DID NOT
+ *    WALK. The round-12 table was parameterised by ROOM KIND and nothing else:
+ *    seven rooms, one 375x667 hive check, no `/manor` row at any player row. So
+ *    when the blueprint's own controls moved into the seal's band — which they
+ *    do the moment she leaves the ground floor, because the sheet draws row 6
+ *    at the TOP of the glass — the gate had nothing to say. Measured live at
+ *    390x844 standing on the Sanctum landing with a plate grant up:
+ *    "Approach the Sanctum" [177,157,64,64] answered `button.mom` at its
+ *    centre, and a DRIVEN click there left `location.hash` unchanged and put
+ *    the notice away; at 375x667 both padlocked-door controls were covered at
+ *    their centres too, and those are COSTED (2 keys + the row's move price),
+ *    which 6.19 exempts nothing from.
+ *
+ *    Round 11 recorded "/manor was clean under the same probe" and it WAS —
+ *    on the ground floor. That is the whole lesson of §0.5 escape 4 and the
+ *    reason the walk below is parameterised by PLAYER POSITION as well as by
+ *    surface. A surface the gate does not name is a surface the round cannot
+ *    fail.
+ *
  * B. THE CABINET PLATE MARKER CLEARS ON OPENING, NOT ON VIEWING. The sheet's
  *    scroller is ~3200px tall in a 742px window; opening it writes
  *    `sys.plate.<id>` for EVERY unseen plate, including the ones two thousand
@@ -17,7 +36,12 @@
  *    shelf — uses an IntersectionObserver for exactly this reason.
  *
  * Harness rules: system Edge (`channel: 'msedge'`), ONE browser, closed in a
- * finally, 390x844 @2x and 375x667.
+ * finally, 390x844 @2x and 375x667. Round 15 moved it off `vite preview` onto
+ * the dev server its two sibling gates already use (tests/modal-hit-test.mjs,
+ * tests/navigation-live.mjs), so a green run is a statement about the tree and
+ * not about whatever `dist/` happened to be lying around — agents share this
+ * checkout, and a gate that silently tested a stale build is a gate that reads
+ * green for the wrong reason.
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
@@ -34,8 +58,18 @@ const PORT = await (async () => {
   throw new Error('no free port');
 })();
 const BASE = `http://localhost:${PORT}/LexiconManor/`;
-const server = spawn(process.execPath, [resolve(ROOT, 'node_modules/vite/bin/vite.js'), 'preview', '--port', String(PORT), '--strictPort'], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
-for (let i = 0; i < 60; i++) { try { const r = await fetch(BASE); if (r.ok) break; } catch { /* not up */ } await new Promise((r) => setTimeout(r, 500)); }
+const server = spawn(process.execPath, [resolve(ROOT, 'node_modules/vite/bin/vite.js'), '--config', resolve(ROOT, 'scripts/gate-vite.config.ts'), '--port', String(PORT), '--strictPort'], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
+/* Wait on vite SAYING it is up, then on the port answering. Agents share this
+   box and a cold transform of this tree can run well past a minute under load;
+   a fixed 60s poll turned into `net::ERR_CONNECTION_REFUSED` and a failure that
+   said nothing about the game. */
+await new Promise((res, rej) => {
+  const t = setTimeout(() => rej(new Error('vite did not start within 180s')), 180000);
+  server.stdout.on('data', (b) => { if (/ready in|Local:/.test(String(b))) { clearTimeout(t); res(); } });
+  server.stderr.on('data', (b) => process.stderr.write(`[vite] ${b}`));
+  server.on('exit', (c) => { clearTimeout(t); rej(new Error(`vite exited early (${c})`)); });
+});
+for (let i = 0; i < 120; i++) { try { const r = await fetch(BASE); if (r.ok) break; } catch { /* not up */ } await new Promise((r) => setTimeout(r, 500)); }
 
 const log = (...a) => console.log('[seal]', ...a);
 let failures = 0;
@@ -48,14 +82,29 @@ try {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   const page = await ctx.newPage();
   page.setDefaultTimeout(20000);
+  /**
+   * Put every queued seal away.
+   *
+   * ROUND 15: over a PLAYFIELD the card is `pointer-events: none` by design —
+   * that IS the fix — so clicking at its centre falls straight through onto the
+   * board and walks the player somewhere. The drain waits out the dwell there
+   * (5.6s alone, 4.0s behind a queue) instead of tapping, which is exactly what
+   * the player who does not know she can tap experiences.
+   */
   const drain = async () => {
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 60; i++) {
       const b = await page.$('.mom');
       if (!b) return;
+      const inert = await page.evaluate(
+        () => getComputedStyle(document.querySelector('.mom')).pointerEvents === 'none',
+      ).catch(() => true);
+      if (inert) { await page.waitForTimeout(300); continue; }
       const r = await b.boundingBox();
+      if (!r) return;
       await page.mouse.click(r.x + r.width / 2, r.y + r.height / 2);
       await page.waitForTimeout(150);
     }
+    fail('a moment seal never retired — the walk cannot continue from a dirty glass');
   };
 
   await page.goto(`${BASE}?seal=${Date.now()}`, { waitUntil: 'domcontentloaded' });
@@ -204,6 +253,144 @@ try {
   await page.evaluate(() => window.__manorStore.getState().leaveRoom());
   await page.waitForTimeout(400);
 
+  /* ---------- A2. THE BLUEPRINT, BY PLAYER ROW (round-15 blocker) --------
+     Parameterised by WHERE SHE IS STANDING, not by which screen it is. The
+     blueprint's controls are the same controls at every row; what changes is
+     which of them the seal's fixed band is sitting on, and that is a function
+     of the storey. Rows 0 / 3 / 5 at both viewports: the ground floor (where
+     round 11 looked, and where the band is empty parchment), a middle storey,
+     and the Sanctum landing — the campaign's milestone screen (4.10d), which is
+     precisely when a plate, a keepsake or a fragment lands.
+     ---------------------------------------------------------------------- */
+  {
+    /** Stand at `row` with a walked column of rooms beneath her. */
+    const standAt = (r) => page.evaluate((row) => {
+      const store = window.__manorStore;
+      const s = store.getState();
+      const rooms = { ...s.manor.rooms };
+      for (let i = 1; i <= row; i++) {
+        rooms[`2,${i}`] = {
+          cardId: 'reading-nook', cell: { col: 2, row: i },
+          doors: ['N', 'S'], solved: false, kind: 'parlor',
+        };
+      }
+      store.setState({ manor: { ...s.manor, rooms, playerCell: { col: 2, row } } });
+    }, r);
+
+    /* A DISTINCT grant per probe, for the round-12 reason: re-filling an
+       already-unlocked plate announces nothing, and a row with no seal on the
+       glass measures nothing while printing a pass.
+       Chosen at RUNTIME from what is still locked rather than written down as a
+       fixed list — the room walk above already spends eight plates, so a fixed
+       list silently collides with it (measured: four of six /manor rows raised
+       no seal at all on the first run of this section) and every collision is a
+       row that proves nothing. */
+    const GRANT_POOL = [
+      'orangery', 'long-gallery', 'strong-room', 'gem-vault', 'key-cabinet',
+      'dumbwaiter', 'greenhouse', 'morning-room', 'drawing-room', 'archive',
+      'observatory', 'bureau', 'boxroom', 'winter-garden', 'map-room',
+    ];
+    const grantSomethingNew = () => page.evaluate((pool) => {
+      const s = window.__manorStore.getState();
+      const id = pool.find((c) => !s.cabinet.unlockedCardIds.includes(c));
+      if (id) s.unlockCard(id);
+      return id ?? null;
+    }, GRANT_POOL);
+
+    for (const vp of [{ width: 390, height: 844 }, { width: 375, height: 667 }]) {
+      await page.setViewportSize(vp);
+      await page.waitForTimeout(350);
+      for (const row of [0, 3, 5]) {
+        await drain();
+        await standAt(row);
+        await page.waitForTimeout(350);
+        const grant = await grantSomethingNew();
+        if (!grant) {
+          fail('/manor walk: every plate in the grant pool is already unlocked — this section can no longer raise a seal and must be repaired, not skipped');
+          break;
+        }
+        await page.waitForTimeout(550);
+
+        const label = `/manor ${vp.width}x${vp.height} row ${row}`;
+        const probe = await page.evaluate(() => {
+          const mom = document.querySelector('.mom');
+          const mb = mom?.getBoundingClientRect();
+          const covered = [];
+          // Every cell, ghost door, padlocked door and Sanctum door on the
+          // sheet, plus the footer's nav row — the blueprint's whole control
+          // surface, not a sample of it.
+          const all = [...document.querySelectorAll('.bp-sheet .bp-hit, .bp-foot__actions button')];
+          for (const b of all) {
+            const r = b.getBoundingClientRect();
+            if (r.width < 1 || r.height < 1) continue;
+            const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+            if (t && !(b === t || b.contains(t))) {
+              const cls = typeof t.className === 'string' ? t.className : (t.className?.baseVal ?? '');
+              covered.push({
+                aria: b.getAttribute('aria-label') || (b.textContent || '').trim().slice(0, 24),
+                box: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)],
+                by: `${t.tagName.toLowerCase()}.${String(cls).split(' ')[0]}`,
+              });
+            }
+          }
+          return {
+            mom: mb ? [Math.round(mb.x), Math.round(mb.y), Math.round(mb.width), Math.round(mb.height)] : null,
+            covered, total: all.length,
+          };
+        });
+
+        if (!probe.mom) {
+          fail(`${label}: no seal mounted after granting "${grant}" — this row cannot prove anything and must be repaired, not skipped`);
+          continue;
+        }
+        log(`  ${label}: seal ${JSON.stringify(probe.mom)} over ${probe.total} controls`);
+        if (probe.covered.length === 0) {
+          ok(`${label}: the seal covers none of the ${probe.total} blueprint controls`);
+        } else {
+          fail(`${label}: ${probe.covered.length}/${probe.total} controls covered — first ${JSON.stringify(probe.covered[0])} (AAA 11.2 / 11.27)`);
+        }
+
+        /* THE CONSEQUENCE, DRIVEN, at the door the whole campaign points at.
+           The sweep above is necessary and not sufficient: a card that stops
+           taking taps passes it by construction. What has to be true is that a
+           tap aimed at a control UNDER the card performs that control's
+           action. Before the fix this printed the defect — the hash did not
+           move and the seal went away. */
+        if (row === 5) {
+          const door = await page.evaluate(() => {
+            const d = document.querySelector('.bp-sanctumhit');
+            if (!d) return null;
+            const r = d.getBoundingClientRect();
+            const mom = document.querySelector('.mom')?.getBoundingClientRect();
+            return {
+              x: r.x + r.width / 2, y: r.y + r.height / 2,
+              underSeal: Boolean(mom && r.y + r.height / 2 > mom.top && r.y + r.height / 2 < mom.bottom),
+            };
+          });
+          if (!door) {
+            fail(`${label}: no "Approach the Sanctum" control on the landing — the driven half of this row cannot run`);
+          } else {
+            const before = await page.evaluate(() => location.hash);
+            await page.mouse.click(door.x, door.y);
+            await page.waitForTimeout(500);
+            const after = await page.evaluate(() => ({ hash: location.hash, seal: Boolean(document.querySelector('.mom')) }));
+            if (/sanctum/.test(after.hash)) {
+              ok(`${label}: a tap at the Sanctum door (under the seal: ${door.underSeal}) opened ${after.hash}`);
+            } else {
+              fail(`${label}: a tap at the Sanctum door left the hash at "${after.hash}" (was "${before}", seal still up: ${after.seal}) — the tap was eaten (AAA 11.2 / 11.27 / §0.5 escape 4)`);
+            }
+            await page.evaluate(() => { location.hash = '#/'; });
+            await page.waitForSelector('.bp-sheet', { timeout: 8000 }).catch(() => {});
+            await page.waitForTimeout(300);
+          }
+        }
+      }
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(300);
+    await drain();
+  }
+
   /* ---------- B. the cabinet marker clears on OPEN, not on VIEW ---------- */
   await page.evaluate(() => {
     const s = window.__manorStore.getState();
@@ -271,4 +458,7 @@ try {
   server.kill();
 }
 log(failures ? `DONE WITH ${failures} FAILURE(S)` : 'DONE clean');
-process.exit(0);
+/* ROUND 15: this read `process.exit(0)` unconditionally, so the gate that owns
+   AAA 11.27 could count its own failures out loud and still hand the runner a
+   green exit code. A gate that cannot fail is not a gate. */
+process.exit(failures ? 1 : 0);

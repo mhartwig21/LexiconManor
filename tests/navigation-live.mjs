@@ -83,7 +83,7 @@ const row = (surface, exit, hit, dest, notes) =>
 
 const server = spawn(
   process.execPath,
-  [resolve(ROOT, 'node_modules/vite/bin/vite.js'), '--port', String(PORT), '--strictPort'],
+  [resolve(ROOT, 'node_modules/vite/bin/vite.js'), '--config', resolve(ROOT, 'scripts/gate-vite.config.ts'), '--port', String(PORT), '--strictPort'],
   { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] },
 );
 const serverUp = new Promise((res, rej) => {
@@ -234,10 +234,21 @@ try {
     if (await page.$('.dlg')) fail('a dialogue scene never closed — the walk cannot continue');
   }
 
-  /** Tap through the morning card + Bramble to a live `exploring` blueprint. */
+  /**
+   * Tap through the morning card + Bramble to a live `exploring` blueprint.
+   * Idempotent about where it starts (round 15): section 1b presses "Begin the
+   * first day" itself, and the front step cannot be returned to afterwards —
+   * the save is dual-written to an IndexedDB mirror (`app/platform/
+   * persistence.ts`), so clearing localStorage and reloading restores the day
+   * from the mirror and the fresh-save branch never renders again.
+   */
   async function reachExploring() {
-    await page.waitForSelector('.bp-btn--seal', { timeout: 20000 });
-    await page.click('.bp-btn--seal');
+    const phase = await page.evaluate(() => window.__manorStore?.getState().day?.phase ?? null);
+    if (phase === 'exploring') { await page.waitForSelector('.chr-retire', { timeout: 8000 }); return; }
+    if (!phase) {
+      await page.waitForSelector('.bp-btn--seal', { timeout: 20000 });
+      await page.click('.bp-btn--seal');
+    }
     await page.waitForSelector('.chr-scene', { timeout: 8000 });
     await page.click('.chr-scene__btn');
     await page.waitForSelector('.dlg', { timeout: 8000 });
@@ -344,6 +355,58 @@ try {
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(250);
+
+  /* ======================================================================
+     1b. THE BOOT SMOKE (AAA 11.1 / §0.4.1) — PRESS THE ONE BUTTON.
+
+     ROUND 15, and it is the reason this row exists: the app was DEAD ON
+     ARRIVAL. `engine/manor/grid.ts` called `randInt` in `deweyCell` and
+     imported only `createRng`, so tapping "Begin the first day" threw
+     `ReferenceError: randInt is not defined` out of BlueprintSheet, React
+     unmounted the whole tree, and the screen went blank —
+     `document.querySelectorAll('button')` returned ZERO controls on a surface
+     with no address bar and no reload, with the store already advanced to
+     `phase: 'morning'` so the save was stranded mid-day.
+
+     The walk below reaches `exploring` and would have timed out waiting for
+     `.chr-scene`, which is a failure that reads as "the harness is slow". This
+     row asks the question directly and answers it in one line: press the
+     button a first-time player presses, then count the controls and read the
+     page errors. A blank screen photographs exactly like a working one
+     (§0.1.7) and it also *times out* exactly like a busy dev server; neither
+     is an acceptable way to learn the game does not start.
+     ====================================================================== */
+  log('');
+  log('— 1b. the first tap of the game —');
+  {
+    const errorsBefore = errors.length;
+    await page.waitForSelector('.bp-btn--seal', { timeout: 20000 });
+    await page.click('.bp-btn--seal');
+    // No selector to wait on: waiting on one is how a crash becomes a timeout.
+    await page.waitForTimeout(1200);
+    const alive = await page.evaluate(() => ({
+      buttons: [...document.querySelectorAll('button')]
+        .filter((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0; })
+        .map((b) => (b.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 24)),
+      rootChildren: (document.getElementById('root') ?? document.getElementById('app') ?? document.body)
+        .childElementCount,
+      phase: window.__manorStore?.getState().day?.phase ?? null,
+    }));
+    const thrown = errors.slice(errorsBefore);
+    check(alive.buttons.length > 0,
+      `"Begin the first day": the game boots to ${alive.buttons.length} live controls [${alive.buttons.slice(0, 4).join(', ')}] at phase ${alive.phase}`,
+      `"Begin the first day": ZERO controls on the glass at phase ${alive.phase} — the tree is gone and the installed PWA has no reload (AAA 11.1). ${thrown[0] ?? 'no page error captured'}`);
+    check(alive.rootChildren > 0,
+      'the React tree is still mounted after the first tap',
+      'the app root is EMPTY after the first tap — React unmounted the tree');
+    check(thrown.length === 0,
+      'the first tap threw nothing',
+      `the first tap threw: ${thrown.slice(0, 2).join(' | ')}`);
+    row('front step → first day', '"Begin the first day"', `${alive.buttons.length} controls`, `phase ${alive.phase}`, thrown.length ? 'THREW' : 'clean');
+  }
+  // No return to the front step: the save is mirrored into IndexedDB, so
+  // clearing localStorage and reloading restores this day rather than the
+  // fresh-save branch. Section 2 picks the walk up from `morning`.
 
   /* ======================================================================
      2. THE RETIRE CONTROL (AAA 11.7 / 11.2 / 11.3 / 6.19)

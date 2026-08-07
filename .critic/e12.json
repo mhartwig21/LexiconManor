@@ -1,0 +1,5 @@
+[
+  {"click":"button.backlink","after":1500},
+  {"shot":"map-state"},
+  {"eval":"Array.from(document.querySelectorAll('[role=button]')).map(function(e){return e.getAttribute('aria-label')})"}
+]

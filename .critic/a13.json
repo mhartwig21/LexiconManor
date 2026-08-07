@@ -1,0 +1,4 @@
+[
+  {"shot":"bp"},
+  {"eval":"Array.from(document.querySelectorAll('button')).map(b=>({c:b.className,t:b.innerText.replace(/\n/g,' / ').slice(0,90),d:b.disabled,r:b.getBoundingClientRect().toJSON()}))"}
+]
