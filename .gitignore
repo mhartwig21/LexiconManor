@@ -11,6 +11,11 @@ content/data/*
 # judged differently in CI than on a developer's machine, which is how a
 # gate stops being a gate.
 !content/data/count_1w.txt
+# cmudict is pulled in by generate-wordweb via content/lib/phonetics.
+# All four corpora are vendored deliberately: the generators and their gates
+# must judge identically on a laptop and on a runner, and three deploys in a
+# row failed because they did not.
+!content/data/cmudict.dict
 *.log
 
 # ── Review / playtest scratch ──────────────────────────────────────────────
