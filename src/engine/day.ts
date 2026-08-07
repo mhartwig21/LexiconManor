@@ -13,9 +13,12 @@
  * (app/slices/day.ts) is the only caller that mutates the store.
  */
 
-import type { DayPhase, DayRecord, DayState, DraftOffer, StepLedger } from './types';
+import type {
+  DayPhase, DayRecord, DayState, DraftOffer, ManorState, StepLedger,
+} from './types';
 import type { DayEndCause, RecordedEvent } from './events';
 import { createRng } from './rng';
+import { wingCharacterOf } from './manor/wings';
 import {
   createLedger, firstMorningPot, highestRowVisited, ledgerTotal, rowName, stepsRefunded,
   stepsSpent, teaBonus, STEP_TABLE,
@@ -143,6 +146,12 @@ export function buildDayRecord(
   recentEvents: readonly RecordedEvent[],
   cause: DayEndCause,
   endedAt: number,
+  /**
+   * The floorplan as she leaves it (REVIEW_AA §5.7). Optional so every existing
+   * caller — and every test fixture written before the wings — still compiles
+   * and simply records a house with no wings argued.
+   */
+  manor?: ManorState | null,
 ): DayRecord {
   const today = recentEvents.filter((e) => e.day === day.day);
   const count = (type: string) => today.filter((e) => e.event.type === type).length;
@@ -159,6 +168,14 @@ export function buildDayRecord(
     // both back as prose and prints neither when it is zero.
     stepsRefunded: stepsRefunded(ledger),
     highestRow: highestRowVisited(ledger),
+    // ── THE ONE THING THE NIGHT DOES NOT TAKE (REVIEW_AA §5.7) ────────────
+    // The manor itself is wiped four lines later in `endDay`. What is written
+    // down here is not the house, it is the ARGUMENT she made about it: which
+    // wing she kept the working rooms in, which one she read in. Tomorrow's
+    // deck reads the series back (engine/manor/wings.ts `rememberedWings`), so
+    // the floorplan resets and the knowledge of it does not — the Blue Prince
+    // property the review says we do not attempt (§7).
+    wings: wingCharacterOf(manor ?? null),
   };
 }
 

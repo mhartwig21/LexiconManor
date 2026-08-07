@@ -8,8 +8,60 @@
  * slice (deckFor).
  *
  * ── DOOR LAYOUT VOCABULARY ────────────────────────────────────────────────
- *   dead-end ['N'] · corridor ['N','S'] · corner ['N','E'] ·
- *   tee ['N','E','W'] · cross ['N','E','S','W']
+ *   dead-end ['N'] · corridor ['N','S'] ·
+ *   corner-L ['N','E'] · corner-R ['N','W'] ·
+ *   tee ['N','E','W'] · fork-L ['N','E','S'] · fork-R ['N','W','S'] ·
+ *   cross ['N','E','S','W']
+ *
+ * ── ROUND-20 REBALANCE (REVIEW_AA §5.7, "make drafting a decision") ────────
+ *
+ * THE REVIEW'S CHARGE: *"7 of 30 cards can ONLY be dead ends and 13 can roll
+ * one; the manor comes out a corridor."* Measured off this file with
+ * `scripts/draft-shape.ts` before the change: 7 pure dead-end cards, 13 of 41
+ * plans (31.7%) a dead end, and — the finding neither reviewer had — **every
+ * single corner in the deck was the same corner.** `['N','E']` under the rigid
+ * rotation (grid.ts THE ORIENTATION CONVENTION) always turns you LEFT: walking
+ * north it opens west, walking west it opens south, walking south it opens
+ * east. Twelve of the deck's forty-one plans were that one turn, and the deck
+ * held no mirror of it at all, so the house could bend one way and only one
+ * way. A floorplan generator with a single handedness does not produce
+ * floorplans; it produces a spiral and a price list.
+ *
+ * The rebalance, and what each half is for:
+ *
+ *   - **`CORNER_R` exists.** Every card that carried a corner now carries both,
+ *     so a corner is a real fork in the plan rather than a fixed turn, and the
+ *     card face (which draws the post-rotation truth since round 9) is what
+ *     tells her which she is being handed.
+ *   - **`FORK_L`/`FORK_R`** — carry on AND branch. The deck had exactly one
+ *     plan (`CROSS`, on one card) that both continued and opened a wing; a
+ *     `TEE` branches but never carries on, and a `CORRIDOR` carries on but
+ *     never branches, so a manor could not be both deep and wide without
+ *     spending a whole storey on the turn. Both forks are placed only on cards
+ *     whose `tierRange` stops at 2 — see the landing note below.
+ *   - **Pure dead ends: 7 → 3**, and the three that stay are the three rooms
+ *     whose FICTION is the end of the house — the Study (the mystery's engine,
+ *     rare, tier 3, gem 2), the Gem Vault (a vault has one door) and the
+ *     Observatory (the top of a tower). Dead-end PLANS fall 31.7% → 20.3%.
+ *     The tension the review asked us to keep is kept: twelve of the deck's
+ *     twenty-eight cards can still roll one (the review counted thirteen), a bad
+ *     hand can still seal a wing, and the difference is that it is now a hand you
+ *     can read and usually a hand you have an answer to.
+ *   - **A sealed room now PAYS** (`SEALED_ROOM_BOUNTY`, below) — the review's
+ *     own "done looks like": *"the card face says 'this room seals itself' and
+ *     the player takes it anyway because it pays for it."*
+ *
+ * THE ONE NUMBER HELD FIXED, DELIBERATELY: the Sanctum landing. AAA 4.10d/e
+ * are measured through `landingDraft`, which rolls a real offer at (2,5), and
+ * only a plan containing canonical `'S'` opens north when the landing is
+ * entered from below. So every tier-3-eligible card's *share* of S-bearing
+ * plans is unchanged by this rebalance — the Conservatory kept two plans and
+ * swapped a corner rather than gaining a third, the Counting House likewise,
+ * the Darkroom traded its dead end for a corner rather than adding one — and
+ * both forks live on tier-1–2 cards that the landing never sees. Measured
+ * before and after: 19.0% of tier-3-eligible plans open north, 63.4% of bare
+ * offers up there contain one. Unmoved, on purpose: the campaign arc is not
+ * this item's to retune.
  *
  * These are CANONICAL plans, drawn as you stand at the threshold: **`'N'` is
  * the door you walk in through.** Placement turns the whole plan rigidly so
@@ -32,8 +84,14 @@ import { KEY_SUPPLY } from '../economy/steps';
 
 const DEAD_END: Dir[] = ['N'];
 const CORRIDOR: Dir[] = ['N', 'S'];
-const CORNER: Dir[] = ['N', 'E'];
+/** Turns LEFT in play: entered walking north it opens west. */
+const CORNER_L: Dir[] = ['N', 'E'];
+/** Its mirror — turns RIGHT: entered walking north it opens east. */
+const CORNER_R: Dir[] = ['N', 'W'];
 const TEE: Dir[] = ['N', 'E', 'W'];
+/** Carries on and branches once. Tier 1–2 cards only (see the landing note). */
+const FORK_L: Dir[] = ['N', 'E', 'S'];
+const FORK_R: Dir[] = ['N', 'W', 'S'];
 const CROSS: Dir[] = ['N', 'E', 'S', 'W'];
 
 // ---------------------------------------------------------------------------
@@ -45,11 +103,11 @@ const PUZZLE_CARDS: RoomCard[] = [
   { id: 'library', name: 'The Library', category: 'puzzle', puzzleKind: 'word-web',
     doorLayouts: [TEE, CORRIDOR], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'reading-room', name: 'The Reading Room', category: 'puzzle', puzzleKind: 'word-web',
-    doorLayouts: [CORNER, DEAD_END], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
+    doorLayouts: [CORNER_L, CORNER_R, DEAD_END], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
   { id: 'conservatory', name: 'The Conservatory', category: 'puzzle', puzzleKind: 'hive',
-    doorLayouts: [CORNER, CORRIDOR], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
+    doorLayouts: [CORNER_R, CORRIDOR], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'orangery', name: 'The Orangery', category: 'puzzle', puzzleKind: 'hive',
-    doorLayouts: [TEE], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
+    doorLayouts: [TEE, CORNER_R], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
   { id: 'gallery', name: 'The Gallery', category: 'puzzle', puzzleKind: 'twistle',
     doorLayouts: [CORRIDOR, TEE], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'long-gallery', name: 'The Long Gallery', category: 'puzzle', puzzleKind: 'twistle',
@@ -68,9 +126,9 @@ const PUZZLE_CARDS: RoomCard[] = [
   // stay common/free, and between them cover pass-through layouts (the
   // Darkroom picks up a corridor so blue micro rooms aren't all dead ends).
   { id: 'darkroom', name: 'The Darkroom', category: 'puzzle', puzzleKind: 'cipher',
-    doorLayouts: [DEAD_END, CORNER, CORRIDOR], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
+    doorLayouts: [CORNER_L, CORNER_R, CORRIDOR], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
   { id: 'linen-closet', name: 'The Linen Closet', category: 'puzzle', puzzleKind: 'crossword',
-    doorLayouts: [DEAD_END, CORNER], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
+    doorLayouts: [CORNER_L, CORNER_R, DEAD_END], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
 
   // The ledger rooms (sudoku). Playtest round: the owner's expert-baseline
   // request, so BOTH cards draw from a pool with no easy bin — the Counting
@@ -79,9 +137,9 @@ const PUZZLE_CARDS: RoomCard[] = [
   // Room is the premium upper-row card that never offers anything softer
   // than tier 2. Same anchor pattern as Library/Reading Room.
   { id: 'counting-house', name: 'The Counting House', category: 'puzzle', puzzleKind: 'sudoku',
-    doorLayouts: [CORRIDOR, CORNER], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
+    doorLayouts: [CORRIDOR, CORNER_R], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'strong-room', name: 'The Strong Room', category: 'puzzle', puzzleKind: 'sudoku',
-    doorLayouts: [DEAD_END], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
+    doorLayouts: [DEAD_END, CORNER_R], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -90,19 +148,19 @@ const PUZZLE_CARDS: RoomCard[] = [
 
 const UTILITY_CARDS: RoomCard[] = [
   { id: 'kitchen', name: 'The Kitchen', category: 'utility',
-    doorLayouts: [CORNER, TEE], tierRange: [1, 2], gemCost: 0, rarity: 'standard' },
+    doorLayouts: [CORNER_L, CORNER_R, TEE], tierRange: [1, 2], gemCost: 0, rarity: 'standard' },
   { id: 'larder', name: 'The Larder', category: 'utility',
-    doorLayouts: [DEAD_END], tierRange: [1, 2], gemCost: 0, rarity: 'common' },
+    doorLayouts: [DEAD_END, CORNER_R], tierRange: [1, 2], gemCost: 0, rarity: 'common' },
   { id: 'boot-room', name: 'The Boot Room', category: 'utility',
-    doorLayouts: [CORRIDOR], tierRange: [1, 1], gemCost: 0, rarity: 'common' },
+    doorLayouts: [CORRIDOR, CORNER_L], tierRange: [1, 1], gemCost: 0, rarity: 'common' },
   { id: 'gem-vault', name: 'The Gem Vault', category: 'utility',
     doorLayouts: [DEAD_END], tierRange: [1, 3], gemCost: 0, rarity: 'unusual' },
   { id: 'key-cabinet', name: 'The Key Cabinet', category: 'utility',
-    doorLayouts: [DEAD_END, CORNER], tierRange: [1, 3], gemCost: 0, rarity: 'unusual' },
+    doorLayouts: [CORNER_L, CORNER_R, DEAD_END], tierRange: [1, 3], gemCost: 0, rarity: 'unusual' },
   { id: 'dumbwaiter', name: 'The Dumbwaiter', category: 'utility',
-    doorLayouts: [CORRIDOR], tierRange: [1, 2], gemCost: 1, rarity: 'unusual' },
+    doorLayouts: [CORRIDOR, FORK_L], tierRange: [1, 2], gemCost: 1, rarity: 'unusual' },
   { id: 'still-room', name: 'The Still Room', category: 'utility',
-    doorLayouts: [CORNER], tierRange: [1, 2], gemCost: 0, rarity: 'common' },
+    doorLayouts: [CORNER_R, TEE], tierRange: [1, 2], gemCost: 0, rarity: 'common' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -111,13 +169,13 @@ const UTILITY_CARDS: RoomCard[] = [
 
 const PARLOR_CARDS: RoomCard[] = [
   { id: 'reading-nook', name: 'The Reading Nook', category: 'parlor',
-    doorLayouts: [DEAD_END, CORNER], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
+    doorLayouts: [DEAD_END, CORNER_L, CORNER_R], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'post-room', name: 'The Post Room', category: 'parlor',
-    doorLayouts: [CORRIDOR], tierRange: [1, 2], gemCost: 0, rarity: 'standard' },
+    doorLayouts: [CORRIDOR, TEE], tierRange: [1, 2], gemCost: 0, rarity: 'standard' },
   { id: 'greenhouse', name: 'The Greenhouse', category: 'parlor',
-    doorLayouts: [CORNER], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
+    doorLayouts: [CORNER_L, CORNER_R], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'morning-room', name: 'The Morning Room', category: 'parlor',
-    doorLayouts: [TEE], tierRange: [1, 2], gemCost: 0, rarity: 'unusual' },
+    doorLayouts: [TEE, FORK_R], tierRange: [1, 2], gemCost: 0, rarity: 'unusual' },
   { id: 'drawing-room', name: 'The Drawing Room', category: 'parlor',
     doorLayouts: [CORRIDOR, TEE], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
 ];
@@ -147,15 +205,15 @@ const PARLOR_CARDS: RoomCard[] = [
  */
 const MYSTERY_CARDS: RoomCard[] = [
   { id: 'archive', name: 'The Archive', category: 'mystery',
-    doorLayouts: [DEAD_END], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
+    doorLayouts: [DEAD_END, CORNER_R], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'chart-room', name: 'The Chart Room', category: 'mystery',
-    doorLayouts: [CORNER], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
+    doorLayouts: [CORNER_L, CORNER_R], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
   { id: 'observatory', name: 'The Observatory', category: 'mystery',
     doorLayouts: [DEAD_END], tierRange: [2, 3], gemCost: 2, rarity: 'rare' },
   { id: 'bureau', name: 'The Bureau', category: 'mystery',
-    doorLayouts: [DEAD_END, CORNER], tierRange: [1, 2], gemCost: 1, rarity: 'rare' },
+    doorLayouts: [CORNER_L, CORNER_R, DEAD_END], tierRange: [1, 2], gemCost: 1, rarity: 'rare' },
   { id: 'boxroom', name: 'The Boxroom', category: 'mystery',
-    doorLayouts: [DEAD_END], tierRange: [3, 3], gemCost: 2, rarity: 'rare' },
+    doorLayouts: [DEAD_END, CORNER_R], tierRange: [3, 3], gemCost: 2, rarity: 'rare' },
 ];
 
 export const BASE_DECK: readonly RoomCard[] = [
@@ -183,7 +241,7 @@ export const UNLOCKABLE_CARDS: readonly RoomCard[] = [
   { id: 'winter-garden', name: 'The Winter Garden', category: 'puzzle', puzzleKind: 'hive',
     doorLayouts: [CROSS], tierRange: [1, 3], gemCost: 0, rarity: 'unusual', unlockedBy: 'posy.quest1.done' },
   { id: 'map-room', name: 'The Map Room', category: 'mystery',
-    doorLayouts: [CORNER], tierRange: [1, 3], gemCost: 1, rarity: 'unusual', unlockedBy: 'posy.deputy' },
+    doorLayouts: [CORNER_L, CORNER_R], tierRange: [1, 3], gemCost: 1, rarity: 'unusual', unlockedBy: 'posy.deputy' },
 ];
 
 /** Cards whose gating flag is set — the live unlock path (AAA 11.17). */
@@ -316,6 +374,49 @@ export function payoutNoticeFor(cardId: string): { title: string; toast: string 
   const effect = UTILITY_EFFECTS[cardId];
   if (!effect) return null;
   return { title: cardById(cardId)?.name ?? cardId, toast: effect.toast };
+}
+
+// ---------------------------------------------------------------------------
+// The sealed room (REVIEW_AA §5.7)
+// ---------------------------------------------------------------------------
+
+/**
+ * ── A SEALED ROOM KEEPS SOMETHING ──────────────────────────────────────────
+ *
+ * The review's own statement of done for the drafting layer: *"Dead ends drop
+ * to a small, telegraphed, deliberately-chosen minority — the card face says
+ * 'this room seals itself' AND THE PLAYER TAKES IT ANYWAY BECAUSE IT PAYS FOR
+ * IT."* The first two clauses landed in round 9 (the honest diagram) and in the
+ * deck rebalance above. This is the third, and without it the other two only
+ * make dead ends rarer, never *chooseable*.
+ *
+ * WHY A GEM AND NOT A STEP. A dead end costs her a FRONTIER, not a walk, so
+ * paying her in walking money would be answering the wrong complaint — and
+ * `STEP_TABLE` is the one surface the whole 4.10 campaign arc is calibrated
+ * against (AAA 4.10b's clock, 4.10d's `reserveToTop`), which this item has no
+ * business moving. A gem buys the reroll at the NEXT door and the premium cards
+ * she could not otherwise afford, so the loop closes on itself exactly where
+ * the frustration is: the room that sealed her wing pays for the look that
+ * un-seals the next one. Gems are also the one currency `simulateDay` does not
+ * model (`deckMixAt`'s own note: affordability is not modelled), so the bounty
+ * cannot silently move a published band.
+ *
+ * It is EARNED, not free: `sealsItself` is a pure function of (card, day, cell,
+ * heading) and the draft card face draws it before she taps
+ * (ui/blueprint/DraftModal.tsx), so taking a sealing plan for the gem is a
+ * decision with a stated price, which is the whole of §5.7.
+ */
+export const SEALED_ROOM_BOUNTY = {
+  gems: 1,
+  /** The card-face stamp, said before she spends. */
+  stamp: 'Seals itself · +1 gem',
+  eyebrow: 'A room with one door',
+  toast: 'Nothing has been through here in years. +1 gem',
+} as const;
+
+/** The notice the rail shows when a drafted plan turns out to seal itself. */
+export function sealedRoomNotice(): { title: string; toast: string } {
+  return { title: SEALED_ROOM_BOUNTY.eyebrow, toast: SEALED_ROOM_BOUNTY.toast };
 }
 
 /** Cards whose face promises a key — the padlock arc's supply (AAA 4.10d). */

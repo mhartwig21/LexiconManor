@@ -26,7 +26,8 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  CARRY_OVER_EFFECTS, UTILITY_EFFECTS, carryOverFrom, payoutNoticeFor,
+  CARRY_OVER_EFFECTS, SEALED_ROOM_BOUNTY, UTILITY_EFFECTS, carryOverFrom,
+  payoutNoticeFor, sealedRoomNotice,
 } from '../src/engine/manor/deck';
 import { allRankUpLines, rankUpNotice } from '../src/ui/chrome/rank-up-lines';
 import { momentForEvent } from '../src/ui/moment/moments';
@@ -94,6 +95,16 @@ const TABLES: NoticeTable[] = [
     accessor: 'dawnCarryOverLines',
     rendered: () => carryOverFrom(Object.keys(CARRY_OVER_EFFECTS)).lines,
     authored: () => Object.values(CARRY_OVER_EFFECTS).map((e) => e.dawnLine),
+  },
+  {
+    // REVIEW_AA §5.7 — the dead end that pays. Registered the day it was
+    // authored, because "a payout the app applies and never mentions" is
+    // exactly the round-6 escape this file exists to make impossible, and a
+    // silent gem is the same defect as a silent one was in 2026-08.
+    what: 'the sealed-room bounty (SEALED_ROOM_BOUNTY.toast)',
+    accessor: 'sealedRoomNotice',
+    rendered: () => [sealedRoomNotice().toast],
+    authored: () => [SEALED_ROOM_BOUNTY.toast],
   },
   {
     what: 'affinity rank-up acknowledgements (rank-up-lines LINES)',

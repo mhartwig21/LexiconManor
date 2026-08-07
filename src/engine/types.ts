@@ -430,4 +430,12 @@ export interface DayRecord {
   stepsRefunded?: number;
   /** Highest 0-based row she stood on (see `rowName` in economy/steps for prose). */
   highestRow?: number;
+  /**
+   * What this evening's floorplan made of each wing (engine/manor/wings.ts).
+   * Optional exactly like `highestRow`: a save written before the wings existed
+   * simply remembers no house yet. This is the ONLY thing about a night's
+   * manor that outlives it (REVIEW_AA §5.7 — "let something survive the
+   * night"), and `rememberedWings` derives the whole memory from the series.
+   */
+  wings?: Partial<Record<'west' | 'stair' | 'east', 'puzzle' | 'parlor'>>;
 }

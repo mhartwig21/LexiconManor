@@ -163,6 +163,39 @@
 }
 .bp-tierpips path { fill: var(--ink-faint); }
 
+/* THE WINGS (round 20, REVIEW_AA §5.7). The plot's own boundaries, in survey
+   ink — quieter than a wall, louder than the graph crosses, so the eye reads
+   three parts of a house rather than five identical columns. The plate above
+   each names the wing; the tag under it says what the papers remember it FOR,
+   and is drawn stronger once they have committed than while tonight's
+   floorplan is still arguing for it (the parenthesised, forming state). */
+.bp-wingseam {
+  stroke: var(--ink-faint);
+  stroke-width: 0.8;
+  stroke-dasharray: 2 7;
+  opacity: 0.5;
+  fill: none;
+}
+.bp-wing__name {
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+  text-anchor: middle;
+  fill: var(--ink-faint);
+}
+.bp-wing__tag {
+  font-family: var(--font-display);
+  font-size: 7.5px;
+  letter-spacing: 0.16em;
+  text-anchor: middle;
+  fill: var(--ink-faint);
+  opacity: 0.7;
+}
+.bp-wing__tag--kept {
+  fill: var(--gilt);
+  opacity: 1;
+}
+
 /* THE RATE CARD (AAA 4.6/4.10): what each storey costs to walk into, in the
    surveyor's margin. Quiet ink — it is reference, not an interactable — but
    tabular so the column of numbers reads as a scale at a glance. */
@@ -744,6 +777,24 @@
 .bp-card__sanctum--opens {
   color: var(--gilt);
   font-weight: 600;
+}
+/* THE SEALING PLAN, PRICED (round 20, REVIEW_AA §5.7). A one-door room is a
+   real cost — it spends a frontier — so the stamp is gilt, the same "this is
+   what you get" ink as the Sanctum's opening plan and the sheet's live door
+   handle: it names a PAYOUT she is choosing, never a mistake she is making.
+   The words carry it on their own, so grayscale loses nothing (AAA 6.3). */
+.bp-card__seals {
+  font-size: var(--text-sm);
+  color: var(--gilt);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+/* What the papers remember this wing for — said once, above the three cards. */
+.bp-modal__wing {
+  margin: 0.35rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  font-style: italic;
 }
 /* The rule said once, above the three cards that answer it. */
 .bp-modal__sanctum {

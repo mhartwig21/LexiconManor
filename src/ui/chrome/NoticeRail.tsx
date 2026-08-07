@@ -33,7 +33,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useManorStore } from '../../app/store';
-import { payoutNoticeFor } from '../../engine/manor/deck';
+import { payoutNoticeFor, sealedRoomNotice } from '../../engine/manor/deck';
 
 interface Notice {
   id: number;
@@ -75,6 +75,17 @@ export default function NoticeRail() {
         if (payout) {
           made.push({
             id: nextId.current++, eyebrow: payout.title, line: payout.toast, tone: 'payout',
+          });
+        }
+        // REVIEW_AA §5.7 — a plan that turns its back on the house pays a gem,
+        // and the gem is SAID. The card face already stamped the price before
+        // she tapped (DraftModal); this is the house keeping that promise out
+        // loud, off the spine, on whatever screen she is standing on.
+        if (event.sealed) {
+          const sealedNotice = sealedRoomNotice();
+          made.push({
+            id: nextId.current++, eyebrow: sealedNotice.title,
+            line: sealedNotice.toast, tone: 'payout',
           });
         }
       }

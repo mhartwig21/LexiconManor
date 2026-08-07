@@ -27,7 +27,14 @@ export interface GuessCloseness {
 export type GameEvent =
   | { type: 'day-started'; day: number }
   | { type: 'day-ended'; day: number; cause: DayEndCause }
-  | { type: 'room-drafted'; cellKey: string; cardId: string; category: RoomCategory }
+  /**
+   * `sealed` (REVIEW_AA §5.7): the plan she took turned its back on the house —
+   * its only live door is the one she walked in by. Carried on the SPINE rather
+   * than announced at the call site, because that is how the notice rail learns
+   * about it without the manor slice knowing what a notice is (AAA 11.10/11.11).
+   * Optional: an event recorded before the bounty existed simply says nothing.
+   */
+  | { type: 'room-drafted'; cellKey: string; cardId: string; category: RoomCategory; sealed?: boolean }
   | { type: 'room-solved'; cellKey: string; kind: RoomPuzzleKind; tier: Tier; perfect: boolean }
   | { type: 'room-abandoned'; cellKey: string; kind: RoomPuzzleKind }
   /** Big in-room moments characters react to (AAA 5.1): pangram, Full Bloom, … */

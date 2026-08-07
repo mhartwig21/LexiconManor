@@ -47,9 +47,30 @@ from v2 carry over (see §10).
 - Rooms are 1×1 cells with door openings on 1–4 walls. A door drawn against the manor's
   outer wall or an existing wall is dead. Drafting is only offered at a door you're
   standing at, into an empty adjacent cell.
-- **Rank pressure:** rooms drafted in higher rows draw from higher-tier puzzle pools and
-  cost more gems for premium picks. This is the difficulty progression — it's spatial,
-  visible, and chosen by the player.
+- **Rank pressure (the vertical axis):** rooms drafted in higher rows draw from
+  higher-tier puzzle pools and cost more gems for premium picks. This is the difficulty
+  progression — it's spatial, visible, and chosen by the player.
+- **Wings (the horizontal axis)** — *new in round 20, REVIEW_AA §5.7 / AAA 4.20.* The
+  five columns are three wings: the **West Wing** (cols 0–1), the **Stair Hall**
+  (col 2, where the Entrance Hall and the sealed Sanctum both stand), and the **East
+  Wing** (cols 3–4). Until round 20 the horizontal axis meant *nothing*: a room paid
+  exactly the same wherever it stood, so the optimal manor was the shortest path to
+  the top and the review's two players both finished with a column. Now:
+  - two or more rooms of one category in a wing, with no tie, give that wing a
+    **character** tonight — blue (*the reading half of the house*) or yellow
+    (*where the household sits*);
+  - at dusk each wing's character is written into the day record and the manor is
+    wiped as usual. A wing that has ended the same way on **two** evenings, by a
+    margin, is **remembered** — that is the one thing about a night's floorplan that
+    outlives it (§9);
+  - a remembered wing **draws true**: cards of its character surface more often
+    behind its doors (a weight, never a filter — the draft stays a decision).
+  - Green and violet can never be a wing's character, and both exclusions are
+    measured rather than tasteful: a mystery wing would let a player farm the drip
+    by geography and would move AAA 4.10g's published violet share; a permanent
+    working wing is a permanent step raise by geography, i.e. a retune of
+    `STEP_TABLE` under another name, measured at 9.7 minutes a night against the
+    published 10–15. See `engine/manor/wings.ts` and AAA 4.20 for both derivations.
 - The blueprint view is the *only* view: parchment sheet, inked room outlines, the
   player as a small token. Entering a room zooms the flat blueprint to a room card /
   puzzle screen. Reuse the v2 parchment map art direction wholesale.
@@ -102,9 +123,25 @@ from v2 carry over (see §10).
 
 ## 5. Drafting
 
-- 3 cards per draft. Each card shows: room name, door layout, puzzle type icon, tier,
-  reward preview, and gem cost (0 for common rooms).
+- 3 cards per draft. Each card shows: room name, the **post-rotation door layout it
+  will actually be laid with** (round 9 — the diagram is the decision), puzzle type
+  icon, tier, reward preview, and gem cost (0 for common rooms).
 - **Reroll** once per draft for 1 gem.
+- **Door plans** (round 20, AAA 4.19): dead-end · corridor · corner-L · corner-R ·
+  tee · fork-L · fork-R · cross. Before round 20 the deck held one corner and no
+  mirror of it — and under the rigid rotation `['N','E']` turns you LEFT every time,
+  so the house could bend one way only. Seven of thirty cards could ONLY be a dead
+  end; three can now, and they are the three rooms whose fiction is the end of the
+  house (the Study, the Gem Vault, the Observatory). Dead-end plans fell 31.7% → 20.3%
+  and offers containing a real shape choice rose 66.4% → 79.2%.
+- **A room that seals itself pays for it** — `SEALED_ROOM_BOUNTY`, **+1 gem**, stamped
+  on the card face *before* she taps. A dead end costs her a frontier, not a walk, so
+  the compensation is the currency that buys the reroll at the next door; it is
+  deliberately never steps, because the step table is what the whole campaign arc is
+  calibrated against.
+- **Every draft door names the wing it opens into** (AAA 4.21), and the offer sheet
+  names the storey — one vocabulary, after the review found a door labelled "the half
+  landing" opening a sheet headed "the ground floors".
 - Room categories (color-coded on the card, colorblind-safe shapes as well):
   - **Puzzle rooms (blue)** — the word games; the bulk of the deck.
   - **Parlor rooms (yellow)** — a character is here; dialogue scene + their service.
@@ -236,7 +273,11 @@ that keep "roguelike" feeling like "coming home."
 **Resets nightly:** manor layout, steps, gems, keys, room solve-states.
 **Persists forever:** journal + all clue fragments, character affinity & dialogue seen,
 floorplan cabinet (unlocked room cards), chronicles/stats, achievements, cosmetic manor
-touches (flowers Fern plants, etc.), current volume state.
+touches (flowers Fern plants, etc.), current volume state, **and the papers' memory of
+the wings** (§3, round 20 — REVIEW_AA §5.7's "let something survive the night"). The
+floorplan itself still goes; what is kept is the *argument* she made about it, derived
+from `chronicles.dayRecords[].wings`, so there is no new save field and a wiped campaign
+forgets the house exactly as it forgets everything else.
 
 Permanent *power* progression stays gentle (this is a puzzle game, not a stat game):
 mostly new room cards, small start-of-day step bumps from affinity, and quality-of-life

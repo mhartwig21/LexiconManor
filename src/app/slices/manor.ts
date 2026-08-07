@@ -27,10 +27,13 @@ import type { ManorStore } from '../store';
 import type { SaveV2 } from '../save';
 import {
   canMoveTo, cellKey, createManor, deweyCell, draftTargets, neighbor,
-  resolveDoors, roomAt, roomSeed, rowTier, sameCell,
+  resolveDoors, roomAt, roomSeed, rowTier, sameCell, sealsItself,
 } from '../../engine/manor/grid';
-import { carryOverFrom, deckFor, UTILITY_EFFECTS } from '../../engine/manor/deck';
+import {
+  carryOverFrom, deckFor, SEALED_ROOM_BOUNTY, UTILITY_EFFECTS,
+} from '../../engine/manor/deck';
 import { deweyProphecy, rollOffer } from '../../engine/manor/drafting';
+import { rememberedWings, type WingCharacters } from '../../engine/manor/wings';
 import { isDoorLocked, KEY_COST, type LockView } from '../../engine/manor/locks';
 import { doorsHeldOpen, sanctumAnswered } from '../../engine/manor/tube';
 import {
@@ -205,6 +208,24 @@ export function landingArcFor(
  * shut in one place and open in another (the round-13 `atSanctumDoor` lesson,
  * applied before the same defect gets a second chance).
  */
+/**
+ * ── THE PAPERS' MEMORY OF THE FLOORPLAN (round 20, REVIEW_AA §5.7) ─────────
+ *
+ * The review, against Blue Prince: *"the North wing is a spatial argument you
+ * conduct against the grid across dozens of runs, and the knowledge you
+ * accumulate is permanent even though the house is not… Lexicon Manor's
+ * floorplan is a corridor generator with a price list."*
+ *
+ * This is the seam that answers it, and it is deliberately the SAME shape as
+ * `landingArcFor` above: a pure derivation off `chronicles.dayRecords`, which
+ * the save already keeps, handed to the drafting engine as a WEIGHT. A wing she
+ * has ended the same way on two evenings draws true tomorrow — so the manor
+ * still resets at dusk while *where things are kept in it* does not.
+ */
+export function wingsFor(s: Pick<ManorStore, 'chronicles'>): WingCharacters {
+  return rememberedWings(s.chronicles.dayRecords);
+}
+
 export function lockViewFor(s: Pick<ManorStore, 'volume' | 'flags'>): LockView {
   return { heldOpen: doorsHeldOpen(s.volume.volumeId, s.flags) };
 }
@@ -221,7 +242,7 @@ export function deweyAnswer(
   // `affinities` is optional so callers that predate the key-access term keep
   // compiling; without it the prophecy simply reads the un-warmed weights.
   s: Pick<ManorStore, 'manor' | 'currencies' | 'cabinet'> &
-    Partial<Pick<ManorStore, 'affinities'>>,
+    Partial<Pick<ManorStore, 'affinities' | 'chronicles'>>,
 ): boolean {
   const manor = s.manor;
   if (!manor) return false;
@@ -231,6 +252,10 @@ export function deweyAnswer(
     declinedLastDraft: sess.declined,
     drawIndexFor: (key) => sess.drawIndex[key] ?? 0,
     keyAccess: keyAccessFor(s.affinities?.fern ?? 0),
+    // The prophecy rolls the SAME offers the real drafts will (round 20: the
+    // wing term included, or the cat would be honest about a deck the house
+    // no longer has).
+    wings: rememberedWings(s.chronicles?.dayRecords ?? []),
   });
 }
 
@@ -338,6 +363,8 @@ export const createManorSlice =
             keyAccess: keyAccessFor(get().affinities?.fern ?? 0),
             // The landing arc (round 13). Inert at every cell but (2,5).
             ...landingArcFor(get()),
+            // The wings (round 20). Inert until the papers remember one.
+            wings: wingsFor(get()),
           },
         );
         // ── THE WALK TO THE DOOR, PRICED AT *HER* ROW (AAA 4.6). ──────────
@@ -422,7 +449,20 @@ export const createManorSlice =
             roomKey: climbKey(cellKey(draftOffer.from), key),
           });
         }
-        get().recordEvent({ type: 'room-drafted', cellKey: key, cardId: card.id, category: card.category });
+        // ── THE SEALED ROOM PAYS (REVIEW_AA §5.7, deck.ts SEALED_ROOM_BOUNTY).
+        // Asked of the manor as it stood BEFORE the placement and with the same
+        // heading the card face drew with, so the stamp she read on the card and
+        // the gem she is handed are the same computation — the round-9 ruling
+        // about `resolveDoors`, applied to the other half of the same decision.
+        const sealed = sealsItself(doors, draftOffer.atDoor, manor, target);
+        if (sealed) {
+          set((s) => ({
+            currencies: { ...s.currencies, gems: s.currencies.gems + SEALED_ROOM_BOUNTY.gems },
+          }));
+        }
+        get().recordEvent({
+          type: 'room-drafted', cellKey: key, cardId: card.id, category: card.category, sealed,
+        });
         applyDraftEffects(placed, manor);
         // Mystery rooms yield their clue the moment she steps in: the volume's
         // deterministic drip (A7's collectFragmentForRoom, AAA 4.14). The UI
@@ -462,6 +502,7 @@ export const createManorSlice =
               gems: get().currencies.gems, declinedLastDraft: sess.declined, drawIndex,
               keyAccess: keyAccessFor(get().affinities?.fern ?? 0),
               ...landingArcFor(get()),
+              wings: wingsFor(get()),
             },
           ),
         });

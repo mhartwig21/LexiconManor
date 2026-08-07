@@ -7,7 +7,7 @@ import {
 } from '../src/engine/manor/drafting';
 import {
   BASE_DECK, cardById, deckFor, isKeyBearing, CARD_PREVIEWS, SCRIPTED_FIRST_DRAFT,
-  UTILITY_EFFECTS,
+  SEALED_ROOM_BOUNTY, UTILITY_EFFECTS,
 } from '../src/engine/manor/deck';
 import { isDoorLocked, KEY_COST } from '../src/engine/manor/locks';
 import { KEY_SUPPLY, moveAt } from '../src/engine/economy/steps';
@@ -21,7 +21,7 @@ import { createJournalSlice } from '../src/app/slices/journal';
 import { createMetaSlice } from '../src/app/slices/meta';
 import {
   cardOpensOntoSanctum, cellKey, createManor, deweyCell, DIRS, opposite, placeRoom, resolveDoors,
-  roomAt, rowTier, SANCTUM_DOOR_CELL,
+  roomAt, rowTier, sealsItself, SANCTUM_DOOR_CELL,
 } from '../src/engine/manor/grid';
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCategory } from '../src/engine/types';
 import { MANOR_COLS, MANOR_ROWS } from '../src/engine/types';
@@ -663,5 +663,93 @@ describe('the landing offer leans toward the door (round 13)', () => {
     const offer = rollOffer(
       DECK, manor, from, 'N', SANCTUM_DOOR_CELL, ctx({ gems: 2, sanctumMercy: true }));
     expect(offer.cards.some((c) => opensNorth(manor, c))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// THE SEALED ROOM PAYS (REVIEW_AA §5.7)
+// ---------------------------------------------------------------------------
+
+/**
+ * The review's own statement of done for this layer: *"Dead ends drop to a
+ * small, telegraphed, deliberately-chosen minority — the card face says 'this
+ * room seals itself' AND THE PLAYER TAKES IT ANYWAY BECAUSE IT PAYS FOR IT."*
+ *
+ * Round 9 made the card honest and the round-20 deck rebalance made the seal
+ * rare (32% of the deck's plans by geometry, 7.6% of placements once she reads
+ * the diagram — `tests/grid.test.ts`). Neither of those makes a dead end a
+ * CHOICE. The gem does, and these are the three things that have to be true of
+ * it: it is paid, it is paid from the same predicate the card face drew with,
+ * and it is small enough to stay a consolation rather than a strategy.
+ */
+describe('a room that seals itself keeps something (REVIEW_AA §5.7)', () => {
+  const sealingDraft = () => {
+    const store = makeStore();
+    store.getState().startDay();
+    store.getState().advanceDayPhase();
+    ensureManor();
+    return store;
+  };
+
+  it('hands her the bounty exactly when the placement seals, and never otherwise', () => {
+    for (let seed = 40; seed < 90; seed++) {
+      const store = sealingDraft();
+      const base = createManor(seed);
+      store.setState({
+        manor: base,
+        day: { ...store.getState().day!, day: 3, daySeed: seed },
+        currencies: { gems: 0, keys: 0, bookmarks: 0 },
+        ledger: { budget: 18, entries: [] },
+      });
+      store.getState().openDraft('N');
+      const offer = store.getState().draftOffer;
+      if (!offer) continue;
+      const target: Cell = { col: 2, row: 1 };
+      const card = offer.cards[0]!;
+      const willSeal = sealsItself(
+        resolveDoors(card, 'N', store.getState().manor!, target), 'N',
+        store.getState().manor!, target,
+      );
+      store.getState().chooseDraftCard(card.id);
+      const gems = store.getState().currencies.gems;
+      // Utility cards can also pay gems, so the assertion is one-directional
+      // for those and exact for every other card in the deck.
+      if (!UTILITY_EFFECTS[card.id]) {
+        expect(gems, `${card.id} @seed ${seed}`).toBe(willSeal ? SEALED_ROOM_BOUNTY.gems : 0);
+      }
+    }
+  });
+
+  it('says so on the spine, so the notice rail can speak without being told', () => {
+    // AAA 11.10/11.11: the manor slice must not know what a notice is. The
+    // round-6 escape was a payout applied in silence; `sealed` on the
+    // `room-drafted` event is how this one avoids being the next.
+    const store = sealingDraft();
+    const seed = 41;
+    store.setState({
+      manor: createManor(seed),
+      day: { ...store.getState().day!, day: 3, daySeed: seed },
+      ledger: { budget: 18, entries: [] },
+    });
+    store.getState().openDraft('N');
+    const offer = store.getState().draftOffer!;
+    store.getState().chooseDraftCard(offer.cards[0]!.id);
+    const drafted = store.getState().recentEvents
+      .map((e) => e.event).filter((e) => e.type === 'room-drafted');
+    expect(drafted).toHaveLength(1);
+    expect(typeof (drafted[0] as { sealed?: boolean }).sealed).toBe('boolean');
+  });
+
+  it('is telegraphed before she spends, in words, on the card', () => {
+    expect(SEALED_ROOM_BOUNTY.stamp).toMatch(/seals itself/i);
+    expect(SEALED_ROOM_BOUNTY.stamp).toContain(`+${SEALED_ROOM_BOUNTY.gems} gem`);
+  });
+
+  it('stays a consolation, not an income — one gem, and never a step', () => {
+    // Steps are the surface every published 4.10 band is calibrated against;
+    // this bounty must not touch them, or the campaign arc becomes this
+    // mechanic's business. One gem is a reroll at the next door.
+    expect(SEALED_ROOM_BOUNTY.gems).toBe(1);
+    expect(Object.keys(SEALED_ROOM_BOUNTY)).not.toContain('steps');
   });
 });

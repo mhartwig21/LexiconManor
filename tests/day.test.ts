@@ -179,6 +179,11 @@ describe('buildDayRecord (the chronicles bank)', () => {
       fragmentsFound: 1,
       stepsRefunded: 6,
       highestRow: 0,
+      // ROUND 20 (REVIEW_AA §5.7): the day record also keeps what she made of
+      // each wing. No manor was handed in here, so the papers learn nothing —
+      // and an empty object rather than `undefined` is the point: a day was
+      // recorded, and it argued for nothing.
+      wings: {},
     });
   });
 

@@ -19,6 +19,34 @@
  */
 
 import { moveAt, rowName } from '../../engine/economy/steps';
+import {
+  WING_CHARACTER_WORDS, WING_NAMES, type WingCharacter, type WingId,
+} from '../../engine/manor/wings';
+
+/**
+ * ── WHERE THIS DOOR GOES (round 20, REVIEW_AA §4 / §5.7) ───────────────────
+ *
+ * The review, on the three doors out of the Entrance Hall: *"two read 'Draft a
+ * room on the ground floor — 1 step' and one 'on the half landing.' Then the
+ * half-landing door opened a modal headed 'Three floorplans for the ground
+ * floors.' The labels still tell you nothing about the decision, and one of
+ * them is wrong."*
+ *
+ * Both halves are answered here. **Wrong**: the modal's heading took its words
+ * from `TIER_LABELS[tier]`, which is a three-row BAND ("the ground floors"),
+ * while the door label took its words from `rowName`, which is a STOREY ("the
+ * half landing") — two vocabularies for one place, and the modal's was the
+ * coarser. There is one now, and it is `rowName`'s. **Nothing about the
+ * decision**: the three doors differ in exactly one respect — the WING each one
+ * opens into (engine/manor/wings.ts) — so that is what the label leads with,
+ * followed by what the papers remember that wing for when they remember
+ * anything.
+ */
+export function wingWords(wing: WingId, character?: WingCharacter): string {
+  return character
+    ? `${WING_NAMES[wing]}, ${WING_CHARACTER_WORDS[character]}`
+    : WING_NAMES[wing];
+}
 
 /** "−3" — the ink stamp on a band or a target. */
 export function priceStamp(row: number): string {
@@ -74,19 +102,28 @@ export function draftPriceWords(fromRow: number, toRow: number): string {
     : `${priceWords(fromRow)} to look, ${total} in all if you take it`;
 }
 
-export function draftLabel(fromRow: number, toRow: number): string {
-  return `Draft a room on ${rowName(toRow)} — ${draftPriceWords(fromRow, toRow)}`;
+export function draftLabel(
+  fromRow: number, toRow: number, wing?: WingId, character?: WingCharacter,
+): string {
+  const place = wing
+    ? `into ${wingWords(wing, character)}, on ${rowName(toRow)}`
+    : `on ${rowName(toRow)}`;
+  return `Draft a room ${place} — ${draftPriceWords(fromRow, toRow)}`;
 }
 
 /** The padlocked-door variant: the key comes first, the price still gets said. */
 export function lockedDraftLabel(
   fromRow: number, toRow: number, keyCost: number, hasKey: boolean,
+  wing?: WingId, character?: WingCharacter,
 ): string {
   const key = `${keyCost} key`;
   const price = draftPriceWords(fromRow, toRow);
+  const place = wing
+    ? `into ${wingWords(wing, character)}, on ${rowName(toRow)}`
+    : `on ${rowName(toRow)}`;
   return hasKey
-    ? `Unlock this door and draft a room on ${rowName(toRow)} — ${key}, ${price}`
-    : `Padlocked door onto ${rowName(toRow)} — you will want ${key}; ${price} once it opens`;
+    ? `Unlock this door and draft a room ${place} — ${key}, ${price}`
+    : `Padlocked door ${place} — you will want ${key}; ${price} once it opens`;
 }
 
 /**

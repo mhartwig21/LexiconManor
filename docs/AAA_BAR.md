@@ -765,6 +765,104 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   `tests/volume-pacing.test.ts` (seeded campaigns through the real deck mix,
   letter grants and pity channel: median day-of-fragment-16 in 10–20, p10 ≥ 6).
 
+### The floorplan is an argument (REVIEW_AA §5.7 / §7 — round 20)
+
+*The review scored this layer **3/10**, the lowest sub-rating in the game, and the
+charge was specific: "7 of 30 cards can ONLY be dead ends and 13 can roll one; the
+manor comes out a corridor, nothing survives the night, and the three draft doors
+are labelled nearly identically." Against Blue Prince: "where you place a room IS
+the problem… the North wing is a spatial argument you conduct against the grid
+across dozens of runs, and the knowledge you accumulate is permanent even though
+the house is not. Lexicon Manor's floorplan is a corridor generator with a price
+list." These four clauses are what that answer is measured against;
+`scripts/draft-shape.ts` is the instrument, run against the live deck and the live
+`rollCards`.*
+
+- 4.19 **A draft usually presents a trade-off, not one live option and two duds.**
+  Measured over real offers at real doors during a seven-draft evening: **≥75% of
+  offers contain two or more plans that keep the path alive**, and **≤6% contain
+  none**. Measured before the round-20 deck rebalance / after: real choice
+  **66.4% → 79.2%**, no-choice **9.2% → 5.3%**, and the three plans in an offer
+  resolve to three *distinct* shapes on **49.8%** of draws (was 37.9%).
+  The deck's own geometry: cards that can only ever be a dead end **7 → 3**,
+  dead-end plans **31.7% → 20.3%** of 59 (was 41), and the deck now holds a
+  **mirror corner** — before the rebalance all twelve of its corner plans were
+  `['N','E']`, which under the rigid rotation turns you LEFT every single time,
+  so the house could bend one way and only one way.
+  **The tension is deliberately kept**, per the review's own wording: twelve of
+  the twenty-eight cards can still roll a dead end (the review counted thirteen),
+  a bad hand can still seal a wing (a fork laid into a corner of the plot still
+  can), the
+  three surviving pure dead ends are the three rooms whose fiction is the end of
+  the house (the Study, the Gem Vault, the Observatory), and a sealing plan is
+  now something she may *want*: `SEALED_ROOM_BOUNTY` pays **+1 gem**, stamped on
+  the card face before she taps, off the same `sealsItself` the slice pays from.
+  A gem and never a step, because `STEP_TABLE` is the surface every 4.10 band is
+  calibrated against and this item has no business moving it.
+  Pinned in `tests/grid.test.ts` (the three seal rates) and
+  `tests/drafting.test.ts` (the bounty).
+  **The one number held fixed on purpose:** the Sanctum landing. Only a plan
+  carrying canonical `'S'` opens north when the landing is entered from below, so
+  every tier-3-eligible card's share of those is unchanged by the rebalance —
+  **19.0% of plans and 63.4% of bare offers, before and after.** 4.10d/e are not
+  this item's to retune.
+- 4.20 **A column means something, and the argument outlives the night.**
+  `rowTier` made the vertical axis mean difficulty, price and rarity; the
+  horizontal axis meant *nothing at all*, which is why the optimal manor was the
+  shortest path to the top. `engine/manor/wings.ts` gives the five columns three
+  wings — **West Wing (0–1) · Stair Hall (2) · East Wing (3–4)** — and one rule
+  with a night in the middle of it: two or more rooms of one category with no tie
+  gives a wing its CHARACTER tonight; a wing that has ended the same way on
+  `WING_MEMORY.eveningsToRemember` evenings, by a margin, is REMEMBERED forever;
+  and a remembered wing **draws true** (`WING_AFFINITY`, a weight and never a
+  filter — 4.6 keeps the draft a decision). The manor still resets at dusk. What
+  survives is *where things are kept*, which is the Blue Prince property the
+  review says we do not attempt.
+  - **Two exclusions, both enforced in one place and both measured rather than
+    chosen.** A wing can be argued into blue or yellow only. **Violet** cannot:
+    a mystery wing spends 4.10g's published supply, and worse, the first build of
+    the term boosted its character against *every* other category and took the
+    increase out of violet — measured, the median player's made-out rate fell
+    **24.0% → 18.9%**, through 4.10g's own ≥20% floor. The term is now normalised
+    over the non-mystery pool, so **violet's share of an offer is bit-identical
+    with a remembered wing and without one** — an equality, asserted at every row
+    in `tests/wings.test.ts`, not a band. **Green** cannot either: a permanent
+    working wing is a permanent step raise by geography, i.e. a retune of
+    `STEP_TABLE` under another name, and at ×2.4 it put the median evening at
+    **9.7 minutes** (under 4.10b's 10–15 floor) and dropped solve-sourced keys
+    *below* Fern's arc, inverting the round-10 owner directive.
+  - **`WING_AFFINITY` = 1.35 is derived, not chosen.** It is the largest value at
+    which every published 4.10 band still holds with the term modelled at its
+    pessimistic strength (`WING_MODEL`: a reading wing, on half of every
+    evening's drafts). Walked down: ×2.00 → skilled first-week win **5.0%**
+    against 4.10e's <3%; ×1.60 → 4.25%; ×1.45 → 3.25%; ×1.35 → **2.9%**, medians
+    unmoved, skilled/median ordering intact. The mechanism is worth naming
+    because it will catch the next person: blue rooms carry §5.1's fragment
+    spine, so any term that puts more of them in front of a player shortens the
+    campaign — the wing is a knowledge lever wearing a floorplan's clothes, and a
+    stronger one needs 4.10e's open ~28-page content commission first.
+  - **Modelled, not assumed.** `simulateDay` has no columns, so leaving this
+    unmeasured would be §0.5's escape exactly. `deckMixAt` takes the same
+    normalised term and `WING_MODEL` states its two assumptions, both chosen to
+    make the bands hardest to hold.
+  - **No save-schema change beyond one optional field.** The memory is derived
+    from `chronicles.dayRecords[].wings`, written at dusk from the floorplan
+    before `endDay` wipes it — the same trick `surveyEveningsIn` and
+    `carryOverFrom` use to cross a night. An older save migrates by doing
+    nothing.
+- 4.21 **The doors out of a room are told apart before she opens one.** REVIEW_AA
+  §4: *"two read 'Draft a room on the ground floor — 1 step' and one 'on the half
+  landing.' Then the half-landing door opened a modal headed 'Three floorplans for
+  the ground floors.' The labels still tell you nothing about the decision, and one
+  of them is wrong."* Both halves fixed. **Wrong:** the modal took its words from
+  the three-row tier BAND while the door took its from `rowName`; there is one
+  vocabulary now and it is the storey's. **Says nothing:** the three doors differ
+  in exactly one respect, the WING each opens into, so every draft label and the
+  modal heading lead with it, plus what the papers remember that wing for. The
+  blueprint draws the two wing seams and the three wing plates in survey ink, and
+  a remembered wing's plate takes the gilt. Pinned in `tests/wings.test.ts` (the
+  three labels out of the Entrance Hall are three distinct strings).
+
 ---
 
 ## 5. Dialogue & characters vs Hades

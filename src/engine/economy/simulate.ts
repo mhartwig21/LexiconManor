@@ -100,7 +100,42 @@
 import { createRng } from '../rng';
 import type { Cell, RoomCard, Tier } from '../types';
 import { BASE_DECK, deckFor, isKeyBearing, UTILITY_EFFECTS } from '../manor/deck';
-import { categoryWeight, rollCards, RARITY_WEIGHTS } from '../manor/drafting';
+import { categoryWeight, rollCards, RARITY_WEIGHTS, WING_AFFINITY } from '../manor/drafting';
+import { WING_MEMORY, type WingCharacter } from '../manor/wings';
+
+/**
+ * ── HOW THE WINGS ARE MODELLED, AND THE TWO ASSUMPTIONS (round 20) ─────────
+ *
+ * `simulateDay` has no columns: it tracks a row, a step budget and a clock. The
+ * wing term (engine/manor/wings.ts, REVIEW_AA §5.7) is the first draft weight
+ * in the game that depends on a COLUMN, so it cannot be measured exactly here.
+ * It is modelled with two assumptions, and both are deliberately the ones that
+ * make the published bands HARDEST to hold:
+ *
+ *   - `character: 'puzzle'`. A wing can be remembered as blue or yellow, and
+ *     the model assumes she always argues for the one with the larger effect on
+ *     every published band: the blue rooms carry the minutes (an anchor is
+ *     3–6 minutes against a parlor beat's 40 seconds), the solve keys, the
+ *     mistakes and the whole §5.1 fragment spine, so a reading wing moves 4.10b,
+ *     4.10d and 4.10e at once where a household wing barely touches them.
+ *     (Green and violet cannot be a wing's character at all —
+ *     `WING_CHARACTERS` excludes both, and engine/manor/wings.ts records the
+ *     measurement that ruled green out — which is what keeps 4.10g's published
+ *     violet shares and the green deck's step calibration out of this
+ *     entirely.)
+ *   - `matchChance: 0.5`. Half of every evening's drafts are assumed to land in
+ *     a wing the papers remember. Four of the five columns are wing columns and
+ *     at most two wings can be remembered at once, so half is at the generous
+ *     end of what a real evening reaches.
+ *
+ * If the bands hold under both, they hold under the shipped game. `WING_MEMORY`
+ * supplies the day the term switches on, so the model and the engine cannot
+ * disagree about when the papers commit.
+ */
+export const WING_MODEL = {
+  character: 'puzzle' as WingCharacter,
+  matchChance: 0.5,
+} as const;
 import {
   canAddressSanctum, cardOpensOntoSanctum, createManor, rowTier, SANCTUM_DOOR_CELL,
 } from '../manor/grid';
@@ -267,12 +302,48 @@ const zeroMix = (): Record<SimRoomKind, number> =>
 export function deckMixAt(
   row0: number,
   deck: readonly RoomCard[] = BASE_DECK,
+  /**
+   * ── THE WING TERM, MODELLED (round 20, REVIEW_AA §5.7) ──────────────────
+   *
+   * `engine/manor/drafting.ts` now multiplies a card's weight by
+   * `WING_AFFINITY` when its category matches what the lexicographer's papers
+   * remember of the WING the door opens into. That is the first term in the
+   * game that reads a COLUMN, and this model has never had columns: it tracks
+   * a row and a step budget. Rather than leave the effect unmodelled — the
+   * exact §0.5 escape shape, "a number verified against a game that is not the
+   * shipped one" — the mix takes the same term here, normalised the same way
+   * (violet-neutral over the non-mystery pool), and `simulateDay` applies it to
+   * the share of her drafts that land in a remembered wing.
+   *
+   * Passing nothing leaves every number this function has ever returned
+   * bit-identical, which is what keeps the 4.10b clock calibrated as it was.
+   * Passing one leaves the MYSTERY share bit-identical too, by construction —
+   * so 4.10g's published violet shares are outside this term either way.
+   */
+  wingCharacter?: WingCharacter,
 ): Record<SimRoomKind, number> {
   const tier = rowTier(row0);
   const w = zeroMix();
-  for (const card of deck) {
-    if (card.tierRange[0] > tier || tier > card.tierRange[1]) continue;
-    const weight = categoryWeight(card.category, row0) * RARITY_WEIGHTS[tier][card.rarity];
+  const eligible = deck.filter((c) => c.tierRange[0] <= tier && tier <= c.tierRange[1]);
+  const bare = (card: RoomCard) =>
+    categoryWeight(card.category, row0) * RARITY_WEIGHTS[tier][card.rarity];
+  // The same non-mystery normalisation `wingBoost` performs on a live pool.
+  let k = 1;
+  if (wingCharacter) {
+    let charW = 0;
+    let otherW = 0;
+    for (const card of eligible) {
+      if (card.category === 'mystery') continue;
+      if (card.category === wingCharacter) charW += bare(card);
+      else otherW += bare(card);
+    }
+    if (charW > 0 && otherW > 0) k = (charW + otherW) / (WING_AFFINITY * charW + otherW);
+  }
+  for (const card of eligible) {
+    let weight = bare(card);
+    if (wingCharacter && card.category !== 'mystery') {
+      weight *= card.category === wingCharacter ? WING_AFFINITY * k : k;
+    }
     if (card.category === 'puzzle') {
       const size = (card.puzzleKind && getRoomAdapter(card.puzzleKind)?.size) ?? 'anchor';
       w[size] += weight;
@@ -711,6 +782,12 @@ export function simulateDay(
     surveyEvenings?: number;
     /** LEGIBLE fragments on the desk at dawn — the mercy's knowledge half. */
     legibleFragments?: number;
+    /**
+     * ROUND 20 (REVIEW_AA §5.7) — what the papers remember the wings for. See
+     * `WING_MODEL` for the two assumptions this makes and why they are the
+     * pessimistic ones for every band in 4.10.
+     */
+    wingCharacter?: WingCharacter;
     /** Fern's key access, so the landing offer rolls the weights she really has. */
     keyAccess?: number;
     /**
@@ -836,7 +913,13 @@ export function simulateDay(
 
     // --- Draft: three cards from the real deck mix, one taken. ------------
     seconds += TIME_TABLE.draft;
-    const mix = deckMixAt(targetRow - 1);
+    // The wing term (round 20): on the share of drafts that land in a wing the
+    // papers remember, the deck she is offered is the tidied one.
+    const inRememberedWing =
+      carry?.wingCharacter !== undefined && rng() < WING_MODEL.matchChance;
+    const mix = deckMixAt(
+      targetRow - 1, BASE_DECK, inRememberedWing ? carry?.wingCharacter : undefined,
+    );
     const stepsLeft = stepsRemaining(ledger);
     const nextRow0 = Math.min(SANCTUM_LANDING_ROW, targetRow + 1) - 1;
     const ctx = {
@@ -1279,6 +1362,10 @@ export function simulateCampaign(
       legibleFragments: fragments,
       keyAccess: keyAccessFor(fernPointsOnDay(day)),
       sanctumAnswered: answered,
+      // ROUND 20: the papers commit after `WING_MEMORY.eveningsToRemember`
+      // evenings of agreement, so a campaign's first two nights are exactly
+      // what they always were and every day after carries the wing term.
+      wingCharacter: day > WING_MEMORY.eveningsToRemember ? WING_MODEL.character : undefined,
     });
     results.push(result);
     if (firstSpeakDay === null && result.couldSpeak) firstSpeakDay = day;

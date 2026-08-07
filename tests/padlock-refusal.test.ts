@@ -90,7 +90,10 @@ describe('the ARIA matches the behaviour', () => {
 
   it('the keyless ghost is still a button, and still tells AT it is padlocked', () => {
     expect(SHEET).toContain('role="button"');
-    expect(SHEET).toContain('lockedDraftLabel(player.row, cell.row, KEY_COST, canPay)');
+    // ROUND 20: the label gained the WING it opens into (REVIEW_AA §4), so the
+    // grep is for the padlock's own arguments — the key cost and whether she
+    // can pay — which are the part this test is about.
+    expect(SHEET).toMatch(/lockedDraftLabel\(player\.row, cell\.row, KEY_COST, canPay,/);
     // The label carries the state ARIA no longer (wrongly) carries.
     const keyless = lockedDraftLabel(3, 5, 1, false);
     expect(keyless.toLowerCase()).toContain('padlocked');

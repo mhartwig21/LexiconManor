@@ -179,7 +179,10 @@ export const createDaySlice =
       // Record first so the spine's lifetime counter includes it, then bank.
       get().recordEvent({ type: 'day-ended', day: day.day, cause });
       const s = get();
-      s.appendDayRecord(buildDayRecord(day, s.ledger, s.recentEvents, cause, at));
+      // The manor is passed BEFORE the reset four lines down: the wings she
+      // argued for tonight are the last thing read off the floorplan, and then
+      // the floorplan goes (REVIEW_AA §5.7, engine/manor/wings.ts).
+      s.appendDayRecord(buildDayRecord(day, s.ledger, s.recentEvents, cause, at, s.manor));
       set({
         // Dusk begins; chrome fades ≤4s then advances dusk → night (AAA 4.12).
         day: { ...day, phase: 'dusk', activeRoom: null },

@@ -474,23 +474,36 @@ describe('orientation at placement', () => {
    * and pinned rather than assumed. Three rates, because they say different
    * things to a design owner:
    *
-   *   (a) 41.5% — geometry: every card, every empty cell of a fresh manor,
+   *   (a) 32.0% — geometry: every card, every empty cell of a fresh manor,
    *       every heading. Dominated by the deck's one-door plans, which seal by
    *       definition. This is the shape of the DECK, not of a day.
-   *   (b) 37.3% — in play, choosing blind. What she would suffer if the card
+   *   (b) 27.2% — in play, choosing blind. What she would suffer if the card
    *       face still lied.
-   *   (c) 13.6% — in play, reading the diagram and preferring an onward door.
-   *       This is the rate that ships, and it is almost exactly the rate at
-   *       which an offer contains NO onward-door card at all (13.0%) — i.e.
-   *       once the card tells the truth, she seals a room only when the house
-   *       gave her nothing else, which is the honest version of the tension.
+   *   (c) 7.6% — in play, reading the diagram and preferring an onward door.
+   *       This is the rate that ships, and it is EXACTLY the rate at which an
+   *       offer contains no onward-door card at all — i.e. once the card tells
+   *       the truth, she seals a room only when the house gave her nothing
+   *       else, which is the honest version of the tension.
    *
    * If (c) drifts far from (a)−(b), the card face has stopped informing the
    * choice and something upstream has regressed.
+   *
+   * ── ROUND 20 (REVIEW_AA §5.7) — ALL THREE MOVED, ON PURPOSE ──────────────
+   * They read 41.5% / 37.3% / 13.6% before the deck rebalance
+   * (engine/manor/deck.ts, ROUND-20 REBALANCE). Seven cards could only ever be
+   * a dead end and thirty-two per cent of the deck's plans were one; three can
+   * and twenty per cent are. What the three numbers say about the change is the
+   * point of keeping all three: the DECK got a fifth less sealing (a), a blind
+   * player a quarter less (b), and a player who reads the card face **nearly
+   * half** as much (c) — because the rebalance did not only remove dead ends,
+   * it gave the offer something else to contain. The gap (b) − (c) is the value
+   * of the honest card face and it grew from 24 points to 20 points of a much
+   * smaller total: reading the diagram now avoids 72% of the seals a blind
+   * player eats, against 63% before.
    */
-  it('THE ACCEPTED CONSEQUENCE (a): the deck seals ~41% of placements by shape', () => {
+  it('THE ACCEPTED CONSEQUENCE (a): the deck seals ~32% of placements by shape', () => {
     let sealed = 0, total = 0;
-    const byShape = new Map<number, { sealed: number; total: number }>();
+    const byShape = new Map<string, { sealed: number; total: number }>();
     for (let seed = 0; seed < 12; seed++) {
       const m = createManor(seed);
       for (const card of BASE_DECK) {
@@ -504,7 +517,11 @@ describe('orientation at placement', () => {
               const seals = sealsItself(doors, entryDir, m, cell);
               total += 1;
               if (seals) sealed += 1;
-              const shape = layoutFor(card, seed, cellKey(cell)).length;
+              // ROUND 20: keyed by the CANONICAL PLAN, not by its door count —
+              // the deck now holds two three-door shapes with opposite
+              // properties (a tee can never seal, a fork can), and a count
+              // buries the difference the rebalance was made of.
+              const shape = [...layoutFor(card, seed, cellKey(cell))].sort().join('');
               const bucket = byShape.get(shape) ?? { sealed: 0, total: 0 };
               bucket.total += 1;
               if (seals) bucket.sealed += 1;
@@ -514,12 +531,22 @@ describe('orientation at placement', () => {
         }
       }
     }
-    expect(sealed / total).toBeCloseTo(0.415, 2);
-    // A one-door plan always seals — it has no other door to offer. A tee or a
-    // cross never can: at most two of its remaining walls are outer walls.
-    expect(byShape.get(1)!.sealed / byShape.get(1)!.total).toBe(1);
-    expect(byShape.get(3)!.sealed).toBe(0);
-    expect(byShape.get(4)!.sealed).toBe(0);
+    expect(sealed / total).toBeCloseTo(0.320, 2);
+    // A one-door plan always seals — it has no other door to offer. A tee and
+    // a cross never can: their remaining doors point three ways and at most
+    // two walls of a cell are outer walls.
+    expect(byShape.get('N')!.sealed / byShape.get('N')!.total).toBe(1);
+    expect(byShape.get('ENW')!.sealed).toBe(0);
+    expect(byShape.get('ENSW')!.sealed).toBe(0);
+    // A FORK (round 20) is the interesting middle: it carries on AND branches,
+    // but its two onward doors are adjacent rather than opposed, so a fork laid
+    // into a CORNER of the plot can still turn its back on the house. That is
+    // the shape doing real work — it is not free, it is just usually right.
+    for (const fork of ['ENS', 'NSW']) {
+      const bucket = byShape.get(fork);
+      if (!bucket) continue;
+      expect(bucket.sealed / bucket.total).toBeLessThan(0.2);
+    }
   });
 
   it('THE ACCEPTED CONSEQUENCE (b,c): reading the card face is what pays', () => {
@@ -554,10 +581,10 @@ describe('orientation at placement', () => {
     };
     const blind = play(true);
     const reading = play(false);
-    expect(blind.rate).toBeCloseTo(0.37, 1);
-    expect(reading.rate).toBeCloseTo(0.14, 1);
-    // The card face is worth roughly a third of the dead ends…
-    expect(reading.rate).toBeLessThan(blind.rate * 0.6);
+    expect(blind.rate).toBeCloseTo(0.272, 2);
+    expect(reading.rate).toBeCloseTo(0.076, 2);
+    // The card face is worth most of the dead ends (round 20: was "a third").
+    expect(reading.rate).toBeLessThan(blind.rate * 0.35);
     // …and what is left is very nearly just the offers that held nothing else.
     expect(reading.rate - reading.starved).toBeLessThan(0.03);
   });

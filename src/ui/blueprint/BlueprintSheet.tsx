@@ -52,10 +52,15 @@ import {
   lockedDraftLabel, lockedRefusalAnnouncement, lockedRefusalLine,
   priceStamp, stampsDraftPrice, stampsPrice, walkLabel, LANDING_SEALED_LABEL,
 } from './pricing';
+import {
+  colsOfWing, rememberedWings, wingCharacterOf, wingOf, WING_CHARACTER_TAGS,
+  WING_IDS, WING_SHORT_NAMES,
+} from '../../engine/manor/wings';
 
 const CELL = 64;
 const MX = 40;          // left margin: the per-row step price + rank-pressure pips
-const MT = 34;          // top margin: plot border + Fell-caps title block
+const MT = 46;          // top margin: plot border, title block, wing plate
+const WING_LABEL_Y = 39;// the three wing names, under the title (round 20)
 const MB = 22;          // bottom margin: plot border + scale mark
 const VIEW_W = MX + MANOR_COLS * CELL + 12;
 const VIEW_H = MT + MANOR_ROWS * CELL + MB;
@@ -227,6 +232,23 @@ export default function BlueprintSheet({
   const lockView: LockView = { heldOpen };
   const keys = keysProp ?? liveKeys;
   /**
+   * ── THE WINGS, DRAWN (REVIEW_AA §5.7) ─────────────────────────────────────
+   *
+   * The horizontal axis of this plan meant nothing at all until round 20: the
+   * margin priced every ROW and named every tier, and the five columns were
+   * five identical columns. So the sheet now draws the house's own geography —
+   * two surveyed seams and three named wings — and, where the lexicographer's
+   * papers remember a wing (`rememberedWings`, off the day records the save
+   * already keeps), what that wing is FOR. That plate is the only thing in the
+   * game that survives a night as a SHAPE, so it is drawn on the shape.
+   *
+   * Selected as primitives, joined here: `useManorStore(fn)` returning a fresh
+   * object re-renders forever (the `lockViewFor` lesson, four lines up).
+   */
+  const dayRecords = useManorStore((s) => s.chronicles.dayRecords);
+  const remembered = rememberedWings(dayRecords);
+  const today = wingCharacterOf(manor);
+  /**
    * A padlock she just tried without a key: it shrugs, nothing is charged —
    * AND IT SAYS SO (AAA 4.16, round-6 fix). The refusal used to be a 420ms
    * wiggle and total silence, which is both the silence 4.16 forbids and, to
@@ -382,6 +404,39 @@ export default function BlueprintSheet({
         <text className="bp-plot__title" x={VIEW_W / 2} y={21}>
           LEXICON MANOR&thinsp;&mdash;&thinsp;GROUNDS
         </text>
+        {/* THE WING SEAMS AND THE WING PLATE (round 20, REVIEW_AA §5.7).
+            A surveyor draws the boundaries of a plot; this one had none, and
+            a five-column grid with no boundaries is why the optimal manor was
+            a chimney. The seam is dashed survey ink, the plate names the wing,
+            and the second line is what the papers remember it FOR — or, before
+            they have committed, what tonight's floorplan is making of it, in
+            parentheses, so the argument is legible while it is still being
+            made. */}
+        {[px(2), px(3)].map((x) => (
+          <path key={`seam-${x}`} className="bp-wingseam" d={`M${x} ${MT}V${MT + MANOR_ROWS * CELL}`} />
+        ))}
+        {WING_IDS.map((wing) => {
+          const cols = colsOfWing(wing);
+          const cx = px(cols[0]!) + (cols.length * CELL) / 2;
+          const kept = remembered[wing];
+          const forming = today[wing];
+          return (
+            <g key={`wing-${wing}`} className="bp-wing">
+              <text className="bp-wing__name" x={cx} y={WING_LABEL_Y}>
+                {WING_SHORT_NAMES[wing]}
+              </text>
+              {(kept || forming) && (
+                <text
+                  className={`bp-wing__tag${kept ? ' bp-wing__tag--kept' : ''}`}
+                  x={cx}
+                  y={WING_LABEL_Y + 9}
+                >
+                  {kept ? WING_CHARACTER_TAGS[kept] : `(${WING_CHARACTER_TAGS[forming!]})`}
+                </text>
+              )}
+            </g>
+          );
+        })}
         {/* scale mark: one bar = one room */}
         <g className="bp-scale" transform={`translate(${MX} ${VIEW_H - 12})`}>
           <rect x={0} y={0} width={CELL / 4} height={3} className="bp-scale__seg bp-scale__seg--fill" />
@@ -458,10 +513,17 @@ export default function BlueprintSheet({
              * cost and the price once it opens), and the refusal answers in
              * `.bp-refusal`'s live region.
              */
+            /* ROUND 20 (REVIEW_AA §4/§5.7): the three doors out of a room used
+               to be labelled "Draft a room on the ground floor — 1 step" three
+               times over, which told her nothing about the only thing that
+               differs between them — WHERE each one goes. Every draft label now
+               names the wing, and what the papers remember that wing for. */
             aria-label={
               locked
-                ? lockedDraftLabel(player.row, cell.row, KEY_COST, canPay)
-                : draftLabel(player.row, cell.row)
+                ? lockedDraftLabel(player.row, cell.row, KEY_COST, canPay,
+                    wingOf(cell.col), remembered[wingOf(cell.col)])
+                : draftLabel(player.row, cell.row,
+                    wingOf(cell.col), remembered[wingOf(cell.col)])
             }
             {...pressProps}
             onClick={() => (canPay ? onOpenDraft(dir) : refuse(key, cell.row))}

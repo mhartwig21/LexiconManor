@@ -22,8 +22,11 @@ import type { PointerEvent } from 'react';
 import type { Dir, DraftOffer, ManorState, RoomCard } from '../../engine/types';
 import {
   layoutFor, neighbor, opensOntoSanctum, opposite, orientLayout, resolveDoors, rowTier, sameCell,
-  SANCTUM_DOOR_CELL,
+  sealsItself, SANCTUM_DOOR_CELL,
 } from '../../engine/manor/grid';
+import { rememberedWings, wingOf, WING_CHARACTER_WORDS, WING_NAMES } from '../../engine/manor/wings';
+import { SEALED_ROOM_BOUNTY } from '../../engine/manor/deck';
+import { rowName } from '../../engine/economy/steps';
 import { isDoorLocked, KEY_COST } from '../../engine/manor/locks';
 import { CARD_PREVIEWS } from '../../engine/manor/deck';
 import { draftCardStake } from '../../engine/economy/preview';
@@ -31,7 +34,6 @@ import { useManorStore } from '../../app/store';
 import { RoomGlyph } from './CategoryGlyph';
 import { draftPriceWords, priceWords, sanctumDraftStamp } from './pricing';
 
-const TIER_LABELS = ['', 'the ground floors', 'the middle landings', 'the high floors'];
 const ROMAN = ['', 'I', 'II', 'III'];
 
 function press(e: PointerEvent<Element>) { e.currentTarget.setAttribute('data-pressed', ''); }
@@ -123,6 +125,12 @@ export default function DraftModal({
   const tier = target ? rowTier(target.row) : 1;
   const liveManor = useManorStore((s) => s.manor);
   const manor = manorProp ?? liveManor;
+  // THE WINGS (round 20). Selected as a primitive-bearing array off the store,
+  // never as a derived object — see BlueprintSheet for what a fresh object per
+  // render costs. `rememberedWings` is pure and cheap over 45-ish records.
+  const dayRecords = useManorStore((s) => s.chronicles.dayRecords);
+  const wing = target ? wingOf(target.col) : null;
+  const wingCharacter = wing ? rememberedWings(dayRecords)[wing] : undefined;
   // She only ever gets to see this modal on a padlocked door if she already
   // held the key (the slice refuses free, without charging a step) — so this
   // line is a statement of what CHOOSING costs, not a warning she can fail.
@@ -156,14 +164,34 @@ export default function DraftModal({
   const opensSanctum = (card: RoomCard): boolean =>
     Boolean(target && opensOntoSanctum(doorsOf(card), target));
 
+  // ── THE SEALING PLAN, PRICED (round 20, REVIEW_AA §5.7). ────────────────
+  // The diagram has told the truth about a one-door room since round 9, and the
+  // review's answer to that was: fine, but *why would she ever take it?* She
+  // takes it for the gem. Same `sealsItself` the slice pays off, same manor,
+  // same heading — so the stamp is a promise the placement keeps, not a guess.
+  const seals = (card: RoomCard): boolean =>
+    Boolean(manor && target && sealsItself(doorsOf(card), offer.atDoor, manor, target));
+
   return (
     <div className="bp-modal" role="dialog" aria-modal="true" aria-label="Draft a room">
       <div className="bp-modal__sheet">
         <header className="bp-modal__head">
           <h2 className="bp-modal__title">Beyond this door</h2>
+          {/* ROUND 20 (REVIEW_AA §4). This line used to read "Three floorplans
+              for the ground floors" over a door onto the HALF LANDING, because
+              it took its words from the three-row tier BAND while the door that
+              opened it took its words from `rowName`. One vocabulary now, and
+              it is the storey's — plus the one fact that actually distinguishes
+              this door from the other two out of the same room: the wing. */}
           <p className="bp-modal__sub">
-            Three floorplans for {TIER_LABELS[tier]} · tier {ROMAN[tier]}
+            Three floorplans for {target ? rowName(target.row) : 'this storey'}
+            {wing ? `, in ${WING_NAMES[wing]}` : ''} · tier {ROMAN[tier]}
           </p>
+          {wing && wingCharacter && (
+            <p className="bp-modal__wing">
+              His papers keep {WING_NAMES[wing]} as {WING_CHARACTER_WORDS[wingCharacter]}.
+            </p>
+          )}
           {/* THE TWO PRICES, SAID OUT LOUD (AAA 4.6, round-5 audit). The look
               was being charged at the TARGET storey's rate before the offer
               opened, so a declined look upstairs cost a whole storey while
@@ -229,6 +257,9 @@ export default function DraftModal({
                     const stake = draftCardStake(card, tier);
                     return stake ? <span className="bp-card__stake">{stake.label}</span> : null;
                   })()}
+                  {seals(card) && (
+                    <span className="bp-card__seals">{SEALED_ROOM_BOUNTY.stamp}</span>
+                  )}
                   {/* THE SANCTUM STAMP (round 13). Double-encoded per AAA 6.3:
                       the words carry it, the modifier class only tints them,
                       and BOTH answers are printed — a card that says nothing

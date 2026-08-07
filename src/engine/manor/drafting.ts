@@ -26,6 +26,7 @@ import {
   SANCTUM_DOOR_CELL,
 } from './grid';
 import { cardById, isKeyBearing, SCRIPTED_FIRST_DRAFT } from './deck';
+import { wingOf, type WingCharacters } from './wings';
 import { keyCardWeightMultiplier, sanctumPlanWeightMultiplier } from '../economy/steps';
 
 /** Mutable-state snapshot the slice passes into every roll. */
@@ -72,6 +73,17 @@ export interface DraftRollCtx {
    * (`sanctumMercyArmed`), so it cannot touch 4.10d's day-1 reach.
    */
   sanctumMercy?: boolean;
+  /**
+   * THE WINGS (REVIEW_AA §5.7, engine/manor/wings.ts). What the lexicographer's
+   * papers remember of the floorplan: a wing she has ended the same way on
+   * enough evenings draws true, so cards of its character surface more often
+   * behind its doors. Omitted, every weight in the game is exactly what it was
+   * — which is why `deckMixAt` (and the 4.10b clock derived from it) is a pure
+   * function of ROW and is untouched by any of this.
+   */
+  wings?: WingCharacters;
+  /** The column the offer is being rolled for — only the wing term reads it. */
+  targetCol?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -149,6 +161,87 @@ export function affordabilityMultiplier(card: RoomCard, gems: number, row: numbe
   return 0.1;
 }
 
+/**
+ * ── THE WING TERM (REVIEW_AA §5.7) ─────────────────────────────────────────
+ *
+ * A wing the papers remember draws true: cards of its character surface more
+ * often behind its doors. This is the ONE place a card's weight depends on the
+ * COLUMN rather than the row — the horizontal axis meant literally nothing
+ * before it, which is why the optimal manor was a chimney.
+ *
+ * Deliberately a WEIGHT and not a filter (AAA 4.6 — the draft stays a
+ * decision): a remembered reading wing still offers her the Post Room, it just
+ * offers her the Library more. A remembered wing should feel like a deck that
+ * has been tidied, never one that has been replaced. Neutral (×1) with no
+ * memory, which is every save's first two evenings and every fresh volume's.
+ *
+ * ── WHY 1.35 AND NOT 2, WHICH IS WHERE THIS STARTED ───────────────────────
+ *
+ * The number is not taste; it is the largest value at which every published
+ * 4.10 band still holds, found by walking it down through
+ * `tests/economy-simulation.test.ts` with the term modelled at its pessimistic
+ * strength (`WING_MODEL`: a reading wing, on half of every evening's drafts):
+ *
+ *   ×2.00 — the skilled player wins inside week one on **5.0%** of campaigns
+ *           against 4.10e's published <3%, and the median player's ≤35-day
+ *           finish rate saturates at 100%, which collapses the skilled/median
+ *           ordering 4.10e asserts.
+ *   ×1.60 — 4.25%. Same two clauses, same direction.
+ *   ×1.45 — 3.25%. Still through the wall.
+ *   ×1.35 — every band holds (measured 2.9% and 1.6%), the medians are
+ *           unmoved, and the ordering is intact.
+ *
+ * The mechanism is worth writing down because it will catch the next person:
+ * blue rooms are the whole of REVIEW_AA §5.1's fragment spine, so ANY term that
+ * puts more of them in front of a player shortens the campaign — the wing is a
+ * knowledge lever wearing a floorplan's clothes. A stronger wing needs the
+ * volume's authored page count raised first (AAA 4.10e's open commission: ~28
+ * pages), not this constant raised.
+ *
+ * ── AND IT IS EXACTLY VIOLET-NEUTRAL, BY CONSTRUCTION ─────────────────────
+ *
+ * The first build of this multiplied the character's weight and left everything
+ * else alone, which quietly takes the boost out of EVERY other category —
+ * including violet. Measured: the median player's made-out rate fell from 24.0%
+ * to 18.9%, straight through 4.10g's published ≥20% floor, because a page can
+ * only be made out if she has met a violet room to seal one. The mystery's
+ * supply is not this mechanic's to spend.
+ *
+ * So the boost is normalised over the NON-MYSTERY pool only: the character is
+ * raised by `WING_AFFINITY` and the other ordinary categories are lowered by
+ * the factor `k` that keeps their combined weight exactly where it was. Violet's
+ * share of an offer is therefore bit-identical with a remembered wing and
+ * without one — the same construction argument `sanctumPlanWarmth` uses to stay
+ * out of 4.10d, rather than a constant somebody re-tuned until a test passed.
+ *
+ * It is computed per POOL rather than per card, which is why it lives beside
+ * `drawOne` and not inside `cardWeight`: slot 1 draws from the free cards only
+ * and slots 2–3 from the rest, and each pool is normalised against itself.
+ */
+export const WING_AFFINITY = 1.35;
+
+export function wingBoost(
+  pool: readonly RoomCard[], row: number, ctx: DraftRollCtx,
+): (card: RoomCard) => number {
+  if (!ctx.wings || ctx.targetCol === undefined) return () => 1;
+  const character = ctx.wings[wingOf(ctx.targetCol)];
+  if (!character) return () => 1;
+  let charWeight = 0;
+  let otherWeight = 0;
+  for (const card of pool) {
+    if (card.category === 'mystery') continue;
+    const w = cardWeight(card, row, ctx);
+    if (card.category === character) charWeight += w;
+    else otherWeight += w;
+  }
+  if (charWeight <= 0 || otherWeight <= 0) return () => 1;
+  const k = (charWeight + otherWeight) / (WING_AFFINITY * charWeight + otherWeight);
+  return (card) => {
+    if (card.category === 'mystery') return 1;
+    return card.category === character ? WING_AFFINITY * k : k;
+  };
+}
+
 /** Full per-card weight for one draw. Never 0 — streams stay well-defined. */
 export function cardWeight(card: RoomCard, row: number, ctx: DraftRollCtx): number {
   let w = categoryWeight(card.category, row) * RARITY_WEIGHTS[rowTier(row)][card.rarity];
@@ -183,8 +276,12 @@ function drawOne(
   rng: Rng, pool: RoomCard[], row: number, ctx: DraftRollCtx,
   boost: (card: RoomCard) => number = () => 1,
 ): RoomCard {
+  // The wing term is normalised against THIS pool (see `wingBoost`), so it is
+  // resolved here rather than folded into the per-card weight.
+  const wing = wingBoost(pool, row, ctx);
   return pickWeighted(
-    rng, pool.map((c) => ({ item: c, weight: cardWeight(c, row, ctx) * boost(c) })),
+    rng,
+    pool.map((c) => ({ item: c, weight: cardWeight(c, row, ctx) * boost(c) * wing(c) })),
   );
 }
 
@@ -226,8 +323,11 @@ function landingBoost(
  * so every door's stream is independent (AAA 4.8).
  */
 export function rollCards(
-  deck: readonly RoomCard[], manor: ManorState, target: Cell, ctx: DraftRollCtx,
+  deck: readonly RoomCard[], manor: ManorState, target: Cell, rawCtx: DraftRollCtx,
 ): RoomCard[] {
+  // The target cell IS the wing, so no caller can pass one and forget the
+  // other (the same reason `rollOffer` fills `entryDir` from the door).
+  const ctx: DraftRollCtx = { ...rawCtx, targetCol: target.col };
   if (ctx.scripted) {
     const scripted = SCRIPTED_FIRST_DRAFT
       .map((id) => cardById(id))
@@ -298,6 +398,8 @@ export function deweyProphecy(
     drawIndexFor: (cellKey: string) => number;
     /** Same key-access term the live drafts use, so the prophecy stays honest. */
     keyAccess?: number;
+    /** …and the same wing memory, for the same reason (round 20). */
+    wings?: WingCharacters;
   },
 ): boolean {
   const row = deweyCell(manor.daySeed).row;
@@ -312,6 +414,7 @@ export function deweyProphecy(
       declinedLastDraft: opts.declinedLastDraft,
       drawIndex: opts.drawIndexFor(cellKey(cell)),
       keyAccess: opts.keyAccess,
+      wings: opts.wings,
     });
     if (cards.some((c) => c.category === 'mystery')) return true;
   }
