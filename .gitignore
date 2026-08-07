@@ -6,6 +6,11 @@ content/data/*
 # out of the shipped pools). Untracked, it passed locally and failed only in
 # CI, which is the worst place to learn a safety gate is missing its corpus.
 !content/data/enable1.txt
+# count_1w is read by the forgotten-word register lint to tell an ordinary
+# English word from a leak. Untracked, the lint did not fail - it silently
+# judged differently in CI than on a developer's machine, which is how a
+# gate stops being a gate.
+!content/data/count_1w.txt
 *.log
 
 # ── Review / playtest scratch ──────────────────────────────────────────────
