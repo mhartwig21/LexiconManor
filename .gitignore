@@ -2,6 +2,10 @@ node_modules/
 dist/
 content/data/*
 !content/data/dictionary.json
+# enable1 is read by tests/content-safety.test.ts (the gate that keeps slurs
+# out of the shipped pools). Untracked, it passed locally and failed only in
+# CI, which is the worst place to learn a safety gate is missing its corpus.
+!content/data/enable1.txt
 *.log
 
 # ── Review / playtest scratch ──────────────────────────────────────────────
