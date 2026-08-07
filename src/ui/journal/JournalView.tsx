@@ -385,7 +385,7 @@ export default function JournalView() {
    */
   function FooterRail() {
     if (solved) return null;
-    const showSanctum = sanctumReadiness(content!, volume).enough;
+    const showSanctum = sanctumReadiness(content!, volume, { sealedIds }).enough;
     return (
       <div className="jrn-rail">
         {stillSealed > 0 && (

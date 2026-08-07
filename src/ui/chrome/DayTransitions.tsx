@@ -25,6 +25,8 @@ import { getVolumeContent } from '../../app/content/volumes';
 import { arrivedLetters, fragmentDroughtDays, openedLetterIds } from '../../engine/volume';
 import { mantelLine, unseenKeepsakes, unseenPlates } from '../moment/mantel';
 import DialogueScene from '../dialogue/DialogueScene';
+import UnreadMark from '../journal/UnreadMark';
+import { useJournalUnread } from '../journal/useJournalUnread';
 
 /**
  * THE SCENE'S OWN ROUTE TO SETTINGS (AAA 11.24, round-9 major).
@@ -56,6 +58,71 @@ export function SceneSettingsLink() {
       Chronicles
       <span className="chr-scene__aside-sub">sound, motion, the trunk</span>
     </button>
+  );
+}
+
+/**
+ * THE SCENE'S OWN ROUTE TO THE JOURNAL (AAA 4.15 / 11.12, round-11 major).
+ *
+ * The morning card and the night digest are full-screen scenes the player
+ * stands on EVERY day, and until this landed their only controls were the
+ * primary advance and the Chronicles aside. Measured live from the morning
+ * card, the cheapest path to a filed document was NINE taps: dismiss the card,
+ * play Mrs. Bramble's whole morning conversation to reach `exploring`, then tap
+ * Journal on the blueprint footer. The night digest was worse in kind, because
+ * it PRINTS the waiting-post and mantel prose — it tells her a letter has
+ * arrived on a surface from which she cannot open it, and the next morning's
+ * card then stands between her and it.
+ *
+ * 4.15 and 11.12 both say ≤2 taps from anywhere, and "anywhere" plainly
+ * includes the two screens she cannot avoid. The argument is the one 11.24
+ * already accepted for Chronicles: the aside exists because the surface she is
+ * trying to reach is the surface the scene is TALKING ABOUT. A seal that says
+ * "Filed in the Journal · Testimony" and a digest that says "A letter waits
+ * unopened in the post tray" are both directions to a room with no door on
+ * them.
+ *
+ * It is rendered unconditionally rather than gated on unread, because 4.15's
+ * promise is about any document EVER seen, not about new ones: re-reading last
+ * week's engraving from the morning card must cost the same two taps as
+ * opening tonight's letter. The unread mark rides on it when there is
+ * something new, which also keeps the 11.19 chain unbroken at this new
+ * entrance — the same mark, the same count, off the same derivation as the
+ * blueprint footer's.
+ */
+export function SceneJournalLink() {
+  const [, navigate] = useLocation();
+  const unread = useJournalUnread();
+  return (
+    <button
+      type="button"
+      className="chr-scene__aside unread-host"
+      onClick={() => { sfx.tap(); navigate('/journal'); }}
+    >
+      <span className="chr-scene__aside-label">
+        Journal
+        <UnreadMark
+          count={unread.total}
+          noun={unread.total === 1 ? 'thing in the journal' : 'things in the journal'}
+          showCount
+        />
+      </span>
+      <span className="chr-scene__aside-sub">what the manor has filed</span>
+    </button>
+  );
+}
+
+/**
+ * The two stand-asides, in one row so the scene keeps its vertical room at
+ * 375×667. Chronicles stays FIRST in the DOM: it is the older affordance and
+ * the live walks address it as `.chr-scene__aside`.
+ */
+function SceneAsides() {
+  return (
+    <div className="chr-scene__asides">
+      <SceneSettingsLink />
+      <SceneJournalLink />
+    </div>
   );
 }
 
@@ -176,7 +243,7 @@ export function MorningCard() {
       <button className="chr-scene__btn" onClick={() => setGreeting(true)}>
         Begin the day
       </button>
-      <SceneSettingsLink />
+      <SceneAsides />
     </section>
   );
 }
@@ -328,7 +395,7 @@ export function NightDigest() {
       <button className="chr-scene__btn" onClick={onTomorrow}>
         To tomorrow
       </button>
-      <SceneSettingsLink />
+      <SceneAsides />
     </section>
   );
 }

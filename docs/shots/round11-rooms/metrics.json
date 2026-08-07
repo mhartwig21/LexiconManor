@@ -1,0 +1,147 @@
+{
+  "conservatory": {
+    "boardId": "hive-t1-73",
+    "closed": {
+      "hive": {
+        "y": 364.7,
+        "h": 335.4,
+        "w": 335.4,
+        "inView": true,
+        "hit": "self"
+      },
+      "entry": {
+        "y": 249.5,
+        "h": 40,
+        "w": 361.2,
+        "inView": true,
+        "hit": "self"
+      },
+      "deck": {
+        "y": 711.2,
+        "h": 53.6,
+        "w": 390,
+        "inView": true,
+        "hit": "self"
+      },
+      "enter": {
+        "y": 718.4,
+        "h": 44,
+        "hit": "self"
+      },
+      "shuffle": true,
+      "del": true,
+      "stripChips": [
+        "FAILED",
+        "EDITED",
+        "DETAIL"
+      ],
+      "sheetChips": []
+    },
+    "open": {
+      "hive": {
+        "y": 364.7,
+        "h": 335.4,
+        "w": 335.4,
+        "inView": true,
+        "hit": "self"
+      },
+      "entry": {
+        "y": 249.5,
+        "h": 40,
+        "w": 361.2,
+        "inView": true,
+        "hit": "anch-chip"
+      },
+      "deck": {
+        "y": 711.2,
+        "h": 53.6,
+        "w": 390,
+        "inView": true,
+        "hit": "self"
+      },
+      "enter": {
+        "y": 718.4,
+        "h": 44,
+        "hit": "self"
+      },
+      "shuffle": true,
+      "del": true,
+      "stripChips": [],
+      "sheetChips": [
+        "FAILED",
+        "EDITED",
+        "DETAIL",
+        "DELETE",
+        "DEFEAT",
+        "ALLIED",
+        "DELETED",
+        "DETAILED",
+        "DEFEATED",
+        "AFFILIATED"
+      ],
+      "centreHexHit": "self"
+    },
+    "sheet": {
+      "y": 222.8,
+      "h": 116.4,
+      "w": 361.2,
+      "inView": true,
+      "hit": "self"
+    },
+    "duplicated": [],
+    "reclosed": {
+      "hive": {
+        "y": 364.7,
+        "h": 335.4,
+        "w": 335.4,
+        "inView": true,
+        "hit": "self"
+      },
+      "entry": {
+        "y": 249.5,
+        "h": 40,
+        "w": 361.2,
+        "inView": true,
+        "hit": "self"
+      },
+      "deck": {
+        "y": 711.2,
+        "h": 53.6,
+        "w": 390,
+        "inView": true,
+        "hit": "self"
+      },
+      "enter": {
+        "y": 718.4,
+        "h": 44,
+        "hit": "self"
+      },
+      "shuffle": true,
+      "del": true,
+      "stripChips": [
+        "FAILED",
+        "EDITED",
+        "DETAIL"
+      ],
+      "sheetChips": []
+    }
+  },
+  "study": {
+    "tierRule": "8 letters — whisper it back.",
+    "headline": "“The little sacrifice a fire requires before it will agree to be a fire.”",
+    "gloss": "Small dry sticks and shavings used to start a fire.",
+    "matched": {
+      "id": "fw-kindling",
+      "tier": 1
+    },
+    "headlineIsPoetic": true,
+    "glossIsPlain": true,
+    "win": {
+      "cap": "The rest of the entry, in his hand",
+      "lines": [
+        "I am the smallest thing in the woodshed, and nothing there burns without me."
+      ]
+    },
+    "winShowsEveryRegister": true
+  }
+}

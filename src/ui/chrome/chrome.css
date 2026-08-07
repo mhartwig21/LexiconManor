@@ -97,7 +97,10 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 .chr-day__phase {
   display: block;
   font-family: var(--font-body);
-  font-size: 0.75rem;
+  /* Round 7 type audit: 0.75rem is 12px, under every published floor in
+     AAA 6.6 (body 16, caption 15). It is the word that tells her which phase
+     of the day she is in, on the one bar that is on every screen. */
+  font-size: var(--text-sm);
   color: var(--ink-faint);
   letter-spacing: 0.06em;
   margin-top: 2px;
@@ -201,7 +204,8 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 
 .chr-steps__label {
   font-family: var(--font-body);
-  font-size: 0.75rem;
+  /* was 0.75rem = 12px (AAA 6.6 floor is 15px for a caption) */
+  font-size: var(--text-sm);
   color: var(--ink-faint);
   letter-spacing: 0.05em;
 }
@@ -234,7 +238,9 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 }
 
 .chr-float--spend { color: var(--ink-soft); }
-.chr-float--mistake { color: var(--wax); }   /* wax = the mistake itself (6.15) */
+/* Round 7: wax as READING ink (tokens --wax-ink) — the fill value is 2.8-3.1:1
+   against candlelit paper, and these are runs of text, not seals. */
+.chr-float--mistake { color: var(--wax-ink); } /* wax = the mistake itself (6.15) */
 .chr-float--gain { color: var(--moss); }
 .chr-float--warm { color: var(--gilt); }     /* tea, snacks — hospitality */
 
@@ -454,6 +460,17 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
    subtitle (11.7), and it holds the 44pt floor (6.19) rather than being a
    text link the owner has to aim at. Deliberately unlike `.chr-scene__btn`:
    this is stepping aside, not the verb of the scene. */
+/* The stand-asides, side by side (round 11). Two stacked full-height asides
+   cost ~76px of a 667px scene that already carries the dawn ledger; a row
+   costs none. `flex-wrap` is the escape hatch for a Dynamic-Type step up
+   (AAA 6.7) — they stack rather than clip. */
+.chr-scene__asides {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
 .chr-scene__aside {
   margin-top: 10px;
   min-height: var(--tap-target);
@@ -472,6 +489,16 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
+/* 11.7: the recognisable noun leads, at body size and full-strength ink; the
+   house voice below it is the SUBTITLE. The label is its own inline row so an
+   unread mark rides beside the word rather than dropping onto a line of its
+   own in the aside's column. */
+.chr-scene__aside-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .chr-scene__aside-sub {
   font-size: var(--text-sm);
   color: var(--ink-faint);
@@ -545,7 +572,10 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 .chr-dawn__rung {
   margin: 6px 0 0;
   font-family: var(--font-body);
-  font-size: var(--text-small, 0.86rem);
+  /* Round 7: `--text-small` does not exist in tokens.css — it never has —
+     so this resolved to the 0.86rem fallback, 13.8px, under the 15px caption
+     floor. It is Mrs. Bramble's line on the morning card. */
+  font-size: var(--text-sm);
   color: var(--ink-faint);
   text-wrap: balance;
 }

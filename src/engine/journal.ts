@@ -488,7 +488,10 @@ export function landingFlag(volumeId: string): string {
 // ---------------------------------------------------------------------------
 
 export interface SanctumReadiness {
-  found: number;
+  /** Pages in the journal, readable or not — what she has been collecting. */
+  filed: number;
+  /** Pages she can actually READ — what she knows (round 11, see below). */
+  legible: number;
   total: number;
   /** Enough on the desk that a guess is an act of deduction, not a dart throw. */
   enough: boolean;
@@ -509,12 +512,37 @@ export interface SanctumReadiness {
  */
 export const THIN_FILE_THRESHOLD = 4;
 
-export function sanctumReadiness(content: VolumeContent, state: VolumeState): SanctumReadiness {
-  const found = state.foundFragmentIds.length;
+/**
+ * ROUND-11 DEFECT: EVERY FRAGMENT GATE COUNTED PAGES SHE CANNOT READ.
+ *
+ * This function (and `dialogueContext.fragmentsFound` behind the authored
+ * `fragmentCount` conditions) read `state.foundFragmentIds.length` flat, so a
+ * player holding four sealed smudges — zero constraints on the alphabet plate,
+ * nothing in the poem, nothing for Ellery — cleared THIN_FILE_THRESHOLD and
+ * RETIRED the Portrait's thin-file nudge, the one AAA 4.16 signal in the game.
+ * It also contradicted the module's own rule: `nextUninterpreted`, `crossRefs`
+ * and `alphabetFacts` all take SealedOpts because "she reads English, not
+ * smudges", yet the count that decides whether she is ready to guess did not.
+ *
+ * So readiness now carries BOTH numbers and hangs `enough` on the legible one.
+ * `filed` is not dropped — "she has been collecting" is a real and different
+ * thing to signal (the Sanctum link says both, which is the enticing version
+ * of the sealed state rather than a hidden one), and the authored dialogue
+ * splits the same way: `fragmentCount` for collecting, `fragmentsLegible` for
+ * knowing (engine/dialogue/conditions.ts).
+ */
+export function sanctumReadiness(
+  content: VolumeContent,
+  state: VolumeState,
+  opts?: SealedOpts,
+): SanctumReadiness {
+  const filed = state.foundFragmentIds.length;
+  const legible = filed - sealedCount(state, opts);
   return {
-    found,
+    filed,
+    legible,
     total: content.fragments.length,
-    enough: found >= THIN_FILE_THRESHOLD,
+    enough: legible >= THIN_FILE_THRESHOLD,
   };
 }
 

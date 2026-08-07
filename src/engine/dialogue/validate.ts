@@ -399,6 +399,7 @@ function atoms(conds: DialogueCondition[] | undefined): Atom[] {
 function bandKey(c: Atom['cond']): string | null {
   switch (c.kind) {
     case 'fragmentCount': return 'fragmentCount';
+    case 'fragmentsLegible': return 'fragmentsLegible';
     case 'day': return 'day';
     case 'affinity': return `affinity:${c.character}`;
     case 'counter': return `counter:${c.event}`;

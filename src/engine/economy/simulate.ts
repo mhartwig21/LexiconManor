@@ -54,6 +54,26 @@
  * The milestone below is now the live landing, and `MOVE_COST_BY_ROW`'s upper
  * rows plus `DOOR_LOCKS.chanceByRow[4..5]` were re-tuned until every 4.10
  * target held for the ascent the player actually pays for.
+ *
+ * ═══ ROUND-11 CORRECTION — THE MODEL COULD NOT SEE THE SEAL ═══
+ * Round 10 made entering a violet room file a SEALED page and made a solve
+ * render it legible (engine/volume.ts). This model kept counting violet rooms
+ * ENTERED as knowledge, modelled no solve-channel fragments at all, and had
+ * no notion of ordering or of an overnight backlog — so AAA 4.10e was
+ * verified against rules the game had stopped having, and any retune of the
+ * seal would have moved the real horizon with every test still green.
+ *
+ * `simulateDay` now plays the seal in the order the evening really happens
+ * (`pagesMadeOut`, `sealedBacklog`, through the real `decipherYield`),
+ * `simulateCampaign` threads the backlog across dawns and counts only
+ * made-out pages toward `deductionDay`, and the two strict solve channels are
+ * modelled with the stock the volume actually authors. Measuring the seal
+ * through the corrected model is also what proved it was not biting: 9.5% of
+ * PROFILE_DECENT days contained a violet room at all, because
+ * `categoryWeight('mystery', row)` ramped on paper while `RARITY_WEIGHTS[1]`
+ * scored tier 1's only two mystery cards 9 and 1. The supply was re-tuned at
+ * source (engine/manor/{deck,drafting}.ts) against the REALISED share, and
+ * AAA 4.10g publishes the band tests/economy-simulation.test.ts now pins.
  */
 
 import { createRng } from '../rng';
@@ -62,6 +82,7 @@ import { BASE_DECK, deckFor, isKeyBearing, UTILITY_EFFECTS } from '../manor/deck
 import { categoryWeight, rollCards, RARITY_WEIGHTS } from '../manor/drafting';
 import { createManor, rowTier } from '../manor/grid';
 import { getRoomAdapter } from '../rooms/registry';
+import { decipherYield } from '../volume';
 import {
   appendEntry, createLedger, ledgerTotal, stepsRemaining, stepsRefunded, stepsSpent,
   fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, moveAt, solveKeys,
@@ -440,7 +461,23 @@ export interface SimDayResult {
   maxRow: number;           // 1-based; 6 = the Sanctum landing (the live door)
   /** Stood on the Sanctum landing — the second gate of AAA 4.10e. */
   reachedSanctum: boolean;
-  fragmentsFound: number;   // violet rooms entered today
+  /**
+   * Violet rooms entered today. ROUND 11: these file SEALED pages — entering
+   * gets the document, solving renders it legible (engine/volume.ts) — so this
+   * is a count of DOCUMENTS ACQUIRED, never of knowledge gained. What she can
+   * actually read is `pagesMadeOut`.
+   */
+  fragmentsFound: number;
+  /**
+   * Sealed pages a solve MADE OUT today, in the order the day really happened:
+   * a solve deciphers `decipherYield(tier)` of the backlog standing at that
+   * moment, so a violet room entered after the day's last solve is not made out
+   * today however many rooms she solved earlier. This is the quantity the
+   * mystery's knowledge curve is allowed to count (AAA 4.10e/4.18).
+   */
+  pagesMadeOut: number;
+  /** Sealed pages still smudged at dusk — they survive the night, unread. */
+  sealedBacklog: number;
   /** Keys off the DECK: green cards taken for their key face. */
   keysFound: number;
   /**
@@ -493,11 +530,19 @@ function preferenceFor(
  * without it, durations fall to range midpoints — the economy's rng stream is
  * untouched either way, so the row/step targets never drift because the clock
  * exists.
+ *
+ * `carry.sealedBacklog` is yesterday's unread pages: the seal is a save-level
+ * flag pair (`vol.*.sealed-` minus `vol.*.legible-`, engine/volume.ts), so a
+ * page she could not make out last night is still smudged at dawn and is the
+ * first thing the next solve clears. Omitted, the day starts with a clean
+ * plate — correct for an isolated day, wrong for a campaign, which is why
+ * `simulateCampaign` threads it.
  */
 export function simulateDay(
   rng: () => number,
   profile: SimProfile,
   timeRng?: () => number,
+  carry?: { sealedBacklog?: number },
 ): SimDayResult {
   let ledger = createLedger(STEP_TABLE.dayStart);
   const tea = teaBonus(profile.brambleAffinity);
@@ -510,6 +555,12 @@ export function simulateDay(
   let rooms = 0;
   let roomsSolved = 0;
   let fragmentsFound = 0;
+  // The seal, in the order the evening really happens (round 11). Entering a
+  // violet room pushes a smudged page onto `sealed`; finishing a word game
+  // pops `decipherYield(tier)` of them. Both halves are the live wiring —
+  // app/slices/journal.ts `collectFragmentForRoom` / `creditSolve`.
+  let sealed = Math.max(0, carry?.sealedBacklog ?? 0);
+  let pagesMadeOut = 0;
   let keysFound = 0;
   let keysFromSolves = 0;
   let keys = profile.dawnKeys ?? 0;
@@ -646,6 +697,13 @@ export function simulateDay(
             keys += earned;
             keysFromSolves += earned;
           }
+          // ROUND 11 — THE SOLVE IS WHAT MAKES THE PAGE OUT. Only the backlog
+          // standing at THIS moment can be deciphered, which is the whole
+          // reason the seal can survive a night: a violet room drafted after
+          // the evening's last solve stays smudged until tomorrow.
+          const madeOut = Math.min(sealed, decipherYield(tier));
+          sealed -= madeOut;
+          pagesMadeOut += madeOut;
           roomsSolved += 1;
         } else {
           seconds += sampleSeconds(TIME_TABLE.abandon, timeRng);
@@ -680,7 +738,11 @@ export function simulateDay(
       }
     } else if (kind === 'mystery') {
       seconds += TIME_TABLE.mysteryBeat;
+      // Hers forever from this step — and unreadable until a word game is
+      // finished (AAA 4.18 keeps it non-blocking; the owner directive keeps it
+      // meaningful).
       fragmentsFound += 1;
+      sealed += 1;
     } else {
       seconds += TIME_TABLE.parlorBeat;
     }
@@ -696,6 +758,8 @@ export function simulateDay(
     maxRow,
     reachedSanctum: maxRow >= SANCTUM_LANDING_ROW,
     fragmentsFound,
+    pagesMadeOut,
+    sealedBacklog: sealed,
     keysFound,
     keysFromSolves,
     lockedOut,
@@ -773,10 +837,48 @@ export function campaignProfileForDay(base: SimProfile, day: number): SimProfile
 }
 
 /**
+ * The Study's share of the puzzle rooms drafted at this 0-based row, derived
+ * from the live deck exactly the way `deckMixAt` derives its own mix. The
+ * campaign's solve-channel model reads it, so a deck edit that makes the
+ * Forgotten Word commoner or rarer moves the measured horizon instead of
+ * quietly invalidating it. (tests/volume-pacing.test.ts derives the same
+ * number over the real volume JSON; this is the abstract model's copy.)
+ */
+export function studySolveShareAt(
+  row0: number,
+  deck: readonly RoomCard[] = BASE_DECK,
+): number {
+  const tier = rowTier(row0);
+  let study = 0;
+  let puzzle = 0;
+  for (const card of deck) {
+    if (card.category !== 'puzzle') continue;
+    if (card.tierRange[0] > tier || tier > card.tierRange[1]) continue;
+    const w = categoryWeight('puzzle', row0) * RARITY_WEIGHTS[tier][card.rarity];
+    puzzle += w;
+    if (card.puzzleKind === 'forgotten-word') study += w;
+  }
+  return puzzle > 0 ? study / puzzle : 0;
+}
+
+/**
  * The mystery's knowledge curve (A7 owns the real drip; AAA 4.14 guarantees
- * the shape this models). Fragments arrive from violet rooms she actually
- * entered — which the day sim counts for real — plus the two non-room source
- * types the anti-RNG-gating rule requires, plus the 3-day pity floor.
+ * the shape this models).
+ *
+ * ═══ ROUND-11 CORRECTION — THE MODEL ENCODED PRE-SEAL RULES ═══
+ * This block used to add `SimDayResult.fragmentsFound` — violet rooms
+ * ENTERED — straight into the deduction count, and modelled no solve channel
+ * at all. Under the shipped rules neither is true: a violet room files a
+ * SEALED page that narrows nothing until a solve makes it out
+ * (engine/volume.ts `sealedFragmentIds` / `DECIPHER_YIELD_BY_TIER`), and the
+ * word games pay two strict channels of their own. So 4.10e was verified
+ * against rules the game no longer has, and any retune of the seal would have
+ * moved the real horizon with every test still green.
+ *
+ * Now: only MADE-OUT pages (`SimDayResult.pagesMadeOut`, computed in day
+ * order) count as knowledge; the solve channels are modelled with the stock
+ * the volume actually authors; letters, testimony and the pity floor arrive
+ * legible, exactly as `letterGrants`/`grantsFragmentIds` file them.
  */
 export const KNOWLEDGE = {
   /** P(a letter carrying a fragment arrives overnight). */
@@ -787,22 +889,58 @@ export const KNOWLEDGE = {
   /** AAA 4.14: never 3 consecutive days with no new fragment. */
   pityDays: 3,
   /**
-   * Fragments she needs before the word is deducible for her. Sampled per
-   * campaign — some volumes click early, some resist. Volume 1 ships ~14
-   * fragments, so the top of this band is "she needed nearly all of them".
+   * THE SOLVE CHANNELS (engine/volume.ts `STUDY_CHANNEL`/`LINTEL_CHANNEL`):
+   * a solved Study hands over a definition line, any other solved word game a
+   * lintel engraving — valved to one per day per channel, and STRICT, so a
+   * channel only pays while the volume still authors something labelled for
+   * it. Volume 1 authors 3 `puzzle/definition-line` and 2 `puzzle/engraving`
+   * fragments, which is why wiring the word games into the mystery moved the
+   * horizon by days rather than weeks. Arrives LEGIBLE: she solved for it.
    */
-  fragmentsToDeduce: [11, 17] as const,
+  studyChannelStock: 3,
+  lintelChannelStock: 2,
+  /**
+   * The volume's whole authored supply — nothing can be learned past it.
+   * Volume 1 ships 17 fragments (the seventeenth is the Portrait's confession,
+   * a scene rather than a clue).
+   */
+  volumeFragments: 17,
+  /**
+   * Fragments she needs LEGIBLE before the word is deducible for her. Sampled
+   * per campaign — some volumes click early, some resist.
+   *
+   * ROUND-11 RE-DERIVATION. This band used to be [11, 17], calibrated when
+   * this model had no solve channels at all and counted violet rooms entered
+   * as knowledge outright. Wiring the channels in put five guaranteed early
+   * fragments on the board, so the old floor no longer described the same
+   * thing. Re-derived from what actually pins the answer instead of from the
+   * old number: tests/volume-solvability.test.ts proves volume 1's SIX
+   * engravings are individually soft and jointly sufficient — the chain runs
+   * 171755 → 15232 → 298 → 22 → 11 → 2 → 1, so five of them still leave two
+   * candidate words. Six engravings among seventeen fragments arriving in
+   * revealOrder means all six are inside the first k she holds with
+   * probability C(k,6)/C(17,6): 3.7% at k = 11, 13.9% at 13, 40% at 15. A
+   * floor of 11 was therefore claiming a deduction the constraint set does
+   * not support in nineteen campaigns out of twenty; 13 is the optimistic
+   * end (she guessed between the last two candidates), 17 the resistant one.
+   */
+  fragmentsToDeduce: [13, 17] as const,
 } as const;
 
 export interface SimCampaignResult {
   days: SimDayResult[];
   /** 1-based day she first stood on the Sanctum row. null = never, in window. */
   firstSanctumReachDay: number | null;
-  /** 1-based day she had enough fragments to name the word. */
+  /** 1-based day she had enough LEGIBLE fragments to name the word. */
   deductionDay: number | null;
   /** 1-based day she both KNEW it and REACHED the door. The volume win. */
   volumeWinDay: number | null;
+  /** Fragments she can actually read (sealed pages excluded until made out). */
   fragments: number;
+  /** Documents filed, legible or not — the AAA 4.14 drought is measured here. */
+  fragmentsFiled: number;
+  /** Days that ended with at least one page still smudged (the seal biting). */
+  sealedOvernightDays: number;
   fragmentsNeeded: number;
 }
 
@@ -826,7 +964,12 @@ export function simulateCampaign(
   const fragmentsNeeded = randInt(metaRng, needMin, needMax);
 
   const results: SimDayResult[] = [];
-  let fragments = 0;
+  let fragments = 0;          // LEGIBLE — what she can read and reason from
+  let fragmentsFiled = 0;     // documents in hand, smudged or not
+  let studyStock = KNOWLEDGE.studyChannelStock;
+  let lintelStock = KNOWLEDGE.lintelChannelStock;
+  let sealedBacklog = 0;
+  let sealedOvernightDays = 0;
   let dryStreak = 0;
   let firstSanctumReachDay: number | null = null;
   let deductionDay: number | null = null;
@@ -834,19 +977,51 @@ export function simulateCampaign(
 
   for (let day = 1; day <= days; day++) {
     const profile = campaignProfileForDay(base, day);
-    const result = simulateDay(rng, profile, timeRng);
+    // Yesterday's unread pages are still on the desk at dawn — the seal is a
+    // save flag, not a day-scoped counter (engine/volume.ts).
+    const result = simulateDay(rng, profile, timeRng, { sealedBacklog });
     results.push(result);
+    sealedBacklog = result.sealedBacklog;
+    if (sealedBacklog > 0) sealedOvernightDays += 1;
 
     if (result.reachedSanctum && firstSanctumReachDay === null) firstSanctumReachDay = day;
 
     // --- The fragment drip (AAA 4.14: ≥2 source types + a pity floor). ----
-    let today = result.fragmentsFound;
-    if (metaRng() < KNOWLEDGE.letterChance) today += 1;
+    // `filed` is what ARRIVED (the drought rule's quantity — the live
+    // `fragmentDroughtDays` reads DayRecord.fragmentsFound, which counts a
+    // sealed page as found, because it IS found). `legible` is what she can
+    // actually reason from, and only that moves the deduction.
+    let filed = result.fragmentsFound;
+    let legible = result.pagesMadeOut;
+
+    // The word games pay their own two channels — strictly, once per day per
+    // channel, and only while the volume still authors something labelled for
+    // them. The i-th solve is placed at row min(i, today's top), the same
+    // cheap ordering tests/volume-pacing.test.ts uses over the real content,
+    // which matters because the Study is a rows-5–6 card: its channel only
+    // opens on a day she climbed far enough to find it.
+    let studyPaid = false;
+    let lintelPaid = false;
+    for (let i = 0; i < result.roomsSolved; i++) {
+      const row0 = Math.min(i, Math.max(0, result.maxRow - 1));
+      const isStudy = metaRng() < studySolveShareAt(row0);
+      if (isStudy && !studyPaid && studyStock > 0) {
+        studyPaid = true; studyStock -= 1; filed += 1; legible += 1;
+      } else if (!isStudy && !lintelPaid && lintelStock > 0) {
+        lintelPaid = true; lintelStock -= 1; filed += 1; legible += 1;
+      }
+    }
+
+    if (metaRng() < KNOWLEDGE.letterChance) { filed += 1; legible += 1; }
     const warmth = Math.min(1, day / KNOWLEDGE.testimonyRampDays);
-    if (metaRng() < KNOWLEDGE.testimonyChance * warmth) today += 1;
-    dryStreak = today > 0 ? 0 : dryStreak + 1;
-    if (dryStreak >= KNOWLEDGE.pityDays) { today += 1; dryStreak = 0; }
-    fragments += today;
+    if (metaRng() < KNOWLEDGE.testimonyChance * warmth) { filed += 1; legible += 1; }
+    dryStreak = filed > 0 ? 0 : dryStreak + 1;
+    if (dryStreak >= KNOWLEDGE.pityDays) { filed += 1; legible += 1; dryStreak = 0; }
+
+    // Nothing can be learned past the volume's authored supply.
+    filed = Math.min(filed, KNOWLEDGE.volumeFragments - fragmentsFiled);
+    fragmentsFiled += filed;
+    fragments = Math.min(fragments + legible, fragmentsFiled);
 
     if (deductionDay === null && fragments >= fragmentsNeeded) deductionDay = day;
     if (
@@ -857,7 +1032,10 @@ export function simulateCampaign(
     }
   }
 
-  return { days: results, firstSanctumReachDay, deductionDay, volumeWinDay, fragments, fragmentsNeeded };
+  return {
+    days: results, firstSanctumReachDay, deductionDay, volumeWinDay,
+    fragments, fragmentsFiled, sealedOvernightDays, fragmentsNeeded,
+  };
 }
 
 /** `count` seeded campaigns of the same player — the distribution 4.10 pins. */

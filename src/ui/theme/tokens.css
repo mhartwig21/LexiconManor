@@ -37,10 +37,36 @@
   --paper-edge: #cdbfa4;     /* sheet edges, hairline rules */
   --ink: #2b2118;            /* body ink */
   --ink-soft: #55452f;       /* secondary text */
-  --ink-faint: #8a795f;      /* placeholders, disabled — still >=3:1 on paper */
+  /* ROUND 7 CONTRAST AUDIT (AAA 6.2 [PARITY]): this was #8a795f and its own
+     comment set the bar at ">=3:1", i.e. at the LARGE-glyph rule. It is not
+     used that way. An automated pass over every screen in both themes found it
+     painting real body copy at 15–17px in 24 places — the Chronicles keepsake
+     names and their notes, the settings hints, the journal captions and
+     Ellery's margin nudges, the Sanctum's insufficient-info line and door
+     caption, the Study's sealed-clue and elimination-history text, the
+     Conservatory's and Gallery's entry hints, the cabinet's rarity/tier line,
+     the letter senders — measuring 3.44:1 on --paper and 3.69:1 on
+     --paper-raised. Every one of those is a 6.2 fail, and the fix belongs
+     here rather than in 24 module rules, or the ink ramp loses its third
+     level and the drift starts again. #695c49 is the same hue walked down
+     until it clears 4.5:1 on the DARKEST light surface (--paper-shade,
+     4.57:1; 5.31 on --paper, 5.69 on --paper-raised) and still reads a clear
+     step lighter than --ink-soft (7.52 on --paper). */
+  --ink-faint: #695c49;      /* third ink level — quiet, and still >=4.5:1 */
 
   /* --- State (rubrication: red = state, never decoration) ----------------- */
   --wax: #8c2b2b;            /* mistakes, unread markers, seals, daily guess */
+  /* WAX AS TEXT vs WAX AS A FILL (round-7 contrast audit). `--wax` is a fill
+     colour first — the seal, the unread disc, which carry their own --on-wax
+     numeral — and in candlelight it is deliberately dark enough to read as
+     sealing wax on charcoal. Used as INK for a 15px refusal toast it measures
+     3.09:1 on --paper in the dark theme: a straight AAA 6.2 fail on the one
+     line that tells her a guess cost her something. `--wax-ink` is the same
+     rubrication lit for reading (4.67:1 on the lightest candlelit surface,
+     5.09 on --paper); in daylight the two are the same colour, because there
+     the fill already reads at 7.36:1. Use --wax for fills and glyphs,
+     --wax-ink whenever wax is a run of text. */
+  --wax-ink: #8c2b2b;
   --moss: #4a6741;           /* success / solved ink */
   --gilt: #a07714;           /* rewards, gems, rank progress */
 
@@ -92,6 +118,27 @@
      Trimmed on short screens by the compaction block at the bottom of this file. */
   --chrome-h: 52px;
 
+  /* THE SECOND NAVIGATION BAND (AAA 11.2/11.4, round-11 major).
+     `--chrome-h` + `--tap-target` describes the shape MOST route surfaces have:
+     the fixed bar, then a back-control row, then content. The journal is not
+     that shape — it puts a ribbon of four tabs below the back row, and the
+     moment seal, which clears exactly those two things, landed on top of them:
+     `elementFromPoint` at every tab's centre returned `.mom`, so reaching for
+     "Testimony" dismissed the notice instead. A tab is not decoration and the
+     seal is tappable, so this was a live §11.2 fail for 5.6s per queued grant.
+
+     A surface that owns a navigation band below the back row PUBLISHES the
+     band's floor here — the viewport-y of its bottom edge, MEASURED from the
+     live element (app/platform/page-nav.ts), never a pixel copy of a layout
+     anyone can retune. 0 means "no second band", which is every other surface,
+     so consumers written against it are inert until a page opts in.
+
+     Why a floor and not a height: the journal's tabs sit below the volume line
+     as well as the back row, so `base + band height` still lands inside them
+     (measured: base 108, tabs 139..183 — +44 gives 152). The only number that
+     is true for any surface is where the band actually ends. */
+  --page-nav-floor: 0px;
+
   /* --- Layering scale (published in ui/chrome/layers.ts; AAA 11.5) --------- */
   /* A rung is a decision about what may be TAPPED, not only what is seen.
      Three modules independently chose "40" and the day bar hit-tested above
@@ -123,8 +170,13 @@
     --paper-edge: #4a3d2c;
     --ink: #e7dcc6;
     --ink-soft: #c2b394;
-    --ink-faint: #8f8168;
+    /* was #8f8168 — 4.37:1 on --paper and 4.01:1 on --paper-raised, i.e. the
+       same 6.2 fail as the light theme in the same 24 places. Walked up to
+       4.58:1 on the LIGHTEST candlelit surface (--paper-raised), 4.99 on
+       --paper, 5.33 on --paper-shade. */
+    --ink-faint: #9a8b70;
     --wax: #b04a41;          /* lifted for contrast on charcoal */
+    --wax-ink: #de6c5f;      /* wax as READING ink — see the note in :root */
     --moss: #7d9a6e;
     --gilt: #c9a13f;
     --cat-puzzle: #7fa3c4;
@@ -142,8 +194,8 @@
 /* Explicit user override beats system preference, both directions. */
 :root[data-theme='light'] {
   --paper: #f0e7d8; --paper-raised: #f6efe2; --paper-shade: #e3d7c1; --paper-edge: #cdbfa4;
-  --ink: #2b2118; --ink-soft: #55452f; --ink-faint: #8a795f;
-  --wax: #8c2b2b; --moss: #4a6741; --gilt: #a07714;
+  --ink: #2b2118; --ink-soft: #55452f; --ink-faint: #695c49;
+  --wax: #8c2b2b; --wax-ink: #8c2b2b; --moss: #4a6741; --gilt: #a07714;
   --cat-puzzle: #33526e; --cat-parlor: #8a6d1f; --cat-utility: #3e6b4f; --cat-mystery: #5c4470;
   --shadow-lift: 0 4px 10px rgba(43, 33, 24, 0.18), inset 0 1px 0 rgba(252, 248, 238, 0.55);
   --deckle: inset 0 1px 0 rgba(252, 248, 238, 0.55), inset 0 -1px 0 rgba(43, 33, 24, 0.05);
@@ -151,8 +203,8 @@
 }
 :root[data-theme='dark'] {
   --paper: #241d15; --paper-raised: #2c241a; --paper-shade: #1d1710; --paper-edge: #4a3d2c;
-  --ink: #e7dcc6; --ink-soft: #c2b394; --ink-faint: #8f8168;
-  --wax: #b04a41; --moss: #7d9a6e; --gilt: #c9a13f;
+  --ink: #e7dcc6; --ink-soft: #c2b394; --ink-faint: #9a8b70;
+  --wax: #b04a41; --wax-ink: #de6c5f; --moss: #7d9a6e; --gilt: #c9a13f;
   --cat-puzzle: #7fa3c4; --cat-parlor: #c9ab55; --cat-utility: #85ab8f; --cat-mystery: #a68cc0;
   --shadow-lift: 0 4px 10px rgba(14, 10, 6, 0.45), inset 0 1px 0 rgba(231, 220, 198, 0.06);
   --deckle: inset 0 1px 0 rgba(231, 220, 198, 0.06), inset 0 -1px 0 rgba(14, 10, 6, 0.3);

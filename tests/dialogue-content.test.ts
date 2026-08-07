@@ -7,6 +7,7 @@ import { isSubstantive, MAX_LINE_CHARS } from '../src/engine/dialogue/schema';
 import { selectDialogue, findNode } from '../src/engine/dialogue/select';
 import { validateDialogueSet } from '../src/engine/dialogue/validate';
 import { DIALOGUE_FILES, getDialogueFile } from '../src/engine/dialogue/content';
+import { deriveLegibleFragmentCount } from '../src/engine/dialogue/conditions';
 
 /**
  * A6 — the authored Volume 1 cast, held to the AAA bar:
@@ -182,6 +183,10 @@ function runGreedySim(days: number): SimResult {
         giftedToday: new Set<CharacterId>(),
         volumeId: 'volume-1',
         fragmentsFound: fragments,
+        // Derived the way the slice derives it, not hardcoded: this sweep sets
+        // no `sealed-` flags, so it resolves to `fragments` today and starts
+        // modelling the seal for free the moment the sweep does set them.
+        fragmentsLegible: deriveLegibleFragmentCount('volume-1', flags, fragments),
       };
       const file = getDialogueFile(character);
       const picked = selectDialogue(file, q);

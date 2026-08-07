@@ -28,15 +28,32 @@
 .mom-layer {
   position: fixed;
   z-index: var(--z-moment, 100);
-  /* Clears TWO things, and both are read from tokens rather than copied as
-     pixels (AAA 11.4): the fixed chrome bar, and the back-control row that
-     every sheet screen (journal, chronicles, sanctum) puts directly beneath
-     it. Measured before this line existed: the seal's box was 12,60,366×99
-     and `elementFromPoint` at the centre of "The manor" returned `.mom` on
-     /journal, /chronicles and /sanctum — a §11.2 fail for the 5.6s it was up,
-     which is precisely the defect class this layer exists to end. */
-  top: calc(
-    var(--chrome-h, 52px) + env(safe-area-inset-top, 0px) + var(--tap-target, 44px) + 12px
+  /* Clears THREE things, all read from tokens rather than copied as pixels
+     (AAA 11.4): the fixed chrome bar, the back-control row that every sheet
+     screen (journal, chronicles, sanctum) puts directly beneath it, and — the
+     round-11 addition — whatever navigation band the SURFACE itself owns below
+     that row.
+
+     Measured before the first two clauses existed: the seal's box was
+     12,60,366×99 and `elementFromPoint` at the centre of "The manor" returned
+     `.mom` on /journal, /chronicles and /sanctum.
+
+     Measured before the third: the seal's box was 12,108,366×143 on /journal
+     and all four ribbon tabs ("The Word", "Engravings", "Testimony",
+     "Letters", tops at y≈139) answered `.mom` at their centres. The seal is
+     itself tappable, so reaching for Testimony silently dismissed the notice
+     — on the very screen the seal's own trace line ("Filed in the Journal ·
+     Testimony") had just sent her to, for 5.6s per queued grant. /chronicles
+     and /manor were clean under the same probe: the journal is the one surface
+     with a SECOND band, and nothing accounted for it.
+
+     `--page-nav-floor` is published by the surface that owns the band, from a
+     live measurement (app/platform/page-nav.ts). It defaults to 0px, so on
+     every other screen the second branch of the max() can never win and the
+     geometry is byte-for-byte what it was. */
+  top: max(
+    calc(var(--chrome-h, 52px) + env(safe-area-inset-top, 0px) + var(--tap-target, 44px) + 12px),
+    calc(var(--page-nav-floor, 0px) + 12px)
   );
   left: 0;
   right: 0;

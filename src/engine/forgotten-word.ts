@@ -36,11 +36,62 @@ export function maxGuessesForLevel(level: number): number {
   return 3;
 }
 
-/** Definition clarity scales with level, implementing the designed progression. */
+/**
+ * The HEADLINE definition: the one line the Study stages in its largest
+ * display italic, which AAA 3.7 [COZY] requires to read as the best writing in
+ * the game.
+ *
+ * ROUND 11 — WHAT WAS WRONG. This function used to key the register straight
+ * to the room tier (1 → plain, 2 → poetic, 3 → riddle), and the adapter
+ * honours tier exactly, so a tier-1 Study could ONLY ever print `plain`. Two
+ * of every three authored definitions never reached glass — 226 of the 339
+ * lines in content/generated/forgotten-word.json were dead content — and the
+ * quality was inverted: the first Study a player meets, in the biggest type
+ * the room owns, got the dictionary gloss ("A small object held on to only
+ * because of the person or place it recalls.") while the line that was
+ * actually written for her ("A pebble, a ticket stub, a button: none of them
+ * beautiful, all of them evidence.") was unreachable.
+ *
+ * The register is no longer the tier lever. `poetic` is the headline wherever
+ * the room is meant to be readable (tiers 1–2); tier 3 — where the room IS the
+ * difficulty — headlines the riddle. The tier lever moved to how much help
+ * comes with it: see `glossForLevel`, and `maxGuessesForLevel` above.
+ */
 export function definitionForLevel(puzzle: ForgottenWordPuzzle, level: number): string {
-  if (level <= 1) return puzzle.definitions.plain;
-  if (level === 2) return puzzle.definitions.poetic;
+  if (level <= 2) return puzzle.definitions.poetic;
   return puzzle.definitions.riddle;
+}
+
+/**
+ * The free second register, shown under the headline. Tier 1 — the bottom of
+ * the house, the first Study anyone meets — gets the plain gloss for nothing:
+ * the poetry leads, the dictionary follows, and the easiest room is the one
+ * that hands over the most. Tiers 2 and 3 get the image alone.
+ *
+ * Between this and `definitionForLevel`, all three authored registers now
+ * reach glass across the shipped pool (plain at tier 1, poetic at tiers 1–2,
+ * riddle at tier 3) — nothing authored to the 3.7 standard is unreachable.
+ */
+export function glossForLevel(puzzle: ForgottenWordPuzzle, level: number): string | null {
+  return level <= 1 ? puzzle.definitions.plain : null;
+}
+
+/**
+ * The registers this level did NOT stage — printed in the verdict panel once
+ * the word is settled (remembered or slipped away), as the rest of the
+ * lexicographer's entry.
+ *
+ * This is the other half of the round-11 fix, and the half that makes the
+ * claim absolute: the adapter honours the room tier exactly, so keying ANY
+ * register to the tier leaves the others unread on that entry forever. With
+ * this, every authored line on every shipped entry reaches glass in a single
+ * visit — the two that are not the puzzle become the reward for finishing it,
+ * which is where the best writing in the game (AAA 3.7) belongs anyway.
+ */
+export function unshownDefinitions(puzzle: ForgottenWordPuzzle, level: number): string[] {
+  const shown = new Set([definitionForLevel(puzzle, level), glossForLevel(puzzle, level)]);
+  return [puzzle.definitions.plain, puzzle.definitions.poetic, puzzle.definitions.riddle]
+    .filter((d) => !shown.has(d));
 }
 
 export function startForgottenWord(puzzle: ForgottenWordPuzzle, level: number): ForgottenWordState {

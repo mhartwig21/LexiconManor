@@ -33,6 +33,13 @@ export type GameEvent =
   /** Big in-room moments characters react to (AAA 5.1): pangram, Full Bloom, … */
   | { type: 'room-notable'; kind: RoomPuzzleKind; note: string }
   | { type: 'fragment-found'; fragmentId: string }
+  /**
+   * A solve made sealed pages out (round 10's seal; `DECIPHER_YIELD_BY_TIER`
+   * sets how many at once, so this is a batch, not one id). `fragment-found`
+   * says the page is HERS; this says it finally SPEAKS — they are different
+   * beats and a violet room fires the first without the second.
+   */
+  | { type: 'fragment-made-out'; fragmentIds: readonly string[] }
   | { type: 'fragment-interpreted'; fragmentId: string }
   | { type: 'letter-opened'; letterId: string }
   | { type: 'sanctum-guess-wrong'; guess: string; closeness: GuessCloseness }
@@ -79,4 +86,12 @@ export interface DialogueQuery {
   /** Mystery context for fragmentCount / volume-gated conditions. */
   volumeId: string;
   fragmentsFound: number;
+  /**
+   * How many filed fragments she can actually READ (round 10's seal).
+   * `fragmentsFound` is what she has been *collecting*; this is what she
+   * *knows*. Conditions whose copy claims knowledge ("you have read more of me
+   * now than anyone living") hang on this one — see the `fragmentsLegible`
+   * condition kind in `engine/dialogue/schema.ts`.
+   */
+  fragmentsLegible: number;
 }

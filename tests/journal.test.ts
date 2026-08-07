@@ -240,10 +240,14 @@ describe('nudges — sympathetic, never silence (AAA 4.16)', () => {
     }
     // Every fragment count below the threshold has a line waiting; the first
     // count at or above it has none (the signal stands down, AAA 4.16).
+    // ROUND 11: the gates count pages she can READ, not pages she is carrying
+    // (engine/journal.sanctumReadiness) — four sealed smudges used to retire
+    // the one AAA 4.16 signal in the game for a player with no constraint on
+    // the alphabet plate at all.
     const covers = (count: number) =>
       gates.some((g) =>
         (g.conditions ?? []).every((c) =>
-          c.kind === 'fragmentCount' &&
+          c.kind === 'fragmentsLegible' &&
           (c.gte === undefined || count >= c.gte) &&
           (c.lte === undefined || count <= c.lte)));
     for (let n = 0; n < THIN_FILE_THRESHOLD; n++) {
@@ -255,7 +259,35 @@ describe('nudges — sympathetic, never silence (AAA 4.16)', () => {
   // The engine must not have quietly regrown the strings.
   it('sanctumReadiness carries counts only — no prose', () => {
     const r = sanctumReadiness(volume, fresh());
-    expect(Object.keys(r).sort()).toEqual(['enough', 'found', 'total']);
+    expect(Object.keys(r).sort()).toEqual(['enough', 'filed', 'legible', 'total']);
+  });
+
+  // ── ROUND-11 BLOCKER: THE GATES COUNTED PAGES SHE CANNOT READ. ────────────
+  it('a file of SMUDGES is still a thin file (AAA 4.16)', () => {
+    const ids = volume.fragments.slice(0, THIN_FILE_THRESHOLD).map((f) => f.id);
+    const state = withFound(...ids);
+    const sealed = { sealedIds: new Set(ids) };
+    const r = sanctumReadiness(volume, state, sealed);
+    expect(r.filed).toBe(THIN_FILE_THRESHOLD);
+    expect(r.legible).toBe(0);
+    // The one 4.16 signal in the game must still be standing.
+    expect(r.enough).toBe(false);
+    // ...and the moment one of them is made out, the count moves by one.
+    const partly = { sealedIds: new Set(ids.slice(1)) };
+    expect(sanctumReadiness(volume, state, partly).legible).toBe(1);
+    // Both numbers survive: "she has been collecting" is a real, different fact.
+    expect(sanctumReadiness(volume, state, partly).filed).toBe(THIN_FILE_THRESHOLD);
+  });
+
+  it('the Sanctum link says BOTH numbers whenever they differ', () => {
+    const src = readFileSync(
+      join(__dirname, '..', 'src', 'ui', 'sanctum', 'SanctumView.tsx'), 'utf8',
+    );
+    expect(src).toMatch(/readiness\.filed/);
+    expect(src).toMatch(/readiness\.legible/);
+    expect(src).toMatch(/made out/);
+    // The old line read "N of 17 fragments filed" and nothing else.
+    expect(src).not.toMatch(/readiness\.found/);
   });
 
   it('the journal nudge always has something warm to say while active', () => {

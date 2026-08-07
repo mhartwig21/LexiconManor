@@ -37,9 +37,27 @@
  * `result.reachedSanctum` is now the same event on both sides — see the
  * landing-gate case at the bottom of this file.
  *
- * The measured quantity is the day the SIXTEENTH fragment is filed — the last
- * engraving, after which the constraint set is a single word. (The
- * seventeenth is the Portrait's confession, which is a scene, not a clue.)
+ * ROUND 7 (verifier) — THE SEAL IS THREADED THROUGH THIS MODEL.
+ *
+ * The measured quantity is the day the sixteenth fragment becomes **LEGIBLE**.
+ * It used to be the day the sixteenth was *filed*, and this header used to
+ * call that "the last engraving, after which the constraint set is a single
+ * word" — which is false for a sealed engraving. Round 10 made a violet room
+ * file a page that narrows NOTHING until a solve makes it out, so filing
+ * sixteen pages no longer means knowing sixteen things, and a model that
+ * measures filing would stay green through any retune of the seal while the
+ * real horizon moved underneath it. That is the same shape as the round-6
+ * "verified against a storey nobody enters" defect.
+ *
+ * So: violet-room pages are filed SEALED and are made out by
+ * `SimDayResult.pagesMadeOut` (oldest first, matching `fragmentsToDecipher`),
+ * with `sealedBacklog` carried across dawns into `simulateDay`; the letter,
+ * testimony and solve-channel grants arrive legible, because she read those.
+ * The FILED day is kept as a secondary assertion so the cozy "it is hers the
+ * instant she walks in" promise stays pinned too — both numbers matter, and
+ * they are now different numbers.
+ *
+ * (The seventeenth fragment is the Portrait's confession, a scene, not a clue.)
  */
 
 import { readFileSync } from 'node:fs';
@@ -117,9 +135,15 @@ function studyShareAt(row0: number): number {
   return puzzle > 0 ? study / puzzle : 0;
 }
 
-/** One seeded campaign through the real drip. Returns the 1-based day each
- *  fragment count was first reached (index n = the day fragment n was filed). */
-function fragmentDays(seed: number, days: number): number[] {
+/** What one seeded campaign measured: the day each FILED count and each
+ *  LEGIBLE count was first reached (index n = fragment n). */
+interface DripRun {
+  filed: number[];
+  legible: number[];
+}
+
+/** One seeded campaign through the real drip, seal included. */
+function fragmentDays(seed: number, days: number): DripRun {
   const rng = createRng(seed);
   const timeRng = createRng((seed ^ 0x715e17) | 0);
   const metaRng = createRng((seed ^ 0x5eed21) | 0);
@@ -129,10 +153,23 @@ function fragmentDays(seed: number, days: number): number[] {
   const openedIds = new Set<string>();
   const delivered = new Set<string>();
   const dayOfCount: number[] = [];
+  const dayOfLegible: number[] = [];
 
-  const file = (fragmentId: string | null | undefined) => {
+  /** Filed but still smudged, in filing order — the queue a solve eats from. */
+  let sealedQueue: string[] = [];
+  let legibleCount = 0;
+
+  /**
+   * `sealed: true` is the violet-room channel: the page is hers this instant
+   * and narrows nothing yet. Everything else — letters, testimony, the two
+   * solve channels — arrives legible, because those are pages she was handed
+   * open or earned by solving.
+   */
+  const file = (fragmentId: string | null | undefined, opts?: { sealed?: boolean }) => {
     if (!fragmentId || state.foundFragmentIds.includes(fragmentId)) return;
     state = { ...state, foundFragmentIds: [...state.foundFragmentIds, fragmentId] };
+    if (opts?.sealed) sealedQueue.push(fragmentId);
+    else legibleCount += 1;   // both counts are day-stamped at dusk, below
   };
   /** Testimony not yet spoken is held out of the room drip (AAA 4.14). */
   const reservedIds = () =>
@@ -148,6 +185,7 @@ function fragmentDays(seed: number, days: number): number[] {
 
   for (let day = 1; day <= days; day++) {
     const before = state.foundFragmentIds.length;
+    const legibleBefore = legibleCount;
 
     // --- Overnight post (drought measured from the banked day records). ----
     const droughtDays = fragmentDroughtDays(records);
@@ -162,11 +200,22 @@ function fragmentDays(seed: number, days: number): number[] {
     speak('bramble');
 
     // --- The day itself, played through the live economy. ------------------
-    const result = simulateDay(rng, campaignProfileForDay(PROFILE_SKILLED, day), timeRng);
+    // The backlog is carried across the dawn: a page she could not make out
+    // last night is still smudged this morning and is the first thing today's
+    // solve clears. Without this the seal would reset every midnight and the
+    // model would understate exactly the pressure the mechanic exists to make.
+    const result = simulateDay(
+      rng, campaignProfileForDay(PROFILE_SKILLED, day), timeRng,
+      { sealedBacklog: sealedQueue.length },
+    );
 
-    // Violet rooms she actually entered file the next fragment on the drip.
+    // Violet rooms she actually entered file the next fragment on the drip —
+    // SEALED. Hers immediately, silent until a word game makes it out.
     for (let i = 0; i < result.fragmentsFound; i++) {
-      file(nextFragmentForRoom(content, state, 'mystery', { reservedIds: reservedIds() })?.id);
+      file(
+        nextFragmentForRoom(content, state, 'mystery', { reservedIds: reservedIds() })?.id,
+        { sealed: true },
+      );
     }
 
     // The word games pay the mystery (round 8): the Study hands over a
@@ -199,39 +248,81 @@ function fragmentDays(seed: number, days: number): number[] {
     // climbs that far does he say his piece (MANOR_DESIGN §8).
     if (result.reachedSanctum) speak('portrait');
 
+    // --- The solves make the backlog out (oldest first, as the engine does).
+    // `pagesMadeOut` is computed inside simulateDay in real day order through
+    // the live `decipherYield`, so tier is already priced in. Clamped to the
+    // queue we actually hold: the volume authors a fixed 17 fragments, so late
+    // in a campaign the drip can run dry and file fewer than the sim expected.
+    const madeOut = Math.min(result.pagesMadeOut, sealedQueue.length);
+    if (madeOut > 0) {
+      sealedQueue = sealedQueue.slice(madeOut);
+      legibleCount += madeOut;
+    }
+
     const found = state.foundFragmentIds.length;
     for (let n = before + 1; n <= found; n++) dayOfCount[n] = day;
+    for (let n = legibleBefore + 1; n <= legibleCount; n++) dayOfLegible[n] = day;
     records.push({
       day, endedAt: 0, cause: 'steps-exhausted',
       roomsDrafted: result.rooms, roomsSolved: result.roomsSolved,
       fragmentsFound: found - before, stepsSpent: result.spent, minutes: result.minutes,
     } as DayRecord);
   }
-  return dayOfCount;
+  return { filed: dayOfCount, legible: dayOfLegible };
 }
 
 describe('fragment pacing — the volume horizon is measured, not asserted (AAA 4.10e)', () => {
   const HORIZON = 60;
   const CAMPAIGNS = 240;
   const runs = Array.from({ length: CAMPAIGNS }, (_, i) => fragmentDays((0x51ce + i * 0x9e37) | 0, HORIZON));
-  const day16 = runs.map((r) => r[16] ?? HORIZON + 1);
+  /** THE horizon: the day the sixteenth fragment can actually be READ. */
+  const day16 = runs.map((r) => r.legible[16] ?? HORIZON + 1);
+  /** The cozy promise, kept as a secondary: the day it became hers. */
+  const day16Filed = runs.map((r) => r.filed[16] ?? HORIZON + 1);
 
-  // Measured on the round-8 content (the two solve channels live): min 6,
-  // p10 10, median 13, p90 17, max 23 across 240 seeded campaigns — i.e. the
-  // drip is built for 4.10e and nowhere near the deleted "2–4 evenings"
-  // clause. (Round 6, before the word games paid anything: min 8, p10 10,
-  // median 13.5, p90 17, max 22. Wiring the Study and the lintels moved the
-  // horizon barely at all, because the volume authors a fixed 17 fragments
-  // and the pity/letter channels were already carrying the quiet days — what
-  // changed is WHERE they come from, which is the whole point of 4.14.)
+  // Measured over 240 seeded campaigns, ROUND 7 (verifier), with the seal
+  // threaded through and the round-11 violet retune live:
+  //   LEGIBLE fragment 16 — p10 8, median 12, max 19   ← the horizon
+  //   FILED   fragment 16 — p10 8, median 11, max 18   ← the cozy promise
+  //   lag between them — mean 0.54 days, max 3, NONZERO on 49% of campaigns
+  //
+  // That gap is the evidence the change is not cosmetic. If the two medians
+  // ever collapse onto each other the seal has stopped costing anything and
+  // 4.10g is no longer biting, which is precisely what this file could not
+  // see while it measured filing alone.
+  //
+  // (Round 8, the two solve channels live and no seal modelled: min 6, p10 10,
+  // median 13, p90 17, max 23. Round 6, before the word games paid anything:
+  // min 8, p10 10, median 13.5, p90 17, max 22. The horizon has stayed inside
+  // 4.10e's 14–28 day win window throughout — the volume authors a fixed 17
+  // fragments and the pity/letter channels carry the quiet days, so what these
+  // rounds changed is WHERE pages come from and WHEN they speak, which is the
+  // whole point of 4.14 and 4.10g respectively.)
   it('every campaign reaches the last engraving inside the horizon', () => {
     expect(day16.every((d) => d <= HORIZON)).toBe(true);
   });
 
-  it('the median campaign files fragment 16 between day 10 and day 20', () => {
+  it('the median campaign can READ fragment 16 between day 10 and day 20', () => {
     const m = medianOf(day16);
-    expect(m, `median day-of-fragment-16 was ${m}`).toBeGreaterThanOrEqual(10);
-    expect(m, `median day-of-fragment-16 was ${m}`).toBeLessThanOrEqual(20);
+    expect(m, `median day-of-LEGIBLE-fragment-16 was ${m}`).toBeGreaterThanOrEqual(10);
+    expect(m, `median day-of-LEGIBLE-fragment-16 was ${m}`).toBeLessThanOrEqual(20);
+  });
+
+  /**
+   * The cozy half of round 10's promise, pinned separately: entering a violet
+   * room hands her the page THAT INSTANT and nothing can take it back. Filing
+   * must therefore never lag being able to read — if these two ever converge,
+   * the seal has stopped costing anything and 4.10g is no longer biting; if
+   * filing ever came out LATER than legibility, the model would be incoherent.
+   */
+  it('a page is hers before it speaks — filed never lags legible', () => {
+    for (let i = 0; i < runs.length; i++) {
+      expect(day16Filed[i]!, `campaign ${i}: filed ${day16Filed[i]}, legible ${day16[i]}`)
+        .toBeLessThanOrEqual(day16[i]!);
+    }
+    const mFiled = medianOf(day16Filed);
+    expect(mFiled, `median day-of-FILED-fragment-16 was ${mFiled}`).toBeGreaterThanOrEqual(10);
+    expect(mFiled, `median day-of-FILED-fragment-16 was ${mFiled}`).toBeLessThanOrEqual(20);
   });
 
   it('even a lucky tenth of campaigns needs a full week (p10 >= 6)', () => {
@@ -272,12 +363,17 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
   });
 
   it('the pity floor holds: never PITY_DROUGHT_DAYS+1 consecutive dry days', () => {
+    // Measured on FILING, deliberately: the pity channel's promise is that
+    // she is never handed nothing for PITY_DROUGHT_DAYS running. A sealed page
+    // still counts as something arriving — it is hers, it is in the journal,
+    // and it is a reason to go solve a room.
     for (const run of runs) {
+      const filedDays = run.filed;
       let dry = 0;
       let worst = 0;
-      const last = run.reduce((a, b) => Math.max(a, b ?? 0), 0);
+      const last = filedDays.reduce((a, b) => Math.max(a, b ?? 0), 0);
       for (let day = 1; day <= last; day++) {
-        const filedToday = run.some((d) => d === day);
+        const filedToday = filedDays.some((d) => d === day);
         dry = filedToday ? 0 : dry + 1;
         worst = Math.max(worst, dry);
       }

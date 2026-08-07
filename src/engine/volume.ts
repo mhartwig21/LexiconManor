@@ -505,6 +505,18 @@ function idsWithPrefix(prefix: string, flags: Iterable<string>): Set<string> {
  * never stored: `sealed-` minus `legible-`, so the write-once rule holds and a
  * save written before this mechanic existed reports nothing sealed.
  */
+/**
+ * The fragments this volume has explicitly MADE OUT — the `legible-` flags on
+ * their own. Not the complement of `sealedFragmentIds`: a page that arrived
+ * legible in the first place (a letter's enclosure, testimony spoken in
+ * person, a solve-channel fragment) never carries the flag, because it never
+ * needed one. This set is exactly "pages a solved room deciphered", which is
+ * what the moment layer diffs to announce the round-10 reward (AAA 11.11).
+ */
+export function madeOutFragmentIds(volumeId: string, flags: Iterable<string>): Set<string> {
+  return idsWithPrefix(`vol.${volumeId}.legible-`, flags);
+}
+
 export function sealedFragmentIds(volumeId: string, flags: Iterable<string>): Set<string> {
   const all = [...flags];
   const sealed = idsWithPrefix(`vol.${volumeId}.sealed-`, all);

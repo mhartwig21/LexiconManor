@@ -43,7 +43,16 @@ export interface WordWebGroupEx extends WordWebGroup {
  * relation (the group it apes plus its intruders), which is what lets the room
  * check whether the player was actually chasing THIS trap before it says so.
  */
-export type WordWebHerringRelation = 'rhyme' | 'shared-affix' | 'doubled-letter' | 'semantic';
+/**
+ * ROUND 11 adds `hidden-string`, split out of `shared-affix`. A trap on a
+ * `Contains "HAM"` group is HAMMER — a word with the group's string buried
+ * inside it — and calling that the same relation as "these four all end in
+ * -GHT" made the room say the same sentence about two different deductions
+ * (and hid the fact that 68% of the shelf's acknowledged herrings were one
+ * kind of trap). Both carry `detail`: the letters you can point at.
+ */
+export type WordWebHerringRelation =
+  | 'rhyme' | 'shared-affix' | 'doubled-letter' | 'semantic' | 'hidden-string';
 export interface WordWebHerring {
   words: string[];
   relation: WordWebHerringRelation;

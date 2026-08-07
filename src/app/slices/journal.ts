@@ -301,7 +301,17 @@ export const createJournalSlice =
       const sealedIds = sealedFragmentIds(v.volumeId, get().flags);
       if (sealedIds.size === 0) return [];
       const ids = fragmentsToDecipher(content, v, sealedIds, count);
+      if (ids.length === 0) return ids;
       for (const id of ids) get().setFlag(legibleFragmentFlag(v.volumeId, id));
+      // ROUND 7 (verifier): the spine now carries the beat, per the architect's
+      // grant of `fragment-made-out`. `fragment-found` said the page was HERS;
+      // this says it finally SPEAKS. One event per batch, because the tier
+      // yield is the thing the player is meant to feel — see
+      // DECIPHER_YIELD_BY_TIER. Dialogue, achievements and the music director
+      // can all read it; the moment layer keeps its own `legible-` flag diff
+      // (it must survive a save loaded mid-campaign, which the day-stamped
+      // stream cannot).
+      get().recordEvent({ type: 'fragment-made-out', fragmentIds: ids });
       return ids;
     },
 

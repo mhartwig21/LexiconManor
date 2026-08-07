@@ -9,7 +9,7 @@
  * for economy. Abandon lives HERE, host-level, for every kind (AAA 4.13).
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { getRoomAdapter } from '../../engine/rooms/registry';
 import { getRoomView } from './registry';
 import { useManorStore } from '../../app/store';
@@ -17,6 +17,9 @@ import { useManorStore } from '../../app/store';
 // slice's puzzleId pinning at placement (integration: replaced the private
 // bit-identical copy that lived here).
 import { roomSeed } from '../../engine/manor/grid';
+// Read-only: the room needs to know a campaign seal is on glass so it can get
+// its own celebration out from under it (see --room-moment-clear below).
+import { momentQueue } from '../moment/queue';
 // Round-4 ergonomics: the shell-fit contract (stage scrolls, footer pinned,
 // no double-counted safe areas). See room-host.css for the why.
 import './room-host.css';
@@ -78,6 +81,72 @@ export default function RoomHost() {
     [adapter, session, applyRoomEvents],
   );
 
+  /**
+   * ROUND 11 (AAA 3.4 / 11.14) — THE WIN AND THE SEAL STOP FIGHTING.
+   *
+   * Solving a room is the one event guaranteed to fire a Campaign moment, and
+   * the moment layer is `position: fixed` at
+   * `chrome-h + safe-top + tap-target + 12`, which at 390x844 puts the seal at
+   * y 108–226 — exactly across the band where every anchor room prints its
+   * verdict headline. Measured: `elementFromPoint` at the centre of
+   * `.anch-done__title` ("The gallery is hung.", y 182.5 h 40.6) returned
+   * `mom__where`, so the default experience of a Gallery win was the headline
+   * *and* the room title illegible behind the card (docs/shots/round11-critic/
+   * metrics.json + gallery-won-390x844.png).
+   *
+   * The seal is not ours to move (src/ui/moment/* is another module, and
+   * raising it would only trade one collision for another). What is ours is
+   * where the room draws its celebration: while a seal is on glass the room
+   * publishes the seal's measured bottom edge as `--room-moment-clear`, and
+   * the verdict column starts below it. Measured rather than derived from the
+   * token arithmetic because the card's height depends on how many lines the
+   * grant's quote runs to. Nothing moves during play — the variable is 0 unless
+   * a moment is actually up, and the room only reads it in `.anch--verdict`.
+   */
+  const moment = useSyncExternalStore(momentQueue.subscribe, momentQueue.getState, momentQueue.getState);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const [momentClear, setMomentClear] = useState(0);
+  const momentKey = moment.current?.key ?? null;
+  useEffect(() => {
+    if (!momentKey) {
+      setMomentClear(0);
+      return;
+    }
+    const measure = () => {
+      const card = document.querySelector('.mom-layer');
+      const stage = stageRef.current;
+      const done = stage?.querySelector('.anch-done');
+      if (!card || !stage || !done) return;
+      // The headline is what the hit test lands on, so the headline is what is
+      // measured — not the panel's border box, which the clearance (a
+      // `padding-top`) does not move.
+      const head = stage.querySelector('.anch-done__title') ?? done.firstElementChild ?? done;
+      const seal = card.getBoundingClientRect();
+      const top = head.getBoundingClientRect().top;
+      // Never push the celebration off the bottom of its own stage: a verdict
+      // panel that no longer fits is a worse failure than the one being fixed.
+      const room = Math.max(0, stage.clientHeight - done.getBoundingClientRect().height - 8);
+      // Convergent and idempotent: measured against the clearance already
+      // applied, so a second reading after `anch-pop` settles corrects the
+      // first rather than doubling or cancelling it.
+      setMomentClear((prev) => {
+        const next = Math.min(room, Math.max(0, Math.round(prev + (seal.bottom + 8 - top))));
+        return Math.abs(next - prev) <= 1 ? prev : next;
+      });
+    };
+    const raf = requestAnimationFrame(measure);
+    // …and once more after the stamp animation has settled, in case the card
+    // measured mid-transform on the first frame.
+    const settled = window.setTimeout(measure, 280);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(settled);
+    };
+    // The verdict can arrive after the seal as well as with it (a queued
+    // moment is already on glass when the last group lands), so the room
+    // re-measures on both.
+  }, [momentKey, session?.done, session?.solvedOnce]);
+
   if (!activeRoom) return null;
 
   if (!adapter || !View || !session) {
@@ -96,7 +165,11 @@ export default function RoomHost() {
       {/* The stage owns the overflow: a room that cannot fit scrolls inside
           this box instead of pushing its buttons off the bottom of the glass
           (round-4 owner report). The footer below always stays visible. */}
-      <div className="room-host__stage">
+      <div
+        className="room-host__stage"
+        ref={stageRef}
+        style={{ '--room-moment-clear': `${momentClear}px` } as CSSProperties}
+      >
         <View puzzle={session.puzzle} state={session.state} tier={activeRoom.tier} dispatch={dispatch} />
       </div>
       <div className="room-host__footer">

@@ -15,8 +15,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { freshVolumeState, type VolumeContent } from '../src/engine/volume';
 import { useManorStore } from '../src/app/store';
 import {
-  advance, EMPTY_QUEUE, enqueue, keepsakeMoment, letterMoment, MAX_PENDING, momentForEvent,
-  openingWords, plateMoment, type Moment, type MomentContext,
+  advance, EMPTY_QUEUE, enqueue, keepsakeMoment, letterMoment, madeOutMoment, MAX_PENDING,
+  momentForEvent, openingWords, plateMoment, type Moment, type MomentContext,
 } from '../src/ui/moment/moments';
 import {
   keepsakeSeenFlag, mantelLine, plateSeenFlag, unseenKeepsakes, unseenPlates,
@@ -37,7 +37,10 @@ const seal = (key: string): Moment => ({
 const ctx: MomentContext = {
   fragment: (id) => {
     const f = volume.fragments.find((x) => x.id === id);
-    return f ? { kind: f.kind, text: f.text, interpretation: f.interpretation } : null;
+    // `sealed: false` = the plain-text arrival these cases are about. The
+    // sealed-copy branch has its own cases against `momentForFragment`; this
+    // fixture must not silently opt into it.
+    return f ? { kind: f.kind, text: f.text, interpretation: f.interpretation, sealed: false } : null;
   },
   answerFor: (id) => (id === volume.id ? volume.answer : null),
 };
@@ -154,6 +157,102 @@ describe('the seal’s words', () => {
 });
 
 // ---------------------------------------------------------------------------
+// 2b. ROUND-11 BLOCKERS — the seal must not read the sealed page aloud, and
+//     making one out must announce itself somewhere (AAA 11.14 / 11.11).
+// ---------------------------------------------------------------------------
+
+describe('a SEALED arrival announces the document, never its contents', () => {
+  /** The same fixture, with the named ids arriving sealed. */
+  const sealedCtx = (...ids: string[]): MomentContext => ({
+    ...ctx,
+    fragment: (id) => {
+      const f = ctx.fragment(id);
+      return f ? { ...f, sealed: ids.includes(id) } : null;
+    },
+  });
+
+  it('quotes NONE of the fragment text — the whole defect, in one assertion', () => {
+    /** The sealed copy classes are a CLOSED table: three titles, one `where`.
+     *  Nothing a fragment says can reach the glass through a fixed string. */
+    const titles = new Set<string>();
+    const wheres = new Set<string>();
+    // Every fragment volume 1 can hand over sealed — the violet drip files
+    // whatever is next on the drip, so this is not just the four engravings.
+    for (const frag of volume.fragments) {
+      const m = momentForEvent({ type: 'fragment-found', fragmentId: frag.id }, sealedCtx(frag.id))!;
+      expect(m.quote, `${frag.id} quoted itself while sealed`).toBeUndefined();
+      titles.add(m.title);
+      wheres.add(m.where);
+      // Belt and braces: no distinctive word of the fragment reaches the glass.
+      // ("page", "out", "his" and friends belong to the copy class itself, so
+      // the check is against the words the copy class does NOT own.)
+      const copyWords = new Set(`${m.title} ${m.where}`.toLowerCase().split(/[^\p{L}]+/u));
+      const said = `${m.title} ${m.where}`.toLowerCase();
+      for (const raw of frag.text.split(/\s+/)) {
+        const w = raw.replace(/[^\p{L}]/gu, '').toLowerCase();
+        if (w.length < 4 || copyWords.has(w)) continue;
+        expect(said, `${frag.id}: the seal said "${w}" out loud`).not.toContain(w);
+      }
+    }
+    expect(titles.size).toBeLessThanOrEqual(3);
+    expect(wheres.size).toBe(1);
+  });
+
+  it('does not contradict the journal: it never claims the hand can be made out', () => {
+    const m = momentForEvent({ type: 'fragment-found', fragmentId: 'v1-d1' }, sealedCtx('v1-d1'))!;
+    // The shipped copy titled it "A line of his definition" while the journal
+    // rendered the same page as "not yet made out" two taps later.
+    expect(m.title).not.toBe('A line of his definition');
+    expect(m.title.toLowerCase()).toMatch(/not yet made out/);
+    // The redemption rides in `where` — the moment still names its own trace
+    // (AAA 11.12) and says what turns the smudge into a sentence.
+    expect(m.where).toMatch(/Journal/);
+    expect(m.where).toMatch(/solve a room/i);
+    // The seal still points at the tab it filed to (AAA 6.3 double-encoding).
+    expect(m.sigil).toBe('W');
+    expect(momentForEvent({ type: 'fragment-found', fragmentId: 'v1-e2' }, sealedCtx('v1-e2'))!.sigil)
+      .toBe('E');
+  });
+
+  it('an UNsealed arrival still speaks — the fix is not "quote nothing"', () => {
+    const m = momentForEvent({ type: 'fragment-found', fragmentId: 'v1-d1' }, ctx)!;
+    expect(m.quote).toBeTruthy();
+    expect(m.title).toBe('A line of his definition');
+  });
+});
+
+describe('deciphering takes the glass (AAA 11.11 — it announced nothing at all)', () => {
+  const factsFor = (...ids: string[]) =>
+    ids.map((id) => {
+      const f = volume.fragments.find((x) => x.id === id)!;
+      return { id: f.id, kind: f.kind, text: f.text };
+    });
+
+  it('names the yield in words, and quotes the first line now legible', () => {
+    const one = madeOutMoment(factsFor('v1-d1'))!;
+    expect(one.kind).toBe('made-out');
+    expect(one.title).toBe('A page comes clear');
+    expect(one.quote).toContain('Where a thing is missing');
+
+    const three = madeOutMoment(factsFor('v1-d1', 'v1-e2', 'v1-e4'))!;
+    expect(three.title).toBe('Three pages come clear');
+    // Batched: one seal for the whole yield, so the tier lever is FELT rather
+    // than arriving as three identical single-page notices.
+    expect(three.key).toBe('made-out:v1-d1+v1-e2+v1-e4');
+  });
+
+  it('the seal is where DECIPHER_YIELD_BY_TIER stops being a constant', () => {
+    const m = madeOutMoment(factsFor('v1-d1'))!;
+    expect(m.where).toMatch(/Journal/);          // its persistent trace (11.12)
+    expect(m.where).toMatch(/higher the room/);  // the tier lever, named
+  });
+
+  it('nothing made out is no moment at all', () => {
+    expect(madeOutMoment([])).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // 3. Emitter reach — every campaign channel lands on the layer (AAA 11.10/11.11)
 // ---------------------------------------------------------------------------
 
@@ -212,6 +311,40 @@ describe('every campaign-class emitter reaches the moment layer', () => {
     const id = useManorStore.getState().collectFragmentForRoom('mystery');
     expect(id).toBe('v1-d1');
     expect(announced()).toEqual(['fragment:v1-d1']);
+  });
+
+  /**
+   * ROUND 11, live: the violet drip files SEALED, and the seal that lands must
+   * not read the page aloud. Driven through the real store + the real
+   * liveContext (which is where the sealed lookup actually happens).
+   */
+  it('CHANNEL 1b — the sealed arrival, through the live store, quotes nothing', () => {
+    useManorStore.getState().collectFragmentForRoom('mystery');
+    watcher.sync();
+    const m = queue.getState().current!;
+    expect(m.key).toBe('fragment:v1-d1');
+    expect(m.quote).toBeUndefined();
+    expect(m.title.toLowerCase()).toMatch(/not yet made out/);
+  });
+
+  /**
+   * ROUND-11 BLOCKER: the reward this round exists to create announced NOTHING.
+   * `decipherFragments` writes only `legible-` flags, emits no spine event, and
+   * always fires while the player is inside a room — so the watcher diffs the
+   * flag set (AAA 11.11: the notice appears where the player is).
+   */
+  it('CHANNEL 7 — a solved room MAKING OUT the backlog takes the glass', () => {
+    // Two sealed pages on the desk (two violet rooms, nothing solved yet).
+    useManorStore.getState().collectFragmentForRoom('mystery');
+    useManorStore.getState().collectFragmentForRoom('mystery');
+    drain(); // adopt the two sealed arrivals; the decipher must stand alone
+    // A tier-2 solve makes out DECIPHER_YIELD_BY_TIER[1] = 2 of them.
+    useManorStore.getState().creditSolve('word-web', 2, false);
+    const keys = drain();
+    const madeOut = keys.filter((k) => k.startsWith('made-out:'));
+    expect(madeOut).toEqual(['made-out:v1-d1+v1-d2']);
+    // ...exactly once, however many passes run afterwards.
+    expect(drain().filter((k) => k.startsWith('made-out:'))).toEqual([]);
   });
 
   it('CHANNEL 2 — testimony spoken behind the dialogue overlay (slices/dialogue.ts)', () => {

@@ -144,6 +144,13 @@ function BloomVignette({ variant, onDone }: { variant: BloomVariant; onDone: () 
 type Toast = { kind: 'good' | 'bad' | 'info' | 'big'; text: string; fern?: string } | null;
 
 /**
+ * Width of the collapsed strip's right-edge mask (anchor.css keeps the same
+ * number). Subtracted from the fit limit so a chip that fits is never dimmed
+ * by it: the fade exists only to catch a chip the JS measurement missed.
+ */
+const STRIP_FADE = 18;
+
+/**
  * AAA 1.12 [COZY] — the shape of the unfound space, SB-Forum style: counts by
  * first letter × word length across ALL remaining words. No word is ever
  * singled out, nothing is spoiled, and (unlike an alphabetical prefix of
@@ -335,7 +342,7 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
     if (everyPetal) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (/^[a-zA-Z]$/.test(e.key)) setTyped((t) => (t + e.key.toUpperCase()).slice(0, 24));
+      if (/^[a-zA-Z]$/.test(e.key)) { setShowFound(false); setTyped((t) => (t + e.key.toUpperCase()).slice(0, 24)); }
       else if (e.key === 'Backspace') setTyped((t) => t.slice(0, -1));
       else if (e.key === 'Enter') submit();
     };
@@ -347,6 +354,10 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
   const tapLetter = (letter: string) => {
     if (everyPetal) return;
     sfx.tap();
+    // The sheet floats over the entry line; going back to gathering puts it
+    // away. The board underneath was never disabled — this is the sheet
+    // getting out of the way of the word she has started, not a mode switch.
+    setShowFound(false);
     setTyped((t) => (t + letter).slice(0, 24));
   };
 
@@ -413,13 +424,30 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
    * when it settles; and because the hidden chips keep their boxes, the
    * measurement is a fixed point (nothing reflows in response to it).
    */
+  /**
+   * ROUND 11 — TWO MECHANISMS, NOT ONE. The measurement below is correct but
+   * it is *JavaScript*, and it ran exactly twice: once at layout and once per
+   * `resize`. Every way the chips can change width without either event
+   * firing — the display/body webfonts swapping in after first paint being the
+   * routine one, an iOS Dynamic Type step the other — left a stale `stripFit`
+   * and put a hard letter-cut back on the glass with nothing to catch it. So:
+   *
+   *   1. the measurement re-runs on `document.fonts.ready` and on a
+   *      ResizeObserver over the strip AND its chips, not only on `resize`;
+   *   2. `.hv-found__strip` carries a right-edge mask (anchor.css) as the belt
+   *      to this measurement's braces. `STRIP_FADE` is the mask's width and is
+   *      subtracted from the fit limit here, so a chip that FITS can never be
+   *      dimmed by it — the fade only ever falls on a chip the measurement has
+   *      (momentarily) failed to catch, and a soft edge reads as "there is
+   *      more" where a cut letter reads as a broken renderer.
+   */
   const stripEl = useRef<HTMLDivElement | null>(null);
   const [stripFit, setStripFit] = useState(strip.length);
   useLayoutEffect(() => {
+    const el = stripEl.current;
+    if (!el) return;
     const measure = () => {
-      const el = stripEl.current;
-      if (!el) return;
-      const limit = el.clientWidth;
+      const limit = el.clientWidth - STRIP_FADE;
       const chips = [...el.children] as HTMLElement[];
       // `offsetLeft` is measured from the nearest POSITIONED ancestor, which
       // may or may not be the strip itself; normalise before comparing.
@@ -433,13 +461,30 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
     };
     measure();
     window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    // Fonts land after first paint: `font-display: swap` means the strip is
+    // first measured in the fallback metrics and then re-drawn in IM Fell /
+    // EB Garamond, at which point every chip is a different width.
+    document.fonts?.ready.then(measure).catch(() => {});
+    let ro: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measure);
+      ro.observe(el);
+      for (const child of [...el.children]) ro.observe(child);
+    }
+    return () => {
+      window.removeEventListener('resize', measure);
+      ro?.disconnect();
+    };
   }, [strip.join('')]);
   // AAA 1.5 — every state that swaps the tall play cluster out for a short
   // panel pins the column to the top instead of letting the stage re-centre
   // it; otherwise the header slides 300px on the vignette, slides back 2s
   // later, and does it again on the found drawer.
-  const verdict = everyPetal || showRest || bloom || petalBloom || showFound;
+  //
+  // ROUND 11 (AAA 1.5 / 11.1): `showFound` is NOT in this list any more,
+  // because opening the found list no longer swaps anything out. See the
+  // sheet that hangs off the strip below.
+  const verdict = everyPetal || showRest || bloom || petalBloom;
 
   /**
    * The hive itself, hoisted so Every Petal can keep it ON THE TABLE beneath
@@ -500,8 +545,18 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
         </span>
       </div>
 
-      <div className="hv-found">
-        <div className="hv-found__strip" ref={stripEl}>
+      {/* ROUND 11 (AAA 11.1 / 1.5) — TAPPING YOUR OWN PROGRESS DOES NOT
+          UNBUILD THE ROOM. The found-list toggle used to swap the whole
+          playfield out for a wrapped list: hive, entry line, Delete/Shuffle/
+          ENTER and the toast slot all unmounted, leaving ~500px of blank
+          parchment whose only control was "Leave it for tomorrow" (measured:
+          hive/entry/deck all `null` after the toggle, docs/shots/round11-
+          critic/metrics2.json). The list is a SHEET hanging off the strip
+          now: the board underneath stays mounted, hit-testable and playable,
+          the toggle above it is the close control, and the collapsed strip is
+          hidden while it is open so no chip is printed twice. */}
+      <div className={`hv-found${showFound ? ' hv-found--open' : ''}`}>
+        <div className="hv-found__strip" ref={stripEl} aria-hidden={showFound || undefined}>
           {strip.map((w, i) => (
             <span
               key={w}
@@ -517,19 +572,29 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
             </span>
           ))}
         </div>
-        <button className="hv-found__toggle" onClick={() => setShowFound((s) => !s)}>
+        <button
+          className="hv-found__toggle"
+          aria-expanded={showFound}
+          onClick={() => setShowFound((s) => !s)}
+        >
           {found.length} found {showFound ? '▴' : '▾'}
         </button>
+        {showFound && (
+          <div className="hv-foundsheet" onClick={() => setShowFound(false)}>
+            <div className="hv-foundsheet__scroll">
+              {found.length === 0 ? (
+                <span className="anch__flavour">Nothing gathered yet — tap to close.</span>
+              ) : (
+                found.map((w) => (
+                  <span key={w} className={`anch-chip${puzzle.pangrams.includes(w) ? ' anch-chip--accent' : ''}`}>{w}</span>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {showFound ? (
-        <div className="hv-foundpanel" onClick={() => setShowFound(false)}>
-          {found.map((w) => (
-            <span key={w} className={`anch-chip${puzzle.pangrams.includes(w) ? ' anch-chip--accent' : ''}`}>{w}</span>
-          ))}
-          {found.length === 0 && <span className="anch__flavour">Nothing gathered yet — tap to close.</span>}
-        </div>
-      ) : petalBloom ? (
+      {petalBloom ? (
         <BloomVignette variant="every-petal" onDone={() => setPetalBloom(false)} />
       ) : bloom ? (
         <BloomVignette variant="bloom" onDone={() => setBloom(false)} />
@@ -612,7 +677,13 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
 
           {hiveBoard}
 
-          <div className="anch-row">
+          {/* ROUND 7 (AAA 1.4/11.3, measured with real iPhone insets): this row
+              — Delete, Shuffle and the room's ENTER — sat 64px past the bottom
+              of its own stage at 390x844. The primary verb of the Conservatory
+              was off the glass on the target device, and every screenshot of
+              the room looked correct. It rides the shell's sticky deck now, so
+              it is in the thumb zone whatever the hive does above it. */}
+          <div className="room-deck room-deck--anch room-deck--row">
             <button
               className="anch-btn"
               {...pressProps<HTMLButtonElement>({ down: deleteDown, up: deleteUp })}

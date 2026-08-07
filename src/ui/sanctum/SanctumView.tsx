@@ -64,7 +64,7 @@ import {
   arrivalShade, definitionSlots, guessVerdict, landingFlag, sanctumReadiness,
   type ArrivalShade,
 } from '../../engine/journal';
-import { applyGuess, hasGuessedOnDay } from '../../engine/volume';
+import { applyGuess, hasGuessedOnDay, sealedFragmentIds } from '../../engine/volume';
 import { atSanctumDoor } from '../../engine/manor/grid';
 import type { GuessCloseness } from '../../engine/events';
 import type { PortraitExpression } from '../../engine/dialogue/schema';
@@ -208,7 +208,12 @@ export default function SanctumView() {
   }
 
   const guessedToday = hasGuessedOnDay(volume, day);
-  const readiness = sanctumReadiness(content, volume);
+  // Round 11: the gate counts pages she can READ. Four sealed smudges used to
+  // retire his thin-file nudge — the one AAA 4.16 signal — for a player with
+  // no constraint at all on the alphabet plate.
+  const readiness = sanctumReadiness(content, volume, {
+    sealedIds: sealedFragmentIds(volume.volumeId, flags),
+  });
   const wrongGuesses = volume.guesses.filter(
     (g) => !content.accepted.some((a) => a.toUpperCase().replace(/[^A-Z]/g, '') === g.guess),
   );
@@ -568,8 +573,14 @@ export default function SanctumView() {
             where the fiction always said it was. */}
         {phase === 'idle' && atDoor && audienceButton}
 
+        {/* Both numbers, always, once they differ: a page she is holding but
+            cannot read yet is the most enticing thing on this screen, and
+            hiding the difference is what let the door say "2 of 17 filed" to
+            someone who could read one of them (AAA 4.16). */}
         <button className="snc-journal-link" onClick={() => navigate('/journal')}>
-          Consult the journal ({readiness.found} of {readiness.total} fragments filed)
+          {readiness.legible === readiness.filed
+            ? `Consult the journal (${readiness.filed} of ${readiness.total} fragments filed)`
+            : `Consult the journal (${readiness.filed} of ${readiness.total} filed · ${readiness.legible} made out)`}
         </button>
       </div>
 

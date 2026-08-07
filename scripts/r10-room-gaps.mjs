@@ -169,6 +169,49 @@ try {
       if (!d || !stage) return null;
       return +(stage.getBoundingClientRect().bottom - d.getBoundingClientRect().bottom).toFixed(1);
     });
+    /**
+     * ROUND 11 (AAA 3.4 / 11.2) — THE WIN HEADLINE IS HIT-TESTED LIKE AN EXIT.
+     *
+     * Solving a room is the one event guaranteed to fire a Campaign moment,
+     * and the moment layer sits at y 108–226 at 390x844 — straight across the
+     * band the verdict headline prints in. `elementFromPoint` at the centre of
+     * `.anch-done__title` returned `mom__where`, so the DEFAULT experience of a
+     * Gallery win was the celebration painted over by the notice, and every
+     * screenshot of it looked correct. Measured BEFORE `clearMoments()`, which
+     * is the whole point: clearing the seal first is how the collision hid.
+     */
+    R.gallery.headlineHit = await page.evaluate(() => {
+      const t = document.querySelector('.anch-done__title');
+      if (!t) return { found: false };
+      const r = t.getBoundingClientRect();
+      const at = (x, y) => {
+        const top = document.elementFromPoint(x, y);
+        return top === t || t.contains(top) ? 'self' : (top?.className || top?.tagName || 'null');
+      };
+      const inset = 4;
+      return {
+        found: true,
+        text: t.textContent.trim(),
+        box: { y: +r.y.toFixed(1), h: +r.height.toFixed(1) },
+        centre: at(r.x + r.width / 2, r.y + r.height / 2),
+        corners: [
+          at(r.left + inset, r.top + inset), at(r.right - inset, r.top + inset),
+          at(r.left + inset, r.bottom - inset), at(r.right - inset, r.bottom - inset),
+        ],
+        momentUp: !!document.querySelector('.mom-layer'),
+        momentBottom: +(document.querySelector('.mom-layer')?.getBoundingClientRect().bottom ?? 0).toFixed(1),
+      };
+    });
+    // `null`, not `false`, when the run never reached the verdict: a harness
+    // that reports a pass/fail for a screen it never opened is the same class
+    // of lie as the sliced-chip detector this round replaced.
+    R.gallery.headlineUncovered = !R.gallery.headlineHit.found
+      ? null
+      : R.gallery.headlineHit.centre === 'self'
+        && R.gallery.headlineHit.corners.every((c) => c === 'self');
+    log('gallery headline uncovered:', R.gallery.headlineUncovered,
+      '(moment up:', R.gallery.headlineHit.momentUp, ')');
+    await shot('gallery-won-with-moment');
     await clearMoments();
     await shot('gallery-won');
   }
@@ -202,8 +245,39 @@ try {
           hidden: getComputedStyle(c).visibility === 'hidden',
         };
       });
+      const cs = getComputedStyle(strip);
+      /**
+       * ROUND 11 — THE DETECTOR THAT COULD NOT FIRE.
+       *
+       * This test used to read `!c.hidden && c.left < sr.right && c.right >
+       * sr.right`, and `c.hidden` is `visibility: hidden` — which is exactly
+       * the mechanism the round-7/10 fix installed. So the detector was
+       * switched off by the thing it was verifying: it recorded `"sliced": []`
+       * on data where five chips were flagged `hidden: true` and LUGGAGE was
+       * showing 14.3 of its 90.6 pixels. A self-certifying audit is worse than
+       * no audit, because it is quoted as evidence.
+       *
+       * The primitive is now unconditional — ANY chip with 0 < visible < full
+       * is `partial`, hidden or not — and the pass/fail split is stated
+       * separately and explicitly:
+       *   partial  every chip the strip is cutting, whatever its visibility
+       *   sliced   the ones a player can actually SEE cut: painted, and not
+       *            wholly inside the strip's right-edge fade. This is the
+       *            list that must be empty.
+       * The strip's own overflow/mask values are recorded alongside so a
+       * future reader can see which mechanism was doing the work.
+       */
+      const fade = (() => {
+        const mask = cs.maskImage || cs.webkitMaskImage || 'none';
+        const m = mask.match(/calc\(100% - (\d+(?:\.\d+)?)px\)/);
+        return mask === 'none' ? 0 : (m ? parseFloat(m[1]) : 0);
+      })();
+      const partial = chips.filter((c) => c.visible > 0.5 && c.visible < c.full - 0.5);
+      const sliced = partial.filter((c) => !c.hidden);
       return { stripRight: +sr.right.toFixed(1), stripW: +sr.width.toFixed(1),
-        sliced: chips.filter((c) => !c.hidden && c.left < sr.right && c.right > sr.right + 0.5).map((c) => c.word),
+        overflowX: cs.overflowX, mask: cs.maskImage || cs.webkitMaskImage || 'none', fade,
+        partial: partial.map((c) => `${c.word} ${c.visible}/${c.full}${c.hidden ? ' (hidden)' : ''}`),
+        sliced: sliced.map((c) => c.word),
         chips };
     });
     await clearMoments();

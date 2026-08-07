@@ -1,0 +1,145 @@
+{
+  "moment": {
+    "present": true,
+    "pointerEvents": "auto",
+    "zIndex": "auto",
+    "position": "static",
+    "y": 108,
+    "bottom": 206.9,
+    "text": "L | A letter from Posy | “On the matter of your journal” | Waiting in the Journal · Letters"
+  },
+  "conservatoryClosed": {
+    "hive": {
+      "y": 364.7,
+      "bottom": 700,
+      "w": 335.4,
+      "h": 335.4,
+      "inView": true,
+      "hit": "self"
+    },
+    "entry": {
+      "y": 249.5,
+      "bottom": 289.5,
+      "w": 361.2,
+      "h": 40,
+      "inView": true,
+      "hit": "self"
+    },
+    "deck": {
+      "y": 711.2,
+      "bottom": 764.8,
+      "w": 390,
+      "h": 53.6,
+      "inView": true,
+      "hit": "self"
+    },
+    "enter": {
+      "y": 718.4,
+      "bottom": 762.4,
+      "inView": true,
+      "hit": "self"
+    },
+    "shuffle": {
+      "y": 718.4,
+      "bottom": 762.4,
+      "inView": true,
+      "hit": "self"
+    },
+    "del": {
+      "y": 718.4,
+      "bottom": 762.4,
+      "inView": true,
+      "hit": "self"
+    },
+    "dupChips": {
+      "strip": [
+        "ALLURE",
+        "ALLELE",
+        "REGULAR",
+        "LUGGAGE",
+        "LEGALLY",
+        "LARGELY",
+        "GALLERY",
+        "EAGERLY"
+      ],
+      "panel": [],
+      "overlap": []
+    },
+    "stageScrollH": 721,
+    "stageH": 721
+  },
+  "conservatoryOpen": {
+    "hive": null,
+    "entry": null,
+    "deck": null,
+    "enter": null,
+    "shuffle": null,
+    "del": null,
+    "dupChips": {
+      "strip": [
+        "ALLURE",
+        "ALLELE",
+        "REGULAR",
+        "LUGGAGE",
+        "LEGALLY",
+        "LARGELY",
+        "GALLERY",
+        "EAGERLY"
+      ],
+      "panel": [],
+      "overlap": []
+    },
+    "stageScrollH": 721,
+    "stageH": 721
+  },
+  "library": {
+    "boardId": "web-d20",
+    "tier": 1,
+    "oneAway": {
+      "picked": [
+        "PASSPORT",
+        "TOILETRIES",
+        "ADAPTER",
+        "LUNCH"
+      ],
+      "notices": {
+        "main": null,
+        "bit": null,
+        "kind": null,
+        "sel": 0
+      }
+    },
+    "herring": {
+      "picked": [
+        "ADAPTER",
+        "CAPTIVATE",
+        "CAPTURE",
+        "CHAPTER"
+      ],
+      "notices": {
+        "main": null,
+        "bit": null,
+        "kind": null,
+        "sel": 0
+      }
+    },
+    "scattered": {
+      "picked": [
+        "PASSPORT",
+        "LUNCH",
+        "CHAPTER",
+        "DIAL"
+      ],
+      "notices": {
+        "main": null,
+        "bit": null,
+        "kind": null,
+        "sel": 0
+      }
+    }
+  },
+  "study3": {
+    "tier": null,
+    "text": "The Study\n\nAn entry in his hand. The headword is torn away.\n\n8 letters — whisper it back.\n\nA HEADWORD IS MISSING\n\n“The plough stops, the lamp is lit, and only the older tongue still has a name for me.”\n\n8 letters · 3 whispers left\nEtymology\nWhere the word came from. Sealed…\nUnseal · −3 steps\nUsage\nThe word at work in a sentence. Sealed…\nUnseal · −3 steps\nWhisper\nWHISPERED · HIS LETTERS · IN PLACE\nNothing whispered yet."
+  }
+}

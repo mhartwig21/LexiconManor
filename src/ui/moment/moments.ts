@@ -33,7 +33,11 @@ export type MomentKind =
   | 'fragment' | 'letter' | 'volume' | 'affinity' | 'reading'
   /** Round 9: permanent unlocks. AAA 11.12's table files "permanent unlock
    *  (room card, keepsake)" as Campaign class; both channels were silent. */
-  | 'keepsake' | 'plate';
+  | 'keepsake' | 'plate'
+  /** Round 11: a sealed page made out by a solved room — the reward the
+   *  round-10 legibility mechanic exists to create, which announced nothing
+   *  anywhere until now (AAA 11.11/11.12). */
+  | 'made-out';
 
 export interface Moment {
   /** Dedup identity. One grant, one moment, however many times it re-derives. */
@@ -60,6 +64,25 @@ export interface FragmentFacts {
   kind: 'definition-line' | 'engraving' | 'testimony' | string;
   text: string;
   interpretation?: string;
+  /**
+   * ROUND-11 BLOCKER: THE NOTICE THAT READ THE SEALED PAGE ALOUD.
+   *
+   * Round 10 made entering a violet room file its fragment SEALED — a torn
+   * leaf whose whole point is that it does not speak until a word game is
+   * solved (engine/volume.ts LEGIBILITY, engine/journal.ts `alphabetFacts`).
+   * The arrival moment then quoted `openingWords(facts.text)` with no sealed
+   * check, so the seal had no teeth: the wax that landed on glass read
+   * `W | A line of his definition | “Where a thing is missing, I am what
+   * remains: not nothing…”` two taps before the journal rendered the same
+   * page as a dotted rubbing over "not yet made out". Worse for the
+   * engravings: every one of volume 1's four sealed arrivals gives its ENTIRE
+   * machine-readable constraint away inside the 62-char quote budget ("Its
+   * breath runs A, then U, then A…" is the whole vowel-sequence clue).
+   *
+   * A sealed fragment therefore gets its own copy class below: the document is
+   * named, its contents are not, and `where` carries the redemption.
+   */
+  sealed: boolean;
 }
 
 export interface MomentContext {
@@ -131,6 +154,38 @@ const FRAGMENT_FALLBACK = {
   where: 'Filed in the Journal',
 };
 
+/**
+ * The sealed arrival. The seal keeps its journal-tab letterform (W/E/T still
+ * says which page to open — AAA 6.3), the title names the DOCUMENT rather than
+ * its contents, and `where` is the redemption instead of a filing address: the
+ * one sentence that makes a smudge worth having is the one that says how to
+ * make it out. No `quote` is ever produced for these — that is the whole fix,
+ * and tests/moment.test.ts asserts a sealed moment contains none of frag.text.
+ */
+const FRAGMENT_SEALED_COPY: Record<string, { sigil: string; title: string; where: string }> = {
+  'definition-line': {
+    sigil: 'W',
+    title: 'A page of his, not yet made out',
+    where: 'Filed in the Journal · solve a room to make it out',
+  },
+  engraving: {
+    sigil: 'E',
+    title: 'A rubbing, not yet made out',
+    where: 'Filed in the Journal · solve a room to make it out',
+  },
+  testimony: {
+    sigil: 'T',
+    title: 'A memory, not yet made out',
+    where: 'Filed in the Journal · solve a room to make it out',
+  },
+};
+
+const FRAGMENT_SEALED_FALLBACK = {
+  sigil: 'W',
+  title: 'A page, filed and not yet made out',
+  where: 'Filed in the Journal · solve a room to make it out',
+};
+
 /** A letter waiting under an unbroken seal (arrival is pure derivation, so
  *  this one is built by the watcher, not by an event). */
 export function letterMoment(letter: {
@@ -166,6 +221,58 @@ export function keepsakeMoment(keepsake: { id: string; name: string; description
   };
 }
 
+/** "Two pages come clear." Counted in words, never a badge. */
+const COUNT_WORDS = ['no', 'A', 'Two', 'Three', 'Four', 'Five', 'Six'];
+
+/** One page that a solved room just made out. */
+export interface MadeOutFacts {
+  id: string;
+  kind: FragmentFacts['kind'];
+  text: string;
+}
+
+/**
+ * ROUND-11 BLOCKER: DECIPHERING ANNOUNCED NOTHING, ANYWHERE.
+ *
+ * The round-10 loop is "solve a word game, make out the sealed backlog"
+ * (engine/volume.ts LEGIBILITY, `DECIPHER_YIELD_BY_TIER`). The making-out half
+ * — the reward the whole mechanic exists to create — was invisible: driven
+ * live, `creditSolve` emptied the sealed set and the only wax on glass was the
+ * *new* channel fragment. `decipherFragments` (app/slices/journal.ts) only sets
+ * write-once `legible-` flags, so it emits no spine event and the event
+ * watcher had nothing to diff, and the player is by definition INSIDE A ROOM
+ * when it fires — the exact "notice rendered by a component that is unmounted
+ * at fire time" shape AAA 11.11 fails.
+ *
+ * So it is a DERIVED channel, like the letter tray and the mantel: the watcher
+ * diffs the volume's `legible-` flag set and hands the newly-made-out pages
+ * here. One seal per batch, not one per page — "Two pages come clear" is the
+ * sentence that makes `DECIPHER_YIELD_BY_TIER` felt, and the `where` line is
+ * where the tier lever stops being a constant and becomes a reason to climb.
+ *
+ * (A `{type:'fragment-made-out'}` spine event would be the tidier emitter and
+ * is filed as a SHARED-FILE REQUEST; engine/events.ts is architect-owned, and
+ * the diff channel is complete without it.)
+ */
+export function madeOutMoment(fragments: readonly MadeOutFacts[]): Moment | null {
+  if (fragments.length === 0) return null;
+  // Oldest on the drip first (the slice deciphers in revealOrder), so the
+  // quoted line is the one the poem has been waiting on.
+  const first = fragments[0]!;
+  const copy = FRAGMENT_COPY[first.kind] ?? FRAGMENT_FALLBACK;
+  const n = fragments.length;
+  const word = COUNT_WORDS[n] ?? String(n);
+  return {
+    key: `made-out:${fragments.map((f) => f.id).join('+')}`,
+    kind: 'made-out',
+    // The seal still points at the tab the quoted page lives in (AAA 6.3).
+    sigil: copy.sigil,
+    title: `${word} ${n === 1 ? 'page comes' : 'pages come'} clear`,
+    quote: openingWords(first.text),
+    where: 'Legible in the Journal · the higher the room, the more at once',
+  };
+}
+
 /** A floorplan plate filled in the cabinet (the unlockCard sibling channel). */
 export function plateMoment(card: { id: string; name: string }): Moment {
   return {
@@ -187,6 +294,21 @@ export function momentForEvent(event: GameEvent, ctx: MomentContext): Moment | n
   switch (event.type) {
     case 'fragment-found': {
       const facts = ctx.fragment(event.fragmentId);
+      // A sealed arrival is a DIFFERENT announcement, not the same one with the
+      // quote trimmed: it names the document, promises the journal, and says
+      // what makes it legible. Quoting it would hand back exactly what the
+      // round-10 mechanic withholds (see FragmentFacts.sealed).
+      if (facts?.sealed) {
+        const sealedCopy = FRAGMENT_SEALED_COPY[facts.kind] ?? FRAGMENT_SEALED_FALLBACK;
+        return {
+          key: `fragment:${event.fragmentId}`,
+          kind: 'fragment',
+          sigil: sealedCopy.sigil,
+          title: sealedCopy.title,
+          quote: undefined,
+          where: sealedCopy.where,
+        };
+      }
       const copy = (facts && FRAGMENT_COPY[facts.kind]) || FRAGMENT_FALLBACK;
       return {
         key: `fragment:${event.fragmentId}`,

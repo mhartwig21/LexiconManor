@@ -732,7 +732,7 @@
           "gte": 2
         },
         {
-          "kind": "fragmentCount",
+          "kind": "fragmentsLegible",
           "gte": 1
         }
       ],
@@ -780,7 +780,7 @@
           "gte": 3
         },
         {
-          "kind": "fragmentCount",
+          "kind": "fragmentsLegible",
           "gte": 2
         }
       ],
@@ -1135,7 +1135,7 @@
       "once": true,
       "conditions": [
         {
-          "kind": "fragmentCount",
+          "kind": "fragmentsLegible",
           "gte": 3
         }
       ],

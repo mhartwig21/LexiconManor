@@ -47,6 +47,34 @@
   padding-bottom: 0;
   background: var(--paper);
   color: var(--ink);
+
+  /* ------------------------------------------------------------------------
+     --stage-h: THE HEIGHT THE ROOM ACTUALLY HAS (round-7 composition pass).
+
+     Every board in the game used to size itself against the VIEWPORT —
+     `min(86vw, 340px, 42vh)`, `calc(100dvh - 28rem)`, `clamp(38px, 5.6vh,
+     52px)`. A viewport unit is the whole glass. The room gets the glass minus
+     the notch inset, minus the fixed day bar, minus the abandon footer, minus
+     the home-indicator inset: at 390x844 that is 651.8px of stage against
+     844px of viewport, and at 375x667 it is 481.6px against 667. Every
+     hand-derived constant in those expressions was therefore calibrated on a
+     desktop Chromium where env() resolves to 0, and on a real iPhone the
+     rooms overran by the size of the insets. MEASURED, before this change:
+     the Conservatory's Delete/Shuffle/ENTER row sat 64px past the bottom of
+     its own stage at 390x844 (top 763.3 in a stage ending at 750.8) — the
+     primary verb of the room, off the glass, on the target device; the
+     Gallery's Clear/Claim row went 81px over at 375x667; the Counting House
+     and Linen Closet pushed their verdict toasts underneath the sticky
+     keypad.
+
+     `container-type: size` on the stage makes it a query container, so a
+     descendant's `cqh` is a percentage OF THE STAGE. Published here as one
+     inherited token: rooms say `var(--stage-h)` and can never again be wrong
+     about how much room they have, in any inset, on any phone.
+
+     Declared on `.room-host` (the ancestor) deliberately: `cqh` resolves at
+     the element that USES it, and only descendants of the stage do. */
+  --stage-h: 100cqh;
 }
 
 .room-host.room-host > .room-host__stage {
@@ -59,6 +87,10 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; /* house rule: no scrollbars, ever */
+  /* The query container behind --stage-h above. Its height is definite (it is
+     the flex:1 item of a fixed-height column), so size containment costs
+     nothing here — the stage was never sized by its contents. */
+  container-type: size;
 }
 .room-host.room-host > .room-host__stage::-webkit-scrollbar {
   display: none;

@@ -90,7 +90,8 @@
 }
 .m2-toast { font-size: var(--text-sm); animation: m2-rise 220ms var(--ease-settle); }
 .m2-toast--good { color: var(--moss); }
-.m2-toast--bad  { color: var(--wax); }
+/* Round 7: wax as READING ink (tokens --wax-ink). */
+.m2-toast--bad  { color: var(--wax-ink); }
 .m2-toast--info { color: var(--ink-soft); }.m2-done { text-align: center; animation: m2-pop 260ms var(--ease-settle); }
 .m2-done__title {
   margin: 0.2rem 0;
@@ -141,7 +142,15 @@
    exact failure this was meant to end. These values put the grid, all five
    clues, the keyboard and the verb on the glass at both sizes with slack. */
 .lc-grid {
-  --lc-cell: clamp(38px, min(15vw, 4.6vh), 52px);
+  /* Round 7: the `4.6vh` term measured 4.6% of the GLASS, not of the room.
+     With real iPhone insets in the cascade the column ran 21px (390×844) and
+     44px (375×667) past its own stage and the verdict slot opened underneath
+     the sticky keyboard. The slot moved into the deck (CrosswordView) and the
+     height term is now a share of `--stage-h`, the shell's container-query
+     stage height (ui/rooms/room-host.css) — so it tracks the insets instead of
+     ignoring them. 6.2% of a 651.8px stage is the same 40px square the room
+     shipped at 390×844; the difference is that it is now the truth on device. */
+  --lc-cell: clamp(38px, min(15vw, calc(var(--stage-h, 100vh) * 0.062)), 52px);
   display: grid;
   gap: 5px;
   justify-content: center;
@@ -175,7 +184,7 @@
 }
 .lc-cell--word   { background: color-mix(in srgb, var(--room-accent) 12%, var(--paper-raised)); }
 .lc-cell--active { outline: 2px solid var(--room-accent); outline-offset: -2px; }
-.lc-cell--wrong  { color: var(--wax); border-color: var(--wax); }
+.lc-cell--wrong  { color: var(--wax-ink); border-color: var(--wax); }
 .lc-cell--given  { color: var(--gilt); }
 .lc-cell--pop .lc-cell__ch { display: inline-block; animation: m2-pop 200ms var(--ease-settle); }
 .lc-cell--won .lc-cell__ch { display: inline-block; animation: m2-dance 520ms ease-in-out both; }
@@ -220,7 +229,13 @@
   /* Comfortably above the 44pt bar on every glass; the ceiling came down from
      56 to 52 in round 5 so the tier-3 closet (5 clues over a 5x5 grid) fits
      whole at 390x844 — the clue list is worth more than 4px of key. */
-  min-height: clamp(44px, 6vh, 52px);
+  /* Round 7: the 6vh term measured 6% of the GLASS (50.6px at 390x844),
+     which — three rows of it, plus the clue panel and the verb — made a 401px
+     deck in a 651.8px stage and put the crossword's bottom ROW underneath the
+     keyboard (measured: the last row's centre hit-tested as the deck). Taken
+     off `--stage-h` it is 45.6px here, still comfortably over the 44pt bar,
+     and the grid clears the deck whole. */
+  min-height: clamp(44px, calc(var(--stage-h, 100vh) * 0.07), 52px);
   border: 1px solid var(--paper-edge);
   border-radius: var(--radius-card);
   background: var(--paper-raised);
@@ -256,7 +271,10 @@
    something above or below to scroll to, so nothing is ever silently cut.
    -------------------------------------------------------------------------- */
 .lc-clues {
-  max-height: 40dvh;
+  /* Round 7: 40dvh is 337px of an 844px glass but 52% of the 651.8px stage the
+     room actually has. Restated against --stage-h so the safety net cannot
+     itself become the thing that overflows. */
+  max-height: calc(var(--stage-h, 100vh) * 0.3);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
@@ -289,7 +307,7 @@
   .m2 { gap: 0.35rem; padding: 0.35rem 0.9rem 0.25rem; }
   .m2__head { display: none; }
   .m2-toastslot { min-height: 1.6rem; }
-  .lc-grid { --lc-cell: clamp(30px, min(15vw, 4.6vh), 48px); }
+  .lc-grid { --lc-cell: clamp(30px, min(15vw, calc(var(--stage-h, 100vh) * 0.062)), 48px); }
   .lc-clues { padding: 0.25rem 0.5rem; gap: 0; }
   .lc-clue { padding: 0.15rem 0.4rem; line-height: 1.25; }
   .lc-keys { gap: 3px; }

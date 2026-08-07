@@ -3,7 +3,9 @@ import type { CharacterId } from '../src/engine/types';
 import type { DialogueQuery, DialogueTrigger, GameEvent, RecordedEvent } from '../src/engine/events';
 import type { DialogueFile, DialogueNode } from '../src/engine/dialogue/schema';
 import { isSubstantive, PRIORITY } from '../src/engine/dialogue/schema';
-import { evaluateCondition } from '../src/engine/dialogue/conditions';
+import {
+  deriveLegibleFragmentCount, evaluateCondition, legibleFragmentCount,
+} from '../src/engine/dialogue/conditions';
 import { selectDialogue, findNode } from '../src/engine/dialogue/select';
 import {
   AFFINITY_RANK_THRESHOLDS, MAX_AFFINITY_RANK, pointsToNextRank, rankFor,
@@ -24,10 +26,10 @@ function rec(day: number, event: GameEvent): RecordedEvent {
 }
 
 function query(partial: Partial<DialogueQuery> = {}): DialogueQuery {
-  return {
+  const base = {
     day: 1,
-    slot: 'parlor',
-    character: 'ellery',
+    slot: 'parlor' as const,
+    character: 'ellery' as CharacterId,
     seen: new Set<string>(),
     flags: new Set<string>(),
     affinities: NO_AFFINITY,
@@ -38,6 +40,15 @@ function query(partial: Partial<DialogueQuery> = {}): DialogueQuery {
     volumeId: 'volume-1',
     fragmentsFound: 0,
     ...partial,
+  };
+  return {
+    ...base,
+    // This helper stands in for `app/slices/dialogue.ts`, so it DERIVES the
+    // legible count exactly as the slice does rather than inventing a number —
+    // otherwise these fixtures would assert against a value only the fixture
+    // believes. A case that wants to force the count states it explicitly.
+    fragmentsLegible: partial.fragmentsLegible
+      ?? deriveLegibleFragmentCount(base.volumeId, base.flags, base.fragmentsFound),
   };
 }
 
@@ -219,6 +230,42 @@ describe('conditions', () => {
     expect(evaluateCondition({ kind: 'seen', node: 'ellery.t.meet' }, q)).toBe(true);
     expect(evaluateCondition({ kind: 'volume', id: 'volume-1' }, q)).toBe(true);
     expect(evaluateCondition({ kind: 'not', cond: { kind: 'fragmentCount', gte: 9 } }, q)).toBe(true);
+  });
+
+  /**
+   * ROUND-11 BLOCKER: every fragment gate in the game counted pages the player
+   * cannot read. `fragmentsLegible` is the gate for "she knows things"; sealed
+   * pages (write-once `vol.<id>.sealed-<frag>` flags, engine/volume.ts) do not
+   * clear it, and making one out with a solved room does.
+   */
+  it('fragmentsLegible counts what she can READ, not what she is carrying', () => {
+    const sealedAll = query({
+      fragmentsFound: 4,
+      flags: new Set([
+        'vol.volume-1.sealed-v1-d1', 'vol.volume-1.sealed-v1-e2',
+        'vol.volume-1.sealed-v1-e4', 'vol.volume-1.sealed-v1-e5',
+      ]),
+    });
+    // The old `fragmentCount` gate cleared at 4; the legible one does not.
+    expect(evaluateCondition({ kind: 'fragmentCount', gte: 4 }, sealedAll)).toBe(true);
+    expect(evaluateCondition({ kind: 'fragmentsLegible', gte: 1 }, sealedAll)).toBe(false);
+    expect(evaluateCondition({ kind: 'fragmentsLegible', lte: 0 }, sealedAll)).toBe(true);
+    expect(legibleFragmentCount(sealedAll)).toBe(0);
+
+    // One made out by a solved room (the `legible-` half of the flag pair).
+    const oneOut = query({
+      fragmentsFound: 4,
+      flags: new Set([...sealedAll.flags, 'vol.volume-1.legible-v1-d1']),
+    });
+    expect(legibleFragmentCount(oneOut)).toBe(1);
+    expect(evaluateCondition({ kind: 'fragmentsLegible', gte: 1, lte: 3 }, oneOut)).toBe(true);
+
+    // A save written before the mechanic existed reports everything readable.
+    expect(legibleFragmentCount(query({ fragmentsFound: 4 }))).toBe(4);
+    // Flags are namespaced per volume, so another volume's seals never leak.
+    expect(legibleFragmentCount(query({
+      fragmentsFound: 2, volumeId: 'volume-2', flags: new Set(['vol.volume-1.sealed-v1-d1']),
+    }))).toBe(2);
   });
 });
 

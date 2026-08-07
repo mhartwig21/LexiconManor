@@ -661,7 +661,19 @@ try {
     s.endDay?.('spent') ?? s.retireForTheEvening?.();
   }).catch(() => {});
   await sleep(700);
-  if (await page.$('.chr-dusk')) { await survey('17-dusk'); await page.click('.chr-dusk__skip').catch(() => {}); await sleep(900); }
+  /* The dusk veil fades in over 3.6s and then advances on its own (AAA 4.12
+     caps it at 4s), so it can be measured neither immediately — mid-fade its
+     own copy reads 1.11:1 against the paper it is fading onto, an artefact of
+     the animation — nor after 4s, when the surface no longer exists. Both
+     animations are jumped to their LAST frame instead, which is the resting
+     appearance the criterion is actually about. */
+  if (await page.$('.chr-dusk')) {
+    await page.addStyleTag({ content:
+      '.chr-dusk, .chr-dusk__line, .chr-dusk__text, .chr-dusk__skip { animation-delay: -8s !important; }' });
+    await survey('17-dusk', { settle: 400 });
+    await page.click('.chr-dusk__skip').catch(() => {});
+    await sleep(1200);
+  }
   if (await page.$('.chr-scene')) await survey('18-night-digest');
 
   /* === 19. not-found ==================================================== */

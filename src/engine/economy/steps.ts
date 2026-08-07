@@ -15,7 +15,7 @@
  *   1. CLIMBING IS THE EXPENSE. Movement is priced per row band
  *      (`MOVE_COST_BY_ROW`): −1 on the ground floor, −9 up top. A single
  *      minimum-length ascent to THE SANCTUM LANDING (0-based row 5 — the cell
- *      the word is spoken from, not the sealed Sanctum above it) costs 21
+ *      the word is spoken from, not the sealed Sanctum above it) costs 22
  *      steps of pure walking — more than the entire base budget — and every
  *      walk-back to a frontier door up there is charged at the same top rate.
  *   2. REFUNDS GET LEANER AS YOU CLIMB. anchor +6/+5/+4 by tier (was

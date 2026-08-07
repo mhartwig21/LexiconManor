@@ -76,6 +76,13 @@ function herringLine(h: WordWebHerringMatch): string {
       return h.detail
         ? `${subject} carry “${h.detail}”. But no.`
         : `${subject} share their letters. But no.`;
+    case 'hidden-string':
+      // Round 11: the cross-category trap gets its own sentence. It is not
+      // "these share an edge" — it is "this one is hiding your group inside
+      // it", which is the actual thing she nearly deduced.
+      return h.detail
+        ? `${subject} hide “${h.detail}”. But no.`
+        : `${subject} hide the same letters. But no.`;
     case 'doubled-letter':
       return `${subject} double a letter. But no.`;
     case 'semantic':

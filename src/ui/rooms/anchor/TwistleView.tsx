@@ -350,30 +350,38 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
             })}
           </div>
 
-          <div className="tw-word">
-            {word || <span className="tw-word__hint">trace or tap a word…</span>}
-          </div>
+          {/* ROUND 7 (AAA 11.2/11.3, measured on device-accurate insets): the
+              traced word, its verdict and Clear/CLAIM are the room's verbs, and
+              at 375x667 they measured 81px PAST the bottom of their own stage —
+              Claim was not on the glass at all. They ride the shell's sticky
+              deck now (ui/rooms/room-host.css), so the board scrolls behind
+              them and the verbs never leave the thumb zone. */}
+          <div className="room-deck room-deck--anch">
+            <div className="tw-word">
+              {word || <span className="tw-word__hint">trace or tap a word…</span>}
+            </div>
 
-          <div className="anch-toastslot" aria-live="polite">
-            {toast && <span className={`anch-toast anch-toast--${toast.kind}`}>{toast.text}</span>}
-          </div>
+            <div className="anch-toastslot" aria-live="polite">
+              {toast && <span className={`anch-toast anch-toast--${toast.kind}`}>{toast.text}</span>}
+            </div>
 
-          <div className="anch-row">
-            <button className="anch-btn" {...pressProps<HTMLButtonElement>()} onClick={() => setPath([])} disabled={path.length === 0}>
-              Clear
-            </button>
-            <button className="anch-btn anch-btn--primary" {...pressProps<HTMLButtonElement>()} onClick={() => submit(word)} disabled={word.length < puzzle.rules.minLength}>
-              Claim
-            </button>
-          </div>
+            <div className="anch-row">
+              <button className="anch-btn" {...pressProps<HTMLButtonElement>()} onClick={() => setPath([])} disabled={path.length === 0}>
+                Clear
+              </button>
+              <button className="anch-btn anch-btn--primary" {...pressProps<HTMLButtonElement>()} onClick={() => submit(word)} disabled={word.length < puzzle.rules.minLength}>
+                Claim
+              </button>
+            </div>
 
-          <div className="tw-lists">
-            {state.twistle.foundWords.map((w) => (
-              <span key={w} className="anch-chip anch-chip--accent">{w}</span>
-            ))}
-            {state.missedWords.map((w) => (
-              <span key={w} className="anch-chip anch-chip--muted">{w}</span>
-            ))}
+            <div className="tw-lists">
+              {state.twistle.foundWords.map((w) => (
+                <span key={w} className="anch-chip anch-chip--accent">{w}</span>
+              ))}
+              {state.missedWords.map((w) => (
+                <span key={w} className="anch-chip anch-chip--muted">{w}</span>
+              ))}
+            </div>
           </div>
         </>
       )}

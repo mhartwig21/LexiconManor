@@ -118,7 +118,27 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  background: var(--paper-raised);
+  /* THE PAGE IS RULED (round-7 composition pass).
+     Measured: on the Engravings tab at 390x844 one filed card left 536px —
+     63.5% of the glass — of absolutely featureless parchment below it, and
+     Testimony and Letters measured the same. An empty sheet read as a
+     rendering gap rather than as a page with room left on it, which is exactly
+     the "large featureless bands" the round-3 critics named.
+     Two static gradients, no images and no extra DOM: faint horizontal rules
+     on the body's 26px leading, and one vertical margin line down the gutter.
+     Ink only — no hue, nothing saturated, so AAA 6.5's neutral budget and the
+     grayscale pass (6.3) are untouched, and the rules sit under the cards
+     rather than behind their text. */
+  background:
+    linear-gradient(to right, transparent 0 2.35rem,
+      color-mix(in srgb, var(--ink) 20%, transparent) 2.35rem 2.4rem,
+      transparent 2.4rem) 0 0 / 100% 100% no-repeat,
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 25px,
+      color-mix(in srgb, var(--ink) 10%, transparent) 25px 26px),
+    var(--paper-raised);
+  background-attachment: local, local;
   border: var(--rule);
   border-top: none;
   border-radius: 0 0 var(--radius-sheet) var(--radius-sheet);
@@ -456,4 +476,14 @@
 @media (prefers-reduced-motion: reduce) {
   .jrn-card, .jrn-letter__body { animation: none; }
   .jrn-tab, .jrn-nudge__link, .jrn-letter__head { transition: none; }
+}
+
+/* The ruling belongs to the PAGE, not to what is written on it. Every block the
+   sheet stacks takes the sheet's own paper as an opaque ground, so no rule ever
+   crosses a line of type (which reads as broken typesetting, not as stationery)
+   and the rules show exactly where they should: between entries and in the part
+   of the page that is still waiting. `background-color` only — nothing here
+   touches the cards' own borders, deckle or dashed edges. */
+.jrn-sheet > * {
+  background-color: var(--paper-raised);
 }

@@ -40,12 +40,17 @@
 .anch--gallery      { --room-accent: var(--gilt); }
 .anch--study        { --room-accent: var(--cat-mystery); }
 
-.anch__head { text-align: center; }
+/* Round 7: the room head measured 79.4px of a 651.8px stage — 12% of the room
+   spent on a nameplate she has already read on the blueprint she walked in
+   from. Tightened by LEADING only (no words cut, no line hidden); the ~14px
+   goes to the board. */
+.anch__head { text-align: center; line-height: 1.2; }
 .anch__title {
   margin: 0;
   font-family: var(--font-display);
   font-size: var(--text-display-sm);
   font-weight: 400;
+  line-height: 1.15;
   letter-spacing: 0.02em;
 }
 /* AAA 3.2 / 7.2 — THE SUBTITLE IS TWO DIFFERENT THINGS.
@@ -58,8 +63,9 @@
      .anch__rule     load-bearing. NEVER hidden, in any viewport, ever. */
 .anch__sub,
 .anch__flavour {
-  margin: 0.15rem 0 0;
+  margin: 0.1rem 0 0;
   font-size: var(--text-sm);
+  line-height: 1.25;
   color: var(--ink-soft);
 }
 .anch__rule {
@@ -81,7 +87,8 @@
   animation: anch-rise 220ms var(--ease-settle);
 }
 .anch-toast--good { color: var(--moss); }
-.anch-toast--bad  { color: var(--wax); }
+/* Round 7: wax as READING ink (tokens --wax-ink) — the fill value measures 3.09:1 on candlelit paper at 15px. */
+.anch-toast--bad  { color: var(--wax-ink); }
 .anch-toast--info { color: var(--ink-soft); }
 .anch-toast--big  { font-family: var(--font-display); font-size: var(--text-display-sm); color: var(--room-accent); }
 /* Fern's voice rides in the SAME reserved slot as the mechanical text, so the
@@ -106,9 +113,48 @@
    information bit AAA 2.10 / 4.17 require). Reserved, so the board never jumps
    when it appears (AAA 1.5). */
 .anch--library .anch-toastslot { min-height: 3.6rem; }
-.anch--study .anch-toastslot { min-height: 2.9rem; }
+/* Round 7: 2.9rem reserved three lines the shipped copy never uses; 2.6 holds
+   the longest authored reply + its closeness bit, and the 4.8px goes to the
+   clue cards, which were running under the deck. */
+.anch--study .anch-toastslot { min-height: 2.6rem; }
 
 .anch-row { display: flex; gap: 0.6rem; justify-content: center; align-items: center; flex-wrap: wrap; }
+
+/* --------------------------------------------------------------------------
+   THE ANCHOR DECK (round-7 composition pass).
+
+   `.room-deck` is the shell's sticky bottom cluster (ui/rooms/room-host.css);
+   the micro rooms have used it since round 4. The anchor rooms did not, and
+   the audit measured the consequence once real iPhone safe-area insets were
+   in the cascade: the Conservatory's ENTER row 64px below its stage at
+   390x844, the Gallery's CLAIM row 81px below at 375x667, the Study's
+   elimination history 106px below. All three photographed perfectly.
+
+   These two modifiers only teach the shell's band the anchor column's own
+   gutter and full-bleed edge — the sticking, the paper backing and the
+   hairline all come from the shell, so there is one implementation of "the
+   verbs stay in the thumb zone" in the game, not four.
+   -------------------------------------------------------------------------- */
+/* Scoped `.anch .room-deck--*` (0,2,0), NOT the bare modifier: room-host.css
+   is imported by RoomHost and therefore lands AFTER this file in the cascade,
+   so a single-class modifier loses `flex-direction` to the shell's `.room-deck
+   { flex-direction: column }`. Measured when it did: the Conservatory's three
+   buttons stacked into a 157.6px tower that swallowed the bottom three petals
+   of the hive — `elementFromPoint` on P, N and L answered as the deck. */
+.anch .room-deck--anch {
+  /* full-bleed across `.anch`'s 0.9rem gutter, so the band reads as a shelf
+     the board scrolls behind rather than a floating card */
+  margin-inline: -0.9rem;
+  padding-inline: 0.9rem;
+  padding-bottom: 0.15rem;
+}
+.anch .room-deck--row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  align-items: center;
+}
 
 .anch-btn {
   min-height: var(--tap-target);
@@ -151,7 +197,12 @@
   background: var(--paper-raised);
   font-size: var(--text-sm);
 }
-.anch-chip--accent { border-color: var(--room-accent); color: var(--room-accent); font-weight: 600; }
+/* Round 7 contrast audit: the Gallery's accent is --gilt, and gilt TEXT on
+   parchment measures 3.57:1 at 15px/600 — under 4.5 (AAA 6.2). The chip keeps
+   the accent where it is a shape (the ring) and takes body ink for the word,
+   so nothing about "found" stops being double-encoded (AAA 6.3) and the word
+   itself is legible. */
+.anch-chip--accent { border-color: var(--room-accent); color: var(--ink); font-weight: 600; }
 .anch-chip--muted  { color: var(--ink-faint); text-decoration: line-through; }
 
 .anch-card {
@@ -174,6 +225,13 @@
    selector and CSS import order between two per-module files is not a contract
    we want to depend on. */
 .anch.anch--verdict.anch--verdict.anch--verdict { justify-content: flex-start; }
+/* ROUND 11 (AAA 3.4 / 11.14) — the celebration is not painted over by the
+   campaign seal. RoomHost measures the moment card's bottom edge and publishes
+   it as `--room-moment-clear` (0 whenever no seal is up), and the verdict
+   column starts below it, so the win headline hit-tests to itself and the room
+   title stays readable. Only `.anch--verdict` reads it: during play the room
+   never moves. */
+.anch--verdict .anch-done { padding-top: var(--room-moment-clear, 0px); }
 .anch-done {
   position: relative;
   margin-top: clamp(1rem, 12vh, 6rem);
@@ -256,6 +314,7 @@
 
 /* Found-words drawer: one collapsed line, tap to unfold (no scrollbars). */
 .hv-found {
+  position: relative;   /* the sheet below hangs off this row */
   display: flex;
   align-items: center;
   gap: 0.45rem;
@@ -267,14 +326,57 @@
    under the rank bar, and it read as a rendering fault. HiveView measures the
    line and takes any chip that does not fit ENTIRELY off the glass
    (`--offstrip`); the boxes stay, so the measurement never oscillates. */
+/* ROUND 11 — the second mechanism. The measurement above is JS and can go
+   stale between the events it listens to (webfont swap, Dynamic Type); when it
+   does, `overflow: hidden` alone puts a hard letter-cut back on the glass. The
+   mask turns that failure mode into a fade. Its width (18px) is the same
+   number HiveView subtracts from the fit limit, so a chip the measurement HAS
+   caught never enters the gradient — the fade only ever falls on a chip that
+   slipped through, and on parchment it reads as "there is more". */
 .hv-found__strip {
   flex: 1;
   display: flex;
   gap: 0.35rem;
   overflow: hidden;
   white-space: nowrap;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
 }
 .anch-chip--offstrip { visibility: hidden; }
+/* While the sheet is open the strip's chips are already on screen, in full,
+   two rems below. Hidden rather than unmounted so the row keeps its height and
+   the fit measurement keeps its boxes (AAA 1.5: no layout shift). */
+.hv-found--open .hv-found__strip { visibility: hidden; }
+
+/* The found SHEET (AAA 11.1). Hangs off the strip row, floats over the hive,
+   and unmounts nothing: the board, the entry line and the Delete/Shuffle/ENTER
+   deck stay mounted and playable underneath. Height is capped against the
+   stage (not the viewport) so it can never reach the deck, and it scrolls
+   inside itself — the house no-scrollbars rule. */
+.hv-foundsheet {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  right: 0;
+  padding: 0.55rem 0.6rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-sheet);
+  box-shadow: var(--shadow-lift);
+  animation: anch-rise 180ms var(--ease-settle);
+}
+.hv-foundsheet__scroll {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  max-height: calc(var(--stage-h, 60vh) * 0.42);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.hv-foundsheet__scroll::-webkit-scrollbar { display: none; }
 .hv-found__toggle {
   border: none;
   background: none;
@@ -321,8 +423,22 @@
    Round 7 (§0.1 side-by-side): the 300px cap left the Conservatory 34% empty
    parchment at 390×844 while SB's hive fills the thumb zone. The px cap moves
    to 340 and the vw cap to 86 — at 390 wide that is a 335px flower with ~107px
-   petals — while the vh cap (the thing that actually protects the SE-class
-   layout) is untouched at the short-screen breakpoint below. */
+   petals.
+
+   ROUND 7 COMPOSITION PASS — the vh cap was measuring the wrong box. `42vh`
+   is 42% of the GLASS (354px at 390×844). The stage is 651.8px, not 844:
+   47px of notch inset, 52px of day bar, the abandon footer and 34px of
+   home-indicator inset all come off first. So the 335px flower plus 380px of
+   column furniture made 716px of content in a 652px stage and the ENTER row
+   landed 64px below the fold — measured, docs/shots/round7/compose. The cap
+   is now taken off `--stage-h` (the shell's container-query height, which
+   cannot be wrong about the insets) minus the column's own furniture. Both
+   reserves below are measured sums, not estimates:
+     390×844 → 79.4 head + 23.2 ladder + 44 found + 40 entry + 52.8 toast
+               + 56 gaps + 19.2 padding + 51.2 deck  ≈ 366 → 23rem
+     375×667 → the same list at the short-screen sizes ≈ 281 → 17.6rem
+   Leaving 284px / 200px of flower — 91px / 64px petals, both at or above the
+   AAA 1.1 floor of 64. */
 .hv-board {
   position: relative;
   /* NEVER shrinks. The cells are absolutely positioned in PERCENTAGES, so a
@@ -331,7 +447,7 @@
      moment the Every Petal trophy list gave the column more content than the
      stage). The stage scrolls instead; the hive stays a hive. */
   flex: 0 0 auto;
-  width: min(86vw, 340px, 42vh);
+  width: min(86vw, 340px, calc(var(--stage-h, 100vh) - var(--hv-reserve, 24rem)));
   aspect-ratio: 1 / 1;
   margin: 0 auto;
 }
@@ -612,7 +728,10 @@
 .ww-tile:active,
 .ww-tile.is-pressed { transform: scale(0.94); }
 .ww-tile--selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.ww-tile--small { font-size: 0.74rem; }
+/* Round 7 (AAA 6.6): 0.74rem measured 11.84px on a 16-letter Library board
+   — the tile TEXT, the thing the whole puzzle is read from. The floor for a
+   word on a tile is the body floor, not the caption floor. */
+.ww-tile--small { font-size: 1rem; }
 .ww-tile--hop { animation: ww-hop 300ms ease both; }
 @keyframes ww-hop {
   0%, 100% { transform: translateY(0); }
@@ -657,6 +776,15 @@
   grid-template-columns: repeat(var(--tw-size, 5), 1fr);
   gap: calc(34px / var(--tw-size, 5));
   touch-action: none;                 /* board owns the gesture (AAA 7.11) */
+  /* The board is square, so a width cap is a height cap. Taken off the
+     shell's `--stage-h` for the same reason the hive's is (see there): the
+     grid used to take the full column width and, at 375×667, that made a
+     346px board in a stage with 265px to spare — Clear and CLAIM measured
+     81px below the fold. Never binds at 390×844, where the column's own
+     430px max-width is the tighter term. */
+  width: 100%;
+  max-width: min(100%, calc(var(--stage-h, 100vh) - var(--tw-reserve, 17.5rem)));
+  margin-inline: auto;
 }
 .tw-cell {
   position: relative;
@@ -748,8 +876,10 @@
      reserve is the honest cap with ~15px of guard. It never binds at 390×844
      (396 > the 332px the column offers) and sheds the 92px that used to push
      the chips under the fold on an SE-class glass. Nothing here is a tap
-     target — the finished sheet is a picture — so the cells may shrink. */
-  max-width: min(100%, calc(100dvh - 28rem));
+     target — the finished sheet is a picture — so the cells may shrink.
+     Round 7: retaken off `--stage-h` rather than `100dvh`, which was counting
+     the notch and the home indicator as board space. */
+  max-width: min(100%, calc(var(--stage-h, 100vh) - 16rem));
 }
 .tw-cell--still {
   display: flex;
@@ -830,7 +960,8 @@
   margin: 0.55rem 0;
 }
 .fw-def__eyebrow {
-  font-size: 0.78rem;
+  /* Round 7 type audit (AAA 6.6): raised to the 15px caption floor. */
+  font-size: var(--text-sm);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -842,7 +973,46 @@
   font-size: var(--text-display-sm);
   line-height: 1.4;
 }
+/* ROUND 11 (AAA 3.7) — the plain gloss under the poetry, tier 1 only. Body
+   serif at the 16px floor, roman, softened ink: unmistakably the footnote to
+   the display italic above it and never competing with it for the headline. */
+.fw-def__gloss {
+  margin: 0 auto 0.15rem;
+  max-width: 34ch;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--ink-soft);
+}
 .fw-def__meta { font-size: var(--text-sm); color: var(--ink-soft); }
+
+/* ROUND 11 (AAA 3.7 / 3.4) — the rest of the entry, printed once the word is
+   settled. Body serif, ranged left inside a centred column with a hairline
+   above: the register of recovered text everywhere else in the house, and
+   quietly different from the display italic the puzzle itself was set in. */
+.fw-entry {
+  margin: 0.75rem auto 0;
+  max-width: 34ch;
+  padding-top: 0.55rem;
+  border-top: var(--rule);
+  text-align: left;
+  animation: anch-rise 240ms var(--ease-settle) 120ms both;
+}
+.fw-entry__cap {
+  margin-bottom: 0.3rem;
+  font-size: var(--text-sm);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-align: center;
+}
+.fw-entry__line {
+  margin: 0.3rem 0;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--ink);
+}
 
 /* AAA 3.4 — the Study's celebration, distinct from the reveal it follows.
    The reveal is `fw-reveal`/`fw-turn` (the answer arriving letter by letter).
@@ -932,7 +1102,8 @@
    the counts are live information, so they are NOT struck. */
 .fw-tried { text-align: center; }
 .fw-tried__cap {
-  font-size: 0.78rem;
+  /* Round 7 type audit (AAA 6.6): raised to the 15px caption floor. */
+  font-size: var(--text-sm);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -966,14 +1137,17 @@
    floor (AAA 6.19) and the play surface stays in the bottom-half thumb zone.
    -------------------------------------------------------------------------- */
 @media (max-height: 700px) {
-  .anch { gap: 0.45rem; padding-top: 0.4rem; }
+  .anch { gap: 0.3rem; padding: 0.4rem 0.9rem 0.2rem; }
+  .anch .room-deck--anch { gap: 0.3rem; }
   /* The FLAVOUR is the decorative reserve that gives way — never the RULE.
      (This line used to be `.anch__sub { display: none }`, which erased the
      Gallery's marked-tile rule, the Conservatory's centre-letter rule and the
      Library's "four threads of four" on every SE-class phone while the
      mistakes those rules gate kept charging steps. AAA 3.2.) */
   .anch__flavour { display: none; }
-  .anch__rule { font-size: 0.8rem; margin-top: 0.1rem; }
+  /* The RULE is load-bearing copy (see the block at .anch__rule) — it may
+     not drop under the caption floor just because the glass is short. */
+  .anch__rule { font-size: var(--text-sm); margin-top: 0.1rem; }
   .anch-toastslot { min-height: 1.2rem; }
   .anch--conservatory .anch-toastslot { min-height: 2.5rem; }
   .anch--library .anch-toastslot { min-height: 3rem; }
@@ -984,16 +1158,18 @@
   .hv-found { min-height: 1.3rem; }
   .hv-ladder { gap: 0.4rem; }
   .hv-entry { min-height: 2rem; font-size: 1.3rem; }
-  /* Measured: at 375x667 a 42vh hive left the Shuffle row 62px past the
-     bottom of the stage. 33vh brings the whole cluster back on-screen and
-     still leaves every petal a ~72px hit target (AAA 6.19). */
-  .hv-board { width: min(86vw, 340px, 33vh); }
+  /* The SE-class reserve (see the measured sum at `.hv-board`). The old
+     `33vh` term here was 220px of flower against a 481.6px stage that only
+     had 182px to give — the Shuffle row measured 38px below the fold. */
+  .anch--conservatory { --hv-reserve: 17.6rem; }
   .fw-def__text { font-size: 1.05rem; margin: 0.3rem 0; }
   .anch--study .fw-def__text { font-size: clamp(1.15rem, 5.2vw, 1.45rem); margin: 0.3rem 0; }
   .fw-clue { min-height: 2.9rem; }
   .fw-slot { height: 1.7rem; }
   .tw-word { min-height: 1.8rem; }
   .tw-lists { min-height: 1.4rem; }
+  /* The SE-class reserve for the Gallery's deck + head (measured 210px). */
+  .anch--gallery { --tw-reserve: 13.8rem; }
   /* The SE-class board still fills what it is given — the floor drops, the
      "grow into the slack" behaviour does not. */
   .ww-tile { min-height: 56px; }
@@ -1029,6 +1205,10 @@ html.kb-open .anch .fw-def__text {
    Reduced motion: states stay legible, juice goes quiet (AAA U.3).
    -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
+  /* Round 11: the found sheet and the restored entry are STATE (a panel that
+     is open; two lines of writing that have arrived), so they still appear —
+     only the arrival goes quiet. */
+  .hv-foundsheet, .fw-entry,
   .anch-shake, .anch-pop, .anch-toast, .anch-done, .hv-note,
   .ww-tile--hop, .ww-banner--in, .ww-banner--dance, .ww-banner--in .ww-banner__theme,
   .ww-banner--perfect .ww-banner__theme,

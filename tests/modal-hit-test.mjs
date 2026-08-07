@@ -42,9 +42,12 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** The word the door wants, read from the authored volume rather than typed
  *  here — a re-authored answer must not silently skip the ceremony row. */
-const ANSWER = JSON.parse(
+const VOLUME = JSON.parse(
   readFileSync(resolve(ROOT, 'content/authored/volumes/volume-1.json'), 'utf8'),
-).answer;
+);
+const ANSWER = VOLUME.answer;
+/** Real fragment ids, so the journal row raises a REAL campaign seal. */
+const FRAGMENT_IDS = VOLUME.fragments.map((f) => f.id);
 
 /** Agents share this checkout and each other's ports; take one that is free. */
 async function freePort(from = 5199, to = 5260) {
@@ -350,6 +353,126 @@ try {
   }
   await assertModal('parlor conversation (.dlg)', '.dlg', retireBox);
   await playScene();
+
+  // 6b. THE JOURNAL, WITH A CAMPAIGN SEAL UP (round-11 major, AAA 11.2/11.4).
+  //
+  //     The moment layer is fixed and clears the shell by tokens: --chrome-h
+  //     (the bar) + --tap-target (the back row). That is the shape of
+  //     /chronicles, /sanctum and the rooms. The JOURNAL has a SECOND
+  //     navigation band — the four ribbon tabs — below the back row, and
+  //     nothing accounted for it: measured, the seal's box was 12,108,366x143,
+  //     the tabs' tops were at y~139, and `elementFromPoint` at every tab's
+  //     centre returned a node inside `.mom`. The seal is itself tappable, so
+  //     reaching for "Testimony" put the notice away instead — on the screen
+  //     the seal's own trace line ("Filed in the Journal · Testimony") had just
+  //     named, for 5.6s per queued grant, and grants QUEUE.
+  //
+  //     This row exists because the second band was forgettable ONCE. It fails
+  //     loudly if no seal mounts, so it can never pass by having nothing on the
+  //     glass to collide with.
+  {
+    const drainMoments = async () => {
+      for (let i = 0; i < 25; i++) {
+        const b = await boxOf('.mom');
+        if (!b) return;
+        await page.mouse.click(b.x + b.w / 2, b.y + b.h / 2);
+        await page.waitForTimeout(160);
+      }
+    };
+    await drainMoments();
+    await page.evaluate(() => { location.hash = '#/journal'; });
+    await page.waitForSelector('.jrn-tabs', { timeout: 8000 });
+    // File on the journal, which is exactly where the player stands when a
+    // room's grant lands and she has followed the trace line (AAA 11.11).
+    await page.evaluate((ids) => {
+      const store = window.__manorStore;
+      const s = store.getState();
+      // Re-file even if the walk already found them: the seal fires on the
+      // transition, not on the count.
+      store.setState({ volume: { ...s.volume, foundFragmentIds: s.volume.foundFragmentIds.filter((f) => !ids.includes(f)) } });
+      for (const id of ids) store.getState().fileFragment(id);
+    }, FRAGMENT_IDS.slice(0, 3));
+    await page.waitForTimeout(500);
+
+    const sealBox = await boxOf('.mom');
+    check(Boolean(sealBox && sealBox.h > 0),
+      'journal: a campaign seal is on the glass — the collision this row tests is real',
+      'journal: no .mom mounted after filing three fragments — this row cannot prove anything and must be repaired, not skipped');
+
+    if (sealBox) {
+      const probe = await page.evaluate(() => {
+        const seal = document.querySelector('.mom');
+        const out = { seal: null, tabs: [] };
+        if (seal) {
+          const r = seal.getBoundingClientRect();
+          out.seal = { top: Math.round(r.top), bottom: Math.round(r.bottom) };
+        }
+        for (const tab of document.querySelectorAll('.jrn-tabs button')) {
+          const r = tab.getBoundingClientRect();
+          const label = (tab.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 20);
+          if (r.width < 1 || r.height < 1) { out.tabs.push({ label, box: false }); continue; }
+          // Centre AND the four inset corners — AAA 11.2 asks for all five.
+          const points = [
+            ['centre', r.x + r.width / 2, r.y + r.height / 2],
+            ['top-left', r.x + 5, r.y + 5],
+            ['top-right', r.x + r.width - 5, r.y + 5],
+            ['bottom-left', r.x + 5, r.y + r.height - 5],
+            ['bottom-right', r.x + r.width - 5, r.y + r.height - 5],
+          ];
+          const bad = [];
+          for (const [where, x, y] of points) {
+            const el = document.elementFromPoint(x, y);
+            if (!el || !(el === tab || tab.contains(el))) {
+              const cls = el && typeof el.className === 'string' ? el.className : '';
+              bad.push(`${where}→${el ? el.tagName.toLowerCase() : 'nothing'}${cls ? '.' + cls.split(' ')[0] : ''}`);
+            }
+          }
+          out.tabs.push({
+            label, box: true, bad,
+            inViewport: r.top >= 0 && r.bottom <= window.innerHeight,
+            top: Math.round(r.top),
+          });
+        }
+        return out;
+      });
+      log(`  journal: seal ${probe.seal?.top}..${probe.seal?.bottom}; tabs at ${probe.tabs.map((t) => t.top).join(', ')}`);
+      check(probe.tabs.length === 4,
+        `journal: all four ribbon tabs are rendered (${probe.tabs.map((t) => t.label).join(', ')})`,
+        `journal: expected 4 ribbon tabs, found ${probe.tabs.length} — the row is probing the wrong band`);
+      for (const t of probe.tabs) {
+        check(t.box && t.bad.length === 0 && t.inViewport,
+          `journal tab "${t.label}": answers as itself at its centre and all four inset corners with a seal up`,
+          `journal tab "${t.label}": ${t.bad?.length ? t.bad.join(', ') : 'no box'} — the moment seal covers the journal's own navigation (AAA 11.2/11.4)`);
+      }
+      // The back row must survive the new clearance too: pushing the seal down
+      // past the tabs must not have pushed it onto anything else.
+      const back = await page.evaluate(() => {
+        const btn = document.querySelector('.jrn-page .backlink');
+        if (!btn) return null;
+        const r = btn.getBoundingClientRect();
+        const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+        return {
+          itself: Boolean(el && (el === btn || btn.contains(el))),
+          who: el ? el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className ? '.' + el.className.split(' ')[0] : '') : 'nothing',
+        };
+      });
+      if (back) {
+        check(back.itself,
+          'journal back-link: still answers as itself with the seal up',
+          `journal back-link: answered by ${back.who} (AAA 11.2)`);
+      }
+      table.push({
+        surface: 'journal, campaign seal up',
+        overlay: '.mom',
+        hit: probe.tabs.every((t) => t.box && t.bad.length === 0) ? '.jrn-tab (itself)' : '.mom',
+        retireMounted: false,
+        dayEnded: false,
+      });
+      await drainMoments();
+    }
+    await page.evaluate(() => { location.hash = '#/'; });
+    await page.waitForTimeout(250);
+  }
 
   // 7. THE VICTORY CEREMONY (.snc-page[data-overlay]) — the round-9 blocker.
   //

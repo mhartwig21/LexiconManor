@@ -320,7 +320,7 @@
       "once": true,
       "conditions": [
         {
-          "kind": "fragmentCount",
+          "kind": "fragmentsLegible",
           "gte": 6
         }
       ],
@@ -462,7 +462,7 @@
       "once": false,
       "conditions": [
         {
-          "kind": "fragmentCount",
+          "kind": "fragmentsLegible",
           "lte": 0
         }
       ],
@@ -481,7 +481,7 @@
       "once": false,
       "conditions": [
         {
-          "kind": "fragmentCount",
+          "kind": "fragmentsLegible",
           "gte": 1,
           "lte": 3
         }

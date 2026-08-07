@@ -63,7 +63,10 @@
 /* The house's voice — secondary by size and tone, never load-bearing. */
 .backlink__flavour {
   margin-top: 0.05rem;
-  font-size: 0.8125rem;
+  /* was 0.8125rem = 13px. AAA 11.7 makes this the SUBTITLE under the plain
+     noun, so it is meant to be smaller — but not smaller than the game's
+     caption floor (AAA 6.6). */
+  font-size: var(--text-sm);
   font-style: italic;
   color: var(--ink-soft);
   white-space: nowrap;

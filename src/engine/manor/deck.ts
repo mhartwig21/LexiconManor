@@ -111,9 +111,28 @@ const PARLOR_CARDS: RoomCard[] = [
 // Mystery rooms (violet) — clue fragments; the reason to climb
 // ---------------------------------------------------------------------------
 
+/**
+ * ROUND-11 RETUNE — THE VIOLET ROOM THE GROUND FLOOR CAN ACTUALLY DRAW.
+ *
+ * Measured before this change (`deckMixAt`, engine/economy/simulate.ts): a
+ * card drawn on 0-based rows 0–2 was a mystery card **0.16%–0.56%** of the
+ * time, because tier 1 admits only the Archive (unusual) and the Bureau
+ * (rare) and `RARITY_WEIGHTS[1]` scores those 9 and 1 against a puzzle deck
+ * full of commons. The consequence, simulated end to end: the median evening
+ * (PROFILE_DECENT) contained a violet room on **9.5%** of days — so the
+ * round-10 seal, the mechanic that carries "solving needs to matter", was
+ * something nine evenings in ten never showed the player at all.
+ *
+ * The Archive is the *plain* violet room — free, a dead end, one shelf of
+ * somebody's papers — and it is the card whose whole job is to be the violet
+ * room she finds. It is a STANDARD card now. The Bureau, Chart Room,
+ * Observatory and Boxroom keep their unusual/rare weights, so violet is still
+ * a category you climb toward (`categoryWeight('mystery', row)` ramps on top
+ * of this); what changed is that the ground floor can show her one.
+ */
 const MYSTERY_CARDS: RoomCard[] = [
   { id: 'archive', name: 'The Archive', category: 'mystery',
-    doorLayouts: [DEAD_END], tierRange: [1, 3], gemCost: 0, rarity: 'unusual' },
+    doorLayouts: [DEAD_END], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'chart-room', name: 'The Chart Room', category: 'mystery',
     doorLayouts: [CORNER], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
   { id: 'observatory', name: 'The Observatory', category: 'mystery',

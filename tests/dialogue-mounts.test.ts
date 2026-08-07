@@ -197,7 +197,8 @@ describe("the Portrait's failure arc reaches the player (AAA 4.17, BENCHMARKS §
       affinities: { bramble: 0, ellery: 0, posy: 0, fern: 0, dewey: 0, portrait: 1 },
       counters: { 'sanctum-guess-wrong': wrongSoFar },
       recentEvents, talkedToday: new Set(), giftedToday: new Set(),
-      volumeId: 'volume-1', fragmentsFound: 8,
+      // No sealed flags in this fixture, so everything filed is readable.
+      volumeId: 'volume-1', fragmentsFound: 8, fragmentsLegible: 8,
     };
   }
 

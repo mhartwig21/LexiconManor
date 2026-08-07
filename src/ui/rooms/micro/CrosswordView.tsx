@@ -216,12 +216,11 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
         })}
       </div>
 
-      <div className="m2-toastslot" aria-live="polite">
-        {toast && <span className={`m2-toast m2-toast--${toast.kind}`}>{toast.text}</span>}
-      </div>
-
       {won ? (
         <div className="m2-done">
+          <div className="m2-toastslot" aria-live="polite">
+            {toast && <span className={`m2-toast m2-toast--${toast.kind}`}>{toast.text}</span>}
+          </div>
           <div className="m2-done__title">Neat as new linen.</div>
           <p className="m2-done__line">
             Every word in its place{state.cw.costedChecks === 0 && state.cw.hintsUsed === 0 ? ' — folded right the first time' : ''}.
@@ -236,6 +235,15 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
               rides WITH the keyboard — a clue you cannot see while typing is
               not a memory prosthetic, it is a memory test. */}
           <div className="room-deck">
+          {/* ROUND 7 (AAA 11.11): the verdict slot used to sit above this deck
+              in the scrolling flow, and with real iPhone insets the column ran
+              21px (390×844) / 44px (375×667) past its stage — the slot opened
+              at 364.9–400.1 against a deck starting at 393.1, so the room's
+              answer printed underneath the keyboard. It rides the deck now. */}
+          <div className="m2-toastslot" aria-live="polite">
+            {toast && <span className={`m2-toast m2-toast--${toast.kind}`}>{toast.text}</span>}
+          </div>
+
           <div className="lc-clues m2-card">
             {puzzle.entries.map((e) => (
               <button

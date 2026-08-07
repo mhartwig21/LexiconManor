@@ -70,6 +70,34 @@ page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 
 const shot = (name) => page.screenshot({ path: resolve(SHOTS, name + '.png') });
+
+/**
+ * ROUND 7: drain the campaign-moment seals before a map interaction.
+ *
+ * `.mom-layer` is a fixed overlay and its seal genuinely intercepts pointer
+ * events — that is the design (a moment is meant to be tapped away). By the
+ * time this pass reaches the padlock it has solved rooms, visited a parlor and
+ * banked a keepsake, so four seals are stacked and Playwright's actionability
+ * check correctly refuses to click through them. This is NOT a bug being
+ * papered over: the seals are dismissed the way a player dismisses them, one
+ * tap each, and the pass asserts afterwards that the map control it wanted is
+ * the thing that answers. Draining is only ever done when the moment is not
+ * the subject of the assertion.
+ */
+const drainMoments = async (limit = 8) => {
+  for (let i = 0; i < limit; i++) {
+    const gone = await page.evaluate(() => {
+      const m = document.querySelector('.mom');
+      if (!m) return true;
+      m.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      m.click?.();
+      return false;
+    });
+    if (gone) return i;
+    await page.waitForTimeout(350);
+  }
+  return limit;
+};
 const store = () => page.evaluate(() => {
   const s = window.__manorStore.getState();
   return {
@@ -574,6 +602,17 @@ try {
     const ariaDisabled = await lockedGhost.getAttribute('aria-disabled');
     if (ariaDisabled) fail(`the padlock still claims aria-disabled="${ariaDisabled}" while answering taps`);
     else ok('the padlock does not lie about being disabled — it answers the tap');
+    // Put the stacked campaign seals away first, then assert the PADLOCK is
+    // what the tap lands on — otherwise this measures the moment layer.
+    const drained = await drainMoments();
+    if (drained) log(`padlock: dismissed ${drained} campaign moment(s) before the tap`);
+    const hit = await lockedGhost.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return el.contains(top) || top === el ? 'self' : (top?.className ?? 'null');
+    });
+    if (hit !== 'self') fail(`the padlocked door is covered by "${hit}" — the tap cannot reach it`);
+    else ok('the padlocked door hit-tests as itself');
     await lockedGhost.click();
     await page.waitForTimeout(150);
     const shrugged = await page.$('.bp-padlock-slot--refused');

@@ -1387,10 +1387,10 @@
         "theme": "Vegetables",
         "tier": "yellow",
         "words": [
-          "CARROT",
-          "BROCCOLI",
-          "CELERY",
-          "SPINACH"
+          "POTATO",
+          "ONION",
+          "RADISH",
+          "CABBAGE"
         ]
       },
       {
@@ -2261,10 +2261,10 @@
         "theme": "Writing Tools",
         "tier": "yellow",
         "words": [
-          "PEN",
-          "PENCIL",
-          "MARKER",
-          "CRAYON"
+          "CHALK",
+          "QUILL",
+          "STYLUS",
+          "BALLPOINT"
         ]
       },
       {
@@ -2445,10 +2445,10 @@
         "theme": "Garden Flowers",
         "tier": "yellow",
         "words": [
-          "ROSE",
-          "TULIP",
-          "DAISY",
-          "LILY"
+          "PANSY",
+          "PEONY",
+          "DAHLIA",
+          "MARIGOLD"
         ]
       },
       {

@@ -92,7 +92,7 @@
   pointer-events: none;
 }
 .bp-float--up { color: var(--moss); }
-.bp-float--down { color: var(--wax); }
+.bp-float--down { color: var(--wax-ink); }
 @keyframes bp-float-rise {
   0% { opacity: 0; transform: translateY(8px); }
   20% { opacity: 1; }
@@ -134,9 +134,16 @@
 .bp-furniture { pointer-events: none; }
 .bp-plot { fill: none; stroke: var(--ink-faint); stroke-width: 1; opacity: 0.5; }
 .bp-plot__ticks { fill: none; stroke: var(--ink-faint); stroke-width: 1.4; opacity: 0.75; }
+/* Round 7 type audit: the sheet's viewBox is 372 units wide and lays out at
+   ~371 CSS px on a 390pt phone, so one unit IS one CSS pixel here and these
+   numbers are literal glass sizes. They measured 11 / 7.5 / 10 / 10.5 —
+   surveyor's-margin type, but type she is meant to READ (the rate card is
+   "the last thing she reads before spending"). Raised toward the caption
+   floor; the plate and the margin still read a clear step quieter than the
+   footer, because tracking and ink do that job, not 4px of size. */
 .bp-plot__title {
   font-family: var(--font-display);
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.26em;
   text-anchor: middle;
   fill: var(--ink-soft);
@@ -150,7 +157,7 @@
 .bp-scale__seg--fill { fill: var(--ink-faint); stroke: none; opacity: 0.7; }
 .bp-scale__label {
   font-family: var(--font-display);
-  font-size: 7.5px;
+  font-size: 10px;
   letter-spacing: 0.22em;
   fill: var(--ink-faint);
 }
@@ -161,7 +168,7 @@
    tabular so the column of numbers reads as a scale at a glance. */
 .bp-rowprice__n {
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 12.5px;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
   text-anchor: middle;
@@ -173,7 +180,7 @@
    decision, and it is the last thing she reads before spending. */
 .bp-price {
   font-family: var(--font-display);
-  font-size: 10.5px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
   text-anchor: end;
   fill: var(--ink-soft);
@@ -388,13 +395,29 @@
    Footer strip
    -------------------------------------------------------------------------- */
 
+/* --------------------------------------------------------------------------
+   THE FOOTER PLATE (round-7 composition pass).
+
+   Round 3's critics called the blueprint the least-authored surface in the
+   game, and this strip was why: a room name, a tier caption, and then three
+   underlined words in a row — a browser nav bar sitting under a hand-drawn
+   surveyor's plot. Nothing about it said "manor".
+
+   It is a title block now, which is the piece of furniture a real drawing
+   ends with: the plate's ink sits on a shaded ground, the name and the tier
+   share one baseline across a hairline rule, and the doors off the sheet are
+   INDEX TABS (AAA 6.16 — navigation is the ribbon/tab idiom, and only
+   navigation is) rather than links. Nothing here is new copy; it is the same
+   three words, given a shape.
+   -------------------------------------------------------------------------- */
 .bp-foot {
-  padding: 0.35rem 1rem 0.2rem;
-  border-top: var(--rule);
+  padding: 0.4rem 0.9rem 0.15rem;
+  border-top: 1px solid var(--ink-faint);
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.35rem;
   min-height: 5.4rem;
+  background: linear-gradient(var(--paper-shade), transparent 78%);
 }
 
 .bp-foot__where {
@@ -402,23 +425,62 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 0.6rem;
+  /* the plate's inner rule: the drawing's name sits ON a line, not above air */
+  padding-bottom: 0.15rem;
+  border-bottom: var(--rule);
 }
 .bp-foot__room {
   font-family: var(--font-display);
   font-size: var(--text-display-sm);
+  line-height: 1.15;
 }
 .bp-foot__tier {
+  font-family: var(--font-display);
   font-size: var(--text-sm);
-  color: var(--ink-faint);
-  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 .bp-foot__actions {
   display: flex;
-  gap: 0.55rem;
+  gap: 0.3rem;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
+  margin: 0 -0.9rem;            /* tabs run to the edge of the plate */
+  padding: 0 0.6rem;
 }
+
+/* The index tabs. Same tap target, same words, same unread chain — but paper
+   with a top-rounded edge and a hairline, so they read as tabs cut into the
+   drawing's margin instead of hyperlinks. Scoped to the footer so the quiet
+   button elsewhere (the draft modal's "Step back") is untouched. */
+.bp-foot__actions .bp-btn--quiet {
+  /* `flex: 1 1 auto` with a content-width floor, never `1 1 0` + ellipsis:
+     measured, an equal-thirds tab clipped "Chronicles 2" by 8px and printed
+     it as "Chronicle…". A word that does not fit is a layout to fix, not a
+     word to cut. With a fit-content basis the three tabs share the leftover
+     evenly and, if a longer count ever arrives, the row wraps instead. */
+  flex: 1 1 auto;
+  min-width: fit-content;
+  padding: 0.45rem 0.3rem;
+  border: 1px solid var(--paper-edge);
+  border-bottom: none;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  background: var(--paper-raised);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.bp-foot__actions .bp-btn--quiet[data-pressed],
+.bp-foot__actions .bp-btn--quiet:active {
+  transform: none;              /* a tab does not press down; it darkens */
+  filter: brightness(0.95);
+}
+/* The seal (Enter, Call on…) keeps its own idiom and does not join the ribbon. */
+.bp-foot__actions .bp-btn:not(.bp-btn--quiet) { flex: 0 0 auto; }
 
 .bp-foot__dewey {
   margin: 0;
@@ -794,8 +856,35 @@
   font-size: var(--text-display-lg);
   color: var(--ink); /* shields against v1 index.css h1 gold */
 }
-.bp-scene__text { margin: 0; color: var(--ink-soft); }
+.bp-scene__text { margin: 0; color: var(--ink-soft); max-width: 30ch; text-wrap: balance; }
 .bp-scene__row { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; }
+
+/* THE FRONT STEP (round-7 composition pass).
+   Measured: the plate sat at 40–62% of an 844px glass with a 300px featureless
+   band above it, and the two doors below the seal were underlined words with
+   nothing holding them — the same browser-nav shape the blueprint footer had.
+   The card is lifted to sit on the optical centre (a centred block always
+   reads low), and the secondary doors get a rule and open space of their own,
+   so the screen reads title → invitation → the one verb → the quiet pair,
+   which is four deliberate beats instead of one stack. No copy changed. */
+.bp-page--card { padding-bottom: 4.5rem; }
+.bp-scene { gap: 1.15rem; }
+.bp-scene__title + .bp-scene__text { margin-top: -0.35rem; }
+.bp-page--card .bp-scene__row {
+  gap: 1.6rem;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  align-self: stretch;
+  justify-content: center;
+  border-top: var(--rule);
+}
+.bp-page--card .bp-scene__row .bp-btn--quiet {
+  text-decoration: none;
+  font-size: var(--text-sm);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
 
 /* dusk: ≤4s wordless fade, tap-skippable (AAA 4.12) */
 .bp-dusk {

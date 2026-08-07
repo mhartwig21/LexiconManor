@@ -399,11 +399,17 @@ describe('a padlocked door blocks without a key — and charges nothing (AAA 4.6
 
 describe('a padlocked door spends EXACTLY ONE key — on placement', () => {
   it('opens for the usual one step and does not touch the key to look', () => {
-    const store = atTheStairs(LOCK_SEED, 1);
+    // ROUND-11 REPAIR: this case handed her ONE key and asserted the door
+    // opened. Round 10 repriced the padlock to `DOOR_LOCKS.keyCost` = 2 and
+    // this file was never re-read, so the two cases below had been failing
+    // ever since — asserting a door that opens on one key, which is a door
+    // the shipped game does not have. They are written against KEY_COST now,
+    // so the next reprice moves them instead of breaking them.
+    const store = atTheStairs(LOCK_SEED, KEY_COST);
     store.getState().openDraft('N');
     const s = store.getState();
     expect(s.draftOffer).not.toBeNull();
-    expect(s.currencies.keys).toBe(1);                   // looking is free
+    expect(s.currencies.keys).toBe(KEY_COST);            // looking is free
     const moves = s.ledger.entries.filter((e) => e.reason === 'move');
     expect(moves).toHaveLength(1);
     // Round-5 audit (AAA 4.6): the look is a walk across the floor she is
@@ -447,14 +453,14 @@ describe('a padlocked door spends EXACTLY ONE key — on placement', () => {
   it('a door she can no longer pay for places nothing and charges nothing', () => {
     // Belt and braces: the key is re-checked at placement, so a key spent
     // elsewhere between opening and choosing cannot half-place a room.
-    const store = atTheStairs(LOCK_SEED, 1);
+    const store = atTheStairs(LOCK_SEED, KEY_COST);
     store.getState().openDraft('N');
-    store.getState().spendKeys(1);                       // Fern took it back
+    store.getState().spendKeys(1);                       // Fern took one back
     const card = store.getState().draftOffer!.cards.find((c) => c.gemCost === 0)!;
     store.getState().chooseDraftCard(card.id);
     const s = store.getState();
     expect(s.manor!.rooms['2,4']).toBeUndefined();
-    expect(s.currencies.keys).toBe(0);
+    expect(s.currencies.keys).toBe(KEY_COST - 1);
     expect(s.manor!.playerCell).toEqual({ col: 2, row: 3 });
   });
 });

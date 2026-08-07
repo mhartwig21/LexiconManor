@@ -101,7 +101,8 @@
 .mic-toast-live { display: block; max-width: 100%; }
 .mic-toast { font-size: var(--text-sm); animation: mic-rise 220ms var(--ease-settle); }
 .mic-toast--good { color: var(--moss); }
-.mic-toast--bad  { color: var(--wax); }
+/* Round 7: wax as READING ink (tokens --wax-ink) — the fill value measures 3.09:1 on candlelit paper at 15px. */
+.mic-toast--bad  { color: var(--wax-ink); }
 .mic-toast--info { color: var(--ink-soft); }
 
 /* End-of-room celebration (AAA 3.4 — distinct from any reveal juice). */
@@ -177,7 +178,8 @@
 .mic-key.is-pressed { transform: scale(0.92); }
 .mic-key:disabled { opacity: 0.4; cursor: default; }
 .mic-key--dim { color: var(--ink-faint); }
-.mic-key--wide { flex: 1.6; font-size: 0.85rem; font-weight: 400; }
+/* Round 7 type audit (AAA 6.6): raised to the 15px caption floor. */
+.mic-key--wide { flex: 1.6; font-size: var(--text-sm); font-weight: 400; }
 
 /* --------------------------------------------------------------------------
    The Darkroom (Cipher) — AAA §3
@@ -229,15 +231,34 @@
 }
 /* Extended hit area: visual cell stays letter-sized, the tap target is
    ≥44×44pt (AAA 6.19 [PARITY]) — the pseudo-element is part of the button. */
+/* Extended hit area: the visual cell stays letter-sized while the TARGET
+   grows into the gutter. The inset used to be -7px against a 6px letter gap,
+   so adjacent cells' targets overlapped by 8px and the neighbour — later in
+   DOM order — won every contested point: probing outward from each centre
+   until the hit test stopped answering as that button measured an EXCLUSIVE
+   target of 26px, NARROWER than the 31.2px cell it was supposed to enlarge.
+   Half the gap (3px) tiles the targets edge to edge instead: 37.2px of
+   exclusive width, 48px tall.
+   That is still under the 44pt bar, and the comment that used to stand here
+   claimed otherwise. It is the same ruling the Counting House's cells and the
+   Linen Closet's squares run on, and it is reported as such: a cipher slot
+   moves a cursor, spends nothing, and every COMMITTING tap in the room (every
+   letter key, Develop the print) is on a >=44px control. */
 .dk-cell::after {
   content: '';
   position: absolute;
-  inset: -5px -7px;
+  inset: -5px -3px;
 }
 /* Long phrases: a denser letter so the whole print clears the deck. The floor
    keeps the plain letter at 1rem (16px — the AAA 6.6 body floor; it is the
    glyph she actually reads) with the small cipher label above it. */
-.dk-sheet--dense .dk-cell { width: clamp(24px, 7vw, 32px); height: clamp(30px, 4.6vh, 42px); }
+/* Round 7 tap-target audit: at 390×844 the dense cell measured 27.3px wide,
+   and the ±7px extended hit area above therefore gave 41.3px — under the
+   AAA 6.19 floor the comment above claims, on the room's ONLY board control.
+   8vw is 31.2px at 390 → a 45.2px target, and the extra row it costs the
+   longest phrase in the pool lands inside the 88px of dead parchment the same
+   audit measured between this sheet and the deck. */
+.dk-sheet--dense .dk-cell { width: clamp(26px, 8vw, 34px); height: clamp(30px, 4.6vh, 42px); }
 .dk-sheet--dense .dk-cell__plain { font-size: 1rem; min-height: 1.2rem; line-height: 1.15; }
 .dk-sheet--dense .dk-cell__cipher { font-size: 0.6rem; line-height: 1; }
 .dk-sheet--dense { gap: 0.3rem 0.55rem; }
@@ -269,7 +290,8 @@
 }
 .dk-cell--locked .dk-cell__plain { color: var(--room-accent); font-weight: 700; }
 .dk-cell--locked .dk-cell__cipher { color: color-mix(in srgb, var(--room-accent) 55%, transparent); }
-.dk-cell--dupe .dk-cell__plain { color: var(--wax); }
+/* Round 7: wax as READING ink (tokens --wax-ink). */
+.dk-cell--dupe .dk-cell__plain { color: var(--wax-ink); }
 
 /* Prints in the tray — the persistent record of everything she has paid to
    learn (AAA 3.3). ONE compact line: the RUN of counts is the tool ("8/13

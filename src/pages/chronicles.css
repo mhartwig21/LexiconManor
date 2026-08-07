@@ -13,7 +13,12 @@
      opaque) painted straight over this header — a hit test at the old "Back"
      button's centre returned .chr-retire, so the way home was un-tappable, not
      merely faint. Clear --chrome-h, as sanctum.css already did. */
-  padding: calc(var(--chrome-h) + 8px) 16px 16px;
+  /* Round 7 (AAA 7.8): the bottom was a flat 16px, so the SCROLLER ran to the
+     bottom of the glass and at 375x667 "Pack (copy code)" / "Unpack (import)"
+     — the recovery path (11.26) — came to rest 3.2px above it, inside the 34px
+     home-indicator band. The page ends above the indicator now, whatever is
+     scrolled into that last line. */
+  padding: calc(var(--chrome-h) + 8px) 16px max(16px, env(safe-area-inset-bottom));
   box-sizing: border-box;
   max-width: 560px;
   margin: 0 auto;
@@ -84,6 +89,12 @@
 .chron__ledger {
   flex: 1;
   min-height: 0;
+  /* Round 7: measured at 375x667 with real iPhone insets, "Pack (copy code)"
+     and "Unpack (import)" ended 3.2px above the bottom of the glass — inside
+     the 34px home-indicator band, on the two controls that ARE the recovery
+     path (AAA 7.8 / 11.26). The scroller now ends its content above the band
+     whatever the page around it does. */
+  padding-bottom: max(0.9rem, env(safe-area-inset-bottom));
 }
 
 /* Round 9 (AAA 11.23): the rhythm is tighter than it was. Settings and the
@@ -309,4 +320,23 @@
 .chron__debug dd {
   margin: 0;
   color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Short glass (375×667 and any compact standalone frame) — round-7 pass.
+
+   AAA 11.23 wants audio, reduced motion and the save trunk two taps from the
+   main screen: one to this surface, one to the control. Measured with real
+   iPhone insets, the ledger scroller is only ~414px tall here, and the four
+   stat tiles + the page's own gutters spend ~145px of the glass ABOVE it, so
+   the travelling trunk — the recovery path (11.26) — sat below the fold and
+   cost a scroll. Nothing is hidden: the head, the tiles and the section rhythm
+   just stop being generous, and the ~46px goes to the scroller.
+   -------------------------------------------------------------------------- */
+@media (max-height: 700px) {
+  .chron { gap: 8px; padding-top: calc(var(--chrome-h) + 4px); }
+  .chron__totals { gap: 6px; }
+  .chron__stat { padding: 4px 4px; }
+  .chron__stat b { font-size: var(--text-body); }
+  .chron__section { margin: 6px 0 3px; }
 }

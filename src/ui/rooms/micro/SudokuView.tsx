@@ -403,18 +403,14 @@ export default function SudokuView({
               so nothing shifts either way (AAA 1.5's principle). The meta sits
               OUTSIDE the live region — a screen reader should hear refusals
               and reports, not a figure count re-read on every ink. */}
-          <div className="ch-toastslot">
-            {!toast && (
-              <span className="ch__meta tabular-nums">
-                <span>{TIER_NAME[puzzle.tier]} leaf</span>
-                <span>{left} {left === 1 ? 'figure' : 'figures'} left</span>
-              </span>
-            )}
-            <span className="ch-toast-live" aria-live="polite">
-              {toast && <span className={`ch-toast ch-toast--${toast.kind}`}>{toast.text}</span>}
-            </span>
-          </div>
-
+          {/* ROUND 7 (AAA 11.11, measured with real iPhone insets): this slot
+              used to sit OUTSIDE the deck, in the scrolling flow. The leaf plus
+              its head made the column 60px taller than the stage at both
+              390×844 and 375×667, so the slot's own box (top 590, bottom 631.6)
+              opened entirely UNDERNEATH the sticky deck (top 582.6) — the
+              room's refusals and its figure count were painted behind the
+              keypad. Moved inside the deck, above the toolbar: the deck is the
+              thing that is always on the glass, so the room's answer is too. */}
           {/* Thumb zone: sticky, always reachable, board scrolls behind it.
               The verbs read free → priced, left to right, and every priced one
               prints its own price in its label, so the cost of a verb is never
@@ -422,6 +418,17 @@ export default function SudokuView({
               size: the second band cost ~48px of height, and height is what
               decides how big the ledger leaf can be (counting-house.css). */}
           <div className="room-deck">
+            <div className="ch-toastslot">
+              {!toast && (
+                <span className="ch__meta tabular-nums">
+                  <span>{TIER_NAME[puzzle.tier]} leaf</span>
+                  <span>{left} {left === 1 ? 'figure' : 'figures'} left</span>
+                </span>
+              )}
+              <span className="ch-toast-live" aria-live="polite">
+                {toast && <span className={`ch-toast ch-toast--${toast.kind}`}>{toast.text}</span>}
+              </span>
+            </div>
             <div className="ch-toolbar">
               <div className="ch-tools ch-tools--free">
                 <button

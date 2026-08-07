@@ -88,6 +88,34 @@ describe('word web bundle', () => {
       expect(s.wrongAttempts, p.id).toBe(0);
     }
   });
+
+  /**
+   * ROUND 11 (AAA 2.8 / content quality) — NO FOUR TILES SHIP TWICE.
+   *
+   * The 51 legacy `web-N` boards carried 204 group instances built from only
+   * 126 distinct word-sets: CALM/SALMON/WOULD/YOLK was "Silent L" on four
+   * separate nights, ANSWER/AWRY/WRENCH/WRINKLE was "Silent W" on four more,
+   * and BALLOON/COFFEE/RACCOON/SUCCESS turned up on four again — inconsistently
+   * tiered, so the same four tiles were the yellow group one night and the
+   * green group another. To a player who visits the Library daily that is not
+   * a deep pool, it is a shallow one printed four times. The generator's bank
+   * groups are word POOLS now and every use draws a distinct hand; this is the
+   * assertion that a future tweak cannot quietly undo it.
+   */
+  it('no 4-word set appears on two boards', () => {
+    const owner = new Map<string, string>();
+    const repeats: string[] = [];
+    for (const p of wordWeb) {
+      for (const g of p.groups) {
+        const key = [...g.words].sort().join('|');
+        const first = owner.get(key);
+        if (first) repeats.push(`${p.id} repeats ${first}: ${g.words.join('/')}`);
+        else owner.set(key, p.id);
+      }
+    }
+    expect(repeats, repeats.join(' ; ')).toEqual([]);
+    expect(owner.size).toBe(wordWeb.length * 4);
+  });
 });
 
 describe('forgotten word bundle', () => {

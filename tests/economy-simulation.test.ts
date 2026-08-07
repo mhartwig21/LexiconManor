@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   campaignProfileForDay, climbStepCost, deckMixAt, keyLuckFor, measuredKeyRate, median, medianOf,
-  microShareAt, quantile, quantileOf, share,
+  microShareAt, quantile, quantileOf, share, studySolveShareAt,
   reserveToTop, simulateDay, simulateDays, simulateCampaigns,
-  MOVEMENT, SANCTUM_LANDING_ROW, TIME_TABLE,
+  KNOWLEDGE, MOVEMENT, SANCTUM_LANDING_ROW, TIME_TABLE,
   PROFILE_DECENT, PROFILE_GREAT, PROFILE_SKILLED, PROFILE_SKIPPER,
 } from '../src/engine/economy/simulate';
 import {
@@ -409,6 +409,172 @@ describe('4.10e — the VOLUME is typically won in 14–28 days', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// ROUND-11 — THE SEAL HAS TO BITE, OR IT CANNOT CARRY "SOLVING NEEDS TO MATTER"
+// ---------------------------------------------------------------------------
+
+/**
+ * Round 10 made entering a violet room file a SEALED page and made a solve
+ * render it legible (engine/volume.ts). The mechanic was real in code and
+ * beautifully presented in the journal — and statistically a rounding error:
+ * measured through this very simulation, only **9.5%** of PROFILE_DECENT days
+ * contained a violet room at all, sealed supply ran 0.45/day against a
+ * decipher capacity of 2.6–6/day, and a sealed page survived the night on
+ * 0.03 page-days per day. Nine evenings in ten the player never met a sealed
+ * page, so the seal could not answer the owner's question and the round-8
+ * solve channel plus the keys were doing all the work.
+ *
+ * Two things were wrong and both are fixed at the source, not here:
+ *   1. THE MODEL COULD NOT SEE IT. `simulateDay` counted violet rooms entered
+ *      and stopped; legibility, ordering and the overnight backlog did not
+ *      exist in it, so any retune of the seal moved the real game and nothing
+ *      here. It now plays the seal in day order (`pagesMadeOut`,
+ *      `sealedBacklog`) through the real `decipherYield`.
+ *   2. THE SUPPLY WAS NOT THERE. `categoryWeight('mystery', row)` ramped 6→48
+ *      on paper while `RARITY_WEIGHTS[1]` scored tier 1's only two mystery
+ *      cards 9 and 1 — a realised 0.16% of draws on the ground floor. The
+ *      Archive is a standard card now and the ramp is tuned against the
+ *      REALISED share (engine/manor/{deck,drafting}.ts).
+ *
+ * THE PUBLISHED TARGET (AAA 4.10g): a sealed page survives to the next dawn on
+ * ~25–50% of a skilled player's days, and a solve makes a page out on ≥1 day
+ * in 3. The bands below are what a future retune has to argue with.
+ */
+describe('4.10g — the SEAL bites: entering gets the page, solving makes it out', () => {
+  const sealed = simulateCampaigns(PROFILE_SKILLED, 300, CAMPAIGN_LENGTH, 0x1234);
+  const sealedDays = sealed.flatMap((c) => c.days);
+
+  it('shows the median evening a violet room often enough to have a mechanic', () => {
+    // The finding's headline number: 9.5% before the retune. A player who
+    // meets a sealed page one evening in ten does not have a seal mechanic,
+    // she has a rumour of one.
+    const met = share(decent, (r) => r.fragmentsFound > 0);
+    expect(met, `PROFILE_DECENT met a violet room on ${(met * 100).toFixed(1)}% of days`)
+      .toBeGreaterThan(0.15);
+    // …and it is still a rare room, not a corridor: violet never becomes the
+    // thing she draws by default.
+    expect(met).toBeLessThan(0.5);
+  });
+
+  it('puts violet on the GROUND FLOOR at a rate the player can actually meet', () => {
+    // The realised share, which is what the player experiences — not the
+    // category weight, which is what the old comment described.
+    const shares = [0, 1, 2, 3, 4, 5, 6].map((row) => deckMixAt(row).mystery);
+    expect(shares[0], `row-0 violet share ${shares[0]}`).toBeGreaterThan(0.012);
+    for (let row = 0; row < 6; row++) {
+      expect(shares[row + 1]!, `violet share row ${row}→${row + 1}`)
+        .toBeGreaterThan(shares[row]!);
+    }
+    // Climbing is still visibly worth it: the top storey is several times the
+    // ground floor (AAA 4.2's "violet ramps with row" as a felt quantity).
+    expect(shares[6]!).toBeGreaterThan(shares[0]! * 3);
+  });
+
+  it('leaves a page unread overnight on a real share of days (the backlog)', () => {
+    const overnight =
+      sealed.reduce((s, c) => s + c.sealedOvernightDays, 0) / sealedDays.length;
+    expect(overnight, `sealed-overnight share ${overnight.toFixed(3)}`)
+      .toBeGreaterThan(0.25);
+    // …and never so much that the journal silts up with smudges she can never
+    // catch up on: the backlog is a pressure, not a debt spiral.
+    expect(overnight).toBeLessThan(0.55);
+    expect(medianOf(sealedDays.map((d) => d.sealedBacklog))).toBeLessThanOrEqual(2);
+  });
+
+  it('makes the solve the thing that moves the case, on 1 day in 3 or better', () => {
+    expect(share(sealedDays, (d) => d.pagesMadeOut > 0)).toBeGreaterThan(0.33);
+  });
+
+  it('never makes out more than she was holding, and never out of order', () => {
+    for (const c of sealed) {
+      let carried = 0;
+      for (const d of c.days) {
+        // Conservation: what she could possibly read today is yesterday's
+        // backlog plus today's finds, and what is left is exactly the rest.
+        expect(d.pagesMadeOut).toBeLessThanOrEqual(carried + d.fragmentsFound);
+        expect(d.sealedBacklog).toBe(carried + d.fragmentsFound - d.pagesMadeOut);
+        carried = d.sealedBacklog;
+      }
+      // The whole point, at campaign scale: she can read less than she holds.
+      expect(c.fragments).toBeLessThanOrEqual(c.fragmentsFiled);
+    }
+  });
+
+  it('a player who solves NOTHING learns nothing from the rooms she walks', () => {
+    // The owner directive, as a tripwire. The skipper drafts violet rooms —
+    // they are hers forever, AAA 4.18 is untouched — and makes out not one
+    // page of them, all campaign. If a future retune lets a walk-through pay
+    // the mystery again, this is what fails.
+    const walker = simulateCampaigns(PROFILE_SKIPPER, 120, CAMPAIGN_LENGTH, 0x77aa);
+    const walkerDays = walker.flatMap((c) => c.days);
+    expect(share(walkerDays, (d) => d.fragmentsFound > 0)).toBeGreaterThan(0.1);
+    expect(walkerDays.every((d) => d.pagesMadeOut === 0)).toBe(true);
+    // …so her backlog only ever grows, and her knowledge comes solely from
+    // the channels that do not need a solved room (letters, testimony, pity).
+    expect(walker.every((c) => c.days.at(-1)!.sealedBacklog > 0)).toBe(true);
+  });
+
+  it('holds the band across independent campaign seeds', () => {
+    for (const seed of [0x1234, 0x9911, 0x2f2f, 0xabc1]) {
+      const runs = simulateCampaigns(PROFILE_SKILLED, 150, CAMPAIGN_LENGTH, seed);
+      const days = runs.flatMap((c) => c.days);
+      const overnight = runs.reduce((s, c) => s + c.sealedOvernightDays, 0) / days.length;
+      expect(overnight, `seed ${seed}: ${overnight.toFixed(3)}`).toBeGreaterThan(0.25);
+      expect(overnight, `seed ${seed}: ${overnight.toFixed(3)}`).toBeLessThan(0.55);
+    }
+  }, HEAVY_MS);
+});
+
+/**
+ * ROUND-11 — 4.10e IS MEASURED AGAINST THE RULES THE GAME HAS.
+ *
+ * `simulateCampaign` used to add `result.fragmentsFound` — violet rooms
+ * ENTERED — straight into the deduction count, and modelled no solve channel
+ * at all. Under the shipped rules a violet room files a page that narrows
+ * nothing until a solve makes it out, and the word games pay two strict
+ * channels of their own (engine/volume.ts `STUDY_CHANNEL`/`LINTEL_CHANNEL`).
+ * So the horizon was verified against a knowledge curve the game had stopped
+ * having, and fixing the seal above would have moved the real horizon with
+ * every test still green.
+ */
+describe('4.10e — the knowledge curve counts LEGIBLE pages, not rooms walked', () => {
+  it('never counts a sealed page as knowledge', () => {
+    for (const c of campaigns.slice(0, 120)) {
+      const filedFromRooms = c.days.reduce((s, d) => s + d.fragmentsFound, 0);
+      const madeOut = c.days.reduce((s, d) => s + d.pagesMadeOut, 0);
+      expect(madeOut).toBeLessThanOrEqual(filedFromRooms);
+      // Legible ≤ filed, always — the seal can only ever subtract.
+      expect(c.fragments).toBeLessThanOrEqual(c.fragmentsFiled);
+    }
+  });
+
+  it('models the solve channels the word games actually pay', () => {
+    // A channel that pays nothing is a dead reward class (AAA 11.17); a
+    // channel modelled as infinite is a horizon nobody can trust. Volume 1
+    // authors 3 definition lines and 2 lintel engravings for the word games,
+    // and the model must hold to that stock.
+    expect(KNOWLEDGE.studyChannelStock).toBeGreaterThan(0);
+    expect(KNOWLEDGE.lintelChannelStock).toBeGreaterThan(0);
+    expect(KNOWLEDGE.studyChannelStock + KNOWLEDGE.lintelChannelStock)
+      .toBeLessThan(KNOWLEDGE.volumeFragments / 2);
+    // The Study is a rows-5–6 card (engine/manor/deck.ts): its channel is the
+    // reward for an ascent, not a tap she can open on the ground floor. The
+    // model has to agree with the deck about that, or the definition lines
+    // would arrive weeks early in the horizon it publishes.
+    for (const row of [0, 2, 4]) expect(studySolveShareAt(row)).toBe(0);
+    for (const row of [5, 6]) {
+      expect(studySolveShareAt(row)).toBeGreaterThan(0);
+      expect(studySolveShareAt(row)).toBeLessThan(0.35);
+    }
+  });
+
+  it('never learns more than the volume authors', () => {
+    for (const c of campaigns) {
+      expect(c.fragmentsFiled).toBeLessThanOrEqual(KNOWLEDGE.volumeFragments);
+    }
+  });
+});
+
 describe('ledger invariants over every simulated day (AAA 4.9)', () => {
   it('steps never render negative and the accounting identity holds', () => {
     for (const r of allDays) {
@@ -677,6 +843,14 @@ describe('4.10b — the FIRST evenings land inside 10–15 minutes too', () => {
     // the headline invariant, so the fix had to be a refill (AAA 4.10d).
     expect(BASE_DAY_BUDGET).toBe(18);
     expect(reserveToTop(1, { walkbackPerRow: 0 })).toBeGreaterThan(BASE_DAY_BUDGET);
+    // ROUND 7 (verifier): pin the EXACT bare ascent, not just the inequality.
+    // AAA 4.10d publishes this number and steps.ts's header quotes it; round 10
+    // moved MOVE_COST_BY_ROW[4] −6 → −7 and updated one of the three copies, so
+    // the docs said 21 while the game charged 22 and every assertion here
+    // (`> 18`, `>= 20`) stayed green straight through the drift. Now a movement
+    // retune has to come here and change the number on purpose.
+    // 1 + 2 + 3 + 7 + 9 = 22, entrance (row 0) → the landing (row 5).
+    expect(reserveToTop(1, { walkbackPerRow: 0 })).toBe(22);
     // Without the pot, day 1 falls out of the window — which is the finding.
     const bare = simulateDays(
       { ...PROFILE_DECENT, brambleAffinity: 0, dawnSteps: 0, dawnKeys: 0 }, 2000, 0xbeef);

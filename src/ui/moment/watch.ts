@@ -26,12 +26,13 @@ import type { RecordedEvent } from '../../engine/events';
 import { useManorStore, type ManorStore } from '../../app/store';
 import { getVolumeContent } from '../../app/content/volumes';
 import {
-  arrivedLetters, fragmentDroughtDays, openedLetterIds,
+  arrivedLetters, fragmentDroughtDays, madeOutFragmentIds, openedLetterIds, sealedFragmentIds,
 } from '../../engine/volume';
 import { keepsakeById } from '../../engine/achievements';
 import { cardById } from '../../engine/manor/deck';
 import {
-  keepsakeMoment, letterMoment, momentForEvent, plateMoment, type MomentContext,
+  keepsakeMoment, letterMoment, madeOutMoment, momentForEvent, plateMoment,
+  type MadeOutFacts, type MomentContext,
 } from './moments';
 import { momentQueue, type MomentQueue } from './queue';
 
@@ -48,6 +49,14 @@ export interface WatchSnapshot {
   keepsakes: readonly KeepsakeFactsLite[];
   /** The cabinet's filled plates — `unlockCard`'s sibling channel. */
   plates: readonly PlateFacts[];
+  /**
+   * Round 11: every page this volume has MADE OUT, oldest first on the drip.
+   * `decipherFragments` writes only `legible-` flags — no spine event — so the
+   * one reward the round-10 mechanic exists to pay was announced nowhere at
+   * all, and it always fires while the player is inside a room. Diffed here,
+   * exactly like the tray and the mantel (AAA 11.11/11.12).
+   */
+  madeOut: readonly MadeOutFacts[];
 }
 
 export interface MomentWatcher {
@@ -71,6 +80,7 @@ export function createMomentWatcher(
   let knownLetters = new Set<string>();
   let knownKeepsakes = new Set<string>();
   let knownPlates = new Set<string>();
+  let knownMadeOut = new Set<string>();
 
   const pass = (announce: boolean) => {
     const snap = read();
@@ -110,6 +120,19 @@ export function createMomentWatcher(
       if (announce && !knownPlates.has(p.id)) queue.push(plateMoment(p));
     }
     knownPlates = plates;
+
+    // Round 11 — the decipher channel. ONE seal per batch, not one per page:
+    // a tier-3 solve makes out three at once, and "Three pages come clear" is
+    // what makes DECIPHER_YIELD_BY_TIER a felt lever rather than a constant.
+    const madeOut = new Set<string>();
+    const fresh: MadeOutFacts[] = [];
+    for (const f of snap.madeOut) {
+      madeOut.add(f.id);
+      if (announce && !knownMadeOut.has(f.id)) fresh.push(f);
+    }
+    knownMadeOut = madeOut;
+    const seal = madeOutMoment(fresh);
+    if (seal) queue.push(seal);
   };
 
   return {
@@ -125,10 +148,20 @@ export function createMomentWatcher(
 /** The live fragment/answer lookup, over the volume the player is inside. */
 export const liveContext: MomentContext = {
   fragment: (id) => {
-    const { volumeId } = useManorStore.getState().volume;
+    const s = useManorStore.getState();
+    const { volumeId } = s.volume;
     const content = getVolumeContent(volumeId);
     const frag = content?.fragments.find((f) => f.id === id);
-    return frag ? { kind: frag.kind, text: frag.text, interpretation: frag.interpretation } : null;
+    if (!frag) return null;
+    return {
+      kind: frag.kind,
+      text: frag.text,
+      interpretation: frag.interpretation,
+      // The arrival must know the state the page arrived IN. `fileFragment`
+      // sets the sealed flag before it records 'fragment-found' precisely so
+      // this read is already true when the watcher gets here.
+      sealed: sealedFragmentIds(volumeId, s.flags).has(id),
+    };
   },
   answerFor: (volumeId) => getVolumeContent(volumeId)?.answer ?? null,
 };
@@ -149,13 +182,23 @@ export function readSnapshot(s: ManorStore): WatchSnapshot {
     .map((c) => ({ id: c.id, name: c.name }));
 
   const content = getVolumeContent(s.volume.volumeId);
-  if (!content) return { recentEvents: s.recentEvents, letters: [], keepsakes, plates };
+  if (!content) {
+    return { recentEvents: s.recentEvents, letters: [], keepsakes, plates, madeOut: [] };
+  }
   const day = s.day?.day ?? s.volume.day;
   const letters = arrivedLetters(content, s.volume, day, {
     droughtDays: fragmentDroughtDays(s.chronicles.dayRecords),
     openedIds: openedLetterIds(content.id, s.flags),
   });
-  return { recentEvents: s.recentEvents, letters, keepsakes, plates };
+  // Pages a solved room has deciphered, oldest first on the drip — the same
+  // order `fragmentsToDecipher` makes them out in, so the batch's quoted line
+  // is the one the definition poem has been waiting on.
+  const madeOutIds = madeOutFragmentIds(s.volume.volumeId, s.flags);
+  const madeOut: MadeOutFacts[] = madeOutIds.size === 0 ? [] : content.fragments
+    .filter((f) => madeOutIds.has(f.id))
+    .sort((a, b) => a.revealOrder - b.revealOrder)
+    .map((f) => ({ id: f.id, kind: f.kind, text: f.text }));
+  return { recentEvents: s.recentEvents, letters, keepsakes, plates, madeOut };
 }
 
 let unsubscribe: (() => void) | null = null;

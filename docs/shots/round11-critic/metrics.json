@@ -1,0 +1,291 @@
+{
+  "gallery": {
+    "boardId": "twistle-t1-42",
+    "won": true,
+    "doneBox": {
+      "x": 14.4,
+      "y": 164.9,
+      "w": 361.2,
+      "h": 503.8,
+      "bottom": 668.8
+    },
+    "headline": {
+      "found": true,
+      "text": "The gallery is hung.",
+      "cls": "anch-done__title",
+      "box": {
+        "y": 182.5,
+        "h": 40.6
+      },
+      "coveredBy": "mom__where"
+    },
+    "momentUp": {
+      "cls": "mom mom--keepsake",
+      "y": 108,
+      "bottom": 225.9
+    },
+    "exitHit": null,
+    "leaveText": [
+      "Step back out"
+    ]
+  },
+  "conservatory": {
+    "boardId": "hive-t1-40",
+    "strip": {
+      "stripBox": {
+        "l": 14.4,
+        "r": 287
+      },
+      "overflow": "hidden",
+      "mask": "none",
+      "chips": [
+        {
+          "word": "ARCHAIC",
+          "l": 14.4,
+          "r": 104,
+          "full": 89.6,
+          "visible": 89.6,
+          "frac": 1
+        },
+        {
+          "word": "ACETATE",
+          "l": 109.6,
+          "r": 194.5,
+          "full": 84.9,
+          "visible": 84.9,
+          "frac": 1
+        },
+        {
+          "word": "THATCHER",
+          "l": 200.1,
+          "r": 302.5,
+          "full": 102.5,
+          "visible": 86.9,
+          "frac": 0.85
+        },
+        {
+          "word": "RECREATE",
+          "l": 308.1,
+          "r": 404.2,
+          "full": 96,
+          "visible": -21.1,
+          "frac": -0.22
+        },
+        {
+          "word": "CRITERIA",
+          "l": 409.8,
+          "r": 500.5,
+          "full": 90.7,
+          "visible": -122.8,
+          "frac": -1.35
+        },
+        {
+          "word": "CATHETER",
+          "l": 506.1,
+          "r": 605.2,
+          "full": 99.1,
+          "visible": -219.1,
+          "frac": -2.21
+        },
+        {
+          "word": "CATARACT",
+          "l": 610.8,
+          "r": 711,
+          "full": 100.3,
+          "visible": -323.8,
+          "frac": -3.23
+        },
+        {
+          "word": "RECHERCHE",
+          "l": 716.6,
+          "r": 828.6,
+          "full": 112,
+          "visible": -429.6,
+          "frac": -3.84
+        }
+      ]
+    },
+    "expander": {
+      "text": "10 found ▾",
+      "w": 81.4,
+      "h": 44,
+      "hit": "mom__quote"
+    },
+    "afterOpen": null
+  },
+  "countingHouse": {
+    "cellCount": 81,
+    "cell": {
+      "w": 43.3,
+      "h": 43.3
+    },
+    "keySizes": [
+      {
+        "label": "17",
+        "w": 59,
+        "h": 52
+      },
+      {
+        "label": "26",
+        "w": 59,
+        "h": 52
+      },
+      {
+        "label": "37",
+        "w": 59,
+        "h": 52
+      },
+      {
+        "label": "48",
+        "w": 59,
+        "h": 52
+      },
+      {
+        "label": "56",
+        "w": 59,
+        "h": 52
+      },
+      {
+        "label": "66",
+        "w": 59,
+        "h": 52
+      },
+      {
+        "label": "75",
+        "w": 59,
+        "h": 52
+      },
+      {
+        "label": "87",
+        "w": 59,
+        "h": 52
+      },
+      {
+        "label": "97",
+        "w": 59,
+        "h": 52
+      },
+      {
+        "label": "↶ Undo",
+        "w": 59,
+        "h": 52
+      },
+      {
+        "label": "Rub out",
+        "w": 122.9,
+        "h": 52
+      }
+    ],
+    "tools": [
+      {
+        "label": "✎ Pencil — off",
+        "disabled": false
+      },
+      {
+        "label": "Pencil what fits",
+        "disabled": false
+      },
+      {
+        "label": "Balance the books · −2",
+        "disabled": false
+      },
+      {
+        "label": "Ask the clerk · −2",
+        "disabled": false
+      },
+      {
+        "label": "Consult a figure · −4",
+        "disabled": false
+      }
+    ],
+    "leaf": {
+      "w": 390,
+      "h": 390,
+      "bottom": 521.6,
+      "inView": true
+    }
+  },
+  "library": {
+    "boardId": "web-d17",
+    "tier": 1,
+    "herrings": 1,
+    "oneAway": {
+      "main": null,
+      "bit": null,
+      "allNotices": []
+    },
+    "herringChase": {
+      "relation": "shared-affix",
+      "picked": [
+        "BLINDFOLD",
+        "GRINDING",
+        "KINDLE",
+        "SPINDLE"
+      ],
+      "main": null,
+      "bit": null,
+      "allNotices": []
+    },
+    "scattered": {
+      "main": null,
+      "bit": null,
+      "allNotices": []
+    },
+    "hintControl": [
+      "BRANCH",
+      "BLOSSOM",
+      "MOON",
+      "SUCKLE",
+      "COMB",
+      "SKIN",
+      "GRINDING",
+      "WINDFALL",
+      "VINE",
+      "DEW",
+      "KINDLE",
+      "BLINDFOLD",
+      "SAPLING",
+      "SPINDLE",
+      "HIVE",
+      "IDEA",
+      "Clear",
+      "Shuffle",
+      "Weave",
+      "Leave it for tomorrow"
+    ]
+  },
+  "study": {
+    "all": "The Study\n\nAn entry in his hand. The headword is torn away.\n\n8 letters — whisper it back.\n\nA HEADWORD IS MISSING\n\n“A small object held on to only because of the person or place it recalls.”\n\n8 letters · 5 whispers left\nEtymology\nWhere the word came from. Sealed…\nUnseal · −2 steps\nUsage\nThe word at work in a sentence. Sealed…\nUnseal · −2 steps\nWhisper\nWHISPERED · HIS LETTERS · IN PLACE\nNothing whispered yet.",
+    "buttons": [
+      "Unseal · −2 steps",
+      "Unseal · −2 steps",
+      "Whisper",
+      "Leave it for tomorrow"
+    ]
+  },
+  "linen": {
+    "cell": {
+      "w": 44.7,
+      "h": 44.7
+    },
+    "cells": 9,
+    "text": "The Linen Closet\n1\n2\n3\n1D\nA duck's mirror\n2A\nIt waits for a draft\n3A\nWhere the day ends\nQ\nW\nE\nR\nT\nY\nU\nI\nO\nP\nA\nS\nD\nF\nG\nH\nJ\nK\nL\nZ\nX\nC\nV\nB\nN\nM\n⌫\nSmooth a crease · −2 steps"
+  },
+  "darkroom": {
+    "text": "The Darkroom\nS\nI\nH\nB\nC\nE\nN\nJ\nD\nO\nD\nO\nA\nN\nC\nE\nS\nF\nP\nC\nE\nE\nS\nV\nD\nO\nH\nL\nV\nC\nE\nE\nS\nE\nS\nD\nO\nQ\nE\nS\n3/15 letters penciled\nQ\nW\nE\nR\nT\nY\nU\nI\nO\nP\nA\nS\nD\nF\nG\nH\nJ\nK\nL\nZ\nX\nC\nV\nB\nN\nM\nERASE\nDevelop the print\nDevelop one letter · −2",
+    "keys": [
+      {
+        "w": 32.5,
+        "h": 55.7
+      },
+      {
+        "w": 32.5,
+        "h": 55.7
+      },
+      {
+        "w": 32.5,
+        "h": 55.7
+      }
+    ]
+  }
+}

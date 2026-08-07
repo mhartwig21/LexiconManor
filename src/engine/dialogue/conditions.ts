@@ -6,7 +6,43 @@
  */
 
 import type { DialogueQuery } from '../events';
+import { sealedFragmentIds } from '../volume';
 import type { DialogueCondition } from './schema';
+
+/**
+ * ROUND 11 — "she reads English, not smudges", applied to the gates.
+ *
+ * Every authored `fragmentCount` condition counted pages the player cannot
+ * read: four sealed smudges retired the Portrait's thin-file nudge and unlocked
+ * Ellery's reading offer for someone with no readable line in the journal.
+ *
+ * ROUND 7 (verifier) — the count is now a REAL FIELD on the frozen snapshot
+ * (`DialogueQuery.fragmentsLegible`, architect-granted), not a per-evaluation
+ * flag scan. To keep one definition and no drift there is exactly one
+ * derivation — `deriveLegibleFragmentCount` below, called once by
+ * `app/slices/dialogue.ts` when it builds the snapshot — and exactly one read
+ * path, `legibleFragmentCount`, which now just answers the field. A query is
+ * only ever built by the slice, so the two can never disagree; a test that
+ * hand-builds one states the number it means, which is the honest thing for a
+ * fixture to do.
+ */
+export function deriveLegibleFragmentCount(
+  volumeId: string,
+  flags: Iterable<string>,
+  fragmentsFound: number,
+): number {
+  // Sealed fragments are write-once `vol.<id>.sealed-<frag>` flags minus
+  // `legible-` ones (engine/volume.ts), and every sealed id is by construction
+  // a filed one (`fileFragment` sets the flag only as it files) — so the
+  // subtraction is exact rather than an estimate.
+  const sealed = sealedFragmentIds(volumeId, flags);
+  return Math.max(0, fragmentsFound - sealed.size);
+}
+
+/** What she can actually READ — the quantity `fragmentsLegible` gates on. */
+export function legibleFragmentCount(q: DialogueQuery): number {
+  return q.fragmentsLegible;
+}
 
 /** Dot-path lookup into an event payload ("closeness.repeat" etc.). */
 function getPath(obj: unknown, path: string): unknown {
@@ -53,6 +89,8 @@ export function evaluateCondition(cond: DialogueCondition, q: DialogueQuery): bo
       return inBand(q.counters[cond.event] ?? 0, cond.gte, cond.lte);
     case 'fragmentCount':
       return inBand(q.fragmentsFound, cond.gte, cond.lte);
+    case 'fragmentsLegible':
+      return inBand(legibleFragmentCount(q), cond.gte, cond.lte);
     case 'day':
       return inBand(q.day, cond.gte, cond.lte);
     case 'seen':

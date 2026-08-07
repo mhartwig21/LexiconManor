@@ -22,6 +22,7 @@ import { isSubstantive } from '../../engine/dialogue/schema';
 import { getDialogueFile } from '../../engine/dialogue/content';
 import { findNode } from '../../engine/dialogue/select';
 import { rankFor } from '../../engine/dialogue/affinity';
+import { deriveLegibleFragmentCount } from '../../engine/dialogue/conditions';
 import { FLAG_REGEX } from '../../engine/dialogue/validate';
 import type { ManorStore } from '../store';
 import type { SaveV2 } from '../save';
@@ -71,6 +72,14 @@ export const createDialogueSlice =
         giftedToday: new Set(s.giftedToday),
         volumeId: s.volume.volumeId,
         fragmentsFound: s.volume.foundFragmentIds.length,
+        // What she has COLLECTED vs what she can READ are different gates
+        // (round 10's seal). One derivation, called here — see
+        // engine/dialogue/conditions.ts.
+        fragmentsLegible: deriveLegibleFragmentCount(
+          s.volume.volumeId,
+          s.flags,
+          s.volume.foundFragmentIds.length,
+        ),
       };
     },
 

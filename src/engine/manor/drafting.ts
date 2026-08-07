@@ -53,13 +53,31 @@ export interface DraftRollCtx {
  * Deck composition by row (MANOR_DESIGN §5): puzzle rooms are the bulk,
  * green fades as you climb, violet ramps strictly with row — the reason to
  * push upward is visible in every draft.
+ *
+ * ── ROUND-11 RETUNE: THE VIOLET RAMP WAS A RAMP ON PAPER ONLY ─────────────
+ * `6 + row * 7` reads as "6 at the bottom, 48 at the top", but the number it
+ * is multiplied by is `RARITY_WEIGHTS[tier][rarity]`, and tier 1 admits only
+ * an unusual (9) and a rare (1) mystery card against a puzzle deck of commons.
+ * The realised share was 0.16% at row 0 and 12.6% at row 6 — i.e. the bottom
+ * three storeys had no violet at all, and the median simulated evening met a
+ * violet room on 9.5% of days. That is not "the reason to push upward is
+ * visible in every draft"; it is a category the player never sees until she
+ * is most of the way up, and after round 10 it starved the seal mechanic that
+ * makes solving matter.
+ *
+ * Re-tuned WITH the deck (the Archive is a standard card now — see
+ * engine/manor/deck.ts `MYSTERY_CARDS`) against the realised share, which is
+ * what `deckMixAt` measures and what tests/economy-simulation.test.ts now
+ * pins: ≈2.7% at row 0 rising to ≈16% at row 6, strictly increasing per row.
+ * The ramp is gentler in the WEIGHT because the rarity table already steepens
+ * it; the shape the player feels is steeper than the numbers here look.
  */
 export function categoryWeight(category: RoomCategory, row: number): number {
   switch (category) {
     case 'puzzle':  return 100;
     case 'parlor':  return 26;
     case 'utility': return Math.max(10, 46 - row * 6);   // 46 at row 0 → 10 up top
-    case 'mystery': return 6 + row * 7;                  // 6 at row 0 → 48 up top
+    case 'mystery': return 22 + row * 3;                 // 22 at row 0 → 40 up top
   }
 }
 

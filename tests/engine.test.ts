@@ -7,6 +7,7 @@ import {
   computeLifetimeTotals,
   createRng,
   definitionForLevel,
+  glossForLevel,
   findPath,
   foundWordScores,
   gainMindPoints,
@@ -248,10 +249,22 @@ describe('twistle', () => {
 // ---------------------------------------------------------------------------
 
 describe('forgotten word', () => {
-  it('definition clarity scales with level', () => {
-    expect(definitionForLevel(fwPuzzle, 1)).toBe(fwPuzzle.definitions.plain);
+  // ROUND 11 (AAA 3.7): the headline register no longer tracks the tier
+  // one-for-one. `poetic` is the headline wherever the room is meant to read
+  // (tiers 1–2); tier 3 headlines the riddle; the tier lever moved to the free
+  // gloss (`glossForLevel`) and the whisper allowance. Two of every three
+  // authored definitions used to be unreachable, and the weakest of the three
+  // was the one the first Study printed in its largest type.
+  it('the headline is the poetry until the top of the house, then the riddle', () => {
+    expect(definitionForLevel(fwPuzzle, 1)).toBe(fwPuzzle.definitions.poetic);
     expect(definitionForLevel(fwPuzzle, 2)).toBe(fwPuzzle.definitions.poetic);
     expect(definitionForLevel(fwPuzzle, 3)).toBe(fwPuzzle.definitions.riddle);
+  });
+
+  it('the plain gloss is free at tier 1 and nowhere else', () => {
+    expect(glossForLevel(fwPuzzle, 1)).toBe(fwPuzzle.definitions.plain);
+    expect(glossForLevel(fwPuzzle, 2)).toBeNull();
+    expect(glossForLevel(fwPuzzle, 3)).toBeNull();
   });
 
   it('accepts the word case/punctuation-insensitively', () => {

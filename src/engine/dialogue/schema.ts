@@ -57,8 +57,20 @@ export type DialogueCondition =
     }
   /** Lifetime event counter (persists forever). */
   | { kind: 'counter'; event: GameEventType; gte?: number; lte?: number }
-  /** Fragments found this volume. */
+  /**
+   * Fragments FILED this volume, readable or not — "she has been collecting".
+   * Use this for gates that comment on the gathering (Bramble's "you're
+   * gathering his scraps", the arc-testimony milestones on the drip).
+   */
   | { kind: 'fragmentCount'; gte?: number; lte?: number }
+  /**
+   * Fragments she can actually READ — filed minus still-sealed (round 11).
+   * Use this for every gate that means "she knows things": the Portrait's
+   * thin-file nudge (AAA 4.16), Ellery's reading service, any line that tells
+   * her to read pages side by side. A sealed leaf carries no constraint, no
+   * poem line and nothing to interpret, so it must not clear those gates.
+   */
+  | { kind: 'fragmentsLegible'; gte?: number; lte?: number }
   /** In-game day number. */
   | { kind: 'day'; gte?: number; lte?: number }
   /** Another node has been seen (arc chains are seen-linked, Hades-style). */
@@ -69,7 +81,8 @@ export type DialogueCondition =
   | { kind: 'not'; cond: DialogueCondition };
 
 export const CONDITION_KINDS = [
-  'flag', 'affinity', 'event', 'counter', 'fragmentCount', 'day', 'seen', 'volume', 'not',
+  'flag', 'affinity', 'event', 'counter', 'fragmentCount', 'fragmentsLegible',
+  'day', 'seen', 'volume', 'not',
 ] as const;
 
 // ---------------------------------------------------------------------------

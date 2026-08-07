@@ -21,7 +21,7 @@ import {
 import { fernLine, fernKeys } from '../../src/engine/rooms/fern-lines';
 import { STEP_TABLE } from '../../src/engine/economy/steps';
 import { findPath, puzzleSize } from '../../src/engine/twistle';
-import { definitionForLevel } from '../../src/engine/forgotten-word';
+import { definitionForLevel, glossForLevel, unshownDefinitions } from '../../src/engine/forgotten-word';
 import { hiveWordPoints } from '../../src/engine/scoring';
 import { bandOf, loadDictionary } from '../../content/lib/dictionary';
 
@@ -786,7 +786,73 @@ describe('shipped content — Library boards (AAA 2.6–2.11)', () => {
    * ones that could printed a board-agnostic string naming neither the words
    * nor the relation. Both halves are now content invariants.
    */
-  const HERRING_RELATIONS = ['rhyme', 'shared-affix', 'doubled-letter', 'semantic'];
+  // ROUND 11: `hidden-string` split out of `shared-affix` — a word with the
+  // group's string buried inside it (HAMMER against Contains "HAM") is a
+  // different deduction from four words that share an edge, and the room now
+  // says a different sentence about it.
+  const HERRING_RELATIONS = ['rhyme', 'shared-affix', 'doubled-letter', 'semantic', 'hidden-string'];
+
+  /**
+   * ROUND 11 — THE ARCHITECTURE BUDGET (AAA 2.7 / 2.12).
+   *
+   * The herring budget was enforced board by board and violated pool-wide.
+   * Measured on the round-10 shelf: 86 of 163 boards carried the identical
+   * group-type signature (yellow semantic / green semantic / blue wordplay /
+   * purple wordplay), the planted trap's home group sat in one colour slot on
+   * 111 of 161 traps, and 119 of 175 named traps were shared-affix. Every
+   * board was therefore solvable by the same learned shortcut — find the
+   * substring group, find the fifth word containing that substring, hand it to
+   * a semantic group — regardless of its words. Connections varies its
+   * architecture day to day precisely so the meta cannot be learned; these are
+   * the numbers that keep ours varied. Mirrors ARCHITECTURE_BUDGET in
+   * content/generate-wordweb.ts, which fails the build on the same thresholds.
+   */
+  describe('the architecture budget: 163 boards, not one board 163 times', () => {
+    const TIER_ORDER = ['yellow', 'green', 'blue', 'purple'] as const;
+    const signatureOf = (p: WordWebPuzzleEx) => TIER_ORDER
+      .map((slot) => p.groups.find((g) => g.tier === slot)?.type?.[0] ?? '?')
+      .join('');
+
+    it('no single group-type signature owns more than 35% of the shelf', () => {
+      const tally = new Map<string, number>();
+      for (const p of WORD_WEB_POOL) {
+        const s = signatureOf(p);
+        tally.set(s, (tally.get(s) ?? 0) + 1);
+      }
+      const [top, n] = [...tally].sort((a, b) => b[1] - a[1])[0]!;
+      expect(n / WORD_WEB_POOL.length, `"${top}" is the dominant shape`).toBeLessThanOrEqual(0.35);
+    });
+
+    it('the planted trap does not always live in the same colour slot', () => {
+      const home = new Map<string, number>();
+      for (const p of WORD_WEB_POOL) {
+        for (const w of p.ambiguousWords ?? []) {
+          const g = p.groups.find((x) => x.words.includes(w));
+          if (g) home.set(g.tier, (home.get(g.tier) ?? 0) + 1);
+        }
+      }
+      const total = [...home.values()].reduce((a, b) => a + b, 0);
+      expect(total).toBeGreaterThan(0);
+      for (const slot of TIER_ORDER) {
+        expect((home.get(slot) ?? 0) / total, `traps living in the ${slot} group`)
+          .toBeGreaterThanOrEqual(0.12);
+      }
+    });
+
+    it('no single relation is the named thread of more than 40% of the traps', () => {
+      const rel = new Map<string, number>();
+      for (const p of WORD_WEB_POOL) {
+        for (const h of p.herrings ?? []) rel.set(h.relation, (rel.get(h.relation) ?? 0) + 1);
+      }
+      const total = [...rel.values()].reduce((a, b) => a + b, 0);
+      expect(total).toBeGreaterThan(0);
+      const [top, n] = [...rel].sort((a, b) => b[1] - a[1])[0]!;
+      expect(n / total, `"${top}" is the dominant trap`).toBeLessThanOrEqual(0.40);
+      // …and every relation the room can describe actually appears, or the
+      // copy written for it is dead (AAA 11.18's spirit).
+      expect(rel.size).toBeGreaterThanOrEqual(4);
+    });
+  });
 
   it('2.10: every board ships at least one trap, and every trap is NAMED', () => {
     for (const p of WORD_WEB_POOL) {
@@ -930,11 +996,29 @@ describe('tier escalation — The Library (herring budget + category subtlety)',
     }
   });
 
-  it('tier 3 bans the trivia gimme; tier 1 is allowed one', () => {
+  /**
+   * ROUND 11 — the second clause used to read `at(1).some(has trivia)`, and it
+   * was passing by accident. No `easy` board in the authored file carries a
+   * trivia category at all, so a tier-1 gimme could only ever arrive by a
+   * medium/hard board being DEMOTED with its gimme intact — and the round-11
+   * bank expansion cut demotions from 21 to 3, which took the last one away.
+   * The invariant that matters is unchanged and still asserted: the top of the
+   * house bans the gimme outright, no board anywhere carries two, and the
+   * allowance is genuinely exercised below tier 3.
+   */
+  it('tier 3 bans the trivia gimme; the lower rows are allowed one', () => {
     for (const p of at(3)) {
       expect(p.groups.filter((g) => g.type === 'trivia').length, p.id).toBe(0);
     }
-    expect(at(1).some((p) => p.groups.some((g) => g.type === 'trivia'))).toBe(true);
+    for (const p of WORD_WEB_POOL) {
+      expect(p.groups.filter((g) => g.type === 'trivia').length, p.id).toBeLessThanOrEqual(1);
+    }
+    const gimmes = [...at(1), ...at(2)].filter((p) => p.groups.some((g) => g.type === 'trivia'));
+    expect(gimmes.length).toBeGreaterThanOrEqual(1);
+    // …and wherever it lands, it is the easiest group on its board (AAA 2.9).
+    for (const p of gimmes) {
+      expect(p.groups.find((g) => g.type === 'trivia')!.tier, p.id).toBe('yellow');
+    }
   });
 
   it('tier 3 boards carry at least two SUBTLE categories', () => {
@@ -1016,17 +1100,51 @@ describe('tier escalation — The Study (three registers, riddle-only at the top
     }
   });
 
-  it('a tier-3 Study shows the RIDDLE and nothing gentler', () => {
+  /**
+   * ROUND 11 (AAA 3.7) — the register is no longer the tier lever, because
+   * keying it to the tier made 226 of the 339 authored definitions unreachable
+   * AND put the weakest of the three in the biggest type in the first Study a
+   * player ever meets. The poetry headlines everywhere the room is meant to
+   * read; the top of the house still gets the riddle and nothing gentler; the
+   * plain gloss is what tier 1 gets EXTRA, for free.
+   */
+  it('a tier-3 Study shows the RIDDLE and nothing gentler; the poetry leads below it', () => {
     for (const p of FORGOTTEN_WORD_POOL) {
       expect(definitionForLevel(p, 3), p.id).toBe(p.definitions.riddle);
       expect(definitionForLevel(p, 2), p.id).toBe(p.definitions.poetic);
-      expect(definitionForLevel(p, 1), p.id).toBe(p.definitions.plain);
+      expect(definitionForLevel(p, 1), p.id).toBe(p.definitions.poetic);
+      expect(glossForLevel(p, 1), p.id).toBe(p.definitions.plain);
+      expect(glossForLevel(p, 2), p.id).toBeNull();
+      expect(glossForLevel(p, 3), p.id).toBeNull();
     }
     // …and the adapter hands the room's tier straight through.
     const puzzle = forgottenWordAdapter.select({ tier: 3, seed: 3, seenIds: [] });
     const state = forgottenWordAdapter.start(puzzle, ctx(3));
     expect(state.tier).toBe(3);
     expect(definitionForLevel(puzzle, state.tier)).toBe(puzzle.definitions.riddle);
+  });
+
+  /**
+   * ROUND 11 (AAA 3.7) — NO AUTHORED REGISTER IS DEAD CONTENT. Every one of
+   * the three definitions on every shipped entry must be reachable at some
+   * tier the room can actually be drafted at, or it is writing nobody will
+   * ever read. (Before this round the answer was 113 of 339 reachable.)
+   */
+  it('every authored register reaches glass in a single visit, at the entry’s own tier', () => {
+    for (const p of FORGOTTEN_WORD_POOL) {
+      // The adapter honours the room tier exactly (selectByTier), so THIS is
+      // the only level this entry is ever read at.
+      const level = p.tier ?? 1;
+      const shown = new Set<string>([definitionForLevel(p, level)]);
+      const g = glossForLevel(p, level);
+      if (g) shown.add(g);
+      for (const line of unshownDefinitions(p, level)) shown.add(line);
+      for (const register of ['plain', 'poetic', 'riddle'] as const) {
+        expect(shown.has(p.definitions[register]), `${p.id}: ${register} unreachable`).toBe(true);
+      }
+      // …and the room never prints the same line twice in one visit.
+      expect(shown.size, p.id).toBe(new Set(Object.values(p.definitions)).size);
+    }
   });
 
   it('the registers are three different KINDS of sentence, not three phrasings', () => {

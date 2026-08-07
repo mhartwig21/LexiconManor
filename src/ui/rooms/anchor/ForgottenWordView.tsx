@@ -18,7 +18,9 @@ import { useEffect, useRef, useState } from 'react';
 import type { RoomViewProps } from '../registry';
 import type { ForgottenWordPuzzle } from '../../../engine/types';
 import type { ForgottenWordAction, ForgottenWordRoomState } from '../../../engine/rooms/adapters/forgotten-word';
-import { definitionForLevel, type ClueId } from '../../../engine/forgotten-word';
+import {
+  definitionForLevel, glossForLevel, unshownDefinitions, type ClueId,
+} from '../../../engine/forgotten-word';
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
 import { typeset } from '../../../../content/lib/typography';
@@ -57,6 +59,26 @@ const CLUES: { id: ClueId; label: string; teaser: string }[] = [
   { id: 'usage', label: 'Usage', teaser: 'The word at work in a sentence.' },
 ];
 
+/**
+ * ROUND 11 (AAA 3.7) — THE REST OF THE ENTRY. The adapter hands the room its
+ * tier exactly, so any register keyed to the tier is unreadable on that entry
+ * forever: 226 of the 339 authored definitions had never once reached glass.
+ * The two lines the puzzle did not use are printed here, once the word is
+ * settled either way — the best writing in the game as the thing you get for
+ * finishing, rather than as content nobody can reach.
+ */
+function RestOfEntry({ lines }: { lines: string[] }) {
+  if (lines.length === 0) return null;
+  return (
+    <div className="fw-entry">
+      <div className="fw-entry__cap">The rest of the entry, in his hand</div>
+      {lines.map((line) => (
+        <p key={line} className="fw-entry__line">{typeset(line)}</p>
+      ))}
+    </div>
+  );
+}
+
 export default function ForgottenWordView({ puzzle, state, tier, dispatch }: RoomViewProps<ForgottenWordPuzzle, ForgottenWordRoomState, ForgottenWordAction>) {
   const [guess, setGuess] = useState('');
   const [shaking, setShaking] = useState(false);
@@ -82,6 +104,8 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
   const slipped = state.fw.status === 'lost'; // engine name; outcome is a warm auto-abandon
   const whispersLeft = state.fw.maxGuesses - state.fw.guesses.length;
   const clueCost = tier === 3 ? 3 : 2;
+  const gloss = glossForLevel(puzzle, state.tier);
+  const rest = unshownDefinitions(puzzle, state.tier);
 
   const submit = () => {
     if (!playing || !guess.trim()) return;
@@ -177,6 +201,12 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
           {typeset(definitionForLevel(puzzle, state.tier))}
           <span className="fw-def__q fw-def__q--close">”</span>
         </p>
+        {/* ROUND 11 (AAA 3.7) — the plain gloss, free, at tier 1 only. The
+            poetry is the headline in every Study now; what the bottom of the
+            house gets extra is the dictionary reading of the same word
+            underneath it, so the easiest room hands over the most and no
+            authored register is unreachable. */}
+        {gloss && <p className="fw-def__gloss">{typeset(gloss)}</p>}
         {inked && won ? (
           <div className="fw-def__word">{puzzle.word}</div>
         ) : (
@@ -212,11 +242,13 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
           <p className="anch-done__line">
             The word returns to the page{state.costedMistakes === 0 && state.hintsBought === 0 ? ' — remembered whole, first breath' : ''}.
           </p>
+          <RestOfEntry lines={rest} />
         </div>
       ) : slipped ? (
         <div className="anch-done">
           <div className="anch-done__title" style={{ fontSize: 'var(--text-display-sm)' }}>It slips away for now.</div>
           <p className="anch-done__line">It was “{puzzle.word}”. The Study will offer another tomorrow.</p>
+          <RestOfEntry lines={rest} />
         </div>
       ) : (
         <>
@@ -241,6 +273,13 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
             );
           })}
 
+          {/* ROUND 7 (AAA 3.3/11.3): the whisper row, the reply and the
+              elimination history measured 52px (390x844) and 106px (375x667)
+              past the bottom of the stage once real iPhone insets were applied
+              — the memory prosthetic the room is built around was off the
+              glass. They ride the shell's sticky deck; the clue cards scroll
+              behind them. */}
+          <div className="room-deck room-deck--anch">
           <div className={`anch-row${shaking ? ' anch-shake' : ''}`} style={{ flexWrap: 'nowrap' }}>
             <input
               className="fw-input"
@@ -294,6 +333,7 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
                 ))
               )}
             </div>
+          </div>
           </div>
         </>
       )}

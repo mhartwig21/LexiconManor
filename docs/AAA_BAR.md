@@ -41,7 +41,7 @@ Every critic review of a word-game room follows this protocol, on a real iPhone
    exactly like a working one. Any §11 row marked pass without a recorded hit test and
    a recorded route return is void.
 8. **Start suspicious.** Read §0.5 (known blind spots) before the round and re-test
-   those three shapes specifically, in whatever screens have appeared since.
+   those five shapes specifically, in whatever screens have appeared since.
 
 ### 0.2 Universal timings (apply to every system)
 
@@ -112,9 +112,9 @@ For each surface, record:
 5. **Record the artifact.** A per-route table: route · exit control · hit-test result ·
    destination reached · notices observed. No table, no §11 pass.
 
-### 0.5 Known blind spots (three escapes, recorded so they cannot repeat)
+### 0.5 Known blind spots (five escapes, recorded so they cannot repeat)
 
-Three defects survived three rounds of harsh critics because the bar had no criterion for
+Five defects survived rounds of harsh critics because the bar had no criterion for
 them *and* because the critics judged from stills. They are now §11, and every round
 re-tests their shape:
 
@@ -136,6 +136,25 @@ re-tests their shape:
    Nothing persisted: the Journal button carried no unread badge, so a missed notice meant
    the player never learned anything had arrived. → 11.10–11.21. Suspect every
    `recordEvent` / currency mutation whose notice is rendered by exactly one component.
+4. **The second navigation band** (round 11). Fixed layers clear the shell by token —
+   `--chrome-h` for the bar, `--tap-target` for the back row that every sheet screen
+   puts under it — and that describes *most* surfaces exactly. It does not describe the
+   journal, which puts a ribbon of four tabs below the back row. The moment seal's box
+   was 12,108,366×143 and `elementFromPoint` at all four tabs' centres returned `.mom`;
+   the seal is itself tappable, so reaching for "Testimony" dismissed the notice instead
+   — on the screen the seal's own trace line had just named, for 5.6s per queued grant,
+   and grants QUEUE. /chronicles and /manor were clean under the same probe, which is
+   exactly why it survived: the clearance was right everywhere the critic looked.
+   → 11.2, 11.4. Suspect any surface whose top band stacks something the shell's tokens
+   do not describe, and probe *every* control in it, not only the back control.
+5. **The scene with one door** (round 11). The morning card and the night digest are
+   full-screen scenes the player stands on every day, and their only controls were the
+   primary advance and the Chronicles aside. The journal cost **nine** taps from the
+   morning card (dismiss, play the whole morning conversation to `exploring`, then tap
+   Journal), and the digest *prints* "A letter waits unopened in the post tray" on a
+   surface from which she cannot open it. → 4.15, 11.12, 11.24. Suspect every screen the
+   player cannot avoid: count its controls, then measure the tap cost to each thing the
+   screen mentions.
 
 ---
 
@@ -317,26 +336,86 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     `tests/economy-simulation.test.ts` asserts the identity so the two can never drift
     apart again.
   - **4.10d — a skilled player FIRST REACHES the Sanctum landing on day 6–10** (median),
-    **<8% on day 1**, and >90% of campaigns get there by day 21. The gate must be
-    **meta, not skill**: the simulated player's puzzle ability is identical on day 1 and
-    day 30 — what changes is Bramble's tea (the step arc) and Fern/Key-Cabinet access
-    (the padlock arc), both affinity-gated at one conversation per day (5.9). A bare,
-    perfectly efficient ascent must cost **more than the entire base day budget**
-    (`reserveToTop(1) > BASE_DAY_BUDGET`, measured **to the landing**: 21 > 18), so the
-    top is always bought with refunds.
+    **<8% on day 1**, and >90% of campaigns get there by day 21. A bare, perfectly
+    efficient ascent must cost **more than the entire base day budget**
+    (`reserveToTop(1) > BASE_DAY_BUDGET`, measured **to the landing**: **22 > 18**, i.e.
+    `1+2+3+7+9`), so the top is always bought with refunds. *Round 7 (verifier) — that
+    number read 21 in this clause and in `steps.ts`'s own file header, stale since round
+    10 moved `MOVE_COST_BY_ROW[4]` from −6 to −7 and updated only one of the three places
+    quoting the sum. The test asserted `> BASE_DAY_BUDGET` and `>= BASE_DAY_BUDGET + 2`,
+    both of which stay true through the drift — which is exactly how the round-6
+    "verified against a storey nobody enters" defect survived in the docs.
+    `tests/economy-simulation.test.ts` now pins the **exact** value, so any movement
+    retune has to update this line consciously instead of silently outdating it.*
+    **Round 11 correction — the gate is META *and* EARNED, and there are three arcs.**
+    This clause used to read "the gate must be **meta, not skill**" and named exactly
+    two levers: Bramble's tea and Fern/Key-Cabinet access. Round 10 then made SOLVED
+    ROOMS the primary key source, on the owner's directive *"skill, not just
+    persistence, earns the campaign"* — measured over 400 campaigns, **1.20 keys/day
+    from solves against 0.68 off the green deck**. The shipped design therefore
+    contradicted the criterion it was being measured against: the exact shape of the
+    round-6 escape, a criterion no critic can pass or fail because the doc and the game
+    disagree. **Three arcs** feed the climb: Bramble's tea (the step arc), Fern's dawn
+    key and Key-Cabinet access (the padlock arc's drafting side), and the **solve
+    channel** (`KEY_SUPPLY.solveKeysByTier` — the storey below a padlock is the storey
+    that pays for it). The invariant critics enforce is the one the simulation actually
+    holds, and it is unchanged in substance:
+    1. **puzzle ability is constant across the campaign** — one `SimProfile`, with
+       `attemptRate`/`solveRate`/`perfectRate`/`mistakes*` identical on day 1 and day
+       45; only `campaignProfileForDay`'s tea, key-access and familiarity terms move;
+    2. **day-1 landing reach stays under 8%** (measured 3.3–6.5% across seeds);
+    3. **the early campaign reaches the landing at less than half the late campaign's
+       rate** (days 1–3 vs days 15–21), which is the ramp itself, asserted in
+       `tests/economy-simulation.test.ts`.
+    Skill buys the keys; the meta arcs are what make the keys enough.
   - **4.10e — the volume is typically won in 14–28 days** of daily play (median), <2%
     inside the first week, >90% by day 35. Winning requires **both** gates independently:
     knowing the word (fragments) *and* reaching the door that day.
+    **Round 11 correction — "knowing the word" means LEGIBLE fragments.** Round 10 made
+    a violet room file a *sealed* page that narrows nothing until a solve makes it out,
+    and gave the word games two fragment channels of their own. Both models still
+    encoded the pre-seal rules: `simulateCampaign` added violet rooms *entered* straight
+    into the deduction count and modelled no solve channel at all, so 4.10e was verified
+    against a knowledge curve the game had stopped having and any retune of the seal
+    would have moved the real horizon with every test still green. `SimDayResult` now
+    carries `pagesMadeOut` and `sealedBacklog`, computed **in day order** through the
+    real `decipherYield`, and only made-out pages count toward `deductionDay`. Measured
+    after the fix: deduction median day 13, win median day 16, 0–1% inside week one.
+    **Still open (A7's file):** `tests/volume-pacing.test.ts` measures the day fragment
+    16 is *filed* and its header still calls that "the last engraving, after which the
+    constraint set is a single word" — false for any sealed engraving. It owes the same
+    change: thread `SimDayResult.pagesMadeOut`/`sealedBacklog` through its drip and
+    measure the day the sixteenth fragment becomes **legible**, keeping the filed day as
+    a secondary assertion so the cozy "it is hers immediately" promise stays pinned too.
   - **4.10f — sessions never inflate.** The median day stays inside 10–15 minutes for the
     whole campaign: the tea arc's extra budget goes into the *climb* (cheap in minutes),
     never into more puzzles per evening.
+  - **4.10g — the seal has to BITE** (the owner's *"solving needs to matter"*). Entering
+    a violet room files a sealed page; a solve makes `decipherYield(tier)` of them out.
+    As shipped in round 10 the mechanic was statistically a rounding error: only **9.5%**
+    of median (`PROFILE_DECENT`) evenings contained a violet room at all, sealed supply
+    ran 0.45/day against a decipher capacity of 2.6–6/day, and a page survived the night
+    on 0.03 page-days per day — nine evenings in ten the player never met a sealed page,
+    so the mechanic could not carry the design question it was built for. The published
+    targets, all measured in `tests/economy-simulation.test.ts`:
+    **a violet room appears on >15% of median evenings** (measured 21.7%) while staying
+    a rare room (<50%); **a sealed page survives to the next dawn on 25–50% of a skilled
+    player's days** (measured ~37%); **a solve makes a page out on ≥1 day in 3**
+    (measured ~50%); and the tripwire — **a player who solves nothing makes out nothing**,
+    all campaign, however many violet rooms she walks through. The supply side is the
+    *realised* violet share per row (`deckMixAt`), not the category weight: `6 + row*7`
+    read like a ramp while `RARITY_WEIGHTS[1]` scored tier 1's only two mystery cards 9
+    and 1, for a realised **0.16%** of ground-floor draws. It is ≈2.0% at row 0 rising
+    to ≈10.5% at row 6, strictly increasing, tuned with the sim rather than by feel.
   - **Levers, in the order they were pulled** (all in `engine/economy/steps.ts`, the one
     tunable file): per-row movement pricing (`MOVE_COST_BY_ROW`, −1 ground floor → −9 up
     top — *climbing is the expense*); leaner-as-you-climb refunds (anchor +6/+5/+4, micro
     +3/+3/+2 — a tier-3 solve no longer funds the storey that reached it); a lean base
-    budget (18); locked upper-row doors (`DOOR_LOCKS`, **rows 4–5 carry the gate** — row 6
-    is the sealed Sanctum and is never drafted, so the published "≈1.7 padlocks per
-    ascent" used to be summed over a row the drafter never sees; keys reset nightly
+    budget (18); locked upper-row doors (`DOOR_LOCKS`, **rows 4–5 carry the gate at
+    0.9 / 0.95, and a padlock costs 2 keys** since round 10 — so the live ascent crosses
+    **≈1.85 padlocks ≈ 3.7 keys**, bought mostly with solves. Row 6 is the sealed Sanctum
+    and is never drafted, so both the older published "≈1.7 padlocks per ascent" and the
+    1-key door it assumed described an ascent the drafter never makes; keys reset nightly
     so every ascent re-earns its way up); and scarce refills (green-room refills
     +2..+6, compounding hooks +1..+2, tea 0 → +11 across the friendship).
     **Round 6 correction:** this clause read "snack +3..+7", which described a
@@ -476,7 +555,25 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   (Strange Horticulture's cited core delight) — subject to R.4 (silent play stays
   complete).
 - 6.19 All tap targets ≥44×44pt including ribbon tabs and map doors (automated
-  bounding-box audit). **[PARITY]**
+  bounding-box audit), **excluding the two grid classes ruled below**, where the floor
+  is arithmetically unreachable at 390px and benchmark parity governs instead. Every
+  **costed** control — anything that spends a step, a key or a guess — is ≥44×44pt with
+  no exception, on every surface. **[PARITY]**
+  - **(a) The 9×9 ledger grid** (Counting House). Nine cells at the floor need 396px;
+    an iPhone 12-class portrait viewport is 390, and the leaf is already edge-to-edge
+    with zero gutters (measured 43.3×43.3px). NYT Sudoku ships ~41px at this width. The
+    exemption is safe because **nothing on the board commits anything**: touching a cell
+    only moves a cursor, and every costed verb lives on a ≥44px pad key (59×52px), so a
+    fat-fingered cell tap can never spend a step.
+  - **(b) Full-width alpha keyboards** (Darkroom 27-key, Linen Closet QWERTY). Ruled
+    floor: **≥32px wide × ≥48px tall with no inter-key dead zone** — iOS system keys are
+    themselves ~32px wide, so shrinking to satisfy the number would make us worse than
+    the benchmark in order to pass it. Measured 32.5×55.7px, inside the ruling.
+  - Both classes must be **measured and recorded** every round (they are, in
+    `docs/shots/*/metrics.json`) — the exemption is from the number, never from the
+    measurement. *Round 7 (verifier): this ruling was requested by three separate passes
+    and was being silently waived in the meantime, which is worse than either answer —
+    a criterion no critic can pass or fail.*
 - 6.20 The style-density test: any screen, cropped to 25%, is still identifiably this
   game (Fell caps, parchment, ink rules, or a cameo in any quadrant).
 
@@ -673,7 +770,15 @@ player cannot reach by tapping is not shipped, however complete the code is.*
   `env(safe-area-inset-top)`), never a hard-coded pixel copy of it — a token grep finds
   zero literal chrome heights in page/overlay CSS, so retuning the bar cannot silently
   bury a control. The same clearance applies to full-screen overlays that place anything
-  interactive in the top band. **[PARITY]**
+  interactive in the top band. **A surface that stacks navigation the shell's tokens do
+  not describe publishes it** (round 11: the journal's ribbon tabs sit below the back
+  row, and the moment seal — which clears the bar and the back row — landed on all four
+  of them). The published value is **measured from the live element** and is the band's
+  *floor*, not its height: a height must be summed with everything else the surface
+  stacks above it, and that sum is a copy of somebody else's layout living in a second
+  file, which is the drift this criterion exists to forbid. Fixed layers take
+  `max(own clearance, published floor)`; the token defaults to 0 so surfaces that do not
+  opt in are untouched. **[PARITY]**
 - 11.5 **Chrome does not reach through an overlay.** While any modal or full-screen
   overlay is up, controls belonging to the persistent chrome are either raised above it
   deliberately (documented, e.g. the day candle staying readable) or made
@@ -723,8 +828,15 @@ and the class dictates what it owes the player:
 - 11.12 **A Campaign moment cannot be missed by being elsewhere.** Its persistent trace
   is present after the moment ends: an unread marker on the entrance affordance, an entry
   in the night digest, or a row in the journal — reachable in ≤2 taps from anywhere
-  (compounds with 4.15). Blue Prince shipped without this and players kept 44 pages of
-  notes for it (BENCHMARKS §4, criticism 2); we do not get to repeat it. **[BEAT]**
+  (compounds with 4.15). **"Anywhere" includes the lifecycle scenes** (round 11): the
+  morning card and the night digest are full-screen, unavoidable, and daily, so a trace
+  they cannot reach is a trace that costs nine taps on the two screens the player stands
+  on most. A scene that *names* a filed document — "A letter waits unopened in the post
+  tray", "Filed in the Journal · Testimony" — and offers no route to it fails this
+  criterion, whatever the blueprint offers. The tap count is measured in the §0.4 walk,
+  by pressing real controls, never by counting `navigate()` call sites. Blue Prince
+  shipped without this and players kept 44 pages of notes for it (BENCHMARKS §4,
+  criticism 2); we do not get to repeat it. **[BEAT]**
 - 11.13 **Transience is capped by attention, not by a timer alone.** A transient notice
   that can fire while the player's eyes are elsewhere either (a) waits for the player to
   return to the surface that shows it, or (b) is Campaign-class and therefore already

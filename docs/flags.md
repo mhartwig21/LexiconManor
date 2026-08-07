@@ -77,6 +77,28 @@ on `recentEvents`, which dusk prunes.
 | `sys.keepsake.<keepsakeId>` | `pages/ChroniclesPage.tsx` | the keepsake shelf is scrolled into view |
 | `sys.plate.<cardId>` | `pages/ManorPage.tsx` | the Floorplan Cabinet is opened |
 
+### Sealed / legible bookkeeping (code-set families, round 10)
+
+Entering a violet room **files** the page; solving a word game **makes it out**.
+Two write-once families carry that, and the state a reader wants — *sealed* — is
+derived as `sealed ∧ ¬legible` rather than stored, so a save written before the
+mechanic existed reports **nothing sealed** and every page already filed stays
+readable. That is why there is no `legible-` opt-in flag and no migration.
+
+| Flag | Set by | When |
+|---|---|---|
+| `vol.<volumeId>.sealed-<fragmentId>` | `app/slices/journal.ts` | the fragment is filed undeciphered (violet-room entry) |
+| `vol.<volumeId>.legible-<fragmentId>` | `app/slices/journal.ts` | a solve makes that fragment out (`decipherFragments`, yield by tier) |
+
+Read through `engine/volume.ts`'s `sealedFragmentIds` / `madeOutFragmentIds`.
+`madeOutFragmentIds` is deliberately **not** the complement of
+`sealedFragmentIds`: a page that arrived legible never carries a `legible-` flag,
+so the two sets answer different questions and neither is derivable from the
+other. Both families match the frozen grammar above (asserted in
+`tests/journal.test.ts`). Neither is referenced by an authored condition —
+dialogue reaches the same quantity through the `fragmentsLegible` condition kind,
+which `engine/dialogue/conditions.ts` derives from `DialogueQuery.flags`.
+
 Both `posy.quest1.done` and `posy.deputy` (authored, existing) additionally gate
 Floorplan Cabinet cards via `engine/manor/deck.ts` `unlockedBy` — the gate is the
 story flag itself, so it cannot drift from the conversation that fills it.

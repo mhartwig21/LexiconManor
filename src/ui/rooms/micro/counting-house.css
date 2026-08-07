@@ -73,15 +73,20 @@
 .ch-done,
 .ch > .room-deck { padding-inline: var(--ch-gutter); }
 
-.ch__head { text-align: center; }
+/* Round 7: the head measured 77px of a 651.8px stage — 12% of the room spent
+   on two lines of label, and it was the difference between the ledger leaf
+   fitting and its last row hiding behind the keypad. Tightened to ~52 by
+   leading alone; no words were cut. */
+.ch__head { text-align: center; line-height: 1.2; }
 .ch__title {
   margin: 0;
   font-family: var(--font-display);
   font-size: var(--text-display-sm);
   font-weight: 400;
+  line-height: 1.15;
   letter-spacing: 0.02em;
 }
-.ch__sub { margin: 0.1rem 0 0; font-size: var(--text-sm); color: var(--ink-soft); }
+.ch__sub { margin: 0.05rem 0 0; font-size: var(--text-sm); line-height: 1.25; color: var(--ink-soft); }
 .ch__meta {
   display: flex;
   justify-content: center;
@@ -142,9 +147,19 @@
      keys are 52px (−29rem); on a short one the subtitle is gone and the keys
      are 46px (−23rem, below). Both were measured, not guessed —
      scripts/round5-capture.mjs and scripts/micro-rooms-round7-verify.mjs
-     re-measure them on every tour. At 390x844 the WIDTH is now the binding
-     constraint, which is the right way round for a board. */
-  max-width: min(100%, calc(100dvh - 28rem));
+     re-measure them on every tour.
+
+     ROUND 7 COMPOSITION PASS — the reserve was being taken off `100dvh`, the
+     whole glass. The room does not get the whole glass: on an iPhone 12 the
+     notch inset, the fixed day bar, the abandon footer and the home-indicator
+     inset take 192px before the leaf is measured, so a 100dvh−28rem cap let
+     the column run 60px past its own stage and the bottom row of the ledger
+     opened UNDERNEATH the sticky keypad. It is taken off `--stage-h` now (the
+     shell's container-query height, ui/rooms/room-host.css), which is the
+     stage and nothing else. Measured budget at 390x844: stage 651.8 − head 52
+     − deck 210 (toast slot included, it lives in the deck now) − 16 gaps
+     = 373 of leaf, i.e. 41.3px cells with the WHOLE leaf on the glass. */
+  max-width: min(100%, calc(var(--stage-h, 100vh) - 18.8rem));
   margin-inline: auto;
   flex: 0 0 auto;
   aspect-ratio: 1;
@@ -243,12 +258,12 @@
   z-index: 1;
 }
 
-.ch-cell--wrong { color: var(--wax); }
+.ch-cell--wrong { color: var(--wax-ink); }
 .ch-cell--wrong .ch-cell__ghost {
   position: absolute;
   font-size: 1.3rem;
   font-weight: 600;
-  color: var(--wax);
+  color: var(--wax-ink);
   animation: ch-refuse 340ms ease-in-out both;
 }
 
@@ -298,16 +313,23 @@
 .ch-tool {
   flex: 1;
   min-height: var(--tap-target);
-  padding: 0.2rem 0.15rem;
+  padding: 0.2rem 0.3rem;
   border: 1px solid var(--paper-edge);
   border-radius: 999px;
   background: var(--paper-raised);
   color: var(--ink);
   font-family: var(--font-body);
   /* Five verbs share the row at ~70px each on a 390px glass; the label wraps
-     to two or three lines inside the 44px key rather than truncating. */
-  font-size: 0.72rem;
-  line-height: 1.1;
+     to two or three lines inside the 44px key rather than truncating.
+     ROUND 7 TYPE AUDIT, reported and NOT fully fixed: 0.72rem measured 11.52px,
+     the smallest painted text in the game, on the room's free verbs — under
+     every floor in AAA 6.6. 0.8rem is as far as it goes without the labels
+     wrapping to a fourth line, and a fourth line is height taken straight off
+     the ledger leaf, which is the thing the room is for. Reaching the 15px
+     caption floor needs shorter verb copy or a two-row toolbar, both of which
+     belong to the room's owner, not to a CSS pass. */
+  font-size: 0.8rem;
+  line-height: 1.15;
   cursor: pointer;
   transition: transform var(--dur-press), filter var(--dur-press);
   touch-action: manipulation;
@@ -367,14 +389,17 @@
   color: var(--ink-faint);
 }
 /* The two word-keys (Undo, Lift/Erase): body type, not the figure display face. */
-.ch-key--verb { font-family: var(--font-body); font-size: 0.8rem; }
+/* Round 7 type audit (AAA 6.6): raised to the 15px caption floor. */
+.ch-key--verb { font-family: var(--font-body); font-size: var(--text-sm); }
 .ch-key--wide { grid-column: span 2; }
 
 /* ONE reserved chrome line — the tier + figures-left at rest, the toast when
    there is one. Two lines tall at 390px so a wrapping refusal never shifts the
    board or the pad (zero layout shift, AAA 1.5's principle). */
 .ch-toastslot {
-  min-height: 2.6rem;
+  /* Reserved, so the deck never jumps when a refusal arrives (AAA 1.5). 2.6rem
+     held two lines the copy never uses; 2.1 holds the longest shipped line. */
+  min-height: 2.1rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -385,7 +410,8 @@
 .ch-toast-live { display: block; max-width: 100%; }
 .ch-toast { font-size: var(--text-sm); animation: ch-rise 220ms var(--ease-settle); }
 .ch-toast--good { color: var(--moss); }
-.ch-toast--bad  { color: var(--wax); }
+/* Round 7: wax as READING ink (tokens --wax-ink). */
+.ch-toast--bad  { color: var(--wax-ink); }
 .ch-toast--info { color: var(--ink-soft); }
 
 /* --------------------------------------------------------------------------
@@ -446,17 +472,24 @@
   .ch { gap: 0.35rem; padding-top: 0.35rem; }
   .ch__sub { display: none; }
   .ch-key { min-height: 46px; font-size: 1.3rem; }
-  .ch-key--verb { font-size: 0.72rem; }
+  .ch-key--verb { font-size: var(--text-sm); }
   /* Height is the binding constraint here, so the cell is ~33px and the nine
      mark slots are ~10px each: the marks scale with them (9.9px) rather than
      spilling. Still 10% up on the 8.96px that shipped, and the contrast fix
      above applies at every size. */
   .ch-pencil { font-size: 0.62rem; }
   .ch-toastslot { min-height: 2.1rem; }
-  /* 667 − 23rem = 299px ≈ 33px cells, and the whole leaf clears the deck with
-     room for a three-line verb label. Measured for real by the bounding-box
-     assertion in scripts/round5-capture.mjs. */
-  .ch-leaf { max-width: min(100%, calc(100dvh - 23rem)); }
+  /* ≈299px ≈ 33px cells, and the whole leaf clears the deck with room for a
+     three-line verb label. Measured for real by the bounding-box assertion in
+     scripts/round5-capture.mjs. Restated against `--stage-h` (481.6px at
+     375×667) rather than 100dvh so the insets can never eat it: 481.6 −
+     11.5rem = 297.6, the same board the SE-class glass has always had.
+     KNOWN RESIDUAL, reported this round: at 375×667 nine cells + head + pad
+     genuinely do not fit a 481.6px stage, so the last row still sits behind
+     the sticky pad at rest and the stage scrolls to it. Shrinking the leaf to
+     fit would put the cells at 26.8px, which is worse; the honest fix is a
+     compacter pad and belongs to the room's owner. */
+  .ch-leaf { max-width: min(100%, calc(var(--stage-h, 100vh) - 11.5rem)); }
 }
 
 /* Juice goes quiet; every state stays legible (AAA U.3). */
