@@ -19,8 +19,10 @@ import type { DialogueChoice, DialogueNode, PortraitExpression } from '../../eng
 import { getDialogueFile, CHARACTER_NAMES } from '../../engine/dialogue/content';
 import { selectDialogue, findNode } from '../../engine/dialogue/select';
 import { rankFor, MAX_AFFINITY_RANK } from '../../engine/dialogue/affinity';
+import { meetingCardFor } from '../../engine/dialogue/meeting';
 import { useManorStore } from '../../app/store';
 import CharacterPortrait from './portraits';
+import MeetingCard from './MeetingCard';
 import TypewriterText from './TypewriterText';
 import ChoiceRow from './ChoiceRow';
 import './dialogue.css';
@@ -60,6 +62,20 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
   const [node, setNode] = useState<DialogueNode | null>(
     () => selectDialogue(file, buildDialogueQuery(character, slot)) ?? null,
   );
+  /**
+   * ROUND 12 — THE FIRST MEETING IS DELIVERED, NOT MERELY PLAYED.
+   *
+   * Frozen at mount, from a non-subscribing read: the acquaintance flag this
+   * scene is about to SET must not be allowed to cancel the ceremony halfway
+   * through it (`met.<c>` lands when the last line settles). One snapshot,
+   * one decision, for the life of the mount. See engine/dialogue/meeting.ts
+   * for why this is a pre-roll here rather than a seal in the moment queue.
+   */
+  const [meeting, setMeeting] = useState(() => {
+    if (!node) return null;
+    const s = useManorStore.getState();
+    return meetingCardFor(character, node, new Set(s.flags), new Set(s.seenNodeIds));
+  });
   const [phase, setPhase] = useState<Phase>('lines');
   const [lineIdx, setLineIdx] = useState(0);
   const [lineInstant, setLineInstant] = useState(false);
@@ -101,6 +117,31 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
   }, [lineDone, isLast, phase, node]);
 
   if (!node) return null;
+
+  /* The card of introduction, and then the panel. It REPLACES the sheet
+     rather than covering it, which is the whole point: the typewriter has not
+     started, so the ceremony lands before the first line rather than over it
+     (the brief's "before or as their first lines begin, not after"). Tapping
+     or waiting hands off, the sheet arrives with its own entrance, and the
+     line begins. `.dlg` keeps the overlay contract — the chrome stays inert
+     and ui/chrome/overlay-watch still sees a scene up. */
+  if (meeting) {
+    return (
+      <div
+        className="dlg"
+        role="dialog"
+        aria-label={`Meeting ${CHARACTER_NAMES[character]}`}
+      >
+        <MeetingCard
+          character={character}
+          copy={meeting}
+          reducedMotion={reducedMotion}
+          onDone={() => setMeeting(null)}
+        />
+      </div>
+    );
+  }
+
   const line = node.lines[lineIdx]!;
 
   // Current expression: last explicit portrait key at or before this line.

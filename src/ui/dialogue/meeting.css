@@ -1,0 +1,275 @@
+/* ==========================================================================
+   THE FIRST MEETING — the card of introduction. OWNER: A6 (Dialogue).
+   Per-module CSS (conflict rule 3); consumes ui/theme/tokens.css only.
+
+   Sits inside `.dlg` (z-index --z-overlay) and covers it: the conversation
+   panel does not mount until the card has handed off, so nothing is layered
+   over anything and there is no second notice surface competing with the
+   moment layer's seal (ui/moment/moment.css).
+
+   MOTION RULE, and the reason every animation below carries `backwards`:
+   the RESTING state of every element is the FINISHED card. The animations
+   only describe how it got there. That makes the reduced-motion override a
+   single `animation: none` — no fill-mode to unwind, no chance of an element
+   being left invisible because a keyframe never ran (the AAA U.3 failure that
+   `forwards` fills invite). Transform and opacity only, throughout.
+   ========================================================================== */
+
+.mtg {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  /* The whole glass is the skip target (AAA 6.19 with room to spare). */
+  width: 100%;
+  margin: 0;
+  padding: 1rem;
+  border: none;
+  /* Deeper than `.dlg`'s own 55% wash: the room behind goes quiet for this
+     one beat, which is what makes it read as a ceremony and not a toast. */
+  background: color-mix(in srgb, var(--paper-shade) 82%, transparent);
+  color: var(--ink);
+  font-family: var(--font-body);
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  animation: mtg-glass-in 260ms var(--ease-settle) backwards;
+}
+
+.mtg:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -4px;
+}
+
+/* --- The card ------------------------------------------------------------ */
+
+.mtg__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(100%, 22rem);
+  padding: 1.1rem 1.2rem 1.3rem;
+  background: var(--paper-raised);
+  border: var(--rule);
+  border-radius: var(--radius-sheet);
+  box-shadow: var(--shadow-lift), var(--deckle);
+  animation: mtg-card-in 320ms var(--ease-settle) backwards;
+}
+
+.mtg__eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  animation: mtg-rise 300ms var(--ease-settle) 80ms backwards;
+}
+
+/* --- The frame the portrait arrives into ---------------------------------- */
+
+.mtg__frame {
+  position: relative;
+  width: 7.4rem;
+  height: 9.25rem;   /* the portraits are authored 240x300 */
+  margin-top: 0.15rem;
+  background: var(--paper);
+  border: var(--rule);
+  /* The same clipped-corner plate the scene's own portrait wears, so the card
+     is visibly the SAME object the conversation is about to show. */
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 var(--radius-sheet);
+  box-shadow: var(--deckle);
+  animation: mtg-frame-in 360ms var(--ease-settle) 140ms backwards;
+}
+
+/* The portrait settles INTO the empty frame a beat after the frame lands —
+   `.dlg-portrait__art` (dialogue.css) already sizes it to its box. */
+.mtg__frame .dlg-portrait__art {
+  animation: mtg-settle 340ms var(--ease-settle) 380ms backwards;
+}
+
+.mtg__wax {
+  position: absolute;
+  right: -0.55rem;
+  bottom: -0.55rem;
+  width: 2.35rem;
+  height: 2.35rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--wax);
+  color: var(--paper-raised);
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);   /* 22px floor (AAA 6.6) */
+  line-height: 1;
+  /* Pressed-in relief, the moment layer's seal vocabulary verbatim. */
+  box-shadow:
+    inset 0 1px 0 rgba(252, 248, 238, 0.28),
+    inset 0 -2px 3px rgba(43, 33, 24, 0.35),
+    0 1px 2px rgba(43, 33, 24, 0.25);
+  transform: rotate(-4deg);
+  animation: mtg-stamp 260ms var(--ease-settle) 1000ms backwards;
+}
+
+/* Candlelit theme: --paper-raised is a dark brown there and dark-on-wax fails
+   the large-glyph 3:1 bar, so the letterform flips to the pale ink (AAA 6.2).
+   Both signals, both directions, so the explicit toggle always wins (6.4). */
+@media (prefers-color-scheme: dark) {
+  .mtg__wax { color: var(--ink); }
+}
+:root[data-theme='dark'] .mtg__wax { color: var(--ink); }
+:root[data-theme='light'] .mtg__wax { color: var(--paper-raised); }
+
+/* --- The rule, drawn ------------------------------------------------------ */
+
+.mtg__rule {
+  width: 62%;
+  height: 1px;
+  margin: 0.55rem 0 0.1rem;
+  background: var(--paper-edge);
+  transform: scaleX(1);
+  animation: mtg-draw 380ms var(--ease-settle) 640ms backwards;
+}
+
+/* --- The name, written ---------------------------------------------------- */
+
+.mtg__name {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: var(--text-display);   /* 28px — the biggest type on the card */
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  overflow: hidden;
+}
+
+/* The nib: a slip of the card's own paper that slides off the name from left
+   to right, so the letters appear to be written rather than to fade in.
+   Transform-only (a clip-path or width animation would not be), and its
+   resting position is fully OFF the name, so `animation: none` leaves the
+   name plainly legible. */
+.mtg__name::after {
+  content: '';
+  position: absolute;
+  inset: -0.1em -0.2em;
+  background: var(--paper-raised);
+  transform: translateX(102%);
+  animation: mtg-write 560ms var(--ease-settle) 700ms backwards;
+}
+
+.mtg__standing {
+  max-width: 19rem;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--ink-soft);
+  text-wrap: balance;
+  animation: mtg-rise 320ms var(--ease-settle) 1180ms backwards;
+}
+
+/* Dewey. He is narration forever (AAA 5.6) and he does not introduce himself,
+   so his card is written ABOUT him in the scene's own narration register —
+   the same italic --ink-soft as `.dlg__text--narration`. The ceremony is
+   identical in every other respect: he is a member of the household. */
+.mtg__standing--narrated { font-style: italic; }
+
+/* --- The affordance ------------------------------------------------------- */
+
+.mtg__hint {
+  font-size: var(--text-sm);
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+  color: var(--ink-faint);
+  animation: mtg-rise 300ms linear 1500ms backwards;
+}
+
+/* --- Short screens (375x667) ---------------------------------------------- */
+
+@media (max-height: 700px) {
+  .mtg { gap: 0.8rem; }
+  .mtg__card { padding: 0.9rem 1rem 1.05rem; gap: 0.4rem; }
+  .mtg__frame { width: 6.2rem; height: 7.75rem; }
+  .mtg__name { font-size: var(--text-display-sm); }
+}
+
+/* --- Keyframes (transform/opacity only — AAA U.3/9.5) --------------------- */
+
+@keyframes mtg-glass-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes mtg-card-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes mtg-frame-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.94); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes mtg-settle {
+  from { opacity: 0; transform: translateY(10px) scale(1.04); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes mtg-stamp {
+  0%   { opacity: 0; transform: scale(1.5) rotate(-11deg); }
+  55%  { opacity: 1; }
+  100% { opacity: 1; transform: scale(1) rotate(-4deg); }
+}
+
+@keyframes mtg-draw {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes mtg-write {
+  from { transform: translateX(0); }
+  to   { transform: translateX(102%); }
+}
+
+@keyframes mtg-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Reduced motion: the card is whole, it simply does not assemble -------
+   Both sources, because a player who turned motion off INSIDE the game must
+   not also have to change an OS setting: the media query, and `.mtg--reduced`
+   which the scene sets from the same store flag that drives `.chr--reduced`.
+   Every resting state above is the finished card, so switching the animations
+   off is all it takes — nothing is left mid-stroke or invisible. */
+
+@media (prefers-reduced-motion: reduce) {
+  .mtg,
+  .mtg__card,
+  .mtg__eyebrow,
+  .mtg__frame,
+  .mtg__frame .dlg-portrait__art,
+  .mtg__wax,
+  .mtg__rule,
+  .mtg__name::after,
+  .mtg__standing,
+  .mtg__hint { animation: none; }
+  .mtg { animation: mtg-glass-in 200ms linear; }
+}
+
+.mtg--reduced,
+.mtg--reduced .mtg__card,
+.mtg--reduced .mtg__eyebrow,
+.mtg--reduced .mtg__frame,
+.mtg--reduced .mtg__frame .dlg-portrait__art,
+.mtg--reduced .mtg__wax,
+.mtg--reduced .mtg__rule,
+.mtg--reduced .mtg__name::after,
+.mtg--reduced .mtg__standing,
+.mtg--reduced .mtg__hint { animation: none; }
+.mtg--reduced { animation: mtg-glass-in 200ms linear; }

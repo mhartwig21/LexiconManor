@@ -1414,6 +1414,145 @@
       ]
     },
     {
+      "id": "bramble.where.fern.glass",
+      "trigger": "morning",
+      "priority": 0,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "flag",
+            "flag": "met.fern"
+          }
+        },
+        {
+          "kind": "day",
+          "gte": 4
+        },
+        {
+          "kind": "day",
+          "lte": 12
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Fern will be under glass at this hour. She always is — says the outdoors is far too draughty for gardening."
+        }
+      ],
+      "summary": "Mrs. Bramble mentioned Fern — under glass, whatever the hour."
+    },
+    {
+      "id": "bramble.where.fern.ivy",
+      "trigger": "morning",
+      "priority": 1,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "flag",
+            "flag": "met.fern"
+          }
+        },
+        {
+          "kind": "day",
+          "gte": 13
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "Fern asked the ivy after you again. Still under glass, still watering something she won’t name."
+        }
+      ],
+      "summary": "Fern has been asking after you. Via the ivy."
+    },
+    {
+      "id": "bramble.where.ellery.lamps",
+      "trigger": "morning",
+      "priority": 0,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "flag",
+            "flag": "met.ellery"
+          }
+        },
+        {
+          "kind": "day",
+          "gte": 4
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Our librarian keeps to wherever the lamps are low and the shelves are deep. He says he haunts them; I say he loiters."
+        }
+      ],
+      "summary": "Mrs. Bramble mentioned Ellery — wherever the lamps are low."
+    },
+    {
+      "id": "bramble.where.posy.sorting",
+      "trigger": "morning",
+      "priority": 0,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "flag",
+            "flag": "met.posy"
+          }
+        },
+        {
+          "kind": "day",
+          "gte": 4
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Those letters don’t post themselves, whatever the house would have you believe. Posy sorts them, where the post comes down."
+        }
+      ],
+      "summary": "Mrs. Bramble mentioned Posy — where the post comes down."
+    },
+    {
+      "id": "bramble.where.portrait.landing",
+      "trigger": "morning",
+      "priority": 0,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "flag",
+            "flag": "met.portrait"
+          }
+        },
+        {
+          "kind": "flag",
+          "flag": "vol.volume-1.landing-reached"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "You got as far as his landing and never said a word to him? Go back and contradict him. Nobody has dared in thirty years."
+        }
+      ],
+      "summary": "Mrs. Bramble mentioned the Portrait — waiting on his landing to be contradicted."
+    },
+    {
       "id": "bramble.idle.valve-1",
       "trigger": "idle",
       "priority": 0,

@@ -336,3 +336,45 @@
 .chr--reduced .dlg__skip { transition: none; }
 .chr--reduced .dlg__skip.is-pressed,
 .chr--reduced .dlg__skip:active { transform: none; }
+
+/* ==========================================================================
+   WHEREABOUTS — what Mrs. Bramble says in passing on the morning card.
+   OWNER: A6 (Dialogue), rendered inside A2's `.chr-scene` frame.
+
+   It is SPEECH on a card of narration, and it has to read as such without
+   dressing as a reward. So it shares no rule with the two things it sits
+   between: `.chr-scene__line` (the morning's narration — --ink-soft, no
+   ground, no marker) and `.chr-dawn__list` (the step grants — tabular, in a
+   grid). It takes a wax hairline down its leading edge, the way a margin note
+   is ruled off, sets the words in full --ink at body size, and signs them in
+   small caps underneath. AAA 11.14 runs the other way here too: it must not be
+   mistaken for a campaign notice either, which is why there is no seal, no
+   raised sheet and no lift shadow — the three things `.mom` is built out of.
+   ========================================================================== */
+
+.dlg-passing {
+  max-width: 34ch;
+  margin: 10px 0 2px;
+  padding: 2px 0 2px 10px;
+  border-left: 2px solid var(--wax);
+  text-align: left;
+}
+
+.dlg-passing__said {
+  display: block;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.dlg-passing__who {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-variant: small-caps;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+}

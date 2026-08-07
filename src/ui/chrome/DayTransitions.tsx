@@ -25,6 +25,7 @@ import { getVolumeContent } from '../../app/content/volumes';
 import { arrivedLetters, legibleDroughtDays, openedLetterIds } from '../../engine/volume';
 import { mantelLine, unseenKeepsakes, unseenPlates } from '../moment/mantel';
 import DialogueScene from '../dialogue/DialogueScene';
+import WhereaboutsAside from '../dialogue/WhereaboutsAside';
 import UnreadMark from '../journal/UnreadMark';
 import SealedMark from '../journal/SealedMark';
 import { useJournalUnread } from '../journal/useJournalUnread';
@@ -247,6 +248,14 @@ export function MorningCard() {
       {kept.length > 0 && (
         <p className="chr-digest__prose">{kept.join(' ')}</p>
       )}
+      {/* A6 seam (round 12): one thing Mrs. Bramble says in passing about
+          somebody the player has not met — the whereabouts channel. It is
+          HERE and not inside her conversation because her morning plays one
+          node and the reaction band owns it; the measurement that settled
+          that is in engine/dialogue/whereabouts.ts. Renders nothing on the
+          two mornings in three that are not mention mornings, and nothing at
+          all once the household is met, so the card grows no hole. */}
+      <WhereaboutsAside />
       <DawnGrants day={day} />
       <button className="chr-scene__btn" onClick={() => setGreeting(true)}>
         Begin the day

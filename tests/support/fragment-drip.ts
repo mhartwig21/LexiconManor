@@ -122,12 +122,30 @@ export interface DripRun {
   perDay: { day: number; filed: number; legible: number; unfoundAtDawn: number }[];
 }
 
+export interface DripOptions {
+  /**
+   * Characters this campaign NEVER meets — their scenes never play, so their
+   * testimony stays reserved out of the room drip forever (AAA 4.14).
+   *
+   * ROUND 12. Discovery is random by design: Fern keeps the Greenhouse and
+   * the Greenhouse is one card in a deck that need never deal it, so "a
+   * player who never meets Fern" is not a pathological input, it is a
+   * reachable campaign. Eight of Volume 1's 28 fragments are gated behind a
+   * character scene, and the question this option exists to answer is whether
+   * the mercy floor still covers her when some of that channel is switched
+   * off. Defaults to nobody, so every existing measurement is byte-identical.
+   */
+  never?: readonly CharacterId[];
+}
+
 /** One seeded campaign through the real drip, seal included. */
 export function fragmentDays(
   seed: number,
   days: number,
   profile: SimProfile = PROFILE_SKILLED,
+  opts: DripOptions = {},
 ): DripRun {
+  const never = new Set(opts.never ?? []);
   const rng = createRng(seed);
   const timeRng = createRng((seed ^ 0x715e17) | 0);
   const metaRng = createRng((seed ^ 0x5eed21) | 0);
@@ -160,6 +178,7 @@ export function fragmentDays(
   const reservedIds = () =>
     new Set(GATES.filter((g) => !delivered.has(g.fragmentId)).map((g) => g.fragmentId));
   const speak = (character: CharacterId) => {
+    if (never.has(character)) return; // never met — the scene never plays
     for (const g of GATES) {
       if (g.character !== character || delivered.has(g.fragmentId)) continue;
       if (state.foundFragmentIds.length < g.gate) continue;

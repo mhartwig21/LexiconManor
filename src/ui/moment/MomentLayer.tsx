@@ -26,6 +26,7 @@ import { sfx } from '../../app/sound';
 import { momentDwellMs } from './moments';
 import { momentQueue } from './queue';
 import { sealDock } from './dock';
+import { ceremonyGate } from './ceremony';
 import { useOverlayOpen } from '../chrome/overlay-watch';
 import { retireBootstrapLayer } from './mount';
 import { installMomentWatch } from './watch';
@@ -54,6 +55,13 @@ export default function MomentLayer({ bootstrap = false }: { bootstrap?: boolean
    *  HERE, with the other hooks, because `if (!current) return null` sits below
    *  and a hook after an early return is React error #310. */
   const overlayOpen = useOverlayOpen();
+  /** …and is a full-glass CEREMONY claiming the screen? (ui/moment/ceremony.ts
+   *  — measured round 12: the introduction card and this seal landed together
+   *  on day 1 and cancelled each other out.) Declared with the other hooks for
+   *  the same reason as the line above. */
+  const ceremony = useSyncExternalStore(
+    ceremonyGate.subscribe, ceremonyGate.get, ceremonyGate.get,
+  );
 
   // The watch belongs to the session, not to this component: it is installed
   // here as a safety net (idempotent) so the layer is never live without it.
@@ -77,13 +85,17 @@ export default function MomentLayer({ bootstrap = false }: { bootstrap?: boolean
 
   useEffect(() => {
     if (!key) return;
+    // A ceremony has the glass: the seal is not shown, so its clock must not
+    // run either — the grant WAITS and presses in when the card hands off,
+    // rather than expiring behind something the player never saw (AAA 11.13).
+    if (ceremony) return;
     if (soundOn) sfx.glyph(); // strict upgrade only (R.4) — silent play is whole
     const t = setTimeout(() => momentQueue.dismiss(), momentDwellMs(waitingAtLanding.current));
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed to the seal, not to the queue behind it
-  }, [key, soundOn]);
+  }, [key, soundOn, ceremony]);
 
-  if (!current) return null;
+  if (!current || ceremony) return null;
 
   /* ROUND 12 / ROUND 15 (AAA 11.2 / 11.27) — OVER A PLAYFIELD THE SEAL IS NOT
      A CONTROL. A room's glass is all playfield, and so is the BLUEPRINT's once
