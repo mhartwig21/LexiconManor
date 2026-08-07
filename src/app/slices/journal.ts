@@ -20,11 +20,11 @@ import type { ManorStore } from '../store';
 import type { SaveV2 } from '../save';
 import {
   advanceVolume, applyGuess, decipherYield, findLetter, fragmentForSolveChannel,
-  fragmentsToDecipher, legibleFragmentFlag, letterGrants, nextFragmentForRoom, normalizeGuess,
-  openedLetterFlag, reservedTestimonyIds, sealedFragmentFlag, sealedFragmentIds,
+  fragmentsToDecipher, legibleDayFlag, legibleFragmentFlag, letterGrants, nextFragmentForRoom,
+  normalizeGuess, openedLetterFlag, reservedTestimonyIds, sealedFragmentFlag, sealedFragmentIds,
   solveChannelFiledToday, solveChannelFor, solvedFlag,
 } from '../../engine/volume';
-import { nextUninterpreted, viewedFragmentFlag } from '../../engine/journal';
+import { glancedFragmentFlag, nextUninterpreted, viewedFragmentFlag } from '../../engine/journal';
 import { atSanctumDoor } from '../../engine/manor/grid';
 import { DIALOGUE_FILES } from '../../engine/dialogue/content';
 import { getVolumeContent, nextVolumeContent } from '../content/volumes';
@@ -58,8 +58,15 @@ export interface JournalSlice {
   /**
    * Record that these fragments have actually been DISPLAYED to the player —
    * the only thing that retires an unread marker (AAA 11.20). Write-once
-   * `vol.<id>.viewed-<fragmentId>` flags, the same shape as the letters'
-   * opened flags, so the state survives the day roll and a force-quit.
+   * flags, the same shape as the letters' opened flags, so the state survives
+   * the day roll and a force-quit.
+   *
+   * ROUND 12 — TWO FLAGS, BECAUSE SHE MAY HAVE SEEN A SMUDGE RATHER THAN A
+   * SENTENCE: a sealed page records `vol.<id>.glanced-<fragmentId>`, a legible
+   * one `vol.<id>.viewed-<fragmentId>`. The unread chain reads whichever one
+   * the page's CURRENT state calls for (engine/journal.hasSeen), so a page she
+   * looked at while smudged stops being unread — and becomes unread again the
+   * moment a solve makes it out, which is the point: that is new information.
    *
    * Called by the journal sheet with `displayedFragmentIds(tab)` — never by a
    * navigation or focus edge. Ids that are not filed yet are ignored, and the
@@ -177,9 +184,14 @@ export const createJournalSlice =
       // moment layer, the journal) already sees the page in the state it
       // actually arrived in.
       if (opts?.sealed) get().setFlag(sealedFragmentFlag(v.volumeId, fragmentId));
+      // ROUND 13 (AAA 4.14 blocker): the pity floor counts what she can READ.
+      // A sealed page taught her nothing, so it must not reset the drought —
+      // it was resetting it, which switched the mercy channel off for exactly
+      // the player the seal is designed to press. `fragment-found` still fires
+      // for both (the chronicles print the filed count, correctly); only the
+      // legible arrival marks the day. See engine/volume.legibleDayFlag.
+      if (!opts?.sealed) get().setFlag(legibleDayFlag(v.volumeId, get().day?.day ?? v.day));
       get().recordEvent({ type: 'fragment-found', fragmentId });
-      // Pity bookkeeping (AAA 4.14) is pure derivation: the drought counter
-      // reads the chronicles' DayRecords (engine/volume.fragmentDroughtDays).
     },
 
     interpretFragment: (fragmentId) => {
@@ -226,6 +238,22 @@ export const createJournalSlice =
         });
       } else {
         get().setFlag(solvedFlag(content.id));
+        // ── ROUND 13 (AAA 4.15 blocker): THE VOLUME CLOSED, SO THE HOUSE GAVE
+        //    HER THE REST. ────────────────────────────────────────────────────
+        // The ceremony already prints every definition line IN CLEAR
+        // (SanctumView's epilogue) and its own copy names the journal as the
+        // permanent trace — "the journal keeps the rest". The journal was
+        // rendering those same lines as dot-runs with "solve a room" written
+        // under each of them, on a volume whose status is 'solved' and whose
+        // rail and nudge both retire when solved: an archive contradicting its
+        // own ceremony, with a dead instruction and no count left to act on.
+        // Making the backlog out at the door retires the smudges EVERYWHERE at
+        // once — journal, tabs, entrance, digest — so one rule governs both
+        // surfaces and 4.15's "zero information exists only in a transient
+        // scene" holds. Routed through `decipherFragments` so the spine, the
+        // moment layer and the unread chain all see it the ordinary way.
+        const stillSealed = sealedFragmentIds(v.volumeId, get().flags);
+        if (stillSealed.size > 0) get().decipherFragments(stillSealed.size);
         get().recordEvent({ type: 'volume-solved', volumeId: content.id });
         // The night sequence (Sanctum epilogue → endDay('volume-solved') →
         // beginNextVolume) is driven by the Sanctum UI so the ceremony plays
@@ -258,11 +286,18 @@ export const createJournalSlice =
     markFragmentsViewed: (fragmentIds) => {
       const v = get().volume;
       const have = new Set(get().flags);
+      // ROUND 12: record what she saw IN THE STATE SHE SAW IT IN. A smudge she
+      // has looked at is `glanced-`; only the words themselves are `viewed-`.
+      // The seal set is read live here rather than passed in, so the sheet
+      // cannot hand us a stale legibility and mint the wrong flag.
+      const sealedIds = sealedFragmentIds(v.volumeId, get().flags);
       for (const id of fragmentIds) {
         // Only what the volume has actually filed can be "seen": a stale id
         // must never mint a flag that outlives its fragment.
         if (!v.foundFragmentIds.includes(id)) continue;
-        const flag = viewedFragmentFlag(v.volumeId, id);
+        const flag = sealedIds.has(id)
+          ? glancedFragmentFlag(v.volumeId, id)
+          : viewedFragmentFlag(v.volumeId, id);
         if (have.has(flag)) continue;
         have.add(flag);
         get().setFlag(flag); // write-once, validated against docs/flags.md
@@ -303,6 +338,9 @@ export const createJournalSlice =
       const ids = fragmentsToDecipher(content, v, sealedIds, count);
       if (ids.length === 0) return ids;
       for (const id of ids) get().setFlag(legibleFragmentFlag(v.volumeId, id));
+      // The other half of the round-13 pity fix: making a page out IS learning
+      // something, so it marks the day even though nothing new was filed.
+      get().setFlag(legibleDayFlag(v.volumeId, get().day?.day ?? v.day));
       // ROUND 7 (verifier): the spine now carries the beat, per the architect's
       // grant of `fragment-made-out`. `fragment-found` said the page was HERS;
       // this says it finally SPEAKS. One event per batch, because the tier

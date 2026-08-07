@@ -9,7 +9,7 @@
  * the character seams (parlor visits, Dewey) via A6's DialogueScene.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useManorStore } from '../app/store';
 import { deweyAnswer, deweyPettedToday, ensureManor } from '../app/slices/manor';
@@ -24,8 +24,10 @@ import DraftModal from '../ui/blueprint/DraftModal';
 import DialogueScene from '../ui/dialogue/DialogueScene';
 import { plateSeenFlag, unseenKeepsakes, unseenPlates } from '../ui/moment/mantel';
 import UnreadMark from '../ui/journal/UnreadMark';
+import SealedMark from '../ui/journal/SealedMark';
 import { useJournalUnread } from '../ui/journal/useJournalUnread';
 import '../ui/blueprint/blueprint.css';
+import './front-step.css';
 
 const ROMAN = ['', 'I', 'II', 'III'];
 
@@ -101,6 +103,17 @@ function Entrances({ onCabinet }: { onCabinet?: () => void }) {
           noun={journalUnread.total === 1 ? 'thing in the journal' : 'things in the journal'}
           showCount
         />
+        {/* ROUND 13 (AAA 11.19) — THE ENTRANCE LEVEL OF THE SEAL CHAIN.
+            The smudge marker existed on the journal's tabs, on every card, in
+            the footer rail and on the lifecycle scenes' journal link — and
+            nowhere on the blueprint, which is the screen the player stands on
+            all day and where the decision the seal is meant to inform (the
+            violet door or the puzzle door) is actually taken. Worse than a gap,
+            because wax retires on a glance: one look at the smudges dropped the
+            entrance count to 0 and the map showed a bare "Journal" with five
+            pages still unread. Same `useJournalUnread()` derivation the digest
+            link uses, so the four levels cannot disagree. */}
+        <SealedMark count={journalUnread.sealed.total} showCount />
       </button>
       {/* Round 5: /chronicles had no entrance anywhere in the app — sound,
           music, reduced motion, the mute-switch bypass, keepsakes and the
@@ -145,16 +158,84 @@ export default function ManorPage() {
   /** The Floorplan Cabinet sheet (AAA 4.7): the whole live deck, browsable. */
   const [cabinetOpen, setCabinetOpen] = useState(false);
 
-  const flags = useManorStore((s) => s.flags);
-  const setFlag = useManorStore((s) => s.setFlag);
-  /** Opening the cabinet IS the plate being displayed — the only thing that
-   *  retires its marker (AAA 11.20). Write-once, so it survives everything. */
-  const openCabinet = () => {
-    setCabinetOpen(true);
-    for (const card of unseenPlates(cabinet.unlockedCardIds, flags)) {
-      setFlag(plateSeenFlag(card.id));
-    }
-  };
+  /**
+   * ROUND 12 (AAA 11.20, major) — THE PLATE MARKER RETIRES ON VIEWING.
+   *
+   * `openCabinet` used to write `plateSeenFlag` for every unseen plate the
+   * instant the sheet mounted. Measured live with 9 plates unlocked: the
+   * entrance read "9"; the sheet's scroller is 3238px tall in a 742px window
+   * and 6 of 28 rows are on the glass at scroll 0; opening it wrote all 9
+   * flags — including The Boot Room, The Still Room and The Counting House,
+   * whose rows sit 1500–3000px down and were never displayed to anybody. One
+   * open/close and the marker was gone. That is a marker retiring on OPENING,
+   * which 11.20 names exactly: "the marker retires when the item has actually
+   * been displayed to the player, and persists otherwise".
+   *
+   * Its sibling channel in the same round got this right and says why:
+   * ChroniclesPage's keepsake shelf uses an IntersectionObserver because "the
+   * shelf is the third section down, so 'the page rendered' is not 'she looked
+   * at it'". The cabinet is the same shape, only twenty times as tall. Two
+   * permanent-unlock channels may not disagree about what viewing means.
+   *
+   * AND THE OTHER HALF OF 11.21: a marker she can never clear is the same
+   * defect wearing the opposite coat. An observer alone leaves one — a fling
+   * down a 3238px sheet moves in bigger steps than the observer samples, so
+   * rows can be jumped clean over and keep their mark forever. A row that has
+   * been scrolled off the TOP has demonstrably passed the glass, so it counts
+   * as displayed too; the pair is monotone (past-the-top ∪ on-the-glass) and
+   * still refuses to mark anything that is only further down the sheet.
+   *
+   * ROUND 8 (verifier): rows are now matched by `data-card-id`, which
+   * CabinetSheet stamps on every plate. This used to match on the row's PRINTED
+   * NAME, which worked but meant renaming a card silently stopped its marker
+   * ever retiring — a by-name join standing in for an id join. An id that
+   * resolves to nothing is skipped rather than guessed at: writing the wrong
+   * flag would retire a marker she can never bring back.
+   */
+  const cabinetRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!cabinetOpen) return;
+    const host = cabinetRef.current;
+    const rows = host?.querySelectorAll('.bp-card--plate:not(.bp-card--locked)');
+    if (!host || !rows || rows.length === 0) return;
+    const scroller = host.querySelector('.bp-modal__sheet');
+
+    const markSeen = (onGlass: Iterable<Element>) => {
+      const s = useManorStore.getState();
+      const unseen = new Set(
+        unseenPlates(s.cabinet.unlockedCardIds, s.flags).map((c) => c.id),
+      );
+      if (unseen.size === 0) return;
+      const mark = (row: Element) => {
+        const id = row.getAttribute('data-card-id');
+        if (id && unseen.has(id)) s.setFlag(plateSeenFlag(id));
+      };
+      for (const row of onGlass) mark(row);
+      const top = scroller?.getBoundingClientRect().top;
+      if (top === undefined) return;
+      for (const row of rows) {
+        if (row.getBoundingClientRect().bottom <= top + 1) mark(row);
+      }
+    };
+
+    // No IntersectionObserver (old engine, jsdom): mark on mount. Erring toward
+    // clearing beats a marker she can never clear (11.21's other half) — the
+    // same fallback the keepsake shelf takes.
+    if (typeof IntersectionObserver === 'undefined') { markSeen(rows); return; }
+    const io = new IntersectionObserver(
+      (entries) => markSeen(entries.filter((e) => e.isIntersecting).map((e) => e.target)),
+      { root: scroller, threshold: 0.15 },
+    );
+    for (const row of rows) io.observe(row);
+    const onScroll = () => markSeen([]);
+    scroller?.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      io.disconnect();
+      scroller?.removeEventListener('scroll', onScroll);
+    };
+  }, [cabinetOpen]);
+
+  const openCabinet = () => setCabinetOpen(true);
 
   /* ROUND 9: the `ensureMomentLayer()` bootstrap that used to live here is
      gone — App.tsx now mounts <MomentLayer /> beside <GameChrome />, outside
@@ -181,12 +262,29 @@ export default function ManorPage() {
     return (
       <div className="bp-page bp-page--card">
         <div className="bp-scene">
+          {/* ROUND 8 composition pass (pages/front-step.css): the cover held a
+              296px featureless band — 35.1% of the glass — between the plate
+              and the doors at the foot. The keyhole is the house's own front
+              door, drawn in line, aria-hidden because the title already says
+              everything it says. */}
+          <svg className="fs-mark" viewBox="0 0 96 120" aria-hidden focusable="false">
+            <path d="M14 10h68v100H14z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            <path d="M22 18h52v84H22z" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+            <circle cx="48" cy="54" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M44 60h8l3 18H41z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            <path d="M48 26v10M48 88v10" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.55" />
+          </svg>
           <h1 className="bp-scene__title">Lexicon Manor</h1>
           <p className="bp-scene__text">
             The gates are open. Somewhere upstairs, a word is missing from
             every dictionary in the house.
           </p>
+          <div className="fs-rule" aria-hidden />
           <button className="bp-btn bp-btn--seal" onClick={startDay}>Begin the first day</button>
+          <p className="fs-note">
+            A day is a walk through the house and back to bed. Nothing here can be
+            lost, and nothing waits on a clock.
+          </p>
           {/* AAA 11.8 / 11.26 (round-9 blocker). These sat below the early
               return, so the front step shipped with exactly one control. The
               trunk is the RECOVERY path: reaching it must cost no day, no step
@@ -288,12 +386,16 @@ export default function ManorPage() {
         )}
       </footer>
 
-      {/* The Floorplan Cabinet — the live deck and its locked plates (AAA 4.7) */}
+      {/* The Floorplan Cabinet — the live deck and its locked plates (AAA 4.7).
+          The wrapper is the observer's handle on the sheet (see the marker
+          effect above); it draws nothing and lays out nothing. */}
       {cabinetOpen && (
-        <CabinetSheet
-          unlockedCardIds={cabinet.unlockedCardIds}
-          onClose={() => setCabinetOpen(false)}
-        />
+        <div ref={cabinetRef} style={{ display: 'contents' }}>
+          <CabinetSheet
+            unlockedCardIds={cabinet.unlockedCardIds}
+            onClose={() => setCabinetOpen(false)}
+          />
+        </div>
       )}
 
       {draftOffer && exploring && (

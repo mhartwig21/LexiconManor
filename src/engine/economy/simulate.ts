@@ -74,6 +74,27 @@
  * scored tier 1's only two mystery cards 9 and 1. The supply was re-tuned at
  * source (engine/manor/{deck,drafting}.ts) against the REALISED share, and
  * AAA 4.10g publishes the band tests/economy-simulation.test.ts now pins.
+ *
+ * ═══ ROUND-12 CORRECTION — THE MODEL ONLY EVER PLAYED ONE PLAYER ═══
+ * Every campaign target 4.10 publishes was measured on `PROFILE_SKILLED`.
+ * `PROFILE_DECENT` — the profile whose own docstring below calls it "the
+ * MEDIAN evening, the one 4.10b clocks", i.e. the owner — played thousands of
+ * single days here and never once played a campaign, so 4.10d/e/g published
+ * unqualified medians nobody had checked for her. Measured when someone
+ * finally ran `simulateCampaigns(PROFILE_DECENT, …)`: first landing at median
+ * day 18–21 (10–14% never inside 45 days), volume won at median day 33–34,
+ * 25% of campaigns unfinished after 45 evenings against a published ">90% by
+ * day 35", and a solve made a page out on 0.23 of days against an unqualified
+ * ">=1 day in 3".
+ *
+ * NOTHING IN THIS FILE WAS WRONG — the model played her correctly the whole
+ * time; nobody asked it to. The fix is therefore in the test and the doc
+ * (`tests/economy-simulation.test.ts` now plays both profiles and AAA 4.10e/g
+ * publish both bands), plus one strictly-progressive retune of `TEA_BY_POINTS`
+ * at source. The rule this leaves behind: **a profile that is named in a
+ * published criterion has to be simulated against that criterion.** If a
+ * future arc adds a third archetype, it owes a campaign block the day it is
+ * quoted in a number.
  */
 
 import { createRng } from '../rng';
@@ -361,7 +382,19 @@ export const PROFILE_SKIPPER: SimProfile = {
   brambleAffinity: 0,
 };
 
-/** A decent, competent day — the MEDIAN evening, the one 4.10b clocks. */
+/**
+ * A decent, competent day — the MEDIAN evening, the one 4.10b clocks.
+ *
+ * ROUND 12: **also a campaign profile.** For eleven rounds this docstring said
+ * "the MEDIAN evening" while nothing ever played her past dusk, so every
+ * multi-week number 4.10 published described `PROFILE_SKILLED` and nobody
+ * else. `tests/economy-simulation.test.ts` now runs her through
+ * `simulateCampaigns` beside him and AAA 4.10e/4.10g publish her band next to
+ * his. She is deliberately a *worse climber* than he is — `boldness` 1.3 vs
+ * 1.0, `walkbackPerRow` 0.58 vs 0.36, `pushBias` 0.62 vs 0.78 — and that gap is
+ * the design, not a bug to tune away: it is why the two bands are separate and
+ * why a lever that collapses them breaks 4.10d's <8% day-1 reach instead.
+ */
 export const PROFILE_DECENT: SimProfile = {
   name: 'decent',
   attemptRate: 0.88,
@@ -987,10 +1020,13 @@ export function simulateCampaign(
     if (result.reachedSanctum && firstSanctumReachDay === null) firstSanctumReachDay = day;
 
     // --- The fragment drip (AAA 4.14: ≥2 source types + a pity floor). ----
-    // `filed` is what ARRIVED (the drought rule's quantity — the live
-    // `fragmentDroughtDays` reads DayRecord.fragmentsFound, which counts a
-    // sealed page as found, because it IS found). `legible` is what she can
-    // actually reason from, and only that moves the deduction.
+    // `filed` is what ARRIVED (documents in hand, smudged or not — the number
+    // the chronicles print). `legible` is what she can actually reason from,
+    // and round 13 makes it the DROUGHT's quantity too: the live pity floor now
+    // reads `legibleDroughtDays` (engine/volume.ts), because a sealed page
+    // taught her nothing and must not switch mercy off. The model keyed its
+    // `dryStreak` off `filed`, so it reproduced the shipped bug instead of
+    // flagging it — which is why this line is the fix's tripwire, not a detail.
     let filed = result.fragmentsFound;
     let legible = result.pagesMadeOut;
 
@@ -1015,7 +1051,7 @@ export function simulateCampaign(
     if (metaRng() < KNOWLEDGE.letterChance) { filed += 1; legible += 1; }
     const warmth = Math.min(1, day / KNOWLEDGE.testimonyRampDays);
     if (metaRng() < KNOWLEDGE.testimonyChance * warmth) { filed += 1; legible += 1; }
-    dryStreak = filed > 0 ? 0 : dryStreak + 1;
+    dryStreak = legible > 0 ? 0 : dryStreak + 1;
     if (dryStreak >= KNOWLEDGE.pityDays) { filed += 1; legible += 1; dryStreak = 0; }
 
     // Nothing can be learned past the volume's authored supply.

@@ -89,6 +89,19 @@ readable. That is why there is no `legible-` opt-in flag and no migration.
 |---|---|---|
 | `vol.<volumeId>.sealed-<fragmentId>` | `app/slices/journal.ts` | the fragment is filed undeciphered (violet-room entry) |
 | `vol.<volumeId>.legible-<fragmentId>` | `app/slices/journal.ts` | a solve makes that fragment out (`decipherFragments`, yield by tier) |
+| `vol.<volumeId>.made-out-day-<N>` | `app/slices/journal.ts` | day `N` produced at least one page she can READ (round 13) |
+
+The third family is the **pity floor's** quantity (round 13, AAA 4.14). The
+drought was read off `DayRecord.fragmentsFound`, which counts `fragment-found` —
+and a violet room fires that for a *sealed* page too, deliberately, so the
+moment layer can see the seal. A smudge therefore reset the drought to zero and
+switched the mercy channel off for exactly the player the seal is designed to
+press. `legibleDayFlag` marks a day when a legible page is filed *or* a solve
+makes pages out; `engine/volume.legibleDroughtDays` counts back over the banked
+`DayRecord`s against those marks. It is a per-day family rather than a field on
+the architect-owned `DayRecord`, so no save-schema change was needed and the
+chronicles keep printing the FILED count — the right number for a chronicle and
+the wrong one for mercy.
 
 Read through `engine/volume.ts`'s `sealedFragmentIds` / `madeOutFragmentIds`.
 `madeOutFragmentIds` is deliberately **not** the complement of
@@ -103,4 +116,5 @@ Both `posy.quest1.done` and `posy.deputy` (authored, existing) additionally gate
 Floorplan Cabinet cards via `engine/manor/deck.ts` `unlockedBy` — the gate is the
 story flag itself, so it cannot drift from the conversation that fills it.
 
-All five match the frozen grammar above (`viewed-v1-e1` is one kebab segment).
+All six match the frozen grammar above (`viewed-v1-e1` and `made-out-day-7` are
+each one kebab segment).

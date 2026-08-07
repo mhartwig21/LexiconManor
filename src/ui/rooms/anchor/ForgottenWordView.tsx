@@ -54,9 +54,16 @@ function closenessLine(shared: number, exact: number): string {
  * must never do. It also gives the room's freed height something to hold
  * (AAA §0.1) instead of parchment.
  */
+/* ROUND 8: the teasers lost four words each. The sealed clue card measured
+   94.3px — two of them, 189px of a 651.8px stage — and at 375x667 that put the
+   second card's own COSTED "Unseal" button underneath the sticky whisper deck
+   (measured: `elementFromPoint` at its centre returned `.anch-btn--primary`,
+   AAA 11.4 [PARITY]). The card is one line of label + teaser beside the price
+   now; nothing the teaser was for is lost — it still says what she is buying
+   before she buys it, which is the whole reason it exists. */
 const CLUES: { id: ClueId; label: string; teaser: string }[] = [
-  { id: 'etymology', label: 'Etymology', teaser: 'Where the word came from.' },
-  { id: 'usage', label: 'Usage', teaser: 'The word at work in a sentence.' },
+  { id: 'etymology', label: 'Etymology', teaser: 'Where it came from.' },
+  { id: 'usage', label: 'Usage', teaser: 'The word in a sentence.' },
 ];
 
 /**
@@ -252,34 +259,51 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
         </div>
       ) : (
         <>
-          {CLUES.map(({ id, label, teaser }) => {
-            const unlocked = state.fw.unlockedClues.includes(id);
-            return (
-              <div key={id} className="anch-card fw-clue">
-                <div>
-                  <div className="fw-clue__label">{label}</div>
-                  {unlocked ? (
-                    <div className="fw-clue__text anch-pop">{typeset(id === 'etymology' ? puzzle.etymology : puzzle.usage)}</div>
-                  ) : (
-                    <div className="fw-clue__sealed">{teaser} Sealed…</div>
-                  )}
-                </div>
-                {!unlocked && (
-                  <button className="anch-btn" {...pressProps<HTMLButtonElement>()} onClick={() => dispatch({ type: 'unseal-clue', clue: id })}>
-                    Unseal · −{clueCost} steps
-                  </button>
-                )}
+          {/* ROUND 8 (AAA 11.4 [PARITY]) — WHAT YOU CAN BUY IS ALWAYS ON THE
+              GLASS; WHAT YOU HAVE BOUGHT IS READING MATTER.
+              Both clue cards used to sit here, in the scrolling body, above a
+              sticky deck — so whether a control that SPENDS STEPS was reachable
+              depended on how many lines this particular definition ran to.
+              Measured: at 375x667 the second card's "Unseal · −N steps"
+              hit-tested as the whisper button on every entry, and at 390x844 on
+              the longer ones; compacting the card (see `.fw-clue`) fixed the
+              short entries and left the long ones failing, which is the worst
+              of the three outcomes because it looks fixed.
+              A SEALED clue is a priced control, so it rides the deck with the
+              other priced control in the room and can never be behind anything.
+              An UNSEALED clue is a paragraph of the entry, so it goes back into
+              the body and scrolls with the definition it belongs to. */}
+          {CLUES.filter(({ id }) => state.fw.unlockedClues.includes(id)).map(({ id, label }) => (
+            <div key={id} className="anch-card fw-clue fw-clue--open">
+              <div className="fw-clue__body">
+                <span className="fw-clue__label">{label}</span>
+                <span className="fw-clue__text anch-pop">{typeset(id === 'etymology' ? puzzle.etymology : puzzle.usage)}</span>
               </div>
-            );
-          })}
+            </div>
+          ))}
 
           {/* ROUND 7 (AAA 3.3/11.3): the whisper row, the reply and the
               elimination history measured 52px (390x844) and 106px (375x667)
               past the bottom of the stage once real iPhone insets were applied
               — the memory prosthetic the room is built around was off the
-              glass. They ride the shell's sticky deck; the clue cards scroll
+              glass. They ride the shell's sticky deck; the entry scrolls
               behind them. */}
           <div className="room-deck room-deck--anch">
+          {CLUES.filter(({ id }) => !state.fw.unlockedClues.includes(id)).map(({ id, label, teaser }) => (
+            <div key={id} className="fw-clue fw-clue--sealedrow">
+              <div className="fw-clue__body">
+                <span className="fw-clue__label">{label}</span>
+                <span className="fw-clue__sealed">{teaser}</span>
+              </div>
+              <button
+                className="anch-btn fw-clue__buy"
+                {...pressProps<HTMLButtonElement>()}
+                onClick={() => dispatch({ type: 'unseal-clue', clue: id })}
+              >
+                Unseal · −{clueCost} steps
+              </button>
+            </div>
+          ))}
           <div className={`anch-row${shaking ? ' anch-shake' : ''}`} style={{ flexWrap: 'nowrap' }}>
             <input
               className="fw-input"

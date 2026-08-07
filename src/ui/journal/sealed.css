@@ -1,0 +1,102 @@
+/* ==========================================================================
+   The SEALED marker — OWNER: A7. Per-module CSS (conflict rule 3); consumes
+   ui/theme/tokens.css only, so both themes come free and no token is added.
+
+   Round 12: the second half of the state vocabulary. Wax red keeps its four
+   sanctioned meanings (AAA 6.15) and unread is one of them; "filed but not yet
+   made out" is NOT one of them and must not borrow the alert's clothes.
+
+   Grayscale (AAA 6.3 / 11.22) is the design constraint, not an afterthought:
+   the wax mark is a SOLID disc, this is an OPEN ring with a bar across it (an
+   unbroken seal impression). Fill-vs-outline is the primary encoding, ink
+   weight the second, and corner position the third — hue carries nothing.
+
+   Nothing here animates, so `prefers-reduced-motion` needs no special case.
+   ========================================================================== */
+
+.sealed {
+  /* Quieter than wax on purpose: this is an invitation, not an alarm.
+     --ink-soft clears 4.5:1 on every parchment AND every candlelit surface
+     (see tokens.css), so the ring and its numeral are legible in both themes. */
+  --sealed-ink: var(--ink-soft);
+
+  position: relative;
+  /* inline-flex makes this an atomic inline box, so a host with
+     `text-decoration: underline` cannot draw its rule through the seal. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-sizing: border-box;
+  width: 11px;
+  height: 11px;
+  margin-left: 0.35rem;
+  vertical-align: 0.2em;
+  border-radius: 50%;
+  /* THE OPEN RING. Wax is `background: var(--wax)` with no border; this is the
+     exact inverse, which is what makes the two tell apart at 11px in a
+     grayscale screenshot. */
+  border: 1.5px solid var(--sealed-ink);
+  background: transparent;
+}
+
+/* The bar across the impression — the seal is still whole. A second shape cue
+   on top of solid-vs-outline, and the thing that stops the ring reading as an
+   empty checkbox. */
+.sealed::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 1.5px;
+  transform: translate(-50%, -50%);
+  background: var(--sealed-ink);
+  border-radius: 1px;
+}
+
+/* The item-level pip sits inside a flex row of caption text (the card's source
+   line) or leading a poem line — no lead gap, no superscript lift. */
+.sealed--pip {
+  margin-left: 0;
+  vertical-align: baseline;
+}
+
+/* The pinned form, for hosts with room in the bottom-right — wax owns the
+   TOP-right (unread.css), so the two never share a pixel or a reading. The
+   host supplies `position: relative` via `.unread-host`, which both markers
+   reuse rather than each minting a host class of its own.
+   NOT used by the journal's ribbon tabs: measured at 390px the ring landed on
+   the descender of "The Word", so those render it inline instead (see
+   JournalView's TabButton). Kept for wider hosts that already pin wax. */
+.sealed--corner {
+  position: absolute;
+  bottom: 5px;
+  right: 8px;
+  margin-left: 0;
+}
+
+/* The counted form, used where the label has room for it (the entrance and the
+   night digest's aside). Tabular numerals so the pill does not jitter as the
+   count changes (AAA 6.6), and the number is the EXACT count, never capped
+   (AAA 11.21). An OUTLINED pill against wax's filled one. */
+.sealed--count {
+  width: auto;
+  height: 1.15rem;
+  min-width: 1.15rem;
+  padding: 0 0.34rem;
+  border-radius: 999px;
+}
+/* The bar belongs to the ring, not to the pill: with a numeral inside it the
+   shape is already unmistakably not-wax, and a rule through the digit would
+   read as a strikethrough. */
+.sealed--count::after { content: none; }
+
+.sealed__n {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  line-height: 1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--sealed-ink);
+}

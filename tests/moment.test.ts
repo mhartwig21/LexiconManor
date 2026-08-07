@@ -16,7 +16,8 @@ import { freshVolumeState, type VolumeContent } from '../src/engine/volume';
 import { useManorStore } from '../src/app/store';
 import {
   advance, EMPTY_QUEUE, enqueue, keepsakeMoment, letterMoment, madeOutMoment, MAX_PENDING,
-  momentForEvent, openingWords, plateMoment, type Moment, type MomentContext,
+  momentDwellMs, momentForEvent, MOMENT_MS, MOMENT_QUEUED_MS, openingWords, plateMoment,
+  type Moment, type MomentContext,
 } from '../src/ui/moment/moments';
 import {
   keepsakeSeenFlag, mantelLine, plateSeenFlag, unseenKeepsakes, unseenPlates,
@@ -87,6 +88,45 @@ describe('the moment queue', () => {
     expect(q.pending.length).toBe(MAX_PENDING);
     expect(q.pending[q.pending.length - 1]?.key).toBe('newest');
     expect(q.pending.map((m) => m.key)).not.toContain('m1');
+  });
+
+  /**
+   * ROUND 12 — the "release" half of the round-7 hold/release item.
+   *
+   * AAA §0.5 escape 4 records the seal's cost in the bar's own words: it owns a
+   * band of whatever screen the player is on, "for 5.6s per queued grant, and
+   * grants QUEUE". A four-grant solve (a page filed sealed, two pages made out,
+   * a keepsake, a rank-up) parked wax over that band for 22.4 seconds. Every
+   * moment in this queue is Campaign class and names its own persistent trace,
+   * so shortening a seal that has company loses nothing — and the last one,
+   * the one that has to carry itself, keeps the full dwell.
+   *
+   * "Hold" is deliberately NOT implemented; see momentDwellMs's own comment.
+   * The waiting half of 11.13(a) is structural here, not temporal, and the
+   * test below it ("a grant landing while nothing is mounted still waits") is
+   * what proves it.
+   */
+  it('a seal with company retires sooner; a lone seal keeps the full dwell', () => {
+    expect(momentDwellMs(0)).toBe(MOMENT_MS);
+    expect(momentDwellMs(1)).toBe(MOMENT_QUEUED_MS);
+    expect(momentDwellMs(7)).toBe(MOMENT_QUEUED_MS);
+    expect(MOMENT_QUEUED_MS).toBeLessThan(MOMENT_MS);
+    // Never so short that the title and the trace cannot be read.
+    expect(MOMENT_QUEUED_MS).toBeGreaterThanOrEqual(3500);
+  });
+
+  it('a four-grant burst costs materially less glass than it used to', () => {
+    let q = EMPTY_QUEUE;
+    for (const k of ['a', 'b', 'c', 'd']) q = enqueue(q, seal(k));
+    let total = 0;
+    while (q.current) {
+      total += momentDwellMs(q.pending.length);
+      q = advance(q);
+    }
+    expect(total).toBe(MOMENT_QUEUED_MS * 3 + MOMENT_MS);
+    expect(total).toBeLessThan(MOMENT_MS * 4);           // the parade in §0.5
+    // …and the LAST seal is the one that got the long look.
+    expect(momentDwellMs(0)).toBe(MOMENT_MS);
   });
 
   it('the observable queue notifies subscribers on push and dismiss', () => {
@@ -207,7 +247,13 @@ describe('a SEALED arrival announces the document, never its contents', () => {
     // The redemption rides in `where` — the moment still names its own trace
     // (AAA 11.12) and says what turns the smudge into a sentence.
     expect(m.where).toMatch(/Journal/);
-    expect(m.where).toMatch(/solve a room/i);
+    // ROUND 13 (AAA 6.16): one verb across the whole seal vocabulary. The four
+    // surfaces said "solve a room" / "finish a room and it comes clear" /
+    // "finishing a room makes them out" / "solve a room to make it out"; they
+    // now all say FINISH A ROOM and MAKE IT OUT (JournalView's rail,
+    // engine/journal.journalNudge, ui/moment/moments.ts).
+    expect(m.where).toMatch(/finish a room to make it out/i);
+    expect(m.where).not.toMatch(/solve a room/i);
     // The seal still points at the tab it filed to (AAA 6.3 double-encoding).
     expect(m.sigil).toBe('W');
     expect(momentForEvent({ type: 'fragment-found', fragmentId: 'v1-e2' }, sealedCtx('v1-e2'))!.sigil)
@@ -231,11 +277,12 @@ describe('deciphering takes the glass (AAA 11.11 — it announced nothing at all
   it('names the yield in words, and quotes the first line now legible', () => {
     const one = madeOutMoment(factsFor('v1-d1'))!;
     expect(one.kind).toBe('made-out');
-    expect(one.title).toBe('A page comes clear');
+    // ROUND 13 (AAA 6.16): "made out" is the phrase, everywhere.
+    expect(one.title).toBe('A page made out');
     expect(one.quote).toContain('Where a thing is missing');
 
     const three = madeOutMoment(factsFor('v1-d1', 'v1-e2', 'v1-e4'))!;
-    expect(three.title).toBe('Three pages come clear');
+    expect(three.title).toBe('Three pages made out');
     // Batched: one seal for the whole yield, so the tier lever is FELT rather
     // than arriving as three identical single-page notices.
     expect(three.key).toBe('made-out:v1-d1+v1-e2+v1-e4');

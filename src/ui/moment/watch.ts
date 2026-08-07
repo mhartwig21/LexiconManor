@@ -26,7 +26,7 @@ import type { RecordedEvent } from '../../engine/events';
 import { useManorStore, type ManorStore } from '../../app/store';
 import { getVolumeContent } from '../../app/content/volumes';
 import {
-  arrivedLetters, fragmentDroughtDays, madeOutFragmentIds, openedLetterIds, sealedFragmentIds,
+  arrivedLetters, legibleDroughtDays, madeOutFragmentIds, openedLetterIds, sealedFragmentIds,
 } from '../../engine/volume';
 import { keepsakeById } from '../../engine/achievements';
 import { cardById } from '../../engine/manor/deck';
@@ -187,7 +187,7 @@ export function readSnapshot(s: ManorStore): WatchSnapshot {
   }
   const day = s.day?.day ?? s.volume.day;
   const letters = arrivedLetters(content, s.volume, day, {
-    droughtDays: fragmentDroughtDays(s.chronicles.dayRecords),
+    droughtDays: legibleDroughtDays(s.volume.volumeId, s.flags, s.chronicles.dayRecords),
     openedIds: openedLetterIds(content.id, s.flags),
   });
   // Pages a solved room has deciphered, oldest first on the drip — the same

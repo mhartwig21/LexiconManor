@@ -150,12 +150,42 @@ export default function RoomHost() {
   if (!activeRoom) return null;
 
   if (!adapter || !View || !session) {
-    // Room kind not registered yet (its agent hasn't landed) — warm fallback.
+    /* Room kind not registered yet (its agent hasn't landed).
+     *
+     * ROUND 8 — this branch was the worst-composed surface in the game: an h2,
+     * a line and a button, pushed down by `paddingTop: 18vh`, leaving a 456px
+     * featureless band (54% of the glass) underneath them. It is also the one
+     * surface a player only ever sees when something has gone wrong, which is
+     * exactly when a game must not look abandoned. Same treatment as the
+     * journal's empty tabs (ui/journal/journal.css): a drawn mark, a Fell
+     * heading, in-voice copy that says what this is and what to do, and the
+     * exit ruled off at the foot — so the way out is pinned above the fold
+     * (AAA 11.1/11.3) instead of floating in the middle of nothing. */
     return (
-      <div className="page" style={{ textAlign: 'center', paddingTop: '18vh' }}>
-        <h2>This room is still being furnished</h2>
-        <p style={{ opacity: 0.85 }}>Come back once the movers have finished.</p>
-        <button className="btn" onClick={leaveRoom}>Step back out</button>
+      <div className="room-host room-host--unfurnished">
+        <div className="rh-void">
+          <div className="rh-void__crest" aria-hidden />
+          <div className="rh-void__plate">
+            <svg className="rh-void__mark" viewBox="0 0 72 72" role="presentation" focusable="false">
+              {/* A dust sheet over something with legs. */}
+              <path d="M12 46c0-14 10-24 24-24s24 10 24 24z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+              <path d="M12 46q6 6 12 0t12 0 12 0 12 0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+              <path d="M20 52v8M52 52v8" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              <path d="M28 34h16" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" opacity="0.7" />
+            </svg>
+            <h2 className="rh-void__title">This room is still under dust sheets</h2>
+            <p className="rh-void__body">
+              The movers left the furniture and took the key with them. Nothing in here
+              costs you anything — step back out and the day carries on as it was.
+            </p>
+          </div>
+          <div className="rh-void__foot">
+            <button className="btn btn--primary rh-void__exit" onClick={leaveRoom}>
+              Step back out
+            </button>
+            <span className="rh-void__note">No steps spent. The door is exactly where you left it.</span>
+          </div>
+        </div>
       </div>
     );
   }

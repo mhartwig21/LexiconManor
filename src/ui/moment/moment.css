@@ -65,6 +65,60 @@
   pointer-events: none;
 }
 
+/* ==========================================================================
+   THE ROOM DOCK (round 12, AAA 11.2 / 11.27 — §0.5 escape 4, now in the rooms)
+
+   The clearance above adds a back row, because every SHEET screen puts one
+   under the bar. A ROOM has no back row, so the seal parked on the playfield:
+   measured at 390x844, 27 of the Counting House's 98 cells (the whole top three
+   rows), 12 of the Darkroom's 57, 6 Linen Closet squares, 5 Twistle cells, the
+   Conservatory's found-words toggle. And the harm was not the covering, it was
+   the SWALLOWING — the seal is a button, so a tap aimed at "Row 1, column 1"
+   dismissed the notice and left the cursor exactly where it was.
+
+   A room has no spare band to move the notice into either (measured, all seven
+   kinds: the Linen Closet's grid starts 7px below the top of the stage and its
+   keyboard runs to the footer), and making the room RESERVE one takes the pixels
+   straight out of the board — 43.3 to 25.8 for the exempt ledger cell at
+   375x667. The full reasoning, with every number, is in ui/moment/dock.ts.
+
+   So in a room the seal stops being a control and becomes a notice. Two rules
+   do it, and the second one is the fix:
+   ========================================================================== */
+
+/* 1. It sits in the band under the bar; there is no back row here to clear. */
+:root[data-seal-dock='room'] .mom-layer {
+  top: calc(var(--chrome-h, 52px) + env(safe-area-inset-top, 0px) + 12px);
+}
+
+/* 2. It does not take taps. `elementFromPoint` at every cell and every key
+      returns the CONTROL, so nothing under the card is unreachable and nothing
+      aimed at the board is eaten; the notice retires on its own clock, which is
+      what `momentDwellMs` already assumes for the player who does not know she
+      can tap (moments.ts). MomentLayer renders it as a plain box rather than a
+      button in this state, so the label never promises a tap that does nothing.
+
+      A notice that cannot be tapped away should also ask for less of the glass,
+      so the room's seal drops the QUOTE and tightens. Everything §11 asks of it
+      stays: the title says what arrived in plain words (11.7), the address names
+      the persistent trace it is promising (11.12), and the wax disc, raised
+      sheet and display face keep it unmistakably not flavour (11.14). The
+      reward's own words are one tap away at the address the card just gave her,
+      which is what the trace is FOR. On the sheet screens nothing changes. */
+:root[data-seal-dock='room'] .mom {
+  pointer-events: none;
+  cursor: default;
+  gap: 10px;
+  padding: 7px 14px;
+}
+:root[data-seal-dock='room'] .mom__seal {
+  width: 34px;
+  height: 34px;
+}
+:root[data-seal-dock='room'] .mom__quote {
+  display: none;
+}
+
 .mom {
   pointer-events: auto;
   display: grid;

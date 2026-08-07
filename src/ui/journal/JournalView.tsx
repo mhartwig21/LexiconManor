@@ -12,12 +12,12 @@ import { useManorStore } from '../../app/store';
 import { getVolumeContent } from '../../app/content/volumes';
 import {
   alphabetFacts, ALPHABET, crossRefs, definitionSlots, displayedFragmentIds, foundByKind,
-  guessHistory, isInterpreted, journalNudge, letterBoxes, sanctumReadiness, sealedCount,
+  guessHistory, isInterpreted, journalNudge, letterBoxes, sanctumReadiness, smudge,
   VERDICT_TOKENS,
   type JournalTab,
 } from '../../engine/journal';
 import {
-  arrivedLetters, fragmentDroughtDays, openedLetterIds, sealedFragmentIds,
+  arrivedLetters, legibleDroughtDays, openedLetterIds, sealedFragmentIds,
   type FragmentContent,
 } from '../../engine/volume';
 import type { CharacterId } from '../../engine/types';
@@ -27,6 +27,7 @@ import { selectDialogue } from '../../engine/dialogue/select';
 import DialogueScene from '../dialogue/DialogueScene';
 import BackLink from '../chrome/BackLink';
 import UnreadMark, { UnreadPip } from './UnreadMark';
+import SealedMark, { SealedPip } from './SealedMark';
 import { useJournalUnread } from './useJournalUnread';
 import { sfx } from '../../app/sound';
 import { quoted } from './quote';
@@ -74,7 +75,11 @@ export default function JournalView() {
    */
   const sealedIds = sealedFragmentIds(volume.volumeId, flags);
   const isSealed = (id: string) => sealedIds.has(id);
-  const stillSealed = sealedCount(volume, { sealedIds });
+  /** The backlog number the rail prints — off the SAME derivation the tab
+   *  rings and the entrance count come from, so the four levels of the seal
+   *  chain cannot disagree with each other (AAA 11.19's rule, applied to the
+   *  second marker). */
+  const stillSealed = unread.sealed.total;
 
   /**
    * What was unread when she got here — and it STAYS marked for this visit.
@@ -95,8 +100,13 @@ export default function JournalView() {
    * what the sheet actually PUT ON THE GLASS, so it is not a focus edge and not
    * a navigation edge; the slice makes it a no-op once nothing is left to mark,
    * so it is safe to re-run on every tab change and every filing.
+   *
+   * ROUND 12: sealed cards are in here too. She has looked at them — that is
+   * what "on the glass" means — and the slice records the glance against the
+   * page's sealed state, so the wax retires while the smudge marker stands and
+   * a later decipher raises wax again (engine/journal.ts, the round-12 block).
    */
-  const displayed = content ? displayedFragmentIds(content, volume, tab, { sealedIds }) : [];
+  const displayed = content ? displayedFragmentIds(content, volume, tab) : [];
   const displayedKey = displayed.join(',');
   useEffect(() => {
     if (displayed.length > 0) markFragmentsViewed(displayed);
@@ -126,7 +136,7 @@ export default function JournalView() {
   // never in the authored array) stay marked opened and readable.
   const openedIds = openedLetterIds(content.id, flags);
   const letters = arrivedLetters(content, volume, day, {
-    droughtDays: fragmentDroughtDays(dayRecords),
+    droughtDays: legibleDroughtDays(volume.volumeId, flags, dayRecords),
     openedIds,
   });
   const engravings = foundByKind(content, volume, 'engraving');
@@ -150,40 +160,74 @@ export default function JournalView() {
           Volume I — {content.title}{solved ? ' · closed' : ''}
         </div>
 
-        {/* Every tab dot is live persisted unread — it retires when the tab's
-            contents have been on the glass, and it does not come back. */}
+        {/* Two marks, two meanings, two places (round 12). The wax count is
+            live persisted unread — it retires when the tab's contents have been
+            on the glass and does not come back. The seal count is the tab's
+            share of the backlog: pages she has, that are not made out yet. A
+            tab can carry either, both, or neither, and each number is exactly
+            the number of items of ITS kind behind that tab (AAA 11.21). */}
         <nav className="jrn-tabs" aria-label="Journal tabs">
-          <TabButton label="The Word" noun="lines of the definition" active={tab === 'word'} unread={unread.word.length} onClick={() => switchTab('word')} />
-          <TabButton label="Engravings" noun="engravings" active={tab === 'engravings'} unread={unread.engravings.length} onClick={() => switchTab('engravings')} />
-          <TabButton label="Testimony" noun="pieces of testimony" active={tab === 'testimony'} unread={unread.testimony.length} onClick={() => switchTab('testimony')} />
-          <TabButton label="Letters" noun="letters" active={tab === 'letters'} unread={unread.letters.length} onClick={() => switchTab('letters')} />
+          <TabButton label="The Word" noun="lines of the definition" sealedNoun="lines not yet made out" active={tab === 'word'} unread={unread.word.length} sealed={unread.sealed.word.length} onClick={() => switchTab('word')} />
+          <TabButton label="Engravings" noun="engravings" sealedNoun="engravings not yet made out" active={tab === 'engravings'} unread={unread.engravings.length} sealed={unread.sealed.engravings.length} onClick={() => switchTab('engravings')} />
+          <TabButton label="Testimony" noun="pieces of testimony" sealedNoun="pieces not yet made out" active={tab === 'testimony'} unread={unread.testimony.length} sealed={unread.sealed.testimony.length} onClick={() => switchTab('testimony')} />
+          {/* Letters arrive whole or not at all — there is no sealed-letter
+              state, so the seal chain has nothing to say here. */}
+          <TabButton label="Letters" noun="letters" active={tab === 'letters'} unread={unread.letters.length} sealed={0} onClick={() => switchTab('letters')} />
         </nav>
 
         <div className="jrn-sheet">
           {tab === 'word' && <WordTab />}
           {tab === 'engravings' && (
             engravings.length === 0 ? (
-              <p className="jrn-empty">No engravings found yet. They are cut into lintels and inkstands about the house — the manor will file them as you pass.</p>
+              <EmptyPlate
+                mark={<RubbingMark />}
+                title="Nothing rubbed yet"
+                body="Lintels, inkstands, the brass under the hall clock — he cut notes to himself all over this house."
+                how="The manor takes the rubbing for you the moment you walk into a room that has one. The violet rooms have the most."
+              />
             ) : (
-              engravings.map((f) => (
-                <EngravingCard key={f.id} frag={f} isNew={isNew(f.id)} sealed={isSealed(f.id)} />
-              ))
+              <>
+                {engravings.map((f) => (
+                  <EngravingCard key={f.id} frag={f} isNew={isNew(f.id)} sealed={isSealed(f.id)} />
+                ))}
+                <SheetTail
+                  cap="Where the rest of them are"
+                  text="Cut into lintels, inkstands and the brass under the hall clock. The manor takes the rubbing as you pass — the violet rooms keep the most of him."
+                />
+              </>
             )
           )}
           {tab === 'testimony' && (
             testimony.length === 0 ? (
-              <p className="jrn-empty">No one has said anything worth filing. Yet. Try tea, and patience.</p>
+              <EmptyPlate
+                mark={<TeacupMark />}
+                title="No one has said anything worth filing"
+                body="Not yet. They will — this house has kept its mouth shut about him for eleven years and it is beginning to itch."
+                how="Sit with someone. Tea in the parlour, a gift, a second conversation on a second day; the ones who liked him best take the longest."
+              />
             ) : (
-              testimony.map((f) => (
-                <TestimonyCard key={f.id} frag={f} isNew={isNew(f.id)} sealed={isSealed(f.id)} />
-              ))
+              <>
+                {testimony.map((f) => (
+                  <TestimonyCard key={f.id} frag={f} isNew={isNew(f.id)} sealed={isSealed(f.id)} />
+                ))}
+                <SheetTail
+                  cap="How the rest of it comes out"
+                  text="Tea in the parlour, a gift, a second conversation on a second day. The ones who liked him best take the longest."
+                />
+              </>
             )
           )}
           {tab === 'letters' && (
             letters.length === 0 ? (
-              <p className="jrn-empty">The post tray is empty. Letters arrive overnight — Posy sees to it.</p>
+              <EmptyPlate
+                mark={<PostTrayMark />}
+                title="The post tray is empty"
+                body="Posy walks the drive before you are up. Whatever she finds, she leaves here, unopened, seal down."
+                how="Letters arrive overnight — the more of the house you have been through, the more there is for someone to write to you about."
+              />
             ) : (
-              letters.map((l) => (
+              <>
+                {letters.map((l) => (
                 <LetterCard
                   key={l.id}
                   letter={l}
@@ -208,7 +252,12 @@ export default function JournalView() {
                     }
                   }}
                 />
-              ))
+                ))}
+                <SheetTail
+                  cap="When the next one comes"
+                  text="Posy walks the drive before you are up and leaves whatever she finds here, seal down. The more of the house you have been through, the more there is for someone to write to you about."
+                />
+              </>
             )
           )}
         </div>
@@ -280,11 +329,27 @@ export default function JournalView() {
                    and cannot read it yet" is the whole point of the round-10
                    loop. Never required for anything (AAA 4.18). */
                 <div key={s.revealOrder} className="jrn-poem__line jrn-poem__line--sealed">
-                  {isNew(s.fragment.id) && <UnreadPip label="a leaf you have not made out" />}{' '}
+                  {/* Both marks, and they mean different things (round 12):
+                      wax = you have not looked at this leaf; ring = the hand
+                      is not made out yet. A leaf can wear both, either, or
+                      neither, and each is true on its own. */}
+                  {isNew(s.fragment.id) && <UnreadPip label="a leaf you have not looked at" />}
+                  <SealedPip label="a leaf not yet made out" />{' '}
                   <span className="jrn-smudge" aria-hidden>{smudge(s.fragment.text)}</span>
-                  <span className="jrn-sealed__label">
-                    A torn leaf, filed — the hand is too faded to make out. Solve a room.
-                  </span>
+                  {/* ROUND 13 (AAA 6.16): STATE ONLY, AND ONCE.
+                      This line used to end "Solve a room." — three times over on
+                      the Word tab, once per sealed slot, in body serif, taking
+                      more vertical room than the documents it annotated and
+                      pushing the sheet into internal scroll before the alphabet
+                      plate existed. With Ellery's nudge and the rail underneath
+                      it, one screen carried the same instruction FIVE times in
+                      three different verbs, which does not read as an invitation
+                      — it reads as an error repeated. The instruction now lives
+                      exactly once, in the rail (pinned outside the scroll, and
+                      already carrying the count and the tier hint); every other
+                      surface says only what a thing IS, and the seal pip carries
+                      the rest. */}
+                  <span className="jrn-sealed__label">A torn leaf, not yet made out.</span>
                 </div>
               ) : s.fragment ? (
                 <div key={s.revealOrder} className="jrn-poem__line">
@@ -391,9 +456,16 @@ export default function JournalView() {
         {stillSealed > 0 && (
           <div className="jrn-rail__backlog">
             <span className="jrn-rail__count" aria-hidden>{stillSealed}</span>
+            {/* THE ONE PLACE THE INSTRUCTION IS PRINTED (round 13, AAA 6.16).
+                The rail is pinned outside the scrolling sheet, it is on every
+                tab, and it is the only surface that also carries the count and
+                the tier hint — so it is the surface that can afford the
+                sentence. Verb discipline: the page is "made out", never
+                "deciphered"/"comes clear"; the action is "finish a room", never
+                "solve a room". Same two words in ui/moment/moments.ts. */}
             <span>
               {stillSealed === 1 ? 'page filed but not made out' : 'pages filed but not made out'}
-              {' · '}finishing a room makes them out{' '}
+              {' · '}finish a room to make {stillSealed === 1 ? 'it' : 'them'} out{' '}
               <span className="jrn-rail__hint">(more of them, the higher the room)</span>
             </span>
           </div>
@@ -418,37 +490,124 @@ export default function JournalView() {
 }
 
 /**
- * What an undeciphered page LOOKS like. Not the text: a run of ink-strokes the
- * same shape and length as the writing under it, so the card reads as a real
- * document she is holding rather than as an empty placeholder — and so nothing
- * of the fragment's content can leak through the DOM (the strokes are derived
- * from word LENGTHS only, and the element is aria-hidden; the sighted and the
- * screen-reader player learn exactly the same amount, which is nothing).
+ * One sealed document, in whichever tab it lives. State only (round 13, AAA
+ * 6.16) — the instruction belongs to the rail, which says it once and says it
+ * with the count. See the note on the Word tab's sealed line.
  */
-export function smudge(text: string, maxWords = 22): string {
-  return text
-    .split(/\s+/)
-    .slice(0, maxWords)
-    .map((w) => '·'.repeat(Math.max(1, Math.min(9, w.replace(/[^\p{L}]/gu, '').length))))
-    .join(' ');
-}
-
-/** One sealed document, in whichever tab it lives. */
 function SealedBody({ text }: { text: string }) {
   return (
     <>
       <p className="jrn-card__text jrn-smudge" aria-hidden>{smudge(text)}</p>
-      <div className="jrn-sealed__label">
-        Filed, and not yet made out — the ink has run. Finish a room and it comes clear.
-      </div>
+      <div className="jrn-sealed__label">Filed, and not yet made out — the ink has run.</div>
     </>
   );
 }
 
+/* ══ THE EMPTY PAGE (round 8) ════════════════════════════════════════════════
+ *
+ * An empty tab is where this game most looks unfinished, and the numbers said
+ * so: the composition harness measured the largest featureless vertical band on
+ * every surface, and the three journal tabs were the three worst in the app —
+ * Letters 63.5% of the glass, Testimony 55%, Engravings 50.2%. Each was one
+ * italic sentence at the top of a 340px sheet and then nothing at all, which
+ * reads as a rendering gap rather than as a page with room left on it.
+ *
+ * The replacement is a real composition rather than a longer sentence: a drawn
+ * mark, a Fell heading, the in-voice line about what lives here, and — pinned
+ * to the foot of the sheet, so the band is broken at the bottom as well as in
+ * the middle — the thing the player actually wants, which is HOW TO EARN IT.
+ * Nothing here is a control and nothing here is state: the unread/sealed
+ * vocabulary (§11.19–11.22) is untouched, because an empty tab by definition
+ * has nothing unread in it.
+ *
+ * The marks are inline SVG in `currentColor` at 1.6/1.1 stroke weights, no
+ * fill and no hue, so they cost nothing to load, invert correctly in the dark
+ * theme, survive the grayscale pass (AAA 6.3) and add no saturated pixels to
+ * the neutral budget (6.5).
+ */
+function EmptyPlate({
+  mark, title, body, how,
+}: { mark: React.ReactNode; title: string; body: string; how: string }) {
+  return (
+    <div className="jrn-void">
+      <div className="jrn-void__crest" aria-hidden />
+      <div className="jrn-void__plate">
+        {mark}
+        <h3 className="jrn-void__title">{title}</h3>
+        <p className="jrn-void__body">{body}</p>
+      </div>
+      <div className="jrn-void__how">
+        <span className="jrn-void__howcap">How it finds you</span>
+        <span className="jrn-void__howtext">{how}</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The foot of a filed tab (round 8). A tab with ONE card in it measured the
+ * same featureless band as an empty one — Engravings 50.2% of the glass,
+ * Letters 63.5% — because a sheet with a single short document on it is
+ * mostly parchment, and round 7's answer (ruling the page with a background
+ * gradient) is invisible to the eye and to the measurement alike: a gradient
+ * is not ink, it is wallpaper.
+ *
+ * This is the same sentence the empty plate ends on — where the rest of them
+ * are and what brings them — ruled off and pinned to the bottom of the sheet
+ * (`margin-top: auto`), so it holds the foot of a short list and simply
+ * follows a long one. It is copy, not state: no marker, no count, nothing the
+ * unread chain owns.
+ */
+function SheetTail({ cap, text }: { cap: string; text: string }) {
+  return (
+    <div className="jrn-tail">
+      <span className="jrn-tail__cap">{cap}</span>
+      <span className="jrn-tail__text">{text}</span>
+    </div>
+  );
+}
+
+/** A rubbing plate: brass, three cut lines, one corner lifted. */
+function RubbingMark() {
+  return (
+    <svg className="jrn-void__mark" viewBox="0 0 72 72" role="presentation" focusable="false">
+      <path d="M14 12h34l10 10v38H14z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M48 12v10h10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M22 34h28M22 42h28M22 50h18" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M22 26h12" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** A cup and saucer, waiting. (Testimony is bought with tea and patience.) */
+function TeacupMark() {
+  return (
+    <svg className="jrn-void__mark" viewBox="0 0 72 72" role="presentation" focusable="false">
+      <path d="M18 30h30v10a15 15 0 0 1-30 0z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M48 33h5a6 6 0 0 1 0 12h-2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M12 58h44" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M28 22c0-4 4-4 4-8M38 22c0-4 4-4 4-8" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" opacity="0.7" />
+    </svg>
+  );
+}
+
+/** A shallow tray with nothing in it, and the shadow of a letter that isn't. */
+function PostTrayMark() {
+  return (
+    <svg className="jrn-void__mark" viewBox="0 0 72 72" role="presentation" focusable="false">
+      <path d="M10 40h52v14a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M10 40l8-12h36l8 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M24 16h24v12H24z" fill="none" stroke="currentColor" strokeWidth="1.1" strokeDasharray="3 3" />
+      <path d="M24 16l12 8 12-8" fill="none" stroke="currentColor" strokeWidth="1.1" strokeDasharray="3 3" />
+    </svg>
+  );
+}
+
 function TabButton({
-  label, noun, active, unread, onClick,
+  label, noun, sealedNoun, active, unread, sealed, onClick,
 }: {
-  label: string; noun: string; active: boolean; unread: number; onClick: () => void;
+  label: string; noun: string; sealedNoun?: string;
+  active: boolean; unread: number; sealed: number; onClick: () => void;
 }) {
   /**
    * This used to render `dot && !active` — suppress the marker while the tab is
@@ -462,6 +621,11 @@ function TabButton({
    * The Letters tab is the exception that proves it: opening the tab shows a
    * row of unbroken seals, not their contents, so its count stands until she
    * breaks each seal (openLetter's write-once flag).
+   *
+   * ROUND 12: and the wax no longer stands in for the OTHER thing it was made
+   * to say. A tab whose sealed pages she has looked at loses its wax and keeps
+   * its ring — "nothing new here, and there is still something to make out" —
+   * which is two facts a single dot could never carry.
    */
   return (
     <button
@@ -470,7 +634,14 @@ function TabButton({
       aria-pressed={active}
     >
       {label}
+      {/* Wax pins to the corner; the seal rides INLINE after the label. Both
+          positions are ones nothing else occupies, which is the positional
+          half of the double-encoding — and measured at 390px a bottom-corner
+          ring landed on the descender of "The Word". A mark that has to sit
+          on top of the word it qualifies is a layout to fix, not a corner to
+          pick: inline participates in layout, so it can never overlap. */}
       <UnreadMark count={unread} noun={noun} corner />
+      <SealedMark count={sealed} noun={sealedNoun} />
     </button>
   );
 }
@@ -488,6 +659,7 @@ function EngravingCard({
     <div className={`jrn-card jrn-card--rubbing${sealed ? ' jrn-card--sealed' : ''}`}>
       <div className="jrn-card__source">
         {isNew && <UnreadPip />}
+        {sealed && <SealedPip label="an engraving not yet made out" />}
         {frag.source}
       </div>
       {sealed ? (
@@ -528,6 +700,7 @@ function TestimonyCard({
           <div className="jrn-card__speaker">{name}</div>
           <div className="jrn-card__source">
             {isNew && <UnreadPip />}
+            {sealed && <SealedPip label="testimony not yet made out" />}
             {frag.source}
           </div>
         </div>

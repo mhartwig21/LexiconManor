@@ -156,11 +156,22 @@
    for. Key height stays ≥44pt (AAA 6.19); width is the Wordle-parity width the
    house already ships next door, and every letter here is a free pencil mark,
    never a committing tap. */
+/* ROUND 8 — THE KEYBOARD INSIDE ITS OWN RULING.
+   AAA 6.19(b) does not exempt "a keyboard"; it exempts a keyboard that is
+   >=32px wide and >=48px TALL with no inter-key dead zone, and it says so
+   because iOS system keys are themselves ~32px wide. At 390x844 this row
+   measured 32.5x55.7 and was inside the ruling. At 375x667 it measured
+   31.9x44 — under the floor on BOTH axes, i.e. outside the exemption
+   altogether — and round 7 counted it as exempt anyway because the exemption
+   was being read as a list of selectors rather than as the numbers it is
+   written in. The keys reclaim the room's side padding at the small size
+   (an iOS keyboard is nearly edge-to-edge; ours was inset 14.4px a side for
+   no reason a thumb can feel) and the height floor is the ruled 48. */
 .mic-keys { display: flex; flex-direction: column; gap: 5px; }
 .mic-keys__row { display: flex; gap: 4px; justify-content: center; }
 .mic-key {
   flex: 1;
-  min-height: clamp(44px, 6.6vh, 56px);
+  min-height: clamp(48px, 6.6vh, 56px);
   border: 1px solid var(--paper-edge);
   border-radius: var(--radius-card);
   background: var(--paper-raised);
@@ -361,9 +372,16 @@
    whenever the keyboard is up. */
 @media (max-height: 700px) {
   .mic__head { display: none; }
-  .mic-keys { gap: 4px; }
+  .mic-keys { gap: 3px; }
   .mic-keys__row { gap: 3px; }
   .dk-sheet--dense { gap: 0.3rem 0.5rem; }
+  /* Round 8: the 12px the taller keys cost, taken out of the reserve that is
+     empty for most of the session — never out of the print. */
+  .mic-toastslot { min-height: 1.6rem; }
+  /* The keys take back the column's side padding so 10 of them clear the
+     ruled 32px width at 375 (measured 33.4). Nothing else in the column
+     moves — this is the keyboard block only. */
+  .mic-keys { margin-inline: -0.55rem; }
 }
 
 /* --------------------------------------------------------------------------

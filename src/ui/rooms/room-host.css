@@ -159,3 +159,92 @@ html.kb-open .room-host .mic__head,
 html.kb-open .room-host .m2__head {
   display: none;
 }
+
+/* ==========================================================================
+   THE UNFURNISHED ROOM (round 8 composition pass)
+
+   The room-kind fallback (RoomHost.tsx) measured a 456px featureless band —
+   54% of a 390x844 glass, the worst number in the whole harness — because it
+   was an h2, a sentence and a button pushed to 18vh with nothing underneath
+   them. It is also the only surface a player reaches when something has gone
+   wrong, so it is the last one that may look abandoned.
+
+   Same shape as the journal's empty tabs: crest, plate, footed exit. The exit
+   is pinned to the foot of a full-height column, so it is above the fold at
+   scroll 0 on every glass (AAA 11.1/11.3) rather than floating mid-page.
+   ========================================================================== */
+.room-host--unfurnished {
+  padding-inline: 1.1rem;
+}
+.rh-void {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 0 1rem;
+  text-align: center;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+.rh-void__crest {
+  flex: none;
+  height: 0.55rem;
+  position: relative;
+  background:
+    linear-gradient(var(--paper-edge), var(--paper-edge)) left center / calc(50% - 0.6rem) 1px no-repeat,
+    linear-gradient(var(--paper-edge), var(--paper-edge)) right center / calc(50% - 0.6rem) 1px no-repeat;
+}
+.rh-void__crest::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.42rem;
+  height: 0.42rem;
+  border: 1px solid var(--ink-faint);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.rh-void__plate {
+  margin: auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.rh-void__mark { width: 5rem; height: 5rem; color: var(--ink-faint); }
+.rh-void__title {
+  margin: 0;
+  font-family: var(--font-display);
+  /* AAA 6.6: the display face is never below 22px. */
+  font-size: var(--text-display-sm);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  max-width: 20ch;
+}
+.rh-void__body {
+  margin: 0;
+  max-width: 32ch;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+.rh-void__foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  border-top: 1px dashed var(--paper-edge);
+  padding-top: 0.7rem;
+}
+.rh-void__exit { min-height: var(--tap-target); }
+.rh-void__note { font-size: var(--text-sm); color: var(--ink-faint); max-width: 34ch; }
+
+@media (max-height: 700px) {
+  .rh-void { gap: 0.6rem; padding: 0.6rem 0 0.7rem; }
+  .rh-void__mark { width: 3.4rem; height: 3.4rem; }
+}

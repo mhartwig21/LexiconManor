@@ -158,8 +158,18 @@
      shell's container-query height, ui/rooms/room-host.css), which is the
      stage and nothing else. Measured budget at 390x844: stage 651.8 − head 52
      − deck 210 (toast slot included, it lives in the deck now) − 16 gaps
-     = 373 of leaf, i.e. 41.3px cells with the WHOLE leaf on the glass. */
-  max-width: min(100%, calc(var(--stage-h, 100vh) - 18.8rem));
+     = 373 of leaf, i.e. 41.3px cells with the WHOLE leaf on the glass.
+
+     ROUND 8 — THE LEDGER GETS ITS PIXELS BACK. AAA 6.19(a) grants this grid
+     its exemption on a MEASURED number: "the leaf is already edge-to-edge with
+     zero gutters (measured 43.3x43.3px)". It was not: the round-7 reserve
+     (18.8rem) capped the leaf at 351px on a 651.8px stage, so the shipped cell
+     was 39x39 and the doc was quoting a board the game had stopped drawing —
+     the exact shape of defect the exemption's own footnote exists to prevent.
+     The reserve is 17.1rem now, paid for by chrome and not by the board (the
+     subtitle goes at 900px rather than 760, and the column's gap tightens),
+     which puts the leaf at 378.2px and the cell at 42x42. */
+  max-width: min(100%, calc(var(--stage-h, 100vh) - 17.1rem));
   margin-inline: auto;
   flex: 0 0 auto;
   aspect-ratio: 1;
@@ -307,33 +317,48 @@
    price in its label ("· −2", "· −4") and the free ones print none, so the
    thing the bands were for (the price of a verb is never a surprise) survives
    the collapse. Reading order still runs free → priced, left to right. */
-.ch-toolbar { display: flex; flex-direction: row; gap: 0.3rem; }
+.ch-toolbar { display: flex; flex-direction: row; gap: 0.25rem; }
 .ch-tools { display: contents; }
 
 .ch-tool {
   flex: 1;
   min-height: var(--tap-target);
-  padding: 0.2rem 0.3rem;
+  padding: 0.15rem 0.2rem;
   border: 1px solid var(--paper-edge);
   border-radius: 999px;
   background: var(--paper-raised);
   color: var(--ink);
   font-family: var(--font-body);
-  /* Five verbs share the row at ~70px each on a 390px glass; the label wraps
-     to two or three lines inside the 44px key rather than truncating.
-     ROUND 7 TYPE AUDIT, reported and NOT fully fixed: 0.72rem measured 11.52px,
-     the smallest painted text in the game, on the room's free verbs — under
-     every floor in AAA 6.6. 0.8rem is as far as it goes without the labels
-     wrapping to a fourth line, and a fourth line is height taken straight off
-     the ledger leaf, which is the thing the room is for. Reaching the 15px
-     caption floor needs shorter verb copy or a two-row toolbar, both of which
-     belong to the room's owner, not to a CSS pass. */
-  font-size: 0.8rem;
+  /* ROUND 8 — THE FLOOR IS REACHED, and the way it was reached is the point.
+     Round 7 measured 0.8rem (12.8px) here and reported it unfixed: five verbs
+     share ~70px of a 390px glass, the labels wrapped to three lines, and a
+     third line is height taken straight off the ledger leaf — the thing the
+     room is for. The answer was never a smaller size; it was a shorter LINE.
+     The label is now two spans, a verb and its price, each on its own line by
+     construction (`flex-direction: column`), so the key is exactly two lines
+     tall whatever the copy does and both lines sit at the 15px caption floor.
+     The long in-voice phrasing moved to `aria-label`/`title` (SudokuView),
+     where the screen-reader player was already getting it. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  font-size: var(--text-sm);
   line-height: 1.15;
   cursor: pointer;
   transition: transform var(--dur-press), filter var(--dur-press);
   touch-action: manipulation;
 }
+.ch-tool__verb { display: block; }
+/* The price is the same size — it is a number she is deciding on, not a
+   footnote — but a shade back, so the verb leads the glance (AAA 11.7). */
+.ch-tool__price {
+  display: block;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.ch-tool--on .ch-tool__price { color: color-mix(in srgb, var(--paper) 82%, transparent); }
 /* U.1: `.is-pressed` lands from pointerdown (the capture-phase delegate in
    app/platform/boot.ts), so the press answers within a frame even where iOS
    Safari withholds `:active`. Both selectors, so nothing regresses. */
@@ -468,6 +493,15 @@
    Threshold 760 (not 700): an iPhone SE is 667 tall, but so is any 12-class
    phone in a compact standalone frame, and the ledger is the one board in the
    game that must be whole at rest. */
+/* Tall glass, but not a desk: the subtitle goes at 900px rather than 760, the
+   same threshold the Darkroom and the Linen Closet trim at, and the column's
+   gap comes in with it. Both are chrome; the ledger is the game, and this is
+   what pays for the 42px cell above (round 8). */
+@media (max-height: 900px) {
+  .ch { gap: 0.35rem; }
+  .ch__sub { display: none; }
+}
+
 @media (max-height: 760px) {
   .ch { gap: 0.35rem; padding-top: 0.35rem; }
   .ch__sub { display: none; }
@@ -484,12 +518,27 @@
      scripts/round5-capture.mjs. Restated against `--stage-h` (481.6px at
      375×667) rather than 100dvh so the insets can never eat it: 481.6 −
      11.5rem = 297.6, the same board the SE-class glass has always had.
-     KNOWN RESIDUAL, reported this round: at 375×667 nine cells + head + pad
-     genuinely do not fit a 481.6px stage, so the last row still sits behind
-     the sticky pad at rest and the stage scrolls to it. Shrinking the leaf to
-     fit would put the cells at 26.8px, which is worse; the honest fix is a
-     compacter pad and belongs to the room's owner. */
-  .ch-leaf { max-width: min(100%, calc(var(--stage-h, 100vh) - 11.5rem)); }
+     ROUND 8 — THE RESIDUAL IS CLOSED, and the compacter pad the round-7 note
+     asked for is what closed it. Measured before: column 533.5 in a 481.6
+     stage, so 9 of the 81 cells hit-tested as `.ch-toastslot` — the bottom
+     rank of the ledger was under the sticky deck at rest and only the stage's
+     own scroll reached it, which AAA 11.4 does not forgive for anything
+     load-bearing. The 51px came out of CHROME first (the nameplate goes
+     entirely at this size — the room is named on the blueprint she walked in
+     from, and RoomHost already hides it whenever the keyboard is up; the toast
+     line comes down to its longest shipped line; the pad keys sit on the 44pt
+     bar instead of 2px over it), and only the last ~9px out of the leaf. */
+  .ch-leaf { max-width: min(100%, calc(var(--stage-h, 100vh) - 12.1rem)); }
+}
+
+/* 667-tall glass (SE/8-class, and any 12-class phone in a compact standalone
+   frame). Everything trimmed here is chrome. */
+@media (max-height: 700px) {
+  .ch__head { display: none; }
+  .ch { gap: 0.3rem; padding-top: 0.3rem; }
+  .ch-toastslot { min-height: 1.5rem; }
+  .ch-key { min-height: 44px; }
+  .ch-pad { gap: 4px; }
 }
 
 /* Juice goes quiet; every state stays legible (AAA U.3). */

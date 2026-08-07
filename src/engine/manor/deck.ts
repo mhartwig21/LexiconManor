@@ -237,8 +237,8 @@ export const CARD_PREVIEWS: Record<string, string> = {
  * conversation that fills it cannot drift apart. Rendered by CabinetSheet.
  */
 export const UNLOCK_QUEST_NAMES: Record<string, string> = {
-  'posy.quest1.done': "Posy's lost word",
-  'posy.deputy': "Posy's deputy sash",
+  'posy.quest1.done': "Posy’s lost word",
+  'posy.deputy': "Posy’s deputy sash",
 };
 
 export interface UtilityEffect {

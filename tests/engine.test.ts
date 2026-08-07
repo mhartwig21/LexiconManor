@@ -49,6 +49,10 @@ const webPuzzle: WordWebPuzzle = {
     { theme: 'Iron ___', tier: 'blue', words: ['FIST', 'WILL', 'CURTAIN', 'MAN'] },
     { theme: '___ Bar', tier: 'purple', words: ['CANDY', 'SALAD', 'SPACE', 'CROW'] },
   ],
+  // BLOCK genuinely reads as both a basketball verb and (in "block bar") a
+  // ___ Bar candidate; CROW is the purple slot's own intruder. Round 8 made
+  // ambiguousWords required, so a fixture must now say what it traps.
+  ambiguousWords: ['BLOCK', 'CROW'],
 };
 
 const hivePuzzle: HivePuzzle = {

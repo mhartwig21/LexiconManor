@@ -333,7 +333,10 @@ describe('UNITS — the affinity tables are indexed by POINTS, never by rank', (
     expect(teaBonus(2)).not.toBe(TEA_BY_POINTS[rankFor(2)]);
     expect(teaBonus(3)).not.toBe(TEA_BY_POINTS[rankFor(3)]);
     // Rank saturates at 4 (14 points), so a rank-indexed pot could never pay
-    // the published ceiling of 11 that AAA 4.10d's day 6–10 curve is built on.
+    // the published ceiling (+13 since the round-12 retune) that AAA 4.10d's
+    // day 6–10 curve is built on. Asserted against `TEA_BY_POINTS.at(-1)`
+    // rather than the literal, so a tuning edit cannot outdate the assertion —
+    // only this comment, which is why the number is named here and nowhere else.
     const topByRank = Math.max(
       ...[0, 1, 2, 3, 4, 5, 6].map((p) => TEA_BY_POINTS[rankFor(p)]!),
     );

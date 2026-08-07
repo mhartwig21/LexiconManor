@@ -16,8 +16,30 @@
  * instance, closed in a finally. Sequential routes.
  *
  * Usage:
- *   node scripts/r7-compose-audit.mjs [--tag before|after] [--rm]
- *     --rm  runs the whole walk with prefers-reduced-motion: reduce
+ *   node scripts/r7-compose-audit.mjs [--tag before|after] [--rm] [--out <dir>]
+ *     --rm   runs the whole walk with prefers-reduced-motion: reduce
+ *     --out  output directory, relative to the repo root
+ *            (default docs/shots/round7/compose)
+ *
+ * ROUND 8 — THE EXEMPTION SPLIT. Round 7 reported one `smallTap` number per
+ * surface and the reader had to take on trust which of it AAA 6.19 forgives.
+ * That is not a number a critic can pass or fail, and it hid two genuine
+ * failures inside a bucket everyone had learned to wave through. The bucket is
+ * now four, and the classifier applies the WRITTEN ruling rather than a
+ * selector's say-so:
+ *
+ *   costedTap   — the control's own label prices it (−N steps / −N keys / a
+ *                 guess). AAA 6.19 forgives NOTHING here, on any surface.
+ *   ledgerTap   — 6.19(a): the Counting House's 9x9 leaf. Exempt from the
+ *                 number, never from the measurement.
+ *   keyboardTap — 6.19(b): a full-width alpha keyboard key, and exempt ONLY
+ *                 while it is inside the ruled floor (>=32 wide x >=48 tall,
+ *                 no inter-key dead zone). A key under 48 tall is outside its
+ *                 own exemption and falls through to `smallTap` — which is how
+ *                 the Linen Closet's 45.6px QWERTY was passing: it was never
+ *                 in the exempt selector list at all, so it was counted, but
+ *                 nothing said whether it should have been.
+ *   smallTap    — everything else. Real.
  */
 
 import { chromium } from 'playwright';
@@ -32,7 +54,9 @@ const args = process.argv.slice(2);
 const TAG = (args[args.indexOf('--tag') + 1] && !args[args.indexOf('--tag') + 1].startsWith('--'))
   ? args[args.indexOf('--tag') + 1] : 'before';
 const REDUCED = args.includes('--rm');
-const OUT = resolve(ROOT, 'docs/shots/round7/compose');
+const OUT_ARG = (args[args.indexOf('--out') + 1] && !args[args.indexOf('--out') + 1].startsWith('--'))
+  ? args[args.indexOf('--out') + 1] : 'docs/shots/round7/compose';
+const OUT = resolve(ROOT, OUT_ARG);
 mkdirSync(OUT, { recursive: true });
 
 const VIEWPORTS = [
@@ -97,7 +121,45 @@ const SAFE_AREA_SHIM = /* js */ `(() => {
     /env\\(\\s*safe-area-inset-(top|bottom|left|right)\\s*(?:,[^()]*)?\\)/g,
     (_, side) => INSET[side],
   );
+
+  /* ROUND 8 — THE SHIM STOPPED EATING THE PAGE.
+   *
+   * Round 7's version assigned the whole declaration block back:
+   *   rule.style.cssText = sub(rule.style.cssText)
+   * because a per-longhand rewrite silently no-ops on a shorthand carrying an
+   * env() (Chrome stores it as a pending-substitution value and
+   * getPropertyValue('padding-bottom') answers ""). True — and the fix took
+   * every OTHER var()-carrying shorthand in the same block down with it.
+   * MEASURED: '.jrn-sheet' declares both
+   *     padding: … calc(0.9rem + env(safe-area-inset-bottom))
+   *   and
+   *     background: <two gradients>, var(--paper-raised)
+   * and after one cssText round-trip the rule's background-image is the empty
+   * string and the computed value is 'none'. So the journal's ruled page —
+   * added in round 7 precisely BECAUSE the sheet measured as featureless
+   * parchment — was being erased by the instrument that photographed it, in
+   * every still round 7 and round 8 produced. The stills said "still blank",
+   * the CSS said "ruled", and both were telling the truth about different
+   * documents.
+   *
+   * The rewrite is additive now. Each inset-bearing declaration is lifted OUT
+   * of the rule's own text (rule.cssText keeps the authored env(), verified),
+   * substituted, and re-declared !important in one appended stylesheet, in
+   * source order, under the rule's own selector and inside the same media
+   * condition. Nothing is ever assigned back into an existing block, so no
+   * declaration the shim did not come for can be lost. */
   let n = 0;
+  const decls = [];
+  const conditionsOf = (rule) => {
+    const out = [];
+    let r = rule.parentRule;
+    while (r) {
+      if (r.conditionText) out.unshift(r.conditionText);
+      else if (r.media && r.media.mediaText) out.unshift(r.media.mediaText);
+      r = r.parentRule;
+    }
+    return out;
+  };
   const walk = (rules) => {
     for (const rule of rules) {
       /* NOT "if (rule.cssRules) recurse; else inspect" — since CSS Nesting
@@ -105,23 +167,46 @@ const SAFE_AREA_SHIM = /* js */ `(() => {
          that shape recursed past every declaration in the app and reported
          "0 rules rewritten" while claiming the phone had no home indicator.
          Inspect first, then descend. */
-      if (rule.style && /safe-area-inset/.test(rule.cssText)) {
-      /* Rewrite the whole declaration block. Per-longhand setProperty() is not
-         enough: 'padding: calc(…) 0 max(10px, env(safe-area-inset-bottom))' is
-         a SHORTHAND carrying an env(), which Chrome stores as a pending-
-         substitution value — getPropertyValue('padding-bottom') answers "" and
-         the rewrite silently no-ops. That is exactly the rule the blueprint
-         footer depends on, so the first version of this shim measured a phone
-         with no home indicator and called it a pass. */
-        const before = rule.style.cssText;
-        const after = sub(before);
-        if (after !== before) { n++; try { rule.style.cssText = after; } catch { /* read-only */ } }
+      if (rule.style && rule.selectorText && /safe-area-inset/.test(rule.cssText)) {
+        const body = rule.cssText.slice(rule.cssText.indexOf('{') + 1, rule.cssText.lastIndexOf('}'));
+        /* Split on top-level semicolons only: values carry commas and nested
+           parens (calc/max/env/color-mix), never an unbracketed ';'. */
+        let depth = 0, cur = '';
+        const parts = [];
+        for (const chpt of body) {
+          if (chpt === '(') depth++;
+          else if (chpt === ')') depth--;
+          if (chpt === ';' && depth === 0) { parts.push(cur); cur = ''; } else cur += chpt;
+        }
+        if (cur.trim()) parts.push(cur);
+        for (const part of parts) {
+          if (!/safe-area-inset/.test(part)) continue;
+          const i = part.indexOf(':');
+          if (i < 0) continue;
+          const prop = part.slice(0, i).trim();
+          const value = sub(part.slice(i + 1).replace(/!important/g, '').trim());
+          if (!prop || !value) continue;
+          decls.push({ sel: rule.selectorText, conds: conditionsOf(rule), prop, value });
+          n++;
+        }
       }
       if (rule.cssRules && rule.cssRules.length) walk(rule.cssRules);
     }
   };
   for (const sheet of document.styleSheets) {
     try { walk(sheet.cssRules); } catch { /* cross-origin: none of ours */ }
+  }
+  if (decls.length) {
+    let css = '';
+    for (const d of decls) {
+      let block = d.sel + '{' + d.prop + ':' + d.value + ' !important}';
+      for (let i = d.conds.length - 1; i >= 0; i--) block = '@media ' + d.conds[i] + '{' + block + '}';
+      css += block + '\\n';
+    }
+    const tag = document.createElement('style');
+    tag.dataset.saShim = '1';
+    tag.textContent = css;
+    document.head.appendChild(tag);
   }
   /* Inline styles too (React sometimes writes them). */
   for (const el of document.querySelectorAll('[style*="safe-area-inset"]')) {
@@ -130,9 +215,9 @@ const SAFE_AREA_SHIM = /* js */ `(() => {
       if (/safe-area-inset/.test(v)) { el.style.setProperty(prop, sub(v)); n++; }
     }
   }
-  /* Idempotent: after the first pass no rule mentions the insets any more, so
-     a later call legitimately rewrites nothing. Distinguish that from "the
-     shim never worked", which must be loud. */
+  /* Idempotent: the override sheet stays, and a second call finds the same
+     authored rules and re-emits the same overrides. Distinguish "nothing left
+     to do" from "the shim never worked", which must be loud. */
   if (n) document.documentElement.dataset.saShim = '1';
   return n || (document.documentElement.dataset.saShim ? -1 : 0);
 })()`;
@@ -145,9 +230,17 @@ const MEASURE = /* js */ `(() => {
   const HOME_BAND = 34;            // iPhone home-indicator band, in CSS px
   const TAP = 44;                  // AAA 6.19
   const INTERACTIVE = 'button, a[href], [role="button"], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-  /* On-screen keyboards are excepted at benchmark parity (SB/Wordle keys are
-     under 44 tall too); they are still recorded, just in their own bucket. */
-  const KEYBOARD = '.mic-key, .ch-key, .hv-key, .kbd, [data-keyboard-key]';
+  /* AAA 6.19(b) — full-width alpha keyboards, at benchmark parity (iOS system
+     keys are ~32px wide). Membership of this list is NOT the exemption: the
+     RULED FLOOR below is, and a key outside it is reported as a real failure.
+     .lc-key (the Linen Closet's QWERTY) was missing here through round 7. */
+  const KEYBOARD = '.mic-key, .ch-key, .hv-key, .lc-key, .dk-key, .kbd, [data-keyboard-key]';
+  const KEY_FLOOR = { w: 32, h: 48 };
+  /* AAA 6.19(a) — the 9x9 ledger grid, and nothing else. */
+  const LEDGER = '.ch-cell';
+  /* A COSTED control prices itself in its own label (the room copy convention:
+     "· −2", "−2 steps", "−1 key"). 6.19 forgives none of these, ever. */
+  const COSTED = /[−–—-]\s*\d+(\s*(steps?|keys?|gems?|guess))?/i;
 
   /* Screen-reader-only text is CLIPPED ON PURPOSE (1px box + clip-path). It is
      not a legibility defect — it is never painted — so it is excluded from the
@@ -210,7 +303,8 @@ const MEASURE = /* js */ `(() => {
     vw, vh,
     pageScrollX: document.scrollingElement.scrollWidth - document.scrollingElement.clientWidth,
     pageScrollY: document.scrollingElement.scrollHeight - document.scrollingElement.clientHeight,
-    past: [], clipped: [], smallTap: [], keyboardTap: [], homeBand: [], buried: [],
+    past: [], clipped: [], smallTap: [], keyboardTap: [], ledgerTap: [], costedTap: [],
+    homeBand: [], buried: [], offPanel: [],
     contrast: [], tinyType: [], typeRamp: {}, gaps: [],
   };
 
@@ -289,6 +383,43 @@ const MEASURE = /* js */ `(() => {
   const OVERLAY = '.chr-scene, .dlg, .bp-modal, .mom, .chr-dusk';
   const overlays = [...document.querySelectorAll(OVERLAY)];
   const top = overlays.length ? overlays[overlays.length - 1] : null;
+
+  /* ROUND 8 — CLIPPED IS NOT BURIED, AND IT IS NOT IN THE HOME BAND EITHER.
+     A control inside an internally-scrolling panel keeps its LAYOUT rect
+     wherever the scroll has left it, so a list row two rows past the end of a
+     scroller reports a bounding box sitting over whatever is painted below the
+     panel — and both the burial test and the home-indicator test believed it.
+     Neither is true: the panel clips it, so it is neither painted there nor
+     tappable there. It is simply scrolled out of view, which is what a
+     scroller is for. Anything whose rect does not intersect every clipping
+     ancestor's rect is recorded as offPanel and excluded from the other two
+     buckets — the finding is kept, it just stops wearing a failure's name.
+     (This is the same class of error as measuring env() on a desktop browser:
+     the number was real, it was describing a different thing.) */
+  const clipRectOf = (el) => {
+    let n = el.parentElement, box = null;
+    while (n && n.nodeType === 1) {
+      const s = getComputedStyle(n);
+      if (/(auto|scroll|hidden|clip)/.test(s.overflowY) || /(auto|scroll|hidden|clip)/.test(s.overflowX)) {
+        const r = n.getBoundingClientRect();
+        box = box
+          ? { top: Math.max(box.top, r.top), bottom: Math.min(box.bottom, r.bottom),
+              left: Math.max(box.left, r.left), right: Math.min(box.right, r.right) }
+          : { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+      }
+      n = n.parentElement;
+    }
+    return box;
+  };
+  /* "Off panel" means the element's CENTRE — the point both tests probe — is
+     outside what its clipping ancestors actually show. A row half-scrolled is
+     still on glass and still answerable for both criteria. */
+  const offPanel = (el, r) => {
+    const c = clipRectOf(el);
+    if (!c) return false;
+    const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+    return cy < c.top - 0.5 || cy > c.bottom + 0.5 || cx < c.left - 0.5 || cx > c.right + 0.5;
+  };
   for (const el of document.querySelectorAll(INTERACTIVE)) {
     const r = el.getBoundingClientRect();
     const cs = getComputedStyle(el);
@@ -296,9 +427,31 @@ const MEASURE = /* js */ `(() => {
     if (cs.pointerEvents === 'none') continue;
     const rec = { sel: path(el), text: txt(el), w: +r.width.toFixed(1), h: +r.height.toFixed(1),
       top: +r.top.toFixed(1), bottom: +r.bottom.toFixed(1) };
-    const isKey = el.matches(KEYBOARD);
-    if (r.width < TAP - 0.5 || r.height < TAP - 0.5) (isKey ? out.keyboardTap : out.smallTap).push(rec);
-    if (r.bottom > vh - HOME_BAND && r.top < vh) out.homeBand.push(rec);
+    const hidden = offPanel(el, r);
+    if (hidden) out.offPanel.push(rec);
+    /* ---- AAA 6.19, applied as written (round 8) -------------------------- */
+    if (r.width < TAP - 0.5 || r.height < TAP - 0.5) {
+      const costed = COSTED.test(rec.text);
+      const isKey = el.matches(KEYBOARD);
+      const inKeyFloor = isKey
+        && r.width >= KEY_FLOOR.w - 0.5 && r.height >= KEY_FLOOR.h - 0.5;
+      const isLedger = el.matches(LEDGER);
+      if (costed) {
+        /* A costed control is never exempt, whatever else it matches. */
+        out.costedTap.push(rec);
+        out.smallTap.push(rec);
+      } else if (isLedger) {
+        out.ledgerTap.push(rec);          // 6.19(a): exempt, still measured
+      } else if (inKeyFloor) {
+        out.keyboardTap.push(rec);        // 6.19(b): exempt, still measured
+      } else {
+        /* Includes a KEYBOARD-class key that has fallen OUT of its ruled
+           floor — outside the exemption is the same as never having had one. */
+        out.smallTap.push(rec);
+      }
+    }
+    if (!hidden && r.bottom > vh - HOME_BAND && r.top < vh) out.homeBand.push(rec);
+    if (hidden) continue;                            // clipped by its own scroller
     if (top && !top.contains(el)) continue;          // legitimately behind a modal
     const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
     if (!(hit && (hit === el || el.contains(hit) || hit.contains(el)))) {
@@ -373,8 +526,10 @@ try {
         if (m.past.length) badge.push(`past:${m.past.length}`);
         if (m.clipped.length) badge.push(`clipped:${m.clipped.length}`);
         if (m.smallTap.length) badge.push(`tap:${m.smallTap.length}`);
+        if (m.costedTap.length) badge.push(`COSTED-tap:${m.costedTap.length}`);
         if (m.homeBand.length) badge.push(`home:${m.homeBand.length}`);
         if (m.buried.length) badge.push(`buried:${m.buried.length}`);
+        if (m.offPanel.length) badge.push(`off-panel:${m.offPanel.length}`);
         if (m.contrast.length) badge.push(`contrast:${m.contrast.length}`);
         if (m.tinyType.length) badge.push(`tiny:${m.tinyType.length}`);
         log(`  ${name} @ ${vp.name}/${theme}: ${badge.length ? badge.join(' ') : 'clean'} · dead band ${m.deadBand.px}px (${m.deadBand.pctOfViewport}%) · ink ${m.inkCoverage}%`);
@@ -669,7 +824,13 @@ try {
      appearance the criterion is actually about. */
   if (await page.$('.chr-dusk')) {
     await page.addStyleTag({ content:
-      '.chr-dusk, .chr-dusk__line, .chr-dusk__text, .chr-dusk__skip { animation-delay: -8s !important; }' });
+      /* Round 8: `.chr-dusk__candle` joins the list. It was added to the veil
+         to fill its 372px featureless band and then measured at opacity 0,
+         because it fades in over 1.4-3.0s and this survey jumps every dusk
+         animation to its last frame — so the composition fix looked like it
+         had done nothing. A surface whose resting appearance is what the
+         criterion is about has to have EVERY one of its animations jumped. */
+      '.chr-dusk, .chr-dusk__line, .chr-dusk__text, .chr-dusk__skip, .chr-dusk__candle { animation-delay: -8s !important; }' });
     await survey('17-dusk', { settle: 400 });
     await page.click('.chr-dusk__skip').catch(() => {});
     await sleep(1200);

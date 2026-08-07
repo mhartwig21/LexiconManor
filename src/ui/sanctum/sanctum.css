@@ -381,7 +381,10 @@
 @media (max-height: 700px) {
   .snc { gap: 0.4rem; }
   .snc-portrait { max-height: 17.5vh; }
-  .snc__title { font-size: 1.15rem; }
+  /* Round 8 type audit (AAA 6.6): 1.15rem is 18.4px of IM Fell English on the
+     one screen the whole campaign points at, and the display face is never
+     below 22px. 1.4rem, which the door's own header has room for at 375. */
+  .snc__title { font-size: 1.4rem; }
   .snc-line { min-height: 3.4rem; }
   .snc-line--nudge { min-height: 1.8rem; }
   .snc-door { padding: 0.7rem 0.8rem 0.8rem; gap: 0.55rem; }

@@ -141,21 +141,60 @@ function outcomeOf(s: WordWebRoomState): RoomOutcome {
 }
 
 /**
+ * ROUND 12 — the identity a naming option has to be unique BY is the string
+ * the player reads, not the string the JSON stores.
+ *
+ * `content/generated/word-web.json` was half-typeset (168 themes with curly
+ * marks, 115 with straight), and `WordWebView` prints every label through
+ * `typeset()`. Board web-d06 therefore stored `Can Follow “TEA”` as the true
+ * theme and `Can Follow "TEA"` as one of its decoys — two different strings,
+ * so the `d !== theme` filter passed them both, and the naming act offered the
+ * SAME LABEL TWICE with one copy of it wrong. Tapping the wrong twin forfeits
+ * the perfect grade and its +2 (AAA 2.11) with nothing on screen to tell them
+ * apart, which is the exact unfairness §2 exists to forbid.
+ *
+ * The corpus is uniformly typeset now and the lint keeps it that way
+ * (content/lint-typography.ts walks `content/generated/**` as of this round),
+ * but the fairness of the naming act must not depend on the corpus being
+ * tidy: options are de-duplicated by the label AS SHOWN — quote handedness
+ * folded away, since no pair of labels is ever meant to differ only by it.
+ * (Folded here rather than by importing `typeset()`: nothing in `src/engine`
+ * imports from `content/`, and this is a comparison key, not a renderer.)
+ */
+const asShown = (label: string) => label
+  .replace(/[“”]/g, '"')
+  .replace(/[‘’]/g, "'")
+  .replace(/\s+/g, ' ')
+  .trim()
+  .toLowerCase();
+
+/**
  * Decoy labels for the naming act: prefer the generator's authored pair,
  * fall back to plausible same-tier themes drawn deterministically from the pool.
+ * Always three labels the player can tell apart, or as many distinct ones as
+ * the shelf can supply.
  */
 function namingOptions(puzzle: WordWebPuzzleEx, theme: string, tier: string): string[] {
+  const taken = new Set([asShown(theme)]);
+  const take = (label: string): boolean => {
+    const shown = asShown(label);
+    if (taken.has(shown)) return false;
+    taken.add(shown);
+    return true;
+  };
+
   const group = puzzle.groups.find((g) => g.theme === theme);
-  let decoys = (group?.decoys ?? []).filter((d) => d !== theme).slice(0, 2);
+  let decoys = (group?.decoys ?? []).filter(take).slice(0, 2);
   if (decoys.length < 2) {
     const rng = createRng([...puzzle.id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 7));
     const pool = WORD_WEB_POOL
       .filter((p) => p.id !== puzzle.id)
-      .flatMap((p) => p.groups.filter((g) => g.tier === tier).map((g) => g.theme))
-      .filter((t) => t !== theme && !decoys.includes(t));
-    while (decoys.length < 2 && pool.length > 0) {
+      .flatMap((p) => p.groups.filter((g) => g.tier === tier).map((g) => g.theme));
+    // Bounded: the pool is finite and every miss is a duplicate we have already
+    // seen, so the walk terminates even when the shelf runs out of labels.
+    for (let i = 0; i < pool.length && decoys.length < 2; i++) {
       const t = pick(rng, pool);
-      if (!decoys.includes(t)) decoys = [...decoys, t];
+      if (take(t)) decoys = [...decoys, t];
     }
   }
   const rng = createRng([...puzzle.id].reduce((h, ch) => (h * 33 + ch.charCodeAt(0)) | 0, 13));

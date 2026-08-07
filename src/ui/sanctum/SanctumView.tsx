@@ -61,7 +61,7 @@ import { useLocation } from 'wouter';
 import { useManorStore } from '../../app/store';
 import { getVolumeContent } from '../../app/content/volumes';
 import {
-  arrivalShade, definitionSlots, guessVerdict, landingFlag, sanctumReadiness,
+  arrivalShade, definitionSlots, guessVerdict, landingFlag, sanctumReadiness, smudge,
   type ArrivalShade,
 } from '../../engine/journal';
 import { applyGuess, hasGuessedOnDay, sealedFragmentIds } from '../../engine/volume';
@@ -438,7 +438,25 @@ export default function SanctumView() {
   }
 
   if (phase === 'epilogue' || alreadySolved) {
-    const slots = definitionSlots(content, volume);
+    /**
+     * ROUND 13 (AAA 4.15) — ONE RULE FOR BOTH SURFACES.
+     *
+     * This called `definitionSlots(content, volume)` with no `sealedIds`, so
+     * the ceremony printed lines IN CLEAR that the Journal — which this very
+     * screen names as the permanent trace ("the journal keeps the whole of
+     * it") — was rendering as dot-runs two taps later, on a volume that was
+     * over. The information she had earned existed legibly only in a transient
+     * scene, which 4.15 forbids outright.
+     *
+     * The primary fix is in the model: `guessAtSanctum` makes the whole backlog
+     * out at the door (the volume closed, so the house gave her the rest), so
+     * in normal play this set is empty and the epilogue reads exactly as it
+     * always did. Passing it anyway is the belt: a save carried over from
+     * before that change — solved with pages still smudged — now reads the same
+     * on the ceremony as it does in the archive, instead of the two disagreeing.
+     */
+    const sealedIds = sealedFragmentIds(volume.volumeId, flags);
+    const slots = definitionSlots(content, volume, { sealedIds });
     // Modal only while the CEREMONY is running. The `alreadySolved` variant is
     // an ordinary page — it carries a BackLink and the player may legitimately
     // retire from it — so it must NOT claim modality (11.21's "no marker where
@@ -453,7 +471,11 @@ export default function SanctumView() {
             <div className="snc-epilogue__word">{answer}</div>
             <div className="snc-epilogue__poem">
               {slots.map((s) =>
-                s.fragment ? (
+                s.fragment && s.sealed ? (
+                  <span key={s.revealOrder} aria-label="a leaf not yet made out">
+                    {smudge(s.fragment.text)}
+                  </span>
+                ) : s.fragment ? (
                   <span key={s.revealOrder}>{quoted(s.fragment.text)}</span>
                 ) : (
                   <span key={s.revealOrder} style={{ letterSpacing: '0.3em' }}>— · —</span>

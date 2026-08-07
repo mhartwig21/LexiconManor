@@ -1,0 +1,177 @@
+{
+ "boardId": "web-b21",
+ "tier": 2,
+ "herrings": [
+  {
+   "words": [
+    "BEGINNING",
+    "CINNAMON",
+    "GRINNED",
+    "MINNOW",
+    "REEDS",
+    "SPINNER"
+   ],
+   "relation": "doubled-letter"
+  }
+ ],
+ "groups": [
+  {
+   "theme": "Things in a Pond",
+   "tier": "yellow",
+   "words": [
+    "LILYPAD",
+    "FROG",
+    "REEDS",
+    "MINNOW"
+   ]
+  },
+  {
+   "theme": "Things That Can Be Skipped",
+   "tier": "purple",
+   "words": [
+    "STONE",
+    "MEAL",
+    "ROPE",
+    "TRACK"
+   ]
+  },
+  {
+   "theme": "Contains “INN”",
+   "tier": "blue",
+   "words": [
+    "BEGINNING",
+    "CINNAMON",
+    "SPINNER",
+    "GRINNED"
+   ]
+  },
+  {
+   "theme": "Silent “B”",
+   "tier": "green",
+   "words": [
+    "PLUMBER",
+    "CRUMB",
+    "DEBTOR",
+    "LIMB"
+   ]
+  }
+ ],
+ "scattered": {
+  "fired": true,
+  "words": [
+   "LILYPAD",
+   "STONE",
+   "BEGINNING",
+   "PLUMBER"
+  ],
+  "toast": {
+   "text": "No two of these share a thread. · −2 steps",
+   "bit": null,
+   "box": {
+    "y": 633.9,
+    "h": 21.8,
+    "w": 232.5
+   },
+   "inView": true,
+   "mainStyle": {
+    "fs": "15px",
+    "color": "rgb(140, 43, 43)",
+    "ff": "EB Garamond",
+    "display": "block",
+    "opacity": "0"
+   },
+   "bitStyle": null
+  },
+  "steps": 400
+ },
+ "oneaway": {
+  "fired": true,
+  "words": [
+   "LILYPAD",
+   "FROG",
+   "REEDS",
+   "STONE"
+  ],
+  "toast": {
+   "text": "One away… · −2 steps",
+   "bit": null,
+   "box": {
+    "y": 632.5,
+    "h": 21.8,
+    "w": 122.9
+   },
+   "inView": true,
+   "mainStyle": {
+    "fs": "15px",
+    "color": "rgb(140, 43, 43)",
+    "ff": "EB Garamond",
+    "display": "block",
+    "opacity": "0.287067"
+   },
+   "bitStyle": null
+  },
+  "steps": 400
+ },
+ "herring": {
+  "fired": true,
+  "words": [
+   "BEGINNING",
+   "CINNAMON",
+   "GRINNED",
+   "PLUMBER"
+  ],
+  "toast": {
+   "text": "One away… · −2 steps",
+   "bit": null,
+   "box": {
+    "y": 633.9,
+    "h": 21.8,
+    "w": 122.9
+   },
+   "inView": true,
+   "mainStyle": {
+    "fs": "15px",
+    "color": "rgb(140, 43, 43)",
+    "ff": "EB Garamond",
+    "display": "block",
+    "opacity": "0"
+   },
+   "bitStyle": null
+  },
+  "steps": 400
+ },
+ "twotwo": {
+  "fired": true,
+  "words": [
+   "BEGINNING",
+   "CINNAMON",
+   "PLUMBER",
+   "CRUMB"
+  ],
+  "toast": {
+   "text": "Two of these share a thread. · −2 steps",
+   "bit": null,
+   "box": {
+    "y": 633.9,
+    "h": 21.8,
+    "w": 214
+   },
+   "inView": true,
+   "mainStyle": {
+    "fs": "15px",
+    "color": "rgb(140, 43, 43)",
+    "ff": "EB Garamond",
+    "display": "block",
+    "opacity": "0"
+   },
+   "bitStyle": null
+  },
+  "steps": 400
+ },
+ "nudge": {
+  "text": "A nudge from the shelves · −2 steps",
+  "h": 44,
+  "inView": true,
+  "hit": "self"
+ }
+}

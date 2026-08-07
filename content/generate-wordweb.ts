@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { createRng, pick, shuffle } from '../src/engine/rng';
 import { loadPhonetics } from './lib/phonetics';
 import { toneOk } from './generate-gate';
+import { typesetDeep } from './lib/typography';
 import { tierLabel } from '../src/engine/rooms/adapters/tier-select';
 import type { Tier, WordWebPuzzle } from '../src/engine/types';
 
@@ -227,7 +228,7 @@ const WORDPLAY_BANK: BankGroup[] = [
   { theme: 'Silent "L"', words: ['CALM', 'WOULD', 'SALMON', 'YOLK', 'PALM', 'HALF', 'CHALK', 'FOLK'] },
   { theme: 'Silent "W"', words: ['WRENCH', 'ANSWER', 'WRINKLE', 'AWRY', 'WRIST', 'WRAP', 'SWORD', 'WREATH'] },
   { theme: 'Silent Letters at the End', words: ['COMB', 'LAMB', 'HYMN', 'COLUMN', 'AUTUMN', 'THUMB', 'CRUMB', 'SOLEMN'] },
-  { theme: 'Hidden Numbers', words: ['CANINE', 'OFTEN', 'HONEST', 'STONEWARE', 'ATONE', 'KITTEN', 'THREAD', 'MONEY'] },
+  { theme: 'Hidden Numbers', words: ['CANINE', 'OFTEN', 'HONEST', 'STONEWARE', 'ATONE', 'KITTEN', 'FEMININE', 'MONEY'] },
   { theme: 'Rhymes with "TREE"', words: ['KEY', 'QUAY', 'DEBRIS', 'FLEA', 'AGREE', 'DEGREE', 'MARQUEE', 'DECREE'] },
   { theme: 'Silent "H"', words: ['GHOST', 'RHYME', 'WHISTLE', 'SCHEME', 'HONEST', 'HOUR', 'RHUBARB', 'GHERKIN'] },
   { theme: 'Anagrams of "NOTES"', words: ['STONE', 'TONES', 'ONSET', 'STENO'] },
@@ -278,12 +279,40 @@ const WORDPLAY_BANK: BankGroup[] = [
   { theme: 'Add a "P" for a New Word', words: ['LANE', 'RIDE', 'LUMP', 'EACH', 'LATE', 'RIME', 'ANTS', 'LOUGH'] },
   { theme: 'Drop the First Letter for a New Word', words: ['BRAIN', 'CHAIR', 'STONE', 'PLACE', 'SPARK', 'CLOVE', 'TRAIL', 'BREED'] },
   { theme: 'Drop the Last Letter for a New Word', words: ['HEARTH', 'PLANET', 'STARE', 'CLOVER', 'CARTON', 'BRANDY', 'SHEEP', 'GRAPES'] },
-  { theme: 'Hidden Insects', words: ['ANTLER', 'BEETROOT', 'MOTHER', 'PLANTAIN', 'CANTALOUPE', 'BEEHIVE', 'WASPISH', 'MIDGET'] },
-  { theme: 'Hidden Trees', words: ['PINEAPPLE', 'ASHAMED', 'FIRST', 'HELMET', 'PALMISTRY', 'OAKUM', 'BEECHNUT', 'SPINELESS'] },
-  { theme: 'Hidden Birds', words: ['CROWD', 'TOWEL', 'HENCE', 'GULLIBLE', 'SWALLOWED', 'BOWLING', 'CRANES', 'HAWKER'] },
-  { theme: 'Hidden Fruits', words: ['PLUMBER', 'FIGURE', 'DATED', 'PEARL', 'LIMEADE', 'GRAPEVINE', 'MELONS', 'CHERISH'] },
-  { theme: 'Hidden Vegetables', words: ['PEASANT', 'CORNER', 'BEETLE', 'KALEIDOSCOPE', 'YAMS', 'LEEKS', 'PEASE', 'OKRAS'] },
-  { theme: 'Hidden Musical Instruments', words: ['ORGANIC', 'HARPOON', 'VIOLATED', 'CELLOPHANE', 'DRUMSTICK', 'LUTES', 'PIANOS', 'TUBAS'] },
+  /**
+   * ROUND 12 — "HIDDEN X" MEANS HIDDEN (AAA 2.9 [BEAT], and the tone gate).
+   *
+   * Two defects lived in these six pools and both shipped.
+   *
+   *   1. MIDGET carried MIDGE here, and web-44 set it in Fell caps on a tile.
+   *      It is a slur for people with dwarfism; it passed only because
+   *      TONE_WORDS had no entry for it. Gated now (content/generate-gate.ts),
+   *      and `assertBankIsClean()` below lints the POOLS at build time so the
+   *      next one cannot enter the same way — until round 12 the gate ran on
+   *      composed boards only, so a pool member the composer never happened to
+   *      draw was never read by anything.
+   *   2. Half of three shipped boards falsified their own category: web-28's
+   *      "Hidden Vegetables" printed LEEKS and PEASE, web-46's "Hidden Musical
+   *      Instruments" printed LUTES and TUBAS, web-43's "Hidden Birds" printed
+   *      CRANES. Those are the noun with a plural on it — the vegetable is not
+   *      hidden inside anything, it IS the tile. A board that teaches "the bird
+   *      is concealed" in one half and "the bird is printed" in the other is
+   *      the exact fairness complaint Connections gets and this generator
+   *      exists to fix. Every bare inflection is gone (YAMS, LEEKS, PEASE,
+   *      OKRAS, LUTES, PIANOS, TUBAS, MELONS, CRANES, SWALLOWED, DATED), and
+   *      `assertBankIsClean()` fails the build on the next one.
+   *
+   * The same pass caught two members that hid NOTHING — CHERISH (no fruit in
+   * it; the author meant CHERRY, which it does not contain) and THREAD (no
+   * THREE) — because the lint now requires a carrier to actually contain its
+   * token. Carriers are chosen so a drawn hand names four DIFFERENT things.
+   */
+  { theme: 'Hidden Insects', words: ['ANTLER', 'BEETROOT', 'MOTHER', 'PLANTAIN', 'CANTALOUPE', 'TICKET', 'WASPISH', 'STAGNATE'] },
+  { theme: 'Hidden Trees', words: ['PINEAPPLE', 'ASHAMED', 'FIRST', 'HELMET', 'PALMISTRY', 'OAKUM', 'STEAK', 'SPINELESS'] },
+  { theme: 'Hidden Birds', words: ['CROWD', 'LANTERN', 'HENCE', 'GULLIBLE', 'ROOKIE', 'BOWLING', 'WRENCH', 'HAWKER'] },
+  { theme: 'Hidden Fruits', words: ['PLUMBER', 'FIGURE', 'MANDATE', 'PEARL', 'LIMEADE', 'GRAPEVINE', 'LEMONADE', 'IMPEACH'] },
+  { theme: 'Hidden Vegetables', words: ['PEASANT', 'CORNER', 'BEETLE', 'KALEIDOSCOPE', 'SLEEK', 'ORCHARD', 'CARIBBEAN', 'ARCHIVE'] },
+  { theme: 'Hidden Musical Instruments', words: ['ORGANIC', 'HARPOON', 'VIOLATED', 'CELLOPHANE', 'CONUNDRUM', 'ABSOLUTE', 'EMBASSY', 'THORNY'] },
   { theme: 'Rhymes with "LIGHT"', words: ['WRITE', 'HEIGHT', 'POLITE', 'TONIGHT', 'DELIGHT', 'INVITE', 'IGNITE', 'RECITE'] },
   { theme: 'Rhymes with "DAY"', words: ['BOUQUET', 'CROCHET', 'BALLET', 'CABARET', 'CHALET', 'OBEY', 'BETRAY', 'DISPLAY'] },
   { theme: 'Rhymes with "MOOD"', words: ['BREWED', 'SHREWD', 'PRUDE', 'CHEWED', 'INCLUDE', 'PURSUED', 'RENEWED', 'CRUDE'] },
@@ -313,9 +342,189 @@ const WORDPLAY_BANK: BankGroup[] = [
   { theme: 'Can Follow "TEA"', words: ['POT', 'SPOON', 'CUP', 'BAG', 'ROOM', 'TIME', 'HOUSE', 'CAKE'] },
   { theme: 'Can Precede "MAKER"', words: ['WATCH', 'HAT', 'MATCH', 'PEACE', 'SHOE', 'HOME', 'DRESS', 'TROUBLE'] },
   { theme: 'Can Precede "PRINT"', words: ['FOOT', 'FINGER', 'BLUE', 'NEWS', 'THUMB', 'IMPRINT', 'RE', 'PAW'] },
+
+  /**
+   * ROUND 12 — THIRTY MORE POOLS, BECAUSE THE CAP NEEDS SOMEWHERE TO GO.
+   *
+   * Making `BANK_REUSE_CAP` bind authored themes (see its docstring) turns
+   * ~30 authored group instances into forced replacements, and the shelf owes
+   * two wordplay categories per board and two SUBTLE ones at tier 3 on top of
+   * that. With the round-11 bank the arithmetic did not close: the first run
+   * under the cap dropped 22 boards — the whole newest batch, which is exactly
+   * where the over-used themes were concentrated — not because those boards
+   * were unfair but because nothing was left to give them. Deleting a round's
+   * growth is not a fix for a round's padding.
+   *
+   * Two thirds of what follows is SUBTLE (rhyme / anagram / silent-letter /
+   * hidden-word / add-a-letter), because that is the narrow shelf and the one
+   * tier 3 draws on. Every member is verified against its own claim: the
+   * rhymes rhyme, the anagrams are exact, the silent letters are silent, and
+   * the hidden words are hidden rather than printed (`assertBankIsClean`).
+   */
+  { theme: 'Rhymes with "CHEESE"', words: ['FREEZE', 'SEIZE', 'TEASE', 'BREEZE', 'PLEASE', 'SQUEEZE', 'APPEASE', 'TRAPEZE'] },
+  { theme: 'Rhymes with "GREEN"', words: ['SCENE', 'MACHINE', 'ROUTINE', 'SERENE', 'MARINE', 'CUISINE', 'CANTEEN', 'BETWEEN'] },
+  { theme: 'Rhymes with "SMILE"', words: ['AISLE', 'PROFILE', 'EXILE', 'WHILE', 'TRIAL', 'DENIAL', 'STYLE', 'AWHILE'] },
+  { theme: 'Rhymes with "CLOUD"', words: ['PROUD', 'ALOUD', 'CROWD', 'VOWED', 'PLOUGHED', 'ENDOWED', 'ALLOWED', 'BOWED'] },
+  { theme: 'Rhymes with "FLOWER"', words: ['HOUR', 'SHOWER', 'POWER', 'TOWER', 'DEVOUR', 'SCOUR', 'GLOWER', 'COWER'] },
+  { theme: 'Rhymes with "PURSE"', words: ['VERSE', 'WORSE', 'NURSE', 'REHEARSE', 'DIVERSE', 'TERSE', 'COERCE', 'IMMERSE'] },
+  { theme: 'Rhymes with "MOUSE"', words: ['HOUSE', 'BLOUSE', 'GROUSE', 'SPOUSE', 'DOUSE', 'ROUSE', 'ESPOUSE'] },
+  { theme: 'Rhymes with "BRUSH"', words: ['HUSH', 'CRUSH', 'LUSH', 'PLUSH', 'THRUSH', 'BLUSH', 'GUSH', 'SLUSH'] },
+  { theme: 'Rhymes with "SHOWN"', words: ['ALONE', 'CYCLONE', 'POSTPONE', 'CHAPERONE', 'CONDONE', 'BACKBONE', 'MILESTONE', 'OZONE'] },
+  { theme: 'Rhymes with "FRIEND"', words: ['ATTEND', 'EXTEND', 'DEPEND', 'SUSPEND', 'AMEND', 'ASCEND', 'COMMEND', 'TRANSCEND'] },
+  { theme: 'Rhymes with "TABLE"', words: ['CABLE', 'STABLE', 'LABEL', 'FABLE', 'GABLE', 'ENABLE', 'UNSTABLE', 'SABLE'] },
+  { theme: 'Silent "N"', words: ['AUTUMN', 'COLUMN', 'SOLEMN', 'HYMN', 'CONDEMN', 'LIMN'] },
+  { theme: 'Silent "S"', words: ['ISLAND', 'AISLE', 'ISLE', 'DEBRIS', 'VISCOUNT', 'CHASSIS', 'RENDEZVOUS', 'BOURGEOIS'] },
+  { theme: 'Anagrams of "STEAM"', words: ['MEATS', 'TEAMS', 'TAMES', 'MATES'] },
+  { theme: 'Anagrams of "LEAST"', words: ['STEAL', 'SLATE', 'STALE', 'TALES', 'TEALS'] },
+  { theme: 'Anagrams of "STARE"', words: ['RATES', 'TEARS', 'ASTER', 'TARES', 'RESAT'] },
+  { theme: 'Anagrams of "PARTIES"', words: ['PIRATES', 'PASTIER', 'TRAIPSE', 'PIASTER'] },
+  { theme: 'Add an "E" for a New Word', words: ['HUG', 'CUT', 'MAT', 'PIN', 'TAP', 'CAP', 'MAN', 'RAT'] },
+  { theme: 'Add an "R" for a New Word', words: ['BEAD', 'BUSH', 'CASH', 'FEE', 'GOWN', 'PAY', 'TICK', 'BAND'] },
+  { theme: 'Add an "L" for a New Word', words: ['BACK', 'FIGHT', 'PANT', 'CAPE', 'SIGHT', 'COVE', 'BEAK', 'PACE'] },
+  { theme: 'Homophones of Weather Words', words: ['REIGN', 'REIN', 'HALE', 'MISSED', 'DUE'] },
+  { theme: 'Hidden Colors', words: ['TANGERINE', 'REDUNDANT', 'MOROSE', 'PLUMMET', 'CRUSTY', 'CHAMBER', 'MARIGOLD', 'GREYHOUND'] },
+  { theme: 'Hidden Weather', words: ['TRAINER', 'MISTAKE', 'REGALE', 'WINDOW', 'SUNDRY', 'FOGGY', 'SLICE', 'DEWY'] },
+  { theme: '___ SHIP', words: ['FRIEND', 'HARD', 'LEADER', 'PART', 'MEMBER', 'SPACE', 'TOWN', 'CHAMPION'] },
+  { theme: '___ LINE', words: ['OUT', 'HEAD', 'TIME', 'COAST', 'PIPE', 'LIFE', 'GUIDE', 'SIDE'] },
+  { theme: '___ BALL', words: ['FOOT', 'BASE', 'SNOW', 'EYE', 'MEAT', 'ODD', 'HAND', 'HAIR'] },
+  { theme: '___ YARD', words: ['COURT', 'BACK', 'SHIP', 'DOCK', 'JUNK', 'FARM', 'VINE', 'BARN'] },
+  { theme: '___ CLOTH', words: ['TABLE', 'WASH', 'LOIN', 'BROAD', 'DISH', 'SACK', 'OIL', 'CHEESE'] },
+  { theme: '___ WORM', words: ['EARTH', 'BOOK', 'SILK', 'GLOW', 'TAPE', 'WOOD', 'RING', 'INCH'] },
+  { theme: '___ CHAIR', words: ['ARM', 'HIGH', 'WHEEL', 'DECK', 'EASY', 'PUSH', 'LAWN', 'SEDAN'] },
+  { theme: '___ POST', words: ['SIGN', 'LAMP', 'GATE', 'GOAL', 'MILE', 'BED', 'OUT', 'FENCE'] },
+  { theme: '___ GLASS', words: ['HOUR', 'SPY', 'EYE', 'LOOKING', 'SUN', 'PLEXI', 'FIBRE', 'WINE'] },
+  { theme: '___ CARD', words: ['POST', 'WILD', 'PLACE', 'FLASH', 'SCORE', 'CREDIT', 'BIRTHDAY', 'REPORT'] },
+  { theme: 'Can Follow "TABLE"', words: ['CLOTH', 'SPOON', 'TOP', 'WARE', 'LAND', 'MAT', 'TALK', 'LEG'] },
+  { theme: 'Can Follow "STAR"', words: ['FISH', 'LIGHT', 'GAZER', 'DUST', 'BOARD', 'LET', 'BURST', 'STRUCK'] },
+  { theme: 'Can Precede "FLOWER"', words: ['SUN', 'WALL', 'MAY', 'WILD', 'BELL', 'CORN', 'ELDER', 'PASSION'] },
 ];
-/** How many boards may share one bank THEME before it feels like wallpaper. */
+/**
+ * How many boards may share one THEME before it feels like wallpaper.
+ *
+ * ROUND 12 — THIS IS NO LONGER A BANK RULE. It was named `BANK_REUSE_CAP`,
+ * documented as the anti-wallpaper rule, and enforced through `bankUse`, which
+ * was incremented ONLY on bank draws (the two `bankUse.set` calls). Authored
+ * themes never touched the counter, so the rule did not apply to the source
+ * the shelf actually grew from: "Two Pairs of Double Letters" was authored onto
+ * 16 of 167 boards — 7 of the 12 boards in the newest batch — and shipped on
+ * 17, and 'Silent "T"', Heteronyms, Palindromes, Semordnilaps, 'Silent "GH"',
+ * Onomatopoeia and 'Silent "K"' were all over the cap too. A player who visits
+ * the Library nightly met the same brown-paper category one night in ten.
+ *
+ * `themeUse` now counts EVERY shipped use, from either source: an authored
+ * group whose theme is already at the cap is a forced replacement victim in
+ * `replaceGroups` (see `overCapGroups`), and `validate` hard-fails — not
+ * warns — if anything gets past it.
+ */
 const BANK_REUSE_CAP = 3;
+
+/**
+ * ROUND 12 — WHAT EACH "HIDDEN X" CATEGORY IS ALLOWED TO HIDE.
+ *
+ * The pools were never linted at authoring time: the tone gate and the
+ * fairness solver both run on *composed boards*, so a pool member the composer
+ * happened not to draw was read by nothing at all, and a member that hid
+ * nothing (CHERISH has no CHERRY in it; THREAD has no THREE) or that simply
+ * printed the answer with an S on it (LEEKS, TUBAS, CRANES) shipped unread.
+ * These lists turn "Hidden X" into a checkable claim.
+ */
+const HIDDEN_TOKENS: Record<string, readonly string[]> = {
+  'Hidden Numbers': ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE'],
+  'Hidden Numbers (Spelled Out)': ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE'],
+  'Hidden Colors': ['RED', 'BLUE', 'GREEN', 'TAN', 'ROSE', 'PLUM', 'JADE', 'GREY', 'PINK', 'GOLD', 'RUST', 'TEAL', 'AMBER', 'CORAL', 'OLIVE', 'INDIGO'],
+  'Hidden Instruments': ['HARP', 'ORGAN', 'LUTE', 'VIOLA', 'CELLO', 'DRUM', 'HORN', 'BASS', 'OBOE', 'PIANO', 'TUBA', 'FIFE', 'BANJO', 'LYRE', 'SITAR', 'FLUTE'],
+  'Hidden Musical Instruments': ['HARP', 'ORGAN', 'LUTE', 'VIOLA', 'CELLO', 'DRUM', 'HORN', 'BASS', 'OBOE', 'PIANO', 'TUBA', 'FIFE', 'BANJO', 'LYRE', 'SITAR', 'FLUTE'],
+  'Hidden Body Parts': ['ARM', 'HIP', 'EAR', 'RIB', 'SHIN', 'SCALP', 'PALM', 'LIP', 'CHIN', 'HEEL', 'CALF', 'EYE', 'JAW', 'GUM', 'HAND', 'FOOT', 'SKIN', 'LUNG', 'LIVER', 'BROW', 'NOSE', 'NECK', 'KNEE', 'SHOULDER'],
+  'Hidden Animals': ['COW', 'PIG', 'CAT', 'DOG', 'CROW', 'BEE', 'HEN', 'GOAT', 'APE', 'RAT', 'OWL', 'FOX', 'BAT', 'ANT', 'EWE', 'SOW'],
+  'Hidden Birds': ['CROW', 'OWL', 'HEN', 'GULL', 'SWALLOW', 'ROOK', 'WREN', 'HAWK', 'DOVE', 'LARK', 'EMU', 'TERN', 'IBIS'],
+  'Hidden Trees': ['PINE', 'ASH', 'FIR', 'ELM', 'PALM', 'OAK', 'BEECH', 'TEAK', 'YEW', 'MAPLE', 'CEDAR', 'BIRCH', 'LARCH', 'ASPEN'],
+  'Hidden Fruits': ['PLUM', 'FIG', 'DATE', 'PEAR', 'LIME', 'GRAPE', 'LEMON', 'PEACH', 'APPLE', 'MELON', 'MANGO', 'CHERRY', 'OLIVE'],
+  'Hidden Vegetables': ['PEA', 'CORN', 'BEET', 'KALE', 'LEEK', 'CHARD', 'BEAN', 'CHIVE', 'YAM', 'OKRA', 'ONION', 'TURNIP', 'CRESS'],
+  'Hidden Insects': ['ANT', 'BEE', 'MOTH', 'WASP', 'GNAT', 'TICK', 'MIDGE', 'FLEA', 'APHID'],
+  'Hidden Weather': ['RAIN', 'SNOW', 'HAIL', 'MIST', 'FOG', 'GALE', 'SUN', 'ICE', 'DEW', 'WIND', 'STORM', 'SLEET', 'FROST'],
+};
+
+/**
+ * The suffixes that turn the noun into itself. A "Hidden X" member may not be
+ * its own token, nor the token wearing one of these — that is the noun printed
+ * on the tile, which is the opposite of the category's claim (AAA 2.9).
+ * Derivational endings are deliberately NOT here: MOTHER is not a moth and
+ * HAWKER is not a hawk, and both are honest carriers.
+ */
+const INFLECTIONS = ['S', 'ES', 'ED', 'ING', 'IES'] as const;
+
+/**
+ * True when `word` is `token` wearing nothing but an inflection — the noun
+ * printed on the tile. The bare `D` case is admitted only for an E-final token
+ * (DATE → DATED), because CROW → CROWD is a different word and an honest
+ * carrier, and a rule that cannot tell those apart would purge the good ones.
+ */
+function isInflectionOf(token: string, word: string): boolean {
+  if (word === token) return true;
+  if (INFLECTIONS.some((sfx) => word === token + sfx)) return true;
+  return token.endsWith('E') && word === `${token}D`;
+}
+
+/** The hidden token this member honestly carries, or null if it carries none. */
+function hiddenTokenOf(theme: string, word: string): string | null {
+  const tokens = HIDDEN_TOKENS[canon(theme)];
+  if (!tokens) return null;
+  for (const t of tokens) {
+    if (!word.includes(t)) continue;
+    if (isInflectionOf(t, word)) continue;
+    return t;
+  }
+  return null;
+}
+
+/**
+ * Every "Hidden X" group — from the bank OR from the authored file — must hide
+ * what it says it hides. Reasons a member fails, in the order they bit us:
+ * it is the bare noun with a plural/participle on it (LEEKS, TUBAS, CRANES,
+ * SWALLOWED, DATED); or it contains no member of the category at all
+ * (CHERISH, THREAD, CALIBER).
+ */
+function hiddenGroupProblems(theme: string, words: readonly string[]): string[] {
+  if (!(canon(theme) in HIDDEN_TOKENS)) {
+    return /^Hidden /.test(canon(theme)) ? [`"${theme}" has no token list — add one to HIDDEN_TOKENS`] : [];
+  }
+  const out: string[] = [];
+  for (const w of words) {
+    if (hiddenTokenOf(theme, w)) continue;
+    const tokens = HIDDEN_TOKENS[canon(theme)]!;
+    const bare = tokens.find((t) => isInflectionOf(t, w));
+    out.push(bare
+      ? `"${theme}": ${w} prints ${bare}, it does not hide it`
+      : `"${theme}": ${w} hides nothing on the list`);
+  }
+  return out;
+}
+
+/**
+ * ROUND 12 — the pools themselves are linted, once, before anything is
+ * composed. Until now the cozy tone gate ran on the sixteen words of a
+ * COMPOSED board, so MIDGET sat in `WORDPLAY_BANK` for as long as it took the
+ * composer to draw the hand that carried it — and once drawn it went straight
+ * past the gate anyway, because TONE_WORDS had no entry for it. A pool is
+ * shipped content the moment it is written down; it is read here.
+ */
+function assertBankIsClean(): void {
+  const problems: string[] = [];
+  for (const g of WORDPLAY_BANK) {
+    for (const w of g.words) {
+      if (!toneOk(w.toLowerCase())) problems.push(`bank "${g.theme}": ${w} fails the tone gate`);
+      if (!/^[A-Z]+$/.test(w)) problems.push(`bank "${g.theme}": ${w} is not plain caps`);
+    }
+    if (new Set(g.words).size !== g.words.length) problems.push(`bank "${g.theme}" repeats a word`);
+    problems.push(...hiddenGroupProblems(g.theme, g.words).map((p) => `bank ${p}`));
+  }
+  const themes = WORDPLAY_BANK.map((g) => canon(g.theme));
+  if (new Set(themes).size !== themes.length) problems.push('bank has a duplicate theme');
+  if (problems.length > 0) {
+    console.error(problems.join('\n'));
+    throw new Error(`the wordplay bank is not shippable: ${problems.length} problem(s)`);
+  }
+}
 
 /** Bank groups whose thread is subtle (the tier-3 supply). */
 const SUBTLE_BANK = WORDPLAY_BANK.filter((b) => isSubtleTheme(b.theme));
@@ -562,11 +771,11 @@ function replaceGroups(
     // already shipped anywhere is not a candidate at all (round 11).
     const usable = from.flatMap(bankDraws).filter(
       (b) =>
-        (bankUse.get(b.theme) ?? 0) < BANK_REUSE_CAP &&
+        (bankUse.get(canon(b.theme)) ?? 0) < BANK_REUSE_CAP &&
         !themes.has(b.theme) &&
         !usedSets.has(setKey(b.words)) &&
         b.words.every((w) => !words.has(w)) &&
-        patternFailures(
+        boardFailures(
           groups.map((g) => (g === victim ? { theme: b.theme, tier: g.tier, words: b.words } : g)),
         ).length === 0,
     );
@@ -574,13 +783,60 @@ function replaceGroups(
     return pick(createRngFrom(rng), usable);
   };
 
+  /** Themes this attempt drew from the bank (already counted by `swapIn`). */
+  const fromBank = new Set<string>();
+
   const swapIn = (victim: RawGroup, bank: BankGroup) => {
-    bankUse.set(bank.theme, (bankUse.get(bank.theme) ?? 0) + 1);
+    bankUse.set(canon(bank.theme), (bankUse.get(canon(bank.theme)) ?? 0) + 1);
+    fromBank.add(canon(bank.theme));
     usedSets.add(setKey(bank.words));
     groups = groups.map((g) =>
       g === victim ? { theme: bank.theme, tier: g.tier, words: [...bank.words] } : g,
     );
   };
+
+  /**
+   * ROUND 12 (AAA 2.6 / volume-quality) — THE CAP BINDS THE AUTHORED FILE TOO.
+   *
+   * `bankUse` counted bank draws only, so the anti-wallpaper rule the file
+   * documents never applied to the source the shelf actually grew from: "Two
+   * Pairs of Double Letters" was authored onto 16 of 167 boards (7 of the 12
+   * in the newest batch, whose word sets were near-clones of each other — the
+   * pool is ~20 words wide and cannot supply 16 honest hands), and seven more
+   * themes sat over budget. An authored group whose theme has already been
+   * spent is a FORCED victim here, before any composition work, and it gives
+   * way to a like-for-like replacement so the tier's floors are untouched:
+   * subtle for subtle, wordplay for wordplay, and a plain category only when
+   * the board can spare it.
+   */
+  // The spent set is fixed on entry. Reading `bankUse` live inside the loop
+  // churns forever: the replacement's own count reaches the cap the moment it
+  // is taken, so the next pass evicts the group it just installed.
+  const spentThemes = new Set(
+    groups.map((g) => canon(g.theme))
+      .filter((t) => (bankUse.get(t) ?? 0) >= BANK_REUSE_CAP),
+  );
+  let capGuard = 0;
+  for (;;) {
+    const victim = groups.find((g) => spentThemes.has(canon(g.theme)));
+    if (!victim) break;
+    if (capGuard++ >= 4) return null;
+    const plainSpare = count('semantic') + count('trivia') - spec.minPlain;
+    const subtleSpare = subtleCount() - spec.minSubtle;
+    const wordplayOk = typeOfTheme(victim.theme) === 'wordplay' || plainSpare > 0;
+    // Like for like first — a subtle victim should leave a subtle category
+    // behind it. But the subtle shelf is the narrow one, and refusing the
+    // board outright when it happens to be empty deleted 22 boards (the whole
+    // newest batch, which is where the over-used themes were concentrated) for
+    // a floor the board still met. The blunt bank is allowed second, and only
+    // while the tier's own subtle floor survives the swap.
+    const bank = (isSubtleTheme(victim.theme) ? pickBankGroup(SUBTLE_BANK, victim) : null)
+      ?? (wordplayOk && (!isSubtleTheme(victim.theme) || subtleSpare > 0)
+        ? pickBankGroup(WORDPLAY_BANK, victim)
+        : null);
+    if (!bank) return null;
+    swapIn(victim, bank);
+  }
 
   // Enforce this tier's composition: trivia cap, wordplay floor, subtle floor.
   // A tier that still owes a SUBTLE category may only take a subtle group —
@@ -641,14 +897,14 @@ function replaceGroups(
     let best: { victim: RawGroup; bank: BankGroup; traps: number; slot: number; rel: number } | null = null;
     for (const victim of groups) {
       for (const bank of WORDPLAY_BANK.flatMap(bankDraws)) {
-        if ((bankUse.get(bank.theme) ?? 0) >= BANK_REUSE_CAP) continue;
+        if ((bankUse.get(canon(bank.theme)) ?? 0) >= BANK_REUSE_CAP) continue;
         if (themes.has(bank.theme)) continue;
         if (usedSets.has(setKey(bank.words))) continue;
         if (bank.words.some((w) => words.has(w) && !victim.words.includes(w))) continue;
         const next = groups.map((g) =>
           g === victim ? { theme: bank.theme, tier: g.tier, words: [...bank.words] } : g);
         if (!compositionOk(next)) continue;
-        if (patternFailures(next).length > 0) continue;
+        if (boardFailures(next).length > 0) continue;
         const traps = tightTrapCount(next, spec.minHerringScore);
         // Round 11: among plants that buy the same number of traps, prefer the
         // one that lands on the slot this board's preference order names first
@@ -696,6 +952,14 @@ function replaceGroups(
     trivia.tier = 'yellow';
   }
 
+  // Round 12: every SURVIVING authored theme is spent against the same cap the
+  // bank pays (the bank's own draws were counted in `swapIn`). Without this
+  // half the ledger was blank and the rule only bound half the corpus.
+  for (const g of groups) {
+    const k = canon(g.theme);
+    if (!fromBank.has(k)) bankUse.set(k, (bankUse.get(k) ?? 0) + 1);
+  }
+
   return { ...board, groups };
 }
 
@@ -732,7 +996,37 @@ function patternSets(words: string[]): PatternSet[] {
   for (const w of words) {
     if (w.length >= 5) add(`suffix:${w.slice(-3)}`, 'shared-affix', w.slice(-3), w);
     if (w.length >= 5) add(`prefix:${w.slice(0, 3)}`, 'shared-affix', w.slice(0, 3), w);
-    if (/([A-Z])\1/.test(w)) add('doubled-letter', 'doubled-letter', undefined, w);
+    /**
+     * ROUND 12 (AAA 2.10 [BEAT] / 2.7) — THE DOUBLED LETTER MUST BE THE SAME
+     * DOUBLED LETTER.
+     *
+     * This was one bucket: any word containing any doubled letter joined
+     * `doubled-letter`, so the "thread" the room bought a wrong guess with was
+     * "these words each contain some repeated character" — a property roughly
+     * a third of English has, and a grouping no Connections player has ever
+     * chased. 52 of the 55 shipped doubled-letter traps had NO doubled letter
+     * in common (web-2's was CHILLY/GIRAFFE/MILLER/STAFF/THRILL/WILLOW;
+     * web-4's ran DD, FF, OO, KK, EE, LL, CC, SS across six words), and the
+     * room charged −2 steps to say "CURRENT, FURROW, KEEP double a letter."
+     * The bar's model line ("they *do* all rhyme, don't they?") is informative
+     * BECAUSE the relation is real; billing noise as a bought insight is the
+     * round-6 misinformation defect in a tighter gate.
+     *
+     * One bucket per letter, and the letter travels as `detail`, so the room
+     * can say "CURRENT, FURROW, SCURRY all double an R" — a thread the player
+     * can check on the tiles and could genuinely have been following. Traps
+     * that cannot meet it now simply do not exist, which is the demotion the
+     * finding asked for: a board with one honest trap beats one with a fake.
+     *
+     * It also makes `patternFailures` honest in the other direction. The old
+     * bucket failed a build when any four words on a board happened to contain
+     * any doubled letters — an "unintended complete grouping" nobody could
+     * have seen — while four words that genuinely all double an L slid past
+     * inside the noise.
+     */
+    for (const m of new Set((w.match(/([A-Z])\1/g) ?? []).map((p) => p[0]!))) {
+      add(`doubled:${m}${m}`, 'doubled-letter', `${m}${m}`, w);
+    }
     for (const key of phonetics.rhymeKeysOf(w.toLowerCase())) add(`rhyme:${key}`, 'rhyme', undefined, w);
   }
   return [...sets.values()];
@@ -804,6 +1098,51 @@ function sameMembers(a: Iterable<string>, b: string[]): boolean {
  * a shared letter/sound pattern. Used both by solveBoard and, at composition
  * time, to veto a bank swap that would create one.
  */
+/**
+ * ROUND 12 — THE COMPOSER MUST SEE THE CLUSTER VETO TOO.
+ *
+ * `pickBankGroup` and the planter vetoed a swap that would create an
+ * unintended complete grouping *by pattern*, but not one created by SEMANTICS
+ * — four words that are somebody else's whole category. That check only ran in
+ * pass 2, where it is a hard build failure, so every widening of the bank
+ * turned into a game of whack-a-mole: install a rhyme pool, watch an unrelated
+ * board fail because its new hand happened to complete another board's
+ * `Contains "ICE"`. Every composed group is either an authored group or a bank
+ * hand, so the union of those two IS the universe of categories a board can
+ * accidentally complete, and it can be indexed by word once and asked in
+ * sixteen lookups.
+ */
+const CORPUS_SETS: string[][] = [];
+const CORPUS_INDEX = new Map<string, number[]>();
+function indexCorpusSets(sets: readonly (readonly string[])[]): void {
+  for (const words of sets) {
+    const i = CORPUS_SETS.push([...words]) - 1;
+    for (const w of words) CORPUS_INDEX.set(w, [...(CORPUS_INDEX.get(w) ?? []), i]);
+  }
+}
+
+/** Somebody else's whole category, complete on this board. */
+function clusterFailures(groups: readonly RawGroup[]): string[] {
+  const here = new Set(groups.flatMap((g) => g.words));
+  const hits = new Map<number, number>();
+  for (const w of here) {
+    for (const i of CORPUS_INDEX.get(w) ?? []) hits.set(i, (hits.get(i) ?? 0) + 1);
+  }
+  const out: string[] = [];
+  for (const [i, n] of hits) {
+    if (n < 4) continue;
+    const overlap = CORPUS_SETS[i]!.filter((w) => here.has(w));
+    if (groups.some((g) => sameMembers(overlap, g.words))) continue;
+    out.push(`semantic cluster: ${overlap.join(', ')}`);
+  }
+  return out;
+}
+
+/** Every unintended complete grouping a board can carry, pattern or semantic. */
+function boardFailures(groups: readonly RawGroup[]): string[] {
+  return [...patternFailures(groups), ...clusterFailures(groups)];
+}
+
 function patternFailures(groups: readonly RawGroup[]): string[] {
   const words = groups.flatMap((g) => g.words);
   const intended = groups.map((g) => g.words);
@@ -934,13 +1273,80 @@ function scoresOf(traps: readonly Trap[]): ScoredHerring[] {
     .map(([word, score]) => ({ word, score }));
 }
 
-function scoreTraps(groups: readonly RawGroup[]): ScoredHerring[] {
-  return scoresOf(findTraps(groups));
+const EMPTY: ReadonlySet<string> = new Set();
+
+/**
+ * ROUND 12 (AAA 2.7 [BEAT]) — A TIER'S TRAP FLOOR COUNTS THREADS, NOT WORDS.
+ *
+ * `TIER_SPECS[3]` says `minHerrings: 2` and the file docstring says "tier 3
+ * must ship 2–3 traps". What was measured was `ambiguousWords.length` — the
+ * flat INTRUDER-WORD list — and what shipped was `herrings.length`, the named
+ * threads, which `herringSets` dedupes by pattern key. Two intruder words
+ * caught by the same `suffix:GHT` are one trap and one sentence; they counted
+ * as two. Result: 25 of the 52 shipped tier-3 boards carried exactly ONE
+ * named trap while passing a 2-trap check, so the row the player pays the most
+ * steps to reach ran at tier-1 trap density on 48% of its boards and no test
+ * could see it.
+ *
+ * Selection is therefore done in threads from here on. Each chosen trap must
+ * contribute a NEW pattern key AND a NEW intruder word, which makes
+ * `herrings.length === ambiguousWords.length` an invariant rather than a
+ * coincidence, and makes the tier floor mean what it says. Eligibility is
+ * unchanged: a word is a candidate intruder when its aggregate herring score
+ * clears the tier's `minHerringScore`.
+ */
+function chooseTraps(
+  traps: readonly Trap[],
+  eligible: readonly ScoredHerring[],
+  max: number,
+  cost: (trap: Trap, intruder: string) => number,
+): { trap: Trap; intruder: string }[] {
+  const score = new Map(eligible.map((h) => [h.word, h.score] as const));
+  // A set of fewer than 3 words can never satisfy the room's ≥3-of-4 match
+  // rule, so it would be a trap the player can never actually trip.
+  const usable = traps.filter(
+    (t) => t.words.length >= 3 && t.intruders.some((w) => score.has(w)),
+  );
+  const bestIntruder = (t: Trap, taken: ReadonlySet<string>): string | null =>
+    t.intruders
+      .filter((w) => score.has(w) && !taken.has(w))
+      .sort((a, b) => score.get(b)! - score.get(a)! || (a < b ? -1 : 1))[0] ?? null;
+
+  const none = EMPTY;
+  const ranked = [...usable].sort((a, b) =>
+    cost(a, bestIntruder(a, none)!) - cost(b, bestIntruder(b, none)!)
+    || b.score - a.score || (a.key < b.key ? -1 : 1));
+
+  const out: { trap: Trap; intruder: string }[] = [];
+  const keys = new Set<string>();
+  const taken = new Set<string>();
+  for (const t of ranked) {
+    if (out.length >= max) break;
+    if (keys.has(t.key)) continue;
+    // Prefer a word no other shipped thread has claimed — the intruder list
+    // is what the opening layout clusters on and what the priced intruder hint
+    // draws from, so spreading it is worth something. But two threads MAY name
+    // the same word: HAMMER caught by `contains:HAM` and by `suffix:MER` is two
+    // different sentences about two different sets, and refusing the second one
+    // cost the top shelf fifteen boards for no gain the player can feel.
+    const intruder = bestIntruder(t, taken) ?? bestIntruder(t, EMPTY);
+    if (!intruder) continue;
+    keys.add(t.key);
+    taken.add(intruder);
+    out.push({ trap: t, intruder });
+  }
+  return out;
 }
 
-/** How many traps on this board pull tightly enough to count for a tier. */
+/** How many DISTINCT threads this trap list can acknowledge at `minScore`. */
+function trapCapacity(traps: readonly Trap[], minScore: number): number {
+  const eligible = scoresOf(traps).filter((h) => h.score >= minScore);
+  return chooseTraps(traps, eligible, Number.POSITIVE_INFINITY, () => 0).length;
+}
+
+/** The same measurement, for a board the composer is still assembling. */
 function tightTrapCount(groups: readonly RawGroup[], minScore: number): number {
-  return scoreTraps(groups).filter((h) => h.score >= minScore).length;
+  return trapCapacity(findTraps(groups), minScore);
 }
 
 /**
@@ -1016,7 +1422,12 @@ function hasGiftRow(order: string[], groupIndex: Map<string, number>): boolean {
   return false;
 }
 
-function buildLayout(board: RawBoard, herrings: string[], seed: number): string[] {
+/** Needs only an id and the composed groups — asks for exactly that. */
+function buildLayout(
+  board: { id: string; groups: readonly RawGroup[] },
+  herrings: string[],
+  seed: number,
+): string[] {
   const words = board.groups.flatMap((g) => g.words);
   const groupIndex = new Map<string, number>();
   board.groups.forEach((g, i) => g.words.forEach((w) => groupIndex.set(w, i)));
@@ -1064,15 +1475,17 @@ function assignDecoys(finals: { id: string; groups: OutGroup[] }[]): void {
 // ---------------------------------------------------------------------------
 
 /** Does this composed board satisfy `tier`'s category + herring gates? */
-function meetsTier(board: RawBoard, herrings: ScoredHerring[], tier: Tier): boolean {
+function meetsTier(board: RawBoard, traps: readonly Trap[], tier: Tier): boolean {
   const spec = TIER_SPECS[tier];
   const types = board.groups.map((g) => typeOfTheme(g.theme));
   if (types.filter((t) => t === 'trivia').length > spec.maxTrivia) return false;
   if (types.filter((t) => t === 'wordplay').length < spec.minWordplay) return false;
   if (types.filter((t) => t !== 'wordplay').length < spec.minPlain) return false;
   if (board.groups.filter((g) => isSubtleTheme(g.theme)).length < spec.minSubtle) return false;
-  const tight = herrings.filter((h) => h.score >= spec.minHerringScore);
-  return tight.length >= spec.minHerrings;
+  // Round 12: THREADS, not intruder words — see `chooseTraps`. A board that
+  // cannot reach its tier's floor in distinct traps demotes to the tier below
+  // rather than shipping at tier-1 trap density with a tier-3 label.
+  return trapCapacity(traps, spec.minHerringScore) >= spec.minHerrings;
 }
 
 // ---------------------------------------------------------------------------
@@ -1171,74 +1584,47 @@ function shippedHerrings(
   herrings: ScoredHerring[],
   traps: readonly Trap[],
   tier: Tier,
-): string[] {
+): { ship: string[]; named: OutHerring[] } {
   const spec = TIER_SPECS[tier];
   const eligible = herrings.filter((h) => h.score >= spec.minHerringScore);
   const slotOf = new Map<string, Slot>();
   for (const g of board.groups) for (const w of g.words) slotOf.set(w, g.tier);
-  const relationsFor = (word: string): HerringRelation[] =>
-    [...new Set(traps.filter((t) => t.intruders.includes(word)).map((t) => t.relation))];
 
-  // Shares, not raw counts: there are four colour slots and four relations but
+  // Shares, not raw counts: there are four colour slots and five relations but
   // they fill at wildly different rates, and summing the raw tallies let the
   // bigger number decide every tie on its own.
   const homeTotal = Math.max(1, [...homeTally.values()].reduce((a, b) => a + b, 0));
   const relTotal = Math.max(1, [...relTally.values()].reduce((a, b) => a + b, 0));
-  const cost = (word: string): number => {
+  const cost = (trap: Trap, word: string): number => {
     const home = (homeTally.get(slotOf.get(word)!) ?? 0) / homeTotal;
-    const rel = Math.min(
-      ...relationsFor(word).map((r) => (relTally.get(r) ?? 0) / relTotal),
-      1,
-    );
+    const rel = (relTally.get(trap.relation) ?? 0) / relTotal;
     // The relation is weighted heavier because it is the thing the room SAYS
     // out loud on a wrong guess (AAA 2.10); a shelf whose every acknowledged
     // herring says "they do all share those letters" is one learnable trap.
     return home + rel * 4;
   };
-  const ranked = [...eligible].sort(
-    (a, b) => cost(a.word) - cost(b.word) || b.score - a.score || (a.word < b.word ? -1 : 1),
-  );
 
-  const ship = ranked.slice(0, spec.maxHerrings).map((h) => h.word);
-  for (const w of ship) {
-    const slot = slotOf.get(w)!;
-    homeTally.set(slot, (homeTally.get(slot) ?? 0) + 1);
-  }
-  return ship;
-}
+  // ROUND 12: one pick per THREAD (see `chooseTraps`) — a distinct pattern key
+  // each — so the tier's floor and the room's stock of sentences are the same
+  // number. Round 11 chose intruder WORDS and then named whatever trap each
+  // happened to fall in, which is how two words inside one `suffix:GHT` shipped
+  // as "two traps" and spoke once. `ambiguousWords` is derived from the picks
+  // and deduped; it is the layout's clustering list, not the budget.
+  const picks = chooseTraps(traps, eligible, spec.maxHerrings, cost);
 
-/**
- * AAA 2.10 — the shipped traps, WITH the thread they imitate. One entry per
- * shipped intruder (its tightest trap), deduped by pattern so a word caught by
- * both `suffix:GHT` and `rhyme:AY1T` is acknowledged once. `words` carries the
- * whole set, which is what lets the room require ≥3 of the player's four tiles
- * inside a trap before it claims she was chasing it.
- */
-function herringSets(traps: readonly Trap[], ship: readonly string[]): OutHerring[] {
-  const out: OutHerring[] = [];
-  const seenKeys = new Set<string>();
-  for (const word of ship) {
-    const candidates = traps
-      .filter((t) => t.intruders.includes(word) && !seenKeys.has(t.key))
-      // ROUND 11: a word caught by BOTH `suffix:GHT` and `rhyme:AY1T` used to
-      // be acknowledged as an affix trap every single time, because the affix
-      // trap scores higher — which is most of why 68% of the pool's named
-      // threads were `shared-affix`. Between traps that are all tight enough
-      // to ship, the under-used relation gets to be the one the room names.
-      .sort((a, b) =>
-        (relTally.get(a.relation) ?? 0) - (relTally.get(b.relation) ?? 0)
-        || b.score - a.score || b.words.length - a.words.length || (a.key < b.key ? -1 : 1));
-    const best = candidates[0];
-    if (!best) continue;
-    seenKeys.add(best.key);
-    relTally.set(best.relation, (relTally.get(best.relation) ?? 0) + 1);
-    out.push({
-      words: [...best.words].sort(),
-      relation: best.relation,
-      ...(best.detail ? { detail: best.detail } : {}),
+  const ship: string[] = [];
+  const named: OutHerring[] = [];
+  for (const { trap, intruder } of picks) {
+    if (!ship.includes(intruder)) ship.push(intruder);
+    homeTally.set(slotOf.get(intruder)!, (homeTally.get(slotOf.get(intruder)!) ?? 0) + 1);
+    relTally.set(trap.relation, (relTally.get(trap.relation) ?? 0) + 1);
+    named.push({
+      words: [...trap.words].sort(),
+      relation: trap.relation,
+      ...(trap.detail ? { detail: trap.detail } : {}),
     });
   }
-  return out;
+  return { ship, named };
 }
 
 /**
@@ -1313,7 +1699,20 @@ function main() {
     for (const k of s.sets) usedSets.add(k);
   };
 
-  const composed: RawBoard[] = boards.map((b): RawBoard => {
+  /**
+   * ROUND 12 — a board whose categories are all already spent LEAVES.
+   *
+   * This used to throw. That was right while the only thing that could
+   * exhaust was the bank (an exhausted bank is a generator bug), and wrong the
+   * moment the anti-wallpaper cap started binding authored themes: a board
+   * written entirely out of categories three other boards already used has
+   * nothing of its own to say, and the honest outcome is the one the rest of
+   * the file already takes — it leaves rather than lowering the floor for
+   * everyone else. The pool-size floors (tests/content.test.ts ≥150 total,
+   * tests/puzzles/anchors.test.ts ≥45 per tier) are what police the total.
+   */
+  const unbuildable: string[] = [];
+  const composed: RawBoard[] = boards.flatMap((b): RawBoard[] => {
     for (let t = intent.get(b.id)!; t >= 1; t--) {
       const before = snap();
       /**
@@ -1352,11 +1751,12 @@ function main() {
         const sig = signatureOf(best.board.groups);
         sigTally.set(sig, (sigTally.get(sig) ?? 0) + 1);
         composedTier.set(b.id, t as Tier);
-        return best.board;
+        return [best.board];
       }
       restore(before);
     }
-    throw new Error(`${b.id}: cannot be composed at any tier (bank exhausted?)`);
+    unbuildable.push(b.id);
+    return [];
   });
 
   // Pass 2: herring solver → tier confirmation (demote, never fake) → layout.
@@ -1372,16 +1772,16 @@ function main() {
   const built: OutBoard[] = solved.map(({ board: b, herrings, traps }) => {
     const wanted = composedTier.get(b.id)!;
     let tier = wanted;
-    while (tier > 1 && !meetsTier(b, herrings, tier)) tier = (tier - 1) as Tier;
+    while (tier > 1 && !meetsTier(b, traps, tier)) tier = (tier - 1) as Tier;
     if (tier !== wanted) demoted++;
-    const ship = shippedHerrings(b, herrings, traps, tier);
+    const { ship, named } = shippedHerrings(b, herrings, traps, tier);
     const layout = buildLayout(b, ship, SEED + [...b.id].reduce((h, c) => h + c.charCodeAt(0), 0));
     return {
       id: b.id,
       tier,
       groups: b.groups.map((g) => ({ ...g, type: typeOfTheme(g.theme), decoys: [] as string[] })),
       ambiguousWords: ship,
-      herrings: herringSets(traps, ship),
+      herrings: named,
       layout,
     };
   });
@@ -1399,7 +1799,10 @@ function main() {
   const shipsHere = (b: OutBoard): boolean => {
     const spec = TIER_SPECS[b.tier];
     const types = b.groups.map((g) => g.type);
-    return b.ambiguousWords.length >= spec.minHerrings
+    // Round 12: the floor is NAMED THREADS — the number of different sentences
+    // the room can say on a wrong guess — not the length of the intruder list.
+    return b.herrings.length >= spec.minHerrings
+      && b.ambiguousWords.length >= 1
       && types.filter((t) => t !== 'wordplay').length >= spec.minPlain
       && types.filter((t) => t === 'wordplay').length >= spec.minWordplay
       && types.filter((t) => t === 'trivia').length <= spec.maxTrivia
@@ -1445,7 +1848,18 @@ function main() {
     .sort((a, b) => b.ambiguousWords.length - a.ambiguousWords.length || (a.id < b.id ? -1 : 1));
   for (const b of top.slice(TIER3_CAP)) {
     b.tier = 2;
-    b.ambiguousWords = b.ambiguousWords.slice(0, TIER_SPECS[2].maxHerrings);
+    // Round 12: the TRAP list is what the budget counts, so it is what gets
+    // trimmed; the intruder list is re-derived from what survives (a word whose
+    // only thread was dropped is no longer a planted herring) and the opening
+    // layout is rebuilt, because 2.6 asks the survivors to sit adjacent and a
+    // subset of an adjacent run need not be one.
+    b.herrings = b.herrings.slice(0, TIER_SPECS[2].maxHerrings);
+    b.ambiguousWords = b.ambiguousWords.filter(
+      (w) => b.herrings.some((h) => h.words.includes(w)),
+    );
+    b.layout = buildLayout(
+      b, b.ambiguousWords, SEED + [...b.id].reduce((h, c) => h + c.charCodeAt(0), 0),
+    );
   }
 
   // Pass 3: decoys for the naming act.
@@ -1453,10 +1867,19 @@ function main() {
 
   validate(out);
 
-  writeFileSync(join(here, 'generated', 'word-web.json'), JSON.stringify(out));
+  /**
+   * ROUND 12 — the generator sets its own type. Bank themes are written with
+   * straight quotes (`Contains "TEN"`) and the shipped corpus must carry curly
+   * ones, so every regeneration used to leave the pool failing
+   * `content:lint-typography` until somebody remembered to run it with
+   * `--fix` — which means `npm run content:all` red on a clean checkout, and a
+   * half-typeset word-web.json is exactly the defect round 11 spent a pass on.
+   * `typesetDeep` is idempotent, so this is a no-op on anything already set.
+   */
+  writeFileSync(join(here, 'generated', 'word-web.json'), JSON.stringify(typesetDeep(out)));
   const perTier = ([1, 2, 3] as Tier[]).map((t) => {
     const arr = out.filter((b) => b.tier === t);
-    const avgHerrings = arr.reduce((a, b) => a + b.ambiguousWords.length, 0) / Math.max(1, arr.length);
+    const avgHerrings = arr.reduce((a, b) => a + b.herrings.length, 0) / Math.max(1, arr.length);
     const subtle = arr.reduce((a, b) => a + b.groups.filter((g) => isSubtleTheme(g.theme)).length, 0) / Math.max(1, arr.length);
     return `t${t} (${tierLabel(t)}): ${arr.length} boards (~${avgHerrings.toFixed(1)} traps, ~${subtle.toFixed(1)} subtle cats)`;
   }).join(', ');
@@ -1466,7 +1889,8 @@ function main() {
   const sigs = architectureCensus(out);
   console.log(
     `word-web.json: ${out.length} boards — ${perTier}; ${demoted} demoted for want of tight traps, ` +
-    `${dropped} dropped for having none at all, ${deduped.length} dropped for repeating a shipped 4-word set` +
+    `${dropped} dropped for having none at all, ${unbuildable.length} dropped for having no category left to itself`
+    + `${unbuildable.length ? ` (${unbuildable.join(', ')})` : ''}, ${deduped.length} dropped for repeating a shipped 4-word set` +
     `${deduped.length ? ` (${deduped.join(', ')})` : ''}, ` +
     `${trivia} with a (yellow-tier) trivia category, bank hands dealt: ${[...bankUse.values()].reduce((a, b) => a + b, 0)}; ` +
     `named herrings by relation: ${[...byRelation].map(([r, n]) => `${r} ${n}`).join(', ')}\n` +
@@ -1549,6 +1973,33 @@ function validate(puzzles: OutBoard[]): void {
     }
   }
 
+  /**
+   * ROUND 12 (AAA 2.6 / volume-quality) — THE ANTI-WALLPAPER CAP APPLIES TO
+   * EVERY THEME, WHATEVER WROTE IT.
+   *
+   * `BANK_REUSE_CAP` was documented as the rule against a category becoming
+   * wallpaper and enforced only where the bank dealt, so it did not apply to
+   * the source the shelf grew from. Shipped before this check: "Two Pairs of
+   * Double Letters" ×17, Heteronyms ×7, 'Silent "T"' ×7, 'Silent "G"' ×6,
+   * "Drop the First Letter" ×6, Palindromes ×5, "Homophones of Animals" ×5,
+   * 'Silent "GH"' ×5, and ten more over budget. This is a hard fail, not a
+   * soft warning: a soft warning is what the last three rounds had.
+   */
+  const themeTally = new Map<string, string[]>();
+  for (const p of puzzles) {
+    for (const g of p.groups) {
+      const k = canon(g.theme);
+      themeTally.set(k, [...(themeTally.get(k) ?? []), p.id]);
+    }
+  }
+  for (const [theme, ids] of [...themeTally].sort()) {
+    if (ids.length > BANK_REUSE_CAP) {
+      problems.push(
+        `pool: "${theme}" is the category on ${ids.length} boards (cap ${BANK_REUSE_CAP}) — ${ids.join(', ')}`,
+      );
+    }
+  }
+
   // ROUND 11 (AAA 2.7 / 2.12) — the pool-wide architecture budget.
   const census = architectureCensus(puzzles);
   if (census.topShare > ARCHITECTURE_BUDGET.maxSignatureShare) {
@@ -1581,6 +2032,10 @@ function validate(puzzles: OutBoard[]): void {
       if (!toneOk(w.toLowerCase())) problems.push(`${p.id}: "${w}" fails the tone gate`);
     }
     if (new Set(p.groups.map((g) => g.tier)).size !== 4) problems.push(`${p.id}: tiers not distinct`);
+    // ROUND 12 (AAA 2.9 [BEAT]) — a "Hidden X" board may not print X.
+    for (const g of p.groups) {
+      problems.push(...hiddenGroupProblems(g.theme, g.words).map((x) => `${p.id}: ${x}`));
+    }
 
     // 2.9 + the round-4 tier gates
     const spec = TIER_SPECS[p.tier];
@@ -1603,12 +2058,37 @@ function validate(puzzles: OutBoard[]): void {
       problems.push(`${p.id}: ${subtle} subtle categories (tier ${p.tier} needs ${spec.minSubtle})`);
     }
 
-    // 2.7 — the tier's herring budget (cap AND floor; AAA's ≤3 still holds)
-    if (p.ambiguousWords.length > Math.min(3, spec.maxHerrings)) {
-      problems.push(`${p.id}: ${p.ambiguousWords.length} herrings (tier ${p.tier} budget ${spec.maxHerrings})`);
+    /**
+     * 2.7 — the tier's herring budget (cap AND floor; AAA's ≤3 still holds).
+     *
+     * ROUND 12: this block asserted `ambiguousWords.length` — the flat
+     * INTRUDER-WORD list — against a spec whose field is named `minHerrings`
+     * and whose docstring says "tier 3 must ship 2–3 traps". Two words caught
+     * by one `suffix:GHT` are one trap and one sentence, and they satisfied a
+     * two-trap check, so half the top shelf shipped at tier-1 trap density
+     * with a tier-3 label and nothing could see it. The TRAP budget is asserted
+     * against `herrings` (the named threads); the intruder list keeps its own,
+     * differently-named assertion below.
+     */
+    if (p.herrings.length > Math.min(3, spec.maxHerrings)) {
+      problems.push(`${p.id}: ${p.herrings.length} named traps (tier ${p.tier} budget ${spec.maxHerrings})`);
     }
-    if (p.ambiguousWords.length < spec.minHerrings) {
-      problems.push(`${p.id}: ${p.ambiguousWords.length} herrings (tier ${p.tier} needs ${spec.minHerrings})`);
+    if (p.herrings.length < spec.minHerrings) {
+      problems.push(`${p.id}: ${p.herrings.length} named traps (tier ${p.tier} needs ${spec.minHerrings})`);
+    }
+    // The intruder list is DERIVED from the traps (one word per thread, deduped
+    // where two threads name the same word), so it is never longer than the
+    // budget and never empty on a board that has a trap. Deliberately a
+    // separate, differently-named assertion: conflating the two is the defect
+    // this block was rewritten for.
+    if (p.ambiguousWords.length > p.herrings.length) {
+      problems.push(`${p.id}: ${p.ambiguousWords.length} intruders against ${p.herrings.length} named traps`);
+    }
+    if (new Set(p.ambiguousWords).size !== p.ambiguousWords.length) {
+      problems.push(`${p.id}: the intruder list repeats a word`);
+    }
+    if (p.herrings.length > 0 && p.ambiguousWords.length === 0) {
+      problems.push(`${p.id}: named traps with no intruder to cluster on`);
     }
     if (p.ambiguousWords.some((w) => !words.includes(w))) problems.push(`${p.id}: herring not on board`);
 
@@ -1627,6 +2107,21 @@ function validate(puzzles: OutBoard[]): void {
       for (const w of h.words) if (!words.includes(w)) problems.push(`${p.id}: herring word "${w}" not on board`);
       if ((h.relation === 'shared-affix' || h.relation === 'hidden-string') && !h.detail) {
         problems.push(`${p.id}: shared-affix herring with no letters to point at`);
+      }
+      /**
+       * ROUND 12 (AAA 2.10) — a doubled-letter trap must name the SAME doubled
+       * letter, and every member must actually carry it. "These words each
+       * contain some repeated character" is a property ~30% of English shares
+       * and a grouping nobody chases; 52 of 55 shipped doubled-letter traps
+       * had no doubled letter in common, so the −2-step guess bought noise
+       * dressed as an insight.
+       */
+      if (h.relation === 'doubled-letter') {
+        if (!h.detail || !/^([A-Z])\1$/.test(h.detail)) {
+          problems.push(`${p.id}: doubled-letter herring with no shared pair to name`);
+        } else if (h.words.some((w) => !w.includes(h.detail!))) {
+          problems.push(`${p.id}: doubled-letter herring "${h.detail}" not carried by every member`);
+        }
       }
     }
     // Every shipped intruder is described by at least one named set.
@@ -1652,5 +2147,10 @@ function validate(puzzles: OutBoard[]): void {
   }
 }
 
+assertBankIsClean();
+indexCorpusSets([
+  ...boards.flatMap((b) => b.groups.map((g) => g.words)),
+  ...WORDPLAY_BANK.flatMap(bankDraws).map((b) => b.words),
+]);
 if (process.argv.includes('--report')) report();
 else main();

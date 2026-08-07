@@ -166,24 +166,24 @@ const FRAGMENT_SEALED_COPY: Record<string, { sigil: string; title: string; where
   'definition-line': {
     sigil: 'W',
     title: 'A page of his, not yet made out',
-    where: 'Filed in the Journal · solve a room to make it out',
+    where: 'Filed in the Journal · finish a room to make it out',
   },
   engraving: {
     sigil: 'E',
     title: 'A rubbing, not yet made out',
-    where: 'Filed in the Journal · solve a room to make it out',
+    where: 'Filed in the Journal · finish a room to make it out',
   },
   testimony: {
     sigil: 'T',
     title: 'A memory, not yet made out',
-    where: 'Filed in the Journal · solve a room to make it out',
+    where: 'Filed in the Journal · finish a room to make it out',
   },
 };
 
 const FRAGMENT_SEALED_FALLBACK = {
   sigil: 'W',
   title: 'A page, filed and not yet made out',
-  where: 'Filed in the Journal · solve a room to make it out',
+  where: 'Filed in the Journal · finish a room to make it out',
 };
 
 /** A letter waiting under an unbroken seal (arrival is pure derivation, so
@@ -267,9 +267,12 @@ export function madeOutMoment(fragments: readonly MadeOutFacts[]): Moment | null
     kind: 'made-out',
     // The seal still points at the tab the quoted page lives in (AAA 6.3).
     sigil: copy.sigil,
-    title: `${word} ${n === 1 ? 'page comes' : 'pages come'} clear`,
+    // ROUND 13 (AAA 6.16): one verb for the page's two states. It is "made
+    // out", never "comes clear"/"deciphered"/"legible" — the same two words the
+    // journal's rail, its cards, Ellery's nudge and the sealed arrival all use.
+    title: `${word} ${n === 1 ? 'page' : 'pages'} made out`,
     quote: openingWords(first.text),
-    where: 'Legible in the Journal · the higher the room, the more at once',
+    where: 'Made out, in the Journal · the higher the room, the more at once',
   };
 }
 
@@ -406,4 +409,51 @@ export function advance(state: QueueState): QueueState {
   if (state.current === null && state.pending.length === 0) return state;
   const [next, ...rest] = state.pending;
   return { current: next ?? null, pending: rest, shown: state.shown };
+}
+
+// ---------------------------------------------------------------------------
+// How long one seal sits on the glass (round 12)
+// ---------------------------------------------------------------------------
+
+/**
+ * A LONE moment. Long enough to read a title, a line of found poetry and the
+ * address it was filed at, without hurrying — this is the number the layer has
+ * always used and it is right for the case it was chosen for.
+ */
+export const MOMENT_MS = 5600;
+
+/**
+ * A moment with others behind it.
+ *
+ * ROUND 12 — the round-7 "hold/release" item, answered in one direction only.
+ *
+ * HOLD is declined. Its two readings both make the burst worse or already
+ * exist: pausing the timer LENGTHENS a parade that is already the complaint,
+ * and 11.13(a)'s "wait for the player to return" is structural here rather
+ * than temporal — the queue is a module singleton mounted outside the router,
+ * so a grant pushed while no layer is mounted waits instead of expiring
+ * (tests/moment.test.ts, "a grant landing while nothing is mounted still
+ * waits"). There is nothing left for a hold to buy.
+ *
+ * RELEASE is the half worth having, and AAA §0.5 escape 4 is the reason: the
+ * seal is a fixed layer that owns a band of whatever screen the player is on,
+ * and the escape is recorded in the bar as "5.6s per queued grant, and grants
+ * QUEUE". A four-grant solve (a sealed page filed, two pages made out, a
+ * keepsake, a rank-up) parked wax over that band for 22.4 seconds. The player
+ * who knows she can tap never felt it; the player who does not know is exactly
+ * the player the escape was written about.
+ *
+ * The shortening is safe precisely because of the class these moments are in:
+ * every one of them is Campaign, so 11.12 already owes it a persistent trace,
+ * and each seal names its own ("Filed in the Journal · Testimony"). Nothing is
+ * lost by moving on — and the player is demonstrably attending, because she
+ * just read the one before it. It is never shortened below the point where the
+ * title and the trace can be read, and it never applies to a moment that is
+ * alone, which is the one that has to carry itself.
+ */
+export const MOMENT_QUEUED_MS = 4000;
+
+/** The dwell for the seal on glass, given how many are waiting behind it. */
+export function momentDwellMs(waiting: number): number {
+  return waiting > 0 ? MOMENT_QUEUED_MS : MOMENT_MS;
 }

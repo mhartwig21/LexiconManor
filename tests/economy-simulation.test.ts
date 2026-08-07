@@ -8,7 +8,7 @@ import {
 } from '../src/engine/economy/simulate';
 import {
   doorLockedAt, fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, ledgerTotal,
-  solveKeys, teaArcPoints, BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, KEY_SUPPLY,
+  solveKeys, teaArcPoints, teaBonus, BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, KEY_SUPPLY,
   MOVE_COST_BY_ROW, TEA_ARC, TEA_BY_POINTS,
 } from '../src/engine/economy/steps';
 import { createRng } from '../src/engine/rng';
@@ -98,6 +98,41 @@ const winDays = campaigns.map((c) => c.volumeWinDay);
 const NEVER = CAMPAIGN_LENGTH + 1;
 const reachOrNever = reachDays.map((d) => d ?? NEVER);
 const winOrNever = winDays.map((d) => d ?? NEVER);
+
+/**
+ * ═══ ROUND-12 — THE SECOND MODELLED PLAYER ═══════════════════════════════
+ *
+ * Everything above this line is `PROFILE_SKILLED`, and until round 12 so was
+ * EVERY campaign assertion in this file. `PROFILE_DECENT` — the profile whose
+ * own docstring calls it "the MEDIAN evening, the one 4.10b clocks", i.e. the
+ * owner — played thousands of single days here and never once played a
+ * campaign, so AAA 4.10d/4.10e/4.10g published unqualified medians that no
+ * critic could pass or fail for the person they were written for. Measured
+ * when someone finally ran it: first landing at median day 18–21 (10–14% never
+ * inside 45 days), the volume won at median day 33–34, and **25% of campaigns
+ * unfinished after 45 evenings** against a published ">90% by day 35".
+ *
+ * That is the exact shape of the round-6 and round-11 escapes this bar keeps
+ * recording — a published number verified against a player the game is not
+ * describing. Two things fixed it, and the second is the one that lasts:
+ *   1. `TEA_BY_POINTS` lifted at its top four rungs (engine/economy/steps.ts,
+ *      which carries the four rejected levers and why), narrowing the gap
+ *      without moving one of the skilled player's published numbers;
+ *   2. THIS FIXTURE, and the block below it. Both players are measured, both
+ *      bands are published in AAA 4.10e, and a future retune that fixes one
+ *      profile by breaking the other now fails a test instead of shipping.
+ *
+ * The counts are smaller than the skilled fixture's on purpose: these are
+ * 45-day campaigns played through the real ledger, and the bands below are
+ * wide enough that 250 campaigns resolve them without a coin-flip.
+ */
+const DECENT_CAMPAIGNS = 250;
+const decentCampaigns =
+  simulateCampaigns(PROFILE_DECENT, DECENT_CAMPAIGNS, CAMPAIGN_LENGTH, 0x1234);
+const decentDays = decentCampaigns.flatMap((c) => c.days);
+const decentReach = decentCampaigns.map((c) => c.firstSanctumReachDay ?? NEVER);
+const decentWin = decentCampaigns.map((c) => c.volumeWinDay ?? NEVER);
+const decentDeduce = decentCampaigns.map((c) => c.deductionDay ?? NEVER);
 
 // ---------------------------------------------------------------------------
 
@@ -331,7 +366,7 @@ describe('4.10c — a great single day still only flirts with the Sanctum landin
   });
 });
 
-describe('4.10d — the CAMPAIGN: first Sanctum reach lands on day 6–10', () => {
+describe('4.10d — the SKILLED player first reaches the Sanctum landing on day 6–10', () => {
   it('puts the median first reach inside the published band', () => {
     const m = medianOf(reachOrNever);
     expect(m).toBeGreaterThanOrEqual(6);
@@ -367,7 +402,7 @@ describe('4.10d — the CAMPAIGN: first Sanctum reach lands on day 6–10', () =
   });
 });
 
-describe('4.10e — the VOLUME is typically won in 14–28 days', () => {
+describe('4.10e — the SKILLED player wins the VOLUME in 14–28 days', () => {
   it('puts the median win inside the published band', () => {
     const m = medianOf(winOrNever);
     expect(m).toBeGreaterThanOrEqual(14);
@@ -406,6 +441,140 @@ describe('4.10e — the VOLUME is typically won in 14–28 days', () => {
     const b = simulateCampaigns(PROFILE_SKILLED, 25, 30, 909);
     expect(a.map((c) => [c.firstSanctumReachDay, c.deductionDay, c.volumeWinDay]))
       .toEqual(b.map((c) => [c.firstSanctumReachDay, c.deductionDay, c.volumeWinDay]));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND-12 — 4.10d/e FOR THE OTHER PLAYER: THE MEDIAN EVENING'S CAMPAIGN
+// ---------------------------------------------------------------------------
+
+/**
+ * THE ROUND-12 BLOCKER, AS A SUITE. Every band above is `PROFILE_SKILLED`'s,
+ * and until this block existed that was the *only* campaign the model had ever
+ * played — while 4.10b's whole 10–15 minute promise is measured on
+ * `PROFILE_DECENT`, and AAA 4.10e's "typically won in 14–28 days" named no
+ * player at all. Two archetypes, one published number, and no way for a critic
+ * to say which one it was about.
+ *
+ * The two arcs are genuinely different and the doc now says so, because they
+ * cannot be collapsed: the median player is modelled as more cautious about the
+ * stairs (boldness 1.3 vs 1.0), less efficient at finding frontier doors
+ * (walkbackPerRow 0.58 vs 0.36) and less inclined to push a storey at all
+ * (pushBias 0.62 vs 0.78). Every lever that pulled her median into 14–28 also
+ * put the skilled player at the Sanctum door on day 1 in 17–20% of campaigns,
+ * against a published <8% that is itself the owner-playtest blocker this whole
+ * overhaul exists to answer. So the honest fix is two published bands and two
+ * measured profiles, not one band and one player.
+ *
+ * These bands are the median player's, and they are deliberately wide — the
+ * point is not to pin a decimal, it is that a retune which fixes the skilled
+ * arc by abandoning the owner's now FAILS HERE instead of shipping.
+ */
+describe('4.10d/e — the MEDIAN player has her own published band, and it is measured', () => {
+  it('is a real campaign, not a wall: she does reach the landing', () => {
+    // Measured over 4 seeds after the round-12 tea retune: median day 16–17,
+    // 3.3–6.0% never inside 45 days. (Before it: 18–21, and 10–14% never.)
+    const m = medianOf(decentReach);
+    expect(m, `median first reach day ${m}`).toBeGreaterThanOrEqual(12);
+    expect(m).toBeLessThanOrEqual(20);
+    expect(share(decentReach, (d) => d === NEVER)).toBeLessThan(0.1);
+    // …and she is slower than the skilled player, which is the whole reason
+    // the two bands exist. If this ever inverts, one of the profiles has
+    // stopped describing the player it is named for.
+    expect(m).toBeGreaterThan(medianOf(reachOrNever));
+  });
+
+  it('still cannot stumble into the top on day 1 (4.10d, for her too)', () => {
+    expect(share(decentReach, (d) => d === 1)).toBeLessThan(0.02);
+    expect(share(decentReach, (d) => d <= 2)).toBeLessThan(0.04);
+  });
+
+  it('wins the volume in 26–34 days at the median — the published second band', () => {
+    // Measured 29–31 across seeds. This is the number AAA 4.10e now publishes
+    // beside the skilled player's 14–28, instead of leaving hers unstated.
+    const m = medianOf(decentWin);
+    expect(m, `median win day ${m}`).toBeGreaterThanOrEqual(26);
+    expect(m).toBeLessThanOrEqual(34);
+    // Never a first-week walkover for her either (measured: exactly 0).
+    expect(share(decentWin, (d) => d <= 7)).toBeLessThan(0.02);
+  });
+
+  it('finishes: >80% inside 45 evenings, and the tail is not a cliff', () => {
+    // THE CLAUSE THE FINDING WAS REALLY ABOUT. Before round 12 this read 74–78%
+    // — i.e. one median-player campaign in four was still unfinished after six
+    // weeks of daily play, while the doc promised >90% by day 35 with no
+    // qualifier. Her real curve is published now, and it has to stay a curve.
+    expect(share(decentWin, (d) => d <= 45)).toBeGreaterThan(0.8);
+    expect(share(decentWin, (d) => d <= 35)).toBeGreaterThan(0.6);
+    expect(share(decentWin, (d) => d <= 28)).toBeGreaterThan(0.35);
+    // The skilled player's ">90% by day 35" is HERS, not a house promise —
+    // pinned as an inequality so nobody re-reads 4.10e as one number again.
+    expect(share(winOrNever, (d) => d <= 35))
+      .toBeGreaterThan(share(decentWin, (d) => d <= 35));
+  });
+
+  it('needs BOTH gates for her too, and never learns past the volume', () => {
+    for (const c of decentCampaigns) {
+      if (c.volumeWinDay === null) continue;
+      expect(c.deductionDay).not.toBeNull();
+      expect(c.volumeWinDay).toBeGreaterThanOrEqual(c.deductionDay!);
+      expect(c.days[c.volumeWinDay - 1]!.reachedSanctum).toBe(true);
+      expect(c.fragments).toBeLessThanOrEqual(c.fragmentsFiled);
+      expect(c.fragmentsFiled).toBeLessThanOrEqual(KNOWLEDGE.volumeFragments);
+    }
+    // Her knowledge gate lags the skilled player's for a mechanical reason,
+    // not a random one: the Study's channel is a rows-5–6 card and violet
+    // share is a function of row, so a player who tops out lower learns slower.
+    const m = medianOf(decentDeduce);
+    expect(m).toBeGreaterThanOrEqual(16);
+    expect(m).toBeLessThanOrEqual(24);
+    expect(m).toBeGreaterThan(medianOf(campaigns.map((c) => c.deductionDay ?? NEVER)));
+  });
+
+  it('keeps HER evening 10–15 minutes for the whole campaign (4.10f)', () => {
+    // 4.10f is the one 4.10 clause that was always about this player, and the
+    // retune had to leave it exactly where it was. Measured: 11.5 early,
+    // 12.8–13.1 late, p90 ≤ 21.9.
+    const early = decentCampaigns.flatMap((c) => c.days.slice(0, 10)).map((d) => d.minutes);
+    const late = decentCampaigns.flatMap((c) => c.days.slice(19, 30)).map((d) => d.minutes);
+    for (const window of [early, late]) {
+      expect(medianOf(window)).toBeGreaterThanOrEqual(10);
+      expect(medianOf(window)).toBeLessThanOrEqual(15);
+      expect(quantileOf(window, 0.9)).toBeLessThanOrEqual(25);
+    }
+  });
+
+  it('holds both medians across independent campaign seeds', () => {
+    for (const seed of [0x1234, 0x9911, 0x2f2f, 0xabc1]) {
+      const runs = simulateCampaigns(PROFILE_DECENT, 150, CAMPAIGN_LENGTH, seed);
+      const reach = medianOf(runs.map((c) => c.firstSanctumReachDay ?? NEVER));
+      const win = medianOf(runs.map((c) => c.volumeWinDay ?? NEVER));
+      expect(reach, `seed ${seed}: reach ${reach}`).toBeGreaterThanOrEqual(12);
+      expect(reach).toBeLessThanOrEqual(20);
+      expect(win, `seed ${seed}: win ${win}`).toBeGreaterThanOrEqual(26);
+      expect(win).toBeLessThanOrEqual(34);
+    }
+  }, HEAVY_MS);
+
+  it('is the TEA arc carrying her, not a key giveaway (round-10 directive intact)', () => {
+    // The retune that closed the gap had to be the step arc: keys belong to
+    // the owner's "skill, not just persistence" directive, so solves must
+    // still out-supply every other channel for HER as well, not only for the
+    // skilled player the ratio was originally measured on.
+    const fromSolves = decentDays.reduce((s, d) => s + d.keysFromSolves, 0);
+    const fromDeck = decentDays.reduce((s, d) => s + d.keysFound, 0);
+    expect(fromSolves).toBeGreaterThan(fromDeck);
+    const fromFern =
+      decentDays.length * fernMorningKeys(FERN_ARC.meetPoints + FERN_ARC.questPoints);
+    expect(fromSolves).toBeGreaterThan(fromFern);
+    // And the lever itself is progressive by construction: `teaArcPoints` does
+    // not reach the rungs that moved until day 6, so days 1–5 — the evenings
+    // the owner called "way too easy" — cannot have been touched by it.
+    for (const day of [1, 2, 3, 4, 5]) {
+      expect(teaArcPoints(day)).toBeLessThanOrEqual(2);
+      expect(teaBonus(teaArcPoints(day))).toBe(TEA_BY_POINTS[teaArcPoints(day)]);
+    }
+    expect(TEA_BY_POINTS.slice(0, 3)).toEqual([0, 4, 6]);
   });
 });
 
@@ -483,6 +652,66 @@ describe('4.10g — the SEAL bites: entering gets the page, solving makes it out
 
   it('makes the solve the thing that moves the case, on 1 day in 3 or better', () => {
     expect(share(sealedDays, (d) => d.pagesMadeOut > 0)).toBeGreaterThan(0.33);
+  });
+
+  /**
+   * ═══ ROUND-12 — "1 DAY IN 3" WAS THE SKILLED PLAYER'S NUMBER TOO ═══════
+   *
+   * 4.10g built all of its evidence from `simulateCampaigns(PROFILE_SKILLED,
+   * …)`. The overnight clause is skill-qualified in the doc ("a skilled
+   * player's days") and is fine; "a solve makes a page out on ≥1 day in 3"
+   * was not qualified, and re-run on the median player's campaigns it measures
+   * 0.23 — false by a third for the very evening 4.10b clocks, and for the
+   * very mechanic ("solving needs to matter") the owner asked for.
+   *
+   * The clause is now qualified in AAA 4.10g and BOTH numbers are pinned here.
+   * It is qualified rather than tuned into range because the ceiling is
+   * arithmetic, not tuning — see the test below, which is the argument.
+   */
+  const decentSealedDays = decentDays;
+
+  it("holds the median player's own made-out band (≥1 day in 5)", () => {
+    const made = share(decentSealedDays, (d) => d.pagesMadeOut > 0);
+    expect(made, `PROFILE_DECENT made a page out on ${(made * 100).toFixed(1)}% of days`)
+      .toBeGreaterThan(0.2);
+    // …and it is genuinely BELOW the skilled band, so the qualification in
+    // 4.10g is load-bearing rather than decorative. If a future retune lifts
+    // her past 1-in-3, this fails and the doc gets to drop the split.
+    expect(made).toBeLessThan(0.33);
+    expect(made).toBeLessThan(share(sealedDays, (d) => d.pagesMadeOut > 0));
+  });
+
+  it('leaves HER a page overnight too — less often, never never', () => {
+    const overnight =
+      decentCampaigns.reduce((s, c) => s + c.sealedOvernightDays, 0) / decentSealedDays.length;
+    expect(overnight, `median-player sealed-overnight share ${overnight.toFixed(3)}`)
+      .toBeGreaterThan(0.08);
+    expect(overnight).toBeLessThan(0.25);
+    // The 25–50% band above is the skilled player's, and the doc says so.
+    expect(overnight).toBeLessThan(
+      sealed.reduce((s, c) => s + c.sealedOvernightDays, 0) / sealedDays.length);
+  });
+
+  it('cannot reach 1-day-in-3 while violet stays a RARE room — the arithmetic', () => {
+    // WHY THE CLAUSE IS QUALIFIED RATHER THAN TUNED. A page can only be made
+    // out if she is holding one, and the median player's overnight backlog
+    // median is 0 — so her made-out rate is pinned to how often she MEETS a
+    // violet room, and violet share is a function of ROW (deckMixAt: 2.0% at
+    // row 0, 10.5% at row 6). She tops out around the third landing; the
+    // skilled player climbs past it. Same mechanic, same tuning, two rates.
+    expect(medianOf(decentSealedDays.map((d) => d.sealedBacklog))).toBe(0);
+    const violetMet = share(decentSealedDays, (d) => d.fragmentsFound > 0);
+    const made = share(decentSealedDays, (d) => d.pagesMadeOut > 0);
+    expect(violetMet, `median-player violet-met share ${violetMet.toFixed(3)}`)
+      .toBeLessThan(0.33);
+    expect(made).toBeLessThanOrEqual(violetMet + 0.05);
+    // So lifting her to 1-in-3 means lifting her violet-met rate past 1 in 3,
+    // which collides with THIS SAME CRITERION's "still a rare room (<50%)" and
+    // with the 4.10b clock calibrated on the deck mix. The skilled player
+    // clears the bar for the mirror-image reason: she meets violet far more
+    // often, because she is further up the house.
+    expect(share(sealedDays, (d) => d.fragmentsFound > 0)).toBeGreaterThan(0.4);
+    expect(share(sealedDays, (d) => d.fragmentsFound > 0)).toBeLessThan(0.75);
   });
 
   it('never makes out more than she was holding, and never out of order', () => {

@@ -67,7 +67,8 @@ import { createRng } from '../src/engine/rng';
 import type { CharacterId, DayRecord, VolumeState } from '../src/engine/types';
 import {
   arrivedLetters, findLetter, fragmentDroughtDays, fragmentForSolveChannel, freshVolumeState,
-  letterGrants, LINTEL_CHANNEL, nextFragmentForRoom, PITY_DROUGHT_DAYS, STUDY_CHANNEL,
+  legibleDayFlag, legibleDroughtDays, letterGrants, LINTEL_CHANNEL, nextFragmentForRoom,
+  PITY_DROUGHT_DAYS, sealedFragmentFlag, STUDY_CHANNEL,
   type VolumeContent,
 } from '../src/engine/volume';
 import {
@@ -140,6 +141,13 @@ function studyShareAt(row0: number): number {
 interface DripRun {
   filed: number[];
   legible: number[];
+  /**
+   * ROUND 13: the per-day view the pity floor has to be measured against.
+   * `unfoundAtDawn` is what makes the measurement honest — once the volume has
+   * authored nothing further, no channel owes her "≥1 new fragment" and a dry
+   * run says nothing about mercy.
+   */
+  perDay: { day: number; filed: number; legible: number; unfoundAtDawn: number }[];
 }
 
 /** One seeded campaign through the real drip, seal included. */
@@ -183,12 +191,26 @@ function fragmentDays(seed: number, days: number): DripRun {
     }
   };
 
+  /**
+   * ROUND 13 (AAA 4.14 blocker) — the days on which she LEARNED something.
+   *
+   * The drought was measured off `DayRecord.fragmentsFound`, which counts a
+   * sealed page, because a sealed page IS found. So a smudge she cannot read
+   * reset the mercy channel, and the model reproduced that rather than flagging
+   * it. The shipped rule now reads legibility (engine/volume.legibleDroughtDays
+   * over the `made-out-day-<N>` flags), and so does this model.
+   */
+  const legibleDaysSet = new Set<number>();
+
+  const perDay: DripRun['perDay'] = [];
+
   for (let day = 1; day <= days; day++) {
     const before = state.foundFragmentIds.length;
     const legibleBefore = legibleCount;
+    const unfoundAtDawn = content.fragments.length - before;
 
     // --- Overnight post (drought measured from the banked day records). ----
-    const droughtDays = fragmentDroughtDays(records);
+    const droughtDays = fragmentDroughtDays(records, { legibleDays: legibleDaysSet });
     for (const letter of arrivedLetters(content, state, day, { droughtDays, openedIds })) {
       if (openedIds.has(letter.id)) continue;
       const resolved = findLetter(content, letter.id) ?? letter;
@@ -262,13 +284,17 @@ function fragmentDays(seed: number, days: number): DripRun {
     const found = state.foundFragmentIds.length;
     for (let n = before + 1; n <= found; n++) dayOfCount[n] = day;
     for (let n = legibleBefore + 1; n <= legibleCount; n++) dayOfLegible[n] = day;
+    if (legibleCount > legibleBefore) legibleDaysSet.add(day);
     records.push({
       day, endedAt: 0, cause: 'steps-exhausted',
       roomsDrafted: result.rooms, roomsSolved: result.roomsSolved,
       fragmentsFound: found - before, stepsSpent: result.spent, minutes: result.minutes,
     } as DayRecord);
+    perDay.push({
+      day, filed: found - before, legible: legibleCount - legibleBefore, unfoundAtDawn,
+    });
   }
-  return { filed: dayOfCount, legible: dayOfLegible };
+  return { filed: dayOfCount, legible: dayOfLegible, perDay };
 }
 
 describe('fragment pacing — the volume horizon is measured, not asserted (AAA 4.10e)', () => {
@@ -362,22 +388,214 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
     expect(journal.slice(at - 400, at), 'the Sanctum link is unconditional again').toMatch(/atLanding/);
   });
 
-  it('the pity floor holds: never PITY_DROUGHT_DAYS+1 consecutive dry days', () => {
-    // Measured on FILING, deliberately: the pity channel's promise is that
-    // she is never handed nothing for PITY_DROUGHT_DAYS running. A sealed page
-    // still counts as something arriving — it is hers, it is in the journal,
-    // and it is a reason to go solve a room.
+  /**
+   * ROUND 13 — THIS TEST USED TO DEFEND THE BUG IN ITS OWN COMMENT.
+   *
+   * It measured the floor on FILING, and said so: *"A sealed page still counts
+   * as something arriving — it is hers, it is in the journal, and it is a
+   * reason to go solve a room."* Which is true about a page and false about a
+   * PITY FLOOR. 4.14's [BEAT] guarantee is about the mystery moving; a smudge
+   * moves nothing, and counting it reset the drought to zero and switched the
+   * mercy channel off for exactly the player it exists for. Both halves are
+   * measured now: filing keeps its cozy promise, legibility carries the floor.
+   */
+  /**
+   * The window the guarantee actually covers: days on which the volume still
+   * had a page to give. Once all seventeen are filed no channel owes her "one
+   * new fragment", so a dry run past that point measures nothing about mercy —
+   * it measures a finished drip. (The old version of this test dodged the
+   * question by stopping at the last event, which is the same thing said by
+   * accident and stops being true the moment the drought rule changes.)
+   */
+  const owedDays = (run: DripRun) => run.perDay.filter((d) => d.unfoundAtDawn > 0);
+  const worstDryRun = (days: DripRun['perDay'], of: 'filed' | 'legible') => {
+    let dry = 0;
+    let worst = 0;
+    for (const d of days) {
+      dry = d[of] > 0 ? 0 : dry + 1;
+      worst = Math.max(worst, dry);
+    }
+    return worst;
+  };
+
+  it('the pity floor holds on LEGIBILITY: never PITY_DROUGHT_DAYS+1 days without learning', () => {
     for (const run of runs) {
-      const filedDays = run.filed;
+      expect(
+        worstDryRun(owedDays(run), 'legible'),
+        'a campaign went too long without making anything out',
+      ).toBeLessThanOrEqual(PITY_DROUGHT_DAYS);
+    }
+  });
+
+  /**
+   * FILING IS NO LONGER THE GUARANTEED QUANTITY, AND THIS TEST SAYS SO OUT LOUD.
+   *
+   * Before round 13 the drought counted filings, so "filing is never dry for
+   * more than PITY_DROUGHT_DAYS" was true by construction — the test was
+   * measuring its own definition. Now that mercy keys off legibility, a stretch
+   * where she makes out backlog pages (learning plenty) but files nothing new
+   * can run one day longer, and it does: measured over 240 seeded campaigns,
+   * worst filing dry run 0 ×28 · 1 ×94 · 2 ×68 · 3 ×46 · 4 ×4, against a
+   * LEGIBLE worst of 0 ×18 · 1 ×94 · 2 ×63 · 3 ×65, max 3 — the floor exactly
+   * where PITY_DROUGHT_DAYS puts it. The band below is the measurement, not a
+   * target; if filing ever drifts further the drip has thinned and that is worth
+   * a look even though the guarantee still holds.
+   */
+  it('filing stays close behind: never more than one day past the legible floor', () => {
+    for (const run of runs) {
+      expect(worstDryRun(owedDays(run), 'filed')).toBeLessThanOrEqual(PITY_DROUGHT_DAYS + 1);
+    }
+  });
+});
+
+/**
+ * ═══ THE TRIPWIRE: THE PLAYER THE SEAL IS DESIGNED TO PRESS ════════════════
+ *
+ * The round-13 blocker in one campaign. She drafts violet rooms and solves
+ * nothing — the profile the seal exists to lean on. Every day a page is filed,
+ * so `DayRecord.fragmentsFound` is never zero, so the old drought counter never
+ * reached PITY_DROUGHT_DAYS, so the mercy letter never came and the one [BEAT]
+ * guarantee in 4.14 was withdrawn by the very documents that taught her
+ * nothing.
+ *
+ * Everything below is the shipped machinery: the real volume content, the real
+ * `sealedFragmentFlag` / `legibleDayFlag` families the slice writes, the real
+ * `legibleDroughtDays` the letter tray and the digest now read, and the real
+ * `arrivedLetters` / `letterGrants` mercy channel including its synthesized
+ * house-written letters. Nothing here is a hand-tuned curve.
+ */
+describe('the pity floor survives a player who cannot read her own pages (AAA 4.14)', () => {
+  const HORIZON = 24;
+
+  interface WalkerDay {
+    day: number;
+    filed: number;      // what the chronicles would print
+    legible: number;    // what she can actually reason from
+    unfoundAtDawn: number;
+  }
+
+  /** She walks `violetPerDay` violet rooms a day and never finishes a puzzle. */
+  function walkTheVioletRooms(violetPerDay: number): WalkerDay[] {
+    let state = freshVolumeState(content.id, 1);
+    const flags = new Set<string>();
+    const openedIds = new Set<string>();
+    const records: DayRecord[] = [];
+    const out: WalkerDay[] = [];
+
+    for (let day = 1; day <= HORIZON; day++) {
+      const unfoundAtDawn = content.fragments.length - state.foundFragmentIds.length;
+      let filed = 0;
+      let legible = 0;
+
+      // Overnight post — the mercy channel, read through the SHIPPED drought.
+      const droughtDays = legibleDroughtDays(content.id, flags, records);
+      for (const letter of arrivedLetters(content, state, day, { droughtDays, openedIds })) {
+        if (openedIds.has(letter.id)) continue;
+        const resolved = findLetter(content, letter.id) ?? letter;
+        for (const id of letterGrants(content, resolved, state)) {
+          if (state.foundFragmentIds.includes(id)) continue;
+          // A letter's enclosure arrives OPEN — she was handed it, not asked
+          // to decipher it (app/slices/journal.openLetter files it unsealed).
+          state = { ...state, foundFragmentIds: [...state.foundFragmentIds, id] };
+          filed += 1; legible += 1;
+        }
+        openedIds.add(letter.id);
+      }
+
+      // The rooms she walks through. Filed forever, sealed, silent.
+      for (let i = 0; i < violetPerDay; i++) {
+        const frag = nextFragmentForRoom(content, state, 'mystery');
+        if (!frag || state.foundFragmentIds.includes(frag.id)) continue;
+        state = { ...state, foundFragmentIds: [...state.foundFragmentIds, frag.id] };
+        flags.add(sealedFragmentFlag(content.id, frag.id));
+        filed += 1;
+      }
+
+      // The two write-once families exactly as app/slices/journal.ts writes
+      // them: the day is marked only when something LEGIBLE landed.
+      if (legible > 0) flags.add(legibleDayFlag(content.id, day));
+      records.push({
+        day, endedAt: 0, cause: 'steps-exhausted',
+        roomsDrafted: violetPerDay, roomsSolved: 0, stepsSpent: 18, fragmentsFound: filed,
+      } as DayRecord);
+      out.push({ day, filed, legible, unfoundAtDawn });
+    }
+    return out;
+  }
+
+  for (const violetPerDay of [1, 2]) {
+    it(`walking ${violetPerDay} violet room(s) a day and solving nothing still learns something every ${PITY_DROUGHT_DAYS} days`, () => {
+      const days = walkTheVioletRooms(violetPerDay);
+
+      // The premise of the defect: she is never handed nothing, so a
+      // filing-based drought counter can never fire. If this ever stops being
+      // true the tripwire has stopped testing the shape it was written for.
+      const dryFilingDays = days.filter((d) => d.unfoundAtDawn > 0 && d.filed === 0);
+      expect(dryFilingDays, 'the walker must always be FILING — that is the trap')
+        .toEqual([]);
+
+      // The guarantee itself, measured on what she can read. Only while the
+      // volume still has something to give: once every page is filed there is
+      // no "new fragment" left for any channel to owe her.
       let dry = 0;
       let worst = 0;
-      const last = filedDays.reduce((a, b) => Math.max(a, b ?? 0), 0);
-      for (let day = 1; day <= last; day++) {
-        const filedToday = filedDays.some((d) => d === day);
-        dry = filedToday ? 0 : dry + 1;
-        worst = Math.max(worst, dry);
+      let worstDay = 0;
+      for (const d of days) {
+        if (d.unfoundAtDawn <= 0) break;
+        dry = d.legible > 0 ? 0 : dry + 1;
+        if (dry > worst) { worst = dry; worstDay = d.day; }
       }
-      expect(worst).toBeLessThanOrEqual(PITY_DROUGHT_DAYS);
+      expect(
+        worst,
+        `${worst} consecutive days with nothing made out, ending day ${worstDay}`,
+      ).toBeLessThanOrEqual(PITY_DROUGHT_DAYS);
+
+      // And the mercy actually arrived — a floor that holds because the volume
+      // ran out of pages is not a floor (the round-12 "lint that matches
+      // nothing" lesson, applied to a simulation).
+      expect(days.some((d) => d.day > 1 && d.legible > 0)).toBe(true);
+    });
+  }
+
+  it('the same walk with the OLD filing-based drought never pays her at all (the defect, pinned)', () => {
+    // The counterfactual, so the fix cannot be quietly reverted: reading the
+    // drought off DayRecord.fragmentsFound — every day non-zero, because a
+    // sealed page is found — leaves the mercy channel permanently asleep.
+    let state = freshVolumeState(content.id, 1);
+    const openedIds = new Set<string>();
+    const records: DayRecord[] = [];
+    let pityLettersEverDelivered = 0;
+
+    for (let day = 1; day <= HORIZON; day++) {
+      let filed = 0;
+      // Only days the volume still owes her a page count: once all seventeen
+      // are filed the drip runs dry on its own and the pity channel fires for a
+      // reason that has nothing to do with the seal.
+      const owed = content.fragments.length - state.foundFragmentIds.length > 0;
+      const droughtDays = fragmentDroughtDays(records);   // the OLD reading
+      for (const letter of arrivedLetters(content, state, day, { droughtDays, openedIds })) {
+        if (openedIds.has(letter.id)) continue;
+        if (letter.pity && owed) pityLettersEverDelivered += 1;
+        for (const id of letterGrants(content, findLetter(content, letter.id) ?? letter, state)) {
+          if (state.foundFragmentIds.includes(id)) continue;
+          state = { ...state, foundFragmentIds: [...state.foundFragmentIds, id] };
+          filed += 1;
+        }
+        openedIds.add(letter.id);
+      }
+      const frag = nextFragmentForRoom(content, state, 'mystery');
+      if (frag && !state.foundFragmentIds.includes(frag.id)) {
+        state = { ...state, foundFragmentIds: [...state.foundFragmentIds, frag.id] };
+        filed += 1;
+      }
+      records.push({
+        day, endedAt: 0, cause: 'steps-exhausted',
+        roomsDrafted: 1, roomsSolved: 0, stepsSpent: 18, fragmentsFound: filed,
+      } as DayRecord);
     }
+    expect(
+      pityLettersEverDelivered,
+      'the filing-based drought is supposed to be broken — if it now pays, this tripwire is dead',
+    ).toBe(0);
   });
 });

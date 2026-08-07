@@ -1,0 +1,65 @@
+/* ==========================================================================
+   pages/front-step.css — the no-day-yet branch of ManorPage.
+   Per-module CSS (ARCHITECTURE conflict rule 3): imported by the page that
+   uses it, consumes ui/theme/tokens.css only, `fs-` prefix so nothing collides
+   with A1's blueprint.css (which owns `.bp-scene`, still doing the layout).
+
+   ROUND 8 composition pass. The front step measured a 296px featureless band —
+   35.1% of a 390x844 glass — between the title plate and the pair of quiet
+   doors at the foot. Round 7 had already moved the plate onto the optical
+   centre and ruled the doors off, which is why the band is 35% and not 60%,
+   but the middle of the screen was still holding nothing at all: this is the
+   cover of the game, and the cover of a book is not a blank page with the
+   title set high on it.
+
+   The ornament is the manor's own front door — a keyhole plate, drawn once in
+   line, in `currentColor`. No hue (AAA 6.5's neutral budget), no fill, no
+   image request, correct in both themes, legible in grayscale (6.3), and it
+   is `aria-hidden` because it says nothing the title does not.
+   ========================================================================== */
+
+.fs-mark {
+  display: block;
+  width: clamp(72px, 22vw, 104px);
+  height: auto;
+  margin: 0.1rem auto -0.2rem;
+  color: var(--ink-faint);
+}
+
+/* The invitation gets a rule under it, so the eye is handed from the plate to
+   the verb instead of crossing empty parchment to reach it. */
+.fs-rule {
+  align-self: stretch;
+  height: 0.6rem;
+  position: relative;
+  background:
+    linear-gradient(var(--paper-edge), var(--paper-edge)) left center / calc(50% - 0.7rem) 1px no-repeat,
+    linear-gradient(var(--paper-edge), var(--paper-edge)) right center / calc(50% - 0.7rem) 1px no-repeat;
+}
+.fs-rule::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.42rem;
+  height: 0.42rem;
+  border: 1px solid var(--ink-faint);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* The line under the seal: what the verb costs, in the house's voice. It is
+   also the ink that breaks the band between the button and the ruled pair of
+   doors below it. */
+.fs-note {
+  margin: 0;
+  max-width: 32ch;
+  font-size: var(--text-sm);
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--ink-faint);
+}
+
+@media (max-height: 700px) {
+  .fs-mark { width: clamp(56px, 16vw, 76px); }
+  .fs-rule { height: 0.4rem; }
+}

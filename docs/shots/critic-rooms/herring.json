@@ -1,0 +1,867 @@
+{
+ "boardId": "web-b23",
+ "tier": 2,
+ "herringDef": {
+  "words": [
+   "CURRENT",
+   "FURROW",
+   "KEEP",
+   "SCURRY",
+   "SQUIRREL",
+   "TURRET"
+  ],
+  "relation": "doubled-letter"
+ },
+ "selection": [
+  "CURRENT",
+  "FURROW",
+  "KEEP",
+  "RAT"
+ ],
+ "together": 2,
+ "timeline": [
+  {
+   "ms": 0,
+   "s": null
+  },
+  {
+   "ms": 300,
+   "s": null
+  },
+  {
+   "ms": 600,
+   "s": null
+  },
+  {
+   "ms": 900,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 0,
+    "y": 624,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 1000,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 0.908973,
+    "y": 620,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 1100,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 0.998755,
+    "y": 619,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 1200,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 619,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 1300,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 1400,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 1500,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 1600,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 1700,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 1800,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 1900,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 2000,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 2100,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 2200,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 2300,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 2400,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 2500,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 2600,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 2700,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 2800,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 2900,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 3000,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 3100,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 3200,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 3300,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 3400,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 3500,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 3600,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 3700,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 3800,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 3900,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 4000,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 4100,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 4200,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 4300,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 4400,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 4500,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 4600,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 4700,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 4800,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 4900,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 5000,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 5100,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 5200,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 5300,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 5400,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 5500,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 5600,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 5700,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 5800,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 5900,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 6000,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 6100,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 6200,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 6300,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 6400,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 6500,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 6600,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 6700,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 6800,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 6900,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 7000,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 7100,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 7200,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 7300,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 7400,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 7500,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 7600,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 7700,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 7800,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  },
+  {
+   "ms": 7900,
+   "s": {
+    "main": "Two of these share a thread. · −2 steps",
+    "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+    "op": 1,
+    "y": 592,
+    "h": 41,
+    "inView": true
+   }
+  }
+ ],
+ "bitEverSeen": true,
+ "bitVisibleMs": 7000,
+ "toastVisibleMs": 7000,
+ "finalToast": {
+  "main": "Two of these share a thread. · −2 steps",
+  "bit": "CURRENT, FURROW, KEEP double a letter. But no.",
+  "op": 1,
+  "y": 592,
+  "h": 41,
+  "inView": true
+ },
+ "at375": {
+  "grid": {
+   "y": 131,
+   "bottom": 427
+  },
+  "deck": null,
+  "weave": {
+   "h": 44,
+   "w": 76.3,
+   "bottom": 528.5,
+   "inView": true,
+   "hit": "self"
+  },
+  "vh": 667,
+  "stageOver": null,
+  "docOver": 0
+ },
+ "study": {
+  "texts": [
+   "An entry in his hand. The headword is torn away.",
+   "10 letters — whisper it back.",
+   "A headword is missing",
+   "10 letters · 3 whispers left",
+   "Whispered · his letters · in place"
+  ],
+  "rule": "10 letters — whisper it back.",
+  "flavour": "An entry in his hand. The headword is torn away.",
+  "clueButtons": [
+   "Unseal · −3 steps",
+   "Unseal · −3 steps",
+   "Whisper"
+  ],
+  "tierFromRoom": {
+   "cellKey": "2,5",
+   "kind": "forgotten-word",
+   "puzzleId": "",
+   "tier": 3
+  }
+ }
+}

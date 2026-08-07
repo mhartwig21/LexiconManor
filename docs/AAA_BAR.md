@@ -147,6 +147,16 @@ re-tests their shape:
    exactly why it survived: the clearance was right everywhere the critic looked.
    → 11.2, 11.4. Suspect any surface whose top band stacks something the shell's tokens
    do not describe, and probe *every* control in it, not only the back control.
+   **It came back in round 12, in the rooms, and that is the real lesson.** The
+   round-11 fix taught the seal about a band the journal *has*; a ROOM's problem is the
+   opposite shape — it has no back row at all, so the same formula overshot straight into
+   the playfield. Measured at 390×844: 27 of the Counting House's 98 cells (the whole top
+   three rows), 12 of the Darkroom's 57, 6 Linen Closet squares, 5 Twistle cells, and the
+   Conservatory's found-words toggle at both viewports. Driven: a tap aimed at "Row 1,
+   column 1" dismissed the seal and left the cursor exactly where it was. Nobody re-probed
+   the rooms, because the journal was the surface that had been wrong. → **11.27**. When
+   a fixed layer is retuned for one surface, re-probe *every* surface it can appear over,
+   including the ones that were clean before the retune.
 5. **The scene with one door** (round 11). The morning card and the night digest are
    full-screen scenes the player stands on every day, and their only controls were the
    primary advance and the Chronicles aside. The journal cost **nine** taps from the
@@ -368,9 +378,48 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
        rate** (days 1–3 vs days 15–21), which is the ramp itself, asserted in
        `tests/economy-simulation.test.ts`.
     Skill buys the keys; the meta arcs are what make the keys enough.
-  - **4.10e — the volume is typically won in 14–28 days** of daily play (median), <2%
-    inside the first week, >90% by day 35. Winning requires **both** gates independently:
+  - **4.10e — the volume is typically won in 14–28 days** of daily play by **the
+    skilled player of 4.10d** (median; measured 15–16), <2% inside the first week,
+    >90% by day 35 (measured >99%). Winning requires **both** gates independently:
     knowing the word (fragments) *and* reaching the door that day.
+    **Round 12 correction — THIS CLAUSE HAD ONE NUMBER AND TWO PLAYERS.** Every
+    campaign target in 4.10 was measured on `PROFILE_SKILLED` alone;
+    `PROFILE_DECENT` — the profile whose own docstring calls it "the MEDIAN
+    evening, the one 4.10b clocks", i.e. the owner — had played thousands of
+    single days in the model and never once played a campaign. Run through the
+    same `simulateCampaigns`, she first stood on the Sanctum landing at median
+    day 18–21 (10–14% never inside 45 days) and won the volume at median day
+    33–34, with **25% of campaigns unfinished after 45 evenings** against the
+    ">90% by day 35" printed above. A number verified against a player the game
+    is not describing is the round-6 and round-11 escape exactly, and no critic
+    could pass or fail this clause for the person it was written for.
+    **The two arcs cannot be collapsed** — the median player is modelled as more
+    cautious on the stairs (`boldness` 1.3 vs 1.0), less efficient at finding
+    frontier doors (`walkbackPerRow` 0.58 vs 0.36) and less inclined to push a
+    storey at all (`pushBias` 0.62 vs 0.78), and every lever that pulled her
+    median into 14–28 also put the skilled player at the Sanctum door on day 1
+    in 17–20% of campaigns, against the <8% of 4.10d that is itself the
+    owner-playtest blocker. So **both bands are published and both are
+    measured**:
+    - **the skilled player** (4.10d's): first landing day 6–10, volume won at
+      median **14–28**, >90% by day 35.
+    - **the median player** (`PROFILE_DECENT`, 4.10b's): first landing at median
+      day **12–20** (measured 16–17, <10% never inside 45 days), the word
+      deducible at median day **16–24** (measured 20), the volume won at median
+      day **26–34** (measured 29–31), <2% inside the first week (measured 0),
+      **>80% inside 45 evenings** (measured 85–89%), and her evening stays
+      inside 10–15 minutes start to finish (4.10f).
+    Both are pinned in `tests/economy-simulation.test.ts`, which now plays
+    `PROFILE_DECENT` campaigns beside the skilled ones, asserts her band is
+    *slower* than his (if that ever inverts, a profile has stopped describing
+    the player it is named for), and re-measures the key-source ratio for her
+    too. The gap was also narrowed at source — `TEA_BY_POINTS` lifted at its top
+    four rungs, the one lever of four simulated that is strictly progressive and
+    that leaves days 1–5 bit-identical (`teaArcPoints` does not reach those rungs
+    until day 6, so the owner's "way too easy on day 1" is untouched); the three
+    rejected levers and their measured failures are recorded in
+    `engine/economy/steps.ts`. The retune narrows the gap; the second measured
+    profile is the part that stops this happening again.
     **Round 11 correction — "knowing the word" means LEGIBLE fragments.** Round 10 made
     a violet room file a *sealed* page that narrows nothing until a solve makes it out,
     and gave the word games two fragment channels of their own. Both models still
@@ -400,9 +449,29 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     targets, all measured in `tests/economy-simulation.test.ts`:
     **a violet room appears on >15% of median evenings** (measured 21.7%) while staying
     a rare room (<50%); **a sealed page survives to the next dawn on 25–50% of a skilled
-    player's days** (measured ~37%); **a solve makes a page out on ≥1 day in 3**
-    (measured ~50%); and the tripwire — **a player who solves nothing makes out nothing**,
-    all campaign, however many violet rooms she walks through. The supply side is the
+    player's days** (measured ~37%); **a solve makes a page out on ≥1 day in 3 for a
+    skilled player** (measured ~50%) **and on ≥1 day in 5 for the median player**
+    (measured ~23%); and the tripwire — **a player who solves nothing makes out nothing**,
+    all campaign, however many violet rooms she walks through.
+    **Round 12 correction — the made-out clause was unqualified and unmeasured.**
+    It was built, like the rest of 4.10g's evidence, from
+    `simulateCampaigns(PROFILE_SKILLED, …)`. The overnight clause above says
+    "a skilled player's days" and is fine; this one said nothing, and on the
+    median player's campaigns it measures 0.23 — false by a third for the exact
+    evening 4.10b clocks and the exact mechanic ("solving needs to matter") the
+    owner asked for. It is **qualified rather than tuned into range because the
+    ceiling is arithmetic, not tuning**: a page can only be made out if she is
+    holding one, her overnight backlog median is 0, so her made-out rate is
+    pinned to how often she *meets* a violet room — and violet share is a
+    function of ROW (`deckMixAt`: ≈2.0% at row 0, ≈10.5% at row 6). She tops out
+    around the third landing and meets violet on ~24% of days; the skilled
+    player climbs past it and meets it on ~54%. Lifting her to 1-in-3 therefore
+    means lifting her violet-met rate past 1 in 3, which collides with this same
+    criterion's "still a rare room (<50%)" and with the 4.10b clock calibrated
+    on the deck mix. Both rates, the backlog-median-0 premise and the
+    violet-met bound are pinned in `tests/economy-simulation.test.ts`, so the
+    split is a measured fact a future retune can argue with rather than a
+    sentence someone chose. The supply side is the
     *realised* violet share per row (`deckMixAt`), not the category weight: `6 + row*7`
     read like a ramp while `RARITY_WEIGHTS[1]` scored tier 1's only two mystery cards 9
     and 1, for a realised **0.16%** of ground-floor draws. It is ≈2.0% at row 0 rising
@@ -417,7 +486,11 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     and is never drafted, so both the older published "≈1.7 padlocks per ascent" and the
     1-key door it assumed described an ascent the drafter never makes; keys reset nightly
     so every ascent re-earns its way up); and scarce refills (green-room refills
-    +2..+6, compounding hooks +1..+2, tea 0 → +11 across the friendship).
+    +2..+6, compounding hooks +1..+2, tea 0 → **+13** across the friendship —
+    lifted from +11 at its top four rungs in round 12, the one lever of four
+    simulated that closed most of the median player's 4.10e gap without moving a
+    single one of the skilled player's published numbers and without touching
+    days 1–5 at all; the three rejected levers are recorded in `steps.ts`).
     **Round 6 correction:** this clause read "snack +3..+7", which described a
     distribution the deck cannot produce — refills are fixed authored numbers
     on the green cards (Kitchen +6, Larder +5, Boot Room +3, Still Room +2),
@@ -561,19 +634,57 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   no exception, on every surface. **[PARITY]**
   - **(a) The 9×9 ledger grid** (Counting House). Nine cells at the floor need 396px;
     an iPhone 12-class portrait viewport is 390, and the leaf is already edge-to-edge
-    with zero gutters (measured 43.3×43.3px). NYT Sudoku ships ~41px at this width. The
+    with zero gutters. NYT Sudoku ships ~41px at this width. The
     exemption is safe because **nothing on the board commits anything**: touching a cell
     only moves a cursor, and every costed verb lives on a ≥44px pad key (59×52px), so a
     fat-fingered cell tap can never spend a step.
   - **(b) Full-width alpha keyboards** (Darkroom 27-key, Linen Closet QWERTY). Ruled
     floor: **≥32px wide × ≥48px tall with no inter-key dead zone** — iOS system keys are
     themselves ~32px wide, so shrinking to satisfy the number would make us worse than
-    the benchmark in order to pass it. Measured 32.5×55.7px, inside the ruling.
-  - Both classes must be **measured and recorded** every round (they are, in
-    `docs/shots/*/metrics.json`) — the exemption is from the number, never from the
-    measurement. *Round 7 (verifier): this ruling was requested by three separate passes
-    and was being silently waived in the meantime, which is worse than either answer —
-    a criterion no critic can pass or fail.*
+    the benchmark in order to pass it.
+  - **(c) Cursor-only grid cells** (Darkroom cipher slot, Linen Closet crossword square).
+    *Ruled round 8, on the verifier's own measurements; the owner may override.* These
+    are the third and fourth members of the family (a) already rules on, and until now
+    they were the only ones unadjudicated — which meant they were being **silently
+    waived**, the exact state round 7 called "worse than either answer". Ruled floor:
+    **no smaller than the benchmark ships at the same width, with no inter-cell dead
+    zone, and every costed verb on the surface at ≥44pt.** The exemption rests on the
+    same argument as (a) and on nothing else — **a slot moves a cursor and commits
+    nothing**; `Develop the print`, `Weigh the books` and every letter key are ≥44pt or
+    inside (b). The arithmetic that forces it: the cipher's longest phrase is 41 letters
+    with an 8-letter longest word, and a 44px slot needs ~2 more ranks, which pushes the
+    print — the primary solving channel, since the read is letter-frequency across the
+    whole phrase — off the glass. The crossword is 5 squares plus a 3-row 48px QWERTY
+    plus a clue row plus the room's verb inside a 481.6px stage at 375×667.
+  - All three classes must be **measured and recorded** every round — the exemption is
+    from the number, never from the measurement. *Round 7 (verifier): this ruling was
+    requested by three separate passes and was being silently waived in the meantime,
+    which is worse than either answer — a criterion no critic can pass or fail.*
+
+  **MEASURED, ROUND 8** (`scripts/r8-tap-targets.mjs`, real Edge, effective tap target
+  derived by hit-testing outward from each control's centre, so `::after` extenders and
+  inter-cell dead zones are both caught — a bounding-rect read cannot tell them apart):
+
+  | control | clause | 390×844 (css / effective) | 375×667 (css / effective) |
+  |---|---|---|---|
+  | `.ch-cell` ledger cell | (a) | 43.3×43.3 / 43×43 | 39.7×39.7 / 39×39 |
+  | `.mic-key` Darkroom key | (b) | 32.5×55.7 / 34×56 | 33.7×48.0 / 34×48 |
+  | `.lc-key` Linen QWERTY key | (b) | 32.5×50.5 / 34×52 | 33.7×48.0 / 34×48 |
+  | `.dk-cell` cipher slot | (c) | 31.2×47.3 / 38×54 | 30.0×38.0 / 36×44 |
+  | `.lc-cell` crossword square | (c) | 48.6×48.6 / 50×49 | 34.1×34.1 / 35×35 |
+  | `.ch-pad` ledger pad key | none | 59.0×52.0 | 57.3×44.0 |
+  | `.mic-btn--primary` Darkroom verb | none | 150.5×44.0 | 150.5×44.0 |
+  | `.lc-clue` clue row | none | 336.8×44.0 | 328.2×44.0 |
+
+  Both keyboards are inside (b)'s floor at both viewports — including the 48px height,
+  which round 12 found them under and fixed. **Zero costed controls are under 44pt on
+  any surface at either viewport.** *Round 8 correction to the record: a round-13 pass
+  asked for 6.19(a)'s recorded 43.3×43.3 to be corrected to "42×42", on the grounds that
+  the round-7 height reserve had shrunk the leaf to 39×39. The reserve fix is in the tree
+  (`counting-house.css`, 18.8rem → 17.1rem) and the cell re-measures at **43.3×43.3**,
+  i.e. back at the number this clause already recorded. The correction was not applied,
+  because applying it would have introduced the error it was trying to remove. The 375×667
+  column is new — (a) had only ever recorded one viewport.*
 - 6.20 The style-density test: any screen, cropped to 25%, is still identifiably this
   game (Fell caps, parchment, ink rules, or a cameo in any quadrant).
 
@@ -778,7 +889,10 @@ player cannot reach by tapping is not shipped, however complete the code is.*
   stacks above it, and that sum is a copy of somebody else's layout living in a second
   file, which is the drift this criterion exists to forbid. Fixed layers take
   `max(own clearance, published floor)`; the token defaults to 0 so surfaces that do not
-  opt in are untouched. **[PARITY]**
+  opt in are untouched. A surface with **no** band to publish — a room, whose glass is
+  playfield from the top of the stage to the sticky key deck — is 11.27's case, not this
+  one: there is no clearance that fits, so the layer stops taking taps instead.
+  **[PARITY]**
 - 11.5 **Chrome does not reach through an overlay.** While any modal or full-screen
   overlay is up, controls belonging to the persistent chrome are either raised above it
   deliberately (documented, e.g. the day candle staying readable) or made
@@ -902,3 +1016,44 @@ unread chain.
 - 11.26 **The trunk is reachable read-only.** Reaching save export/import costs the player
   no game state: no day started, no step spent, no scene consumed. It is the recovery
   path (7.19) and a recovery path that charges admission is not one. **[PARITY]**
+
+### Notices over playfields
+
+*Added in round 12. §11 had a clause for a fixed layer landing on navigation (11.4) and
+none for a fixed layer landing on a BOARD, so the moment seal sat on five of the seven
+rooms for two rounds and no critic could pass or fail it.*
+
+- 11.27 **A notice over a playfield does not take the taps aimed at the board.** A room's
+  glass is playfield from the top of its stage to the sticky key deck; there is no spare
+  band to clear (measured, all seven kinds — the Linen Closet's grid starts 7px below the
+  top of the stage) and no way to give one back without taking it from the board itself.
+  So the rule is not about position, it is about **agency**: while a transient notice is
+  over a playfield, `document.elementFromPoint` at every cell and every key returns that
+  CONTROL, and a driven tap aimed at a control the notice covers performs that control's
+  action. A notice that is itself tappable over a board fails, however briefly it is up —
+  the tap it eats is indistinguishable from a dead control (§0.5 escape 4). Its
+  corollaries, all verified by driving, never by stills:
+  - **(a) The board pays nothing.** The notice may not resize, reflow or scroll the
+    playfield to make room for itself. Boards here are sized off `--stage-h` and several
+    sit at their measured floor already, so a reserved band comes straight out of the
+    cell: measured at 390×844 and 375×667, reserving the seal's own height took the Counting
+    House's exempt 9×9 cell from 43.3 → 35.8 and from **39.7 → 25.8**, and the hive hex
+    from 107.3 → 75.8 and 86.1 → 46.1. 6.19(a)'s exemption is granted on a measurement,
+    so a notice that invalidates the measurement for five seconds is a second defect and
+    not a fix. Recorded every round by `scripts/probe-seal-geometry.mjs`, which prints
+    stage height and cell geometry with and without a notice on glass; every value must
+    be unchanged.
+  - **(b) It retires on its own clock.** A notice that cannot be tapped away must not
+    need to be: it is Campaign-class, so 11.12 already owes it a persistent trace, and
+    the dwell is what has to carry it (5.6s alone, 4.0s with a queue behind it). It may
+    not wait on a tap that would land on the board instead.
+  - **(c) It still says everything 11.7/11.12/11.14 require** — the plain word for what
+    arrived, the address of the trace, and a form that shares nothing with flavour. It
+    may drop the reward's own words, which are one tap away at the address it just named;
+    it may not drop the address.
+  - **(d) Every surface, every round.** The gate is
+    `tests/critic-round12-seal-overlap.mjs`: it walks all seven room kinds with a
+    **distinct** grant each — re-filling an already-unlocked plate announces nothing,
+    which is how a first pass silently measured six rooms with no notice on the glass at
+    all — asserts zero covered controls, and then drives one tap at a cell under the
+    notice to prove the tap is not eaten. **[PARITY]**

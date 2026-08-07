@@ -126,6 +126,28 @@ export function nextUninterpreted(
   return found[0]?.id ?? null;
 }
 
+/**
+ * What an undeciphered page LOOKS like. Not the text: a run of ink-strokes the
+ * same shape and length as the writing under it, so a card reads as a real
+ * document she is holding rather than as an empty placeholder — and so nothing
+ * of the fragment's content can leak through the DOM (the strokes are derived
+ * from word LENGTHS only, and every render site marks the element aria-hidden;
+ * the sighted and the screen-reader player learn exactly the same amount,
+ * which is nothing).
+ *
+ * ROUND 13: moved down here out of ui/journal/JournalView.tsx, because the
+ * Sanctum epilogue needs it too (AAA 4.15 — one rule for both surfaces) and a
+ * ceremony screen must not have to import a whole page component, with its
+ * stylesheet, to draw a smudge.
+ */
+export function smudge(text: string, maxWords = 22): string {
+  return text
+    .split(/\s+/)
+    .slice(0, maxWords)
+    .map((w) => '·'.repeat(Math.max(1, Math.min(9, w.replace(/[^\p{L}]/gu, '').length))))
+    .join(' ');
+}
+
 /** How many filed pages are still waiting to be made out (the journal's
  *  footer rail says this number out loud — it is the reason to go solve). */
 export function sealedCount(state: VolumeState, opts?: SealedOpts): number {
@@ -164,12 +186,87 @@ export function viewedFragmentFlag(volumeId: string, fragmentId: string): string
   return `vol.${volumeId}.viewed-${fragmentId}`;
 }
 
-/** Fragment ids this volume has actually shown the player. */
+/**
+ * Fragment ids this volume has shown the player WHILE THEY WERE READABLE.
+ *
+ * ROUND-12 NARROWING (see `glancedFragmentFlag`): the meaning of this flag has
+ * not changed for any save ever written — before the seal existed every filed
+ * page was legible, so "displayed" and "displayed legibly" were the same
+ * sentence — but it is now only half of "she has looked at this".
+ */
 export function viewedFragmentIds(volumeId: string, flags: Iterable<string>): Set<string> {
   const prefix = `vol.${volumeId}.viewed-`;
   const out = new Set<string>();
   for (const f of flags) if (f.startsWith(prefix)) out.add(f.slice(prefix.length));
   return out;
+}
+
+/**
+ * ── ROUND-12 DEFECT: ONE MARK, TWO MEANINGS (AAA 11.20 false by design) ─────
+ *
+ * Round 10 made `displayedFragmentIds` skip sealed pages, so a card the player
+ * had fully looked at kept its wax mark for as long as the hand stayed
+ * illegible. The comment defending it said the mark was truthful because
+ * "there IS something here she has not read" — but that is not what the mark
+ * says. Wax on the Journal entrance says *you have not looked at this*, and she
+ * had. The marker was answering two different questions with one glyph, so it
+ * could not clear on viewing (11.20) and its count could not match the number
+ * of unviewed items (11.21): a player who read every card still saw "3".
+ *
+ * The two states are both real and both worth telling her about, so they get
+ * two vocabularies:
+ *
+ *   UNREAD  — wax. State: you have not looked at this card.
+ *   SEALED  — smudge (an unbroken seal, an ink ring, never wax). Promise: this
+ *             page is yours and is not yet made out; solve a room.
+ *
+ * Four coherent combinations, all reachable, all rendered:
+ *
+ *   | seen? | legible? | wax | smudge |
+ *   |-------|----------|-----|--------|
+ *   | no    | no       |  ●  |   ⊖    |  a torn leaf she has not even opened to
+ *   | yes   | no       |  ·  |   ⊖    |  she has seen the smudge; it still is one
+ *   | no    | yes      |  ●  |   ·    |  legible and never looked at — INCLUDING
+ *   |       |          |     |        |  a page she glanced at while sealed and
+ *   |       |          |     |        |  which a solve has since made out
+ *   | yes   | yes      |  ·  |   ·    |  read
+ *
+ * The third row is the other half of the directive: a page becoming legible IS
+ * information she has not seen, so it must re-raise unread. That falls out of
+ * the encoding rather than needing a rule — seeing a smudge writes `glanced-`,
+ * and only seeing the WORDS writes `viewed-`, so the instant `legible-` lands
+ * the page is once again "displayed, but never displayed readably".
+ *
+ * Why a second flag and not a rewrite of the first: flags are write-once and
+ * `viewed-` already means "seen it readable" in every save that exists,
+ * including the owner's live one and the migration backfill
+ * (VIEWED_BACKFILL_FLAG, app/migrations.ts — A8's file, untouched). Encoding
+ * the new state as the NEW flag is the only version of this change that does
+ * not re-mark sixteen pages she has been reading for a fortnight.
+ */
+export function glancedFragmentFlag(volumeId: string, fragmentId: string): string {
+  return `vol.${volumeId}.glanced-${fragmentId}`;
+}
+
+/** Fragment ids this volume has shown the player WHILE THEY WERE SEALED. */
+export function glancedFragmentIds(volumeId: string, flags: Iterable<string>): Set<string> {
+  const prefix = `vol.${volumeId}.glanced-`;
+  const out = new Set<string>();
+  for (const f of flags) if (f.startsWith(prefix)) out.add(f.slice(prefix.length));
+  return out;
+}
+
+/**
+ * Has the player actually looked at this page IN ITS CURRENT STATE? The one
+ * predicate the whole unread chain hangs on (AAA 11.20).
+ */
+export function hasSeen(
+  fragmentId: string,
+  input: { viewedIds: ReadonlySet<string>; glancedIds?: ReadonlySet<string>; sealedIds?: ReadonlySet<string> },
+): boolean {
+  return input.sealedIds?.has(fragmentId)
+    ? !!input.glancedIds?.has(fragmentId)
+    : input.viewedIds.has(fragmentId);
 }
 
 /**
@@ -183,6 +280,23 @@ export const VIEWED_BACKFILL_FLAG = 'sys.unread.backfilled';
 
 export type JournalTab = 'word' | 'engravings' | 'testimony' | 'letters';
 
+/**
+ * Filed-but-not-made-out, by the tab that shows it. The SECOND chain: the
+ * smudge marker's entrance count, tab counts and per-card ids all come from
+ * here, exactly as the wax marker's do from `JournalUnread`. It is deliberately
+ * the same shape, so a reader of either one knows how to read the other — and
+ * so the two can never be summed by accident into a single dishonest number.
+ */
+export interface JournalSealed {
+  word: readonly string[];
+  engravings: readonly string[];
+  testimony: readonly string[];
+  /** Every still-sealed fragment id, all tabs. */
+  fragments: readonly string[];
+  /** Exactly the number of pages filed and not yet made out. */
+  total: number;
+}
+
 export interface JournalUnread {
   /** Unviewed definition lines (the Word tab). */
   word: readonly string[];
@@ -194,7 +308,21 @@ export interface JournalUnread {
   fragments: readonly string[];
   /** Exactly the number of unviewed items behind the Journal entrance. */
   total: number;
+  /**
+   * The other axis (round 12). NOT part of `total`: a page she has looked at
+   * and cannot read yet is not unread, and counting it as unread is the exact
+   * defect this field exists to end.
+   */
+  sealed: JournalSealed;
 }
+
+export const NOTHING_SEALED: JournalSealed = Object.freeze({
+  word: Object.freeze([]) as readonly string[],
+  engravings: Object.freeze([]) as readonly string[],
+  testimony: Object.freeze([]) as readonly string[],
+  fragments: Object.freeze([]) as readonly string[],
+  total: 0,
+});
 
 export const NOTHING_UNREAD: JournalUnread = Object.freeze({
   word: Object.freeze([]) as readonly string[],
@@ -203,10 +331,16 @@ export const NOTHING_UNREAD: JournalUnread = Object.freeze({
   letters: Object.freeze([]) as readonly string[],
   fragments: Object.freeze([]) as readonly string[],
   total: 0,
+  sealed: NOTHING_SEALED,
 });
 
 export interface UnreadInput {
+  /** Seen while READABLE — engine/journal.viewedFragmentIds. */
   viewedIds: ReadonlySet<string>;
+  /** Seen while SEALED — engine/journal.glancedFragmentIds. Absent = none. */
+  glancedIds?: ReadonlySet<string>;
+  /** Filed but not made out — engine/volume.sealedFragmentIds. Absent = none. */
+  sealedIds?: ReadonlySet<string>;
   /** Letters in the tray today (engine/volume.arrivedLetters). */
   arrivedLetterIds: readonly string[];
   /** engine/volume.openedLetterIds — the existing honest marker. */
@@ -214,27 +348,56 @@ export interface UnreadInput {
 }
 
 /**
- * The whole unread chain in one derivation: the entrance count, the per-tab
- * counts, and the per-card ids all come from HERE, so the three levels of
- * AAA 11.19 cannot disagree with each other or with the items themselves.
+ * Both chains in one derivation: the entrance counts, the per-tab counts, and
+ * the per-card ids all come from HERE, so the three levels of AAA 11.19 cannot
+ * disagree with each other or with the items themselves — and the wax chain
+ * and the smudge chain cannot disagree about which page is which.
+ *
+ * Omitting `sealedIds`/`glancedIds` means "nothing is sealed", which is the
+ * pre-seal truth and the truth of every save written before round 10, so the
+ * derivation degrades to the plain `!viewed` rule with no caller changes.
  */
 export function journalUnread(
   content: VolumeContent,
   state: VolumeState,
   input: UnreadInput,
 ): JournalUnread {
-  const unviewed = (kind: FragmentContent['kind']): string[] =>
+  const byKind = (kind: FragmentContent['kind'], keep: (id: string) => boolean): string[] =>
     content.fragments
-      .filter((f) => f.kind === kind && isFound(state, f.id) && !input.viewedIds.has(f.id))
+      .filter((f) => f.kind === kind && isFound(state, f.id) && keep(f.id))
       .sort((a, b) => a.revealOrder - b.revealOrder)
       .map((f) => f.id);
 
-  const word = unviewed('definition-line');
-  const engravings = unviewed('engraving');
-  const testimony = unviewed('testimony');
+  // UNREAD: she has not looked at this card in the state it is in now.
+  const unseen = (id: string) => !hasSeen(id, input);
+  const word = byKind('definition-line', unseen);
+  const engravings = byKind('engraving', unseen);
+  const testimony = byKind('testimony', unseen);
   const letters = input.arrivedLetterIds.filter((id) => !input.openedLetterIds.has(id));
   const fragments = [...word, ...engravings, ...testimony];
-  return { word, engravings, testimony, letters, fragments, total: fragments.length + letters.length };
+
+  // SEALED: the hand is not made out yet, whether or not she has looked.
+  const smudged = (id: string) => !!input.sealedIds?.has(id);
+  const sWord = byKind('definition-line', smudged);
+  const sEngravings = byKind('engraving', smudged);
+  const sTestimony = byKind('testimony', smudged);
+  const sFragments = [...sWord, ...sEngravings, ...sTestimony];
+
+  return {
+    word,
+    engravings,
+    testimony,
+    letters,
+    fragments,
+    total: fragments.length + letters.length,
+    sealed: {
+      word: sWord,
+      engravings: sEngravings,
+      testimony: sTestimony,
+      fragments: sFragments,
+      total: sFragments.length,
+    },
+  };
 }
 
 /**
@@ -248,27 +411,29 @@ export function displayedFragmentIds(
   content: VolumeContent,
   state: VolumeState,
   tab: JournalTab,
-  opts?: SealedOpts,
 ): string[] {
-  // ROUND 10 — A SEALED PAGE IS NOT A READ PAGE.
-  // The card is on the glass, but its contents are not: what she can see is a
-  // torn leaf and the words "not yet made out". So it is never marked viewed,
-  // and its wax mark stands until a solved room makes it out and she comes
-  // back to read it. That keeps AAA 11.21 true in both directions (there IS
-  // something unread behind that mark) and turns the journal's unread count
-  // into the honest backlog the footer rail names.
-  const legible = (ids: string[]) => ids.filter((id) => isLegible(state, id, opts));
+  // ROUND 12 — THIS FUNCTION ANSWERS ONE QUESTION AND IT IS NOT ABOUT INK.
+  //
+  // Round 10 filtered sealed pages out of here, which made "displayed" mean
+  // "displayed legibly" and left a card she had fully looked at wearing an
+  // unread mark. The mark is about her eyes, not about the hand: a sealed leaf
+  // she has opened the tab and looked at HAS been displayed to her, and it is
+  // the SMUDGE marker's job — not wax's — to say the ink has run.
+  //
+  // So this returns everything the tab puts on the glass, sealed included, and
+  // the caller (app/slices/journal.markFragmentsViewed) records what she saw in
+  // the state she saw it in: `glanced-` for a smudge, `viewed-` for words. A
+  // later decipher therefore re-raises unread all on its own, because the page
+  // has still never been displayed READABLY.
   switch (tab) {
     case 'word':
-      return legible(
-        definitionSlots(content, state, opts)
-          .filter((s) => s.fragment)
-          .map((s) => s.fragment!.id),
-      );
+      return definitionSlots(content, state)
+        .filter((s) => s.fragment)
+        .map((s) => s.fragment!.id);
     case 'engravings':
-      return legible(foundByKind(content, state, 'engraving').map((f) => f.id));
+      return foundByKind(content, state, 'engraving').map((f) => f.id);
     case 'testimony':
-      return legible(foundByKind(content, state, 'testimony').map((f) => f.id));
+      return foundByKind(content, state, 'testimony').map((f) => f.id);
     // Letters are not "viewed" by opening the tab: the seal is unbroken until
     // she breaks it, and openLetter already records that (AAA 11.20).
     case 'letters':
@@ -565,9 +730,15 @@ export function journalNudge(
   // word game (the round-10 loop, in Ellery's voice).
   const sealed = sealedCount(state, opts);
   if (sealed > 0) {
+    // ROUND 13 (AAA 6.16): Ellery no longer recites the rail's instruction.
+    // The Word tab was printing "solve a room" five times in three verbs — once
+    // per sealed line, again here, again in the rail — and the tier hint twice.
+    // The rail owns the instruction and the tier hint (it has the count beside
+    // it); Ellery says the thing only Ellery can say, which is that she cannot
+    // read them either. Two lines, two different sentences.
     return sealed === 1
-      ? 'One leaf here is still too smudged to read, dear. Solve something — a room well finished steadies the hand wonderfully.'
-      : `${sealed} of these are still too smudged to read, dear. Solve a room and they come clear — the harder the room, the more of them at once.`;
+      ? 'One leaf here is not made out yet, dear. I am no more use on it than you are — bring it back to me once it is.'
+      : `${sealed} of these are not made out yet, dear. I cannot read a word of them either, and I have had eleven years of practice.`;
   }
   const uninterpreted = nextUninterpreted(content, state, opts);
   const facts = alphabetFacts(content, state, opts);

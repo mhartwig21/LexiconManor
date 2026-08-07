@@ -1,0 +1,371 @@
+{
+ "gallery": {
+  "boardId": "twistle-t1-12",
+  "gridLen": 25,
+  "claimed": [
+   "ACTA",
+   "ACTING",
+   "ACTION",
+   "ACTIONS",
+   "ACTOR"
+  ],
+  "won": true,
+  "trace": {
+   "grid": true,
+   "gridBox": {
+    "x": 28.8,
+    "y": 272.4,
+    "w": 332.4,
+    "h": 332.4,
+    "bottom": 604.8
+   },
+   "gridInView": true,
+   "svgBox": {
+    "w": 332.4,
+    "h": 332.4,
+    "dx": 0,
+    "dy": 0
+   },
+   "polylines": 5,
+   "vertexMisses": 0,
+   "sampleMiss": [],
+   "svgOpacity": "1",
+   "svgDisplay": "block",
+   "strokeColor": "rgb(160, 119, 20)",
+   "strokeW": "14.64px",
+   "polyOpacity": "1",
+   "chips": 5,
+   "hungCells": 12,
+   "stageOverflow": 0
+  },
+  "words": [
+   "ACTA",
+   "ACTING",
+   "ACTION",
+   "ACTIONS",
+   "ACTOR",
+   "ACTORS",
+   "ACTS"
+  ],
+  "target": 5,
+  "at375": {
+   "y": 260.2,
+   "bottom": 554.8,
+   "inView": true,
+   "vh": 667,
+   "stageOver": null,
+   "polylines": 5
+  }
+ },
+ "conservatory": {
+  "boardId": "hive-t1-27",
+  "strip": {
+   "stripBox": {
+    "x": 14.4,
+    "right": 287,
+    "w": 272.6
+   },
+   "maskImage": "linear-gradient(to right, rgb(0, 0, 0) calc(100% - 18px), rgba(0, 0, 0, 0) 100%)",
+   "overflow": "hidden",
+   "chips": [
+    {
+     "t": "ERRATA",
+     "vis": "visible",
+     "left": 14.4,
+     "right": 92.5,
+     "w": 78.2
+    },
+    {
+     "t": "EFFORT",
+     "vis": "visible",
+     "left": 98.1,
+     "right": 172.3,
+     "w": 74.1
+    },
+    {
+     "t": "TORRENT",
+     "vis": "hidden",
+     "left": 177.8,
+     "right": 270.4,
+     "w": 92.6
+    },
+    {
+     "t": "TAFFETA",
+     "vis": "hidden",
+     "left": 276,
+     "right": 357.8,
+     "w": 81.7
+    },
+    {
+     "t": "RETREAT",
+     "vis": "hidden",
+     "left": 363.3,
+     "right": 450.3,
+     "w": 87
+    },
+    {
+     "t": "REFEREE",
+     "vis": "hidden",
+     "left": 455.9,
+     "right": 538.4,
+     "w": 82.5
+    },
+    {
+     "t": "OFFEROR",
+     "vis": "hidden",
+     "left": 544,
+     "right": 631.7,
+     "w": 87.7
+    },
+    {
+     "t": "FANFARE",
+     "vis": "hidden",
+     "left": 637.3,
+     "right": 721.8,
+     "w": 84.5
+    }
+   ],
+   "visibleCount": 2,
+   "clipped": [],
+   "faded": [],
+   "toggle": "14 found ▾"
+  },
+  "stripAfterTypeBump": {
+   "stripBox": {
+    "x": 17.1,
+    "right": 268.1,
+    "w": 251
+   },
+   "maskImage": "linear-gradient(to right, rgb(0, 0, 0) calc(100% - 18px), rgba(0, 0, 0, 0) 100%)",
+   "overflow": "hidden",
+   "chips": [
+    {
+     "t": "ERRATA",
+     "vis": "visible",
+     "left": 17.1,
+     "right": 109.5,
+     "w": 92.4
+    },
+    {
+     "t": "EFFORT",
+     "vis": "visible",
+     "left": 116.1,
+     "right": 203.8,
+     "w": 87.6
+    },
+    {
+     "t": "TORRENT",
+     "vis": "hidden",
+     "left": 210.4,
+     "right": 319.9,
+     "w": 109.5
+    },
+    {
+     "t": "TAFFETA",
+     "vis": "hidden",
+     "left": 326.6,
+     "right": 423.2,
+     "w": 96.7
+    },
+    {
+     "t": "RETREAT",
+     "vis": "hidden",
+     "left": 429.9,
+     "right": 532.7,
+     "w": 102.9
+    },
+    {
+     "t": "REFEREE",
+     "vis": "hidden",
+     "left": 539.4,
+     "right": 637,
+     "w": 97.6
+    },
+    {
+     "t": "OFFEROR",
+     "vis": "hidden",
+     "left": 643.6,
+     "right": 747.3,
+     "w": 103.7
+    },
+    {
+     "t": "FANFARE",
+     "vis": "hidden",
+     "left": 754,
+     "right": 853.9,
+     "w": 100
+    }
+   ],
+   "visibleCount": 2,
+   "clipped": [],
+   "faded": [],
+   "toggle": "14 found ▾"
+  },
+  "stripAt375": {
+   "stripBox": {
+    "x": 14.4,
+    "right": 272,
+    "w": 257.6
+   },
+   "maskImage": "linear-gradient(to right, rgb(0, 0, 0) calc(100% - 18px), rgba(0, 0, 0, 0) 100%)",
+   "overflow": "hidden",
+   "chips": [
+    {
+     "t": "ERRATA",
+     "vis": "visible",
+     "left": 14.4,
+     "right": 92.5,
+     "w": 78.2
+    },
+    {
+     "t": "EFFORT",
+     "vis": "visible",
+     "left": 98.1,
+     "right": 172.3,
+     "w": 74.1
+    },
+    {
+     "t": "TORRENT",
+     "vis": "hidden",
+     "left": 177.8,
+     "right": 270.4,
+     "w": 92.6
+    },
+    {
+     "t": "TAFFETA",
+     "vis": "hidden",
+     "left": 276,
+     "right": 357.8,
+     "w": 81.7
+    },
+    {
+     "t": "RETREAT",
+     "vis": "hidden",
+     "left": 363.3,
+     "right": 450.3,
+     "w": 87
+    },
+    {
+     "t": "REFEREE",
+     "vis": "hidden",
+     "left": 455.9,
+     "right": 538.4,
+     "w": 82.5
+    },
+    {
+     "t": "OFFEROR",
+     "vis": "hidden",
+     "left": 544,
+     "right": 631.7,
+     "w": 87.7
+    },
+    {
+     "t": "FANFARE",
+     "vis": "hidden",
+     "left": 637.3,
+     "right": 721.8,
+     "w": 84.5
+    }
+   ],
+   "visibleCount": 2,
+   "clipped": [],
+   "faded": [],
+   "toggle": "14 found ▾"
+  }
+ },
+ "countingHouse": {
+  "cellIdx": 1,
+  "afterMarks": "2579",
+  "eraseLabel": {
+   "text": "Rub out 9",
+   "aria": "Rub out the 9 penciled in this cell — the other marks stay",
+   "disabled": false
+  },
+  "afterOneErase": "257",
+  "eraseLabel2": "Rub out 7",
+  "undo": {
+   "box": {
+    "x": 197.5,
+    "y": 717.6,
+    "w": 59,
+    "h": 52,
+    "bottom": 769.6
+   },
+   "inView": true,
+   "hit": "self",
+   "corners": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "disabled": false
+  },
+  "afterUndo": "2579",
+  "afterDeepUndo": "",
+  "undoDisabledAtBottom": true,
+  "cell": {
+   "w": 43.3,
+   "h": 43.3,
+   "leafW": 390
+  }
+ },
+ "library": {
+  "boardId": "web-c22",
+  "tier": 2,
+  "herrings": [
+   {
+    "words": [
+     "ALTHOUGH",
+     "ANTHOLOGY",
+     "AUTHOR",
+     "HAWTHORN",
+     "METHOD",
+     "PYTHON"
+    ],
+    "relation": "hidden-string",
+    "detail": "THO"
+   }
+  ],
+  "scattered": {
+   "main": null,
+   "bit": null,
+   "all": [
+    {
+     "c": "anch-toastslot",
+     "t": ""
+    }
+   ]
+  },
+  "oneAway": {
+   "main": null,
+   "bit": null,
+   "all": [
+    {
+     "c": "anch-toastslot",
+     "t": ""
+    }
+   ]
+  },
+  "herringSel": [
+   "ALTHOUGH",
+   "ANTHOLOGY",
+   "AUTHOR",
+   "TOWED"
+  ],
+  "herring": {
+   "main": null,
+   "bit": null,
+   "all": [
+    {
+     "c": "anch-toastslot",
+     "t": ""
+    }
+   ]
+  },
+  "toastStyles": {
+   "main": null,
+   "bit": null
+  }
+ }
+}

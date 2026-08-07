@@ -166,7 +166,34 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   justify-content: center;
 }
 
-.chr-steps__candle { display: block; overflow: visible; }
+.chr-steps__candle { display: block; overflow: visible; flex: none; }
+
+/* THE STEP READOUT ("12 steps") — ROUND 8 (verifier), AAA 11.4.
+   Rounds 12 and 13 both reported tests/modal-hit-test.mjs failing two
+   assertions at 375x667 — the bar measuring 59px against a 50px --chrome-h —
+   and both correctly said "not mine" without measuring where the 9px came
+   from. Measured (scripts/r8-chrome-height-probe.mjs): the count and the label
+   are two inline spans in a wrapper that had no class and no rules, so at 375
+   the squeezed flex row REFLOWED them onto two lines. The wrapper went
+   24.6px -> 49.3px, .chr-steps 38 -> 53.3, and the bar 52 -> 59.3.
+
+   So the bar's height was being set by a text wrap, and every surface in the
+   game clears itself by var(--chrome-h). `.chr-day` beside it has carried
+   `white-space: nowrap` all along for the same reason; this block is that
+   defence, applied to the element that was missing it.
+   `line-height: 1` + baseline flex also stops the 22px count and 15px label
+   from building a line box taller than either of them.
+
+   The label's own text keeps its leading space (" steps") so the aria-live
+   region still announces "12 steps" and not "12steps"; hence gap: 0 here. */
+.chr-steps__read {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  line-height: 1;
+  white-space: pre;
+  flex: none;
+}
 
 .chr-steps__wax {
   fill: var(--paper-shade);
@@ -412,7 +439,25 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   padding: 72px 24px calc(24px + env(safe-area-inset-bottom, 0px));
   background: var(--paper);
   text-align: center;
+  /* ROUND 8 (AAA 7.8 / 7.12) — A CENTRED COLUMN THAT DOES NOT FIT SPILLS BOTH
+     WAYS. Measured at 375x667: the night digest's Chronicles aside came to
+     rest at 591.2–647.2, i.e. 14px INSIDE the 34px home-indicator band, even
+     though this box pads `24px + env(safe-area-inset-bottom)` at the foot —
+     because a `justify-content: center` flex column whose content is taller
+     than its box overflows past its own padding at both ends, and this box is
+     `position: fixed; inset: 0` with no overflow rule, so the spill went onto
+     the glass rather than into a scroller. (The same overflow can push the
+     TITLE up under the fixed bar, which is the round-11 escape shape.)
+     `safe center` centres only while there is room and pins to the start
+     otherwise; the scroll is internal and contained, with no scrollbar (house
+     rule), so a long digest is reachable instead of half-drawn. */
+  justify-content: safe center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
 }
+.chr-scene::-webkit-scrollbar { display: none; }
+
 
 .chr-scene__title {
   font-family: var(--font-display);
@@ -628,6 +673,26 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   to   { opacity: 1; background-color: rgba(36, 29, 21, 0.82); }
 }
 
+/* Round 8: the veil's 372px featureless band, filled with the image the
+   economy already runs on — the day's candle, gone out. Centred in the glass
+   between the fixed day bar and the veil's own line; inherits the veil's fade
+   (no animation of its own, so reduced motion needs no extra rule). */
+.chr-dusk__candle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(84px, 26vw, 124px);
+  height: auto;
+  transform: translate(-50%, -58%);
+  color: #e7dcc6;
+  opacity: 0;
+  animation: chrDuskCandle 1600ms ease-out 1400ms forwards;
+}
+@keyframes chrDuskCandle {
+  from { opacity: 0; }
+  to   { opacity: 0.4; }
+}
+
 .chr-dusk__line {
   position: absolute;
   left: 0;
@@ -676,6 +741,10 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   .chr-scene--enter { animation: none; }
   .chr-dusk { animation: chrDuskStill 200ms linear forwards; }
   .chr-dusk__line { animation: chrDuskLineStill 200ms linear 300ms forwards; }
+  /* Round 8: the candle is a still image either way — it just arrives at its
+     resting opacity instead of fading to it (AAA U.3: the state stays legible,
+     the motion goes). */
+  .chr-dusk__candle { animation: none; opacity: 0.4; }
 }
 
 .chr--reduced .chr-steps__wax { transition: none; }
@@ -686,6 +755,7 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 .chr--reduced .chr-scene--enter { animation: none; }
 .chr--reduced .chr-dusk { animation: chrDuskStill 200ms linear forwards; }
 .chr--reduced .chr-dusk__line { animation: chrDuskLineStill 200ms linear 300ms forwards; }
+.chr--reduced .chr-dusk__candle { animation: none; opacity: 0.4; }
 
 @keyframes chrFloatStill {
   0% { opacity: 0; }
@@ -732,4 +802,23 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
    both viewport heights and fails if they part company. */
 @media (max-height: 700px) {
   .chr-header { padding-top: calc(3px + env(safe-area-inset-top, 0px)); padding-bottom: 2px; }
+}
+
+/* ==========================================================================
+   Short glass (SE/8-class, 375x667). Declared LAST in the file so it actually
+   wins: every rule it trims is a plain single-class rule further up, and at
+   equal specificity source order decides — a media query does not raise it.
+   Everything given up here is the scene's own frame, never its content
+   (round 8; see the overflow note on `.chr-scene`).
+   ========================================================================== */
+@media (max-height: 700px) {
+  /* Measured with the corrected safe-area shim (round 8): the night digest's
+     column ran 32px past its own bottom padding at 375x667, which put the
+     Chronicles aside's box at 585.3-641.3 — 8px inside the 34px home-indicator
+     band. Everything trimmed here is frame or display size; not one line of the
+     digest's prose is dropped, because the digest IS the day read back. */
+  .chr-scene { padding-top: 54px; gap: 6px; }
+  .chr-scene__title { font-size: var(--text-display); }
+  .chr-scene__rule { margin: 3px 0; }
+  .chr-scene__aside { margin-top: 2px; }
 }

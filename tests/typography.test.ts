@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  typeset, typesetDeep, walkForStraightQuotes,
+  typeset, typesetDeep, walkForStraightQuotes, sourceCopyProblems,
   OPEN_DOUBLE, CLOSE_DOUBLE, OPEN_SINGLE, CLOSE_SINGLE,
 } from '../content/lib/typography';
-import { authoredFiles, lintAuthoredTypography } from '../content/lint-typography';
+import {
+  authoredFiles, lintAuthoredTypography,
+  outstandingSourceCopyProblems, sourceFiles, staleSourceCopyExceptions,
+} from '../content/lint-typography';
 
 /**
  * ═══ THE STRAIGHT-QUOTE DEFECT (round 5 verifier, P2 but visible) ═════════
@@ -114,11 +117,107 @@ describe('the lint over authored content (U+0022 / U+0027)', () => {
     expect(problems.map((p) => `${p.where}: ${p.suggestion}`)).toEqual([]);
   });
 
+  /**
+   * ROUND 12 — THE EXCEPTION THAT WAS THE WHOLE HOLE.
+   *
+   * Round 6 linted `content/authored/**` and called the defect closed. The app
+   * does not ship `content/authored`: `src/app/pools.ts` imports
+   * `content/generated/*.json`. `content/generated/crossword.json` was stale —
+   * generated before the round-6 pass — so 35 Linen Closet clues still read
+   * `Tea's pale partner` on glass, in a view that (unlike WordWebView and
+   * ForgottenWordView) never calls `typeset()`. The lint walks the whole
+   * shipped corpus now, and this is the row that says so.
+   */
+  it('SHIPPED: the corpus the lint walks is the corpus the app imports', () => {
+    const files = authoredFiles().map((f) => f.replace(/\\/g, '/'));
+    // Every pool `src/app/pools.ts` imports must be inside the walk.
+    for (const pool of [
+      'word-web', 'hive', 'twistle', 'forgotten-word', 'cipher', 'crossword', 'sudoku',
+    ]) {
+      expect(files.some((f) => f.endsWith(`content/generated/${pool}.json`)), pool).toBe(true);
+    }
+    expect(files.some((f) => f.endsWith('word-web-boards.json'))).toBe(true);
+    expect(files.some((f) => f.includes('dialogue'))).toBe(true);
+  });
+
   it('is actually looking at the corpus (guards against an empty walk)', () => {
     const files = authoredFiles();
     expect(files.length).toBeGreaterThanOrEqual(8);
     expect(files.some((f) => f.endsWith('word-web-boards.json'))).toBe(true);
     expect(files.some((f) => f.includes('dialogue'))).toBe(true);
+  });
+
+  it('the Linen Closet clue rail is set, and matches its own authored bank', () => {
+    const clues = (JSON.parse(readFileSync(
+      join(process.cwd(), 'content', 'generated', 'crossword.json'), 'utf-8',
+    )) as { entries: { clue: string }[] }[]).flatMap((p) => p.entries.map((e) => e.clue));
+    const bank = new Set((JSON.parse(readFileSync(
+      join(process.cwd(), 'content', 'authored', 'crossword-clues.json'), 'utf-8',
+    )) as { clues: { clue: string; wry?: string }[] }).clues
+      .flatMap((c) => [c.clue, c.wry]).filter(Boolean) as string[]);
+
+    expect(clues.length).toBeGreaterThan(50);
+    for (const clue of clues) {
+      // CrosswordView prints the clue raw — the data has to be right, because
+      // nothing downstream repairs it.
+      expect(clue, clue).not.toContain('"');
+      expect(clue, clue).not.toContain("'");
+      // …and it is still the authored line, not a typeset near-miss of one.
+      expect(bank.has(clue), `generated clue not in the authored bank: ${clue}`).toBe(true);
+    }
+  });
+});
+
+/**
+ * ═══ THE THIRD CORPUS (round 12) ══════════════════════════════════════════
+ *
+ * Rounds 6 and 12 taught the lint to read `content/authored/**` and
+ * `content/generated/**`. Both are JSON. A third of the game's player-visible
+ * copy is neither — it is written inline in `.ts`/`.tsx`: the rooms' verdict
+ * toasts, the cabinet's plate names. Nothing had ever looked at it, and it
+ * carries the same defect on the same screens, in the same faces.
+ */
+describe('straight quotes in copy that lives in source', () => {
+  it('the rule is precise: prose apostrophes only, never a string delimiter', () => {
+    const hit = (src: string) => sourceCopyProblems('f.ts', src).map((p) => p.text.trim());
+    // The shape it must catch, in each literal form.
+    expect(hit(`const a = "The tiles won't connect";`)).toEqual([`The tiles won't connect`]);
+    // Escaped, the mark is still a mark on screen — and the scanner unescapes
+    // before judging, so `\'` cannot be used to smuggle one past the lint.
+    expect(hit(`const a = 'Posy\\'s lost word';`)).toEqual([`Posy's lost word`]);
+    expect(hit('const a = `${w} isn\'t in the lexicon`;')).toEqual([`isn't in the lexicon`]);
+    // …and the four shapes it must not, or the lint is one somebody turns off.
+    expect(hit(`const a = 'plain';\nconst b = 'kebab-case-id';`)).toEqual([]);
+    expect(hit(`// she won't see this comment\nconst a = 'ok';`)).toEqual([]);
+    expect(hit(`/* nor won't this */\nconst a = 'ok';`)).toEqual([]);
+    expect(hit(`const a = 'http://example.com/x';`)).toEqual([]);
+    // A straight double quote in source is a developer diagnostic, not copy.
+    expect(hit(`throw new Error('goto "x" does not exist');`)).toEqual([]);
+  });
+
+  it('no UNSIGNED straight apostrophe in shipped source copy', () => {
+    const problems = outstandingSourceCopyProblems();
+    expect(problems.map((p) => `${p.where}: ${p.text.trim()} → ${p.suggestion.trim()}`)).toEqual([]);
+  });
+
+  /**
+   * The five known ones are NAMED, not skipped: they live in files this pass
+   * does not own (the two anchor room views and the deck's plate names), and
+   * AAA 6.19's own note is the ruling — a criterion "being silently waived in
+   * the meantime … is worse than either answer". This row is what stops the
+   * list becoming permanent: fixing one and leaving its entry behind fails
+   * exactly as loudly as not fixing it, and the failure names the line to
+   * delete.
+   */
+  it('the exception list is not stale — a fixed line must lose its entry', () => {
+    expect(staleSourceCopyExceptions()).toEqual([]);
+  });
+
+  it('the scanner is actually reading the app (guards against an empty walk)', () => {
+    const files = sourceFiles().map((f) => f.replace(/\\/g, '/'));
+    expect(files.length).toBeGreaterThanOrEqual(100);
+    expect(files.some((f) => f.endsWith('src/ui/rooms/anchor/WordWebView.tsx'))).toBe(true);
+    expect(files.some((f) => f.endsWith('src/engine/manor/deck.ts'))).toBe(true);
   });
 });
 

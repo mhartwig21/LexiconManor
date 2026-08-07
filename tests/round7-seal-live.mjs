@@ -11,6 +11,20 @@
  *   4. KEYS ACCRUE FROM SOLVED ROOMS (`KEY_SUPPLY.solveKeysByTier`), so the
  *      storey below a padlock is the storey that pays for it.
  *
+ * ROUND 12 adds the four state combinations of the unread/sealed split, driven
+ * on the same run because they are the same page's life story (AAA 11.20/11.21):
+ *
+ *   A. unread + sealed  — filed, never opened, not made out
+ *   B. read   + sealed  — she has LOOKED at the smudge: wax retires, ring stays
+ *   C. unread + legible — the solve made it out, so unread RE-RAISES
+ *   D. read   + legible — neither marker, across a reload and a day roll
+ *
+ * B is the round-12 blocker: `displayedFragmentIds` excluded sealed cards, so
+ * wax meant "not deciphered" as well as "not seen" and could not clear on
+ * viewing. Every phase compares the MODEL (flags) against the GLASS (the DOM's
+ * `.unread`/`.sealed` marks and the entrance's printed count), because a count
+ * that disagrees with the items behind it is exactly what 11.21 forbids.
+ *
  * Everything here goes through REAL store actions on a REAL build — the violet
  * room is drafted with `chooseDraftCard` off a genuine `openDraft` offer (so
  * the `card.category === 'mystery'` branch is the thing under test, not a
@@ -132,6 +146,195 @@ const countSealedOnGlass = async () => {
   if (best >= 0) { await tabs[best].click().catch(() => {}); await sleep(350); }
   else if (tabs[0]) { await tabs[0].click().catch(() => {}); await sleep(350); }
   return { ...seen, total: Math.max(seen.label, seen.card + seen.poem) };
+};
+
+/**
+ * ── ROUND 12: THE TWO MARKERS, ON GLASS ────────────────────────────────────
+ *
+ * `displayedFragmentIds` used to exclude sealed cards, so wax meant BOTH "you
+ * have not looked at this" and "this is not deciphered yet" — AAA 11.20 false
+ * by design, and 11.21's count could never match the number of unviewed items.
+ *
+ * The model is now two independent axes and two glyphs, and this reads BOTH
+ * out of live state and out of the live DOM so they can be compared:
+ *
+ *   unread (wax `.unread`)  — sealed page: `glanced-` flag; legible page:
+ *                             `viewed-` flag. Nothing else clears it.
+ *   sealed (ring `.sealed`) — `sealed-` minus `legible-`.
+ */
+const markState = () => page.evaluate(() => {
+  const s = window.__manorStore.getState();
+  const pre = `vol.${s.volume.volumeId}.`;
+  const ids = (p) => new Set(
+    s.flags.filter((f) => f.startsWith(pre + p)).map((f) => f.slice((pre + p).length)),
+  );
+  const viewed = ids('viewed-');
+  const glanced = ids('glanced-');
+  const legible = ids('legible-');
+  const sealed = new Set([...ids('sealed-')].filter((id) => !legible.has(id)));
+  const found = [...s.volume.foundFragmentIds];
+  const q = (sel) => document.querySelectorAll(sel).length;
+  // THE JOURNAL entrance specifically. The blueprint footer is a ribbon of
+  // three counted entrances (Cabinet, Journal, Chronicles) and they carry
+  // DIFFERENT counts, so `.unread__n` on its own reads whichever came first —
+  // the first cut of this probe was measuring the Cabinet's floorplan count
+  // and calling it the journal's, which is the same class of mistake as the
+  // criterion it is here to check.
+  const journalBtn = [...document.querySelectorAll('.bp-btn--quiet, .chr-scene__aside')]
+    .find((b) => /^\s*Journal/.test(b.textContent ?? ''));
+  const entranceN = journalBtn?.querySelector('.unread__n');
+  // ROUND 13 (AAA 11.19) — the SEAL's entrance level, which was never wired.
+  // The smudge marker lived on the tabs, the cards, the rail and the lifecycle
+  // scenes' journal link, and nowhere on the blueprint — the one screen the
+  // player stands on all day. It photographed fine, because wax retires on a
+  // glance and the bare word "Journal" is what a cleared entrance looks like.
+  const entranceSealN = journalBtn?.querySelector('.sealed__n');
+  return {
+    found,
+    // THE MODEL. Unread asks about the state the page is in NOW.
+    unread: found.filter((id) => (sealed.has(id) ? !glanced.has(id) : !viewed.has(id))),
+    sealed: found.filter((id) => sealed.has(id)),
+    glanced: [...glanced],
+    viewed: [...viewed],
+    // THE GLASS.
+    dom: {
+      entranceFound: !!journalBtn,
+      entranceWax: entranceN ? Number(entranceN.textContent) : 0,
+      entranceSeal: journalBtn ? journalBtn.querySelectorAll('.sealed').length : 0,
+      entranceSealN: entranceSealN ? Number(entranceSealN.textContent) : 0,
+      tabWax: q('.jrn-tab .unread'),
+      tabSeal: q('.jrn-tab .sealed'),
+      pipWax: q('.jrn-sheet .unread--pip'),
+      pipSeal: q('.jrn-sheet .sealed--pip'),
+    },
+  };
+});
+
+/** The blueprint, with any queued campaign seals cleared off it. */
+const toBlueprint = async () => {
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.waitForSelector('.bp-sheet', { timeout: 20000 });
+  await sleep(400);
+  await drainMoments();
+  await sleep(200);
+};
+
+const toJournal = async () => {
+  await page.goto(BASE + '#/journal', { waitUntil: 'networkidle' });
+  await page.waitForSelector('.jrn-tabs', { timeout: 20000 });
+  await sleep(600);
+  await drainMoments();
+  await sleep(200);
+};
+
+/**
+ * The entrance count is unread FRAGMENTS plus unbroken LETTER SEALS (letters
+ * are the fourth tab and the seal is their own unread marker). To check
+ * 11.21's "matches exactly" against the fragment model we have to know the
+ * tray, and the tray only changes at dawn — so it is measured once, from the
+ * Letters tab, and reused for the whole run. Opening that tab marks nothing
+ * viewed by design (`displayedFragmentIds('letters') === []`), so measuring
+ * cannot perturb what is being measured.
+ */
+let trayUnopened = 0;
+const measureTray = async () => {
+  const tabs = await page.$$('.jrn-tab');
+  for (const t of tabs) {
+    if ((await t.textContent())?.trim().startsWith('Letters')) {
+      await t.click().catch(() => {});
+      await sleep(300);
+      break;
+    }
+  }
+  trayUnopened = await page.evaluate(
+    () => document.querySelectorAll('.jrn-seal:not(.jrn-seal--broken)').length,
+  );
+  log(`[r12] the post tray holds ${trayUnopened} unbroken seal(s)`);
+  return trayUnopened;
+};
+
+/** AAA 11.21: the number beside the mark is EXACTLY the unviewed items. */
+const expectExactEntrance = (m, tag) => {
+  const expected = m.unread.length + trayUnopened;
+  if (!m.dom.entranceFound) { fail(`[${tag}] no Journal entrance on the blueprint`); return; }
+  if (m.dom.entranceWax !== expected) {
+    fail(`[${tag}] the Journal entrance prints ${m.dom.entranceWax}, but ${m.unread.length} `
+      + `fragments are unviewed and ${trayUnopened} letter seals are unbroken `
+      + `(= ${expected}) — the count is not exact (AAA 11.21)`);
+  } else {
+    ok(`[${tag}] the entrance count is EXACT: ${m.dom.entranceWax} `
+      + `= ${m.unread.length} unviewed + ${trayUnopened} sealed letter(s)`);
+  }
+  expectExactEntranceSeal(m, tag);
+};
+
+/**
+ * ROUND 13 (AAA 11.19) — THE SEAL CHAIN'S ENTRANCE LEVEL.
+ *
+ * The same assertion, for the other marker. This is the level that was never
+ * wired: `src/pages/ManorPage.tsx` rendered only `<UnreadMark>` on the
+ * blueprint's Journal button, so a live probe with five pages sealed read
+ * `{text:"Journal7", wax:1, seal:0}` — and after one glance at the smudges the
+ * wax count dropped to 0 and the map showed a bare "Journal" with five pages
+ * still unread. A screenshot of that is indistinguishable from a clean map,
+ * which is why this is a probe and not a review note (AAA §0.1.7).
+ */
+const expectExactEntranceSeal = (m, tag) => {
+  if (!m.dom.entranceFound) return;   // already failed above
+  if (m.sealed.length === 0) {
+    if (m.dom.entranceSeal !== 0) {
+      fail(`[${tag}] the Journal entrance shows a smudge marker with nothing sealed (AAA 11.21)`);
+    }
+    return;
+  }
+  if (m.dom.entranceSeal < 1) {
+    fail(`[${tag}] ${m.sealed.length} page(s) are sealed and the blueprint's Journal entrance `
+      + `carries NO smudge marker — the seal chain has no entrance level (AAA 11.19)`);
+  } else if (m.dom.entranceSealN !== m.sealed.length) {
+    fail(`[${tag}] the entrance smudge count prints ${m.dom.entranceSealN}, `
+      + `but ${m.sealed.length} page(s) are sealed (AAA 11.21)`);
+  } else {
+    ok(`[${tag}] the seal chain reaches the ENTRANCE: ${m.dom.entranceSealN} `
+      + `= ${m.sealed.length} page(s) not yet made out`);
+  }
+};
+
+/**
+ * AAA 11.22 / 6.3: the two markers must separate WITHOUT hue. Wax is a solid
+ * disc with no border; the seal is an open ring with a border and no fill.
+ * Measured off computed style so a palette edit that flattens one into the
+ * other fails here rather than in a grayscale screenshot nobody takes.
+ */
+const auditDoubleEncoding = async () => {
+  const enc = await page.evaluate(() => {
+    const pick = (sel) => {
+      const el = document.querySelector(sel);
+      if (!el) return null;
+      const c = getComputedStyle(el);
+      return {
+        bg: c.backgroundColor,
+        border: parseFloat(c.borderTopWidth) || 0,
+        animation: c.animationName,
+        transition: c.transitionProperty,
+      };
+    };
+    return { wax: pick('.unread'), seal: pick('.sealed') };
+  });
+  if (!enc.wax || !enc.seal) return enc;
+  const transparent = (c) => /rgba\(0, 0, 0, 0\)|transparent/.test(c);
+  if (transparent(enc.wax.bg)) fail('the wax marker has no fill — it is not a solid disc');
+  else ok('wax renders as a FILLED disc');
+  if (enc.seal.border < 1) fail('the sealed marker has no ring — it cannot be told from wax in grayscale');
+  else ok(`the seal renders as an OPEN ring (${enc.seal.border}px border)`);
+  if (!transparent(enc.seal.bg)) fail('the sealed marker is filled like wax — the shapes collide in grayscale');
+  else ok('the seal is unfilled — fill-vs-outline separates the two without hue');
+  for (const [name, m] of Object.entries(enc)) {
+    if (m.animation && m.animation !== 'none') {
+      fail(`the ${name} marker animates (${m.animation}) — reduced motion would change its meaning`);
+    }
+  }
+  ok('neither marker animates in any state (AAA 11.22 / U.3)');
+  return enc;
 };
 
 /** Dismiss stacked campaign seals so a map control can be reached. */
@@ -349,14 +552,77 @@ try {
     // The journal must SAY so, not just store it.
     await page.evaluate(() => window.__manorStore.getState().leaveRoom?.());
     await sleep(300);
-    await page.goto(BASE + '#/journal', { waitUntil: 'networkidle' });
-    await sleep(700);
-    await drainMoments();
+
+    // =======================================================================
+    // ROUND 12 (A) — UNREAD *and* SEALED, before she has opened anything.
+    // =======================================================================
+    await toBlueprint();
+    const mA = await markState();
+    log('[r12] A, at the entrance:', JSON.stringify(mA));
+    if (!mA.unread.includes(id)) {
+      fail(`a page just filed is not unread — wax cannot be trusted (${id})`);
+    } else ok('the newly filed page is UNREAD (she has not looked at it)');
+    if (!mA.sealed.includes(id)) fail(`${id} is not in the sealed set on glass`);
+    else ok('…and SEALED (the hand is not made out) — both states at once');
+
+    // =======================================================================
+    // ROUND 12 (B) — READ but still SEALED: wax retires, the ring stands.
+    //   THIS IS THE DEFECT. Before the fix `displayedFragmentIds` skipped
+    //   sealed cards, so looking at this page changed nothing and its wax
+    //   mark stood until a solve — a marker that does not clear on viewing.
+    // =======================================================================
+    await toJournal();
     const sealedCards = await countSealedOnGlass();
     log('journal (sealed):', JSON.stringify(sealedCards));
     if (sealedCards.total < 1) fail('the journal renders no sealed marker for a sealed fragment');
     else ok(`the journal shows the leaf as SEALED and undeciphered (${sealedCards.total} marker(s))`);
+    // Measured on the tab that is actually showing the smudged leaf. (Order
+    // matters and did not, once: `measureTray` clicks the LETTERS tab, so
+    // taking this reading after it counted zero item-level pips and passed
+    // anyway on the tab-level mark — a probe that photographs the wrong tab.)
+    const mJ = await markState();
+    log('[r12] B, standing in the journal:', JSON.stringify(mJ.dom));
+    if (mJ.dom.tabSeal < 1) fail('no `.sealed` ring on any journal tab');
+    else ok(`the seal ring is on the tab (${mJ.dom.tabSeal})`);
+    if (mJ.dom.pipSeal < 1) {
+      fail('no item-level `.sealed` pip on the smudged leaf itself — the seal chain '
+        + 'breaks at the item, which is where AAA 11.19 says it must not');
+    } else ok(`the seal ring is on the leaf itself (${mJ.dom.pipSeal} pip)`);
+    if (mJ.dom.pipWax < 1) {
+      fail('the smudged leaf carries no wax pip on the visit she first sees it');
+    } else ok(`…alongside its wax pip (${mJ.dom.pipWax}) — both marks, two meanings`);
+    await auditDoubleEncoding();
     await shot('seal-01-journal-undeciphered');
+    await measureTray();
+    expectExactEntrance(mA, 'A');            // deferred: the tray is known now
+
+    await toBlueprint();
+    const mB = await markState();
+    log('[r12] B, back at the entrance:', JSON.stringify(mB));
+    if (!mB.glanced.includes(id)) {
+      fail(`looking at the sealed card wrote no glanced- flag for ${id}`);
+    } else ok('looking at the smudge recorded a GLANCE (not a reading)');
+    if (mB.unread.includes(id)) {
+      fail(`${id} is STILL unread after she looked straight at it — AAA 11.20 fails`);
+    } else ok('the wax marker RETIRED ON VIEWING — and on nothing else (11.20)');
+    if (!mB.sealed.includes(id)) {
+      fail(`${id} stopped being sealed just because she looked at it`);
+    } else ok('…while the page stays SEALED: the two states are now separate');
+    expectExactEntrance(mB, 'B');
+    if (mA.dom.entranceWax - mB.dom.entranceWax !== 1) {
+      fail(`looking at one unread page moved the entrance count by `
+        + `${mA.dom.entranceWax - mB.dom.entranceWax}, not by 1`);
+    } else ok('the entrance count fell by exactly one — one page looked at, one mark retired');
+
+    // Persistence: it is state, not a session flag (11.20's force-quit clause).
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForSelector('.bp-sheet', { timeout: 20000 });
+    await sleep(500);
+    await drainMoments();
+    const mR = await markState();
+    if (mR.unread.includes(id) || !mR.sealed.includes(id) || !mR.glanced.includes(id)) {
+      fail('a reload changed the markers — they are session state, not save state');
+    } else ok('both markers survive a RELOAD (write-once flags in the save)');
 
     // AAA 4.18: a sealed page is never REQUIRED for anything.
     const readiness = await page.evaluate(() => {
@@ -470,9 +736,31 @@ try {
         // --- the journal now reads it -----------------------------------
         await page.evaluate(() => window.__manorStore.getState().leaveRoom?.());
         await sleep(400);
-        await page.goto(BASE + '#/journal', { waitUntil: 'networkidle' });
-        await sleep(700);
-        await drainMoments();
+
+        // ===================================================================
+        // ROUND 12 (C) — THE TRANSITION. A page becoming legible is
+        // information she has not seen, so it must RE-RAISE unread. She
+        // glanced at a smudge in phase B; she has never read the sentence.
+        // ===================================================================
+        await toBlueprint();
+        const mC = await markState();
+        log('[r12] C, after the solve:', JSON.stringify(mC));
+        if (mC.sealed.includes(id)) fail(`${id} is still sealed after the solve`);
+        else ok('the solve made the page out — it has left the sealed set');
+        if (!mC.unread.includes(id)) {
+          fail(`${id} became legible without re-raising unread — she is never told `
+            + 'the page she is holding can now be read');
+        } else ok('becoming legible RE-RAISED the unread marker — new information, marked');
+        if (mC.viewed.includes(id)) {
+          fail(`${id} carries a viewed- flag it never earned (a glance is not a reading)`);
+        } else ok('the glance never counted as a reading — which is what makes C possible');
+        expectExactEntrance(mC, 'C');
+
+        // ===================================================================
+        // ROUND 12 (D) — READ and LEGIBLE: neither marker, and it stays that
+        // way. The fourth of the four combinations.
+        // ===================================================================
+        await toJournal();
         const sealedAfter = await countSealedOnGlass();
         log('journal after the solve (sealed):', JSON.stringify(sealedAfter));
         if (sealedAfter.total >= sealedCards.total) {
@@ -482,6 +770,27 @@ try {
           ok(`the journal shows fewer sealed markers (${sealedCards.total} -> ${sealedAfter.total})`);
         }
         await shot('seal-02-journal-legible');
+
+        await toBlueprint();
+        const mD = await markState();
+        log('[r12] D, read and legible:', JSON.stringify(mD));
+        if (!mD.viewed.includes(id)) {
+          fail(`reading ${id} wrote no viewed- flag — the marker can never settle`);
+        } else ok('reading the made-out page wrote the reading flag');
+        if (mD.unread.includes(id)) fail(`${id} is still unread after she read it`);
+        else ok('no wax: she has read it');
+        if (mD.sealed.includes(id)) fail(`${id} is still sealed after being made out`);
+        else ok('no ring: it is made out — the fourth state carries neither marker');
+        expectExactEntrance(mD, 'D');
+
+        // And it survives the night. AAA 11.20 names the day roll explicitly:
+        // unread derived from anything dusk prunes is a recency badge.
+        await rollDay();
+        await drainMoments();
+        const mN = await markState();
+        if (mN.unread.includes(id) || mN.sealed.includes(id)) {
+          fail('a day roll resurrected a marker on a page she has read and made out');
+        } else ok('both markers stay retired across the DAY ROLL (11.20)');
       }
     }
   }

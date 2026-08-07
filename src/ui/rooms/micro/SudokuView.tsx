@@ -429,36 +429,65 @@ export default function SudokuView({
                 {toast && <span className={`ch-toast ch-toast--${toast.kind}`}>{toast.text}</span>}
               </span>
             </div>
+            {/* ROUND 8 TYPE PASS (AAA 6.6) — THE TWO-LINE VERB.
+                These five labels were the smallest painted text in the game:
+                0.8rem = 12.8px, three published floors under the body serif's
+                16, and round 7 reported them without fixing them because the
+                copy could not wrap into a 44px key at any legible size. The
+                label is now a VERB line and a PRICE line, so the button is
+                exactly two lines tall by construction and both of them are
+                15px. The long in-voice phrasing is not lost — it is the
+                aria-label and the tooltip, where it was already duplicated.
+                Every priced key still prints its own price (the reason the
+                free/priced bands could collapse into one row in round 7). */}
             <div className="ch-toolbar">
               <div className="ch-tools ch-tools--free">
                 <button
                   className={`ch-tool${pencilMode ? ' ch-tool--on' : ''}`}
                   aria-pressed={pencilMode}
+                  aria-label={`Pencil mode — ${pencilMode ? 'on' : 'off'}, free`}
+                  title="Pencil mode — free"
                   onClick={() => { sfx.tap(); setPencilMode((p) => !p); }}
                 >
-                  {pencilMode ? '✎ Pencil — on' : '✎ Pencil — off'}
+                  <span className="ch-tool__verb">✎ Pencil</span>
+                  <span className="ch-tool__price">{pencilMode ? 'on' : 'off'}</span>
                 </button>
                 <button
                   className="ch-tool"
                   onClick={() => { sfx.tap(); dispatch({ type: 'fill-pencil' }); }}
                   aria-label="Pencil every figure that still fits in each blank cell — free"
+                  title="Pencil every figure that still fits — free"
                 >
-                  Pencil what fits
+                  <span className="ch-tool__verb">Fill marks</span>
                 </button>
               </div>
               <div className="ch-tools ch-tools--priced">
-                <button className="ch-tool" onClick={() => dispatch({ type: 'balance' })}>
-                  Balance the books · −{claimCost}
+                <button
+                  className="ch-tool"
+                  onClick={() => dispatch({ type: 'balance' })}
+                  aria-label={`Balance the books: check the leaf against his hand, minus ${claimCost} steps`}
+                  title="Balance the books"
+                >
+                  <span className="ch-tool__verb">Balance</span>
+                  <span className="ch-tool__price">−{claimCost} steps</span>
                 </button>
                 <button
                   className="ch-tool"
                   onClick={() => dispatch({ type: 'nudge' })}
                   aria-label={`A word from the clerk: name the next deduction on this leaf, minus ${claimCost} steps`}
+                  title="Ask the clerk"
                 >
-                  Ask the clerk · −{claimCost}
+                  <span className="ch-tool__verb">Ask clerk</span>
+                  <span className="ch-tool__price">−{claimCost} steps</span>
                 </button>
-                <button className="ch-tool" onClick={consult}>
-                  Consult a figure · −{figureCost}
+                <button
+                  className="ch-tool"
+                  onClick={consult}
+                  aria-label={`Consult a figure: the ledger fills the selected cell, minus ${figureCost} steps`}
+                  title="Consult a figure"
+                >
+                  <span className="ch-tool__verb">Consult</span>
+                  <span className="ch-tool__price">−{figureCost} steps</span>
                 </button>
               </div>
             </div>

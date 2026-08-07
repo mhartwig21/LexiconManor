@@ -273,7 +273,7 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
         setRungBeat((n) => n + 1);
         setToast({
           kind: 'good',
-          text: `${fb.word} +${fb.points} — you've reached ${rung}`,
+          text: `${fb.word} +${fb.points} — you’ve reached ${rung}`,
           fern: fernLine(`tier-up:${rung}`, puzzle.id),
         });
         later(() => setToast(null), 1600);

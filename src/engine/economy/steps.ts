@@ -28,7 +28,7 @@
  *      demand a key. Deep pushes are PREPARED for (Key Cabinet, Fern's
  *      trades) — you cannot stumble into the Sanctum row.
  *   5. THE REFILL CURVE IS A CAMPAIGN ARC. Bramble's tea (`TEA_BY_POINTS`)
- *      climbs 0 → +11 across her friendship, and refills shrink to +2..+6.
+ *      climbs 0 → +13 across her friendship, and refills shrink to +2..+6.
  *      The budget that makes the Sanctum reachable is EARNED over days.
  *
  * ═══ THE INDEXING CONTRACT — READ BEFORE TOUCHING AN AFFINITY TABLE ═══
@@ -591,8 +591,47 @@ export function doorLockedAt(daySeed: number, cellKey: string, row: number): boo
  * still strange — measured 10.2–10.5 minutes, right on the floor of the 10–15
  * band. The top of the curve is untouched, so the campaign shape is
  * unchanged; only the first week got its promised length.
+ *
+ * ═══ ROUND-12 RETUNE — THE ARC ONLY EVER LIFTED THE PLAYER WHO DID NOT NEED IT
+ * ═══
+ * Every 4.10 campaign target was measured on `PROFILE_SKILLED` alone. Played as
+ * `PROFILE_DECENT` — the profile whose own docstring calls it "the MEDIAN
+ * evening, the one 4.10b clocks", i.e. the owner — the same model put the first
+ * Sanctum-landing reach at median day 18–21 (10–14% never inside 45 days) and
+ * the volume win at median day 33–34, with **25% of campaigns unfinished after
+ * 45 evenings** against a published ">90% by day 35". She banks toward a gate
+ * she rarely clears: 1.47 keys/day against the ~3.7 an ascent costs.
+ *
+ * The lever is deliberately the TEA and not the padlock, because the tea is the
+ * arc AAA 4.10d assigns to persistence ("the step arc") while keys belong to
+ * the round-10 skill directive. Four levers were simulated before this one was
+ * chosen (400 seeded campaigns each, both profiles):
+ *   - `KEY_SUPPLY.solveKeysByTier` → [0,1,2] moved NOTHING: tier 3 is 0-based
+ *     rows 5–6, and row 5 IS the landing, so a tier-3 solve only ever happens
+ *     after the climb it was supposed to buy;
+ *   - `DOOR_LOCKS.keyCost` 2→1 and `solveKeysByTier` → [0,2,2] put a skilled
+ *     player at the door on day 1 in 17–20% of campaigns (published: <8%);
+ *   - `fernMorningKeysByPoints` → 2 at her authored ceiling fixed the median
+ *     player outright, but made FERN the largest key source in the game
+ *     (2.0/day against 1.16 from solves), inverting round 10's directive;
+ *   - lowering `DOOR_LOCKS.chanceByRow[4..5]` doubled the skilled player's
+ *     day-1 reach (3.6% → 6.8%) against a published <8% ceiling.
+ *
+ * Lifting the top four rungs of THIS table is the one lever that is strictly
+ * progressive: it is worth nothing to a player who is already standing on the
+ * landing and everything to one who keeps stopping a storey short, and it
+ * cannot touch the early game at all — `teaArcPoints` does not reach point 3
+ * until day 6, so days 1–5 are bit-identical and the owner's "way too easy on
+ * day 1" complaint is untouched. Measured after (300 campaigns × 4 seeds):
+ * the median player's first reach moves day 18–21 → 16–17, her win day 33–34
+ * → 29–31, and her never-finished share 25% → 11–15%; the skilled player's
+ * published numbers do not move (reach median 7–8, day-1 3.0–7.3%, win median
+ * 15–16). Both bands are now published in AAA 4.10e and pinned in
+ * tests/economy-simulation.test.ts, which is the half of this that matters:
+ * the retune narrows the gap, the second measured profile is what stops the
+ * criterion from describing a player nobody checked.
  */
-export const TEA_BY_POINTS: readonly number[] = [0, 4, 6, 7, 9, 10, 11];
+export const TEA_BY_POINTS: readonly number[] = [0, 4, 6, 8, 10, 12, 13];
 
 /**
  * The morning pot for a Bramble affinity of `bramblePoints` RAW POINTS

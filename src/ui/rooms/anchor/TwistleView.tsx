@@ -136,9 +136,9 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
     } else {
       const messages: Record<typeof fb.reason, string> = {
         'too-short': `Words need ${puzzle.rules.minLength}+ letters`,
-        'not-on-grid': "The tiles won't connect so",
+        'not-on-grid': "The tiles won’t connect so",
         'breaks-rule': `It must cross the marked tile · −${stepCost} steps`,
-        'not-a-word': `${fb.word} isn't in the lexicon`,
+        'not-a-word': `${fb.word} isn’t in the lexicon`,
         'already-found': 'Already gathered',
       };
       if (fb.costed) sfx.wrong();

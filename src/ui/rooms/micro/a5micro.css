@@ -150,7 +150,20 @@
      stage height (ui/rooms/room-host.css) — so it tracks the insets instead of
      ignoring them. 6.2% of a 651.8px stage is the same 40px square the room
      shipped at 390×844; the difference is that it is now the truth on device. */
-  --lc-cell: clamp(38px, min(15vw, calc(var(--stage-h, 100vh) * 0.062)), 52px);
+  /* ROUND 8 — 44pt ON THE GLASS IT CAN BE HAD ON. The square was 40.4px at
+     390x844 and 30px at 375x667, and the round-5 note above rules it exempt on
+     the Counting-House grounds (nothing commits when a square is tapped). That
+     ruling is real, but AAA 6.19 grants it to the 9x9 ledger by NAME and to
+     nothing else, and unlike the ledger this grid is FIVE squares wide: 5x44
+     plus gutters is 240px of a 390px glass, so the floor is not arithmetically
+     out of reach here — it was only out of VERTICAL reach, and the height it
+     needed came out of the room's chrome (the nameplate, the toast reserve,
+     the clue panel's cap). At 375x667 it genuinely does not fit — 5 squares +
+     a 3-row QWERTY at the ruled 48px + a clue row + the room's verb is more
+     than the whole 481.6px stage before the board is measured — so the
+     SE-class square stays at 30px and is REPORTED as a residual rather than
+     waved through. */
+  --lc-cell: clamp(44px, min(15vw, calc(var(--stage-h, 100vh) * 0.0675)), 52px);
   display: grid;
   gap: 5px;
   justify-content: center;
@@ -198,10 +211,18 @@
 }
 
 .lc-clues { display: flex; flex-direction: column; gap: 0.15rem; }
+/* ROUND 8 (AAA 6.19 [PARITY]) — the clue row is a CONTROL, and it measured
+   336.8x26.9. It is not a board cell and not a keyboard key, so neither
+   written exemption reaches it and there was never an argument for it: it is
+   the thing she taps to change which word she is filling in, and at 26.9px
+   tall the two rows either side of the one she wants are 13px away. 44px, on
+   every glass. The height is paid for by the panel's cap (below), not by the
+   board. */
 .lc-clue {
   display: flex;
   gap: 0.5rem;
-  align-items: baseline;
+  align-items: center;
+  min-height: var(--tap-target);
   border: none;
   background: none;
   padding: 0.28rem 0.5rem;
@@ -216,7 +237,18 @@
 .lc-clue.is-pressed { background: color-mix(in srgb, var(--room-accent) 8%, transparent); }
 .lc-clue--active { background: color-mix(in srgb, var(--room-accent) 14%, transparent); }
 .lc-clue--done .lc-clue__text { color: var(--ink-faint); }
-.lc-clue__id { font-family: var(--font-display); min-width: 1.7rem; color: var(--room-accent); }
+/* Round 8 type audit (AAA 6.6): IM Fell English is never below 22px, and this
+   was 15px of it — the smallest display type in the room. A 15px marker is a
+   caption, so it wears the body serif, tracked and tabular so 1A/10D stay in
+   one column. */
+.lc-clue__id {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  min-width: 1.7rem;
+  color: var(--room-accent);
+}
 
 .lc-keys { display: flex; flex-direction: column; gap: 5px; }
 .lc-keys__row { display: flex; gap: 4px; justify-content: center; }
@@ -234,8 +266,16 @@
      deck in a 651.8px stage and put the crossword's bottom ROW underneath the
      keyboard (measured: the last row's centre hit-tested as the deck). Taken
      off `--stage-h` it is 45.6px here, still comfortably over the 44pt bar,
-     and the grid clears the deck whole. */
-  min-height: clamp(44px, calc(var(--stage-h, 100vh) * 0.07), 52px);
+     and the grid clears the deck whole.
+
+     ROUND 8: 45.6px is inside 44pt but OUTSIDE AAA 6.19(b), which is the only
+     reason this row is allowed to be 32.5px wide in the first place — the
+     ruled floor is ">=32px wide x >=48px tall with no inter-key dead zone",
+     and the row was 45.6px at 390x844 and 44px at 375x667. A key that has
+     fallen out of its own exemption is not exempt, so the floor is the ruled
+     48 and the harness now says so rather than counting the row as forgiven
+     (scripts/r7-compose-audit.mjs). */
+  min-height: clamp(48px, calc(var(--stage-h, 100vh) * 0.07), 52px);
   border: 1px solid var(--paper-edge);
   border-radius: var(--radius-card);
   background: var(--paper-raised);
@@ -273,8 +313,24 @@
 .lc-clues {
   /* Round 7: 40dvh is 337px of an 844px glass but 52% of the 651.8px stage the
      room actually has. Restated against --stage-h so the safety net cannot
-     itself become the thing that overflows. */
-  max-height: calc(var(--stage-h, 100vh) * 0.3);
+     itself become the thing that overflows.
+
+     ROUND 8: the cap stops being a safety net and becomes the budget, because
+     the rows underneath it are 44px now instead of 26.9 and the board above it
+     is 44px instead of 40.4. 0.185 of the stage is 120.6px at 390x844 — two
+     whole clue rows and the top of a third, which is what makes the overflow
+     SIGNPOSTED rather than silent: the scroll-shadow pair below only paints
+     when there is something above or below to scroll to, and CrosswordView
+     keeps the ACTIVE clue scrolled into view (activeClueRef), so the clue she
+     is actually filling in is never the one that is off the panel. That is the
+     round-5 complaint answered — the failure then was a clue sliced mid-glyph
+     with no affordance, not a panel that scrolls.
+
+     The cap is a WHOLE NUMBER OF ROWS, not a share of the stage: a fraction of
+     the stage put the third clue's cap-height through the middle of its own
+     text, which is the sliced glyph again in a different disguise. Two rows +
+     the panel's own padding, arithmetically. */
+  max-height: calc(2 * var(--tap-target) + 1.05rem);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
@@ -295,23 +351,48 @@
 @media (max-height: 900px) {
   .m2 { gap: 0.4rem; padding-top: 0.45rem; }
   .m2__sub { display: none; }
-  .m2-toastslot { min-height: 2.2rem; }
+  /* Round 8: the nameplate goes at 900 rather than 700. It is the last chrome
+     in the room and it is worth 40px — which is most of what takes the square
+     from 40.4 to 44 (AAA 6.19). The room is named on the blueprint she walked
+     in from, and RoomHost already hides this head whenever the keyboard is up. */
+  .m2__head { display: none; }
+  .m2-toastslot { min-height: 2rem; }
   .lc-clues { padding: 0.45rem 0.7rem; gap: 0.1rem; }
   .lc-clue { padding: 0.2rem 0.45rem; line-height: 1.3; }
+  /* Scoped to this room's deck — `.room-deck` is the shell's (room-host.css)
+     and every room uses it. */
+  .m2 > .room-deck { gap: 0.45rem; }
 }
 
 /* 667-tall glass. The nameplate is the last chrome to go — the room is named
    on the blueprint she walked in from, and RoomHost already hides this head
    whenever the keyboard is up. */
+/* 667-tall glass. ROUND 8 — the whole board clears the deck at rest.
+   Measured before: column 522.5 in a 481.6 stage, so the grid's bottom row
+   hit-tested as `.m2-toastslot` (AAA 11.4). The 40px came out of chrome and
+   out of the clue PANEL's cap — never out of the squares, which stay at the
+   30px they shipped at, and never out of the keyboard, which had to GROW to
+   48px to be inside 6.19(b) at all. The panel shows one whole clue row here
+   (the NYT Mini's own arrangement) and scrolls to the rest with the shadow
+   pair signposting it; CrosswordView keeps the active clue in view. */
 @media (max-height: 700px) {
   .m2 { gap: 0.35rem; padding: 0.35rem 0.9rem 0.25rem; }
   .m2__head { display: none; }
-  .m2-toastslot { min-height: 1.6rem; }
+  .m2-toastslot { min-height: 1.5rem; }
   .lc-grid { --lc-cell: clamp(30px, min(15vw, calc(var(--stage-h, 100vh) * 0.062)), 48px); }
-  .lc-clues { padding: 0.25rem 0.5rem; gap: 0; }
+  .lc-clues {
+    padding: 0.25rem 0.5rem;
+    gap: 0;
+    /* One whole row + the panel's padding (see the note above). */
+    max-height: calc(var(--tap-target) + 0.5rem);
+  }
   .lc-clue { padding: 0.15rem 0.4rem; line-height: 1.25; }
   .lc-keys { gap: 3px; }
   .lc-keys__row { gap: 3px; }
+  /* Same reclaim as the Darkroom: 10 keys clear the ruled 32px width only if
+     the row takes back the column's side padding. */
+  .lc-keys { margin-inline: -0.55rem; }
+  .m2 > .room-deck { gap: 0.3rem; }
 }
 
 /* --------------------------------------------------------------------------

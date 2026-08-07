@@ -116,6 +116,95 @@ describe('word web bundle', () => {
     expect(repeats, repeats.join(' ; ')).toEqual([]);
     expect(owner.size).toBe(wordWeb.length * 4);
   });
+
+  /**
+   * ROUND 12 (AAA 2.6 / volume-quality) — NO CATEGORY IS WALLPAPER.
+   *
+   * `BANK_REUSE_CAP = 3` in content/generate-wordweb.ts was documented as the
+   * anti-wallpaper rule and enforced through a counter that only bank draws
+   * ever incremented, so it did not apply to the source the shelf actually
+   * grew from. Shipped before the fix: "Two Pairs of Double Letters" on 17 of
+   * 164 boards — and on 7 of the 12 boards in the newest batch, whose word sets
+   * were near-clones of each other (web-e10 {SUCCESS, BALLOON, GODDESS,
+   * COMMITTEE} against web-e12 {SUCCESS, RACCOON, BALLOON, COMMITTEE}) because
+   * the underlying pool is ~20 words wide and cannot supply 16 honest hands —
+   * plus Heteronyms ×7, 'Silent "T"' ×7, 'Silent "G"' ×6, Palindromes ×5 and
+   * thirteen more over budget. A player who visits the Library nightly met the
+   * same brown-paper category one night in ten. The cap binds every theme now,
+   * whatever wrote it, and this is the assertion that keeps it binding.
+   */
+  it('no category is the theme of more than three boards', () => {
+    const canon = (t: string) => t.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
+    const tally = new Map<string, string[]>();
+    for (const p of wordWeb as (WordWebPuzzle & { id: string })[]) {
+      for (const g of p.groups) {
+        const k = canon(g.theme);
+        tally.set(k, [...(tally.get(k) ?? []), p.id]);
+      }
+    }
+    const over = [...tally]
+      .filter(([, ids]) => ids.length > 3)
+      .map(([theme, ids]) => `"${theme}" ×${ids.length} (${ids.join(', ')})`);
+    expect(over, over.join(' ; ')).toEqual([]);
+  });
+
+  /**
+   * ROUND 12 (AAA 2.9 [BEAT]) — A "HIDDEN X" BOARD MAY NOT PRINT X.
+   *
+   * Three shipped boards falsified their own category on half their tiles:
+   * web-28's "Hidden Vegetables" printed LEEKS and PEASE, web-46's "Hidden
+   * Musical Instruments" printed LUTES and TUBAS, web-43's "Hidden Birds"
+   * printed CRANES. Those are the noun with a plural on it — the vegetable is
+   * not concealed inside an unrelated word, it IS the tile. Half the board
+   * teaches "the bird is hidden", the other half teaches "the bird is printed",
+   * which is the fairness complaint Connections gets and the one this
+   * generator exists to fix. The generator lints its pools now; this is the
+   * shipped-JSON half of that guard, and it also catches a member that hides
+   * nothing at all (CHERISH has no CHERRY in it; THREAD has no THREE).
+   */
+  it('every "Hidden X" tile hides its noun rather than printing it', () => {
+    const TOKENS: Record<string, string[]> = {
+      'Hidden Numbers': ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE'],
+      'Hidden Colors': ['RED', 'BLUE', 'GREEN', 'TAN', 'ROSE', 'PLUM', 'JADE', 'GREY', 'PINK', 'GOLD', 'RUST', 'TEAL', 'AMBER', 'CORAL', 'OLIVE', 'INDIGO'],
+      'Hidden Instruments': ['HARP', 'ORGAN', 'LUTE', 'VIOLA', 'CELLO', 'DRUM', 'HORN', 'BASS', 'OBOE', 'PIANO', 'TUBA', 'FIFE', 'BANJO', 'LYRE', 'SITAR', 'FLUTE'],
+      'Hidden Body Parts': ['ARM', 'HIP', 'EAR', 'RIB', 'SHIN', 'SCALP', 'PALM', 'LIP', 'CHIN', 'HEEL', 'CALF', 'EYE', 'JAW', 'GUM', 'HAND', 'FOOT', 'SKIN', 'LUNG', 'LIVER', 'BROW', 'NOSE', 'NECK', 'KNEE', 'SHOULDER'],
+      'Hidden Animals': ['COW', 'PIG', 'CAT', 'DOG', 'CROW', 'BEE', 'HEN', 'GOAT', 'APE', 'RAT', 'OWL', 'FOX', 'BAT', 'ANT', 'EWE', 'SOW'],
+      'Hidden Birds': ['CROW', 'OWL', 'HEN', 'GULL', 'SWALLOW', 'ROOK', 'WREN', 'HAWK', 'DOVE', 'LARK', 'EMU', 'TERN', 'IBIS'],
+      'Hidden Trees': ['PINE', 'ASH', 'FIR', 'ELM', 'PALM', 'OAK', 'BEECH', 'TEAK', 'YEW', 'MAPLE', 'CEDAR', 'BIRCH', 'LARCH', 'ASPEN'],
+      'Hidden Fruits': ['PLUM', 'FIG', 'DATE', 'PEAR', 'LIME', 'GRAPE', 'LEMON', 'PEACH', 'APPLE', 'MELON', 'MANGO', 'CHERRY', 'OLIVE'],
+      'Hidden Vegetables': ['PEA', 'CORN', 'BEET', 'KALE', 'LEEK', 'CHARD', 'BEAN', 'CHIVE', 'YAM', 'OKRA', 'ONION', 'TURNIP', 'CRESS'],
+      'Hidden Insects': ['ANT', 'BEE', 'MOTH', 'WASP', 'GNAT', 'TICK', 'MIDGE', 'FLEA', 'APHID'],
+      'Hidden Weather': ['RAIN', 'SNOW', 'HAIL', 'MIST', 'FOG', 'GALE', 'SUN', 'ICE', 'DEW', 'WIND', 'STORM', 'SLEET', 'FROST'],
+    };
+    // Plural/participle only — derivational endings are honest carriers
+    // (MOTHER is not a moth, HAWKER is not a hawk), and CROW → CROWD is a word
+    // in its own right, so a bare "D" counts only after an E-final noun.
+    const printed = (token: string, word: string) =>
+      word === token
+      || ['S', 'ES', 'ED', 'ING', 'IES'].some((sfx) => word === token + sfx)
+      || (token.endsWith('E') && word === `${token}D`);
+
+    const problems: string[] = [];
+    for (const p of wordWeb as (WordWebPuzzle & { id: string })[]) {
+      for (const g of p.groups) {
+        if (!/^Hidden /.test(g.theme)) continue;
+        // "Hidden Numbers (Spelled Out)" and "Hidden Musical Instruments" are
+        // the same claims as their shorter siblings.
+        const key = g.theme.replace(' (Spelled Out)', '').replace('Musical ', '');
+        const tokens = TOKENS[key];
+        expect(tokens, `${p.id}: "${g.theme}" has no token list in this test`).toBeTruthy();
+        for (const w of g.words) {
+          const honest = tokens!.some((t) => w.includes(t) && !printed(t, w));
+          if (honest) continue;
+          const bare = tokens!.find((t) => printed(t, w));
+          problems.push(bare
+            ? `${p.id} "${g.theme}": ${w} prints ${bare}`
+            : `${p.id} "${g.theme}": ${w} hides nothing`);
+        }
+      }
+    }
+    expect(problems, problems.join(' ; ')).toEqual([]);
+  });
 });
 
 describe('forgotten word bundle', () => {

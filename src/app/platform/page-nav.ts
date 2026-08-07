@@ -30,6 +30,12 @@
  * in a second file — the exact drift 11.4 forbids. The bottom edge of the real
  * element is the one number that is true whatever the surface stacks above it,
  * and it is read from the live box, never written down.
+ *
+ * THE ROOMS ARE NOT THIS SHAPE (round 12). A room owns no second band and has
+ * no spare glass to publish one from — its board starts at the top of the stage
+ * and its sticky key deck runs to the footer. The seal's collision there is
+ * answered in the moment module instead (`ui/moment/dock.ts`), not here: there
+ * is no floor to measure.
  */
 
 import { useEffect } from 'react';

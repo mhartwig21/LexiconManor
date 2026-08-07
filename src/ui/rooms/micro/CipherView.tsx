@@ -114,6 +114,57 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.attempts]);
 
+  /**
+   * ═══ THE SCROLL THAT MOVED THE CURSOR (round 12, deferred since round 7) ══
+   *
+   * Round 6 moved every *costed* verb in this room onto release (`onClick`) —
+   * the 27 keys, Erase, Develop, Develop one letter — because the deck is
+   * `position: sticky` over a scrolling stage and a press that lands wrong has
+   * to be abortable by sliding off (AAA U.1 / 7.12). Cell selection was left
+   * on `pointerdown` under the house rule "selection commits nothing".
+   *
+   * It commits nothing, and it still breaks the room. The tray is where the
+   * scroll gesture LIVES: at 30+ glyphs the sheet is taller than the glass
+   * (that is what `dense` exists for), the whole sheet is made of `.dk-cell`
+   * buttons, so a drag to read the top of a long cryptogram necessarily
+   * *begins* on a cell — and moved the cursor there. The next key press then
+   * pencilled into whichever letter her thumb happened to start the scroll on.
+   * That is precisely the failure `pencil()` already guards against from the
+   * other direction ("earned state must not move under her", AAA 3.3), reached
+   * by a gesture instead of a tap.
+   *
+   * The fix keeps both halves. Selection still lands on `pointerdown`, so the
+   * highlight is instant (U.1) — and if the gesture turns out to be a scroll
+   * rather than a tap, it is put back. Two signals, because touch gives both:
+   * the browser fires `pointercancel` on the element when it takes the gesture
+   * over for scrolling, and before that we watch for movement past a thumb's
+   * worth of slop.
+   */
+  const DRAG_SLOP_PX = 10;
+  const tapGuard = useRef<{ id: number; from: string | null; x: number; y: number } | null>(null);
+
+  const beginCellTap = (e: React.PointerEvent, c: string) => {
+    if (state.engine.locked.includes(c)) return;
+    tapGuard.current = { id: e.pointerId, from: sel, x: e.clientX, y: e.clientY };
+    sfx.tap();
+    setSel(c);
+  };
+  /** The gesture was a scroll, not a tap: put the cursor back where it was. */
+  const abandonCellTap = () => {
+    const g = tapGuard.current;
+    if (!g) return;
+    tapGuard.current = null;
+    setSel(g.from);
+  };
+  const moveCellTap = (e: React.PointerEvent) => {
+    const g = tapGuard.current;
+    if (!g || g.id !== e.pointerId) return;
+    if (Math.hypot(e.clientX - g.x, e.clientY - g.y) > DRAG_SLOP_PX) abandonCellTap();
+  };
+  const endCellTap = (e: React.PointerEvent) => {
+    if (tapGuard.current?.id === e.pointerId) tapGuard.current = null;
+  };
+
   const advanceFrom = (c: string) => {
     const start = letters.indexOf(c);
     for (let i = 1; i <= letters.length; i++) {
@@ -187,7 +238,13 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
         </div>
       ) : (
         <>
-          <div className={`dk-sheet${dense ? ' dk-sheet--dense' : ''}${shaking ? ' mic-shake' : ''}`}>
+          <div
+            className={`dk-sheet${dense ? ' dk-sheet--dense' : ''}${shaking ? ' mic-shake' : ''}`}
+            onPointerMove={moveCellTap}
+            onPointerUp={endCellTap}
+            onPointerCancel={abandonCellTap}
+            onPointerLeave={abandonCellTap}
+          >
             {words.map((w, wi) => (
               <span key={wi} className="dk-word">
                 {[...w].map((c) => {
@@ -203,7 +260,7 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
                         + (locked ? ' dk-cell--locked' : '')
                         + (guess && dupes.has(guess) && !locked ? ' dk-cell--dupe' : '')
                       }
-                      onPointerDown={() => { if (!locked) { sfx.tap(); setSel(c); } }}
+                      onPointerDown={(e) => beginCellTap(e, c)}
                       aria-label={`Cipher letter ${c}${guess ? `, penciled ${guess}` : ', blank'}${locked ? ', developed' : ''}`}
                     >
                       <span className="dk-cell__cipher">{c}</span>

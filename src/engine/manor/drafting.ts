@@ -68,9 +68,21 @@ export interface DraftRollCtx {
  * Re-tuned WITH the deck (the Archive is a standard card now — see
  * engine/manor/deck.ts `MYSTERY_CARDS`) against the realised share, which is
  * what `deckMixAt` measures and what tests/economy-simulation.test.ts now
- * pins: ≈2.7% at row 0 rising to ≈16% at row 6, strictly increasing per row.
- * The ramp is gentler in the WEIGHT because the rarity table already steepens
- * it; the shape the player feels is steeper than the numbers here look.
+ * pins: **≈2.0% at row 0 rising to ≈10.5% at row 6**, strictly increasing per
+ * row. The ramp is gentler in the WEIGHT because the rarity table already
+ * steepens it; the shape the player feels is steeper than the numbers here
+ * look. (Round 12: this comment read "≈2.7% … ≈16%", which is not what the
+ * shipped weights realise and not what AAA 4.10g publishes — measure with
+ * `deckMixAt(row).mystery` before editing either number, and move all three
+ * copies together.)
+ *
+ * THE ROW DEPENDENCE IS LOAD-BEARING, not flavour: because violet share is a
+ * function of row, how often a player MEETS a sealed page is a function of how
+ * high she climbs. That is why AAA 4.10g publishes two made-out rates — ~54%
+ * of a skilled player's days carry a violet room against ~24% of the median
+ * player's — and why the seal's "≥1 day in 3" clause is skill-qualified rather
+ * than tunable: lifting the median player to 1-in-3 means lifting this ramp
+ * past a rate that stops violet being a rare room at all.
  */
 export function categoryWeight(category: RoomCategory, row: number): number {
   switch (category) {

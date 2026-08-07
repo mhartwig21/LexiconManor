@@ -60,12 +60,12 @@ export default function StepMeter() {
     const entries = ledger.entries;
     // ── A NEW DAY IS NOT "NOTHING HAPPENED" (round-7 defect). ──────────────
     // This branch used to swallow the campaign's headline payment: `startDay`
-    // appends Bramble's tea (up to +11), the day-1 welcome pot and yesterday's
+    // appends Bramble's tea (up to +13), the day-1 welcome pot and yesterday's
     // carry-over INSIDE the same tick that resets the ledger, so the new day's
     // entry list was SHORTER than yesterday's and the whole dawn batch was
     // classified as "fresh ledger, a new day, no floats". Measured: 0 of 30
     // samples over 3s carried a `.chr-float` at a dawn whose ledger held
-    // [['tea', 11]] — the single largest step grant in the game, silent.
+    // [['tea', 13]] — the single largest step grant in the game, silent.
     //
     // The reset is keyed on THE DAY NUMBER, not on the entry count. A count
     // watermark cannot see a dawn whose ledger happens to be the same length
@@ -116,7 +116,12 @@ export default function StepMeter() {
         {/* the candle dish */}
         <line x1="2" y1="31" x2="18" y2="31" stroke="var(--ink-faint)" strokeWidth="1.5" />
       </svg>
-      <div>
+      {/* ROUND 8: this wrapper carries a class and `white-space: nowrap` (see
+          chrome.css). Unclassed, it was free to reflow "12 steps" onto two
+          lines the moment the flex row was squeezed — which is exactly what
+          happened at 375x667, making .chr-steps 53.3px, the bar 59.3px, and
+          --chrome-h a lie on every surface that clears itself by it. */}
+      <div className="chr-steps__read">
         {/* key retriggers the tick pulse on every change */}
         <span key={steps} className="chr-steps__count chr-steps__count--tick tabular-nums">
           {steps}

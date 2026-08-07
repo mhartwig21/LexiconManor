@@ -108,6 +108,29 @@ const TONE_WORDS = [
   'slaughter', 'slaughters', 'slaughtered', 'slaughtering', 'manslaughter',
   'strangled', 'strangler', 'stranglers', 'strangles', 'strangling',
   'choking', 'stabbing', 'stabbings', 'killings',
+  // Eighth read (round 12) — the SLUR HOLE. This list already blocks 'hick'
+  // as merely derogatory, and 'dyke'/'dike' as slur-adjacent, but carried no
+  // entry for the words that name a disability as an insult. MIDGET shipped as
+  // a Library tile (it was a member of the Hidden Insects pool, carrying
+  // MIDGE) and was set in Fell caps on web-44 for months: a widely-recognised
+  // slur for people with dwarfism, on a display surface, in a game built for
+  // the owner's wife. The base BLOCKLIST in content/lib/dictionary.ts is
+  // racial-slur focused and does not reach this family. Gate the family.
+  // Kept deliberately tight to the family that has no cozy reading at all, so
+  // this addition cannot quietly invalidate another room's shipped pool.
+  // Kept deliberately tight to the family that has no cozy reading at all.
+  //
+  // ROUND 8 (verifier): the RETARD family is now gated too. Round 13's content
+  // agent named it and deliberately left it — it was live in hive.json (9) and
+  // twistle.json (1), and gating it there would have redded the Conservatory's
+  // and Gallery's lint without a regeneration that agent could not run. The
+  // verifier can run it, so the honest end of that trade is taken here: the
+  // family is gated AND both pools regenerated in the same change. A slur a
+  // player can spell on a cozy word board is a COZY/3.7 failure whichever
+  // agent's territory the JSON happens to sit in.
+  'midget', 'midgets', 'midgety',
+  'spastic', 'spastics', 'imbecile', 'imbeciles', 'mongoloid', 'mongoloids',
+  'retard', 'retards', 'retarded', 'retarding', 'retardate', 'retardates',
 ];
 
 const NAME_WORDS = [

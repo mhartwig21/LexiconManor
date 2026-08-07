@@ -128,15 +128,27 @@
      on the body's 26px leading, and one vertical margin line down the gutter.
      Ink only — no hue, nothing saturated, so AAA 6.5's neutral budget and the
      grayscale pass (6.3) are untouched, and the rules sit under the cards
-     rather than behind their text. */
+     rather than behind their text.
+
+     ROUND 8: the rules were drawn at 10% ink and the margin line at 20%, which
+     on this parchment is under the grain — the page measured as ruled and
+     photographed as blank, so the round-7 fix could not do the job it was
+     written for. 15%/26% is still ink-only, still under the cards, and now
+     actually visible at arm's length on a phone — and it now REACHES the
+     glass, which it did not before: the harness's safe-area shim was rewriting
+     this rule's whole declaration block (it carries an env() in `padding`) and
+     taking every var()-carrying shorthand in the block down with it, `border`
+     and `background` included. So the round-7 ruling was being erased by the
+     instrument that photographed it, in every still it produced. Fixed in
+     scripts/r7-compose-audit.mjs; see docs/shots/round8/compose/INDEX.md. */
   background:
     linear-gradient(to right, transparent 0 2.35rem,
-      color-mix(in srgb, var(--ink) 20%, transparent) 2.35rem 2.4rem,
+      color-mix(in srgb, var(--ink) 26%, transparent) 2.35rem 2.4rem,
       transparent 2.4rem) 0 0 / 100% 100% no-repeat,
     repeating-linear-gradient(
       to bottom,
       transparent 0 25px,
-      color-mix(in srgb, var(--ink) 10%, transparent) 25px 26px),
+      color-mix(in srgb, var(--ink) 15%, transparent) 25px 26px),
     var(--paper-raised);
   background-attachment: local, local;
   border: var(--rule);
@@ -154,6 +166,141 @@
   color: var(--ink-soft);
   font-style: italic;
   padding: 2.2rem 0.6rem;
+}
+
+/* ── THE EMPTY PAGE (round 8) ───────────────────────────────────────────────
+   Measured before: Letters 63.5% of the glass featureless, Testimony 55%,
+   Engravings 50.2% — the three worst bands in the app, and all three were the
+   same shape: one italic line at the top of the sheet and 340px of nothing.
+   The ruled page (`.jrn-sheet`, above) was the round-7 answer and it was not
+   enough, because a background gradient is not composition: the eye reads a
+   page with one sentence on it as a page that failed to load.
+
+   The plate spans the sheet and puts ink at three heights — a crest at the
+   top, the mark and its copy centred in the optical middle, and the "how it
+   finds you" line ruled off at the foot. Nothing in it is interactive and
+   nothing in it is state, so the unread/sealed vocabulary is untouched. */
+.jrn-sheet > .jrn-void {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.2rem 0.2rem 0.1rem;
+  text-align: center;
+  /* Transparent, so the page's rules run behind the whole composition (the
+     `.jrn-sheet > *` raised backing below is for CARDS, which mask the rules
+     under their text on purpose). */
+  background-color: transparent;
+}
+
+/* A ruled crest: hairline, diamond, hairline. The same ink furniture the
+   blueprint and the digest use, so an empty tab still reads as this game
+   cropped to 25% (AAA 6.20). */
+.jrn-void__crest {
+  flex: none;
+  height: 0.55rem;
+  background:
+    linear-gradient(var(--paper-edge), var(--paper-edge)) left center / calc(50% - 0.6rem) 1px no-repeat,
+    linear-gradient(var(--paper-edge), var(--paper-edge)) right center / calc(50% - 0.6rem) 1px no-repeat;
+  position: relative;
+}
+.jrn-void__crest::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.42rem;
+  height: 0.42rem;
+  border: 1px solid var(--ink-faint);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.jrn-void__plate {
+  margin: auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+.jrn-void__mark {
+  width: 4.5rem;
+  height: 4.5rem;
+  color: var(--ink-faint);
+}
+.jrn-void__title {
+  margin: 0;
+  font-family: var(--font-display);
+  /* AAA 6.6: the display face is never below 22px. */
+  font-size: var(--text-display-sm);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  max-width: 22ch;
+}
+.jrn-void__body {
+  margin: 0;
+  max-width: 30ch;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+/* Pinned to the foot of the sheet — this is the half the player is actually
+   after ("what do I do to make something appear here?"), and putting it at the
+   bottom is also what breaks the band below the plate rather than above it. */
+.jrn-void__how {
+  flex: none;
+  border-top: 1px dashed var(--paper-edge);
+  padding-top: 0.5rem;
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+.jrn-void__howcap {
+  display: block;
+  margin-bottom: 0.15rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.jrn-void__howtext { display: block; max-width: 34ch; margin: 0 auto; }
+
+/* The foot of a FILED tab. A single card left the same band an empty tab did
+   (Engravings 50.2%, Letters 63.5%), so the sheet ends on a ruled line that
+   says where the rest of them are. `margin-top: auto` holds it to the bottom
+   of a short list and lets it simply follow a long one. */
+.jrn-sheet > .jrn-tail {
+  /* BOTH margins auto, so the free space splits above and below the foot
+     instead of all of it landing in one band. With one card filed, Engravings
+     measured a single 260px void under it; halved, it is two ~130px runs of
+     ruled page, which is what a real page with one entry on it looks like. */
+  margin-top: auto;
+  margin-bottom: auto;
+  padding-top: 0.55rem;
+  border-top: 1px dashed var(--paper-edge);
+  background-color: transparent;
+  text-align: center;
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+.jrn-tail__cap {
+  display: block;
+  margin-bottom: 0.15rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.jrn-tail__text { display: block; max-width: 36ch; margin: 0 auto; font-style: italic; }
+
+/* Short glass: the mark gives up size first, the copy never does. */
+@media (max-height: 700px) {
+  .jrn-sheet > .jrn-void { gap: 0.6rem; }
+  .jrn-void__mark { width: 3.2rem; height: 3.2rem; }
 }
 
 /* --- The footer rail (AAA 11.2/11.3 — round-6 gap) --------------------------
@@ -358,10 +505,18 @@
   color: var(--ink-faint);
 }
 .jrn-nudge__text { display: inline; }
+/* Round 8 type audit (AAA 6.6): the signature inherited `.jrn-nudge`'s 15px
+   and set it in IM Fell English, which is never below 22px. A signature is the
+   one place in the journal where the display face at full size is exactly
+   right — it is a hand, not a caption — so it goes UP rather than changing
+   face. Decorative-adjacent but not decoration: it is what stops the nudge
+   being a voice nobody owns (AAA 5.13), so it has to be legible. */
 .jrn-nudge__sign {
   display: block;
   font-style: normal;
   font-family: var(--font-display);
+  font-size: 1.4rem;
+  line-height: 1.1;
   letter-spacing: 0.06em;
 }
 

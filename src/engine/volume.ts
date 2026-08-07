@@ -408,15 +408,86 @@ export function reservedTestimonyIds(
   return out;
 }
 
+/**
+ * THE LEGIBLE-DAY MARK — the round-13 fix to the pity floor (AAA 4.14).
+ *
+ * THE DEFECT, in one sentence: the mercy channel was switched off by pages she
+ * could not read. `DayRecord.fragmentsFound` counts `fragment-found`, and a
+ * violet room fires that for a SEALED page too (deliberately — the moment layer
+ * has to see the seal). So a smudge reset the drought to zero, and the player
+ * the seal is designed to press — drafting violet rooms, solving nothing — had
+ * the one [BEAT] guarantee in 4.14 ("≥1 new fragment within any 3 consecutive
+ * days") silently withdrawn by the very documents that taught her nothing.
+ *
+ * Round 11 audited this exact "counted pages she cannot read" shape and fixed
+ * three of the four sites (`sanctumReadiness`, `fragmentsLegible`,
+ * `simulateCampaign`'s deduction counter) and left the mercy channel.
+ *
+ * THE MARK. A day on which at least one page she can actually READ landed —
+ * a legible filing (letter enclosure, testimony, the solve channel) or a solve
+ * deciphering the backlog — writes `vol.<volumeId>.made-out-day-<N>`, the same
+ * write-once flag mechanism the seal itself rides (docs/flags.md, round 10).
+ * It is a per-day family, so it needs no save-schema change and no field on the
+ * architect-owned `DayRecord`; the chronicles keep printing the FILED count,
+ * which is the right number for a chronicle ("what arrived"), while the drought
+ * reads the LEGIBLE one, which is the right number for mercy ("what taught her
+ * anything").
+ */
+export function legibleDayFlag(volumeId: string, day: number): string {
+  return `vol.${volumeId}.made-out-day-${Math.max(0, Math.floor(day))}`;
+}
+
+/** The day numbers on which this volume made something out (from the flags). */
+export function legibleDays(volumeId: string, flags: Iterable<string>): Set<number> {
+  const out = new Set<number>();
+  const prefix = `vol.${volumeId}.made-out-day-`;
+  for (const f of flags) {
+    if (!f.startsWith(prefix)) continue;
+    const n = Number.parseInt(f.slice(prefix.length), 10);
+    if (Number.isFinite(n)) out.add(n);
+  }
+  return out;
+}
+
+export interface DroughtOpts {
+  /**
+   * The days on which something LEGIBLE landed (`legibleDays`). Supplied, the
+   * drought counts days since she last learned anything; omitted, it falls back
+   * to `DayRecord.fragmentsFound`, which counts smudges — correct only for a
+   * caller that genuinely means "documents arrived".
+   */
+  legibleDays?: ReadonlySet<number>;
+}
+
 /** Days of completed play since a fragment last appeared (from the banked
  *  DayRecords — chronicles are the one persistent per-day record). */
-export function fragmentDroughtDays(dayRecords: readonly DayRecord[]): number {
+export function fragmentDroughtDays(
+  dayRecords: readonly DayRecord[],
+  opts?: DroughtOpts,
+): number {
+  const legible = opts?.legibleDays;
   let drought = 0;
   for (let i = dayRecords.length - 1; i >= 0; i--) {
-    if (dayRecords[i]!.fragmentsFound > 0) break;
+    const record = dayRecords[i]!;
+    const learned = legible ? legible.has(record.day) : record.fragmentsFound > 0;
+    if (learned) break;
     drought++;
   }
   return drought;
+}
+
+/**
+ * The one-call form every live caller should use: how many days since she last
+ * made anything out, read off the volume's own flags. Exists so no surface can
+ * accidentally pass the smudge-counting default — the mistake this whole block
+ * is here to end.
+ */
+export function legibleDroughtDays(
+  volumeId: string,
+  flags: Iterable<string>,
+  dayRecords: readonly DayRecord[],
+): number {
+  return fragmentDroughtDays(dayRecords, { legibleDays: legibleDays(volumeId, flags) });
 }
 
 export const PITY_DROUGHT_DAYS = 3;
@@ -426,11 +497,12 @@ export function pityDue(
   def: VolumeDef,
   state: VolumeState,
   dayRecords: readonly DayRecord[],
+  opts?: DroughtOpts,
 ): boolean {
   return (
     state.status === 'active' &&
     unfoundFragments(def, state).length > 0 &&
-    fragmentDroughtDays(dayRecords) >= PITY_DROUGHT_DAYS
+    fragmentDroughtDays(dayRecords, opts) >= PITY_DROUGHT_DAYS
   );
 }
 

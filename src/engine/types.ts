@@ -36,8 +36,17 @@ export interface WordWebPuzzle {
   /** Authoritative row band (round 4): 1|2|3 → rows 0–2 / 3–4 / 5–6. */
   tier: Tier;
   groups: WordWebGroup[]; // exactly 4
-  /** Words that plausibly fit more than one group (UI may highlight them). */
-  ambiguousWords?: string[];
+  /**
+   * Words that plausibly fit more than one group (UI may highlight them).
+   *
+   * ROUND 8 (verifier): promoted from optional to REQUIRED. Every shipped board
+   * has carried ≥1 since round 7 and `tests/puzzles/anchors.test.ts` has
+   * enforced it since, but the guarantee lived only in a test — the type still
+   * said a board could ship without any intruder at all. Moving it here means
+   * the compiler refuses a board that has stopped being ambiguous, which is the
+   * whole of the Library's difficulty (AAA 2.7/2.10).
+   */
+  ambiguousWords: string[];
 }
 
 export interface WordWebGroup {

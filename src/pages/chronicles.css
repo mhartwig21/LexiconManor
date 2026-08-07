@@ -183,9 +183,16 @@
   min-width: 0;
 }
 
+/* Round 8 type audit (AAA 6.6): this inherited the body size (17px) and set it
+   in IM Fell English, which is never below 22px. A keepsake name sits in a
+   dense shelf list where a 22px line would push the note off the row, so it
+   takes the body serif instead — same size, semibold and lightly tracked so it
+   still reads as the row's title against the note under it. */
 .chron__keepsake-name {
   display: block;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--ink-faint);
 }
 

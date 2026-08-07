@@ -8,24 +8,27 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { ManorState, PlacedRoom, VolumeState } from '../src/engine/types';
+import type { DayRecord, ManorState, PlacedRoom, VolumeState } from '../src/engine/types';
 import { cellKey, createManor, SANCTUM_DOOR_CELL } from '../src/engine/manor/grid';
 import {
-  decipherYield, freshVolumeState, fragmentsToDecipher, legibleFragmentFlag, openedLetterFlag,
-  sealedFragmentFlag, sealedFragmentIds, solvedFlag, DECIPHER_YIELD_BY_TIER,
+  decipherYield, freshVolumeState, fragmentsToDecipher, legibleDayFlag, legibleDroughtDays,
+  legibleFragmentFlag, openedLetterFlag, sealedFragmentFlag, sealedFragmentIds, solvedFlag,
+  DECIPHER_YIELD_BY_TIER,
   type VolumeContent,
 } from '../src/engine/volume';
 import {
   alphabetFacts, arrivalShade, crossRefs, definitionSlots, displayedFragmentIds, foundByKind,
-  guessHistory, guessVerdict, isLegible, journalNudge, journalUnread, landingFlag, letterBoxes,
-  nextUninterpreted, sanctumReadiness, sealedCount, SPENT_ARRIVAL_STEPS, THIN_FILE_THRESHOLD,
+  glancedFragmentFlag, glancedFragmentIds, guessHistory, guessVerdict, hasSeen, isLegible,
+  journalNudge, journalUnread, landingFlag, letterBoxes, nextUninterpreted, NOTHING_UNREAD,
+  sanctumReadiness, sealedCount, SPENT_ARRIVAL_STEPS, THIN_FILE_THRESHOLD,
   VERDICT_TOKENS, viewedFragmentFlag, viewedFragmentIds,
   type GuessVerdict, type JournalTab,
 } from '../src/engine/journal';
 import { solveKeys } from '../src/engine/economy/steps';
 import { FLAG_REGEX } from '../src/engine/dialogue/validate';
 import { getDialogueFile } from '../src/engine/dialogue/content';
-import { useManorStore } from '../src/app/store';
+import { selectSave, useManorStore } from '../src/app/store';
+import { exportSaveCode, importSaveCode } from '../src/app/save';
 
 const volume = JSON.parse(
   readFileSync(join(__dirname, '..', 'content', 'authored', 'volumes', 'volume-1.json'), 'utf8'),
@@ -33,6 +36,13 @@ const volume = JSON.parse(
 
 const fresh = (): VolumeState => freshVolumeState(volume.id, 1);
 const withFound = (...ids: string[]): VolumeState => ({ ...fresh(), foundFragmentIds: ids });
+
+/** Four banked days of play, a page filed on every one of them — the walker's
+ *  chronicle, which is what made the old filing-based drought read zero. */
+const records4: DayRecord[] = [1, 2, 3, 4].map((day) => ({
+  day, endedAt: day * 1000, cause: 'steps-exhausted',
+  roomsDrafted: 3, roomsSolved: 0, stepsSpent: 18, fragmentsFound: 1,
+}));
 
 describe('definition poem — gaps keep the shape (— ? —)', () => {
   it('always renders six slots, found lines in revealOrder, the rest gaps', () => {
@@ -397,6 +407,176 @@ describe('displayedFragmentIds — viewing is what a tab puts on the glass', () 
 });
 
 // ---------------------------------------------------------------------------
+// ROUND 12 — ONE MARK, TWO MEANINGS (the AAA 11.20 blocker)
+// ---------------------------------------------------------------------------
+
+/**
+ * The defect: `displayedFragmentIds` excluded SEALED cards, so a page the
+ * player had fully looked at kept its wax marker simply because the hand was
+ * not legible yet. Wax therefore meant BOTH "you have not seen this" and "this
+ * is not deciphered" — 11.20 requires it to clear on viewing and on nothing
+ * else, and 11.21 requires any count beside it to be exactly the number of
+ * unviewed items.
+ *
+ * The fix gives the second state its own vocabulary. These tests walk all four
+ * combinations of (seen?, legible?) and pin each one's two markers.
+ */
+describe('the two markers — wax is "unseen", the seal is "unmade-out"', () => {
+  /** Derive both chains the way `useJournalUnread` does. */
+  const marks = (
+    state: VolumeState,
+    o: { viewed?: string[]; glanced?: string[]; sealed?: string[] } = {},
+    letters = noLetters,
+  ) =>
+    journalUnread(volume, state, {
+      viewedIds: new Set(o.viewed ?? []),
+      glancedIds: new Set(o.glanced ?? []),
+      sealedIds: new Set(o.sealed ?? []),
+      ...letters,
+    });
+
+  const state = withFound('v1-d1');
+
+  it('(1) UNREAD + SEALED — never opened, and not made out', () => {
+    const m = marks(state, { sealed: ['v1-d1'] });
+    expect(m.word).toEqual(['v1-d1']);          // wax: she has not looked
+    expect(m.total).toBe(1);
+    expect(m.sealed.word).toEqual(['v1-d1']);   // seal: the ink has run
+    expect(m.sealed.total).toBe(1);
+  });
+
+  it('(2) READ + SEALED — she has looked at the smudge; it is still a smudge', () => {
+    // THE CASE THAT WAS FALSE BY DESIGN. Wax must be gone: nothing here is
+    // unseen. The seal must remain: nothing here is deciphered.
+    const m = marks(state, { sealed: ['v1-d1'], glanced: ['v1-d1'] });
+    expect(m.word).toEqual([]);
+    expect(m.total).toBe(0);
+    expect(m.sealed.word).toEqual(['v1-d1']);
+    expect(m.sealed.total).toBe(1);
+  });
+
+  it('(3) UNREAD + LEGIBLE — readable and never looked at', () => {
+    const m = marks(state);
+    expect(m.word).toEqual(['v1-d1']);
+    expect(m.total).toBe(1);
+    expect(m.sealed.total).toBe(0);
+  });
+
+  it('(4) READ + LEGIBLE — no marker of either kind', () => {
+    const m = marks(state, { viewed: ['v1-d1'] });
+    expect(m.total).toBe(0);
+    expect(m.sealed.total).toBe(0);
+  });
+
+  it('THE TRANSITION: making a glanced page out RE-RAISES unread', () => {
+    // A page becoming legible is information she has not seen. Glancing at a
+    // smudge is not reading the sentence under it, so the moment a solve makes
+    // it out the page is unread again — and the seal marker retires.
+    const glanced = { sealed: ['v1-d1'], glanced: ['v1-d1'] };
+    expect(marks(state, glanced).total).toBe(0);
+
+    // …a room is solved; `legible-v1-d1` lands, so it leaves the sealed set.
+    const after = marks(state, { glanced: ['v1-d1'] });
+    expect(after.word).toEqual(['v1-d1']);
+    expect(after.total).toBe(1);
+    expect(after.sealed.total).toBe(0);
+
+    // …and reading it NOW is what finally retires the wax, for good.
+    expect(marks(state, { glanced: ['v1-d1'], viewed: ['v1-d1'] }).total).toBe(0);
+  });
+
+  it('a glance is not a reading: the glance flag alone never clears a legible page', () => {
+    // The encoding's whole load-bearing property. If `glanced-` could stand in
+    // for `viewed-`, the transition above would silently stop firing.
+    expect(marks(state, { glanced: ['v1-d1'] }).total).toBe(1);
+  });
+
+  it('hasSeen is the one predicate, and it asks about the CURRENT state', () => {
+    const viewedIds = new Set(['v1-d1']);
+    const glancedIds = new Set(['v1-e1']);
+    // Legible → the reading flag decides.
+    expect(hasSeen('v1-d1', { viewedIds, glancedIds })).toBe(true);
+    expect(hasSeen('v1-e1', { viewedIds, glancedIds })).toBe(false);
+    // Sealed → the glance flag decides, and only the glance flag.
+    const sealedIds = new Set(['v1-d1', 'v1-e1']);
+    expect(hasSeen('v1-d1', { viewedIds, glancedIds, sealedIds })).toBe(false);
+    expect(hasSeen('v1-e1', { viewedIds, glancedIds, sealedIds })).toBe(true);
+  });
+
+  it('TRUTHFUL COUNTS at every level, on a mixed journal (11.19/11.21)', () => {
+    // Six filed pages in three tabs, in all four states at once.
+    const mixed = withFound('v1-d1', 'v1-d2', 'v1-e1', 'v1-e2', 'v1-t2', 'v1-t3');
+    const m = marks(mixed, {
+      sealed: ['v1-d2', 'v1-e1', 'v1-t3'],
+      glanced: ['v1-d2'],                       // seen while sealed
+      viewed: ['v1-d1', 'v1-e2'],               // read
+    });
+    // Word: d1 read+legible, d2 read+sealed → no wax, one ring.
+    expect(m.word).toEqual([]);
+    expect(m.sealed.word).toEqual(['v1-d2']);
+    // Engravings: e1 unread+sealed, e2 read+legible → one wax, one ring.
+    expect(m.engravings).toEqual(['v1-e1']);
+    expect(m.sealed.engravings).toEqual(['v1-e1']);
+    // Testimony: t2 unread+legible, t3 unread+sealed → two wax, one ring.
+    expect(m.testimony).toEqual(['v1-t2', 'v1-t3']);
+    expect(m.sealed.testimony).toEqual(['v1-t3']);
+
+    // The entrance numbers are exactly the sums of the tab numbers, and the
+    // two chains are never added together.
+    expect(m.total).toBe(m.word.length + m.engravings.length + m.testimony.length + m.letters.length);
+    expect(m.total).toBe(3);
+    expect(m.sealed.total).toBe(3);
+    expect(m.fragments).toEqual(['v1-e1', 'v1-t2', 'v1-t3']);
+    expect(m.sealed.fragments).toEqual(['v1-d2', 'v1-e1', 'v1-t3']);
+  });
+
+  it('a sealed page is still counted as unread when she has not opened the tab', () => {
+    // Truthful in the other direction too (11.21): "read-but-sealed" is a
+    // state she has to actually reach, not the default for anything sealed.
+    const m = marks(withFound('v1-d1', 'v1-e1'), { sealed: ['v1-d1', 'v1-e1'] });
+    expect(m.total).toBe(2);
+    expect(m.sealed.total).toBe(2);
+  });
+
+  it('degrades to the pre-seal rule when no seal information is supplied', () => {
+    // Every caller predating round 10 (and every save that has no seal flags)
+    // must land on exactly the old behaviour.
+    expect(unread(withFound('v1-d1')).total).toBe(1);
+    expect(unread(withFound('v1-d1'), ['v1-d1']).total).toBe(0);
+    expect(unread(withFound('v1-d1')).sealed.total).toBe(0);
+    expect(NOTHING_UNREAD.sealed.total).toBe(0);
+  });
+
+  it('the glance flag lives in the docs/flags.md namespace, per volume', () => {
+    const flag = glancedFragmentFlag('volume-1', 'v1-d1');
+    expect(flag).toBe('vol.volume-1.glanced-v1-d1');
+    expect([...glancedFragmentIds('volume-1', [flag, viewedFragmentFlag('volume-1', 'v1-e1')])])
+      .toEqual(['v1-d1']);
+    expect(glancedFragmentIds('volume-2', [flag]).size).toBe(0);
+    for (const f of volume.fragments) {
+      expect(FLAG_REGEX.test(glancedFragmentFlag(volume.id, f.id)), f.id).toBe(true);
+    }
+  });
+
+  it('a live save written before the glance flag existed keeps its pages read', () => {
+    // The reason the NEW state got the NEW flag: `viewed-` already means "seen
+    // it readable" in the owner's save and in the migration backfill, and
+    // nothing sealed exists there. Re-deriving must not re-mark a fortnight of
+    // reading.
+    const legacyFlags = volume.fragments.map((f) => viewedFragmentFlag(volume.id, f.id));
+    const all = withFound(...volume.fragments.map((f) => f.id));
+    const m = journalUnread(volume, all, {
+      viewedIds: viewedFragmentIds(volume.id, legacyFlags),
+      glancedIds: glancedFragmentIds(volume.id, legacyFlags),   // empty
+      sealedIds: sealedFragmentIds(volume.id, legacyFlags),     // empty
+      ...noLetters,
+    });
+    expect(m.total).toBe(0);
+    expect(m.sealed.total).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // ROUND 10 — entering gets the document, solving makes it legible
 // ---------------------------------------------------------------------------
 
@@ -476,13 +656,16 @@ describe('sealed fragments — filed forever, made out by solving', () => {
     expect(crossRefs(volume, both, 'v1-e1', sealedOf('v1-t2'))).toEqual([]);
   });
 
-  it('a sealed page is never "viewed", so its wax mark stands until it is made out', () => {
-    // AAA 11.20/11.21, applied honestly: the CARD is on the glass but its
-    // CONTENTS are not, so there genuinely is something here she has not read.
+  it('ROUND 12 — a sealed page IS displayed: the tab puts it on the glass', () => {
+    // This test used to assert the opposite, and that assertion was the
+    // round-12 blocker (AAA 11.20 false by design): filtering sealed pages out
+    // of `displayedFragmentIds` made wax mean "not deciphered" as well as "not
+    // looked at", so a card she had fully looked at kept its unread mark.
+    // `displayedFragmentIds` answers ONE question — what did the tab show her —
+    // and the seal is the other marker's business entirely.
     const state = withFound('v1-e1');
     expect(displayedFragmentIds(volume, state, 'engravings')).toEqual(['v1-e1']);
-    expect(displayedFragmentIds(volume, state, 'engravings', sealedOf('v1-e1'))).toEqual([]);
-    expect(displayedFragmentIds(volume, withFound('v1-d1'), 'word', sealedOf('v1-d1'))).toEqual([]);
+    expect(displayedFragmentIds(volume, withFound('v1-d1'), 'word')).toEqual(['v1-d1']);
   });
 
   it('isLegible is found AND made out', () => {
@@ -512,13 +695,34 @@ describe('sealed fragments — filed forever, made out by solving', () => {
     expect(fragmentsToDecipher(volume, withFound('v1-d1'), sealed, 3)).toEqual(['v1-d1']);
   });
 
-  it('the journal points her at the backlog, in a voice, with the answer in it', () => {
+  /**
+   * ROUND 13 (AAA 6.16) — THE NUDGE NAMES THE BACKLOG; IT NO LONGER RECITES
+   * THE RAIL'S INSTRUCTION.
+   *
+   * At 390px with five sealed pages the Word tab printed the same instruction
+   * five times in three different verbs — once per sealed line, again in this
+   * nudge, again in the footer rail — and the tier hint three times. The rail
+   * is the surface that owns it (pinned outside the scroll, count and tier hint
+   * beside it); Ellery says the thing only Ellery can say. So the assertion
+   * inverts: the count still has to be here (it is the useful half), and the
+   * instruction must NOT be.
+   */
+  it('the journal points her at the backlog, in a voice, and does not repeat the rail', () => {
     const state = withFound('v1-d1', 'v1-e1');
     const nudge = journalNudge(volume, state, sealedOf('v1-d1', 'v1-e1'));
     expect(nudge).toBeTruthy();
-    expect(nudge!.toLowerCase()).toContain('solve');
     expect(nudge).toContain('2');
+    expect(nudge!.toLowerCase()).toContain('not made out');
+    expect(nudge!.toLowerCase()).not.toMatch(/solve|finish a room|the higher the room|harder the room/);
     expect(sealedCount(state, sealedOf('v1-d1', 'v1-e1'))).toBe(2);
+  });
+
+  /** The single-page voice keeps the same discipline (state, no instruction). */
+  it('the one-page nudge says the state and not the instruction', () => {
+    const state = withFound('v1-d1');
+    const nudge = journalNudge(volume, state, sealedOf('v1-d1'));
+    expect(nudge!.toLowerCase()).toContain('not made out');
+    expect(nudge!.toLowerCase()).not.toMatch(/solve|finish a room|the higher the room/);
   });
 });
 
@@ -607,6 +811,95 @@ describe('journal slice through the real store', () => {
     // beginNextVolume is a warm no-op until a volume-2 is authored.
     s.beginNextVolume();
     expect(useManorStore.getState().volume.volumeId).toBe(volume.id);
+  });
+
+  /**
+   * ═══ ROUND-13 BLOCKER (AAA 4.14): THE PITY FLOOR'S DAY MARK ═══════════════
+   *
+   * The write side of the fix, through the real slice. A page she cannot read
+   * must not mark the day, or the mercy channel is switched off by exactly the
+   * documents that taught her nothing.
+   */
+  it('only a page she can READ marks the day for the pity floor', () => {
+    useManorStore.setState({ day: { ...useManorStore.getState().day, day: 4 } as never });
+    const s = useManorStore.getState();
+
+    s.fileFragment('v1-d1', { sealed: true });          // walked into a violet room
+    expect(useManorStore.getState().flags).not.toContain(legibleDayFlag(volume.id, 4));
+    expect(legibleDroughtDays(volume.id, useManorStore.getState().flags, records4)).toBe(4);
+
+    s.fileFragment('v1-t1');                            // testimony, spoken aloud
+    expect(useManorStore.getState().flags).toContain(legibleDayFlag(volume.id, 4));
+    expect(legibleDroughtDays(volume.id, useManorStore.getState().flags, records4)).toBe(0);
+  });
+
+  it('making the backlog out marks the day even though nothing new was filed', () => {
+    useManorStore.setState({ day: { ...useManorStore.getState().day, day: 6 } as never });
+    const s = useManorStore.getState();
+    s.fileFragment('v1-d1', { sealed: true });
+    s.fileFragment('v1-e1', { sealed: true });
+    expect(useManorStore.getState().flags).not.toContain(legibleDayFlag(volume.id, 6));
+
+    expect(s.decipherFragments(1).length).toBe(1);
+    expect(useManorStore.getState().flags).toContain(legibleDayFlag(volume.id, 6));
+  });
+
+  /**
+   * ═══ ROUND-13 BLOCKER (AAA 4.15): THE CLOSED VOLUME'S ARCHIVE CONTRADICTED
+   *     ITS OWN CEREMONY ════════════════════════════════════════════════════
+   *
+   * Won at the door holding three sealed definition lines. The epilogue printed
+   * all three IN CLEAR (`definitionSlots(content, volume)` with no `sealedIds`)
+   * while the Journal — which the ceremony's own copy names as the permanent
+   * trace, "the journal keeps the rest" — rendered the same three lines as
+   * dot-runs telling her to go solve a room, on a volume whose status is
+   * 'solved', with the footer rail and Ellery's pointer both retired so there
+   * was no count and no context left for the instruction. The text she earned
+   * existed legibly only on a ceremony screen, which is exactly what 4.15
+   * forbids.
+   *
+   * Fix (a) of the two the finding offered, and the cozy reading: the volume
+   * closed, so the house gave her the rest. One rule, every surface.
+   */
+  it('closing the volume makes every filed page legible — the archive matches the ceremony', () => {
+    const s = useManorStore.getState();
+    // Three pages walked out of violet rooms and never made out.
+    s.fileFragment('v1-d1', { sealed: true });
+    s.fileFragment('v1-e1', { sealed: true });
+    s.fileFragment('v1-t1', { sealed: true });
+    expect(sealedFragmentIds(volume.id, useManorStore.getState().flags).size).toBe(3);
+
+    s.guessAtSanctum('lacuna');
+
+    const st = useManorStore.getState();
+    expect(st.volume.status).toBe('solved');
+    // No smudge survives the closing of the book — so the journal, the tabs,
+    // the entrance count and the digest all agree with the epilogue.
+    expect(sealedFragmentIds(volume.id, st.flags).size).toBe(0);
+    for (const id of ['v1-d1', 'v1-e1', 'v1-t1']) {
+      expect(st.flags).toContain(legibleFragmentFlag(volume.id, id));
+    }
+    // Routed through the ordinary decipher channel, so the spine carries it.
+    expect(st.counters['fragment-made-out']).toBe(1);
+    // And the archive reads as prose, not as dot-runs (the surface the
+    // ceremony promised).
+    const slots = definitionSlots(volume, st.volume, {
+      sealedIds: sealedFragmentIds(volume.id, st.flags),
+    });
+    expect(slots.filter((x) => x.fragment).every((x) => !x.sealed)).toBe(true);
+    // The dead instruction is gone with the smudges: nothing left to nudge at.
+    expect(journalNudge(volume, st.volume, {
+      sealedIds: sealedFragmentIds(volume.id, st.flags),
+    })).toBeNull();
+  });
+
+  it('a volume won with nothing sealed rings no phantom decipher', () => {
+    const s = useManorStore.getState();
+    s.fileFragment('v1-d1');           // arrived legible; no seal to retire
+    s.guessAtSanctum('lacuna');
+    const st = useManorStore.getState();
+    expect(st.volume.status).toBe('solved');
+    expect(st.counters['fragment-made-out']).toBeUndefined();
   });
 
   it('openLetter: write-once flag, grants filed before the event, pity grants drip', () => {
@@ -854,5 +1147,174 @@ describe('solving matters — the live channel, end to end', () => {
     expect(st.flags).toContain(solvedFlag(volume.id));
     // …and the sealed pages are still hers, still filed, still nothing's gate.
     expect(st.volume.foundFragmentIds.length).toBe(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND 12 — the two markers, driven through the real store
+// ---------------------------------------------------------------------------
+
+/**
+ * The engine suite proves the derivation. This one proves the WIRING: that the
+ * journal sheet's own call — `markFragmentsViewed(displayedFragmentIds(tab))` —
+ * writes the right flag for the state the page was in, that a decipher
+ * re-raises unread on real state, and that both facts survive a day roll and a
+ * reload, which is the whole of AAA 11.20's "across the day roll and a
+ * force-quit".
+ */
+describe('unread vs sealed — through the store, the day roll and a reload', () => {
+  const store = () => useManorStore.getState();
+  const sealedSet = () => sealedFragmentIds(volume.id, store().flags);
+  /** Exactly what `useJournalUnread` computes, from live persisted state. */
+  const marksNow = () =>
+    journalUnread(volume, store().volume, {
+      viewedIds: viewedFragmentIds(volume.id, store().flags),
+      glancedIds: glancedFragmentIds(volume.id, store().flags),
+      sealedIds: sealedSet(),
+      ...noLetters,
+    });
+  /** What the journal sheet does while the player is looking at a tab. */
+  const lookAt = (tab: JournalTab) =>
+    store().markFragmentsViewed(displayedFragmentIds(volume, store().volume, tab));
+
+  beforeEach(() => {
+    useManorStore.setState({
+      volume: fresh(),
+      flags: [],
+      recentEvents: [],
+      counters: {},
+      day: { day: 1, phase: 'exploring', daySeed: 1, activeRoom: null },
+      manor: manorAtTheDoor(),
+      currencies: { gems: 0, keys: 0, bookmarks: 0 },
+      ledger: { budget: 18, entries: [] },
+      seenPuzzleIds: {
+        'forgotten-word': [], hive: [], twistle: [], 'word-web': [],
+        cipher: [], crossword: [], sudoku: [],
+      },
+    });
+  });
+
+  it('looking at a sealed page writes GLANCED, not VIEWED', () => {
+    store().collectFragmentForRoom('mystery');          // v1-d1, sealed
+    expect(marksNow().total).toBe(1);                   // unread AND sealed
+    expect(marksNow().sealed.total).toBe(1);
+
+    lookAt('word');
+
+    expect(store().flags).toContain(glancedFragmentFlag(volume.id, 'v1-d1'));
+    // The reading flag must NOT be minted: she saw a smudge, not a sentence.
+    // If it were, the decipher below could never raise the marker again.
+    expect(store().flags).not.toContain(viewedFragmentFlag(volume.id, 'v1-d1'));
+    expect(marksNow().total).toBe(0);                   // wax retires (11.20)
+    expect(marksNow().sealed.total).toBe(1);            // the ring stands
+  });
+
+  it('looking at a legible page writes VIEWED, and that is the end of it', () => {
+    store().fileFragment('v1-t2');                      // testimony arrives legible
+    expect(marksNow().testimony).toEqual(['v1-t2']);
+    lookAt('testimony');
+    expect(store().flags).toContain(viewedFragmentFlag(volume.id, 'v1-t2'));
+    expect(store().flags).not.toContain(glancedFragmentFlag(volume.id, 'v1-t2'));
+    expect(marksNow().total).toBe(0);
+    expect(marksNow().sealed.total).toBe(0);
+  });
+
+  it('THE TRANSITION, live: a solve makes the page out and unread comes BACK', () => {
+    store().collectFragmentForRoom('mystery');          // v1-d1, sealed
+    lookAt('word');                                     // she has seen the smudge
+    expect(marksNow().total).toBe(0);
+
+    // A room is solved: the spine watcher deciphers the backlog.
+    store().recordEvent({
+      type: 'room-solved', cellKey: '2,3', kind: 'crossword', tier: 1, perfect: false,
+    });
+
+    expect(sealedSet().has('v1-d1')).toBe(false);
+    const m = marksNow();
+    expect(m.word).toContain('v1-d1');                  // it is new information
+    expect(m.sealed.fragments).not.toContain('v1-d1');  // and no longer a smudge
+
+    // Reading it now — and only now — retires the wax for good.
+    lookAt('word');
+    expect(store().flags).toContain(viewedFragmentFlag(volume.id, 'v1-d1'));
+    expect(marksNow().word).not.toContain('v1-d1');
+  });
+
+  it('both markers survive the DAY ROLL that prunes the event stream (11.20)', () => {
+    store().collectFragmentForRoom('mystery');          // v1-d1, sealed, unread
+    store().fileFragment('v1-t2');                      // legible, unread
+    lookAt('word');                                     // the smudge is now seen
+    const before = marksNow();
+    expect(before.fragments).toEqual(['v1-t2']);        // only v1-t2 is unread
+    expect(before.sealed.fragments).toEqual(['v1-d1']);
+
+    store().endDay('steps-exhausted');
+    store().advanceDayPhase();
+    store().startDay();
+    store().endDay('steps-exhausted');
+    expect(store().recentEvents.some((e) => e.event.type === 'fragment-found')).toBe(false);
+
+    const after = marksNow();
+    expect(after.fragments).toEqual(['v1-t2']);
+    expect(after.total).toBe(1);
+    expect(after.sealed.fragments).toEqual(['v1-d1']);
+    expect(after.sealed.total).toBe(1);
+  });
+
+  it('and survive a RELOAD — the flags are in the save, not in the session', () => {
+    store().collectFragmentForRoom('mystery');          // v1-d1, sealed
+    store().fileFragment('v1-t2');                      // legible
+    lookAt('word');                                     // glanced
+    lookAt('testimony');                                // viewed
+
+    // Round-trip the real persisted projection (this is also the save-code
+    // path of AAA 7.19, so the two storage containers agree as well).
+    const restored = importSaveCode(exportSaveCode(selectSave(store())));
+    expect(restored).toBeTruthy();
+    const rf = restored!.journal.flags;
+    expect(rf).toContain(glancedFragmentFlag(volume.id, 'v1-d1'));
+    expect(rf).toContain(viewedFragmentFlag(volume.id, 'v1-t2'));
+
+    const m = journalUnread(volume, restored!.volume, {
+      viewedIds: viewedFragmentIds(volume.id, rf),
+      glancedIds: glancedFragmentIds(volume.id, rf),
+      sealedIds: sealedFragmentIds(volume.id, rf),
+      ...noLetters,
+    });
+    expect(m.total).toBe(0);                            // nothing unlooked-at
+    expect(m.sealed.total).toBe(1);                     // one page still smudged
+    expect(m.sealed.fragments).toEqual(['v1-d1']);
+  });
+
+  it('the entrance count equals the tab counts equals the card ids (11.19/11.21)', () => {
+    store().collectFragmentForRoom('mystery');          // v1-d1, sealed
+    store().collectFragmentForRoom('puzzle');           // v1-e1, sealed
+    store().fileFragment('v1-t2');                      // legible
+    lookAt('engravings');                               // glance at v1-e1 only
+
+    const m = marksNow();
+    // Wax: v1-d1 (never opened) + v1-t2 (legible, never opened) = 2, exactly.
+    expect(m.fragments).toEqual(['v1-d1', 'v1-t2']);
+    expect(m.total).toBe(2);
+    expect(m.word.length + m.engravings.length + m.testimony.length + m.letters.length)
+      .toBe(m.total);
+    // Seal: v1-d1 and v1-e1, each counted on its own tab and nowhere else.
+    expect(m.sealed.total).toBe(2);
+    expect(m.sealed.word).toEqual(['v1-d1']);
+    expect(m.sealed.engravings).toEqual(['v1-e1']);
+    expect(m.sealed.testimony).toEqual([]);
+    // The two chains overlap (v1-d1 is both) and are never summed — which is
+    // precisely the conflation round 12 exists to end.
+    expect(m.fragments.filter((id) => m.sealed.fragments.includes(id))).toEqual(['v1-d1']);
+  });
+
+  it('markFragmentsViewed still refuses ids the volume has not filed', () => {
+    store().collectFragmentForRoom('mystery');          // v1-d1, sealed
+    store().markFragmentsViewed(['v1-d1', 'not-a-real-fragment']);
+    expect(store().flags).toContain(glancedFragmentFlag(volume.id, 'v1-d1'));
+    expect(store().flags).not.toContain(glancedFragmentFlag(volume.id, 'not-a-real-fragment'));
+    const before = store().flags.length;
+    store().markFragmentsViewed(['v1-d1']);             // idempotent, no churn
+    expect(store().flags.length).toBe(before);
   });
 });

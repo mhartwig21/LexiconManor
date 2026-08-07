@@ -22,10 +22,11 @@ import { highestRowLine, refundLine } from '../../engine/day';
 import { dawnCarryOver, dawnCarryOverLines } from '../../app/slices/manor';
 import { firstMorningPot, teaArcPoints, teaBonus, TEA_ARC } from '../../engine/economy/steps';
 import { getVolumeContent } from '../../app/content/volumes';
-import { arrivedLetters, fragmentDroughtDays, openedLetterIds } from '../../engine/volume';
+import { arrivedLetters, legibleDroughtDays, openedLetterIds } from '../../engine/volume';
 import { mantelLine, unseenKeepsakes, unseenPlates } from '../moment/mantel';
 import DialogueScene from '../dialogue/DialogueScene';
 import UnreadMark from '../journal/UnreadMark';
+import SealedMark from '../journal/SealedMark';
 import { useJournalUnread } from '../journal/useJournalUnread';
 
 /**
@@ -106,6 +107,13 @@ export function SceneJournalLink() {
           noun={unread.total === 1 ? 'thing in the journal' : 'things in the journal'}
           showCount
         />
+        {/* ROUND 12 — the second marker, and the reason the first one is
+            trustworthy again. Wax used to carry both "you have not looked at
+            this" and "this is not deciphered yet", so it could not clear on
+            viewing (AAA 11.20) and its count could not match the number of
+            unviewed items (11.21). The backlog now has its own glyph — an open
+            ink ring, never wax — and its own exact count. */}
+        <SealedMark count={unread.sealed.total} showCount />
       </span>
       <span className="chr-scene__aside-sub">what the manor has filed</span>
     </button>
@@ -267,6 +275,23 @@ export function DuskVeil() {
 
   return (
     <div className="chr-dusk" onAnimationEnd={onFallen} role="status" aria-label="Dusk settles">
+      {/* ROUND 8 composition pass: the veil measured a 372px featureless band
+          — 44.1% of the glass — between the day bar and its own line, because
+          everything it drew lived in the bottom 100px and the blueprint behind
+          it had gone to shadow. The candle is the image the whole economy is
+          already built on (the step meter IS a candle, chrome.css), so the
+          middle of the veil now holds the one thing dusk means: it has gone
+          out. Decorative and aria-hidden — the veil's own `role="status"`
+          already announces dusk — and it inherits the veil's fade rather than
+          animating on its own, so `prefers-reduced-motion` needs nothing extra
+          (AAA U.3). */}
+      <svg className="chr-dusk__candle" viewBox="0 0 64 96" aria-hidden focusable="false">
+        <path d="M24 40h16v44a4 4 0 0 1-4 4h-8a4 4 0 0 1-4-4z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M24 52q8 5 16 0" fill="none" stroke="currentColor" strokeWidth="1.1" opacity="0.65" />
+        <path d="M32 40v-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M32 30c0-5 5-6 3-11 4 3 6 7 3 11" fill="none" stroke="currentColor" strokeWidth="1.1" opacity="0.55" />
+        <path d="M12 88h40" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.7" />
+      </svg>
       <div className="chr-dusk__line">Dusk settles over the manor.</div>
       <button className="chr-dusk__skip" onClick={advance}>
         And so, to bed
@@ -361,7 +386,7 @@ export function NightDigest() {
   const openedIds = content ? openedLetterIds(content.id, flags) : new Set<string>();
   const tray = content
     ? arrivedLetters(content, volume, day.day, {
-        droughtDays: fragmentDroughtDays(records),
+        droughtDays: legibleDroughtDays(volume.volumeId, flags, records),
         openedIds,
       })
     : [];

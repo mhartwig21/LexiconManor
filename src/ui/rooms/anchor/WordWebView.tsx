@@ -38,6 +38,7 @@ import { createRng, shuffle } from '../../../engine/rng';
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
 import { typeset } from '../../../../content/lib/typography';
+import { herringLine } from './herring-line';
 import './anchor.css';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string; bit?: string } | null;
@@ -56,38 +57,6 @@ function togetherLine(together: 1 | 2): string {
   return together >= 2
     ? 'Two of these share a thread.'
     : 'No two of these share a thread.';
-}
-
-/**
- * (b) THE ACKNOWLEDGED HERRING, printed when ≥3 of her four tiles sat inside
- *     one planted trap. The bar's own example ("they *do* all rhyme, don't
- *     they?") is informative BECAUSE it names the relation; the round-6 line
- *     ("They do keep company, don't they? But no.") named neither the words
- *     nor the thread, and fired on guesses that had never touched the trap.
- */
-function herringLine(h: WordWebHerringMatch): string {
-  // Naming all four by name overflows the reserved slot at 390px, and when all
-  // four ARE the trap the count says it better anyway.
-  const subject = h.matched.length >= 4 ? 'All four of these' : h.matched.join(', ');
-  switch (h.relation) {
-    case 'rhyme':
-      return `${subject} do rhyme. But no.`;
-    case 'shared-affix':
-      return h.detail
-        ? `${subject} carry “${h.detail}”. But no.`
-        : `${subject} share their letters. But no.`;
-    case 'hidden-string':
-      // Round 11: the cross-category trap gets its own sentence. It is not
-      // "these share an edge" — it is "this one is hiding your group inside
-      // it", which is the actual thing she nearly deduced.
-      return h.detail
-        ? `${subject} hide “${h.detail}”. But no.`
-        : `${subject} hide the same letters. But no.`;
-    case 'doubled-letter':
-      return `${subject} double a letter. But no.`;
-    case 'semantic':
-      return `${subject} keep company. But no.`;
-  }
 }
 
 function hashStr(s: string): number {

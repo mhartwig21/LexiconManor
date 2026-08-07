@@ -10,9 +10,9 @@ import { describe, expect, it } from 'vitest';
 import type { DayRecord, VolumeState } from '../src/engine/types';
 import {
   advanceVolume, applyGuess, arrivedLetters, computeCloseness, findLetter,
-  fragmentDroughtDays, freshVolumeState, hasGuessedOnDay, letterGrants,
-  nextFragmentForRoom, normalizeGuess, openedLetterFlag, openedLetterIds, pityDue,
-  reservedTestimonyIds, solvedFlag, synthesizedPityCount, synthesizedPityLetter,
+  fragmentDroughtDays, freshVolumeState, hasGuessedOnDay, legibleDayFlag, legibleDroughtDays,
+  letterGrants, nextFragmentForRoom, normalizeGuess, openedLetterFlag, openedLetterIds, pityDue,
+  reservedTestimonyIds, sealedFragmentFlag, solvedFlag, synthesizedPityCount, synthesizedPityLetter,
   unfoundFragments, DEFAULT_PITY_TEMPLATES, PITY_DROUGHT_DAYS, SYNTH_PITY_PREFIX,
   type VolumeContent,
 } from '../src/engine/volume';
@@ -175,6 +175,67 @@ describe('pity rule — no fragment for 3 days of play brings the post (AAA 4.14
     expect(fragmentDroughtDays([dayRecord(1, 2), dayRecord(2, 0), dayRecord(3, 0)])).toBe(2);
     expect(fragmentDroughtDays([dayRecord(1, 0), dayRecord(2, 1)])).toBe(0);
     expect(fragmentDroughtDays([])).toBe(0);
+  });
+
+  /**
+   * ═══ ROUND-13 BLOCKER: THE FLOOR WAS SWITCHED OFF BY PAGES SHE CANNOT READ ═
+   *
+   * `DayRecord.fragmentsFound` counts `fragment-found`, and a violet room fires
+   * that for a SEALED page too — deliberately, so the moment layer can see the
+   * seal. So a smudge reset the drought to zero and the mercy channel never
+   * fired for the one player it exists for: the one drafting violet rooms and
+   * not solving. Round 11 fixed three of the four "counted pages she cannot
+   * read" sites and left this one.
+   *
+   * The drought now takes the days on which something was actually MADE OUT,
+   * parsed off the `vol.<id>.made-out-day-<N>` write-once family the slice
+   * writes (no save-schema change, no field on the architect-owned DayRecord —
+   * the chronicles keep printing the filed count, which is the right number
+   * for a chronicle and the wrong one for mercy).
+   */
+  it('the drought counts days she LEARNED something, not days a smudge arrived', () => {
+    // Three days of play, a page filed on every one of them — and every page
+    // sealed. The old reading says drought 0; the shipped reading says 3.
+    const walked = [dayRecord(1, 2), dayRecord(2, 1), dayRecord(3, 2)];
+    expect(fragmentDroughtDays(walked)).toBe(0);
+    expect(fragmentDroughtDays(walked, { legibleDays: new Set<number>() })).toBe(3);
+    // A day she made something out stops the count where it happened.
+    expect(fragmentDroughtDays(walked, { legibleDays: new Set([2]) })).toBe(1);
+    expect(fragmentDroughtDays(walked, { legibleDays: new Set([3]) })).toBe(0);
+    expect(fragmentDroughtDays([], { legibleDays: new Set<number>() })).toBe(0);
+  });
+
+  it('legibleDroughtDays reads the day marks straight off the flags', () => {
+    const walked = [dayRecord(1, 2), dayRecord(2, 1), dayRecord(3, 2)];
+    const flags = [
+      sealedFragmentFlag(volume.id, 'v1-d1'),   // a smudge marks nothing
+      legibleDayFlag(volume.id, 2),
+    ];
+    expect(legibleDroughtDays(volume.id, flags, walked)).toBe(1);
+    expect(legibleDroughtDays(volume.id, [], walked)).toBe(3);
+    // Another volume's marks are not hers.
+    expect(legibleDroughtDays(volume.id, [legibleDayFlag('volume-2', 3)], walked)).toBe(3);
+    expect(legibleDayFlag(volume.id, 7)).toBe(`vol.${volume.id}.made-out-day-7`);
+    // docs/flags.md grammar: 2–3 kebab segments, no dots inside a segment.
+    expect(legibleDayFlag(volume.id, 7))
+      .toMatch(/^[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,2}$/);
+  });
+
+  it('the pity channel fires for the violet walker who never solves (AAA 4.14)', () => {
+    // Three days of walking violet rooms: pages filed every day, nothing made
+    // out. This is the exact campaign the defect silenced.
+    const walked = [dayRecord(1, 1), dayRecord(2, 1), dayRecord(3, 1)];
+    const noneMadeOut = { legibleDays: new Set<number>() };
+    expect(pityDue(volume, fresh(), walked)).toBe(false);              // the bug
+    expect(pityDue(volume, fresh(), walked, noneMadeOut)).toBe(true);  // the fix
+    // And the tray actually carries a letter with a grant in it.
+    const tray = arrivedLetters(volume, fresh(), 4, {
+      droughtDays: fragmentDroughtDays(walked, noneMadeOut),
+      openedIds: new Set<string>(),
+    });
+    const pity = tray.find((l) => l.pity);
+    expect(pity, 'no mercy letter for the walker').toBeDefined();
+    expect(letterGrants(volume, pity!, fresh()).length).toBeGreaterThan(0);
   });
 
   it('pityDue only during an active volume with fragments left', () => {

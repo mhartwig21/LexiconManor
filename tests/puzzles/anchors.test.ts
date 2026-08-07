@@ -24,6 +24,8 @@ import { findPath, puzzleSize } from '../../src/engine/twistle';
 import { definitionForLevel, glossForLevel, unshownDefinitions } from '../../src/engine/forgotten-word';
 import { hiveWordPoints } from '../../src/engine/scoring';
 import { bandOf, loadDictionary } from '../../content/lib/dictionary';
+import { typeset } from '../../content/lib/typography';
+import { anArticle, herringLine } from '../../src/ui/rooms/anchor/herring-line';
 
 /**
  * A3 — the four anchor rooms behind the RoomPuzzle contract.
@@ -213,6 +215,39 @@ describe('word-web adapter', () => {
     expect(eventsOfType(named.events, 'solved')).toEqual([{ type: 'solved', perfect: true }]);
     expect(named.outcome).toEqual({ status: 'solved', perfect: true });
     expect(named.state.web.status).toBe('won');
+  });
+
+  /**
+   * ROUND 12 — TWO IDENTICAL LABELS IN THE NAMING ACT.
+   *
+   * The shipped shelf was half-typeset (168 themes with curly marks, 115 with
+   * straight) and `WordWebView` prints every label through `typeset()`. Board
+   * web-d06 stored `Can Follow “TEA”` as its purple theme and
+   * `Can Follow "TEA"` as one of that group's decoys; `d !== theme` compared
+   * the raw strings, so both survived, and the player was shown the same
+   * sentence twice with one copy of it wrong. Tapping the wrong twin forfeits
+   * the perfect grade and its +2 with nothing on the glass to choose by, which
+   * is the unfairness AAA §2 exists to forbid. The corpus is uniform now and
+   * the lint keeps it so — this asserts the room does not depend on that.
+   */
+  it('the three labels are three labels, whatever the corpus does to its quotes', () => {
+    const twinned: WordWebPuzzleEx = {
+      ...webPuzzle,
+      id: 'web-twinned',
+      groups: webPuzzle.groups.map((g, i) => (i === 3
+        ? { ...g, theme: 'Can Follow “TEA”', decoys: ['Things on a Mantelpiece', 'Can Follow "TEA"'] }
+        : g)),
+    };
+    let s: WordWebRoomState = wordWebAdapter.start(twinned, ctx(1));
+    for (const g of twinned.groups) {
+      s = wordWebAdapter.reduce(twinned, s, { type: 'submit', selection: g.words }).state;
+    }
+    const options = s.pendingNaming!.options;
+    expect(options).toHaveLength(3);
+    // As the player reads them, not as the JSON stores them.
+    const shown = options.map((o) => typeset(o));
+    expect(new Set(shown).size, shown.join(' / ')).toBe(3);
+    expect(shown).toContain(typeset(s.pendingNaming!.theme));
   });
 
   it('naming the final thread wrong still solves, but forfeits perfect — never steps', () => {
@@ -761,10 +796,13 @@ describe('shipped content — Library boards (AAA 2.6–2.11)', () => {
       // 2.7 herring budget: ≤3, all on the board.
       expect((p.ambiguousWords ?? []).length, p.id).toBeLessThanOrEqual(3);
       for (const w of p.ambiguousWords ?? []) expect(words, p.id).toContain(w);
-      // 2.11 decoys for the act of naming.
+      // 2.11 decoys for the act of naming. Compared AS SHOWN (round 12): the
+      // shelf shipped `Can Follow “TEA”` beside `Can Follow "TEA"` on web-d06,
+      // two strings and one sentence, and raw `not.toContain` waved it past.
       for (const g of p.groups) {
         expect(g.decoys?.length, `${p.id} "${g.theme}"`).toBe(2);
-        expect(g.decoys, `${p.id} "${g.theme}"`).not.toContain(g.theme);
+        const shown = [g.theme, ...(g.decoys ?? [])].map((t) => typeset(t));
+        expect(new Set(shown).size, `${p.id}: ${shown.join(' / ')}`).toBe(3);
       }
     }
   });
@@ -987,12 +1025,56 @@ describe('tier escalation — The Library (herring budget + category subtlety)',
     }
   });
 
+  /**
+   * ROUND 12 — THE BUDGET COUNTS TRAPS, AND `ambiguousWords` IS NOT TRAPS.
+   *
+   * This test, and the generator's own validator, measured
+   * `ambiguousWords.length` — the flat INTRUDER-WORD list — against a budget
+   * whose spec field is `minHerrings` and whose docstring says "tier 3 must
+   * ship 2–3 traps". Two intruder words caught by one `suffix:GHT` are ONE
+   * thread and one sentence; they were counted as two. Measured on the round-11
+   * shelf: 25 of the 52 shipped tier-3 boards carried exactly one named trap
+   * while passing this two-trap check, so the row the player pays the most
+   * steps to reach ran at tier-1 trap density on 48% of its boards and no test
+   * could see it. `herrings` — the named threads, deduped by pattern — is the
+   * number the room can actually say out loud, so it is the number the budget
+   * asserts. The intruder list keeps its own, separate assertion below: it is
+   * derived from the traps and is what the opening layout clusters on.
+   */
   it('the herring budget widens with the row, and never past the AAA 2.7 cap of 3', () => {
-    for (const p of at(1)) expect((p.ambiguousWords ?? []).length, p.id).toBeLessThanOrEqual(1);
-    for (const p of at(2)) expect((p.ambiguousWords ?? []).length, p.id).toBeLessThanOrEqual(2);
+    for (const p of at(1)) expect((p.herrings ?? []).length, p.id).toBeLessThanOrEqual(1);
+    for (const p of at(2)) expect((p.herrings ?? []).length, p.id).toBeLessThanOrEqual(2);
     for (const p of at(3)) {
-      expect((p.ambiguousWords ?? []).length, p.id).toBeGreaterThanOrEqual(2);
-      expect((p.ambiguousWords ?? []).length, p.id).toBeLessThanOrEqual(3);
+      expect((p.herrings ?? []).length, p.id).toBeGreaterThanOrEqual(2);
+      expect((p.herrings ?? []).length, p.id).toBeLessThanOrEqual(3);
+    }
+    for (const p of WORD_WEB_POOL) {
+      const intruders = p.ambiguousWords ?? [];
+      expect(new Set(intruders).size, p.id).toBe(intruders.length);
+      expect(intruders.length, p.id).toBeLessThanOrEqual((p.herrings ?? []).length);
+      expect(intruders.length, p.id).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  /**
+   * ROUND 12 (AAA 2.10 [BEAT]) — A DOUBLED-LETTER TRAP NAMES THE SAME PAIR.
+   *
+   * The generator bucketed every word containing any doubled letter into one
+   * `doubled-letter` set, so the "thread" the room sold a wrong guess was
+   * "these each contain some repeated character": 52 of the 55 shipped
+   * doubled-letter traps had NO doubled letter in common (web-2's ran
+   * CHILLY/GIRAFFE/MILLER/STAFF/THRILL/WILLOW; web-4's ran DD, FF, OO, KK, EE,
+   * LL, CC and SS across six words) and the room charged −2 steps to say
+   * "CURRENT, FURROW, KEEP double a letter." The bar's model line is
+   * informative because the relation is real.
+   */
+  it('2.10: a doubled-letter trap shares one pair, and names it', () => {
+    for (const p of WORD_WEB_POOL) {
+      for (const h of p.herrings ?? []) {
+        if (h.relation !== 'doubled-letter') continue;
+        expect(h.detail, `${p.id}: ${h.words.join('/')}`).toMatch(/^([A-Z])\1$/);
+        for (const w of h.words) expect(w, `${p.id}: ${h.detail}`).toContain(h.detail!);
+      }
     }
   });
 
@@ -1181,5 +1263,54 @@ describe('tier escalation — The Study (three registers, riddle-only at the top
       expect(share(d.poetic, d.riddle), `${p.id} poetic/riddle`).toBeLessThanOrEqual(0.4);
       expect(share(d.plain, d.riddle), `${p.id} plain/riddle`).toBeLessThanOrEqual(0.4);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND 12 — the acknowledged-herring SENTENCE (AAA 2.10 [BEAT]).
+//
+// The line is what a −2-step wrong guess actually buys, so it is asserted as
+// copy, not merely as data. Before round 12 the generator bucketed every word
+// containing any doubled letter into one relation and the room printed
+// "CURRENT, FURROW, KEEP double a letter" — a property ~30% of English shares
+// and a grouping nobody chases. The mechanism was live-verified on glass at
+// 390×844 in round 11 and is unchanged; what moved is the claim it makes.
+// ---------------------------------------------------------------------------
+
+describe('the acknowledged herring names a thread she could have followed', () => {
+  it('a doubled-letter trap names its pair, on every shipped board', () => {
+    for (const p of WORD_WEB_POOL) {
+      for (const h of p.herrings ?? []) {
+        if (h.relation !== 'doubled-letter') continue;
+        const line = herringLine({ ...h, matched: h.words.slice(0, 3) });
+        // The letter itself, with the right article, and never the old
+        // contentless "double a letter".
+        const letter = h.detail![0]!;
+        expect(line, `${p.id}: ${line}`).toContain(`double ${anArticle(letter)} ${letter}.`);
+        expect(line.endsWith('But no.'), line).toBe(true);
+      }
+    }
+  });
+
+  it('every relation the pool ships has a sentence, and none is empty', () => {
+    const seen = new Set<string>();
+    for (const p of WORD_WEB_POOL) {
+      for (const h of p.herrings ?? []) {
+        seen.add(h.relation);
+        const line = herringLine({ ...h, matched: h.words.slice(0, 3) });
+        expect(line.length, `${p.id} ${h.relation}`).toBeGreaterThan(10);
+        // It must name her own tiles or say how many there were — the round-6
+        // line named neither the words nor the thread.
+        expect(line, `${p.id} ${h.relation}`).toContain(h.words[0]!);
+      }
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(4);
+  });
+
+  it('all four tiles inside one trap are counted, not listed (390px budget)', () => {
+    const line = herringLine({
+      words: ['A', 'B', 'C', 'D'], relation: 'rhyme', matched: ['A', 'B', 'C', 'D'],
+    });
+    expect(line).toBe('All four of these do rhyme. But no.');
   });
 });

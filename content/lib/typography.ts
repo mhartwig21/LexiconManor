@@ -149,3 +149,117 @@ export function typesetDeep<T>(value: T): T {
 export function formatQuoteProblem(p: QuoteProblem): string {
   return `${p.where}: straight quote ${p.mark} in authored copy\n    is:     ${p.text}\n    should: ${p.suggestion}`;
 }
+
+// ---------------------------------------------------------------------------
+// The third corpus: copy that lives in source (round 12)
+// ---------------------------------------------------------------------------
+
+/**
+ * ═══ THE CORPUS THE LINT COULD NOT READ ═══════════════════════════════════
+ *
+ * Round 6 linted `content/authored/**`; round 12 widened it to
+ * `content/generated/**` (the files the app actually imports). Both are JSON.
+ * A third of the game's player-visible copy is neither: it is written inline
+ * in `.ts`/`.tsx` — the rooms' verdict toasts, the cabinet's plate names, the
+ * chrome's notices. Nothing had ever looked at it, and it carries the same
+ * defect, in the same faces, on the same screens:
+ *
+ *     TwistleView   "The tiles won't connect so"
+ *     TwistleView   `${fb.word} isn't in the lexicon`
+ *     HiveView      `${fb.word} +${fb.points} — you've reached ${rung}`
+ *     deck.ts       "Posy's lost word" / "Posy's deputy sash"
+ *
+ * Straight apostrophes beside the properly-set ones the JSON corpus prints on
+ * the very same screen. All five were patched in round 8 (round-13 tree) and
+ * the exception list is now empty; the five lines above are kept as the worked
+ * example of what this scanner is for, not as an outstanding list.
+ *
+ * WHY THIS SCANS RATHER THAN GREPS. In source, U+0027 is mostly a string
+ * DELIMITER — a grep for it is all false positive. So this walks the file with
+ * a four-state scanner (code / comment / string / template) and reports the one
+ * shape that is unambiguously prose: an apostrophe BETWEEN TWO LETTERS inside a
+ * literal (`won't`, `Posy's`, `you've`). No identifier, path, flag key or class
+ * name looks like that, and measured over all 125 files of `src/` the rule
+ * returns five hits and five true positives.
+ *
+ * U+0022 is deliberately NOT reported here even though it is reported in JSON.
+ * In source it is overwhelmingly a diagnostic quoting an identifier back to a
+ * developer — 39 of the 44 raw hits were `validate.ts` build errors of the form
+ * `goto "x" does not exist`, plus CSS selectors — none of which ever reaches a
+ * player or a serif face. A lint with a 90% false-positive rate is a lint
+ * somebody turns off, and turning it off is how round 5 happened.
+ *
+ * Comments are skipped entirely: they are for us, not for her.
+ */
+export function sourceCopyProblems(where: string, source: string): QuoteProblem[] {
+  const problems: QuoteProblem[] = [];
+  const n = source.length;
+  let i = 0;
+
+  const isLetter = (c: string | undefined) => !!c && /[A-Za-z]/.test(c);
+
+  /** Read a literal that has already had its opening delimiter consumed. */
+  const readLiteral = (quote: string, start: number): number => {
+    let j = start;
+    let body = '';
+    while (j < n) {
+      const c = source[j]!;
+      // Escapes are UNESCAPED into the body, not copied verbatim: written as
+      // 'Posy\'s lost word' the apostrophe is still an apostrophe on screen,
+      // and a scanner that kept the backslash would see `\` beside the mark
+      // instead of `y` and wave the line through. (`\n` folding to `n` is
+      // harmless — this rule only looks at letters either side of a mark.)
+      if (c === '\\') { body += source[j + 1] ?? ''; j += 2; continue; }
+      if (c === quote) break;
+      // A template's ${...} is code, not copy — skip it wholesale so an
+      // expression's own strings are scanned as code on the next pass.
+      if (quote === '`' && c === '$' && source[j + 1] === '{') {
+        let depth = 1;
+        j += 2;
+        while (j < n && depth > 0) {
+          if (source[j] === '{') depth++;
+          else if (source[j] === '}') depth--;
+          j++;
+        }
+        body += ' ';
+        continue;
+      }
+      if (quote === '`' && c === '\n') { body += c; j++; continue; }
+      if (quote !== '`' && c === '\n') break;  // unterminated; bail
+      body += c;
+      j++;
+    }
+    // Now judge the body.
+    for (let k = 0; k < body.length; k++) {
+      const c = body[k]!;
+      if (c === STRAIGHT_SINGLE && isLetter(body[k - 1]) && isLetter(body[k + 1])) {
+        problems.push({
+          where, mark: 'U+0027', text: body, suggestion: typeset(body),
+        });
+        break;
+      }
+    }
+    return j + 1;
+  };
+
+  while (i < n) {
+    const c = source[i]!;
+    const next = source[i + 1];
+    if (c === '/' && next === '/') {
+      while (i < n && source[i] !== '\n') i++;
+      continue;
+    }
+    if (c === '/' && next === '*') {
+      i += 2;
+      while (i < n && !(source[i] === '*' && source[i + 1] === '/')) i++;
+      i += 2;
+      continue;
+    }
+    if (c === STRAIGHT_SINGLE || c === STRAIGHT_DOUBLE || c === '`') {
+      i = readLiteral(c, i + 1);
+      continue;
+    }
+    i++;
+  }
+  return problems;
+}

@@ -39,6 +39,17 @@ describe('gate self-check', () => {
       'tits', 'poop', 'hell', 'damn', 'died', 'snot', 'shitty', 'fucks']) {
       expect(TONE_BLOCKLIST.has(w), w).toBe(true);
     }
+    /**
+     * ROUND 12 — the slur hole. MIDGET sat in the Library's Hidden Insects
+     * pool (it carries MIDGE) and shipped as a tile on web-44, set in Fell
+     * caps: a widely-recognised slur for people with dwarfism, on a display
+     * surface, in a game built for the owner's wife. It passed because
+     * TONE_WORDS — a list that explicitly gates 'hick' as merely derogatory —
+     * had no entry for the family at all.
+     */
+    for (const w of ['midget', 'midgets', 'spastic', 'imbecile', 'mongoloid']) {
+      expect(TONE_BLOCKLIST.has(w), w).toBe(true);
+    }
     for (const w of ['cory', 'benny', 'jill', 'howe', 'rex', 'dirk', 'hank', 'jean', 'kays', 'mays', 'shaw']) {
       expect(NAME_BLOCKLIST.has(w), w).toBe(true);
     }

@@ -43,7 +43,14 @@ function tierText(card: RoomCard): string {
 
 function CabinetCard({ card }: { card: RoomCard }) {
   return (
-    <li className={`bp-card bp-card--plate bp-card--${card.category} bp-card--${card.rarity}`}>
+    // ROUND 8 (verifier): `data-card-id` is load-bearing, not decoration.
+    // ManorPage's plate-seen observer (AAA 11.20/11.21) resolves rows to cards
+    // so it can retire their markers; it used to match on the printed name,
+    // which meant renaming a card silently stopped its marker ever clearing.
+    <li
+      data-card-id={card.id}
+      className={`bp-card bp-card--plate bp-card--${card.category} bp-card--${card.rarity}`}
+    >
       <span className="bp-card__glyph">
         <RoomGlyph category={card.category} puzzleKind={card.puzzleKind} size={30} />
       </span>
@@ -73,7 +80,10 @@ function CabinetCard({ card }: { card: RoomCard }) {
 function LockedCard({ card }: { card: RoomCard }) {
   const quest = (card.unlockedBy && UNLOCK_QUEST_NAMES[card.unlockedBy]) ?? 'a favor not yet done';
   return (
-    <li className={`bp-card bp-card--plate bp-card--locked bp-card--${card.category}`}>
+    <li
+      data-card-id={card.id}
+      className={`bp-card bp-card--plate bp-card--locked bp-card--${card.category}`}
+    >
       <span className="bp-card__glyph">
         <RoomGlyph category={card.category} puzzleKind={card.puzzleKind} size={30} />
       </span>
