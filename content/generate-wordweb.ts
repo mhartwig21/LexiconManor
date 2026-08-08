@@ -3,6 +3,18 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRng, pick, shuffle } from '../src/engine/rng';
 import { loadPhonetics } from './lib/phonetics';
+import {
+  FINISH_MIN,
+  LETTER_MECHANIC_FAMILIES,
+  MIN_LADDER_RISE,
+  chooseColours,
+  familySignature,
+  familyOfTheme,
+  intrinsicLateral,
+  isWayIn,
+  ladderProblems,
+  lateralOf,
+} from './lib/wordweb-ladder';
 import { gateOk, toneOk } from './generate-gate';
 import { typesetDeep } from './lib/typography';
 import { tierLabel } from '../src/engine/rooms/adapters/tier-select';
@@ -235,6 +247,39 @@ const WALLPAPER_FAMILIES: readonly Family[] = [
   'rhyme', 'contains', 'compound', 'silent', 'letter-swap',
   'hidden', 'homophone', 'anagram', 'letter-shape',
 ];
+
+/**
+ * ROUND 13 (REVIEW_AA §5.8) — THE LETTER MECHANICS, and the line the round-14
+ * family budget did not draw.
+ *
+ * The review's finding was that 67.3% of shipped groups are one of eleven
+ * label templates, and that *"by week two the player is running a checklist
+ * rather than solving: find the rhyme group, find the letter-string group,
+ * split the remainder."* The checklist is real and it is made of these eight
+ * families — the ones where the deduction is an operation on letters or sounds
+ * and is therefore identical every time you meet it. `compound` is
+ * deliberately NOT among them: it is a template by label form and a fresh
+ * search of English by content (see `LETTER_MECHANIC_FAMILIES` in
+ * lib/wordweb-ladder.ts for the full argument, and `qualityOf` for the ruling
+ * this repository already made about it).
+ *
+ * Kept as its own list rather than derived from `WALLPAPER_FAMILIES` because
+ * the two answer different questions: that one asks "is this trick wallpaper
+ * across the shelf", this one asks "is this board two letter puzzles in a
+ * trench coat". The review's first live board carried TWO `Contains` groups.
+ */
+const LETTER_MECHANIC_FAMILY: readonly Family[] = [
+  'rhyme', 'contains', 'silent', 'letter-swap',
+  'hidden', 'homophone', 'anagram', 'letter-shape',
+];
+
+function isLetterMechanicTheme(rawTheme: string): boolean {
+  return LETTER_MECHANIC_FAMILY.includes(familyOf(rawTheme));
+}
+
+function letterMechanicCount(groups: readonly { theme: string }[]): number {
+  return groups.filter((g) => isLetterMechanicTheme(g.theme)).length;
+}
 
 /**
  * ROUND 14 — ONE LABEL PER MECHANIC.
@@ -2192,12 +2237,19 @@ const homeTally = new Map<Slot, number>();
 /** How often each relation has been the named thread of a shipped trap. */
 const relTally = new Map<HerringRelation, number>();
 
-/** yellow/green/blue/purple → 's' | 't' | 'w'. The board's architecture. */
+/**
+ * The board's architecture: WHICH FOUR DEDUCTIONS it asks for.
+ *
+ * ROUND 13 — this used to be the four group TYPES read off in colour order
+ * (`sswwq`), and that measure dies the moment colours are assigned from
+ * measured difficulty (see `chooseColours`): "plain English first,
+ * transformation last" is now the promise the ladder MAKES, so every board
+ * says it and a budget on the signature would either be vacuous or would
+ * forbid the ladder from working. What should still vary night to night is
+ * which tricks she meets, and `familySignature` is that.
+ */
 function signatureOf(groups: readonly RawGroup[]): string {
-  return TIER_ORDER
-    .map((slot) => groups.find((g) => g.tier === slot))
-    .map((g) => (g ? typeOfTheme(g.theme)[0]! : '?'))
-    .join('');
+  return familySignature(groups);
 }
 
 /** The four admissible victim orders `main` chooses between. */
@@ -2207,67 +2259,6 @@ const SLOT_PREFS: readonly (readonly Slot[])[] = [
   ['blue', 'green', 'purple', 'yellow'],
   ['purple', 'green', 'blue', 'yellow'],
 ];
-
-/**
- * The other half of the signature spread, and the half that reaches the boards
- * the composer never touches. Two thirds of the shelf needs no bank help at
- * all — it is authored to the floors already — so victim order alone cannot
- * move it: those boards ship the shape they were written in, and they were all
- * written in the same shape (plain English at the top of the difficulty
- * ladder, letter puzzles at the bottom of it).
- *
- * Swapping which COLOUR two groups wear is the one lever that is free here.
- * It is not a new kind of move — the generator already reassigns colours to
- * keep the trivia gimme at yellow — and it is a claim about difficulty
- * ORDERING, not about fairness: nothing else on the board changes. YELLOW IS
- * NEVER TOUCHED (it is the gimme, and 2.9 pins the trivia category to it), so
- * the easiest group stays the easiest group and 2.12's tester rule is
- * unaffected; the swaps only reorder the three graded slots beneath it.
- */
-const SLOT_SWAPS: readonly (readonly [Slot, Slot] | null)[] = [
-  null,
-  ['green', 'blue'], ['green', 'purple'], ['blue', 'purple'],
-  // Yellow moves ONLY on a board with no trivia category (2.9 pins the gimme
-  // there). Without these three the spread has a hard floor: a board composed
-  // of one plain category and three letter-puzzles has exactly one arrangement
-  // if yellow is frozen, and 38% of the shelf is that composition.
-  ['yellow', 'green'], ['yellow', 'blue'], ['yellow', 'purple'],
-];
-
-/**
- * ROUND 14 (AAA 2.12) — move a group that shouts out of the two slots the
- * player is meant to reach last. A single `SLOT_SWAPS` entry can only move one
- * group, and a board can carry two loud ones; this runs after the swap and
- * fixes both, never disturbing a trivia gimme (2.9 pins it to yellow).
- */
-function repairLoudSlots(board: RawBoard): RawBoard {
-  const groups = board.groups.map((g) => ({ ...g }));
-  const loud = (g: RawGroup) => visibilityOf(g.theme, g.words) >= VISIBILITY_LOUD;
-  for (const dark of ['purple', 'blue'] as const) {
-    const g = groups.find((x) => x.tier === dark && loud(x));
-    if (!g) continue;
-    const host = (['green', 'yellow'] as const)
-      .map((s) => groups.find((x) => x.tier === s)!)
-      .find((x) => !loud(x) && typeOfTheme(x.theme) !== 'trivia');
-    if (!host) continue;
-    const slot = g.tier;
-    g.tier = host.tier;
-    host.tier = slot;
-  }
-  return { ...board, groups };
-}
-
-function withSlotSwap(board: RawBoard, swap: readonly [Slot, Slot] | null): RawBoard {
-  if (!swap) return board;
-  const [a, b] = swap;
-  return {
-    ...board,
-    groups: board.groups.map((g) => ({
-      ...g,
-      tier: g.tier === a ? b : g.tier === b ? a : g.tier,
-    })),
-  };
-}
 
 /**
  * The traps this tier actually ships: tight enough, capped by the budget, and
@@ -2284,8 +2275,19 @@ function shippedHerrings(
 ): { ship: string[]; named: OutHerring[] } {
   const spec = TIER_SPECS[tier];
   const eligible = herrings.filter((h) => h.score >= spec.minHerringScore);
+  /**
+   * ROUND 13 — the slot a word's group is HEADING FOR, not the one it wears.
+   *
+   * The board's colours are assigned after this function returns (see
+   * `chooseColours` in pass 2), because a trap is part of a group's
+   * difficulty. So the home-slot spread this budget polices has to be read
+   * off the provisional ladder — the colours the board would wear with no
+   * traps planted — rather than off the authored colours, which by this point
+   * mean nothing at all.
+   */
+  const provisional = chooseColours(board.groups, EMPTY);
   const slotOf = new Map<string, Slot>();
-  for (const g of board.groups) for (const w of g.words) slotOf.set(w, g.tier);
+  board.groups.forEach((g, i) => { for (const w of g.words) slotOf.set(w, provisional[i]!); });
 
   // Shares, not raw counts: there are four colour slots and five relations but
   // they fill at wildly different rates, and summing the raw tallies let the
@@ -2436,50 +2438,48 @@ function main() {
         const attempt = replaceGroups(b, t as Tier, rng, pref);
         if (!attempt) continue;
         const state = snap();
-        for (const swap of SLOT_SWAPS) {
-          const variant = repairLoudSlots(withSlotSwap(attempt, swap));
-          // The trivia gimme is pinned to yellow (2.9) and yellow is never
-          // swapped, so a variant can never move it; assert the invariant
-          // rather than trust it.
-          if (variant.groups.some((g) => typeOfTheme(g.theme) === 'trivia' && g.tier !== 'yellow')) continue;
-          /**
-           * ROUND 14 (AAA 2.12) — A GROUP THAT SHOUTS MAY NOT WEAR PURPLE.
-           *
-           * 43 of 162 shipped boards put a bare visible letter-pattern in the
-           * slot whose whole job is to be found LAST, and 8 of them were pure
-           * prefix sorts: web-22's purple was `Contains "CAR"` over CARGO,
-           * CARTON, CARPET, CARNIVAL. That does not miss 2.12's "easiest group
-           * found first on ≥70% of boards" by a margin, it inverts it. A loud
-           * group ships at yellow or green or the variant is refused.
-           */
-          if (variant.groups.some(
-            (g) => visibilityOf(g.theme, g.words) >= VISIBILITY_LOUD
-              && (g.tier === 'blue' || g.tier === 'purple'),
-          )) continue;
-          // Novelty decides, but a board that KEEPS its authored trivia gimme
-          // gets a head start: the composer is allowed to eat a within-cap
-          // trivia category as a last resort to reach the wordplay floor, and
-          // with a full bank it started doing that often enough to strip the
-          // gimme off the bottom of the house entirely (AAA 2.9 caps trivia at
-          // one and pins it to yellow; it never asked for zero).
-          const gimme = variant.groups.some((g) => typeOfTheme(g.theme) === 'trivia');
-          /**
-           * ROUND 14 (AAA 2.12) — THE GIMME SHOULD READ AS A GIMME. Yellow was
-           * a wordplay category on 86 of 162 boards and a plain one on only 69,
-           * so the tier whose job is to be found first was itself a letter
-           * trick more often than not. A variant whose yellow is plain English
-           * wins ties while the pool is under the target share; once it is
-           * over, the bonus lapses and novelty decides again.
-           */
-          const yellowGroup = variant.groups.find((g) => g.tier === 'yellow');
-          const plainYellow = !!yellowGroup && isPlainish(yellowGroup.theme);
-          const owed = plainYellowShipped < PLAIN_YELLOW_TARGET * Math.max(1, boardsShipped);
-          const seen = (sigTally.get(signatureOf(variant.groups)) ?? 0)
-            - (gimme ? 3 : 0)
-            - (plainYellow && owed ? 2 : 0);
-          if (!best || seen < best.seen) best = { board: variant, state, seen };
-        }
-        if (best?.seen === 0) break;   // nothing beats a shape nobody has shipped
+        /**
+         * ROUND 13 — THE COLOURS ARE NO LONGER A VARIABLE HERE.
+         *
+         * This loop used to try seven `SLOT_SWAPS` variants of every attempt
+         * and then run `repairLoudSlots` over each, hunting for a colour
+         * arrangement that scored well on a novelty tally. Three heuristics,
+         * none of which measured a board's difficulty, and REVIEW_AA §5.8
+         * measured the result: across 156 shipped boards yellow's mean lateral
+         * distance was 4.38 and green's was 4.15 — the ladder ran BACKWARDS on
+         * average — with a purple-minus-yellow spread of 0.33. All three are
+         * retired. Colours are assigned once, at the end of pass 2, from
+         * `lateralOf`, after the traps are known (`chooseColours`); what this
+         * loop still chooses between is which CATEGORIES ship, which is the
+         * thing it was always actually good at.
+         */
+        const variant = attempt;
+        // A board that KEEPS its authored trivia gimme gets a head start: the
+        // composer is allowed to eat a within-cap trivia category as a last
+        // resort to reach the wordplay floor, and with a full bank it started
+        // doing that often enough to strip the gimme off the bottom of the
+        // house entirely (AAA 2.9 caps trivia at one; it never asked for zero).
+        const gimme = variant.groups.some((g) => typeOfTheme(g.theme) === 'trivia');
+        /**
+         * ROUND 13 (AAA 2.12) — THE WAY-IN FLOOR, which is what
+         * `PLAIN_YELLOW_TARGET` was reaching for and could not hold.
+         *
+         * The old rule counted whether the group WEARING yellow was plain
+         * English, which a colour swap could satisfy without changing a single
+         * word on the board. The question that matters is whether the board
+         * HAS a category she can enter through at all — one she reads rather
+         * than decodes (`isWayIn`: lateral distance ≤ 3). 16 of the 156
+         * round-12 boards had none, and their yellow group was "plain" only
+         * because a compound frame counts as plain English for a different
+         * and correct reason. A variant with a way in wins outright.
+         */
+        const wayIn = variant.groups.some(isWayIn);
+        const finish = variant.groups.some((g) => intrinsicLateral(g) >= FINISH_MIN);
+        const seen = (sigTally.get(signatureOf(variant.groups)) ?? 0)
+          - (gimme ? 3 : 0)
+          - (wayIn ? 8 : 0)
+          - (finish ? 4 : 0);
+        if (!best || seen < best.seen) best = { board: variant, state, seen };
       }
       if (best) {
         restore(best.state);
@@ -2550,10 +2550,27 @@ function main() {
     if (tier !== wanted) demoted++;
     const { ship, named } = shippedHerrings(b, herrings, traps, tier);
     const layout = buildLayout(b, ship, SEED + [...b.id].reduce((h, c) => h + c.charCodeAt(0), 0));
+    /**
+     * ROUND 13 (REVIEW_AA §5.8) — THE COLOURS ARE ASSIGNED HERE, FROM THE
+     * MEASUREMENT, AND NOWHERE ELSE.
+     *
+     * This is the last moment at which the board is fully known: the
+     * categories are fixed, the solver has run, and — crucially — the traps
+     * that ship have been chosen. A planted intruder is part of a group's
+     * difficulty (it is the board pulling against you while you solve it), so
+     * a ladder assigned before `shippedHerrings` would be grading a board that
+     * does not exist yet.
+     */
+    const colours = chooseColours(b.groups, new Set(ship));
     return {
       id: b.id,
       tier,
-      groups: b.groups.map((g) => ({ ...g, type: typeOfTheme(g.theme), decoys: [] as string[] })),
+      groups: b.groups.map((g, i) => ({
+        ...g,
+        tier: colours[i]!,
+        type: typeOfTheme(g.theme),
+        decoys: [] as string[],
+      })),
       ambiguousWords: ship,
       herrings: named,
       layout,
@@ -2649,6 +2666,11 @@ function main() {
     b.layout = buildLayout(
       b, b.ambiguousWords, SEED + [...b.id].reduce((h, c) => h + c.charCodeAt(0), 0),
     );
+    // ROUND 13 — dropping a trap changes a group's measured difficulty, so the
+    // ladder is re-read rather than left describing the board this one used to
+    // be. (Missing this is exactly how the colours drifted decorative before.)
+    const recoloured = chooseColours(b.groups, new Set(b.ambiguousWords));
+    b.groups.forEach((g, i) => { g.tier = recoloured[i]!; });
   }
 
   // Pass 3: decoys for the naming act.
