@@ -7,20 +7,31 @@
  * gutters when the day runs low — with no alarm colors and no shake (R.3):
  * spending reads as spending. Wax red appears only on mistake deltas, which
  * are the mistake state itself (AAA 6.15).
+ *
+ * ROUND 26: every float now says WHY (COMPREHENSION.md fix 1 — the reason word
+ * lives in ui/chrome/step-reasons.ts, which is where the argument is written
+ * down and where the copy is unit-tested).
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { useManorStore } from '../../app/store';
 import { dayStartTotal, stepsRemaining } from '../../engine/economy/steps';
 import type { StepReason } from '../../engine/types';
+import { reasonWord } from './step-reasons';
 
 interface Float {
   id: number;
   delta: number;
   reason: StepReason;
+  /** The reason, in a word — see `reasonWord`. */
+  why: string;
+  /** Position in its batch; a cascade so three at once are three, not a smudge. */
+  order: number;
 }
 
 const FLOAT_MS = 1150;
+/** Each float in a batch waits this much longer than the one before it. */
+const FLOAT_STAGGER_MS = 130;
 
 function floatClass(reason: StepReason, delta: number): string {
   if (reason === 'mistake') return 'chr-float--mistake';
@@ -80,16 +91,30 @@ export default function StepMeter() {
     if (covered) return;   // held until the morning card is dismissed; re-runs then
     const fresh = entries.slice(seenCount.current).slice(-3);
     seenCount.current = entries.length;
+    // Read imperatively, not as a selector: the room a mistake was made in is
+    // wanted at SPAWN time only, and subscribing the bar to every room in the
+    // manor would re-render the chrome on every placement for one word.
+    const rooms = useManorStore.getState().manor?.rooms;
     const spawned = fresh
       .filter((e) => e.delta !== 0)
-      .map((e) => ({ id: nextId.current++, delta: e.delta, reason: e.reason }));
+      .map((e, i) => ({
+        id: nextId.current++,
+        delta: e.delta,
+        reason: e.reason,
+        why: reasonWord(e, e.roomKey ? rooms?.[e.roomKey]?.kind : undefined),
+        order: i,
+      }));
     if (spawned.length === 0) return;
     setFloats((f) => [...f, ...spawned]);
     const ids = spawned.map((s) => s.id);
     // Each batch expires on its own timer — a new batch must never cancel an
     // older batch's removal (mistake → solve inside 1.2s is the common case).
+    // The last of a staggered batch starts latest, so the sweep waits for it.
     timers.current.push(
-      setTimeout(() => setFloats((f) => f.filter((fl) => !ids.includes(fl.id))), FLOAT_MS),
+      setTimeout(
+        () => setFloats((f) => f.filter((fl) => !ids.includes(fl.id))),
+        FLOAT_MS + (spawned.length - 1) * FLOAT_STAGGER_MS,
+      ),
     );
   }, [ledger.entries, covered, dayNumber]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -129,8 +154,15 @@ export default function StepMeter() {
         <span className="chr-steps__label"> steps</span>
       </div>
       {floats.map((f) => (
-        <span key={f.id} className={`chr-float ${floatClass(f.reason, f.delta)}`}>
-          {f.delta > 0 ? `+${f.delta}` : `−${-f.delta}`}
+        <span
+          key={f.id}
+          className={`chr-float ${floatClass(f.reason, f.delta)}`}
+          style={f.order ? { animationDelay: `${f.order * FLOAT_STAGGER_MS}ms` } : undefined}
+        >
+          <span className="chr-float__n tabular-nums">
+            {f.delta > 0 ? `+${f.delta}` : `−${-f.delta}`}
+          </span>
+          {f.why ? <span className="chr-float__why"> {f.why}</span> : null}
         </span>
       ))}
     </div>

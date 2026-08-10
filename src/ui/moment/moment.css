@@ -240,6 +240,12 @@
 
 .mom__waiting { color: var(--ink-faint); }
 
+/* The address is walkable (COMPREHENSION.md fix 2): one chevron, in the same
+   small-caps line that already names the trace, so the card says "here is
+   where this went" and "and I will take you" in one breath. Drawn only where
+   the card is a real control — the docked, inert card never prints it. */
+.mom__go { color: var(--ink-soft); font-variant: normal; }
+
 /* --- Motion (transform/opacity only — AAA U.3/9.5) ------------------------ */
 
 @keyframes mom-press {

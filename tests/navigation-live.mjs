@@ -498,8 +498,34 @@ try {
       `retire (armed): ${Math.round(armed.box.w)}x${Math.round(armed.box.h)} holds the 44pt floor`,
       `retire (armed): ${Math.round(armed?.box.w)}x${Math.round(armed?.box.h)} is under the 44pt floor (AAA 6.19)`);
 
-    // Disarms itself, and the chips come back.
+    /* ROUND 26 (COMPREHENSION.md fix 9) — THE ARM HOLDS UNTIL SHE TAPS
+       ELSEWHERE, and this block used to assert the opposite. The armed state
+       disarmed itself after 2600ms; three of three blind testers never saw the
+       confirm and all three concluded the control was broken (one pressed it
+       four times over several minutes). A timeout is the wrong instrument for
+       "are you sure?" — so the two gates are now: it is STILL ARMED well past
+       the old timer, and a tap on anything else puts it away.
+       Both can fail: a re-introduced timeout fails the first, and a listener
+       that never fires (or that swallows the tap) fails the second. */
     await page.waitForTimeout(2900);
+    const stillArmed = await page.evaluate(() => {
+      const b = document.querySelector('.chr-retire');
+      return {
+        armed: b?.classList.contains('chr-retire--armed') ?? null,
+        text: (b?.textContent || '').replace(/\s+/g, ' ').trim(),
+      };
+    });
+    check(stillArmed.armed === true,
+      `retire: the confirm still stands 2.9s after arming ("${stillArmed.text}") — it waits for her, not for a clock`,
+      `retire: disarmed itself after 2.9s (text "${stillArmed.text}") — the timeout is back`);
+
+    // …and her next touch anywhere else stands it down. The day numeral is the
+    // safest "elsewhere" on the glass: it is in the same bar, it is not a
+    // control, and tapping it cannot open a modal that would confuse the
+    // assertions below.
+    const dayBox = await boxOf('.chr-day');
+    await page.mouse.click(dayBox.x + dayBox.w / 2, dayBox.y + dayBox.h / 2);
+    await page.waitForTimeout(250);
     const disarmed = await page.evaluate(() => {
       const b = document.querySelector('.chr-retire');
       return {
@@ -507,11 +533,15 @@ try {
         text: (b?.textContent || '').replace(/\s+/g, ' ').trim(),
         chips: [...document.querySelectorAll('.chr-chip')]
           .filter((c) => c.getBoundingClientRect().width > 0).length,
+        phase: window.__manorStore?.getState?.().day?.phase ?? null,
       };
     });
     check(disarmed.armed === false && /retire/i.test(disarmed.text),
-      `retire: disarms itself back to "${disarmed.text}"`,
-      `retire: still armed after 2.9s (text "${disarmed.text}")`);
+      `retire: a tap elsewhere stands it down to "${disarmed.text}"`,
+      `retire: still armed after a tap elsewhere (text "${disarmed.text}")`);
+    check(disarmed.phase === 'exploring',
+      'retire: standing down did not end the day',
+      `retire: the day ended on a tap that was not the confirm (phase ${disarmed.phase})`);
     check(disarmed.chips === 3,
       'retire: the three currency chips are back on the bar after disarm (AAA 11.16)',
       `retire: ${disarmed.chips} currency chips visible after disarm — the bar did not recover`);

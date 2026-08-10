@@ -32,9 +32,19 @@ export default function CurrencyChip({ name, unit, value, live, children }: Prop
       {children}
       <span className="chr-chip__n tabular-nums">{value}</span>
       <span className="chr-sr"> {word}</span>
+      {/* ROUND 26 (COMPREHENSION.md fix 15). The three glyphs are never named
+          on screen — one tester worked out gems/keys/bookmarks only by reading
+          the accessible text above, and another finished the session believing
+          the diamond was a friendship meter. The bar is exactly full at 390 AND
+          at 375 (measured: content ends on the right padding at both), so the
+          word cannot stand beside the glyph without pushing something off the
+          glass. It goes where there IS room and where she is already looking:
+          the float. "+1 key" names the chip at the one instant the chip moves,
+          and it speaks the step meter's new grammar (a number and its word). */}
       {floats.map((f) => (
         <span key={f.id} className={`chr-float ${deltaFloatClass(f.delta)}`}>
-          {deltaFloatText(f.delta)}
+          <span className="chr-float__n tabular-nums">{deltaFloatText(f.delta)}</span>
+          <span className="chr-float__why"> {Math.abs(f.delta) === 1 ? unit[0] : unit[1]}</span>
         </span>
       ))}
     </span>

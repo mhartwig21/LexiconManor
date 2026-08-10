@@ -56,6 +56,26 @@ export interface Moment {
   quote?: string;
   /** Where it now lives forever — the moment names its own persistent trace. */
   where: string;
+  /**
+   * ROUND 26 (COMPREHENSION.md fix 2) — THE ADDRESS, MADE WALKABLE.
+   *
+   * Every moment has always NAMED its trace ("Waiting in the Journal ·
+   * Letters", "Kept in the Chronicles · Keepsakes") and the card's only verb
+   * was `dismiss()`. Three blind testers' very first input in the game was a
+   * reach for the day-1 letter card; all three hit nothing, and one wrote:
+   * "every reward the game gave me announced itself in a card I could not
+   * catch." The seal was telling her where to go and then refusing to take her
+   * there.
+   *
+   * So the trace line becomes a destination. `route` is the hash route the
+   * card's own `where` already promises — and it is OPTIONAL on purpose: a
+   * rank-up ("There is more in her conversation now") has no screen to open,
+   * and a card that offers a journey to nowhere is worse than one that does
+   * not offer. Nothing about the docked/inert case changes (ui/moment/dock.ts):
+   * over a playfield the card still takes no taps at all, so this can never
+   * swallow a tap aimed at a cell or a door.
+   */
+  route?: string;
 }
 
 /** The one fragment fact the mapping needs; supplied by the caller so this
@@ -102,6 +122,20 @@ const CHARACTER_NAMES: Record<CharacterId, string> = {
 
 /** Longest preview the seal carries before it stops being a *moment*. */
 export const QUOTE_CHARS = 62;
+
+/**
+ * The two screens a moment can send her to (hash routes — see App.tsx). They
+ * are named here rather than spelled at seven call sites so the card and the
+ * router can never disagree about where "the Journal" is.
+ *
+ * The Floorplan Cabinet deliberately has NO route: it is a modal opened from
+ * the blueprint's footer, not a screen, and a card that navigated to /manor
+ * would land her on a board with the plate nowhere in sight — a promise the
+ * arrival does not keep. Same for a rank-up: "There is more in her
+ * conversation now" is true and has no address.
+ */
+const JOURNAL = '/journal';
+const CHRONICLES = '/chronicles';
 
 /**
  * The reward's opening words, set in the journal's quoting convention (the
@@ -198,6 +232,7 @@ export function letterMoment(letter: {
     title: `A letter from ${CHARACTER_NAMES[letter.from]}`,
     quote: letter.subject ? openingWords(letter.subject) : undefined,
     where: 'Waiting in the Journal · Letters',
+    route: JOURNAL,
   };
 }
 
@@ -218,6 +253,7 @@ export function keepsakeMoment(keepsake: { id: string; name: string; description
     title: `A keepsake: ${keepsake.name}`,
     quote: openingWords(keepsake.description),
     where: 'Kept in the Chronicles · Keepsakes',
+    route: CHRONICLES,
   };
 }
 
@@ -273,6 +309,7 @@ export function madeOutMoment(fragments: readonly MadeOutFacts[]): Moment | null
     title: `${word} ${n === 1 ? 'page' : 'pages'} made out`,
     quote: openingWords(first.text),
     where: 'Made out, in the Journal · the higher the room, the more at once',
+    route: JOURNAL,
   };
 }
 
@@ -310,6 +347,7 @@ export function momentForEvent(event: GameEvent, ctx: MomentContext): Moment | n
           title: sealedCopy.title,
           quote: undefined,
           where: sealedCopy.where,
+          route: JOURNAL,
         };
       }
       const copy = (facts && FRAGMENT_COPY[facts.kind]) || FRAGMENT_FALLBACK;
@@ -320,6 +358,7 @@ export function momentForEvent(event: GameEvent, ctx: MomentContext): Moment | n
         title: copy.title,
         quote: facts ? openingWords(facts.text) : undefined,
         where: copy.where,
+        route: JOURNAL,
       };
     }
     case 'fragment-interpreted': {
@@ -332,6 +371,7 @@ export function momentForEvent(event: GameEvent, ctx: MomentContext): Moment | n
         title: 'Ellery reads it again',
         quote: openingWords(facts.interpretation),
         where: 'Her note is filed beneath the line',
+        route: JOURNAL,
       };
     }
     case 'volume-solved': {
@@ -343,6 +383,7 @@ export function momentForEvent(event: GameEvent, ctx: MomentContext): Moment | n
         title: 'The volume closes',
         quote: word ? `“${word.toUpperCase()}”` : undefined,
         where: 'The Journal keeps it, closed but readable',
+        route: JOURNAL,
       };
     }
     case 'affinity-rank-up': {
@@ -456,4 +497,29 @@ export const MOMENT_QUEUED_MS = 4000;
 /** The dwell for the seal on glass, given how many are waiting behind it. */
 export function momentDwellMs(waiting: number): number {
   return waiting > 0 ? MOMENT_QUEUED_MS : MOMENT_MS;
+}
+
+/**
+ * ROUND 26 — THE ONE MOMENT THAT DOES NOT RUN ON A CLOCK.
+ *
+ * The letter is the first thing the manor ever hands the player: it lands at
+ * dawn, on the blueprint, before she has touched anything. All three blind
+ * testers reached for that card and all three missed it — on the blueprint the
+ * seal is deliberately inert (ui/moment/dock.ts, and that ruling stands: it
+ * covers cells that are controls), so their reach fell through to parchment
+ * and the card then expired on its own 5.6s timer. "Every reward the game gave
+ * me announced itself in a card I could not catch."
+ *
+ * A letter therefore waits for HER instead of for a timer. It stays on the
+ * glass until she touches something — anything, anywhere; the layer does not
+ * swallow that touch, so whatever she reached for still happens (MomentLayer).
+ * The reach that used to hit nothing now visibly puts the card away, which is
+ * what "catching it" feels like.
+ *
+ * Only letters. Everything else keeps `momentDwellMs`: a solve can bank four
+ * grants at once, and four cards each waiting on their own tap is the round-12
+ * parade with an extra chore bolted to it.
+ */
+export function momentHolds(moment: Moment): boolean {
+  return moment.kind === 'letter';
 }

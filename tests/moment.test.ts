@@ -16,8 +16,8 @@ import { freshVolumeState, type VolumeContent } from '../src/engine/volume';
 import { useManorStore } from '../src/app/store';
 import {
   advance, EMPTY_QUEUE, enqueue, keepsakeMoment, letterMoment, madeOutMoment, MAX_PENDING,
-  momentDwellMs, momentForEvent, MOMENT_MS, MOMENT_QUEUED_MS, openingWords, plateMoment,
-  type Moment, type MomentContext,
+  momentDwellMs, momentForEvent, momentHolds, MOMENT_MS, MOMENT_QUEUED_MS, openingWords,
+  plateMoment, type Moment, type MomentContext,
 } from '../src/ui/moment/moments';
 import {
   keepsakeSeenFlag, mantelLine, plateSeenFlag, unseenKeepsakes, unseenPlates,
@@ -569,5 +569,65 @@ describe('the mantel’s unread chain', () => {
     // AAA 6.3/11.22: one Latin letterform, never a glyph that can tofu.
     expect(k.sigil).toMatch(/^[A-Z]$/);
     expect(p.sigil).toMatch(/^[A-Z]$/);
+  });
+});
+
+/**
+ * ROUND 26 (COMPREHENSION.md fix 2) — THE ADDRESS IS WALKABLE, AND THE FIRST
+ * ONE WAITS.
+ *
+ * "Every reward the game gave me announced itself in a card I could not
+ * catch." All three blind testers' first input in the game was a reach for the
+ * day-1 letter; all three hit nothing. Two gates here, both able to fail: a
+ * moment that names a screen must carry the route to it, and a moment that
+ * names no screen must not pretend to (a card offering a walk to nowhere is
+ * worse than one that offers none).
+ */
+describe('a moment names a place, and can take her there', () => {
+  const ctx: MomentContext = {
+    fragment: () => ({ kind: 'testimony', text: 'Six candles.', sealed: false }),
+    answerFor: () => 'lacuna',
+  };
+
+  it('routes every seal whose trace is a screen', () => {
+    const journal = [
+      letterMoment({ id: 'first-post', from: 'posy', subject: 'Welcome' }),
+      momentForEvent({ type: 'fragment-found', fragmentId: 'f1' }, ctx)!,
+      momentForEvent({ type: 'volume-solved', volumeId: 'volume-1' }, ctx)!,
+      madeOutMoment([{ id: 'f1', kind: 'testimony', text: 'Six candles.' }])!,
+    ];
+    for (const moment of journal) {
+      expect(moment.route, `${moment.kind} names ${moment.where} and cannot go there`).toBe('/journal');
+    }
+    expect(keepsakeMoment({ id: 'first-morning', name: 'The First Morning', description: 'Keep a day.' }).route)
+      .toBe('/chronicles');
+  });
+
+  it('offers no walk where there is no screen to walk to', () => {
+    // "There is more in her conversation now" is true and has no address; the
+    // Floorplan Cabinet is a modal on the blueprint, not a route.
+    expect(momentForEvent({ type: 'affinity-rank-up', character: 'bramble', rank: 1 }, ctx)!.route)
+      .toBeUndefined();
+    expect(plateMoment({ id: 'map-room', name: 'The Map Room' }).route).toBeUndefined();
+  });
+
+  it('every route it does offer is a route the app actually serves', () => {
+    const app = readFileSync(join(__dirname, '..', 'src', 'App.tsx'), 'utf8');
+    const routed = [
+      letterMoment({ id: 'first-post', from: 'posy' }),
+      keepsakeMoment({ id: 'first-morning', name: 'The First Morning', description: 'Keep a day.' }),
+    ];
+    for (const moment of routed) {
+      expect(app).toContain(`path="${moment.route}"`);
+    }
+  });
+
+  it('holds the dawn letter for her, and nothing else', () => {
+    expect(momentHolds(letterMoment({ id: 'first-post', from: 'posy' }))).toBe(true);
+    expect(momentHolds(momentForEvent({ type: 'fragment-found', fragmentId: 'f1' }, ctx)!)).toBe(false);
+    expect(momentHolds(keepsakeMoment({ id: 'k', name: 'K', description: 'd' }))).toBe(false);
+    // A held moment still keeps the promise every moment makes (11.12): the
+    // hold is about catching it, never about replacing the trace.
+    expect(letterMoment({ id: 'first-post', from: 'posy' }).where).toMatch(/Journal/);
   });
 });

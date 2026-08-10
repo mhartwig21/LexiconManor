@@ -7,11 +7,19 @@
  * "can I afford one more room?", and the answer never hides.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useManorStore } from '../../app/store';
 import CurrencyChip from './CurrencyChip';
 import StepMeter from './StepMeter';
 import { useOverlayOpen } from './overlay-watch';
+
+/**
+ * The first-run currency key: how long it waits for the dawn's step floats to
+ * clear (matched by `.chr-key`'s animation-delay in chrome.css), and how long
+ * it then stays if she touches nothing at all.
+ */
+const KEY_IN_MS = 1400;
+const KEY_MS = 8000;
 
 const PHASE_LABEL: Record<string, string> = {
   morning: 'morning',
@@ -54,27 +62,100 @@ export default function DayHeader() {
   // Is a scene the player believes is modal on the glass? (AAA 11.5)
   const overlayOpen = useOverlayOpen();
 
-  // Retire: first tap arms, second confirms; disarms itself after a moment.
+  /* ═══ RETIRE: FIRST TAP ARMS, SECOND CONFIRMS ═══════════════════════════
+   *
+   * ROUND 26 (COMPREHENSION.md fix 9) — THE ONLY CONTROL THREE OF THREE BLIND
+   * TESTERS BELIEVED WAS BROKEN. The arm used to disarm ITSELF after 2600ms.
+   * A player reads "End the day?", thinks about whether she is done, looks
+   * back — and the plate has quietly gone back to "Retire". One tester pressed
+   * it four times over several minutes and concluded it was bugged; nobody
+   * ever saw the confirm state and the arm at the same moment.
+   *
+   * A timeout was the wrong instrument. The arm exists so the day cannot be
+   * ended by ONE stray tap, and a stray tap is exactly what un-arms it now:
+   * the confirm holds until she touches something else. That is strictly safer
+   * than the timer (a tap anywhere disarms, immediately, instead of leaving a
+   * live confirm sitting in the band for 2.6s) and it is legible, which the
+   * timer never was.
+   *
+   * The listener does not swallow the tap that disarms — no preventDefault, no
+   * stopPropagation — so the cell, door or chip she actually reached for still
+   * does its own job in the same gesture (the round-15 lesson: a layer that
+   * eats a tap aimed at something else is the defect, not the fix).
+   */
   const [armed, setArmed] = useState(false);
-  const disarm = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (disarm.current) clearTimeout(disarm.current); }, []);
+  /** Has the first-run currency key had its turn? (See `firstRun` below.) */
+  const [keyShown, setKeyShown] = useState(false);
   // An overlay opening mid-arm must not leave a live confirm tap waiting in
   // the band above it — the second tap ends the day with no further warning.
   useEffect(() => {
     if (!overlayOpen) return;
-    if (disarm.current) clearTimeout(disarm.current);
     setArmed(false);
   }, [overlayOpen]);
+  useEffect(() => {
+    if (!armed) return;
+    const elsewhere = (event: Event) => {
+      // The confirm tap itself lands on the button and must reach onClick.
+      const el = event.target instanceof Element ? event.target : null;
+      if (el?.closest('.chr-retire')) return;
+      setArmed(false);
+    };
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setArmed(false); };
+    // Capture, so a scene that stops propagation on its own root cannot leave
+    // the confirm armed behind it.
+    document.addEventListener('pointerdown', elsewhere, true);
+    document.addEventListener('keydown', escape, true);
+    return () => {
+      document.removeEventListener('pointerdown', elsewhere, true);
+      document.removeEventListener('keydown', escape, true);
+    };
+  }, [armed]);
   const onRetire = () => {
     if (!armed) {
       setArmed(true);
-      if (disarm.current) clearTimeout(disarm.current);
-      disarm.current = setTimeout(() => setArmed(false), 2600);
       return;
     }
     setArmed(false);
     endDay('retired-early');
   };
+
+  /* ═══ THE THREE GLYPHS, NAMED ONCE (COMPREHENSION.md fix 15) ════════════
+   *
+   * "The three currency chips in the header are never labelled on screen — one
+   * player only worked out gems/keys/bookmarks by reading accessible text."
+   * And a second finished the campaign believing bookmarks were confiscated at
+   * bedtime along with the gems and keys, which made the whole gift economy
+   * look like pure loss. (endDay zeroes gems and keys and PRESERVES bookmarks;
+   * they are the one currency that keeps.)
+   *
+   * A word beside each glyph is not available: measured live, the bar's
+   * content ends exactly on its right padding at 390x844 AND at 375x667 —
+   * there is not one spare pixel, and an overflowing label is a worse defect
+   * than the unlabelled glyph. So this is the other half of 11.7's remedy: a
+   * one-time first-run key, hung under the cluster it names, in the chips'
+   * own left-to-right order, out of the bar's width entirely.
+   *
+   * It is inert (`pointer-events: none`), it never returns after the first
+   * morning, and the player's first touch anywhere puts it away — the same
+   * grammar as the retire confirm above. It waits out the dawn's step floats
+   * before it fades in (CSS delay) so the two labels are never on the glass at
+   * once. Everything it says is a NOUN, not a rule: this is a key to three
+   * glyphs, not a tutorial.
+   */
+  const firstRun = day?.day === 1 && day.phase === 'exploring' && !overlayOpen && !keyShown;
+  useEffect(() => {
+    if (!firstRun) return;
+    const done = () => setKeyShown(true);
+    // The listener is armed only once the key is actually ON the glass: an
+    // eager first tap must not retire a label she never got to see.
+    const arm = setTimeout(() => document.addEventListener('pointerdown', done, true), KEY_IN_MS);
+    const out = setTimeout(done, KEY_IN_MS + KEY_MS);
+    return () => {
+      clearTimeout(arm);
+      clearTimeout(out);
+      document.removeEventListener('pointerdown', done, true);
+    };
+  }, [firstRun]);
 
   if (!day) return null;
   const phase = PHASE_LABEL[day.phase];
@@ -154,6 +235,17 @@ export default function DayHeader() {
               </>
             )}
           </button>
+        ) : null}
+        {/* Hung UNDER the cluster (chrome.css `.chr-key`), so it costs the bar
+            no width and can be read left-to-right against the three glyphs it
+            names. Inert and one-time; see the note above `firstRun`. */}
+        {firstRun && !armed ? (
+          <span className="chr-key">
+            <span className="chr-key__row">gems · keys · bookmarks</span>
+            <span className="chr-key__row chr-key__row--note">
+              only the bookmarks keep overnight
+            </span>
+          </span>
         ) : null}
       </div>
     </header>

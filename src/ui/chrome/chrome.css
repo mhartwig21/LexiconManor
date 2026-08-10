@@ -107,10 +107,48 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 }
 
 .chr-right {
+  position: relative;   /* the anchor the first-run key hangs from */
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 3px;
+}
+
+/* --- The first-run currency key (COMPREHENSION.md fix 15) ------------------
+   Three unlabelled glyphs sat in this cluster for the whole campaign; the bar
+   is exactly full at 390 and at 375 (measured), so the words hang BELOW it for
+   one morning instead of squeezing in beside the glyphs forever. Right-aligned
+   on the cluster so "gems · keys · bookmarks" runs left-to-right against the
+   diamond, the key and the ribbon in that order.
+   Inert by construction — this is a caption, not a control, and the blueprint
+   under it must keep every tap (the round-15 lesson). It fades in after the
+   dawn floats have gone, and retires on her first touch (DayHeader). */
+.chr-key {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  pointer-events: none;
+  text-align: right;
+  animation: chrKeyIn 320ms var(--ease-settle) 1400ms both;
+}
+
+.chr-key__row {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  line-height: 1.15;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.chr-key__row--note { color: var(--ink-faint); font-style: italic; }
+
+@keyframes chrKeyIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* --- Currency chips ------------------------------------------------------- */
@@ -261,7 +299,23 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   font-weight: 600;
   pointer-events: none;
   white-space: nowrap;
-  animation: chrFloat 1100ms var(--ease-settle) forwards;
+  /* `both`, not `forwards`: a batch of three staggers by animation-delay, and
+     a delayed float with no BACKWARDS fill sits at its resting style — fully
+     opaque, undisplaced — until its turn comes. That reads as a number that
+     appeared, froze and then jumped. */
+  animation: chrFloat 1100ms var(--ease-settle) both;
+}
+
+/* THE REASON, BESIDE THE NUMBER (COMPREHENSION.md fix 1).
+   The number keeps the weight; the word is quieter and takes the same ink, so
+   the pair reads as one phrase ("−1 gift") rather than as two signals. No
+   opacity trim: `--wax-ink` on candlelit paper is already near its floor
+   (round 7), and a label that fails to be read is the defect this closes. */
+.chr-float__n { font-weight: 600; }
+.chr-float__why {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
 .chr-float--spend { color: var(--ink-soft); }
@@ -849,8 +903,9 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   .chr-steps__wax { transition: none; }
   .chr-steps--guttering .chr-steps__flame { animation: none; transform: scale(0.7); }
   .chr-steps__count--tick { animation: none; }
-  .chr-float { animation: chrFloatStill 1100ms linear forwards; }
+  .chr-float { animation: chrFloatStill 1100ms linear both; }
   .chr-float--gain, .chr-float--warm { animation-name: chrFloatStill; }
+  .chr-key { animation: chrKeyStill 200ms linear 1400ms both; }
   .chr-notice { animation: none; }
   .chr-scene--enter { animation: none; }
   .chr-dusk { animation: chrDuskStill 200ms linear forwards; }
@@ -864,12 +919,18 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 .chr--reduced .chr-steps__wax { transition: none; }
 .chr--reduced .chr-steps--guttering .chr-steps__flame { animation: none; transform: scale(0.7); }
 .chr--reduced .chr-steps__count--tick { animation: none; }
-.chr--reduced .chr-float { animation: chrFloatStill 1100ms linear forwards; }
+.chr--reduced .chr-float { animation: chrFloatStill 1100ms linear both; }
+.chr--reduced .chr-key { animation: chrKeyStill 200ms linear 1400ms both; }
 .chr--reduced .chr-notice { animation: none; }
 .chr--reduced .chr-scene--enter { animation: none; }
 .chr--reduced .chr-dusk { animation: chrDuskStill 200ms linear forwards; }
 .chr--reduced .chr-dusk__line { animation: chrDuskLineStill 200ms linear 300ms forwards; }
 .chr--reduced .chr-dusk__candle { animation: none; opacity: 0.4; }
+
+@keyframes chrKeyStill {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 
 @keyframes chrFloatStill {
   0% { opacity: 0; }
