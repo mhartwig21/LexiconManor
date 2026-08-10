@@ -523,24 +523,35 @@ describe('fragment pacing — the volume horizon is measured, not asserted (AAA 
    * more than PITY_DROUGHT_DAYS" was true by construction — the test was
    * measuring its own definition. Now that mercy keys off legibility, a stretch
    * where she makes out backlog pages (learning plenty) but files nothing new
-   * can run one day longer, and it does: measured over 240 seeded campaigns,
-   * worst filing dry run 0 ×28 · 1 ×94 · 2 ×68 · 3 ×46 · 4 ×4, against a
-   * LEGIBLE worst of 0 ×18 · 1 ×94 · 2 ×63 · 3 ×65, max 3 — the floor exactly
-   * where PITY_DROUGHT_DAYS puts it. The band below is the measurement, not a
-   * target; if filing ever drifts further the drip has thinned and that is worth
-   * a look even though the guarantee still holds.
+   * can run one day longer, and it does. (Round 13's histogram, kept for the
+   * shape: filed 0 ×28 · 1 ×94 · 2 ×68 · 3 ×46 · 4 ×4 against a LEGIBLE worst
+   * of 0 ×18 · 1 ×94 · 2 ×63 · 3 ×65, max 3.) The current histograms are in the
+   * test body, re-derived at round-25 HEAD. The band below is the measurement,
+   * not a target; if filing ever drifts further the drip has thinned and that is
+   * worth a look even though the guarantee still holds.
    */
-  it('filing stays close behind: never more than two days past the legible floor', () => {
-    // ROUND 22 — the bound moved +1 and the honest clock is why. Filing is fed
-    // by the solve channels, and an evening with real room durations finishes
-    // about two rooms instead of nearly three (see the seal block below), so a
-    // filing dry stretch runs one day longer at its worst: measured over the
-    // same 240 seeded campaigns, worst filed dry run 4 against a LEGIBLE worst
-    // of 3 — the pity floor exactly where `PITY_DROUGHT_DAYS` puts it, which is
-    // the guarantee this clause has always been the shadow of. If filing ever
-    // drifts past this the drip HAS thinned and it is worth a look.
+  it('filing stays close behind: never more than ONE day past the legible floor', () => {
+    // ROUND 22 loosened this bound from `PITY_DROUGHT_DAYS + 1` to `+ 2`, and
+    // said why in this comment: the honest per-room clock made an evening
+    // finish about two rooms instead of nearly three, filing is fed by the
+    // solve channels, and the worst filed dry run measured 4 against a LEGIBLE
+    // worst of 3. That was a justified loosening, documented, of a bound the
+    // file itself calls a measurement rather than a target.
+    //
+    // ═══ ROUND 25 — IT IS RESTORED, BECAUSE THE FINDING EXPIRED ═════════════
+    // Round 24 made the day model grid-true and the evening finishes 2.18
+    // rooms again (AAA 4.10g), so the stretch round 22 measured is gone.
+    // Re-derived over the same 240 seeded campaigns at HEAD:
+    //
+    //   worst FILED   dry run:  0 ×110 · 1 ×107 · 2 ×21 · 3 ×2   (max 3)
+    //   worst LEGIBLE dry run:  0 ×49  · 1 ×149 · 2 ×42          (max 2 = PITY_DROUGHT_DAYS)
+    //
+    // So `+ 1` is exactly the measurement again — 2 of 240 campaigns sit on
+    // the bound and one more day of drift fails it. A loosening that outlives
+    // the measurement that justified it is just a lower standard, and this
+    // repo's own rule is that a bound may fall and may never rise. It fell.
     for (const run of runs) {
-      expect(worstDryRun(owedDays(run), 'filed')).toBeLessThanOrEqual(PITY_DROUGHT_DAYS + 2);
+      expect(worstDryRun(owedDays(run), 'filed')).toBeLessThanOrEqual(PITY_DROUGHT_DAYS + 1);
     }
   });
 });

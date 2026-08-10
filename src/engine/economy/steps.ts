@@ -196,7 +196,15 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
  * deliberately the smallest lever that bites: the payout side is wage-locked
  * by 4.10h (round 22) and cutting it would re-open the 36× spread, and the
  * refill side is Bramble's arc, which round 23 moved rather than cut (see
- * `TEA_POUR`). Bare ascent 22 → 23; every 4.10 band re-measured in
+ * `TEA_POUR`). **The bare ascent is UNCHANGED at 22** — the old band was
+ * −1/−1/−2/−3 and the new one is −2/−2/−2/−2, so rows 1–5 sum to 1+2+3+7+9 = 22
+ * before and 2+2+2+7+9 = 22 after; the retune moved the FLOOR, not the climb,
+ * which is why every band calibrated on `reserveToTop(1) > BASE_DAY_BUDGET` is
+ * untouched by it. *(Round 25 correction: this line read "Bare ascent 22 → 23",
+ * which is arithmetically wrong and contradicted the value
+ * `tests/economy-pressure.test.ts` pins twelve lines below. Round 7 lost a day
+ * to this exact number drifting in one of three files; it drifted again in the
+ * round that quoted round 7's lesson.)* Every 4.10 band re-measured in
  * tests/economy-simulation.test.ts and the ground floor pinned in
  * tests/economy-pressure.test.ts.
  */
@@ -1000,7 +1008,7 @@ export function teaBonus(bramblePoints: number): number {
  * THE DEFECT, measured before this existed: **the ground floor got richer
  * every week and never got dearer.** `TEA_BY_POINTS` climbs 0 → +13 and it
  * all landed at dawn, so the purse she carried around rows 0–2 ran 21 steps
- * on day 1 and 31 by day 12 against a ground floor that charged 1 step a
+ * on day 1 (the pot was 3 then) and 31 by day 12 against a floor that charged 1 step a
  * room. Median steps in hand down there: **28 (median player) / 30 (skilled)
  * against an 18-step budget**, p10 20/26 — she was never once poor on the
  * storeys where she spends 62% of her evening, and she arrived at the first
@@ -1009,19 +1017,28 @@ export function teaBonus(bramblePoints: number): number {
  *
  * THE FIX IS NOT A CUT. Bramble's pot is the same size it has always been and
  * grows on the same schedule (`TEA_ARC`); what changed is WHERE she puts it
- * down. She pours a cup at the door — `dawnCup`, the same 3 steps the scripted
- * first morning is worth, so **the ground floor runs on 21 steps on day 1 and
- * on day 30 alike** — and carries the rest of the pot up to the second
- * landing, which is where the climb the arc exists to fund actually begins.
+ * down. She pours a cup at the door — `dawnCup`, the same **4** steps the
+ * scripted first morning is worth (`FIRST_MORNING_POT`, which this same round
+ * moved 3 → 4), so **the ground floor runs on 22 steps on day 1 and on day 30
+ * alike** — and carries the rest of the pot up to the second landing, which is
+ * where the climb the arc exists to fund actually begins.
  *
  * Why the SECOND landing (0-based row 3) and not higher or lower:
  *   - it is the first storey ABOVE the tier-1 band (`rowTier`), i.e. exactly
  *     the boundary §5.10 is drawn at ("below row 4");
  *   - it is the storey BELOW the first padlock (`DOOR_LOCKS.chanceByRow[4]`),
  *     so the pot is in her hand when the gate she has to prepare for appears;
- *   - it costs 2+2+3 = 7 steps to reach from the entrance out of a 21-step
+ *   - it costs 2+2+2 = 6 steps to reach from the entrance out of a 22-step
  *     purse, so a timid evening can always go and get it. It is a pour she
  *     walks to, never a pour she can be denied.
+ *
+ * *(Round 25 correction. This block shipped quoting the table it REPLACED: "the
+ * same 3 steps" (`dawnCup` is 4), "21 steps on day 1 and on day 30" (it is 22,
+ * which is what the `dawnCup` member comment below says, so the file
+ * contradicted itself), and "2+2+3 = 7 steps out of a 21-step purse" (the walk
+ * to row 3 is 2+2+2 = 6 out of 22, under the one-price band this very round
+ * introduced). Three arithmetic claims about the change, all computed on the
+ * pre-change constants.)*
  *
  * WHAT THIS DOES NOT TOUCH, by construction: day 1. `teaBonus(0)` is 0, so on
  * the first evening there is no pot to split and AAA 4.10d's "<8% stand at the

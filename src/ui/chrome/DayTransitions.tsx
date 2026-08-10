@@ -252,10 +252,12 @@ function DawnGrants({ day }: { day: DayState }) {
   // BASE_DAY_BUDGET is 18 on every day of the campaign; day 1 alone adds this
   // scripted pot. Two of three blind testers finished the session certain the
   // allowance had SHRUNK on day 2 — one filed it as a difficulty spike, one as
-  // a punishment for having retired early — because day 1's header read 21 and
-  // day 2's opens at 18 before her tea lands. The arithmetic was fixed at HEAD
-  // (round 23's TEA_POUR dawn cup makes the day-2 purse 21 again at one
-  // affinity point); this is the naming half, and it is the half that matters,
+  // a punishment for having retired early — because day 1's header read 21 on
+  // the build they played (`FIRST_MORNING_POT` was 3) and day 2's opens at 18
+  // before her tea lands. The arithmetic was fixed at HEAD: the pot is 4 now
+  // and round 23's TEA_POUR dawn cup makes the day-2 purse **22** — the same
+  // number day 1 shows — from one affinity point on. This is the naming half,
+  // and it is the half that matters,
   // because the row is where she is looking. Say it is a first morning's own
   // and only, and tomorrow's smaller list is not a demotion, it is the house
   // going back to normal.

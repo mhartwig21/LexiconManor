@@ -168,12 +168,45 @@ describe('4.10h — the payout is a function of the work, with a floor and a cei
  * the Counting House's half hour at tier 3), and no payout table with a cozy
  * floor and a day-budget ceiling can span 30×. What the wage CAN do is make a
  * minute worth a minute between the clamps, and squeeze the rest — measured
- * 45× → 12× overall, and 2× on the rooms the evening is actually made of.
+ * **45.00× → 20.00× overall**.
  *
- * So the criterion ships in three parts, and the bounds below are measurements:
- * they may be tightened by the content fixes REVIEW_AA §6 also asks for (the
- * Gallery's `targetCount`, the Counting House banking across days) and they may
- * never be loosened without a finding to point at.
+ * ═══ ROUND 25 — THE SECOND NUMBER WAS NAMED FOR SOMETHING IT DID NOT MEASURE
+ *
+ * That sentence used to end *"…and 2× on the rooms the evening is actually made
+ * of"*, over a header claiming **12×** overall. Both halves were wrong, and
+ * differently:
+ *
+ *   * **12× overall is arithmetic that was never re-run.** `spreadOf(wageOf)` is
+ *     `twistle t1 4.000 / sudoku t3 0.200` = **20.00×**, which is what
+ *     `AAA_BAR.md` has printed since round 22. One file said 12, one said 20,
+ *     and the assertion below (`<= 21`) passed under either.
+ *   * **"the rooms an ordinary evening is made of" was a FILTERED SUBSET wearing
+ *     a population's name.** The filter is `tier <= 2 && effortMinutes >= 2 &&
+ *     !(sudoku t2)`, and what falls out of it is not exotic: **the Gallery
+ *     (twistle t1/t2, 1 and 1.5 min), the Linen Closet (forgotten-word t1/t2,
+ *     1.5 min) and the Study (crossword t1/t2, 1.25 and 1.5 min)** — three of
+ *     the commonest draws in the deck, excluded for being SHORT, in a metric
+ *     about how short rooms are paid. Seven of the fourteen tier-1/2 pairs
+ *     survived it. The measured 1.75× was true of those seven and of nothing
+ *     else; the population it was named for measures **12.00×**.
+ *
+ * This is structurally the same defect as the "79.2% of offers have a real
+ * choice" headline that AAA 4.10j retired — a name that claims a population and
+ * a definition that quietly takes a sample — and it was committed in the round
+ * that was told about that one. So the number is published three ways now, all
+ * three gated below, none of them called "an ordinary evening":
+ *
+ *   | population | measured |
+ *   |---|---|
+ *   | every room × every tier | **20.00×** |
+ *   | every tier-1/2 room, unfiltered | **12.00×** (twistle t1 4.000 / sudoku t2 0.333) |
+ *   | tier-1/2 minus the Counting House | **4.89×** (twistle t1 4.000 / hive t2 0.818) |
+ *   | tier-1/2, two minutes or longer, minus the Counting House | **1.75×** |
+ *
+ * The bounds below are measurements: they may be tightened by the content fixes
+ * REVIEW_AA §6 also asks for (the Gallery's `targetCount`, the Counting House
+ * banking across days) and they may never be loosened without a finding to
+ * point at.
  */
 describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () => {
   it('is strictly better than the flat table it replaced', () => {
@@ -185,18 +218,50 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
     expect(after).toBeLessThanOrEqual(21);
   });
 
-  it('holds 2× across the rooms an ordinary evening is made of', () => {
+  it('publishes the UNFILTERED tier-1/2 spread — the number the old name hid', () => {
     // 62% of the rooms the median player enters are tier 1 and 36% tier 2
-    // (measured over 21,600 simulated days), and inside that band the outliers
-    // are the two ends the review names as CONTENT defects rather than pricing
-    // ones: the Gallery is not yet a puzzle at tier 1, and the Counting House
-    // is a 27-minute expert board at tier 2 that should be banking across days.
-    // Everything else — the rooms whose length is honest — pays within 2×.
-    const honest = everyRoom.filter(([k, t]) =>
+    // (measured over 21,600 simulated days), so THIS is "the rooms an ordinary
+    // evening is made of", with nothing taken out of it: 14 pairs, 12.00×.
+    // Both ends are named in the assertion below so a content edit that moves
+    // either one fails here rather than quietly re-opening the gap.
+    const tier12 = everyRoom.filter(([, t]) => t <= 2);
+    expect(tier12.length).toBe(14);
+    const all = spreadOf(wageOf, tier12);
+    expect(all, `tier-1/2 spread ${all.toFixed(2)}×`).toBeLessThanOrEqual(12.5);
+    // …and the Counting House is one whole end of it. Without that single
+    // 27-minute tier-2 board — a CONTENT commission REVIEW_AA §6 already asks
+    // for (bank the grid across days) — the same band is 4.89×.
+    const exCountingHouse = spreadOf(wageOf, tier12.filter(([k, t]) => !(k === 'sudoku' && t === 2)));
+    expect(exCountingHouse, `tier-1/2 ex-Counting-House ${exCountingHouse.toFixed(2)}×`)
+      .toBeLessThanOrEqual(5);
+    expect(exCountingHouse).toBeLessThan(all);
+  });
+
+  it('holds 2× across tier-1/2 rooms of two minutes or more, minus the Counting House', () => {
+    // THE NAME IS THE FILTER (round 25). This used to be titled "the rooms an
+    // ordinary evening is made of", which is the population measured in the
+    // test above — not this one. What this one excludes, by name, is the
+    // Gallery (twistle t1, 1 min), the Linen Closet (forgotten-word t1/t2,
+    // 1.5 min), the Study (crossword t1/t2, 1.25/1.5 min) and the Counting
+    // House at tier 2. Seven of fourteen pairs remain.
+    //
+    // It is still worth gating, because it is the honest claim underneath the
+    // dishonest one: once a room is long enough for the wage to bind rather
+    // than the cozy floor, a minute really is worth a minute. What it may never
+    // again be called is the evening.
+    const twoMinutePlus = everyRoom.filter(([k, t]) =>
       t <= 2 && effortMinutes(k, t) >= 2 && !(k === 'sudoku' && t === 2));
-    const s = spreadOf(wageOf, honest);
-    expect(s, `honest-room spread ${s.toFixed(2)}×`).toBeLessThanOrEqual(2);
-    expect(honest.length).toBeGreaterThanOrEqual(6);
+    const excluded = everyRoom
+      .filter(([k, t]) => t <= 2 && !twoMinutePlus.some(([k2, t2]) => k2 === k && t2 === t))
+      .map(([k, t]) => `${k} t${t}`);
+    expect(excluded.sort(), 'the exclusion list moved — retitle the metric').toEqual([
+      'crossword t1', 'crossword t2', 'forgotten-word t1', 'forgotten-word t2',
+      'sudoku t2', 'twistle t1', 'twistle t2',
+    ]);
+    const s = spreadOf(wageOf, twoMinutePlus);
+    expect(s, `two-minute-plus spread ${s.toFixed(2)}× over ${twoMinutePlus.length} pairs`)
+      .toBeLessThanOrEqual(2);
+    expect(twoMinutePlus.length).toBe(7);
   });
 
   it('names the two rooms that still miss, so nobody has to rediscover them', () => {

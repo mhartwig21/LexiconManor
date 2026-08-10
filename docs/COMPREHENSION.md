@@ -58,9 +58,9 @@ These are worse than confusion. A confused player knows to ask; this one does no
 
 ### “The manor gave me fewer steps on day 2 than day 1 — the base allowance went down, possibly as a penalty for retiring early.”
 
-**Truth.** BASE_DAY_BUDGET is a constant 18 on every day of the campaign. Day 1 adds a scripted one-off FIRST_MORNING_POT of +3 (=21). Day 2's tea (+4 at one affinity point) is granted by shareMorningTea when the morning scene actually plays — after the header has already rendered 18. Day 2 is richer than day 1, not poorer.
+**Truth.** BASE_DAY_BUDGET is a constant 18 on every day of the campaign. Day 1 adds a scripted one-off FIRST_MORNING_POT, and **at HEAD that pot is +4, so day 1 opens at 22** — the build these three played still had +3 (=21), which is the number they read and the number this file first quoted. Day 2's tea (+4 at one affinity point) is granted by shareMorningTea when the morning scene actually plays — after the header has already rendered 18. Day 2 is richer than day 1, not poorer.
 
-**What it cost.** Both counting players read a difficulty spike or a punishment where there is a raise. The systems player recorded it as an unexplained regression and cited it in his 'the engine hasn't visibly turned over' verdict. (Round 23's TEA_POUR dawn cup already makes the day-2 dawn purse 21 at >=1 point — the arithmetic is half-fixed at HEAD, the naming is not.)
+**What it cost.** Both counting players read a difficulty spike or a punishment where there is a raise. The systems player recorded it as an unexplained regression and cited it in his 'the engine hasn't visibly turned over' verdict. (Round 23's TEA_POUR dawn cup already makes the day-2 dawn purse **22** at >=1 point — the same number day 1 shows, so the arithmetic is fixed at HEAD; the naming is the half that landed in round 24's DawnGrants rows.)
 
 ### “Wrong letters in the mini crossword cost 2 steps each, silently — and I was charged even for a word I got right.”
 

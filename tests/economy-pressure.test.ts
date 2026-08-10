@@ -154,7 +154,8 @@ describe('4.10i — the ground floor is a purse she can run down', () => {
     // self-funding and that is the design (she solves 90% of what she sits
     // for); what it may never be again is POSITIVE, which is what the economy
     // critic measured on the shipped table (+1.61 on row 0).
-    // ROUND 24 - -2.55/-0.96 -> -1.24/-0.35. TWO honest causes, both of them
+    // ROUND 24 - -2.55/-0.96 -> -1.24/-0.26 (published as -0.35; round 25
+    // re-derived it over this same fixture at -1.236 / -0.257). TWO honest causes, both of them
     // the instrument getting more like the game: the green card she takes now
     // pays what is authored on its OWN face (`UTILITY_EFFECTS`, the Kitchen's
     // +6 and the Larder's +5) instead of a uniform draw over `REFILL_PAYOUTS`,

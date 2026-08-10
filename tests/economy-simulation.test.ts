@@ -340,7 +340,11 @@ describe('4.10b — the decent day is 10–15 MINUTES (the owner-playtest fix)',
     expect(m).toBeLessThanOrEqual(15);
   });
 
-  it('keeps the long-evening tail bounded (p90 ≤ 23 min; measured ~21.5)', () => {
+  it('keeps the long-evening tail bounded (p90 ≤ 23 min; measured 18.78)', () => {
+    // ROUND 25 — the title said "~21.5", a round-5 figure. Re-derived here:
+    // p90 18.78 on this fixture, 18.69–18.90 across the four seeds the test
+    // below runs. The median moved further than the tail did (11.6 → 14.48),
+    // which is the interesting half and is published in AAA 4.10b.
     expect(quantile(decent, 0.9, (r) => r.minutes)).toBeLessThanOrEqual(23);
   });
 
@@ -1434,10 +1438,28 @@ describe('the padlock is LIVE, and the live key supply can pay for it', () => {
     // "keys arrive" would therefore have failed the gate for the directive
     // working. Both channels are measured now, and the deck keeps its own floor
     // so it cannot quietly die.
+    //
+    // ═══ ROUND 25 — THE DECK FLOOR IS RESTORED TO 0.3 ══════════════════════
+    // Round 22 walked this floor 0.3 → 0.2 because the deck share had fallen to
+    // ~29%, and that was an honest, documented loosening of a floor whose only
+    // job is to catch the channel dying. The premise is gone. Round 24 found
+    // that the grid-blind model handed a green card its key ONLY when the
+    // player was short of one (`needsKeySoon && keys < 2 && roll < keyLuck`)
+    // while the live game pays `UTILITY_EFFECTS[cardId].keys` on every
+    // placement — so the ~29% was an artefact of the instrument, not the deck.
+    // Re-derived at HEAD over these same 400×45 campaigns:
+    //
+    //   either channel        96.1%   (floor 50%)
+    //   DECK  keysFound > 0   68.5%   (floor restored to 30%)
+    //   SOLVE keysFromSolves  84.4%   — 26,960 solve keys against 23,066 deck keys
+    //
+    // The floor goes back where it was rather than up to the measurement: it
+    // exists to fail when the green deck stops paying, and a floor pinned to
+    // today's number would fail on healthy tuning instead.
     const padlockDays = campaigns.flatMap((c) => c.days);
     expect(share(padlockDays, (d) => d.keysFound + d.keysFromSolves > 0))
       .toBeGreaterThan(0.5);
-    expect(share(padlockDays, (d) => d.keysFound > 0)).toBeGreaterThan(0.2);
+    expect(share(padlockDays, (d) => d.keysFound > 0)).toBeGreaterThan(0.3);
   });
 
   it('models the live refusal: a door she cannot open charges nothing for the storey above', () => {

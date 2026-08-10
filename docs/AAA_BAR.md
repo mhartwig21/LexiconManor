@@ -416,7 +416,7 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   > | 4.10a skipper: how the evening ends | 100% spent out *(by construction)* | 76% spent out · **24% shut in**, median 6 steps left |
   > | 4.10b rooms per evening | 5–8 (measured 6) | **7–11** (measured 9) |
   > | 4.10b median / p90 minutes | 10–15 / ≤23 (10.8 / 16.2) | band unmoved, measured **14.4 / 18.9** |
-  > | 4.10c great day, max row | 5–6 | measured **5**; landing 4.2% → **4.3%** |
+  > | 4.10c great day, max row | 5–6 | measured **5**; landing 8.6% → **3.7%** *(round-25 re-derivation; this row shipped saying 4.2% → 4.3%, and neither figure is in the tree — `share(great, reachedLanding)` over the test's own fixture is 3.73%)* |
   > | 4.10d skilled first DOOR | 6–10 (measured 9–10) | **14–22** (measured 18 on all four seeds) |
   > | 4.10d skilled, by day 21 | >90% (99.5%) | **>65%** (72.3%); >85% by day 28 |
   > | 4.10e skilled volume win | 12–20 (measured 16) | **12–20 UNMOVED** (measured 18–19) |
@@ -432,7 +432,7 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   > | 4.10g a solve makes a page out, median player | <1 day in 3 (23.5%) | **35.2%** — she cleared it; the split is now about SIZE (his 65%) |
   > | 4.10g sealed overnight, skilled | 25–55% (49.0%) | **25–60%** (55.1%) |
   > | 4.10g sealed overnight, median player | 10–25% (18.3%) | **10–35%** (29.3%) |
-  > | 4.10i ground-floor drain per room | −2.58 hers / −0.96 his | **−1.24 / −0.35** |
+  > | 4.10i ground-floor drain per room | −2.58 hers / −0.96 his | **−1.24 / −0.26** *(round-25 re-derivation: his figure shipped as −0.35; `drain(PROFILE_SKILLED)` over the pressure suite's own 120×45 fixture is −0.257, which is 0.007 inside the −0.25 bound the test asserts — a tighter squeeze than the published number implied)* |
   > | 4.10i in hand at the first padlock | 12 / 18 | **11 / 19** |
   > | §8 unspent budget at day end | median 0.0% p90 0.0% *(vacuous)* | median 0.0% **p90 33.3%**, 14.4% of evenings shut in |
   > | §5.7 "offers with a real choice" | 79.2% | **RETIRED — see 4.10j** |
@@ -458,11 +458,23 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     (median row 3–5, never the Sanctum row) and is over in **2–5 minutes**. Refunds are
     what buy a real day.
   - **4.10b — the decent day is 10–15 MINUTES at the median, p90 ≤ 23.** Not 20 (the
-    pre-overhaul measurement) and not 29 at p90; measured median ~11.6, p90 ~21.5
-    (round 5: the day-1 pot and the lifted low tea ranks moved the median up from
-    ~11.2). That is **5–8 rooms** with 2–4 puzzles
-    actually solved — the post-cull deck is anchor-heavy, so fewer rooms *is* the same
-    amount of game. The simulation's clock must be calibrated against the **live deck
+    pre-overhaul measurement) and not 29 at p90. **Measured at round-25 HEAD: median
+    14.48, p90 18.78** (3,000 seeded days, `PROFILE_DECENT`, seed `0xbeef`; 14.30–14.52
+    and 18.69–18.90 across the four independent seeds the test also runs). That is
+    **7–11 rooms** (measured 9) with a median 2 puzzles actually solved — the post-cull
+    deck is anchor-heavy, so fewer rooms *is* the same amount of game.
+    *Round 25 — THIS PARAGRAPH WAS THE STALEST PROSE IN THE FILE, and it disagreed with
+    round 24's own table 40 lines above it. It read "measured median ~11.6, p90 ~21.5"
+    and "5–8 rooms", both of which were round-5 figures: the median has since gone
+    12.74 → 10.87 (round 23's ground-floor retune, shipped as "unchanged") → 14.48
+    (round 24's grid-true instrument, which stopped charging a phantom walk-back per
+    draft and stopped clipping the evening at `sessionMinutes`), and p90 21.5 → 16.19 →
+    18.78. The BAND has not moved since it was written and is not moved here; the
+    measurement inside it has moved three times, and only the last move was published.
+    The median now sits 0.52 min under the 15-minute ceiling rather than 3.4 above the
+    floor — the evening is at the long end of its promise, which is a thing to watch and
+    is why the number is printed rather than the band widened.*
+    The simulation's clock must be calibrated against the **live deck
     mix** (`deckMixAt` derives category and micro/anchor shares from `BASE_DECK` ×
     `categoryWeight` × `RARITY_WEIGHTS` × the room-adapter registry, so sudoku's
     Counting House counts as anchor-weight and a future deck edit breaks the test
@@ -641,7 +653,11 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
       the word deducible at median day **14–24** (round 21, was 10–20; measured
       19), the volume won at median day **18–28** (round 21, was 14–24; round 23:
       measured 22–23 across the four campaign seeds, was 21–22; p10 18, p90 30),
-      <2% inside the first week (measured 0.5%), **>80% inside 45 evenings**
+      <2% inside the first week (measured **0.0%**; *round 25 — this read "measured
+      0.5%", which is the ≤14-DAY share off `metrics:review`, not the first week's.
+      Her ≤7-day share is 0.0% and has been through every campaign seed since round 24;
+      `tests/economy-simulation.test.ts` already asserted it as "measured: still exactly
+      0" while this line printed the fortnight's number*), **>80% inside 45 evenings**
       (measured 100%), and her evening stays inside 10–15 minutes start to
       finish (4.10f). *(Round 23 moved both of her numbers by a day or two and
       nothing else: the ground floor now costs two steps a room and Bramble's
@@ -762,9 +778,22 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     **ROUND 22 RE-PUBLISHED BOTH OVERNIGHT ROWS: hers 10–20% → 10–25%
     (measured 19–20%), his 25–50% → 25–55% (measured 52%).** 4.10h gave the day
     model per-room durations, and the consequence is arithmetic: an honest
-    evening FINISHES about two rooms, not two and eight tenths (measured 1.99
-    for her, 1.82 for him, against 2.76 / 2.4 under the flat 3–6 minute clock),
+    evening FINISHES about two rooms, not two and eight tenths (round 22 measured
+    1.99 for her, 1.82 for him, against 2.76 / 2.4 under the flat 3–6 minute clock),
     because two of the four anchors cannot be finished in a cozy sitting at all.
+    ***ROUND 25 — THIS DRIVER MOVED TWICE AND WAS REPORTED ONCE.*** Re-derived over
+    the same fixtures the tests use (250 `PROFILE_DECENT` and 400 `PROFILE_SKILLED`
+    campaigns × 45 days, seed `0x1234`), an evening now finishes **2.18 rooms for her
+    and 2.38 for him** — 1.99 → 1.77 under round 23's ground-floor retune (unreported),
+    then 1.77 → 2.18 under round 24's grid-true instrument (reported only as its
+    consequences). **The order has inverted**: for the whole life of this clause she
+    finished more rooms per evening than he did, and now he finishes more. That is the
+    grid, not the clock — his `pushBias` 0.78 against her 0.62 buys more when the
+    frontier is real geometry instead of a scalar row, and her longer walk-back
+    (`walkbackPerRow` 0.58 vs 0.36) stopped being a phantom tax on both of them
+    equally. The overnight bands above are re-measured on the current figure and are
+    unmoved; the sentence "she finishes about two rooms" is still true of both players,
+    which is the claim the seal arithmetic actually rests on.
     A page can only be made out by a finished room, so a page waits for tomorrow
     more often. The bands are re-measured rather than tuned back, because tuning
     them back means either a longer evening (4.10b/f) or a shorter Conservatory
@@ -802,9 +831,22 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     tier; (c) between the cozy floor (+4, so a short puzzle is never a bad choice) and
     the day-budget ceiling (⅔ / ½ / ⅓ of `BASE_DAY_BUDGET` by tier, so no single room
     prints an evening and refunds still get leaner as you climb) **a minute is worth a
-    minute**; (d) the residual spread is a RATCHET — measured **45× → 20×** overall and
-    **≤ 2× across the rooms an ordinary evening is actually made of** — that may fall
-    and may never rise; (e) a room longer than a sitting **pays its ladder, not only its
+    minute**; (d) the residual spread is a RATCHET — that may fall and may never rise —
+    and **round 25 re-derived it unfiltered**, because the second half of this clause
+    used to read *"≤ 2× across the rooms an ordinary evening is actually made of
+    (measured 1.75×)"* and that population was a filtered sample: `tier ≤ 2 AND
+    effortMinutes ≥ 2 AND not the Counting House at tier 2`, which drops **the Gallery,
+    the Linen Closet and the Study** — three of the commonest draws — for being short, in
+    a metric about how short rooms are paid. Seven of fourteen tier-1/2 pairs survived it.
+    Same defect as the retired "79.2% real choice" headline (4.10j), committed in the
+    round that was told about that one. All four populations are published and gated now
+    (`tests/economy-effort.test.ts`), and none is called "an evening":
+    **every room × every tier 45.00× → 20.00×**; **every tier-1/2 room, unfiltered
+    12.00×** (twistle t1 4.000 against sudoku t2 0.333); **tier-1/2 minus the Counting
+    House 4.89×** (twistle t1 against hive t2 0.818); **tier-1/2 of two minutes or more,
+    minus the Counting House, 1.75×**. The Counting House at tier 2 is one whole end of
+    the band and is a CONTENT commission REVIEW_AA §6 already asks for;
+    (e) a room longer than a sitting **pays its ladder, not only its
     summit** (`stageSteps`, off the progress markers the adapters already emit: the
     Conservatory pays at Blossom / Bower / Garden, the Counting House per nine
     placements, the Library per thread), out of the SAME total, so a solved room's price
