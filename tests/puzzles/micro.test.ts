@@ -360,10 +360,20 @@ describe('shipped pools', () => {
       }
     });
 
-    it('tier 3 is the no-crib tier: no short words, no reveals, long and wide', () => {
+    /**
+     * ROUND 24 (REVEALS 0 → 2). Tier 3 still hands over no crib WORD — every
+     * word is 3+ letters — but it now reveals two mid-frequency letters. The
+     * no-reveal rule was leaning on a crib the generator never declared: 44%
+     * of the pool was a stock proverb, and a proverb is recognisable, which is
+     * the biggest crib a cryptogram has. With the proverbs cut (REVIEW_AA 5.9)
+     * a 26–41 letter phrase over 13+ symbols with nothing revealed sits below
+     * the frequency-analysis floor, so the two letters replace what
+     * recognition used to do. It is still the hardest tier by a distance.
+     */
+    it('tier 3 has no crib WORD, a two-letter crib, and is long and wide', () => {
       for (const p of at(3)) {
         expect(shortestWord(p), p.id).toBeGreaterThanOrEqual(3);
-        expect(p.reveals.length, p.id).toBe(0);
+        expect(p.reveals.length, p.id).toBe(2);
         expect(letters(p), p.id).toBeGreaterThanOrEqual(26);
         expect(cipherLettersOf(p).length, p.id).toBeGreaterThanOrEqual(13);
       }

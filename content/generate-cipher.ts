@@ -29,21 +29,37 @@ import type { Tier } from '../src/engine/types';
  *   tier 2 — no one-letter word, but a TWO-LETTER word (IS/IT/TO/OF…) still
  *            narrows things fast, plus exactly one revealed letter — and it is
  *            deliberately a MID-frequency letter, not the easy E/T.
- *   tier 3 — NO CRIB AT ALL: every word is 3+ letters, nothing is revealed,
- *            the phrase is long (≥ TIER3_MIN_LETTERS) and its alphabet is wide
- *            (≥ TIER3_MIN_DISTINCT distinct letters). You start from pure
- *            pattern: doubles, word shapes, and the manor's own voice.
+ *   tier 3 — NO CRIB WORD: every word is 3+ letters, so nothing in the phrase
+ *            shape hands you a letter. The phrase is long (≥
+ *            TIER3_MIN_LETTERS) and its alphabet wide (≥ TIER3_MIN_DISTINCT
+ *            distinct letters), and two MID-frequency letters are revealed —
+ *            a place to stand, not an answer. See REVEALS for why that is 2
+ *            and not the 0 it used to be.
  *
  * Validation round-trips every puzzle through the runtime decoder, re-checks
  * the derangement, and enforces every tier gate above.
  */
 
 const SEED = 20260807;
-/** Starting reveals by tier — the crib the Darkroom hands you, or doesn't. */
-const REVEALS: Record<Tier, number> = { 1: 3, 2: 1, 3: 0 };
+/**
+ * Starting reveals by tier — the crib the Darkroom hands you.
+ *
+ * ROUND 24: tier 3 goes 0 → 2. It was the no-crib tier on the argument that
+ * pattern alone is enough, and that argument was quietly leaning on the
+ * proverbs: half the pool was a phrase you could RECOGNISE, which is a crib
+ * the generator never had to hand out. With the proverbs cut there is no
+ * recognisable line left anywhere in the room, and a 26–41 letter phrase over
+ * 13+ symbols with nothing revealed is below the frequency-analysis floor a
+ * newspaper cryptoquote clears at 60–120 characters. Tier 3 is still the
+ * hardest tier by a distance — no one- or two-letter crib word, the longest
+ * phrases, the widest alphabets — and the two letters it now hands over are
+ * MID-frequency, the same deliberately unhelpful pick tier 2 gets, not the
+ * free E and T.
+ */
+const REVEALS: Record<Tier, number> = { 1: 3, 2: 1, 3: 2 };
 /** Tier-1 phrases stay short — the crib plus a long phrase is no puzzle. */
 const TIER1_MAX_LETTERS = 34;
-/** Tier 3 is the long one: more cells to fill and no foothold to start from. */
+/** Tier 3 is the long one: more cells to fill and the thinnest foothold. */
 const TIER3_MIN_LETTERS = 26;
 const TIER3_MIN_DISTINCT = 13;
 /**
@@ -52,112 +68,159 @@ const TIER3_MIN_DISTINCT = 13;
  * most a 360px viewport fits at that size. Guarded here and in validate().
  */
 const MAX_WORD_LEN = 8;
+/**
+ * Ceiling on a phrase's letters. CipherView switches to its dense cell at 30
+ * glyphs so long phrases stay above the sticky deck (AAA 3.3 / §0.1: the
+ * board is wholly visible at rest), and 41 is the longest the dense sheet was
+ * ever laid out against. The review asked for 60+ letter tier-3 plaintexts so
+ * frequency analysis bites; that needs a layout the Darkroom does not have,
+ * and shipping a phrase the room cannot show at rest is the worse failure. So
+ * the length stays where the glass is, and the crib above does the work.
+ */
+const MAX_LETTERS = 41;
 
-/** Public-domain proverbs & in-voice aphorisms. A–Z + single spaces only. */
+/**
+ * The manor's own phrases. A-Z and single spaces only, nothing else.
+ *
+ * ROUND 24 (REVIEW_AA 5.9). This list used to be 58 public-domain proverbs
+ * beside 36 house lines, and the tone review measured the consequence
+ * exactly: 61.7 per cent of the Darkroom decoded to A BIRD IN THE HAND, and
+ * the split ran the wrong way down the manor - tier 1 was 67 per cent stock,
+ * tier 3 only 22. A short cryptogram is solved by RECOGNISING the phrase, so
+ * the recognisable proverbs sat on the tier that also hands over three crib
+ * letters, and the lexicographer's own voice sat on the tier with no crib at
+ * all, where nobody had ever read it.
+ *
+ * Every proverb is gone. All 121 phrases are things somebody in this
+ * house could have written: a line from the lexicographer's notebooks, a
+ * house rule of Mrs. Bramble's, one of Ellery's asides, a Post Room
+ * regulation of Posy's, Fern in her clipped fragments, or a card left in a
+ * room. The register is the one the authored dialogue already establishes -
+ * cozy, dry, never twee - and it now reaches every tier, because there is
+ * nothing else left in the pool for a tier to reach.
+ */
 const PHRASES: string[] = [
-  'A STITCH IN TIME SAVES NINE',
-  'ACTIONS SPEAK LOUDER THAN WORDS',
-  'ALL THAT GLITTERS IS NOT GOLD',
-  'AN APPLE A DAY KEEPS THE DOCTOR AWAY',
-  'BETTER LATE THAN NEVER',
-  'BIRDS OF A FEATHER FLOCK TOGETHER',
-  'A WATCHED POT NEVER BOILS',
-  'ABSENCE MAKES THE HEART GROW FONDER',
-  'EVERY CLOUD HAS A SILVER LINING',
-  'FORTUNE FAVORS THE BOLD',
-  'HASTE MAKES WASTE',
-  'HONESTY IS THE BEST POLICY',
-  'LITTLE BY LITTLE THE BIRD BUILDS ITS NEST',
-  'LOOK BEFORE YOU LEAP',
-  'A BIRD IN THE HAND IS WORTH TWO IN THE BUSH',
-  'NO NEWS IS GOOD NEWS',
-  'PRACTICE MAKES PERFECT',
-  'SLOW AND STEADY WINS THE RACE',
-  'STILL WATERS RUN DEEP',
-  'THE EARLY BIRD CATCHES THE WORM',
-  'THE PEN IS MIGHTIER THAN THE SWORD',
-  'THERE IS NO PLACE LIKE HOME',
-  'TWO HEADS ARE BETTER THAN ONE',
-  'WHERE THERE IS SMOKE THERE IS FIRE',
-  'YOU REAP WHAT YOU SOW',
-  'A PICTURE IS WORTH A THOUSAND WORDS',
-  'DO NOT COUNT YOUR CHICKENS BEFORE THEY HATCH',
-  'DO NOT PUT ALL YOUR EGGS IN ONE BASKET',
-  'EVERY DOG HAS ITS DAY',
-  'GOOD THINGS COME TO THOSE WHO WAIT',
-  'GREAT OAKS FROM LITTLE ACORNS GROW',
-  'HOME IS WHERE THE HEART IS',
-  'IF THE SHOE FITS WEAR IT',
-  'LAUGHTER IS THE BEST MEDICINE',
-  'LET SLEEPING DOGS LIE',
-  'MANY HANDS MAKE LIGHT WORK',
-  'NEVER JUDGE A BOOK BY ITS COVER',
-  'OUT OF SIGHT OUT OF MIND',
-  'ROME WAS NOT BUILT IN A DAY',
-  'THE GRASS IS ALWAYS GREENER ON THE OTHER SIDE',
-  'THE SQUEAKY WHEEL GETS THE GREASE',
-  'WHEN IN ROME DO AS THE ROMANS DO',
-  'YOU CANNOT HAVE YOUR CAKE AND EAT IT TOO',
-  'A FRIEND IN NEED IS A FRIEND INDEED',
-  'A JOURNEY OF A THOUSAND MILES BEGINS WITH A SINGLE STEP',
-  'A PENNY SAVED IS A PENNY EARNED',
-  'A ROLLING STONE GATHERS NO MOSS',
-  'BEAUTY IS IN THE EYE OF THE BEHOLDER',
-  'A CAT MAY LOOK AT A KING',
-  'EASY COME EASY GO',
-  'EVERY ROSE HAS ITS THORN',
-  'FIRST THINGS FIRST',
-  'IT TAKES TWO TO TANGO',
-  'ALL GOOD THINGS MUST COME TO AN END',
-  'MAKE HAY WHILE THE SUN SHINES',
-  'NO TIME LIKE THE PRESENT',
-  'ONE GOOD TURN DESERVES ANOTHER',
-  'EVERY PATH HAS ITS PUDDLE',
-  'STRIKE WHILE THE IRON IS HOT',
-  'THE APPLE NEVER FALLS FAR FROM THE TREE',
-  'THE BEST THINGS IN LIFE ARE FREE',
-  'THE PROOF IS IN THE PUDDING',
-  'TIME AND TIDE WAIT FOR NO MAN',
-  'VARIETY IS THE SPICE OF LIFE',
-  'WELL BEGUN IS HALF DONE',
-  'WASTE NOT WANT NOT',
-  // Manor-voice aphorisms (original, in the lexicographer's register).
-  'EVERY WORD KEEPS A SECRET',
-  'INK RECALLS WHAT PAPER FORGETS',
-  'A QUIET ROOM TEACHES LOUD LESSONS',
-  'THE LEXICON NEVER SLEEPS',
-  'OLD BOOKS MAKE WARM COMPANY',
-  'A LETTER SENT IS A PROMISE KEPT',
-  'SMALL KEYS OPEN GREAT DOORS',
-  'THE CANDLE KNOWS THE SHAPE OF NIGHT',
-  'PATIENCE TURNS EVERY PAGE',
-  'LOST WORDS LEAVE WARM SHADOWS',
-  'A MISLAID WORD ALWAYS COMES HOME',
-  'THE MARGINS HOLD THE BRAVEST NOTES',
-  'DUST SETTLES ONLY ON QUIET SHELVES',
+  'A HOUSE THAT MOVES KEEPS SECRETS',
+  'BRAMBLE POURS A SECOND CUP DAILY',
+  'I KEPT THE WORD IN A LOCKED DRAWER',
+  'DEWEY SLEEPS ON A WARM LETTER',
+  'FERN TRADES SEEDS FOR A STORY',
+  'EVERY DOOR HERE HAS A MOOD',
+  'THE MARGIN IS A QUIET ROOM',
   'A GOOD INDEX FORGIVES A BAD MEMORY',
-  'THE LAMP BURNS LONGEST FOR SLOW READERS',
-  'EVERY LOCKED DRAWER HIDES A FIRST DRAFT',
-  'MORNING LIGHT FADES THE BOLDEST INK',
-  // Round 4 — the no-crib tier: long, every word 3+ letters, wide alphabet.
-  'EVERY LOCKED DRAWER HIDES ANOTHER SMALL SECRET',
-  'THE QUIET HOUSE KEEPS EVERY VISITOR WARM',
-  'GOOD READERS NEVER HURRY THE LAST PAGE',
-  'THE GARDEN FORGIVES EVERY CLUMSY GARDENER',
-  'SMALL LAMPS OUTLAST GREAT BONFIRES',
-  'EVERY MARGIN HOLDS SOME BRAVER SENTENCE',
-  'THE OLDEST INK STILL SMELLS FAINTLY SWEET',
-  'PATIENT HANDS MEND WHAT HASTE UNDID',
+  'A SCONE MENDS MOST MORNINGS',
+  'A LETTER PERCHES WHEN THE NEWS IS GOOD',
+  'I AM ALL THE FRAME COULD HOLD',
+  'DUST IS A KIND OF CALENDAR',
+  'TEA FIRST AND THEN A THEORY',
+  'A CANDLE IS AN HONEST CLOCK',
+  'I HAVE NEVER MISSPELT A GUEST',
+  'A ROOM RECALLS WHO SWEPT IT',
+  'EVERY GUEST ARRIVES WITH A DRAFT',
+  'A WORD LEAVES A HOLE ITS OWN SHAPE',
+  'THE IVY TAKES A WALL WITHOUT ASKING',
+  'A LOCKED DRAWER WANTS A READER',
+  'A HEART IN PIECES IS STILL COMPLETE',
+  'NOTHING URGENT ARRIVES WITH A STAMP',
+  'THE HOUSE IS A TERRIBLE GOSSIP',
+  'AN UNREAD LETTER IS A SECRET',
+  'THE EAST WING IS A FLIRT',
+  'MILK OR LEMON I ALREADY KNOW',
+  'A QUIET SHELF STILL KEEPS SCORE',
+  'POSY FILES A RUMOUR UNDER FICTION',
+  'I RESHELVE BY CANDLE AND THE BOOKS AGREE',
+  'A GARDEN IS A SLOW ARGUMENT',
+  'THE STAIRS SQUEAK IN A METRE',
+  'ONE WORD A DAY IS THE RULE HERE',
+  'A CAT DECIDES WHICH PARCEL WAITS',
+  'THE CELLAR KEEPS A COOL OPINION',
+  'ELLERY FILES THE DUST BY HAND',
+  'THE KETTLE WENT QUIET AT THE DOOR',
+  'NOTHING MARKED URGENT EVER IS',
+  'STRING IS SACRED IN THIS ROOM',
+  'BROWN PAPER IS WORTH SAVING',
+  'DEWEY IS ASLEEP ON THE PARCEL',
+  'GROWING IS LOUD IF YOU LISTEN',
+  'MY MOTHER THOUGHT SHE WAS FUNNY',
+  'SEEDS TURN UP IN ODD CORNERS',
+  'PAPER SETTLES ONCE IT IS READ',
+  'DOORS DO NOT CHANGE THEIR MINDS',
+  'THE LAMP IS LIT ON THE STAIRS',
+  'COATS OFF AND WORRIES DOWN',
+  'THE HOUSE WRITES IN BROWN INK',
+  'ROOMS WANDER AND DOORS SULK',
+  'HOLD YOUR PLANS LOOSELY',
+  'TEA HOLDS ITS WARMTH LONGER',
+  'SORT THE POST BEFORE THE TOAST',
+  'PLANTS NOTICE FEET',
+  'THE SHELVES MOVE ABOUT AT NIGHT',
+  'HE WROTE ON RECEIPTS AND HEMS',
+  'THE PANTRY IS OUT OF PATIENCE',
+  'EVERY ROOM IS SOMEONE ELSE TODAY',
+  'MIND THE LAST STAIR IT SQUEAKS',
+  'THE MASTER WROTE ON THE BACKS OF NOTICES',
+  'THIRTY YEARS OF DUST AND ONE DOOR',
+  'THE GLASS ROOM IS WARM AGAIN',
+  'ASK THE KETTLE IT KNOWS FIRST',
+  'NOTHING IN THIS HOUSE STAYS PUT',
+  'THE POST ROOM RUNS ON STRING',
+  'FIFTY YEARS OF UNSORTED POST',
+  'BOOTS STAY ON INDOORS HERE',
+  'THE CAT OUTRANKS THE PARCEL',
+  'WORDS NEVER SIT STILL EITHER',
+  'GOOD HANDS SAID IT BEFORE',
+  'THE GARDEN IS INDOORS HERE',
+  'WATER THEN MORE WATER',
+  'THE LOST POST PILE IS PATIENT',
+  'TAKE THE KEYS BEFORE THE STAIRS',
+  'SOME DOORS SULK UNTIL TEATIME',
+  'THE HOUSE KEEPS WHAT YOU FOUND',
+  'EVERY LAMP IS LIT FOR SOMEONE',
+  'INK RECALLS WHAT PAPER FORGETS',
   'THE HOUSE LEARNS EVERY GUEST FROM THEIR FOOTFALL',
-  'WARM TEA MENDS MORE THAN CLEVER ADVICE',
-  'EVERY SHELF KEEPS ONE UNREAD STORY',
-  'THE KETTLE SINGS FOR ANYONE WHO WAITS',
-  'LOST LETTERS FIND WARMER ROOMS LATER',
-  'SLOW READING KEEPS THE LONGEST COMPANY',
-  'THE MANOR COUNTS ITS DAYS AND NOT ITS CLOCKS',
-  'EVERY GOOD QUESTION OUTLIVES ITS ANSWER',
-  'THE CANDLE KEEPS ITS OWN QUIET COUNSEL',
+  'EVERY LOCKED DRAWER HIDES ANOTHER DRAFT',
   'DUSTY SHELVES HOLD THE WARMEST STORIES',
+  'OLD INK STILL SMELLS FAINTLY SWEET',
+  'PATIENT HANDS MEND WHAT HASTE UNDID',
+  'KETTLES SING FOR ANYONE WHO WAITS',
+  'EVERY SHELF KEEPS ONE UNREAD STORY',
+  'SLOW READING KEEPS THE LONGEST COMPANY',
+  'THIS MANOR COUNTS DAYS AND NOT CLOCKS',
+  'EVERY GOOD QUESTION OUTLIVES ITS ANSWER',
+  'CANDLES KEEP THEIR OWN QUIET COUNSEL',
+  'LOST LETTERS FIND WARMER ROOMS LATER',
+  'WARM TEA MENDS MORE THAN CLEVER ADVICE',
+  'EVERY MARGIN HOLDS SOME BRAVER SENTENCE',
+  'QUIET HOUSES KEEP EVERY VISITOR WARM',
+  'GOOD READERS NEVER HURRY THE LAST PAGE',
+  'GARDENS FORGIVE EVERY CLUMSY GARDENER',
+  'SMALL LAMPS OUTLAST GREAT BONFIRES',
+  'POETRY CASES HERE ARE LOAD BEARING',
+  'SHELVES HAVE OPINIONS MOSTLY SMUG',
+  'GOOD NEWS PERCHES BAD NEWS LIES FLAT',
+  'BRAMBLE POURS THE SECOND CUP COLD',
+  'HIS PORTRAIT WANTS ONLY ONE WORD',
+  'ERASURE ONLY MAKES THE ROOM QUIET',
+  'SOME WORDS LEAVE ROOMS SHAPED LIKE THEM',
+  'STRING AND KINDNESS RUN THIS POST ROOM',
+  'GLASS ROOMS SMELL LIKE EARLY SPRING',
+  'READ YOUR OWN MARGINS BEFORE YOU CLIMB',
+  'DEWEY DECIDES WHICH PARCEL GOES OUT',
+  'GARDENS TEACH PATIENCE AND NOT COMMERCE',
+  'SOMEBODY STILL AIRS THE EMPTY ROOMS',
+  'PAPER AND PEOPLE AGREE ABOUT KEEPING',
+  'THIS HOUSE AIRS ITSELF BEFORE DAWN',
+  'ONE MOP OUTLASTS EVERY ARGUMENT',
+  'EVERY UNREAD LETTER CURDLES SLOWLY',
+  'OUR LIBRARY PREENS WHEN NOBODY SLIPS',
+  'NOTHING ABOUT THIS HOUSE STANDS STILL',
+  'THAT LAST STAIR SQUEAKS BEFORE ANY THOUGHT',
+  'ONE WRONG WORD AND THE DOOR STAYS SHUT',
+  'HIS HAND SLANTS LEFT WHENEVER HE LIES',
+  'OUR ORCHARD OWES NOBODY ANY APOLOGY',
+  'TEA HOLDS ITS WARMTH LONGER THAN RESOLVE',
+  'EVERY ROOM THAT WANDERS COMES BACK',
+  'OUR LEXICON MISSES EXACTLY ONE WORD',
 ];
 
 function letterCount(phrase: string): number {
@@ -230,17 +293,18 @@ function main() {
       const encode = derangedMapping(rng, present);
       const ciphertext = [...plaintext].map((ch) => encode[ch] ?? ch).join('');
 
-      // Tier 1's crib is generous — the most frequent letters. Tier 2 gets one
-      // MID-frequency letter instead: a foothold, but not the free E.
+      // Tier 1's crib is generous — the most frequent letters. Tiers 2 and 3
+      // get MID-frequency letters instead: a foothold, but never the free E.
       const freq: Record<string, number> = {};
       for (const ch of plaintext) {
         if (/[A-Z]/.test(ch)) freq[ch] = (freq[ch] ?? 0) + 1;
       }
       const byFreq = [...present]
         .sort((a, b) => (freq[b] ?? 0) - (freq[a] ?? 0) || a.localeCompare(b));
-      const chosen = tier === 2
-        ? byFreq.slice(Math.floor(byFreq.length / 2), Math.floor(byFreq.length / 2) + REVEALS[2])
-        : byFreq.slice(0, REVEALS[tier]);
+      const mid = Math.floor(byFreq.length / 2);
+      const chosen = tier === 1
+        ? byFreq.slice(0, REVEALS[1])
+        : byFreq.slice(mid, mid + REVEALS[tier]);
       const reveals = chosen.map((plain) => encode[plain]!);
 
       puzzles.push({
@@ -279,7 +343,9 @@ function validate(puzzles: TieredCipherPuzzle[]) {
       if (shortestWord(p.plaintext) < 3) problems.push(`${p.id}: tier 3 must have no crib word shorter than 3 letters`);
       if (letterCount(p.plaintext) < TIER3_MIN_LETTERS) problems.push(`${p.id}: tier 3 phrase too short`);
       if (cipherLettersOf(p).length < TIER3_MIN_DISTINCT) problems.push(`${p.id}: tier 3 alphabet too thin`);
-      if (p.reveals.length !== 0) problems.push(`${p.id}: tier 3 is the no-crib tier`);
+    }
+    if (letterCount(p.plaintext) > MAX_LETTERS) {
+      problems.push(`${p.id}: ${letterCount(p.plaintext)} letters exceeds the ${MAX_LETTERS} the dense sheet lays out`);
     }
     if (p.tier === 1 && shortestWord(p.plaintext) !== 1) {
       problems.push(`${p.id}: tier 1 must hand over a one-letter crib word`);

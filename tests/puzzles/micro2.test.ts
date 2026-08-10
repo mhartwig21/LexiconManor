@@ -9,7 +9,7 @@ import { crosswordAdapter, CROSSWORD_POOL, type CrosswordRoomState } from '../..
 import clueBank from '../../content/authored/crossword-clues.json';
 
 const CLUE_BANK = clueBank as {
-  clues: { word: string; clue: string; wry?: string; difficulty: string }[];
+  clues: { word: string; clues: string[]; wry: string[]; difficulty: string }[];
 };
 
 /**
@@ -131,7 +131,7 @@ describe('crossword pool', () => {
 
     it('tier 3 reads at least two clues in the wry (misdirecting) style', () => {
       const wry = new Set(
-        (CLUE_BANK.clues.filter((c) => c.wry).map((c) => c.wry)) as string[],
+        CLUE_BANK.clues.flatMap((c) => c.wry),
       );
       for (const p of at(3)) {
         const wryCount = p.entries.filter((e) => wry.has(e.clue)).length;
@@ -141,7 +141,7 @@ describe('crossword pool', () => {
 
     it('tiers 1 and 2 keep the plain definition register', () => {
       const wry = new Set(
-        (CLUE_BANK.clues.filter((c) => c.wry).map((c) => c.wry)) as string[],
+        CLUE_BANK.clues.flatMap((c) => c.wry),
       );
       for (const p of [...at(1), ...at(2)]) {
         for (const e of p.entries) expect(wry.has(e.clue), `${p.id} ${e.id}`).toBe(false);
@@ -161,6 +161,52 @@ describe('crossword pool', () => {
     for (const p of CROSSWORD_POOL) {
       expect(validateCrosswordPuzzle(p), p.id).toEqual([]);
     }
+  });
+
+  /**
+   * REVIEW_AA 5.9, pinned. Both reviewers measured the Linen Closet at 155
+   * unique clues across 360 entries (0.431) and 115 unique answers, with SUN
+   * headlining twelve puzzles and "Parchment guide" printed eight times: the
+   * pool exhausted itself on the tenth closet and the room became a typing
+   * test, taking the best house-voice writing in the repository down with it.
+   *
+   * The generator now spends a fresh clue on every use and carries the
+   * cursors across all three tiers, so this is 1.000 by construction. The
+   * gate is here because the failure mode is silent — a reused clue looks
+   * exactly like a written one until you have seen it twice.
+   */
+  describe('clue freshness (REVIEW_AA 5.9)', () => {
+    const entries = CROSSWORD_POOL.flatMap((p) => p.entries);
+
+    it('no clue is ever printed twice in the whole shipped pool', () => {
+      const seen = new Map<string, string>();
+      const repeats: string[] = [];
+      for (const p of CROSSWORD_POOL) {
+        for (const e of p.entries) {
+          const first = seen.get(e.clue);
+          if (first !== undefined) repeats.push(`"${e.clue}" — ${first} and ${p.id}`);
+          else seen.set(e.clue, p.id);
+        }
+      }
+      expect(repeats).toEqual([]);
+      expect(seen.size / entries.length).toBeGreaterThanOrEqual(0.9);
+    });
+
+    it('no answer headlines more than four of the ninety puzzles', () => {
+      const uses = new Map<string, number>();
+      for (const e of entries) uses.set(e.answer, (uses.get(e.answer) ?? 0) + 1);
+      for (const [answer, n] of uses) expect(n, answer).toBeLessThanOrEqual(4);
+      expect(uses.size).toBeGreaterThanOrEqual(140);
+    });
+
+    it('every bank word carries a pool of clues, not one sentence', () => {
+      for (const c of CLUE_BANK.clues) {
+        expect(c.clues.length, c.word).toBeGreaterThanOrEqual(2);
+        expect(c.wry.length, c.word).toBeGreaterThanOrEqual(1);
+      }
+      const all = CLUE_BANK.clues.flatMap((c) => [...c.clues, ...c.wry]);
+      expect(new Set(all).size, 'two bank words share a clue').toBe(all.length);
+    });
   });
 });
 

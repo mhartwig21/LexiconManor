@@ -80,6 +80,11 @@ Its one-line diagnosis, which has driven every round since:
 | §5.10 Net steps per ground-floor room (median / skilled) | **−0.84 / −0.36** (a wash) | **−2.58 / −0.96** |
 | §5.10 In hand arriving at the first padlock (median / skilled) | 15 / **21** — richer than she started | 12 / 18 |
 | §5.10 Simulated days that could end with steps in hand | **0%** (the gate answered itself) | 5.5% early nights, reported |
+| §5.9 Linen Closet unique clues per entry | **0.431** (155 of 360) | **1.000** (360 of 360) |
+| §5.9 Most-repeated crossword answer / clue | SUN ×12 · “Parchment guide” ×8 | ×4 · **never twice** |
+| §5.9 Darkroom plaintexts that are stock proverbs | **59 of 94 (62.8%)** | **0 of 121** |
+| §5.9 Stock-proverb share, tier 1 / tier 2 / tier 3 | 67% / 84% / 22% | 0% / 0% / 0% |
+| §5.9 Darkroom crib letters at tier 3 | **0** (below the frequency-analysis floor) | 2, mid-frequency |
 
 Also shipped outside the review's list: room orientation now follows the direction you
 enter (and the draft card shows the true placement); a fresh-start reset; the
@@ -96,8 +101,11 @@ Ordered as the review ordered them — most value first.
 - *(nothing)*
 
 **Queued**
-- **§5.9 House voice in puzzle content.** Stock proverbs in the cipher; 155 unique clues
-  across 360 crossword entries. The puzzles are not yet *about* the lexicographer.
+- **§5.9 remainder.** The Darkroom and the Linen Closet are done (above). Untouched, and
+  each belongs to the room that owns it: the Library's 612 threads still hold two about
+  the manor; the Gallery and the Conservatory carry no authored prose field at all, so
+  neither can speak until its room shell grows a surface to speak from; the Study's
+  113-entry pool is still the thinnest per tier in the game.
 - **§5.11 The night, and player choice.** Three night-line variants; ~20 player choices in
   the whole game; notice cards can overlap; per-room palettes borrow from other products.
 

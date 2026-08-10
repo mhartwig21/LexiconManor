@@ -153,8 +153,8 @@ describe('the lint over authored content (U+0022 / U+0027)', () => {
     )) as { entries: { clue: string }[] }[]).flatMap((p) => p.entries.map((e) => e.clue));
     const bank = new Set((JSON.parse(readFileSync(
       join(process.cwd(), 'content', 'authored', 'crossword-clues.json'), 'utf-8',
-    )) as { clues: { clue: string; wry?: string }[] }).clues
-      .flatMap((c) => [c.clue, c.wry]).filter(Boolean) as string[]);
+    )) as { clues: { clues: string[]; wry: string[] }[] }).clues
+      .flatMap((c) => [...c.clues, ...c.wry]));
 
     expect(clues.length).toBeGreaterThan(50);
     for (const clue of clues) {
