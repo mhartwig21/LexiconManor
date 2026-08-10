@@ -534,6 +534,40 @@ describe('every shipped pool and authored file is clean', () => {
     }
   });
 
+  /**
+   * ROUND 25. Found by a crossword fill search over `enable1 ∩ gateOk`, which
+   * offered ABO as a three-letter answer and was told yes. Probing the rest of
+   * the family found JAP, WOG and PAKI passing as well, while COON, GYP, SPIC,
+   * KIKE, DAGO and GOOK were already blocked — a lemma list catching six of
+   * ten, which is the RETARDED shape again.
+   *
+   * This assertion could come out wrong and did: all four returned TRUE at
+   * efabc43. Nothing shipped carried them (every generated pool and authored
+   * file scanned, zero hits), so the hole was latent and closable without a
+   * regeneration.
+   */
+  it('the four ethnic slurs the round-25 fill search surfaced are gated', () => {
+    for (const w of ['abo', 'abos', 'jap', 'japs', 'wog', 'wogs', 'paki', 'pakis']) {
+      expect(gateOk(w), `${w} must not be a display word`).toBe(false);
+      expect(toneOk(w), `${w} must not be a display word`).toBe(false);
+    }
+  });
+
+  it('and the round-25 rules did not take an innocent word with them', () => {
+    // All four are WHOLE-WORD because every one is a live prefix of ordinary
+    // English. JAPED is the one that needed naming: the inflector derives it
+    // from the `jap` stem, so without the rule's `innocent` list an ordinary
+    // past tense ("he japed") would have been collateral. Measured: `japed`
+    // passed at HEAD, failed with the rule alone, passes again with the list.
+    for (const w of [
+      'about', 'above', 'abode', 'aboard', 'abound', 'abbot',
+      'jape', 'japed', 'japes', 'japing', 'japan', 'japanned',
+      'woggle', 'wobble', 'tabor', 'labor',
+    ]) {
+      expect(gateOk(w), `${w} is innocent and must survive`).toBe(true);
+    }
+  });
+
   it('and the round-16 rules did not take an innocent word with them', () => {
     // AMMO is whole-word ONLY, which is the whole reason it is written that
     // way: four ordinary English words carry the trigram.

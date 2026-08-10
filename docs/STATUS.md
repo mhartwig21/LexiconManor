@@ -256,6 +256,57 @@ Ordered most value first.
   Study's 113-entry pool is still the thinnest per tier in the game.
 - **§5.11 remainder.** Per-room palettes still borrow from other products.
 
+### The Linen Closet: measured, decided, NOT executed
+
+The NYT critic's blocker is real and this round confirmed it exactly: **median 25.0% checked
+squares** across all 90 shipped puzzles (min 18.8%, max 33.3%; tier medians 25.0 / 23.1 / 26.7)
+against the Mini's 100%. Three quarters of the letters have no crossing, so a wrong answer is
+never disproved by anything. It is a list of clues sharing a grid.
+
+Round 25 was asked to choose between rebuilding the grid to full checking and cutting the room.
+**The measurements say cut, and the reason is stronger than the critic's.** They also say the
+brief's two premises about the rebuild are both false, so they are written down here rather
+than measured a third time:
+
+- **It is not a layout-engine change.** Every fully-checked, connected grid mask that can exist
+  at sizes 3–5 with no entry under 3 letters was enumerated: **251 of them** (1 at 3×3, 15 at
+  4×4, 235 at 5×5). **Zero** are fillable from the room's 174-word clue bank — 2,008 seeded
+  attempts, no hits. Full checking is reachable only from a much larger word list: all 38
+  tested 5×5 masks with ≥8 entries fill from a 2,034-word pool (`enable1` ∩ top-8000 English ∩
+  the cozy gate), and fill quality there is fine (ASH/ESSAY/SAUCE/THEME, ROSE/EVIL/SETS/TREE).
+  The cost is **authoring, not geometry**: at 20 puzzles a tier and a 6/8/10 entry ladder,
+  362 distinct answers of which **305 are new → ≥915 new clues**. At a minimum-contract 12 a
+  tier it is still 188 new words / 564 new clues, and that pool ships **288 entries against
+  today's 360**. The room's entire authored history is 696 clues.
+- **The clue writing does NOT survive a rebuild — it survives a cut.** Only **57 of 362**
+  (15.7%) of the answers a fully-checked pool needs clear the manor bank the room's own authors
+  hand-picked. A rebuild orphans about two thirds of the 174 words and most of the 360 shipped
+  clues. §5.9's writing and the two reviewers who *sat up* at `1D: "Mrs. Bramble's morning
+  ritual"` are on the CUT side of this trade, not the rebuild side.
+- **Full checking and this room's voice are in direct opposition, permanently.** The clues are
+  good *because* the grid is sparse: a skeleton lets an author choose every word, which is how
+  you get OWL from "Night's librarian". Full checking takes that choice away and pays in
+  connective fill — plural/verb answers go **2.3% → 13.4%**, and ALA, ALT, ANA, ATT, AYE, ABS,
+  DEL, BETA arrive with it. You can have a beautifully-clued word list on a grid, or a real
+  crossword. At this bank size and this tone bar, not both.
+
+**Why it is not executed here.** Removing the card is not a deletion, it is a re-tuning. Probed
+live: taking `linen-closet` out of `deck.ts` alone reds **14 tests across 4 files** — the seal
+backlog bands (4.10g, both profiles), the session median (4.11), the padlock gate, the grid's
+~32% shape-seal figure, and tier-flow's top-of-house draftability. Each is a published band
+with a rationale, and re-deriving fourteen of them in the tail of a round is precisely how a
+number gets tuned until it passes. The Closet is also **1 of only 2 micro cards** and the only
+one covering `DEAD_END`, so the cut owes a replacement micro archetype, not just a removal.
+
+**And the transplant target in the brief is wrong.** The Study cannot take these clues: its pool
+is long forgotten words in three enforced registers (plain gloss / poetic image / riddle, with
+leak and overlap gates), and TEA, OWL, PIE are not Study headwords in any register. Re-homing
+is its own authoring job and should be scoped as one.
+
+**Also missing, and it is the reason this room has drifted for 24 rounds:** `docs/BENCHMARKS.md`
+has **no NYT Mini teardown and no crossword section at all** — the spec the room is judged
+against does not exist in the house's own spec document. Write it before the next attempt.
+
 **Known live findings nobody has claimed** (each verified byte-for-byte on a clean HEAD
 build, so none is a regression from the round that reported it)
 - The Darkroom print `cipher-t2-21` (30 glyphs, 6 words) overflows its stage by 14px at

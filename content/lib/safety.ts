@@ -219,6 +219,42 @@ const SLUR_RACE: readonly Rule[] = [
   S('gyp', 'slur-race-ethnicity', {           // whole word: GYPSUM, EGYPT innocent
     also: ['gyps', 'gypped', 'gypping', 'gypper', 'gyppers'],
   }),
+  /*
+   * ROUND 25 — FOUR THAT ENABLE1 ADMITS AND THIS LEXICON DID NOT CATCH.
+   *
+   * Found by search, not by reading: a crossword fill experiment over
+   * `enable1 ∩ gateOk` offered ABO as a three-letter answer, and the gate
+   * said yes. Probing the rest of the family found JAP, WOG and PAKI passing
+   * too, while COON, GYP, SPIC, KIKE, DAGO and GOOK were already blocked.
+   * Nothing shipped carries any of them (all seven generated pools and every
+   * authored file were scanned: zero hits), so this is a latent hole, not a
+   * live one — which is the only reason it can be closed without a
+   * regeneration. It is the RETARDED shape exactly: a short, high-frequency
+   * fill word that a generator reaches for and a lemma list never listed.
+   *
+   * All four are WHOLE-WORD. Every one of them is a live prefix of innocent
+   * English — ABOUT/ABOVE/ABODE/ABOARD, JAPE/JAPAN, WOGGLE, PAKISTANI — so
+   * `embedded` here would gate a dozen ordinary words and red the build for
+   * the wrong reason.
+   */
+  S('abo', 'slur-race-ethnicity', {           // whole word: ABOUT, ABOVE, ABODE, ABOARD innocent
+    also: ['abos'],
+  }),
+  S('jap', 'slur-race-ethnicity', {           // whole word: JAPE, JAPAN, JAPANNED innocent
+    also: ['japs'],
+    // The inflector derives `japed` from this stem, and JAPED is an ordinary
+    // English past tense (to jape, to joke). Measured before it was written:
+    // `gateOk('japed')` was true at HEAD and false with the rule alone. The
+    // whole JAPE/JAPAN family is named so the slur costs no innocent word.
+    innocent: ['jape', 'japed', 'japes', 'japing', 'japer', 'japers', 'japery',
+      'japan', 'japans', 'japanned', 'japanning', 'japanner', 'japanners'],
+  }),
+  S('wog', 'slur-race-ethnicity', {           // whole word: WOGGLE innocent
+    also: ['wogs'],
+  }),
+  S('paki', 'slur-race-ethnicity', {          // whole word: PAKISTANI is a demonym, not this
+    also: ['pakis'],
+  }),
 ];
 
 /**
