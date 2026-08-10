@@ -9,6 +9,7 @@ import {
   STEP_TABLE, moveAt,
 } from '../src/engine/economy/steps';
 import { getRoomAdapter, registeredRoomKinds } from '../src/engine/rooms/registry';
+import { maxFindableFor } from '../src/engine/twistle';
 import { ROOM_PUZZLE_KINDS, type RoomPuzzleKind } from '../src/engine/rooms/room-puzzle';
 import { HIVE_LADDER, ladderThreshold } from '../src/engine/rooms/adapters/hive';
 import type { Tier } from '../src/engine/types';
@@ -196,26 +197,65 @@ describe('4.10h — the payout is a function of the work, with a floor and a cei
  * that was told about that one. So the number is published three ways now, all
  * three gated below, none of them called "an ordinary evening":
  *
- *   | population | measured |
- *   |---|---|
- *   | every room × every tier | **20.00×** |
- *   | every tier-1/2 room, unfiltered | **12.00×** (twistle t1 4.000 / sudoku t2 0.333) |
- *   | tier-1/2 minus the Counting House | **4.89×** (twistle t1 4.000 / hive t2 0.818) |
- *   | tier-1/2, two minutes or longer, minus the Counting House | **1.75×** |
+ * ═══ ROUND 26 — THE GALLERY'S CONTENT FIX LANDED, AND THE RATCHET TURNED ══
+ *
+ * Round 25 wrote that these bounds *"may be tightened by the content fixes
+ * REVIEW_AA §6 also asks for (the Gallery's `targetCount`…)"*, and pinned
+ * `effortMinutes('twistle', 1) < 2` so the deferred fix could not be forgotten.
+ * It has landed. `content/generate-twistle.ts` now ships a room whose ask is
+ * never thinner than **one word in five** of its own board (0.047 → 0.217 at
+ * tier 1) and whose cheapest possible solve is no longer inside the top
+ * thousand words of English (rank 305 → 2,581), and `ROOM_EFFORT.twistle` is
+ * re-derived to **[1.25, 1.5, 2.5]** minutes in the same commit.
+ *
+ * The Gallery's wage falls **4.000 → 3.200 steps a minute** and with it three
+ * of the four spreads below, because it was one whole END of each:
+ *
+ *   | population | round 25 | round 26 |
+ *   |---|---|---|
+ *   | every room × every tier | 20.00× | **16.00×** (twistle t1 3.200 / sudoku t3 0.200) |
+ *   | every tier-1/2 room, unfiltered | 12.00× | **9.60×** (twistle t1 / sudoku t2 0.333) |
+ *   | tier-1/2 minus the Counting House | 4.89× | **3.91×** (twistle t1 / hive t2 0.818) |
+ *   | tier-1/2, two minutes or longer, minus the Counting House | 1.75× | **1.75×**, unchanged |
+ *
+ * THE FOURTH ROW DID NOT MOVE, AND THAT IS THE INTERESTING PART. The Gallery is
+ * still under two minutes, so it is still outside that population — the room
+ * became a puzzle without becoming long, which is the whole thesis of the fix
+ * (*a word search is not a puzzle because it is long; it is a puzzle because
+ * finding the target set requires seeing something*). The board's answer space
+ * shrank from a median 106 findable words to 23; the ask rose by nothing at
+ * tier 1 and fell from 7 to 6 at tier 2.
+ *
+ * WHAT THE RE-CLOCK COST, MEASURED, because it is a finding in its own right:
+ * fifteen seconds on the most-drafted room in the deck is very nearly all the
+ * headroom the manor has. `tests/economy-simulation.test.ts` puts the decent
+ * evening at 14.63 min against a published ceiling of 15, the skilled
+ * campaign's win-by-day-35 at 95.3% against a floor of 95%, and the
+ * maximal-carry-over evening 0.12 min over a band it was already inside by
+ * 0.03. **The next room that gets longer has to be paid for by one that gets
+ * shorter** — that is the state of AAA 4.10, written down.
  *
  * The bounds below are measurements: they may be tightened by the content fixes
- * REVIEW_AA §6 also asks for (the Gallery's `targetCount`, the Counting House
- * banking across days) and they may never be loosened without a finding to
- * point at.
+ * REVIEW_AA §6 still asks for (the Counting House banking across days) and they
+ * may never be loosened without a finding to point at.
  */
 describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () => {
   it('is strictly better than the flat table it replaced', () => {
+    // ROUND 26 — WHY THIS STOPPED BEING A RATIO OF RATIOS. It used to assert
+    // `after < before / 2` (measured 45.00× → 20.00×). Both columns share a
+    // denominator, `effortMinutes`, so re-clocking the Gallery moved BOTH: the
+    // flat table's own worst offender was twistle t1 at 6 steps for one minute,
+    // and at 1.25 minutes it reads 4.800 rather than 6.000, so the flat table
+    // "improved" 45.00× → 36.00× without a single flat number changing. That is
+    // exactly the sort of arithmetic that goes stale in the reassuring
+    // direction, so the teeth now live in the ABSOLUTE ratchet — 16.00×, down
+    // from 20.00× — and `before` is kept only to show the alternative is worse.
     const before = spreadOf(legacyWageOf);
     const after = spreadOf(wageOf);
-    expect(before, `flat-table spread ${before.toFixed(1)}×`).toBeGreaterThan(30);
-    expect(after, `priced spread ${after.toFixed(1)}× (was ${before.toFixed(1)}×)`)
-      .toBeLessThan(before / 2);
-    expect(after).toBeLessThanOrEqual(21);
+    expect(before, `flat-table spread ${before.toFixed(2)}×`).toBeGreaterThanOrEqual(30);
+    expect(after, `priced spread ${after.toFixed(2)}× (flat table ${before.toFixed(2)}×)`)
+      .toBeLessThan(before);
+    expect(after, `overall spread ${after.toFixed(2)}×`).toBeLessThanOrEqual(16.5);
   });
 
   it('publishes the UNFILTERED tier-1/2 spread — the number the old name hid', () => {
@@ -227,23 +267,32 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
     const tier12 = everyRoom.filter(([, t]) => t <= 2);
     expect(tier12.length).toBe(14);
     const all = spreadOf(wageOf, tier12);
-    expect(all, `tier-1/2 spread ${all.toFixed(2)}×`).toBeLessThanOrEqual(12.5);
+    // Round 26: 12.00× → 9.60×, because the Gallery stopped being the top of it.
+    expect(all, `tier-1/2 spread ${all.toFixed(2)}×`).toBeLessThanOrEqual(10);
     // …and the Counting House is one whole end of it. Without that single
     // 27-minute tier-2 board — a CONTENT commission REVIEW_AA §6 already asks
-    // for (bank the grid across days) — the same band is 4.89×.
+    // for (bank the grid across days) — the same band is 3.91× (was 4.89×).
     const exCountingHouse = spreadOf(wageOf, tier12.filter(([k, t]) => !(k === 'sudoku' && t === 2)));
     expect(exCountingHouse, `tier-1/2 ex-Counting-House ${exCountingHouse.toFixed(2)}×`)
-      .toBeLessThanOrEqual(5);
+      .toBeLessThanOrEqual(4);
     expect(exCountingHouse).toBeLessThan(all);
   });
 
   it('holds 2× across tier-1/2 rooms of two minutes or more, minus the Counting House', () => {
     // THE NAME IS THE FILTER (round 25). This used to be titled "the rooms an
     // ordinary evening is made of", which is the population measured in the
-    // test above — not this one. What this one excludes, by name, is the
-    // Gallery (twistle t1, 1 min), the Linen Closet (forgotten-word t1/t2,
-    // 1.5 min), the Study (crossword t1/t2, 1.25/1.5 min) and the Counting
-    // House at tier 2. Seven of fourteen pairs remain.
+    // test above — not this one. What it excludes, by name, is the Gallery
+    // (twistle t1/t2, 1.25 and 1.5 min), the Linen Closet (forgotten-word
+    // t1/t2, 1.5 min), the Study (crossword t1/t2, 1.25/1.5 min) and the
+    // Counting House at tier 2. Seven of fourteen pairs remain.
+    //
+    // ROUND 26 — THE MEMBERSHIP WAS CHECKED AND IT DID NOT MOVE. The Gallery
+    // was re-clocked 1.0 → 1.25 and 1.5 → 1.5 in that round; both tiers are
+    // still under the two-minute filter, so this population is the same seven
+    // pairs it was and measures the same 1.75×. The assertion below is what
+    // says so — it fails the moment the membership moves, in either direction,
+    // rather than letting a seven-pair number be re-baselined as a nine-pair
+    // one under the same title.
     //
     // It is still worth gating, because it is the honest claim underneath the
     // dishonest one: once a room is long enough for the wage to bind rather
@@ -264,11 +313,38 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
     expect(twoMinutePlus.length).toBe(7);
   });
 
-  it('names the two rooms that still miss, so nobody has to rediscover them', () => {
-    // A gate that only passes tells you nothing. These two ARE the residual
-    // spread, they are both content commissions REVIEW_AA §6 asks for, and if
-    // either is ever fixed this assertion fails and the bounds above tighten.
-    expect(effortMinutes('twistle', 1), 'the Gallery became a puzzle — retighten 4.10h')
+  it('names the rooms that still miss, so nobody has to rediscover them', () => {
+    // A gate that only passes tells you nothing. These ARE the residual spread,
+    // and if any of them is ever fixed this assertion fails and the bounds
+    // above tighten.
+    //
+    // ═══ ROUND 26 — THE PIN THAT WOULD HAVE STAYED GREEN THROUGH ITS OWN FIX
+    //
+    // This used to read `expect(effortMinutes('twistle', 1)).toBeLessThan(2)`
+    // under the message *"the Gallery became a puzzle — retighten 4.10h"*: a
+    // MINUTES assertion standing in for a PUZZLE-QUALITY claim. The Gallery did
+    // become a puzzle in this commit — its ask went from 5 words of a median
+    // 106-word board to 5 of 23, and the cheapest set of words that clears it
+    // moved from frequency rank 305 to 2,581 — and it gained FIFTEEN SECONDS
+    // doing it. The pin would have gone on passing, and the bounds above would
+    // never have been retightened by the very thing they were waiting for.
+    // A metric's name must match what it computes, so the content facts now
+    // live where they can be seen: in "the durations are pinned to the content
+    // they were measured on" below, and in twistle-boards.test.ts.
+    //
+    // What is left at the top of the table is not an underworked room, it is
+    // THE COZY FLOOR: the two shortest rooms in the house are both paid +4
+    // because a cozy game must not punish a short choice, and +4 over 1.25
+    // minutes is 3.200 steps a minute. Naming both of them is the point — the
+    // assertion fails if either moves, or if a third room joins them.
+    const wages = everyRoom.map(([k, t]) => [`${k} t${t}`, wageOf(k, t)] as const);
+    const top = Math.max(...wages.map(([, w]) => w));
+    expect(wages.filter(([, w]) => w === top).map(([n]) => n).sort(),
+      `the top of the wage table moved (${top.toFixed(3)} steps/min)`)
+      .toEqual(['crossword t1', 'twistle t1']);
+    expect(effortMinutes('twistle', 1), 'the Gallery got longer — retighten 4.10h')
+      .toBeLessThan(2);
+    expect(effortMinutes('crossword', 1), 'the Linen Closet got longer — retighten 4.10h')
       .toBeLessThan(2);
     expect(effortMinutes('sudoku', 2), 'the Counting House got shorter — retighten 4.10h')
       .toBeGreaterThan(20);
@@ -376,22 +452,44 @@ describe('4.10h — the long rooms pay on the way up, out of the same total', ()
  * to re-derive its row, never to relax the pin.
  */
 describe('4.10h — the durations are pinned to the content they were measured on', () => {
-  it('the Gallery: 5 target words of a ~107-word pool at tier 1', () => {
-    for (const [tier, targets, pool] of [[1, 5, 100], [2, 7, 70], [3, 6, 20]] as const) {
+  it('the Gallery: 5 target words of a ~23-word pool at tier 1 (round 26)', () => {
+    // ROUND 26 — THE PIN THAT USED TO CERTIFY THE DEFECT. This read
+    // `[[1, 5, 100], [2, 7, 70], [3, 6, 20]]` with the pool asserted as a
+    // FLOOR: it guaranteed that a tier-1 Gallery offered AT LEAST a hundred
+    // findable words to a five-word ask. That is the defect, written down as a
+    // contract, and it is why the duration underneath it was honest arithmetic
+    // over a dishonest room. The ask is still pinned; the pool is a CEILING
+    // now, DERIVED from `MIN_ASK_SHARE` rather than typed in, and the thin end
+    // is asserted too so a regeneration cannot drift either way.
+    for (const [tier, targets] of [[1, 5], [2, 6], [3, 6]] as const) {
       const group = twistles.filter((p) => p.tier === tier);
       expect(group.length).toBeGreaterThan(10);
       expect(median(group.map((p) => p.targetCount)), `twistle t${tier} targetCount`).toBe(targets);
-      expect(median(group.map((p) => p.targetWords.length)), `twistle t${tier} pool`)
-        .toBeGreaterThanOrEqual(pool);
+      expect(Math.max(...group.map((p) => p.targetWords.length)), `twistle t${tier} fattest pool`)
+        .toBeLessThanOrEqual(maxFindableFor(targets));
+      // …and the room still offers a real CHOICE of which words to take: the
+      // ask may never be the whole board either (round 4's `minFindable`).
+      expect(Math.min(...group.map((p) => p.targetWords.length)), `twistle t${tier} thinnest pool`)
+        .toBeGreaterThanOrEqual(targets + 4);
     }
-    // The model: a find in a dense grid runs 12–25 s, so tier 1 is 5 × ~12 s.
+    // The model: every target is now 5+ letters on a trace that turns, drawn
+    // from a board with no chaff left on it, so a find sits inside the repo's
+    // own instrumented 12–25 s band — measured 15 s, 15 s and 25 s per find.
+    const perFind: number[] = [];
     for (const tier of TIERS) {
       const targets = median(twistles.filter((p) => p.tier === tier).map((p) => p.targetCount));
       const secondsPerFind = (effortMinutes('twistle', tier) * 60) / targets;
       expect(secondsPerFind, `twistle t${tier} implies ${secondsPerFind.toFixed(0)}s/find`)
-        .toBeGreaterThanOrEqual(10);
-      expect(secondsPerFind).toBeLessThanOrEqual(30);
+        .toBeGreaterThanOrEqual(12);
+      expect(secondsPerFind).toBeLessThanOrEqual(25);
+      perFind.push(secondsPerFind);
     }
+    // …and a harder board may never imply a FASTER find. This is the
+    // assertion that catches the failure mode the old row had: an ask that
+    // grows while the duration stands still, which reads as the player
+    // speeding up on the tier where the words got harder to see.
+    expect(perFind[1]!, `t2 ${perFind[1]}s/find vs t1 ${perFind[0]}s`).toBeGreaterThanOrEqual(perFind[0]!);
+    expect(perFind[2]!, `t3 ${perFind[2]}s/find vs t2 ${perFind[1]}s`).toBeGreaterThanOrEqual(perFind[1]!);
   });
 
   it('the Conservatory: Full Bloom needs ~32 of 71 words at tier 1, played perfectly', () => {

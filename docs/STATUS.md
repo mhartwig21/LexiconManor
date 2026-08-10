@@ -238,10 +238,31 @@ Ordered most value first.
   demolished nightly (genre-legitimate, but say it once, in Bramble's voice, on day 1).
 
 **Queued — from the review**
-- **§6 content commissions, which are also both ends of the wage ratchet.** The Gallery is
-  not yet a puzzle at tier 1 (one minute), and the Counting House at tier 2 is a 27-minute
-  expert board that should bank across days. Fixing either FAILS 4.10h on purpose and forces
-  the published spread down.
+- **~~The Gallery~~ — DONE, round 26.** *(Left here with the finding, because the finding is
+  the reusable part.)* The room was not a puzzle: tier 1 asked **5 words of a median 106-word
+  findable pool** (need/pool 0.047) and the fifth-commonest of those words sat at frequency
+  rank **305**, so it cleared in twenty seconds out of pure recall. It now asks **5 of 23**
+  (0.217) with a cheapest solve at rank **2,581**, and the fix is almost entirely
+  SUBTRACTIVE — a 5-letter floor and a turn floor on every target at every tier, tier 3's
+  centre rule brought down to tier 2, and a generated ceiling that forbids any board from
+  offering more than five words per word it asks for. **The ask itself did not rise at all**
+  (tier 2's fell, 7 → 6). A word search is not a puzzle because it is long.
+  Three published spreads fell with it (4.10h: 20.00× → 16.00×, 12.00× → 9.60×,
+  4.89× → 3.91×) and the fourth — the one filtered to rooms of two minutes or more — did not
+  move, because the room became a puzzle without becoming long.
+- **The Counting House at tier 2** is still a 27-minute expert board that should bank across
+  days. It is now the ONLY end of the wage ratchet that is a mispriced room; the other end is
+  the cozy floor itself (the Gallery and the Linen Closet tie at 3.200 steps a minute because
+  a short room may never be a bad choice). Fixing it FAILS 4.10h on purpose.
+- **THE EVENING HAS NO CLOCK LEFT — the commission round 26 hands on.** Fifteen seconds on
+  the most-drafted anchor in the deck spent very nearly all of it. Measured before round 26:
+  4.10b's decent evening 14.48 min against a ceiling of 15; 4.11's maximal-carry-over evening
+  14.97 against the same 15; 4.10e's skilled win-by-day-35 96.3% against a floor of 95%.
+  After: 14.63, 15.11 and 95.3%. A two-and-a-half-minute Gallery — which is what an ask of
+  eight words would honestly have cost — puts them at 15.18 and 93.0%, i.e. **the honest
+  clock for a better version of this room is a band the manor cannot currently pay for.**
+  The next room in `ROOM_EFFORT` that gets longer has to be paid for by one that gets
+  shorter, and that is an economy round's decision, not a word-game round's.
 - **The deck's door layouts.** Round 24's finding hands this to the next round: the top of
   the house is priced by geometry, and the dominance rate (67.0% against a <40% target) comes
   down through **finer spread**, not de-correlation — frontier spread is zero on 31.3% of
@@ -391,6 +412,22 @@ the only document in here written by people who did not already know the answers
 - **Screenshots are not evidence of interaction.** Three navigation defects survived three
   critic rounds because a buried control photographs exactly like a working one. The bar now
   requires hit-testing at the centre and all four inset corners, at both sizes.
+- **A ONE-CLASS SELECTOR LOSES TO A LATER ONE-CLASS SELECTOR, AND SAYS NOTHING.** *(Round
+  26.)* The Gallery's hung sheet carried a rule, and a comment explaining it, saying it does
+  not want `.anch-done`'s tall leading spacer. `.tw-hung` is exactly as specific as the
+  `.anch-done` rule in the short-glass media query 400 lines below it, so on the one glass
+  where the saving mattered the later rule won and the panel took 46.7px of leading it had
+  explicitly refused. It had been scrolling at 375×667 on every tier for several rounds.
+  A comment is not a cascade.
+- **A PIN CAN MEASURE THE WRONG THING AND STAY GREEN THROUGH ITS OWN FIX.** *(Round 26.)*
+  Round 15 pinned `effortMinutes('twistle', 1) < 2` under the message *"the Gallery became a
+  puzzle — retighten 4.10h"*, so the deferred content fix could not be forgotten. The fix
+  landed and the room gained fifteen seconds: the pin would have gone on passing, and the
+  bounds it guards would never have been retightened by the very thing they were waiting
+  for. It was a MINUTES assertion standing in for a PUZZLE-QUALITY claim — the same
+  name-versus-computation defect as the two above, one level more subtle, because the number
+  it computed was correlated with the thing it meant right up until somebody fixed the room.
+  **If a pin is waiting for a content fix, assert the CONTENT FACT.**
 - **Measure the thing you are claiming.** The rounds that went well ended with a number
   beside the review's number. The rounds that went badly ended with an assertion. Round 25
   adds the corollary: **and re-measure it, in the tree, before you republish it** — eleven

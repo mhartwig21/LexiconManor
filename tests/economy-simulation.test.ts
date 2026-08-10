@@ -1775,13 +1775,36 @@ describe('4.11 — something the player buys today pays out tomorrow', () => {
     expect(both.lines.length).toBe(Object.keys(CARRY_OVER_EFFECTS).length);
   });
 
-  it('does NOT move the 10–15 minute median (4.10f: sessions never inflate)', () => {
+  it('does NOT move the median: carry-over buys climb, not minutes (4.10f)', () => {
+    // ═══ ROUND 26 — THE NAME SAID "DOES NOT MOVE" AND THE TEST MEASURED "IS
+    // UNDER FIFTEEN". Those are different claims, and the difference only
+    // showed when something OTHER than carry-over lengthened the evening.
+    //
+    // The fixture is deliberately maximal — every carry-over card in the deck
+    // drafted on the same yesterday — so it sits above the ordinary evening by
+    // construction: measured 14.97 min against `decent`'s 14.48 before the
+    // Gallery was re-clocked, i.e. the mechanic's own contribution is +0.49 and
+    // the fixture was inside the published 10–15 band by 0.03 minutes. When
+    // round 26 spent fifteen seconds on the Gallery, this test failed at 15.11
+    // with a message about a median — and the mechanic it is named for had not
+    // changed at all. Its delta is +0.49 before and +0.49 after, to the
+    // hundredth.
+    //
+    // So it asserts the DELTA now, which is the sentence in its own title, plus
+    // the tail bound and the climb. The 10–15 band still has a gate: 4.10b
+    // above, on the `decent` fixture the band was published for. This one may
+    // not be widened either — a mechanic that bought two minutes of evening
+    // would fail it just as loudly, and more legibly.
     const carried = carryOverFrom(Object.keys(CARRY_OVER_EFFECTS));
     const withInvestment = simulateDays(
       { ...PROFILE_DECENT, dawnSteps: carried.steps, dawnKeys: carried.keys }, DAYS, 0xbeef);
     const m = median(withInvestment, (r) => r.minutes);
+    const base = median(decent, (r) => r.minutes);
+    expect(m - base, `carry-over adds ${(m - base).toFixed(2)} min to a ${base.toFixed(2)} min evening`)
+      .toBeLessThanOrEqual(1);
+    expect(m).toBeGreaterThanOrEqual(base);
+    // …and the evening it lands on is still an evening, not a session.
     expect(m).toBeGreaterThanOrEqual(10);
-    expect(m).toBeLessThanOrEqual(15);
     expect(quantile(withInvestment, 0.9, (r) => r.minutes)).toBeLessThanOrEqual(23);
     // It buys CLIMB, which is what a prepared ascent is supposed to buy.
     expect(median(withInvestment, (r) => r.maxRow))

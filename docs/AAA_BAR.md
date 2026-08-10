@@ -415,12 +415,12 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   > |---|---|---|
   > | 4.10a skipper: how the evening ends | 100% spent out *(by construction)* | 76% spent out · **24% shut in**, median 6 steps left |
   > | 4.10b rooms per evening | 5–8 (measured 6) | **7–11** (measured 9) |
-  > | 4.10b median / p90 minutes | 10–15 / ≤23 (10.8 / 16.2) | band unmoved, measured **14.4 / 18.9** |
+  > | 4.10b median / p90 minutes | 10–15 / ≤23 (10.8 / 16.2) | band unmoved, measured **14.6 / 18.9** *(round 26: 14.4 → 14.6, the Gallery's re-clock)* |
   > | 4.10c great day, max row | 5–6 | measured **5**; landing 8.6% → **3.7%** *(round-25 re-derivation; this row shipped saying 4.2% → 4.3%, and neither figure is in the tree — `share(great, reachedLanding)` over the test's own fixture is 3.73%)* |
   > | 4.10d skilled first DOOR | 6–10 (measured 9–10) | **14–22** (measured 18 on all four seeds) |
   > | 4.10d skilled, by day 21 | >90% (99.5%) | **>65%** (72.3%); >85% by day 28 |
   > | 4.10e skilled volume win | 12–20 (measured 16) | **12–20 UNMOVED** (measured 18–19) |
-  > | 4.10e skilled, by day 28 | >99% (100%) | **>85%** (88.7%); >95% by day 35 |
+  > | 4.10e skilled, by day 28 | >99% (100%) | **>85%** (88.2%); >95% by day 35 (95.3%) *(round 26: 88.7% / 96.3% before the Gallery's re-clock — the floors hold, with 0.3 pt of margin at day 35)* |
   > | 4.10f skilled evening, whole campaign | 10–15 (12.8) | **14–20** (16.9 early → 18.2 late) |
   > | 4.10f median-player evening | 10–15 (12.8) | **13–18** (14.5 early → 15.6 late) |
   > | 4.10d/e median player first DOOR | 12–20 (measured 19) | **22–30** (measured 24–26); never-inside-45 0% → **12.8%** |
@@ -458,9 +458,11 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     (median row 3–5, never the Sanctum row) and is over in **2–5 minutes**. Refunds are
     what buy a real day.
   - **4.10b — the decent day is 10–15 MINUTES at the median, p90 ≤ 23.** Not 20 (the
-    pre-overhaul measurement) and not 29 at p90. **Measured at round-25 HEAD: median
-    14.48, p90 18.78** (3,000 seeded days, `PROFILE_DECENT`, seed `0xbeef`; 14.30–14.52
-    and 18.69–18.90 across the four independent seeds the test also runs). That is
+    pre-overhaul measurement) and not 29 at p90. **Measured at round-26 HEAD: median
+    14.63, p90 18.92** (3,000 seeded days, `PROFILE_DECENT`, seed `0xbeef`; 14.36–14.63
+    and 18.70–19.02 across the four independent seeds the test also runs; it was 14.48 /
+    18.78 at round 25, and the fifteen seconds is the Gallery's re-clock — see 4.10h,
+    which also records that this band has 0.37 min of headroom left at the median). That is
     **7–11 rooms** (measured 9) with a median 2 puzzles actually solved — the post-cull
     deck is anchor-heavy, so fewer rooms *is* the same amount of game.
     *Round 25 — THIS PARAGRAPH WAS THE STALEST PROSE IN THE FILE, and it disagreed with
@@ -841,11 +843,20 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     Same defect as the retired "79.2% real choice" headline (4.10j), committed in the
     round that was told about that one. All four populations are published and gated now
     (`tests/economy-effort.test.ts`), and none is called "an evening":
-    **every room × every tier 45.00× → 20.00×**; **every tier-1/2 room, unfiltered
-    12.00×** (twistle t1 4.000 against sudoku t2 0.333); **tier-1/2 minus the Counting
-    House 4.89×** (twistle t1 against hive t2 0.818); **tier-1/2 of two minutes or more,
-    minus the Counting House, 1.75×**. The Counting House at tier 2 is one whole end of
-    the band and is a CONTENT commission REVIEW_AA §6 already asks for;
+    **every room × every tier 45.00× → 20.00× → 16.00× (round 26)**; **every tier-1/2
+    room, unfiltered 12.00× → 9.60×**; **tier-1/2 minus the Counting House 4.89× →
+    3.91×**; **tier-1/2 of two minutes or more, minus the Counting House, 1.75×,
+    unchanged**. The Counting House at tier 2 is one whole end of the band and is a
+    CONTENT commission REVIEW_AA §6 already asks for;
+    *Round 26 — THE GALLERY'S END OF THE RATCHET LANDED.* The first three fell because
+    the Gallery was one whole END of each of them, at 4.000 steps a minute; it now pays
+    3.200 and ties the Linen Closet at the top rather than owning it, and both are there
+    because of the cozy floor rather than a mispriced room. The fourth did NOT move, and
+    that is the interesting one: its population is `effortMinutes ≥ 2`, and the Gallery
+    went 1.0 → 1.25 minutes, so it is still outside. **The room became a puzzle without
+    becoming long** — its ask over its own board went 0.047 → 0.217 and the cheapest set
+    of words that clears it moved from frequency rank 305 to 2,581, by shrinking the
+    board (a median 106 findable words to 23) rather than by asking for more of them;
     (e) a room longer than a sitting **pays its ladder, not only its
     summit** (`stageSteps`, off the progress markers the adapters already emit: the
     Conservatory pays at Blossom / Bower / Garden, the Counting House per nine
@@ -854,11 +865,18 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     are pinned to the CONTENT FACTS they were measured from (target counts, pool sizes,
     given counts, the hive's own 70% gate), so a content edit that changes a room's
     workload fails a test instead of quietly re-opening the gap.
-    What still misses, named so nobody has to rediscover it: the two ends of the ratchet
-    are both content commissions REVIEW_AA §6 also asks for — the Gallery is not yet a
-    puzzle at tier 1, and the tier-2/3 Counting House should bank partial grids across
-    days. The test asserts both are still true, so fixing either FAILS 4.10h and forces
-    the bound to tighten.
+    What still misses, named so nobody has to rediscover it: **the top of the wage table
+    is now the COZY FLOOR itself** — the Gallery and the Linen Closet, the two shortest
+    rooms in the house, both paid +4 over 1.25 minutes — and the bottom is still the
+    tier-2/3 Counting House, which should bank partial grids across days. The test names
+    all three, so lengthening any of them FAILS 4.10h and forces the bound to tighten.
+    *Round 26 also retired a pin that would have stayed green through its own fix.* It
+    read `effortMinutes('twistle', 1) < 2` under the message "the Gallery became a
+    puzzle" — a MINUTES assertion standing in for a PUZZLE-QUALITY claim. The Gallery
+    became a puzzle and gained fifteen seconds, so the pin would have gone on passing and
+    these bounds would never have been retightened by the thing they were waiting for.
+    The content facts are gated where they can be seen now, in
+    `tests/puzzles/twistle-boards.test.ts`.
   - **4.10j — THE DRAFT IS A DECISION, MEASURED AS THE DOMINANCE RATE** (REVIEW_AA §5.7,
     round 24). The number this replaces was published as *"79.2% of offers have a real
     choice"* and is defined in `scripts/draft-shape.ts` as

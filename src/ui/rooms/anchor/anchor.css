@@ -871,7 +871,16 @@
    it made the finish read as the feedback she had already seen 5 times.
    Each edge is a hairline scaled from its far end — transform only (U.3/9.5),
    so there is no stroke-dash repaint and no SVG aspect distortion. */
-.tw-hung {
+/* ROUND 26 — THE SELECTOR HAD TO GROW A CLASS TO WIN ITS OWN ARGUMENT.
+   This was `.tw-hung`, one class, exactly as specific as the `.anch-done`
+   rule inside the SE-class media query 400 lines below it — so on the glass
+   where the saving mattered, the later rule won and the hung sheet got the
+   tall spacer this comment says it does not need. Measured at 375×667: 46.7px
+   of leading where the rule below asks for 20, on a panel that was already
+   40px past the bottom of its own stage. `.anch-done.tw-hung` is the same
+   element, said twice, which is what it takes to beat a later same-weight
+   rule without an `!important` or a reshuffle of the file. */
+.anch-done.tw-hung {
   padding: 0.9rem 0.9rem 0.7rem;
   /* The hung sheet carries the board, so it does not need `.anch-done`'s tall
      leading spacer (that spacer exists to keep a SHORT verdict panel from
@@ -1315,6 +1324,20 @@
   .fw-slot { height: 1.7rem; }
   .tw-word { min-height: 1.8rem; }
   .tw-lists { min-height: 1.4rem; }
+  /* ROUND 26 — the finished sheet's board, on an SE-class glass.
+     The chip strip under it is now TWO rows wherever it used to be one: every
+     target is 5+ letters (the four-letter chaff is gone from the boards), and
+     five or six long chips do not fit 375px across. Measured, that is 63px of
+     chips against the 33 the one-row strip cost, and the panel ran 40px past
+     the stage on all three tiers — it ran 6px past on tier 1 BEFORE this round,
+     so the strip was already the binding term and the longer words only made
+     it legible. 26.7px of that came back from the spacer bug fixed at
+     `.anch-done.tw-hung`; this pays the rest out of the one thing on the panel
+     that is not a tap target and not words — the picture. Measured after:
+     591px of content in a 551px stage becomes 545px, with 6px of guard, and
+     the tier-3 6×6 still draws at 41px a cell. Nothing at 390×844 moves: the
+     query is `max-height: 700px`. */
+  .tw-grid--hung { max-width: min(100%, calc(var(--stage-h, 100vh) - 18.8rem)); }
   /* The SE-class reserve for the Gallery's deck + head (measured 210px). */
   .anch--gallery { --tw-reserve: 13.8rem; }
   /* The SE-class board still fills what it is given — the floor drops, the

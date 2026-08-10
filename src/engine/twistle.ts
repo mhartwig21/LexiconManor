@@ -47,6 +47,46 @@ export function puzzleSize(puzzle: Pick<TwistlePuzzle, 'grid' | 'size'>): number
   return puzzle.size ?? gridSize(puzzle.grid);
 }
 
+/**
+ * ═══ THE ASK IS NEVER THINNER THAN ONE WORD IN FIVE (round 26) ═════════════
+ *
+ * The Gallery's defect was a RATIO, not a count. Measured over the 210 boards
+ * shipped before this round, tier 1 asked **5 target words of a median 106-word
+ * findable pool** — need/pool 0.047 — and the fifth-commonest of those words
+ * sat at Norvig rank 305, i.e. inside the three hundred commonest words in
+ * English. Five of 106 is a rounding error of a board however many minutes it
+ * takes, so the room could be cleared out of reflex without ever reading the
+ * grid as a grid.
+ *
+ * So the generator now rejects any board whose findable pool is fat enough to
+ * make its own ask trivial, at a ceiling DERIVED from that board's
+ * `targetCount` (`maxFindableFor`) rather than typed in per tier: raising an
+ * ask automatically permits a proportionally larger board, and lowering one
+ * cannot quietly re-open the gap.
+ *
+ * ONE IN FIVE, AND WHY THAT RATHER THAN A BIGGER ASK. It is tier 3's own
+ * shipped share — the one tier both hostile reviewers left alone — so the
+ * bottom of the manor is now held to the standard the top already met. Working
+ * it as a SHARE is what lets the Gallery stay short: the room is fixed by
+ * shrinking the board's answer space (a 5-letter floor, a turn floor on every
+ * target, the centre rule from tier 2 up), not by asking for twelve words. A
+ * word search is not a puzzle because it is long.
+ *
+ * Measured on the pool this ships: the tier-1 board went from a median 106
+ * findable words to 23, the thinnest ask on any of the 210 boards from 0.029 to
+ * 0.200, and the fattest board in the house from 173 findable words to 30.
+ *
+ * It lives here rather than in `content/generate-twistle.ts` because that file
+ * runs `main()` on import; the shipped-pool test needs the number, not the
+ * generator.
+ */
+export const MIN_ASK_SHARE = 1 / 5;
+
+/** The fattest findable pool a board asking `targetCount` words may ship. */
+export function maxFindableFor(targetCount: number): number {
+  return Math.floor(targetCount / MIN_ASK_SHARE);
+}
+
 export interface TwistleState {
   puzzleId: string;
   foundWords: string[];

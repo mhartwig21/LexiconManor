@@ -3,7 +3,8 @@
  *
  * ═══ WHY THIS FILE EXISTS (REVIEW_AA §6 / "5.6", round 22) ════════════════
  * `STEP_TABLE.solve(size, tier)` had no room parameter at all. Five anchors
- * that range from twenty seconds (the Gallery: five words of a 106-word pool)
+ * that range from twenty seconds (the Gallery, as it was: five words of a
+ * 106-word pool — round 26 fixed the room, see `ROOM_EFFORT.twistle`)
  * to thirty-five minutes (the Counting House at tier 2: 25 givens, 98% of
  * boards requiring an X-wing, an XY-wing, a swordfish or colouring) were paid
  * off one row-band table — a **36× spread in seconds-per-step**, and 15×
@@ -33,10 +34,13 @@
  * re-opening the 36× spread. If one of those pins fires, the fix is to
  * re-derive the row here, never to relax the pin.
  *
- *   twistle (the Gallery)      5 words of a median 106-word pool at tier 1
- *                              (need/pool 0.047) — measured 20–100 s live;
- *                              7 of 85 at tier 2; 6 of 28 at minLength 5 with
- *                              the centre required at tier 3.
+ *   twistle (the Gallery)      ROUND 26, RE-DERIVED — the content this row was
+ *                              measured on changed, so the row moved with it.
+ *                              5 words of a median 23-word pool at tier 1
+ *                              (need/pool 0.048 → 0.217), every target 5+
+ *                              letters and turning at least once; 6 of 21 at
+ *                              tier 2 with the centre tile required; 6 of 22
+ *                              at tier 3, unchanged. See the row itself.
  *   crossword (Linen Closet)   4×4, 3 entries, 11 letters — ~75 s.
  *   cipher (the Darkroom)      11 of 14 distinct letters to deduce over 26.
  *   word-web (the Library)     16 tiles, 4 groups, 1 ambiguous, 1 herring.
@@ -60,8 +64,8 @@
  * and answers one question: how much of this room's payout has she earned so
  * far? The room slice pays the difference as she crosses each rung, and the
  * `solved` event pays exactly the remainder. Only rooms longer than
- * `LADDER_MINUTES` have one: the Gallery is over in a minute and the review's
- * bar for it is "2–4 minutes TO A PAYOUT", which it already meets.
+ * `LADDER_MINUTES` have one: the Gallery is over in a minute and a quarter and
+ * the review's bar for it is "2–4 minutes TO A PAYOUT", which it already meets.
  *
  * THE INVARIANT THAT MAKES THIS SAFE, and the reason no published band in AAA
  * 4.10 moves because of it: **staging never changes what a room pays in total.**
@@ -84,7 +88,59 @@ export type EffortByTier = readonly [number, number, number];
  */
 export const ROOM_EFFORT: Record<RoomPuzzleKind, EffortByTier> = {
   // ── anchors ──────────────────────────────────────────────────────────────
-  'twistle': [1.0, 1.5, 2.5],
+  /**
+   * ROUND 26 — THE GALLERY, RE-CLOCKED BECAUSE ITS WORK CHANGED.
+   *
+   * `1.0` was honest arithmetic over a dishonest room: five words of a median
+   * 106-word pool whose fifth-commonest member sat at frequency rank 305 — five
+   * words you already had in your head — which is twenty seconds of play and
+   * was the highest reward-per-minute cell in the house.
+   * `content/generate-twistle.ts` now ships a board with no chaff on it (5+
+   * letters and a turn floor on EVERY target, the centre rule from tier 2 up, a
+   * findable pool capped at one word in five of the ask), so the row is
+   * re-derived rather than defended:
+   *
+   *   tier 1 — 5 finds × 15 s = 1.25 min. The ask did not move; the board did.
+   *            A median 23 findable words rather than 106, the fifth-commonest
+   *            of them at rank 2,581 rather than 305. Nothing on the grid is
+   *            free now, so the find sits at 15 s rather than the 12 s floor of
+   *            the repo's own instrumented 12–25 s band.
+   *   tier 2 — 6 finds × 15 s = 1.5 min, unchanged in minutes. The ask FELL
+   *            (7 → 6) and the board hardened: two turns minimum and every
+   *            trace through the marked centre tile. A centre rule cuts both
+   *            ways on the clock — it complicates the trace and it prunes the
+   *            search — so the per-find figure holds where tier 1's landed.
+   *   tier 3 — 6 finds × 25 s = 2.5 min. UNCHANGED. This is the tier both
+   *            hostile reviewers left alone, and the one tiers 1–2 borrowed
+   *            from; its 6×6 board and four-turn traces are why a find there
+   *            costs two thirds again what it costs downstairs.
+   *
+   * ═══ WHAT THE FIFTEEN SECONDS COST, AND WHY THE ROW IS NOT HIGHER ═══════
+   *
+   * The honest reading of a constrained find spans 12–25 s, so 5 finds is
+   * anywhere from 1.0 to 2.1 minutes and 1.25 is the low-middle of it. It is
+   * the low-middle because THE MANOR HAS NO CLOCK LEFT. Measured on the
+   * shipped simulation before this round, the published bands sat here:
+   *
+   *   - 4.10b's decent evening: 14.48 min against a ceiling of 15;
+   *   - 4.11's maximal-carry-over evening: 14.97 against the same 15;
+   *   - 4.10e's skilled win-by-day-35: 96.3% against a floor of 95%.
+   *
+   * Fifteen seconds on the most-drafted anchor in the deck moves those to
+   * 14.63, 15.11 and 95.3%. Thirty seconds breaks 4.10e outright (94.3%), and
+   * a two-and-a-half-minute Gallery — which is what an ask of 8 would honestly
+   * cost — puts the decent evening at 15.18 and the campaign at 93.0%. So the
+   * room was fixed by SHRINKING THE BOARD rather than by lengthening the
+   * sitting, and this row records the ceiling that forced it: **the next room
+   * in this table that gets longer has to be paid for by one that gets
+   * shorter.** That is a commission for an economy round, not a word-game one.
+   *
+   * It stays well under `KEY_SUPPLY.workKeyMinutes` (3.0) at tier 1, so no
+   * ground-floor key source opens and no campaign band moves for that reason.
+   * `tests/economy-effort.test.ts` re-derives all three numbers off the shipped
+   * pool; `tests/puzzles/twistle-boards.test.ts` gates the board itself.
+   */
+  'twistle': [1.25, 1.5, 2.5],
   'word-web': [4.5, 5.0, 6.0],
   'hive': [14.0, 11.0, 7.0],
   'forgotten-word': [1.5, 1.5, 1.5],

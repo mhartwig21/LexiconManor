@@ -1182,19 +1182,22 @@ describe('tier escalation — The Gallery (bigger asks, twistier paths)', () => 
     for (const p of at(3)) expect(puzzleSize(p), p.id).toBe(6);
   });
 
-  it('tier 3 raises the word-length floor and demands the centre tile', () => {
-    for (const p of at(1)) {
-      expect(p.rules.minLength, p.id).toBe(4);
-      expect(p.rules.centerRequired, p.id).toBe(false);
-    }
-    for (const p of at(2)) {
-      expect(p.rules.minLength, p.id).toBe(4);
-      expect(p.rules.centerRequired, p.id).toBe(false);
-    }
-    for (const p of at(3)) {
-      expect(p.rules.minLength, p.id).toBe(5);
-      expect(p.rules.centerRequired, p.id).toBe(true);
-      for (const w of p.targetWords) expect(w.length, `${p.id}: ${w}`).toBeGreaterThanOrEqual(5);
+  it('the length floor is 5 everywhere; the centre tile is demanded from tier 2 up', () => {
+    // ROUND 26 — this used to certify `minLength 4` and `centerRequired false`
+    // on tiers 1–2, i.e. it wrote the Gallery's defect down as a contract: a
+    // median 56 findable words per tier-1 board sat at exactly four letters,
+    // which is the chaff the eye picks up without reading the grid. The floor
+    // is 5 at every tier now, and the centre rule — the Wordle-hard-mode knob
+    // that constrains the player rather than adding content — comes down a
+    // storey to tier 2. See tests/puzzles/twistle-boards.test.ts for the
+    // measured before/after this rests on.
+    const centreFromTier2: Record<number, boolean> = { 1: false, 2: true, 3: true };
+    for (const tier of [1, 2, 3] as const) {
+      for (const p of at(tier)) {
+        expect(p.rules.minLength, p.id).toBe(5);
+        expect(p.rules.centerRequired, `${p.id} (tier ${tier})`).toBe(centreFromTier2[tier]!);
+        for (const w of p.targetWords) expect(w.length, `${p.id}: ${w}`).toBeGreaterThanOrEqual(5);
+      }
     }
   });
 

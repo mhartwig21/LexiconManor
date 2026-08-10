@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { loadDictionary, bandOf, type Dictionary, type Band } from './lib/dictionary';
 import { gateOk } from './generate-gate';
 import { createRng, pick, randInt, shuffle, type Rng } from '../src/engine/rng';
-import { findPath, centerIndex, gridSize } from '../src/engine/twistle';
+import { findPath, centerIndex, gridSize, maxFindableFor, MIN_ASK_SHARE } from '../src/engine/twistle';
 import { tierLabel } from '../src/engine/rooms/adapters/tier-select';
 import type { TwistlePuzzle, Tier } from '../src/engine/types';
 
@@ -37,22 +37,93 @@ import type { TwistlePuzzle, Tier } from '../src/engine/types';
  *      `size` ships on every puzzle; engine/twistle.ts and TwistleView derive
  *      their metrics from the board, so nothing is told the size twice.
  *   1. TORTUOSITY FLOOR. Every target's shortest valid trace is measured for
- *      *turns* (direction changes between consecutive steps). Tier 1 targets
- *      are mostly straight runs (≤1 turn); tier 3 demands FOUR turns from every
- *      target — no straight-line gimme exists on the board at all, and the
- *      word genuinely corkscrews.
- *   2. LENGTH FLOOR. minLength climbs 4 → 4 → 5, so tier 3 refuses the
+ *      *turns* (direction changes between consecutive steps). It climbs
+ *      1 → 2 → 4, so no tier ships a target that reads straight off a row.
+ *   2. LENGTH FLOOR. minLength is 5 at every tier: no tier offers the
  *      four-letter chaff the eye finds for free.
- *   3. THE CENTRE CONSTRAINT. Tier 3 alone sets `centerRequired`, forcing
- *      every trace through the board's centre tile — a Wordle-hard-mode-shaped
- *      knob that constrains the player rather than adding content (AAA 3.8).
+ *   3. THE CENTRE CONSTRAINT. Tiers 2–3 set `centerRequired`, forcing every
+ *      trace through the board's centre tile — a Wordle-hard-mode-shaped knob
+ *      that constrains the player rather than adding content (AAA 3.8).
  *      On the 6×6 the centre is `centerIndex(6)` = tile 14 (row 2, col 2): one
  *      of the four middle tiles, chosen by the engine so the generator, the
  *      solver and the marked tile in the view can never disagree.
+ *   4. THE ASK, AS A SHARE OF THE BOARD — never thinner than one word in five
+ *      of what the board offers (`MIN_ASK_SHARE`, round 26), and the ask's
+ *      CHEAPEST possible set is never words she already had in her head
+ *      (`minEntryRank`).
+ *
+ * ---------------------------------------------------------------------------
+ * ROUND 26 — THE GALLERY WAS NOT A PUZZLE, AND THE MEASUREMENT SAYS WHY
+ * ---------------------------------------------------------------------------
+ * Across the 210 boards this file used to ship, **tier 1 asked five words of a
+ * median 106-word pool** (need/pool 0.047) with a median 56 of those available
+ * at exactly the four-letter minimum, and — scored against Norvig rank — **the
+ * fifth-commonest findable word sat at rank 305, i.e. inside the three hundred
+ * commonest words in English.** The whole room could therefore be cleared by
+ * typing words you already had in your head, in about twenty seconds, without
+ * ever looking at the grid as a grid. Both hostile reviewers cleared it
+ * instantly and stopped respecting the room; because it was also the highest
+ * reward-per-minute cell in the house, the rational player farmed it and never
+ * opened the Conservatory.
+ *
+ * The fix is NOT "ask for more words". A word search is not a puzzle because it
+ * is long; it is a puzzle because finding the target set requires SEEING
+ * something. Tier 3 was already the proof — 6 of 28 at minLength 5 with a
+ * four-turn floor and the centre rule — so tiers 1–2 borrow its recipe rather
+ * than its length (BENCHMARKS §3, Wordle hard mode: *difficulty by CONSTRAINING
+ * the player, not by adding content*):
+ *
+ *   | knob                       | tier 1        | tier 2        | tier 3 |
+ *   |----------------------------|---------------|---------------|--------|
+ *   | minLength                  | 4 → **5**    | 4 → **5**    | 5 |
+ *   | minTurns                   | 0 → **1**    | 2             | 4 |
+ *   | centerRequired             | false         | false → **true** | true |
+ *   | maxFindable                | none → **25**| none → **30**| none → **30** |
+ *   | targetCount                | 5             | 7 → **6**    | 6 |
+ *
+ * NOTE WHAT DID NOT MOVE. Tier 1 still asks for FIVE words. The critic proposed
+ * 5 → 12, and the measurement says the count was never the defect: 5 of 106 is
+ * a broken room and 5 of 23 is not. Three of the knobs above shrink the board's
+ * answer space and only one touches the ask, downward. What that buys is a room
+ * that is a puzzle without being a chore — and, as it turns out, the only fix
+ * the manor's clock could afford (see `ROOM_EFFORT.twistle`).
+ *
+ * What it does to the 210 boards actually shipped, measured before and after
+ * against the vendored Norvig corpus:
+ *
+ *   | measurement                        | tier 1        | tier 2        | tier 3 |
+ *   |------------------------------------|---------------|---------------|--------|
+ *   | median findable pool               | 106 → **23** | 85 → **21**  | 28 → **22** |
+ *   | fattest pool on any board          | 173 → **25** | 167 → **30** | 76 → **30** |
+ *   | median ask / pool                  | 0.048 → **0.217** | 0.082 → **0.286** | 0.214 → **0.273** |
+ *   | THINNEST ask on any board          | 0.029 → **0.200** | 0.042 → **0.200** | 0.079 → **0.200** |
+ *   | words at exactly the minimum length| 57 → **12**  | 38 → **9**   | 0 → 0 |
+ *   | cheapest solve, median board       | rank 305 → **2,581** | 608 → **3,540** | 6,740 → **8,812** |
+ *   | CHEAPEST SOLVE, WORST BOARD        | rank **125** → **1,044** | 224 → **1,010** | 1,319 → **3,050** |
+ *
+ * The last row is the one that matters, and it is the metric the room is now
+ * generated and gated on (`minEntryRank` below, replayed against the shipped
+ * JSON in `tests/puzzles/twistle-boards.test.ts`): sort a board's findable
+ * words by frequency and read off the `targetCount`-th — that is the EASIEST
+ * POSSIBLE SOLVE, the last word of the cheapest set that clears the room. It
+ * used to be the 125th commonest word in English on the worst tier-1 board.
+ * No board in the house now answers to anything inside the top thousand.
+ *
+ * Three of the four knobs SHRINK the board's answer space rather than growing
+ * the ask; `targetCount` rises only far enough to bring the share into line
+ * with tier 3's. `ROOM_EFFORT.twistle` was re-derived in the same commit — a
+ * room is paid for the work it asks for, and this changed the work.
  */
 
 const TARGET_PER_TIER = 70; // 3 tiers => 210 total
 const SEED = 20260702;
+
+/*
+ * THE ASK IS NEVER THINNER THAN ONE WORD IN FIVE — `MIN_ASK_SHARE`, and it lives
+ * in `src/engine/twistle.ts` beside the rest of the board contract so the
+ * shipped-pool test can read it without importing (and therefore running) this
+ * generator. See the comment there for the derivation.
+ */
 
 /** Board side length per tier — the Gallery itself grows at the top. */
 const SIZES: Record<Tier, number> = { 1: 5, 2: 5, 3: 6 };
@@ -80,13 +151,38 @@ interface TierSpec {
    */
   minEntryTurns: number;
   maxEntryTurns: number;
+  /**
+   * ROUND 26 — THE EASIEST POSSIBLE SOLVE, AS A FREQUENCY FLOOR.
+   *
+   * The same construction as `minEntryTurns`, applied to vocabulary instead of
+   * geometry: sort the board's targets by Norvig frequency rank and read off
+   * the `targetCount`-th. That word is the last one a player needs if she takes
+   * the cheapest possible route through the room, so its rank IS the difficulty
+   * of clearing the board by reflex. Before this round the median tier-1 board
+   * answered 305 and the worst answered **125** — the 125th commonest word in
+   * English cleared a Gallery. The floor puts the cheapest solve outside the
+   * top thousand words at every tier.
+   */
+  minEntryRank: number;
 }
 
 const SPECS: Record<Tier, TierSpec> = {
-  1: { targetBands: ['everyday'], seedWordCount: 7, targetCount: 5, minFindable: 12,
-       centerRequired: false, minLength: 4, minTurns: 0, minEntryTurns: 0, maxEntryTurns: 1 },
-  2: { targetBands: ['everyday'], seedWordCount: 7, targetCount: 7, minFindable: 12,
-       centerRequired: false, minLength: 4, minTurns: 2, minEntryTurns: 2, maxEntryTurns: 99 },
+  // TIER 1 — the ground floor, and 62% of the rooms the median player enters.
+  // Still the gentlest Gallery in the house (5×5, no centre rule, and the
+  // entry twist capped at 2 so the eighth-easiest target is never a
+  // corkscrew), but no longer a free one: 5+ letters and at least one turn on
+  // EVERY target means nothing reads straight off a row.
+  1: { targetBands: ['everyday'], seedWordCount: 7, targetCount: 5, minFindable: 11,
+       centerRequired: false, minLength: 5, minTurns: 1, minEntryTurns: 1, maxEntryTurns: 2,
+       minEntryRank: 1000 },
+  // TIER 2 — the same ask on a harder board (BENCHMARKS §3: constrain the
+  // player, don't add content). What escalates from tier 1 is not the number
+  // of words but the board: every target turns at least twice AND crosses the
+  // marked centre tile, a rule the room states at rest in its header and marks
+  // on the glass before it can cost anything.
+  2: { targetBands: ['everyday'], seedWordCount: 7, targetCount: 6, minFindable: 12,
+       centerRequired: true, minLength: 5, minTurns: 2, minEntryTurns: 2, maxEntryTurns: 99,
+       minEntryRank: 1000 },
   // 6×6: more tiles to seed (10 words; the rest of the board fills with
   // frequency noise), and the twist bar goes up a notch now that there is room
   // for it — EVERY tier-3 target turns at least four times (the old 5×5 tier 3
@@ -94,8 +190,10 @@ const SPECS: Record<Tier, TierSpec> = {
   // rises to the lower rows' floor as well: the top of the manor should offer
   // no less CHOICE than the ground floor, only harder traces.
   3: { targetBands: ['everyday', 'familiar'], seedWordCount: 10, targetCount: 6, minFindable: 12,
-       centerRequired: true, minLength: 5, minTurns: 4, minEntryTurns: 4, maxEntryTurns: 99 },
+       centerRequired: true, minLength: 5, minTurns: 4, minEntryTurns: 4, maxEntryTurns: 99,
+       minEntryRank: 1500 },
 };
+
 
 // --- path tortuosity --------------------------------------------------------
 
@@ -258,6 +356,21 @@ function entryTurns(turns: number[], targetCount: number): number {
   return [...turns].sort((a, b) => a - b)[targetCount - 1]!;
 }
 
+/**
+ * The Norvig frequency rank of the `targetCount`-th COMMONEST target: the last
+ * word of the cheapest set that clears the board, and therefore the honest
+ * difficulty of solving it out of reflex. Unranked words sort last (`UNRANKED`),
+ * which is correct — a word the corpus never saw is not a gimme. Returns 0
+ * (i.e. "trivially clearable") if the pool is short, so a thin board cannot
+ * sneak through the floor.
+ */
+const UNRANKED = 1_000_000;
+
+function entryRank(ranks: number[], targetCount: number): number {
+  if (ranks.length < targetCount) return 0;
+  return [...ranks].sort((a, b) => a - b)[targetCount - 1]!;
+}
+
 function generatePuzzle(
   dict: Dictionary,
   trie: TrieNode,
@@ -308,8 +421,16 @@ function generatePuzzle(
     return true;
   });
   if (targets.length < Math.max(spec.minFindable, spec.targetCount + 4)) return null;
+  // ROUND 26 — the ask may never be thinner than one word in five of the board
+  // it is asked on (`MIN_ASK_SHARE`). This rejects the haystacks: a 5×5 whose
+  // fair-target pool runs to a hundred words is a room you clear by reflex.
+  if (targets.length > maxFindableFor(spec.targetCount)) return null;
   const entry = entryTurns(targets.map((w) => turnsByWord.get(w)!), spec.targetCount);
   if (entry < spec.minEntryTurns || entry > spec.maxEntryTurns) return null;
+  // ROUND 26 — and the cheapest set of words that clears this board must not be
+  // words she already had in her head (see `minEntryRank`).
+  const rank = entryRank(targets.map((w) => { const r = dict.rankOf(w); return r > 0 ? r : UNRANKED; }), spec.targetCount);
+  if (rank < spec.minEntryRank) return null;
 
   return {
     id: `twistle-t${tier}-${index}`,
@@ -337,7 +458,7 @@ function main() {
   for (const tier of [1, 2, 3] as Tier[]) {
     let made = 0;
     let attempts = 0;
-    while (made < TARGET_PER_TIER && attempts < TARGET_PER_TIER * 120) {
+    while (made < TARGET_PER_TIER && attempts < TARGET_PER_TIER * 400) {
       attempts++;
       const p = generatePuzzle(dict, trie, pools, tier, rng, made + 1);
       if (p) {
@@ -354,14 +475,14 @@ function main() {
     }
   }
 
-  validate(puzzles);
+  validate(puzzles, dict);
   const outPath = join(dirname(fileURLToPath(import.meta.url)), 'generated', 'twistle.json');
   writeFileSync(outPath, JSON.stringify(puzzles));
   console.log(`twistle.json: ${puzzles.length} puzzles`);
 }
 
 /** Fail the build on any unsolvable, unfair, or off-tier puzzle. */
-function validate(puzzles: GeneratedTwistlePuzzle[]) {
+function validate(puzzles: GeneratedTwistlePuzzle[], dict: Dictionary) {
   const problems: string[] = [];
   for (const p of puzzles) {
     const spec = SPECS[p.tier];
@@ -370,6 +491,10 @@ function validate(puzzles: GeneratedTwistlePuzzle[]) {
     if (p.grid.length !== n * n) problems.push(`${p.id}: grid is ${p.grid.length} tiles, not ${n}×${n}`);
     if (gridSize(p.grid) !== p.size) problems.push(`${p.id}: declared size disagrees with the grid`);
     if (p.targetWords.length < p.targetCount) problems.push(`${p.id}: targetCount ${p.targetCount} > ${p.targetWords.length} findable`);
+    if (p.targetWords.length > maxFindableFor(p.targetCount)) {
+      problems.push(`${p.id}: ${p.targetCount} of ${p.targetWords.length} findable is an ask of ${(p.targetCount / p.targetWords.length).toFixed(3)}, under the ${MIN_ASK_SHARE.toFixed(3)} floor`);
+    }
+    if (p.targetCount !== spec.targetCount) problems.push(`${p.id}: targetCount ${p.targetCount} != tier ${p.tier} ask ${spec.targetCount}`);
     if (p.rules.minLength !== spec.minLength) problems.push(`${p.id}: minLength ${p.rules.minLength} != tier ${p.tier} floor ${spec.minLength}`);
     if (p.rules.centerRequired !== spec.centerRequired) problems.push(`${p.id}: centerRequired != tier ${p.tier} rule`);
     const turns: number[] = [];
@@ -388,6 +513,10 @@ function validate(puzzles: GeneratedTwistlePuzzle[]) {
     const entry = entryTurns(turns, p.targetCount);
     if (entry < spec.minEntryTurns || entry > spec.maxEntryTurns) {
       problems.push(`${p.id}: entry turns ${entry} outside tier ${p.tier} twist band ${spec.minEntryTurns}–${spec.maxEntryTurns}`);
+    }
+    const rank = entryRank(p.targetWords.map((w) => { const r = dict.rankOf(w); return r > 0 ? r : UNRANKED; }), p.targetCount);
+    if (rank < spec.minEntryRank) {
+      problems.push(`${p.id}: the cheapest solve ends on rank ${rank}, inside tier ${p.tier}'s reflex floor of ${spec.minEntryRank}`);
     }
   }
   if (problems.length > 0) {

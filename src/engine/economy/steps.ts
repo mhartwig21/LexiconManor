@@ -346,6 +346,21 @@ export const SANCTUM_GUESS_COST = 0;
  * else** — the day its content becomes a puzzle (REVIEW_AA §6 asks for
  * `targetCount` to rise), `ROOM_EFFORT` moves and the payout rises with it,
  * automatically. Nothing else in the table was cut.
+ *
+ * ═══ ROUND 26 — AND THAT DAY CAME, WITHOUT A LINE OF THIS FILE CHANGING ═══
+ * The Gallery's content fix landed: `content/generate-twistle.ts` shrank the
+ * board's answer space from a median 106 findable words to 23 WITHOUT asking
+ * for one more word, `ROOM_EFFORT.twistle` went [1.0, 1.5, 2.5] →
+ * **[1.25, 1.5, 2.5]** minutes, and the room's price followed on its own —
+ * which is the whole claim this table makes about itself, tested for the first
+ * time by something other than the table's author. It is still at the cozy
+ * FLOOR (1.4 × 1.25 = 1.75, floored to +4), so the payout is the same +4 it
+ * was; what changed is the WAGE, **4.000 → 3.200 steps a minute** at tier 1,
+ * and with it the top of the whole house. The Gallery no longer stands alone as
+ * the most profitable minute in the manor — it ties the Linen Closet, and both
+ * of them are there because of the COZY FLOOR rather than because of a
+ * mispriced room. `tests/economy-effort.test.ts` names both, so whichever is
+ * lengthened next fails a test and retightens the published spread.
  */
 export const SOLVE_WAGE = {
   /**
@@ -644,9 +659,17 @@ export const KEY_SUPPLY = {
    * Gallery's twenty seconds and the whole point of round 22 is that reward
    * follows WORK. A tier-1 solve pays a key when the room asked at least
    * `workKeyMinutes` of honest work (`ROOM_EFFORT`): the Library, the Darkroom,
-   * the Conservatory, the Counting House — never the twenty-second word search,
-   * and never the 75-second Linen Closet. The tier table is a FLOOR, so rows
-   * 3–6 are exactly what they were.
+   * the Conservatory, the Counting House — never the 75-second Linen Closet.
+   * The tier table is a FLOOR, so rows 3–6 are exactly what they were.
+   *
+   * ROUND 26: the Gallery is no longer a twenty-second room (1.25 min at tier
+   * 1), and it still does not pay a ground-floor key — 1.25 < 3.0 — which is
+   * deliberate rather than incidental. It remains the SHORT anchor of the
+   * house, the padlock arc's supply was budgeted at +0.4–0.5 keys/day against
+   * the rooms listed above, and opening a new tier-1 key source is a campaign
+   * change (AAA 4.10c/d re-measured over 200 seeded campaigns), not a
+   * side-effect of a word-game fix. If the Gallery is ever lengthened past
+   * three minutes, that is the conversation, and this is where it starts.
    *
    * Budgeted, not asserted: measured over 200 seeded campaigns × 45 days this
    * is +0.4–0.5 keys/day, which replaces almost exactly what round 22's honest
