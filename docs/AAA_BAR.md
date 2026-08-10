@@ -372,6 +372,88 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   number below is verified by `tests/economy-simulation.test.ts` over thousands of
   seeded days and hundreds of seeded multi-week campaigns played through the real
   `STEP_TABLE` + ledger — **before** any playtest, and re-run on every tuning edit:
+
+  > ### ROUND 24 — THE INSTRUMENT COULD NOT SEE THE MANOR
+  >
+  > **Every number in 4.10a–i before this round was measured on a model that tracked a
+  > SCALAR ROW (1..6) and a step budget.** It never held a `Cell`, never called
+  > `resolveDoors`, never asked `sealsItself`, never had a frontier and never had a
+  > neighbour — grepping `sealsItself|draftTargets|resolveDoors|neighbor(` over
+  > `src/engine/economy/simulate.ts` returned **0**. Three consequences, each of which
+  > invalidated published numbers:
+  >
+  > 1. **No change to the deck's GEOMETRY could move a single published band.** Door
+  >    layouts, the rigid rotation, the sealed-room bounty, round 22's dead-end
+  >    rebalance — the campaign model was blind to all of it. A row is not a floorplan.
+  > 2. **The evening could not STRAND**, so `metrics:review` printed *"unspent budget
+  >    0.0%"* on every day and REVIEW_AA §8's third gate answered itself.
+  > 3. **The landing gate was a proxy**: `landingDraft` rolled a hypothetical offer at
+  >    (2,5) on an EMPTY manor whenever the scalar row hit 6 — i.e. it assumed that
+  >    climbing the storey and standing on the landing CELL were the same event.
+  >
+  > `simulateDay` is grid-true now (`engine/economy/manor-walk.ts` plus a rewritten day
+  > loop): a real `ManorState`, the frontier from `draftTargets`/`doorsConnect`, the
+  > padlock from `isDoorLocked` per (daySeed, cell) rather than a per-row coin, the offer
+  > from `rollCards` at the real door, the plan from `resolveDoors`, the seal from
+  > `sealsItself`, and `reachedSanctum` **is** `atSanctumDoor(manor)`. The room she plays
+  > is the CARD SHE TOOK, not a draw from `deckMixAt`. **One instrument, not two** — a
+  > second harness would have needed its numbers gated against the first, and the first
+  > is the one that is wrong.
+  >
+  > **THE HEADLINE FINDING: the top of the house is priced by GEOMETRY, not by steps.**
+  > Standing on row 5 is not standing on (2,5). Measured with the manor in hand, only
+  > **24.5%** of the evenings that reach the landing storey end on the landing cell with
+  > a plan that opens north — and given an unlimited purse and ten keys the door is still
+  > only a **30%** proposition per evening, while the house shuts (every reachable room's
+  > doors on outer wall or blank plaster) after a median **20 of 33 cells**. That is the
+  > commission this round hands the next one, and it is why the ACCESS bands below moved
+  > while every KNOWLEDGE band stayed exactly where it was.
+  >
+  > **EVERY BAND THAT MOVED, before (grid-blind) → after (grid-true):**
+  >
+  > | band | before | after |
+  > |---|---|---|
+  > | 4.10a skipper: how the evening ends | 100% spent out *(by construction)* | 76% spent out · **24% shut in**, median 6 steps left |
+  > | 4.10b rooms per evening | 5–8 (measured 6) | **7–11** (measured 9) |
+  > | 4.10b median / p90 minutes | 10–15 / ≤23 (10.8 / 16.2) | band unmoved, measured **14.4 / 18.9** |
+  > | 4.10c great day, max row | 5–6 | measured **5**; landing 4.2% → **4.3%** |
+  > | 4.10d skilled first DOOR | 6–10 (measured 9–10) | **14–22** (measured 18 on all four seeds) |
+  > | 4.10d skilled, by day 21 | >90% (99.5%) | **>65%** (72.3%); >85% by day 28 |
+  > | 4.10e skilled volume win | 12–20 (measured 16) | **12–20 UNMOVED** (measured 18–19) |
+  > | 4.10e skilled, by day 28 | >99% (100%) | **>85%** (88.7%); >95% by day 35 |
+  > | 4.10f skilled evening, whole campaign | 10–15 (12.8) | **14–20** (16.9 early → 18.2 late) |
+  > | 4.10f median-player evening | 10–15 (12.8) | **13–18** (14.5 early → 15.6 late) |
+  > | 4.10d/e median player first DOOR | 12–20 (measured 19) | **22–30** (measured 24–26); never-inside-45 0% → **12.8%** |
+  > | 4.10d/e median player volume win | 18–28 (measured 23) | **24–32** (measured 25.5–29) |
+  > | 4.10d/e median player deduction | 14–24 (measured 19) | **14–24 UNMOVED** (measured 17) |
+  > | 4.10d/e knowing→saying gap, median | 8 hers / 2 his | **9 / 4** (p90 22 / 16) |
+  > | 4.10d/e keys: solves vs deck, median player | 10569 vs 2751 | **13882 vs 15700 — INVERTED** |
+  > | 4.10g violet evenings, median player | 21.7% | **37.0%** |
+  > | 4.10g a solve makes a page out, median player | <1 day in 3 (23.5%) | **35.2%** — she cleared it; the split is now about SIZE (his 65%) |
+  > | 4.10g sealed overnight, skilled | 25–55% (49.0%) | **25–60%** (55.1%) |
+  > | 4.10g sealed overnight, median player | 10–25% (18.3%) | **10–35%** (29.3%) |
+  > | 4.10i ground-floor drain per room | −2.58 hers / −0.96 his | **−1.24 / −0.35** |
+  > | 4.10i in hand at the first padlock | 12 / 18 | **11 / 19** |
+  > | §8 unspent budget at day end | median 0.0% p90 0.0% *(vacuous)* | median 0.0% **p90 33.3%**, 14.4% of evenings shut in |
+  > | §5.7 "offers with a real choice" | 79.2% | **RETIRED — see 4.10j** |
+  >
+  > **THE KEY INVERSION IS A FINDING, NOT A TUNING NOTE.** The old model handed a green
+  > card its key only when the player was SHORT of one (`needsKeySoon && keys < 2 &&
+  > roll < keyLuck`, else a flat 20%). The live game does no such thing:
+  > `applyDraftEffects` pays `UTILITY_EFFECTS[cardId].keys` on placement, every time.
+  > With that fixed, the round-10 owner directive — *"skill, not just persistence, earns
+  > the campaign"* — **holds for the skilled player (20213 solve-keys vs 17342 deck) and
+  > fails for the owner's own profile (13882 vs 15700)**. That is a deck-supply question
+  > and it is recorded here rather than tuned away, because this round may not touch
+  > `deck.ts`.
+  >
+  > **WHAT DID NOT MOVE, and it is the interesting half.** Every KNOWLEDGE band — both
+  > profiles' deduction day, the legible-day share, the skilled volume win, the 10–15
+  > minute single evening — is where it was. The climb to the landing STOREY is where it
+  > was (skilled median day 12 against a grid-blind 9). What moved is the LAST STEP of
+  > the climb and the tail of every distribution that waits on it. Nothing in `deck.ts`,
+  > `drafting.ts` or any content file was edited: an instrument round that also tunes the
+  > thing it measures is worthless.
   - **4.10a — the no-refund day.** Skipping every puzzle tops out on the middle floors
     (median row 3–5, never the Sanctum row) and is over in **2–5 minutes**. Refunds are
     what buy a real day.
@@ -396,8 +478,11 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     milestone row is now `SANCTUM_LANDING_ROW`, tied to `SANCTUM_DOOR_CELL.row`, and
     `tests/economy-simulation.test.ts` asserts the identity so the two can never drift
     apart again.
-  - **4.10d — a skilled player FIRST REACHES the Sanctum landing on day 6–10** (median),
-    **<8% on day 1**, and >90% of campaigns get there by day 21. A bare, perfectly
+  - **4.10d — a skilled player FIRST STANDS AT THE SANCTUM DOOR on day 14–22**
+    (median; **6–10 before round 24 made the instrument grid-true** — see the round-24
+    block above; the LANDING STOREY under it is still reached at median day 12),
+    **<8% on day 1** (measured 0.0%), and >65% of campaigns get there by day 21, >85% by
+    day 28. A bare, perfectly
     efficient ascent must cost **more than the entire base day budget**
     (`reserveToTop(1) > BASE_DAY_BUDGET`, measured **to the landing**: **22 > 18**, i.e.
     `1+2+3+7+9`), so the top is always bought with refunds. *Round 7 (verifier) — that
@@ -605,9 +690,29 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     change: thread `SimDayResult.pagesMadeOut`/`sealedBacklog` through its drip and
     measure the day the sixteenth fragment becomes **legible**, keeping the filed day as
     a secondary assertion so the cozy "it is hers immediately" promise stays pinned too.
-  - **4.10f — sessions never inflate.** The median day stays inside 10–15 minutes for the
-    whole campaign: the tea arc's extra budget goes into the *climb* (cheap in minutes),
-    never into more puzzles per evening.
+  - **4.10f — sessions inflate a little, and the ceiling is published.** *(ROUND 24: this
+    clause read "sessions never inflate — the median day stays inside 10–15 minutes for
+    the whole campaign", and it was held by a CAP rather than by the design.*
+    `PROFILE_DECENT.sessionMinutes` *was **18** while 4.10b publishes "p90 ≤ 23", and the
+    day loop breaks at* `sessionMinutes`*: past minute 12* `SESSION_WIND_DOWN` *cuts her
+    appetite to 0.35, giving a ceiling of 3 × 0.35 × 1.8 × 1.5 = 2.84 work-minutes in
+    sight and at most ×1.2 of jitter — so **no evening could exceed ≈21.6 minutes** and
+    "p90 ≤ 23" could not come out wrong. Measured over 3000 days: p90 16.2, p99 18.6,
+    **max 19.9**. The distribution was clipped and the gate was reading the clip. Round
+    15 killed a vacuous gate and added this one one paragraph later.)*
+    **THE RULE THIS LEAVES BEHIND: a modelled STOPPING RULE may never sit below a band
+    published about the quantity it stops.** `CLOCK_BAND` is that surface, in one place,
+    and `tests/economy-pressure.test.ts` gates every profile's clock above it (26 / 28 /
+    30 minutes — +8 on each, so the three profiles keep their ordering) and additionally
+    requires the measured **p90 to sit at least two minutes clear of the cap**, so a
+    clipped distribution cannot wear a passing test.
+    With the clip gone the inflation is visible, and it is now the published thing: the
+    skilled evening runs **16.9 minutes over his first ten and 18.2 over days 20–30**
+    (band 14–20, p90 ≤ 26) and the median player's **14.5 → 15.6** (band 13–18, p90 ≤ 22).
+    What is GATED is the SHAPE: the late evening may not exceed **×1.2** the early one,
+    or the tea arc is buying an evening the owner did not ask for. Retirement is now rare
+    (0.04–2.1% of evenings) and the evening's honest second ending is the one the grid
+    supplies for free — **stranded**, the house shut with steps still in hand.
   - **4.10g — the seal has to BITE** (the owner's *"solving needs to matter"*). Entering
     a violet room files a sealed page; a solve makes `decipherYield(tier)` of them out.
     As shipped in round 10 the mechanic was statistically a rounding error: only **9.5%**
@@ -712,6 +817,39 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     puzzle at tier 1, and the tier-2/3 Counting House should bank partial grids across
     days. The test asserts both are still true, so fixing either FAILS 4.10h and forces
     the bound to tighten.
+  - **4.10j — THE DRAFT IS A DECISION, MEASURED AS THE DOMINANCE RATE** (REVIEW_AA §5.7,
+    round 24). The number this replaces was published as *"79.2% of offers have a real
+    choice"* and is defined in `scripts/draft-shape.ts` as
+    `(liveHist[2]+liveHist[3])/offerCount`, where "live" means only `!sealsItself(...)`.
+    That is *the share of offers holding two or more cards that do not instantly wall you
+    in* — how rarely the deck hands you a cul-de-sac — printed under a name that claims
+    something else. **It never once asked whether the three cards DIFFER.** Three
+    identical corridors score 3 live and count as a real choice. Same failure as the
+    "1.75× wage spread" computed on a filtered subset, and the same standing rule retires
+    it.
+    **THE DOMINANCE RATE** is the share of offers containing a card that weakly dominates
+    on BOTH axes the card face actually prints (`ui/blueprint/DraftModal.tsx`):
+    **FRONTIER** — the post-rotation doors into empty cells, off the same `resolveDoors`
+    the placement uses — and **STEPS** — what the room can pay, off the same
+    `solvePayout` / `UTILITY_EFFECTS` the ledger pays out of. An offer holding such a
+    card has its answer written on it; `1 − dominance` is the share where she must
+    actually give something up.
+    **The target is DERIVED, not asserted: <40%.** With three cards and two finely-spread
+    unrelated axes, the same card is top of both exactly **1/3** of the time — so 1/3 is
+    the floor a deck with no correlation between geometry and payout reaches, and 0.40 is
+    that floor plus an allowance for honest ties. (The economy critic proposed <40%
+    independently; this is why it is the number rather than an opinion.)
+    **Measured at round 24's HEAD: 67.0%** through the diagnostic walker and
+    **66.4–66.8%** on the evenings `simulateDays` really plays — against a **permutation
+    null of 68.7%** (each offer's frontier vector paired with a different offer's step
+    vector). So the deck is *not* pairing the two axes; the rate is what three coarse,
+    tie-heavy axes produce on their own, and the way down is **finer spread** rather than
+    de-correlation: frontier spread is zero on **31.3%** of offers and all three cards
+    are one category on **19.9%**.
+    `tests/draft-dominance.test.ts` gates the **RATCHET (≤70%)** — which fails on any
+    deck edit that makes offers more dominated — and pins the target as the destination
+    the next round walks it down to. Same shape as 4.10h's and 4.10i's ratchets, for the
+    same reason.
   - **4.10i — THE GROUND FLOOR IS A RESOURCE, NOT A FORMALITY** (REVIEW_AA §5.10, round
     23). *"If a resource is never scarce it is not a resource."* Nothing in 4.10a–h
     constrained the storeys the median player spends 62% of her evening on, and measured

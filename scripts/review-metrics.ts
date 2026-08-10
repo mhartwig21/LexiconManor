@@ -69,12 +69,31 @@ function campaignMetrics(profile: typeof PROFILE_DECENT, label: string) {
   // model has two endings now (`RETIREMENT`), so the honest report is the
   // SHARE of each beside the number — a 0.0% median that comes with "94.6% of
   // evenings spent out" is a measurement; the same 0.0% alone was not.
+  //
+  // ROUND 24 - AND THE HONEST NUMERATOR TURNED OUT TO BE THE HOUSE. Round 23's
+  // second ending was an APPETITE clock, and to produce any endings at all it
+  // had to sit BELOW 4.10b's published p90 - which made "p90 <= 23 minutes"
+  // unfalsifiable (see `CLOCK_BAND`). Lifted above every published band,
+  // retirement nearly vanishes. What replaced it is an ending the grid supplies
+  // for free: STRANDED - every room she can walk back to has its doors on outer
+  // wall, on a neighbour's blank plaster, or behind a padlock she cannot pay -
+  // measured on 14.7% of the median player's evenings and 25.6% of the skilled
+  // player's, with a median 8-9 steps still in her hand. A scalar row could
+  // never end that way, which is exactly why (d) read 0.0% for 23 rounds.
   const endings = all.flatMap((c) => c.days.map((d) => d.endReason));
-  const retired = all.flatMap((c) => c.days.filter((d) => d.endReason === 'retired'));
-  const retiredUnspent = retired.map((d) => {
+  const held = all.flatMap((c) => c.days.filter(
+    (d) => d.endReason === 'retired' || d.endReason === 'stranded'));
+  const retiredUnspent = held.map((d) => {
     const budget = d.spent - d.refunded + d.stepsLeft;
     return budget > 0 ? d.stepsLeft / budget : 0;
   });
+  // ROUND 24 - THE DOMINANCE RATE, on the evenings she really has. Replaces
+  // "79.2% of offers have a real choice", which measured only how rarely the
+  // deck hands her a cul-de-sac (see tests/draft-dominance.test.ts).
+  const offerCount = all.reduce((t, c) => t + c.days.reduce((u, d) => u + d.offers, 0), 0);
+  const dominated = all.reduce(
+    (t, c) => t + c.days.reduce((u, d) => u + d.dominatedOffers, 0), 0);
+  const cols = all.flatMap((c) => c.days.map((d) => d.columnsTouched));
 
   // ROUND 23 (REVIEW_AA §5.10) — THE GROUND FLOOR, which no published number
   // could see: every metric above is a whole-day aggregate, so a floor that
@@ -96,8 +115,10 @@ function campaignMetrics(profile: typeof PROFILE_DECENT, label: string) {
   console.log(`      VOLUME WIN day                     median ${fmt(medianOf(win))}   p10 ${fmt(quantileOf(win, 0.1))}  p90 ${fmt(quantileOf(win, 0.9))}`);
   console.log(`      win <=45 ${pct(share(win, (d) => d <= 45))} · <=35 ${pct(share(win, (d) => d <= 35))} · <=28 ${pct(share(win, (d) => d <= 28))} · <=14 ${pct(share(win, (d) => d <= 14))} · <=7 ${pct(share(win, (d) => d <= 7))} · never ${pct(share(win, (d) => d >= NEVER))}`);
   console.log(`  (d) unspent budget at day end          median ${pct(medianOf(unspent))}  p90 ${pct(quantileOf(unspent, 0.9))}`);
-  console.log(`      …how the evening ENDED               spent out ${pct(share(endings, (e) => e === 'broke'))} · early night ${pct(share(endings, (e) => e === 'retired'))}`);
-  console.log(`      …unspent on the early nights         median ${retiredUnspent.length ? pct(medianOf(retiredUnspent)) : 'n/a'}`);
+  console.log(`      …how the evening ENDED               spent out ${pct(share(endings, (e) => e === 'broke'))} · shut in ${pct(share(endings, (e) => e === 'stranded'))} · early night ${pct(share(endings, (e) => e === 'retired'))} · house full ${pct(share(endings, (e) => e === 'filled'))}`);
+  console.log(`      …unspent when it did not spend out   median ${retiredUnspent.length ? pct(medianOf(retiredUnspent)) : 'n/a'}`);
+  console.log(`  (§5.7) DOMINANCE RATE                  ${pct(dominated / offerCount)}   over ${offerCount} real offers   [target <40% · was published as "79.2% real choice"]`);
+  console.log(`      columns her floorplan touched      median ${medianOf(cols)}   one-column chimneys ${pct(share(cols, (n) => n <= 1))}`);
   console.log(`  (§5.10) steps in hand, rows 0-${GROUND_ROWS}         median ${medianOf(inHand)}  p10 ${quantileOf(inHand, 0.1)}  p90 ${quantileOf(inHand, 0.9)}   [day-1 purse ${BASE_DAY_BUDGET + FIRST_MORNING_POT}]`);
   console.log(`      net steps per ground-floor room     ${(groundNet / groundRooms).toFixed(2)}   (${(groundRooms / endings.length).toFixed(2)} of them an evening)`);
   console.log(`      in hand entering row ${FIRST_LOCKED_ROW} (1st padlock)  median ${atLock.length ? medianOf(atLock) : 'n/a'}   [dawn budget ${BASE_DAY_BUDGET}]`);

@@ -103,7 +103,7 @@ import type { RoomPuzzleKind } from '../rooms/room-puzzle';
 import { effortMinutes, paysInStages } from './effort';
 import { BASE_DECK, deckFor, isKeyBearing, UTILITY_EFFECTS } from '../manor/deck';
 import { categoryWeight, rollCards, RARITY_WEIGHTS, WING_AFFINITY } from '../manor/drafting';
-import { WING_MEMORY, type WingCharacter } from '../manor/wings';
+import { rememberedWings, WING_MEMORY, type WingCharacter } from '../manor/wings';
 
 /**
  * ── HOW THE WINGS ARE MODELLED, AND THE TWO ASSUMPTIONS (round 20) ─────────
@@ -134,19 +134,42 @@ import { WING_MEMORY, type WingCharacter } from '../manor/wings';
  * supplies the day the term switches on, so the model and the engine cannot
  * disagree about when the papers commit.
  */
+/**
+ * ── ROUND 24: BOTH ASSUMPTIONS ARE RETIRED ────────────────────────────────
+ *
+ * `simulateDay` has columns now. `simulateCampaign` writes a real `DayRecord`
+ * per evening out of `wingCharacterOf(manor)` and derives the memory through
+ * the live `rememberedWings`, and the result goes straight into `rollCards`,
+ * which reads the target COLUMN itself. Nothing in the day model reads either
+ * field any more.
+ *
+ * Kept, and only kept, because `engine/manor/wings.ts` cites `WING_MODEL` by
+ * name for the measurement that ruled a GREEN wing out (median evening 9.7
+ * minutes, solve-keys below Fern's arc). That measurement was made under these
+ * two assumptions and the citation has to keep pointing at them.
+ */
 export const WING_MODEL = {
   character: 'puzzle' as WingCharacter,
   matchChance: 0.5,
 } as const;
 import {
-  canAddressSanctum, cardOpensOntoSanctum, createManor, rowTier, SANCTUM_DOOR_CELL,
+  canAddressSanctum, cardOpensOntoSanctum, cellKey, createManor, rowTier,
+  SANCTUM_CARD_ID, SANCTUM_DOOR_CELL,
 } from '../manor/grid';
+import { KEY_COST, type LockView } from '../manor/locks';
+import {
+  frontierWithLocks, isDominated, kindOfCard, offerAt, placeAndEnter, puzzleKindOfCard,
+  shapesOf, standsAtSanctumDoor, stepInto,
+  type CardShape, type FrontierDoor, type WalkRoomKind,
+} from './manor-walk';
+import { wingCharacterOf, type WingCharacters } from '../manor/wings';
+import { MANOR_COLS, MANOR_ROWS } from '../types';
 import { getRoomAdapter } from '../rooms/registry';
 import {
   channelStock, decipherYield, FRAGMENTS_TO_DEDUCE, LINTEL_CHANNEL, PITY_DROUGHT_DAYS,
   STUDY_CHANNEL,
 } from '../volume';
-import type { VolumeDef } from '../types';
+import type { DayRecord, VolumeDef } from '../types';
 // The authored volume itself, so the knowledge model below is DERIVED from the
 // content rather than transcribed from it (see `channelStock`). This module is
 // a dev/test instrument — nothing under src/app or src/ui imports it — so the
@@ -155,7 +178,7 @@ import volume1 from '../../../content/authored/volumes/volume-1.json';
 
 const VOLUME_1 = volume1 as unknown as VolumeDef;
 import {
-  appendEntry, createLedger, ledgerTotal, stepsRemaining, stepsRefunded, stepsSpent,
+  appendEntry, climbKey, createLedger, ledgerTotal, stepsRemaining, stepsRefunded, stepsSpent,
   fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, moveAt, solveKeys,
   sanctumMercyArmed, sanctumPlanWarmth, stageSteps, teaArcPoints, teaDawnPour, teaLandingPour,
   DOOR_LOCKS, ROOM_SIZE, SANCTUM_ARC, STEP_TABLE, TEA_POUR,
@@ -215,6 +238,17 @@ let landingDeck: readonly RoomCard[] | null = null;
  * Roll the REAL offer at the Sanctum landing and answer the only question that
  * matters up there: does any plan in it open onto the sealed door?
  *
+ * ── ROUND 24: A DIAGNOSTIC, NOT THE GATE ──────────────────────────────────
+ * The day model no longer calls this. It rolls the offer at the door she is
+ * actually standing at, in the manor she has actually built, and asks
+ * `atSanctumDoor` of that manor — which is the live predicate, and which this
+ * function could only ever approximate because it builds a FRESH manor with no
+ * rooms in it (so `eligibleCards`' deck thinning, the wing memory and her real
+ * entry direction were all wrong up there). What it still measures honestly is
+ * the LANDING OFFER RATE in isolation, which is the quantity `SANCTUM_ARC`'s
+ * warmth and mercy are tuned against, and `tests/economy-simulation.test.ts`
+ * uses it for exactly that.
+ *
  * Not modelled (documented, small, and both conservative): the live manor has
  * more rooms placed by the time she gets up here, so `eligibleCards`' deck
  * thinning differs slightly; and taking the north plan constrains which ROOM
@@ -261,19 +295,65 @@ export const REFILL_PAYOUTS: readonly number[] = Object.values(UTILITY_EFFECTS)
   .sort((a, b) => a - b);
 
 export const MOVEMENT = {
-  /** Hard cap so a runaway profile terminates. */
-  maxRoomsPerDay: 60,
   /**
-   * What a PADLOCKED climb actually costs when she has no key, modelled
-   * against the live wiring (app/slices/manor.ts `openDraft`): the door
-   * refuses free — no step is charged — because the padlock was already drawn
-   * on the blueprint and she never walks to a gate she cannot open (AAA 4.6).
-   * She drafts laterally instead, at THIS storey's price. The only extra cost
-   * is the detour: about half the time the other live door out of the room
-   * she is standing in is already spoken for, and she has to walk to another
-   * frontier door before she can draft at all.
+   * ROUND 24 — THE CAP IS THE HOUSE NOW, not a runaway guard.
+   *
+   * This was a flat 60 on a model with no grid, i.e. a number no evening could
+   * ever reach and a `capped` ending nothing could ever produce. The manor has
+   * 5×7 cells, two of them pre-placed (the Entrance Hall and the sealed
+   * Sanctum), so 33 is what the house physically holds — and an evening that
+   * fills it ends `filled`, which is a real ending a real player can have.
+   * Derived from `MANOR_COLS`/`MANOR_ROWS` so a grid resize moves it.
    */
-  lockoutDetourChance: 0.5,
+  maxRoomsPerDay: MANOR_COLS * MANOR_ROWS - 2,
+  /**
+   * ROUND 24 — `lockoutDetourChance` IS GONE, and its removal is the point.
+   *
+   * It was 0.5: "about half the time the other live door out of the room she is
+   * standing in is already spoken for, and she has to walk to another frontier
+   * door". That is a guess at a floorplan question, made because the model had
+   * no floorplan. It is now ANSWERED rather than estimated — a refused padlock
+   * sends her to the next reachable frontier door (`frontierWithLocks`) and the
+   * walk to it is priced cell by cell through the real `moveAt`, which is
+   * sometimes free (she is standing at another door) and sometimes four storeys
+   * of walking back down.
+   *
+   * Kept as a named zero so the constant's death is legible rather than silent,
+   * and so `tests/economy-simulation.test.ts` can assert the model no longer
+   * carries an unmodelled detour term.
+   */
+  lockoutDetourChance: 0,
+  /**
+   * Chance she opens a door she had to WALK to rather than the one at her feet,
+   * per unit of `SimProfile.walkbackPerRow`. On the real grid the walk-back is
+   * measured rather than taxed, so what the profile field buys is NAVIGATION
+   * SKILL — and the error it models is a LOCAL one (`sloppyWalkRadius`), not a
+   * march across the house: a player who has just placed a room is standing at
+   * its doors, and choosing a different door is a couple of rooms of walking,
+   * never a tour. At 0.35 the median player opens ~20% of her drafts at a door
+   * she walked to and the skilled player ~13%, which is the gap their two
+   * docstrings have always claimed and the first round in which it is paid for
+   * in real steps.
+   */
+  navigationNoise: 0.35,
+  /** How far a sloppy pick may be from her feet, in rooms walked. */
+  sloppyWalkRadius: 2,
+  /**
+   * ── SHE CAN SEE THE TOP OF THE HOUSE (round 24) ─────────────────────────
+   *
+   * The sealed Sanctum is drawn on the blueprint from the first dawn, in the
+   * stair column, and a player climbing for it climbs UNDER it. The scalar model
+   * assumed this by construction — it had one column, so "row 6" and "the
+   * landing" were the same thing. On the real 5×7 they are not: reaching row 5
+   * in the west wing is not the landing, and measured with no column intent at
+   * all only **8.1%** of the evenings that reached the storey ended on the cell.
+   *
+   * This is the cost, in steps, that she is willing to pay per column of drift
+   * away from `SANCTUM_DOOR_CELL.col` when a draft is aimed upward. It is a
+   * PREFERENCE and not a rule: a cheap door two columns over still wins on a
+   * storey where a move is two steps, and loses on one where a move is nine.
+   */
+  sanctumColumnPull: 2.5,
 } as const;
 
 /**
@@ -314,8 +394,57 @@ export const RETIREMENT = {
   minSessionFactor: 1.25,
 } as const;
 
-/** Why an evening ended (round 23) — see `RETIREMENT`. */
-export type SimEndReason = 'broke' | 'retired' | 'capped';
+/**
+ * ═══ ROUND 24 — `sessionMinutes` WAS A CONSTRUCTION-BOUNDED CAP ═══════════
+ *
+ * Round 23 killed a vacuous gate ("unspent budget 0.0%", fixed by the loop
+ * condition) and, one paragraph later, added one. `PROFILE_DECENT.sessionMinutes`
+ * was **18** while AAA 4.10b publishes **p90 ≤ 23 minutes**, so the published
+ * number could not come out wrong:
+ *
+ *   the loop exits the moment `seconds/60 >= sessionMinutes`, so the only way
+ *   past 18 minutes is the ONE room she was already inside; past minute 12
+ *   `SESSION_WIND_DOWN.patienceFactor` cuts her appetite to 0.35, giving a
+ *   ceiling of `3 × 0.35 × 1.8 × 1.5 = 2.84` work-minutes in sight and at most
+ *   `× 1.2` of clock jitter — so **no evening can exceed ≈21.6 minutes** and
+ *   `p90 ≤ 23` is unfalsifiable. Measured over 3000 days at round 23's HEAD:
+ *   p90 16.2, p99 18.6, **max 19.9** — the distribution is clipped, and the
+ *   gate was reading the clip.
+ *
+ * THE RULE THIS LEAVES BEHIND, and it is a general one: **a modelled stopping
+ * rule may never sit below a band that is published about the quantity it
+ * stops.** The evening's second ending is real and stays — without it REVIEW_AA
+ * §8's unspent-budget number goes back to answering itself — but the clock she
+ * stops at now sits ABOVE every published clock band, so the band is produced
+ * by how she plays and not by where the loop breaks. `CLOCK_BAND` is that
+ * published surface, in one place, and `tests/economy-pressure.test.ts` gates
+ * every profile's `sessionMinutes` against it.
+ */
+export const CLOCK_BAND = {
+  /** AAA 4.10b: the median evening. */
+  medianMin: 10,
+  medianMax: 15,
+  /** AAA 4.10b: the long-evening tail. */
+  p90Max: 23,
+  /**
+   * A profile's `sessionMinutes` must exceed this — strictly above the widest
+   * published band, so the cap cannot be what produces the number.
+   */
+  minSessionMinutes: 23,
+} as const;
+
+/**
+ * Why an evening ended.
+ *
+ * ROUND 24 added the two the grid can produce and a scalar row could not:
+ *   `stranded` — every room she could walk back to has its doors on outer
+ *     walls, on neighbours' blank plaster, or behind a padlock she has no key
+ *     for. The house is shut and she still has steps. This is the ending that
+ *     makes REVIEW_AA §8's unspent-budget number a measurement.
+ *   `filled` — she placed a room in every cell the manor has.
+ * `capped` is gone: it named a runaway guard at 60 rooms on a 33-cell house.
+ */
+export type SimEndReason = 'broke' | 'retired' | 'stranded' | 'filled';
 
 /**
  * Last 0-based row of THE GROUND FLOOR for §5.10's purposes — the tier-1 band,
@@ -337,8 +466,12 @@ export const FIRST_LOCKED_ROW = DOOR_LOCKS.chanceByRow.findIndex((c) => c > 0);
 // The deck mix — derived from the REAL deck, not from vibes
 // ---------------------------------------------------------------------------
 
-/** What a drafted room turns out to be, from the economy's point of view. */
-export type SimRoomKind = 'micro' | 'anchor' | 'utility' | 'parlor' | 'mystery';
+/**
+ * What a drafted room turns out to be, from the economy's point of view.
+ * ROUND 24: one definition, in `manor-walk.ts`, so the kind the day model
+ * reasons about and the kind read off the CARD SHE TOOK cannot drift apart.
+ */
+export type SimRoomKind = WalkRoomKind;
 
 export const SIM_ROOM_KINDS: readonly SimRoomKind[] =
   ['micro', 'anchor', 'utility', 'parlor', 'mystery'];
@@ -664,9 +797,14 @@ export interface SimProfile {
    * the blueprint with steps still in hand and she stops ("An early night,
    * well chosen", `NIGHT_LINES`). See `RETIREMENT` for why this is the ONLY
    * honest second ending — the live game has no affordability refusal above
-   * one step. Omitted, she plays until the ledger is empty, which is what
-   * every profile did for twenty-two rounds and what made REVIEW_AA §8's
-   * unspent-budget gate vacuous.
+   * one step. Omitted, she plays until the ledger is empty.
+   *
+   * ROUND 24 — AND IT MUST SIT ABOVE EVERY PUBLISHED CLOCK BAND. Round 23 set
+   * this to 18 while 4.10b publishes p90 ≤ 23, which made the published number
+   * unfalsifiable: no evening could reach 23 minutes because the loop broke at
+   * 18 (measured max 19.9 over 3000 days). See `CLOCK_BAND` for the arithmetic
+   * and for the rule this leaves behind; `tests/economy-pressure.test.ts` gates
+   * every profile that sets this against `CLOCK_BAND.minSessionMinutes`.
    */
   sessionMinutes?: number;
   /**
@@ -758,7 +896,7 @@ export const PROFILE_SKIPPER: SimProfile = {
  */
 export const PROFILE_DECENT: SimProfile = {
   name: 'decent',
-  sessionMinutes: 18,
+  sessionMinutes: 26,
   attemptRate: 0.88,
   solveRate: 0.8,
   patienceMinutes: 3,
@@ -777,7 +915,7 @@ export const PROFILE_DECENT: SimProfile = {
 /** A great day with refills: warm tea, snacks found, sharp solving (4.10c). */
 export const PROFILE_GREAT: SimProfile = {
   name: 'great',
-  sessionMinutes: 22,
+  sessionMinutes: 30,
   attemptRate: 0.92,
   solveRate: 0.9,
   patienceMinutes: 4,
@@ -803,7 +941,7 @@ export const PROFILE_GREAT: SimProfile = {
  */
 export const PROFILE_SKILLED: SimProfile = {
   name: 'skilled',
-  sessionMinutes: 20,
+  sessionMinutes: 28,
   attemptRate: 0.68,
   solveRate: 0.9,
   patienceMinutes: 5,
@@ -964,6 +1102,26 @@ export interface SimDayResult {
    * really happens.
    */
   pressure: GroundPressure;
+  /**
+   * ROUND 24 — THE FLOORPLAN FACTS, which no published number could see before
+   * because the model had no floorplan.
+   */
+  /** The day's manor seed — the offers, the layouts and the padlocks all hash off it. */
+  daySeed: number;
+  /** Real 3-card offers she was shown tonight. */
+  offers: number;
+  /**
+   * Of those, offers containing a card that weakly dominates on BOTH frontier
+   * and steps — i.e. offers where the card face already told her the answer.
+   * See `manor-walk.ts` DOMINANCE for why this replaces "79.2% real choice".
+   */
+  dominatedOffers: number;
+  /** Distinct columns her rooms ended up in (1 = the chimney REVIEW_AA §5.7 measured). */
+  columnsTouched: number;
+  /** Plans she took that sealed themselves (`sealsItself`, the live predicate). */
+  sealedPicks: number;
+  /** What tonight's floorplan made of each wing — the campaign's memory fuel. */
+  wings: WingCharacters;
   ledger: StepLedger;
   /**
    * Pages she could actually READ today, from every faucet (round 18). Written
@@ -1013,6 +1171,84 @@ function preferenceFor(
 }
 
 /**
+ * Gems the model assumes she is holding when an offer is rolled. Two, the same
+ * figure every other `rollCards` call in this file has used since round 5 —
+ * gems are not ledgered here (AAA 4.1's affordability rule guarantees a
+ * takeable card exists whatever she holds), and the term's whole effect is on
+ * `affordabilityMultiplier`, which A1 property-tests.
+ */
+const DRAFT_GEMS = 2;
+
+/**
+ * ── HOW SHE READS A CARD (round 24) ────────────────────────────────────────
+ *
+ * Before this the model chose a KIND out of `deckMixAt` and never saw a card,
+ * so the only thing that could steer a draft was category preference. She is
+ * choosing between three real plans now, and the two things she can read off
+ * the face before she spends are the two axes `manor-walk.ts` measures:
+ *
+ *   `frontierPull`  — the plan's onward doors. Modest on purpose: a player who
+ *     always maximised the frontier would spread sideways and never climb, and
+ *     both hostile reviewers did the opposite.
+ *   `sealAversion`  — the stamp `ui/blueprint/DraftModal.tsx` prints ("Seals
+ *     itself · +1 gem"). Deliberately smaller than the strongest category pull,
+ *     because the review's whole ask is that a sealed room be CHOOSEABLE — she
+ *     takes the walled-in violet room when violet is what she came for, and
+ *     pays for it in the walk back down.
+ *   `sanctumPull`   — "Opens onto the Sanctum", stamped on exactly the plans
+ *     `opensOntoSanctum` returns true for. Large: the round-13 note says the
+ *     model assumes she takes such a plan when it is offered, and that
+ *     assumption is only honest because the stamp exists.
+ */
+export const CARD_READING = {
+  frontierPull: 0.6,
+  sealAversion: 1.6,
+  sanctumPull: 12,
+  /**
+   * Both geometry terms are scaled by what a walk on THIS storey costs, as a
+   * multiple of the ground floor's price (`moveAt(row) / moveAt(0)`: ×1 on rows
+   * 0–3, ×3.5 on row 4, ×4.5 on rows 5–6). A cul-de-sac on the ground floor is
+   * two steps of walking back; the same plan on the fourth storey is nine a
+   * room, and a player reading the sheet knows the difference. This is the one
+   * place the model lets geometry outrank category preference, and it only does
+   * so where the price says it should.
+   */
+  priceScaled: true,
+} as const;
+
+/** Which of the three real cards she takes. */
+function chooseCard(
+  shapes: readonly CardShape[],
+  profile: SimProfile,
+  ctx: { stepsLeft: number; keys: number; needsKeySoon: boolean },
+  rng: () => number,
+  /** What one walk costs where this room would stand, over the ground price. */
+  geometryWeight: number,
+): CardShape {
+  let best = shapes[0]!;
+  let bestScore = -Infinity;
+  for (const s of shapes) {
+    // Affordability (AAA 4.1): slot 1 is guaranteed free, so this can never
+    // empty the offer — it only stops her taking a gem card she cannot pay for.
+    if (s.card.gemCost > DRAFT_GEMS) continue;
+    let score = preferenceFor(kindOfCard(s.card), profile, ctx);
+    score += s.frontier * CARD_READING.frontierPull * geometryWeight;
+    if (s.seals) score -= CARD_READING.sealAversion * geometryWeight;
+    if (s.opensSanctum) score += CARD_READING.sanctumPull;
+    score += rng() * 0.5;
+    if (score > bestScore) { bestScore = score; best = s; }
+  }
+  return best;
+}
+
+/** The live deck, memoised — every offer in the model rolls out of this one. */
+let walkDeckCache: readonly RoomCard[] | null = null;
+function walkDeck(): readonly RoomCard[] {
+  walkDeckCache ??= deckFor([]);
+  return walkDeckCache;
+}
+
+/**
  * Play one abstract day through the real ledger. Deterministic per rng.
  * `timeRng` (a separate stream) samples durations for the clock model;
  * without it, durations fall to range midpoints — the economy's rng stream is
@@ -1043,13 +1279,24 @@ export function simulateDay(
     /** LEGIBLE fragments on the desk at dawn — the mercy's knowledge half. */
     legibleFragments?: number;
     /**
-     * ROUND 20 (REVIEW_AA §5.7) — what the papers remember the wings for. See
-     * `WING_MODEL` for the two assumptions this makes and why they are the
-     * pessimistic ones for every band in 4.10.
+     * ROUND 24 — THE WINGS ARE READ, NOT ASSUMED.
+     *
+     * Round 20 modelled them with two stated assumptions (`WING_MODEL`: always
+     * a reading wing, matching half of every evening's drafts) because a model
+     * with no columns cannot know which wing a door opens into. It has columns
+     * now, so this is the real `WingCharacters` the papers remember — built by
+     * `simulateCampaign` out of the per-evening `wingCharacterOf(manor)` its own
+     * days produced, through the live `rememberedWings` — and it is handed
+     * straight to `rollCards`, which reads the target COLUMN itself.
      */
-    wingCharacter?: WingCharacter;
-    /** Fern's key access, so the landing offer rolls the weights she really has. */
+    wings?: WingCharacters;
+    /** Fern's key access, so the offers roll the weights she really has. */
     keyAccess?: number;
+    /**
+     * The manor seed for this evening. Omitted, it is drawn from the economy
+     * rng — which is what keeps `simulateDays` a single reproducible stream.
+     */
+    daySeed?: number;
     /**
      * ROUND 17 (REVIEW_AA §5.2) — THE WORD HAS ALREADY BEEN SPOKEN, down the
      * Entrance Hall's speaking tube, and the house is holding its doors for the
@@ -1071,8 +1318,6 @@ export function simulateDay(
   // the ground floor stops getting richer every week.
   const tea = teaDawnPour(profile.brambleAffinity);
   if (tea > 0) ledger = appendEntry(ledger, { reason: 'tea', delta: tea, at: 0 });
-  const landingPot = teaLandingPour(profile.brambleAffinity);
-  let landingPoured = false;
   // The welcome pot / yesterday's risen dough — through the same audited path
   // and the same 'tea' reason the live day slice uses (AAA 4.9).
   const dawnSteps = profile.dawnSteps ?? 0;
@@ -1091,24 +1336,36 @@ export function simulateDay(
   let keysFromSolves = 0;
   let keys = profile.dawnKeys ?? 0;
   let lockedOut = 0;
-  let row = 1;              // 1-based; the entrance
-  let maxRow = 1;
   let seconds = 0;
-  // THE LANDING DRAFT (round 13). She gets exactly one at (2,5) per evening —
-  // the cell is drafted once and the manor resets at dawn — so this is rolled
-  // on the first arrival and never again today.
-  let landingDrafted = false;
-  let atSanctumDoor = false;
-  const surveyEvenings = carry?.surveyEvenings ?? 0;
-  // ROUND 17: once the word is answered the house stops gambling with her —
-  // the mercy slot is armed and the plans of the top storey are as good as they
-  // will ever get. Before that, both terms are exactly what they always were.
+  let offers = 0;
+  let dominatedOffers = 0;
+  let sealedPicks = 0;
+
+  // ── THE MANOR, FOR REAL (round 24). ────────────────────────────────────
+  // A `ManorState`, not a row: `createManor` lays the Entrance Hall at the
+  // bottom of the stair column and the sealed Sanctum at the top of it, and
+  // every door, seal, padlock and offer below is asked of THIS object through
+  // the same functions the blueprint asks.
+  const daySeed = carry?.daySeed ?? Math.floor(rng() * 2 ** 31);
+  let manor = createManor(daySeed);
+  const deck = walkDeck();
+  // ROUND 17: once the word is answered the house holds its doors open — the
+  // live `LockView`, threaded into the same `isDoorLocked` the slice calls.
   const answered = carry?.sanctumAnswered ?? false;
+  const lockView: LockView = { heldOpen: answered };
+  const surveyEvenings = carry?.surveyEvenings ?? 0;
   const landingArc = {
     planWarmth: answered ? 1 : sanctumPlanWarmth(surveyEvenings),
-    mercy: answered || sanctumMercyArmed(surveyEvenings, carry?.legibleFragments ?? 0),
+    sanctumMercy: answered || sanctumMercyArmed(surveyEvenings, carry?.legibleFragments ?? 0),
     keyAccess: carry?.keyAccess ?? 0,
   };
+  /** Anti-repeat (AAA 4.3): the cards she was offered and turned down last time. */
+  let declinedLastDraft: string[] = [];
+
+  let row = 1;              // 1-based, DERIVED from playerCell — never tracked
+  let maxRow = 1;
+  const landingPot = teaLandingPour(profile.brambleAffinity);
+  let landingPoured = false;
 
   // ── THE GROUND FLOOR, MEASURED (round 23, REVIEW_AA §5.10). ─────────────
   // Sampled as the evening happens rather than reconstructed at dusk: the
@@ -1134,167 +1391,217 @@ export function simulateDay(
   };
   mark();
 
-  /** Charge one move into 0-based `intoRow0`. */
-  const move = (intoRow0: number) => {
-    // The step OUT of the tier-1 band belongs to the climb, not to the floor.
-    if (intoRow0 > GROUND_ROWS) leftGround = true;
+  /**
+   * Charge one WALK into a placed room — the live `moveTo`, which ledgers
+   * `moveAt(destination row)` (app/slices/manor.ts, re-priced by `priceEntry`
+   * off the cell key). Round 24: these are the real walk-backs. The old model
+   * charged `walkbackPerRow × depth` moves at the MIDPOINT row of the path;
+   * the manor charges the row she is actually standing in, and a retreat down
+   * the stairs is cheap while a lateral walk across the fourth storey is seven
+   * steps a room.
+   */
+  // ── THE GATE IS A MOMENT, NOT A DUSK (round 24). ───────────────────────
+  // `atSanctumDoor` is a predicate about where she is STANDING, and the live
+  // game asks it the instant she gets there (the blueprint routes her into the
+  // Sanctum screen). An evening that stood at the door and then walked back
+  // down to bank a Kitchen has still reached it — so this is latched at every
+  // placement and every step, never read off the final cell.
+  let atSanctumDoor = false;
+  const latchDoor = () => { if (standsAtSanctumDoor(manor)) atSanctumDoor = true; };
+
+  const walkInto = (cell: Cell) => {
+    if (cell.row > GROUND_ROWS) leftGround = true;
+    manor = stepInto(manor, cell);
+    latchDoor();
     ledger = appendEntry(ledger, {
-      reason: 'move', delta: moveAt(intoRow0), at: 0, roomKey: `2,${intoRow0}`,
+      reason: 'move', delta: moveAt(cell.row), at: 0, roomKey: cellKey(cell),
     });
     seconds += TIME_TABLE.moveTap;
     mark();
   };
 
-  let endReason: SimEndReason = 'capped';
+  let endReason: SimEndReason = 'filled';
   outer: while (rooms < MOVEMENT.maxRoomsPerDay) {
     // ── THE EVENING'S SECOND ENDING (round 23, `RETIREMENT`). ─────────────
     // "An early night, well chosen" — she is out on the blueprint with steps
-    // still in hand and she puts the kettle on. Before this the loop only ever
-    // exited broke, which is what made REVIEW_AA §8's unspent-budget gate
-    // answer itself: 100.0% of days ended at exactly 0.
+    // still in hand and she puts the kettle on. Round 24 lifted every profile's
+    // clock above `CLOCK_BAND.p90Max` so this can no longer be what produces a
+    // published minute.
     if (profile.sessionMinutes !== undefined && seconds / 60 >= profile.sessionMinutes) {
       endReason = 'retired';
       break outer;
     }
-    // Push or farm? Real push-your-luck play is not a coin flip: she climbs
-    // while she can still SEE the top from where she stands, and settles into
-    // the lower floors to bank refunds when she cannot. `reserveToTop` prices
-    // the rest of the ascent through the same MOVE_COST_BY_ROW the ledger
-    // uses, so the decision moves with any movement retune. This is the
-    // mechanism behind the day-6–10 first reach: early in a campaign the
-    // budget never gets far enough above the reserve for the climb to look
-    // affordable; the tea arc is what eventually lifts it over the line.
-    const stepsNow = stepsRemaining(ledger);
-    const canAffordStorey = stepsNow >= climbStepCost(row, profile) * profile.boldness;
-    const wantsUp = row < SANCTUM_LANDING_ROW && canAffordStorey && rng() < profile.pushBias;
-    let targetRow = wantsUp ? Math.min(SANCTUM_LANDING_ROW, row + 1) : row;
-    const targetRow0 = targetRow - 1;
 
-    // --- Walk to the frontier door: 1 step in + depth-scaled walk-back. ----
-    // Walk-backs traverse the storeys below; they are priced at the midpoint
-    // row of that path, which is where most of the re-walking happens. The
-    // multiplier is deliberately GENTLE (≈0.3 extra moves per storey of
-    // depth): with per-row movement pricing the climb already gets expensive
-    // on its own, and Blue Prince's much larger re-walk figure came from a
-    // flat move cost on a 5×9 grid with no vertical door planning.
-    const extra = profile.walkbackPerRow * (row - 1);
-    const walkbacks = Math.floor(extra) + (rng() < extra % 1 ? 1 : 0);
-    const midRow0 = Math.max(0, Math.floor((row - 1) / 2));
-    for (let i = 0; i < walkbacks; i++) {
-      move(midRow0);
-      if (ledgerTotal(ledger) <= 0) { endReason = 'broke'; break outer; } // dusk, out on the blueprint
+    // ── THE FRONTIER (round 24). ──────────────────────────────────────────
+    // Every door into an empty cell she can reach from where she stands, with
+    // the real walk to it — BFS over `doorsConnect`, the only movement rule the
+    // live game has. A sealed plan is genuinely a cul-de-sac here.
+    const frontier = frontierWithLocks(manor, lockView);
+    const openable = frontier.filter((d) => !d.locked || keys >= KEY_COST);
+    // ── THE PADLOCK REFUSES, FREE (AAA 4.6). ─────────────────────────────
+    // A door she cannot pay for is a door she does not walk to: nothing is
+    // charged and she drafts somewhere else. Counted once per turn the gate
+    // actually stood between her and a door — which on the real grid is a
+    // fact about which CELLS locked tonight (`isDoorLocked`, deterministic per
+    // daySeed and cell), not a per-row coin flipped at the moment she looked.
+    if (keys < KEY_COST && frontier.some((d) => d.locked)) lockedOut += 1;
+    if (openable.length === 0) {
+      // ── THE ENDING A SCALAR ROW COULD NOT HAVE ──────────────────────────
+      // The house is shut: everything she can walk back to opens onto outer
+      // wall, blank plaster, or a padlock she cannot pay. She still has steps.
+      // This is the honest numerator of REVIEW_AA §8's unspent-budget gate,
+      // which read 0.0% on every day for twenty-three rounds by construction.
+      endReason = 'stranded';
+      break outer;
     }
 
-    // --- The padlock (DOOR_LOCKS): the hard gate on the upper storeys. -----
-    // Rolled BEFORE the step is charged, because that is how the live game
-    // plays it (app/slices/manor.ts openDraft): the padlock is already drawn
-    // on the blueprint, so a door she cannot open is a door she declines to
-    // walk to — refused free, never a surprise charge (AAA 4.6). The key
-    // itself is spent on placement, i.e. only when the climb actually
-    // happens, which is exactly what the `keys -=` below models.
-    if (wantsUp && !answered && (DOOR_LOCKS.chanceByRow[targetRow0] ?? 0) > 0) {
-      if (rng() < DOOR_LOCKS.chanceByRow[targetRow0]!) {
-        if (keys >= DOOR_LOCKS.keyCost) {
-          keys -= DOOR_LOCKS.keyCost;
-        } else {
-          // No key: the climb is refused and she drafts laterally on this
-          // storey instead — at THIS storey's price, not the one above —
-          // plus the detour to a door that will actually open
-          // (MOVEMENT.lockoutDetourChance).
-          lockedOut += 1;
-          targetRow = row;
-          if (rng() < MOVEMENT.lockoutDetourChance) {
-            move(Math.max(0, row - 1));
-            if (ledgerTotal(ledger) <= 0) { endReason = 'broke'; break outer; }
-          }
-        }
+    // ── WHICH DOOR (round 24). ────────────────────────────────────────────
+    // `pushBias` is unchanged in meaning: the chance this draft is aimed UP.
+    // What changed is that "aimed up" is now a door with a higher row on a real
+    // floorplan, and the price of getting to it is the walk the grid charges,
+    // not `walkbackPerRow × depth` at a midpoint row.
+    const stepsNow = stepsRemaining(ledger);
+    const priceOf = (d: FrontierDoor) => {
+      let cost = 0;
+      for (const cell of d.walk) cost += -moveAt(cell.row);
+      cost += -moveAt(d.from.row);                                   // the door-step
+      cost += Math.max(0, -moveAt(d.cell.row) - -moveAt(d.from.row)); // the climb
+      return cost;
+    };
+    const climbs = openable.filter((d) => d.cell.row > manor.playerCell.row);
+    const wantsUp = manor.playerCell.row + 1 < SANCTUM_LANDING_ROW + 1
+      && climbs.length > 0
+      && rng() < profile.pushBias;
+    // Boldness: how much margin over the priced climb she insists on. The
+    // price is now exact rather than estimated, so a cautious player is
+    // cautious about a real number.
+    const affordable = climbs.filter((d) => stepsNow >= priceOf(d) * profile.boldness);
+    const pool = wantsUp && affordable.length > 0 ? affordable : openable;
+    // Navigation skill: `walkbackPerRow` used to be a movement tax; on the real
+    // grid it is the chance she does NOT take the cheapest door. A sharp player
+    // reads the sheet and walks the short way (0.36); the median player takes
+    // the door in front of her (0.58) and pays for it in steps.
+    const scoreOf = (d: FrontierDoor) => priceOf(d)
+      // She can see the sealed Sanctum from the first dawn; a climb aimed at it
+      // is a climb under its column (`MOVEMENT.sanctumColumnPull`).
+      // …and it applies to a LATERAL draft above the ground floor too: working
+      // her way under the stair column is most of how a real climb is made, and
+      // a pull that only fired on the step up could never move her sideways.
+      + (wantsUp || d.cell.row > GROUND_ROWS
+        ? Math.abs(d.cell.col - SANCTUM_DOOR_CELL.col) * MOVEMENT.sanctumColumnPull : 0)
+      - d.cell.row * 0.01;                               // ties go to the higher door
+    const sloppy = rng() < Math.min(1, profile.walkbackPerRow * MOVEMENT.navigationNoise);
+    const local = pool.filter((d) => d.walk.length <= MOVEMENT.sloppyWalkRadius);
+    let door: FrontierDoor;
+    if (sloppy && local.length > 0) {
+      door = local[Math.floor(rng() * local.length)]!;
+    } else {
+      door = pool[0]!;
+      let best = scoreOf(door);
+      for (const d of pool.slice(1)) {
+        const score = scoreOf(d);
+        if (score < best) { best = score; door = d; }
       }
     }
-    move(targetRow - 1);
-    // She has paid for the storey, so she is STANDING on it — even if that was
-    // her last step. The live game agrees and is explicit about it
-    // (app/slices/manor.ts openDraft: "even if it was her last step, the offer
-    // still opens", dusk deferred until it resolves), so recording the arrival
-    // before the dusk check is what stops the model from charging her for a
-    // floor it then says she never reached.
-    row = targetRow;
-    maxRow = Math.max(maxRow, row);
-    if (ledgerTotal(ledger) <= 0) { endReason = 'broke'; break outer; }
 
-    // --- Draft: three cards from the real deck mix, one taken. ------------
+    // --- Walk to the door's room, cell by cell, at the real prices. --------
+    for (const cell of door.walk) {
+      walkInto(cell);
+      if (ledgerTotal(ledger) <= 0) { endReason = 'broke'; break outer; }
+    }
+
+    // --- Open the draft: the step to the door, priced at HER row. ----------
+    // app/slices/manor.ts `openDraft`: she is crossing the floor she is already
+    // standing on to look at three cards, so the door-step is her row's price.
+    // Even if it was her last step the offer still opens (dusk is deferred).
+    ledger = appendEntry(ledger, {
+      reason: 'move', delta: moveAt(manor.playerCell.row), at: 0,
+      roomKey: cellKey(manor.playerCell),
+    });
     seconds += TIME_TABLE.draft;
-    // The wing term (round 20): on the share of drafts that land in a wing the
-    // papers remember, the deck she is offered is the tidied one.
-    const inRememberedWing =
-      carry?.wingCharacter !== undefined && rng() < WING_MODEL.matchChance;
-    const mix = deckMixAt(
-      targetRow - 1, BASE_DECK, inRememberedWing ? carry?.wingCharacter : undefined,
-    );
+    mark();
+
+    // --- The REAL offer, behind the REAL door. ----------------------------
+    const cards = offerAt(deck, manor, door, {
+      gems: DRAFT_GEMS,
+      declinedLastDraft,
+      drawIndex: 0,
+      keyAccess: landingArc.keyAccess,
+      sanctumPlanWarmth: landingArc.planWarmth,
+      sanctumMercy: landingArc.sanctumMercy,
+      wings: carry?.wings,
+    });
+    const shapes = shapesOf(cards, manor, door);
+    offers += 1;
+    if (isDominated(shapes)) dominatedOffers += 1;
+
     const stepsLeft = stepsRemaining(ledger);
-    const nextRow0 = Math.min(SANCTUM_LANDING_ROW, targetRow + 1) - 1;
+    const nextRow0 = Math.min(SANCTUM_LANDING_ROW, door.cell.row + 2) - 1;
     const ctx = {
       stepsLeft, keys,
-      needsKeySoon: (DOOR_LOCKS.chanceByRow[nextRow0] ?? 0) > 0,
+      needsKeySoon: !answered && (DOOR_LOCKS.chanceByRow[nextRow0] ?? 0) > 0,
     };
-    let kind = drawKind(rng, mix);
-    let best = preferenceFor(kind, profile, ctx);
-    for (let slot = 1; slot < 3; slot++) {
-      const other = drawKind(rng, mix);
-      const pref = preferenceFor(other, profile, ctx) + rng() * 0.5;
-      if (pref > best) { best = pref; kind = other; }
+    const pick = chooseCard(
+      shapes, profile, ctx, rng, moveAt(door.cell.row) / moveAt(0),
+    );
+
+    // --- Take it: the key on placement, the climb on the step through. -----
+    if (door.locked) keys -= KEY_COST;
+    // The climb differential, keyed "from>to" so the audited `priceEntry`
+    // computes it — never the call site (app/slices/manor.ts chooseDraftCard).
+    const climb = Math.min(0, moveAt(door.cell.row) - moveAt(door.from.row));
+    if (climb < 0) {
+      if (door.cell.row > GROUND_ROWS) leftGround = true;
+      ledger = appendEntry(ledger, {
+        reason: 'move', delta: climb, at: 0,
+        roomKey: climbKey(cellKey(door.from), cellKey(door.cell)),
+      });
     }
+    manor = placeAndEnter(manor, pick.card, door.dir, door.cell);
+    latchDoor();
+    declinedLastDraft = cards.filter((c) => c.id !== pick.card.id).map((c) => c.id);
+    if (pick.seals) sealedPicks += 1;
+    row = manor.playerCell.row + 1;
+    maxRow = Math.max(maxRow, row);
 
     rooms += 1;
-    const tier: Tier = rowTier(row - 1);
-    const roomKey = `sim-${rooms}`;
+    const tier: Tier = rowTier(manor.playerCell.row);
+    const roomKey = cellKey(manor.playerCell);
     if (!leftGround) pressure.groundRooms += 1;
-    if (row - 1 >= FIRST_LOCKED_ROW && pressure.atFirstLock === null) {
+    if (manor.playerCell.row >= FIRST_LOCKED_ROW && pressure.atFirstLock === null) {
       pressure.atFirstLock = stepsRemaining(ledger);
     }
+    mark();
 
     // ── BRAMBLE CARRIES THE POT UP (round 23, `TEA_POUR`, REVIEW_AA §5.10). ─
     // The live counterpart is app/slices/manor.ts, on the placement that puts
     // her on the second landing — same row, same one-per-evening rule, and the
-    // same audited 'tea' entry, so what floats on her counter here is what
-    // floats on it in the game.
-    if (!landingPoured && row - 1 >= TEA_POUR.landingRow0) {
+    // same audited 'tea' entry.
+    if (!landingPoured && manor.playerCell.row >= TEA_POUR.landingRow0) {
       landingPoured = true;
       if (landingPot > 0) {
         ledger = appendEntry(ledger, {
           reason: 'tea', delta: landingPot, at: 0, roomKey: TEA_POUR.key,
         });
+        mark();
       }
     }
 
-    // ── THE SECOND GATE, DRAFTED FOR REAL (round 13, AAA 4.10d/e). ─────────
-    // Arriving on the landing is the CLIMB; opening the door is the GATE, and
-    // the gate is a card. Roll the offer she really gets at (2,5), through the
-    // same `rollCards` the slice calls, and take the plan that opens north if
-    // one is there — which she can now see on the card face (DraftModal stamps
-    // it). One roll per evening: the cell is drafted once and the manor resets
-    // at dawn, so an evening that lands on a sealed plan is an evening spent.
-    if (row === SANCTUM_LANDING_ROW && !landingDrafted) {
-      landingDrafted = true;
-      atSanctumDoor = landingDraft(Math.floor(rng() * 2 ** 31), landingArc);
-    }
-
-    // --- Resolve the room. -------------------------------------------------
+    // --- Resolve the room she actually drafted. ---------------------------
+    // ROUND 24: `kind` is READ OFF THE CARD SHE TOOK, not drawn from
+    // `deckMixAt`, and the puzzle is the room on its face rather than a second
+    // independent draw from `puzzleKindMixAt`. A deck edit moves this directly.
+    const kind = kindOfCard(pick.card);
     if (kind === 'micro' || kind === 'anchor') {
       // With the day nearly out she looks at the board, decides she cannot
       // afford the mistakes, and leaves it for tomorrow (AAA 4.13) — and she
       // is far more willing to squeeze in a 60-second Linen Closet than to
-      // open a six-minute Library on her last four steps. This is what keeps
-      // the clock's tail bounded: exhausted days do not end with an anchor.
+      // open a six-minute Library on her last four steps.
       const lowOnSteps = stepsRemaining(ledger) < 8;
       const attemptChance = profile.attemptRate
         * (lowOnSteps ? (kind === 'anchor' ? 0.2 : 0.7) : 1);
       if (rng() < attemptChance) {
-        // ── WHICH ROOM, AND HOW LONG SHE GIVES IT (round 22). ───────────────
-        // The kind is drawn off the real draft weights, the work it asks for
-        // comes from `ROOM_EFFORT`, and the sitting she was willing to give it
-        // decides whether the evening contains a solved Conservatory or a
-        // Conservatory she banked three rungs of and left for tomorrow.
-        const puzzleKind = drawPuzzleKind(rng, targetRow - 1, kind);
+        const puzzleKind = puzzleKindOfCard(pick.card) ?? 'twistle';
         const workMinutes = effortMinutes(puzzleKind, tier);
         const windDown = seconds / 60 > SESSION_WIND_DOWN.afterMinutes
           ? SESSION_WIND_DOWN.patienceFactor : 1;
@@ -1334,20 +1641,13 @@ export function simulateDay(
           }
           // ROUND 11 — THE SOLVE IS WHAT MAKES THE PAGE OUT. Only the backlog
           // standing at THIS moment can be deciphered, which is the whole
-          // reason the seal can survive a night: a violet room drafted after
-          // the evening's last solve stays smudged until tomorrow.
+          // reason the seal can survive a night.
           const madeOut = Math.min(sealed, decipherYield(tier));
           sealed -= madeOut;
           pagesMadeOut += madeOut;
           roomsSolved += 1;
         } else if (paysInStages(puzzleKind, tier)) {
           // ── THE LADDER PAYS (REVIEW_AA §6, round 22). ────────────────────
-          // She worked it and left it for tomorrow, and the rungs she crossed
-          // are hers: `stageSteps` is the same function the room slice calls
-          // off the adapters' own progress events, so what the model banks
-          // here is exactly what the live ledger prints. Before this, a hive
-          // worked for six minutes paid ZERO, which is why both reviewers
-          // stopped opening the long rooms at all.
           const banked = stageSteps(puzzleKind, tier, workedFraction, 0);
           if (banked > 0) {
             ledger = appendEntry(ledger, {
@@ -1360,34 +1660,23 @@ export function simulateDay(
       }
     } else if (kind === 'utility') {
       seconds += TIME_TABLE.utilityBeat;
-      // The green deck is roughly half refill (Kitchen/Larder/Boot Room/Still
-      // Room), a sixth keys (Key Cabinet), the rest gems and compounding
-      // trinkets that this model treats as flavour.
-      const roll = rng();
-      if (ctx.needsKeySoon && keys < 2 && roll < profile.keyLuck) {
-        // She took the green card BECAUSE its face said "+1 key" (AAA 1.17) —
-        // the padlock upstairs is visible before she picks.
-        keys += 1;
-        keysFound += 1;
-      } else if (roll < 0.55) {
+      // ROUND 24: the green card is the one she TOOK, so its payout is the one
+      // authored on its own face (`UTILITY_EFFECTS`) rather than a draw from
+      // the set of payouts the deck could have paid. `keys` likewise.
+      const effect = UTILITY_EFFECTS[pick.card.id];
+      if (effect?.steps) {
         ledger = appendEntry(ledger, {
-          reason: 'snack',
-          // Round-6 audit: this used to roll uniformly over `STEP_TABLE.snack`
-          // (then a fictional 3..7). Refills are FIXED authored numbers on the
-          // green cards, so the model now draws from the payouts the deck can
-          // actually pay — see REFILL_PAYOUTS.
-          delta: REFILL_PAYOUTS[randInt(rng, 0, REFILL_PAYOUTS.length - 1)]!,
-          at: 0, roomKey,
+          reason: 'snack', delta: effect.steps, at: 0, roomKey,
         });
-      } else if (roll < 0.75) {
-        keys += 1;
-        keysFound += 1;
+      }
+      if (effect?.keys) {
+        keys += effect.keys;
+        keysFound += effect.keys;
       }
     } else if (kind === 'mystery') {
       seconds += TIME_TABLE.mysteryBeat;
       // Hers forever from this step — and unreadable until a word game is
-      // finished (AAA 4.18 keeps it non-blocking; the owner directive keeps it
-      // meaningful).
+      // finished (AAA 4.18 keeps it non-blocking).
       fragmentsFound += 1;
       sealed += 1;
     } else {
@@ -1400,10 +1689,23 @@ export function simulateDay(
     if (ledgerTotal(ledger) <= 0) { endReason = 'broke'; break; }
   }
 
+  const cols = new Set<number>();
+  for (const placed of Object.values(manor.rooms)) {
+    if (placed.cardId === SANCTUM_CARD_ID) continue;
+    cols.add(placed.cell.col);
+  }
+
   return {
     rooms,
     roomsSolved,
     maxRow,
+    // ── THE GATE, ASKED OF THE MANOR (round 24). ─────────────────────────
+    // `atSanctumDoor`'s own two clauses, on the real object: she is standing on
+    // the landing cell AND the room she drafted there drew a north door that
+    // matches the Sanctum's sealed south one. Round 13 measured this through
+    // `landingDraft`, a hypothetical offer rolled on an EMPTY manor; the manor
+    // she is standing in has ten rooms in it, its own deck thinning and its own
+    // wing memory, and this asks that one.
     reachedSanctum: atSanctumDoor,
     reachedLanding: maxRow >= SANCTUM_LANDING_ROW,
     fragmentsFound,
@@ -1419,6 +1721,12 @@ export function simulateDay(
     minutes: seconds / 60,
     endReason,
     pressure,
+    daySeed,
+    offers,
+    dominatedOffers,
+    columnsTouched: cols.size,
+    sealedPicks,
+    wings: wingCharacterOf(manor),
     ledger,
   };
 }
@@ -1695,6 +2003,11 @@ export function simulateCampaign(
   let answeredDay: number | null = null;
   let firstSpeakDay: number | null = null;
   let volumeWinDay: number | null = null;
+  // ROUND 24 — the one thing about a night's manor that outlives it
+  // (REVIEW_AA §5.7). Real `DayRecord`s, so `rememberedWings` is the live
+  // function rather than a re-implementation of its rule.
+  const wingRecords: DayRecord[] = [];
+  let wings: WingCharacters = {};
 
   for (let day = 1; day <= days; day++) {
     const profile = campaignProfileForDay(base, day);
@@ -1725,12 +2038,24 @@ export function simulateCampaign(
       legibleFragments: fragments,
       keyAccess: keyAccessFor(fernPointsOnDay(day)),
       sanctumAnswered: answered,
-      // ROUND 20: the papers commit after `WING_MEMORY.eveningsToRemember`
-      // evenings of agreement, so a campaign's first two nights are exactly
-      // what they always were and every day after carries the wing term.
-      wingCharacter: day > WING_MEMORY.eveningsToRemember ? WING_MODEL.character : undefined,
+      // ROUND 24: THE PAPERS REMEMBER WHAT SHE ACTUALLY BUILT. Round 20 fed
+      // this an assumed character on an assumed half of her drafts because the
+      // model had no columns. It has columns, so the memory is derived the way
+      // the save derives it — `rememberedWings` over the day records this
+      // campaign's own evenings wrote — and it commits after
+      // `WING_MEMORY.eveningsToRemember` evenings of agreement or not at all.
+      wings,
     });
     results.push(result);
+    wingRecords.push({
+      day, endedAt: 0,
+      cause: result.endReason === 'retired' ? 'retired-early' : 'steps-exhausted',
+      roomsDrafted: result.rooms,
+      roomsSolved: result.roomsSolved, stepsSpent: result.spent,
+      fragmentsFound: result.fragmentsFound, highestRow: result.maxRow - 1,
+      wings: result.wings,
+    });
+    wings = rememberedWings(wingRecords);
     if (firstSpeakDay === null && result.couldSpeak) firstSpeakDay = day;
     sealedBacklog = result.sealedBacklog;
     if (sealedBacklog > 0) sealedOvernightDays += 1;

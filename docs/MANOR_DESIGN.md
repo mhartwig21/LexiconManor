@@ -146,6 +146,15 @@ from v2 carry over (see §10).
   end; three can now, and they are the three rooms whose fiction is the end of the
   house (the Study, the Gem Vault, the Observatory). Dead-end plans fell 31.7% → 20.3%
   and offers containing a real shape choice rose 66.4% → 79.2%.
+  *ROUND 24 RETIRED THAT SECOND NUMBER.* "Offers with a real choice" was
+  `(liveHist[2]+liveHist[3])/offerCount` with "live" meaning only `!sealsItself(...)`
+  — i.e. the share of offers holding two or more cards that do not instantly wall you
+  in. It never asked whether the three cards DIFFER: three identical corridors score 3
+  and pass. What replaces it is the **DOMINANCE RATE** (AAA 4.10j,
+  `tests/draft-dominance.test.ts`) — the share of offers holding a card that weakly
+  dominates on BOTH frontier and steps, i.e. offers whose answer is written on the card
+  face. Measured **67.0%** against a derived target of **<40%**, with frontier spread
+  zero on 31.3% of offers. The dead-end number above is unaffected and still true.
 - **A room that seals itself pays for it** — `SEALED_ROOM_BOUNTY`, **+1 gem**, stamped
   on the card face *before* she taps. A dead end costs her a frontier, not a walk, so
   the compensation is the currency that buys the reroll at the next door; it is

@@ -28,6 +28,12 @@ import {
 } from '../src/engine/manor/grid';
 import { rollCards } from '../src/engine/manor/drafting';
 import { wingCharacterOf, wingOf, WING_NAMES } from '../src/engine/manor/wings';
+import {
+  DOMINANCE_GATE, isDominated, shapeOf, type CardShape,
+} from '../src/engine/economy/manor-walk';
+import {
+  PROFILE_DECENT, PROFILE_SKILLED, simulateDays,
+} from '../src/engine/economy/simulate';
 import { createRng } from '../src/engine/rng';
 
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
@@ -66,6 +72,8 @@ interface WalkResult {
   manor: ManorState;
   offers: number[];         // live-card count per offer seen
   shapes: number[];         // distinct post-rotation door-sets per offer
+  /** Both dominance axes, per card, per offer (engine/economy/manor-walk.ts). */
+  cardShapes: CardShape[][];
   rooms: number;
 }
 
@@ -76,6 +84,7 @@ function walkAnEvening(
   let manor = createManor(seed);
   const offers: number[] = [];
   const shapesPerOffer: number[] = [];
+  const cardShapes: CardShape[][] = [];
   const path: Cell[] = [{ ...manor.playerCell }];
   let placed = 0;
   for (let i = 0; i < rooms; i++) {
@@ -95,6 +104,7 @@ function walkAnEvening(
     shapesPerOffer.push(
       new Set(cards.map((c) => resolveDoors(c, dir, manor, cell).join(''))).size,
     );
+    cardShapes.push(cards.map((c) => shapeOf(c, dir, manor, cell)));
     // She takes a live card when one is offered (the card face tells her).
     const pick = live.length > 0 ? live[Math.floor(rng() * live.length)]! : cards[0]!;
     const doors = resolveDoors(pick, dir, manor, cell);
@@ -123,7 +133,7 @@ function walkAnEvening(
     }
     if (draftTargets(manor).length === 0) break;
   }
-  return { manor, offers, shapes: shapesPerOffer, rooms: placed };
+  return { manor, offers, shapes: shapesPerOffer, cardShapes, rooms: placed };
 }
 
 function offerAndFootprint(
@@ -132,15 +142,18 @@ function offerAndFootprint(
   const liveHist = [0, 0, 0, 0];
   const shapeHist = [0, 0, 0, 0];
   let offerCount = 0;
+  const allShapes: CardShape[][] = [];
   const widths: number[] = [];
   const aspects: number[] = [];
   let chimneys = 0;
   let sealed = 0;
   let placements = 0;
   for (let seed = 1; seed <= samples; seed++) {
-    const { manor, offers, shapes } = walkAnEvening(seed, roomsPerDay, deck, useWings);
+    const walked = walkAnEvening(seed, roomsPerDay, deck, useWings);
+    const { manor, offers, shapes } = walked;
     for (const n of offers) { liveHist[Math.min(3, n)]! += 1; offerCount += 1; }
     for (const n of shapes) shapeHist[Math.min(3, n)]! += 1;
+    for (const o of walked.cardShapes) allShapes.push(o);
     const cols = new Set<number>();
     const rowsTouched = new Set<number>();
     for (const r of Object.values(manor.rooms)) {
@@ -169,9 +182,10 @@ function offerAndFootprint(
   for (let n = 0; n <= 3; n++) {
     console.log(`    ${n} live card${n === 1 ? ' ' : 's'} : ${pct(liveHist[n]! / offerCount)}`);
   }
-  console.log(`    offers with a REAL choice (>=2 live): ${pct((liveHist[2]! + liveHist[3]!) / offerCount)}`);
+  console.log(`    >=2 non-sealing cards (the RETIRED headline): ${pct((liveHist[2]! + liveHist[3]!) / offerCount)}`);
   console.log(`    offers whose 3 plans are all the SAME shape: ${pct(shapeHist[1]! / offerCount)}` +
     `  ·  3 distinct shapes: ${pct(shapeHist[3]! / offerCount)}`);
+  reportDominance(allShapes, `walker, wings ${useWings ? 'ON' : 'off'}`);
   console.log(`\n(4) THE FOOTPRINT — ${samples} evenings of ${roomsPerDay} drafts`);
   console.log(`    columns touched: median ${widths[Math.floor(widths.length / 2)]}  mean ${(widths.reduce((a, b) => a + b, 0) / widths.length).toFixed(2)}  max ${widths[widths.length - 1]}`);
   console.log(`    width/height of the footprint: mean ${(aspects.reduce((a, b) => a + b, 0) / aspects.length).toFixed(2)}`);
@@ -215,8 +229,78 @@ function wingSanity() {
   console.log(`\n(5) WINGS — ${cols.map((c) => `col ${c} → ${WING_NAMES[wingOf(c)]}`).join(' · ')}`);
 }
 
+// ── (2b) THE DOMINANCE RATE — what replaced "79.2% of offers have a real
+// choice" (round 24) ───────────────────────────────────────────────────────
+//
+// THE OLD HEADLINE DID NOT MEASURE WHAT ITS NAME SAID. It was
+// `(liveHist[2] + liveHist[3]) / offerCount`, where "live" meant only
+// `!sealsItself(...)` — the share of offers holding two or more cards that do
+// not INSTANTLY wall you in. Three identical corridors score 3 and counted as
+// "a real choice". It never once asked whether the three cards DIFFER, which is
+// the entire question REVIEW_AA §5.7 asks.
+//
+// The dominance rate asks it. A card weakly dominates when it is >= every other
+// card on BOTH axes the game prints on its face — FRONTIER (onward doors into
+// empty cells, post-rotation, `resolveDoors`) and STEPS (what the room can pay,
+// `solvePayout` / `UTILITY_EFFECTS`). An offer holding such a card has a right
+// answer written on it; 1 − dominance is the share of offers where she has to
+// give something up.
+//
+// The permutation NULL beside it is the scale: pair each offer's frontier
+// vector with a DIFFERENT offer's step vector, and any correlation between
+// "keeps the house open" and "pays well" is destroyed by construction. A deck
+// whose real rate sits at or above its own null is a deck that pairs the two —
+// i.e. one where the geometry decision and the economy decision are the same
+// decision, and only one of them is really being made.
+function reportDominance(offers: CardShape[][], label: string) {
+  if (offers.length === 0) return;
+  const real = offers.filter((o) => isDominated(o)).length / offers.length;
+  const rng = createRng(0xd01a);
+  const order = offers.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const t = order[i]!; order[i] = order[j]!; order[j] = t;
+  }
+  let nullHits = 0;
+  for (let i = 0; i < offers.length; i++) {
+    const frontierFrom = offers[i]!;
+    const stepsFrom = offers[order[i]!]!;
+    const n = Math.min(frontierFrom.length, stepsFrom.length);
+    const mixed: CardShape[] = [];
+    for (let k = 0; k < n; k++) mixed.push({ ...frontierFrom[k]!, steps: stepsFrom[k]!.steps });
+    if (isDominated(mixed)) nullHits += 1;
+  }
+  const spreadZero = offers.filter(
+    (o) => new Set(o.map((c) => c.frontier)).size === 1,
+  ).length / offers.length;
+  const oneCategory = offers.filter(
+    (o) => new Set(o.map((c) => c.card.category)).size === 1,
+  ).length / offers.length;
+  console.log(`\n(2b) THE DOMINANCE RATE [${label}] — ${offers.length} offers`);
+  console.log(`    a card weakly dominates on BOTH axes : ${pct(real)}` +
+    `   [target <${pct(DOMINANCE_GATE.target)} · ratchet <=${pct(DOMINANCE_GATE.ratchet)}]`);
+  console.log(`    permutation null (axes re-paired)    : ${pct(nullHits / offers.length)}`);
+  console.log(`    frontier spread is ZERO              : ${pct(spreadZero)}`);
+  console.log(`    all three cards ONE category         : ${pct(oneCategory)}`);
+}
+
+// ── (2c) …and the same number on the evenings the PLAYER really has. The
+// walker above is a climb-preferring probe; `simulateDays` is the day model,
+// grid-true since round 24, with its own budget, retreats and preferences. If
+// the two disagreed by much, one of them would not be playing this game.
+function realPlayDominance() {
+  console.log('\n(2c) DOMINANCE ON REAL EVENINGS (simulateDays, grid-true)');
+  for (const profile of [PROFILE_DECENT, PROFILE_SKILLED]) {
+    const days = simulateDays(profile, 1500, 0xd01a + profile.name.length);
+    const offers = days.reduce((t, d) => t + d.offers, 0);
+    const dominated = days.reduce((t, d) => t + d.dominatedOffers, 0);
+    console.log(`    ${profile.name.padEnd(8)} ${pct(dominated / offers)}   (${offers} offers over 1500 evenings)`);
+  }
+}
+
 deckGeometry();
 offerAndFootprint(deckFor([]), false);
 offerAndFootprint(deckFor([]), true);
+realPlayDominance();
 landingRates(deckFor([]));
 wingSanity();
