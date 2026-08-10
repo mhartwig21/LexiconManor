@@ -1955,7 +1955,7 @@
     {
       "id": "bramble.night.warm",
       "trigger": "night",
-      "priority": 110,
+      "priority": 100,
       "once": false,
       "conditions": [
         {
@@ -2690,6 +2690,370 @@
           "speaker": "bramble",
           "portrait": "warm",
           "text": "The house gave you nothing today and took your steps for it. It will be sheepish in the morning. They always are."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.untouched-1",
+      "trigger": "night",
+      "priority": 320,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "retired-early"
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-solved",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-abandoned",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "fragment-found",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "sanctum-guess-wrong",
+            "withinDays": 0
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Home before the lamps wanted lighting, and nothing to show for it but yourself. That is a perfectly good thing to have brought back."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.untouched-2",
+      "trigger": "night",
+      "priority": 320,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "retired-early"
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-solved",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-abandoned",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "fragment-found",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "sanctum-guess-wrong",
+            "withinDays": 0
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "You did not open a single door today. Good. The house is a house, not an appointment — it will still be difficult in the morning."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.untouched-3",
+      "trigger": "night",
+      "priority": 320,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "retired-early"
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-solved",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-abandoned",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "fragment-found",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "sanctum-guess-wrong",
+            "withinDays": 0
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "An empty day, kept whole. He never once managed one; worked himself thin in this very hall. I am glad somebody here still can."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.untouched-4",
+      "trigger": "night",
+      "priority": 320,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "retired-early"
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-solved",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-abandoned",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "fragment-found",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "sanctum-guess-wrong",
+            "withinDays": 0
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Back before the kettle had cooled. Nothing is owed on a day like that, whatever face the house is pulling at you from the stairs."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.dry-3",
+      "trigger": "night",
+      "priority": 320,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-solved",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-abandoned",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "fragment-found",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "sanctum-guess-wrong",
+            "withinDays": 0
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "concerned",
+          "text": "Every step gone and every door still shut. The house does that when it is thinking. Let it think. You sleep."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.dry-4",
+      "trigger": "night",
+      "priority": 320,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-solved",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-abandoned",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "fragment-found",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "sanctum-guess-wrong",
+            "withinDays": 0
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "Not one thing to write in the book tonight. There were years of those. The book is patient, and so, pet, am I."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.warm-2",
+      "trigger": "night",
+      "priority": 100,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "bramble",
+          "gte": 5
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Goodnight. I have got used to a light being on upstairs — do not tell the house, it will start charging you for it."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.warm-3",
+      "trigger": "night",
+      "priority": 100,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "bramble",
+          "gte": 5
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Sleep well, pet. I shall do my rounds and think what to put in your cup tomorrow. It is the best part of my evening."
         }
       ]
     }

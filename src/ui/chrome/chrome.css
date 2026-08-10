@@ -505,18 +505,35 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
    subtitle (11.7), and it holds the 44pt floor (6.19) rather than being a
    text link the owner has to aim at. Deliberately unlike `.chr-scene__btn`:
    this is stepping aside, not the verb of the scene. */
-/* The stand-asides, side by side (round 11). Two stacked full-height asides
-   cost ~76px of a 667px scene that already carries the dawn ledger; a row
-   costs none. `flex-wrap` is the escape hatch for a Dynamic-Type step up
-   (AAA 6.7) — they stack rather than clip. */
+/* The stand-asides, side by side (round 11) — AND THEY WERE NOT (round 25).
+   Round 11 wrote "two stacked full-height asides cost ~76px of a 667px scene
+   that already carries the dawn ledger; a row costs none", and then shipped a
+   row that could never form: the two asides measure 179.3 + 174.2 at their
+   natural width, which is 363.5 with the 10px gap and does not fit 342px at
+   390 wide, let alone 327 at 375. So `flex-wrap` — written as the Dynamic-Type
+   escape hatch — fired on EVERY phone, every day, and the scene paid the 76px
+   round 11 believed it had saved. Measured at 375×667 on the fullest night:
+   `.chr-scene__asides` 126px tall, and the Journal aside's box bottom 726.7,
+   fifty-nine pixels off the glass.
+
+   `flex: 1 1 0` makes them share the row instead of asking for their content
+   width; the subtitle wraps to a second line rather than pushing its aside
+   onto one. The wrap escape is untouched and still real — at a Dynamic-Type
+   step up the labels' min-content widths stop fitting and they stack, which is
+   what 6.7 asks for. Measured after: 77px, both asides fully on the glass at
+   both sizes, `elementFromPoint` returning the button at all five points. */
 .chr-scene__asides {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: stretch;
   gap: 10px;
+  width: 100%;
 }
 
 .chr-scene__aside {
+  flex: 1 1 0;
+  min-width: 0;
   margin-top: 10px;
   min-height: var(--tap-target);
   padding: 6px 16px;
@@ -614,11 +631,23 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   color: var(--ink-faint);
 }
 
+/* THE TALLY, TWO PAIRS TO A ROW (round 25).
+   It was one label/number pair per row, and there are six of them now that
+   the refund has come down out of the headline (engine/day.ts
+   NIGHT_TALLY_LABELS): six rows is 176px of a 667px scene, and it was 147px
+   at five, which is most of the 84px the digest overflowed by. Paired, the
+   same six rows come to 88px and lose nothing — the numbers still line up in
+   their own column, the labels still read left to right, and the day's three
+   natural couples fall out of the order for free (drafted/solved,
+   spent/given back, fragments/letters).
+   `minmax(0, 1fr)` on the label columns is what keeps a long label wrapping
+   inside its own half instead of shoving the numbers out of the box. */
 .chr-digest {
   display: grid;
-  grid-template-columns: auto auto;
-  gap: 6px 18px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  gap: 6px 8px;
   margin-top: 4px;
+  width: 100%;
   font-family: var(--font-body);
   font-size: var(--text-body);
   color: var(--ink-soft);
@@ -630,6 +659,20 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   text-align: left;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
+}
+
+/* The other half of comprehension fix 10: what the tally IS. All three
+   testers read the refund as a payout and went looking for it in their
+   inventory; this says, on the screen where the number is, that the whole
+   column is a record of today and none of it survives the night. Caption
+   type, because it is a footnote to the rows and must not out-shout Mrs.
+   Bramble's goodnight above them. */
+.chr-digest__note {
+  margin: 4px 0 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  text-wrap: balance;
 }
 
 /* --- The morning's grants, itemised (AAA 4.9 / 4.10d / 11.16) -------------
@@ -888,8 +931,25 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
      Chronicles aside's box at 585.3-641.3 — 8px inside the 34px home-indicator
      band. Everything trimmed here is frame or display size; not one line of the
      digest's prose is dropped, because the digest IS the day read back. */
-  .chr-scene { padding-top: 54px; gap: 6px; }
+  .chr-scene {
+    padding-top: 54px;
+    gap: 6px;
+    /* Round 25: the foot pad was 24px + the indicator band. A 375×667 phone
+       is a home-BUTTON device — `env(safe-area-inset-bottom)` is 0 there and
+       the max() keeps the band on any short screen that does have one — so
+       the flat 24 was 8px of nothing on exactly the glass that could not
+       spare it. Frame, not content. */
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
   .chr-scene__title { font-size: var(--text-display); }
   .chr-scene__rule { margin: 3px 0; }
   .chr-scene__aside { margin-top: 2px; }
+  /* The verb keeps its 44pt box; only the air above it is given up. */
+  .chr-scene__btn { margin-top: 6px; }
+  .chr-digest { gap: 4px 8px; margin-top: 2px; }
+  .chr-digest__note { margin-top: 2px; }
+  .chr-dawn { margin: 2px 0 0; }
+  .chr-dawn__list { gap: 3px 12px; }
+  .chr-dawn__rung { margin-top: 4px; }
+  .chr-night { gap: 2px; }
 }

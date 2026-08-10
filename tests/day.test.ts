@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { create } from 'zustand';
 import {
   beginDay, buildDayRecord, canAdvancePhase, canEndDay, daySeedFor, highestRowLine,
-  pruneEventsAtDusk, refundLine, shouldTriggerDusk, DAY_FLOW, DUSK_FADE_MS,
+  nightTallyRows, pruneEventsAtDusk, shouldTriggerDusk, DAY_FLOW, DUSK_FADE_MS,
+  NIGHT_TALLY_LABELS, NIGHT_TALLY_NOTE,
 } from '../src/engine/day';
 import {
   appendEntry, climbKey, createLedger, moveAt, rowName, teaArcFloor, teaArcPoints, teaBonus,
@@ -206,7 +207,13 @@ describe('buildDayRecord (the chronicles bank)', () => {
     expect(record.highestRow).toBe(3);
     expect(record.stepsRefunded).toBe(10);
     expect(highestRowLine(record)).toContain(rowName(3));
-    expect(refundLine(record)).toBe('The manor gave back +10.');
+    // COMPREHENSION fix 10: the refund is a ROW among the other rows now, in
+    // the same type and the same column, and the prose above it is the climb
+    // alone. Three blind testers read "The manor gave back +10." as a payout
+    // and went hunting for the ten; nothing in this digest is a purse.
+    expect(nightTallyRows(record, 0)).toContainEqual(['Steps given back', 10]);
+    expect(NIGHT_TALLY_NOTE).toMatch(/carries to tomorrow/);
+    expect(NIGHT_TALLY_LABELS).toContain('Steps given back');
   });
 
   it('says nothing rather than printing a zero (the cozy pillar)', () => {
@@ -214,7 +221,9 @@ describe('buildDayRecord (the chronicles bank)', () => {
     expect(quiet.highestRow).toBe(0);
     expect(quiet.stepsRefunded).toBe(0);
     expect(highestRowLine(quiet)).toBeNull();
-    expect(refundLine(quiet)).toBeNull();
+    // Every zero row is suppressed rather than printed — including the refund
+    // now that it has a row of its own.
+    expect(nightTallyRows(quiet, 0)).toEqual([]);
   });
 });
 

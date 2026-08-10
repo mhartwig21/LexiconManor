@@ -33,6 +33,10 @@ import {
   availableChoices, resolveChoiceTarget, selectAskMenu, selectTaggedLine,
 } from '../src/engine/dialogue/select';
 import { ASK_MENU_CHARACTERS, NIGHT_FLOOR, TRIGGER_MOUNTS } from '../src/engine/dialogue/validate';
+import {
+  beatBlockPx, beatVisualLines, nightBeatLineBudget, tallyBlockPx, NIGHT_FIT,
+} from '../src/engine/dialogue/night-fit';
+import { NIGHT_TALLY_LABELS } from '../src/engine/day';
 
 const ALL_FILES = Object.values(DIALOGUE_FILES);
 
@@ -90,6 +94,97 @@ describe('the night is mounted, and it is a person (REVIEW_AA §5.11)', () => {
     for (const n of night) {
       expect(n.lines.length, n.id).toBeLessThanOrEqual(NIGHT_FLOOR.maxLines);
       for (const l of n.lines) expect(l.text.length, n.id).toBeLessThanOrEqual(NIGHT_FLOOR.maxChars);
+    }
+  });
+
+  /**
+   * ── THE FIT, AS A NUMBER THAT CAN COME OUT WRONG (round 25) ──────────────
+   *
+   * Round 24 published "the fullest possible night (four ledger rows, a
+   * two-line beat) still fits 375x667 with no scroll" and shipped an 84px
+   * overflow: the digest prints SIX rows, not four, and the cap it gated on
+   * (150 chars per LINE) has no relationship to the height of the glass — two
+   * 150-char lines pass it and draw nine rendered lines. This is that claim
+   * rebuilt as an assertion, over the measured scene (engine/dialogue/
+   * night-fit.ts). The three ways it fails are all real: a longer goodnight,
+   * a taller tally, a retune of the scene's frame.
+   */
+  it('the worst goodnight in the file fits the fullest night at 375x667', () => {
+    const night = getDialogueFile('bramble').nodes.filter((n) => n.trigger === 'night');
+    const drawn = night.map((n) => [beatVisualLines(n.lines), n.id] as const);
+    const worst = drawn.reduce((a, b) => (b[0] > a[0] ? b : a));
+    expect(NIGHT_FLOOR.maxVisualLines).toBe(nightBeatLineBudget());
+    expect(worst[0], `${worst[1]} is the tallest beat`).toBeLessThanOrEqual(NIGHT_FLOOR.maxVisualLines);
+
+    // The whole column, modelled: frame + every tally row + the tallest beat.
+    const column = NIGHT_FIT.framePx
+      + tallyBlockPx(NIGHT_TALLY_LABELS.length)
+      + beatBlockPx(worst[0], NIGHT_FLOOR.maxLines);
+    expect(column).toBeLessThanOrEqual(NIGHT_FIT.glassPx);
+  });
+
+  it('the fit gate can fail — one more line, or one more tally row, breaks it', () => {
+    // A goodnight one rendered line longer than the budget is over the glass.
+    const overlong = 'x'.repeat(NIGHT_FLOOR.maxVisualLines * NIGHT_FIT.charsPerLine + 1);
+    expect(beatVisualLines([{ text: overlong }])).toBeGreaterThan(NIGHT_FLOOR.maxVisualLines);
+
+    // …and so is today's longest beat if the tally grows. The budget is
+    // DERIVED from NIGHT_TALLY_LABELS.length, so this is not a hypothetical:
+    // adding a row is a two-character edit that this number answers.
+    const night = getDialogueFile('bramble').nodes.filter((n) => n.trigger === 'night');
+    const worst = Math.max(...night.map((n) => beatVisualLines(n.lines)));
+    expect(nightBeatLineBudget(NIGHT_TALLY_LABELS.length + 1)).toBeLessThan(worst);
+  });
+
+  /**
+   * ── THE CORNER ROUND 24 DID NOT DRIVE (round 25) ─────────────────────────
+   *
+   * 27 of round 24's 30 beats are conditioned on the day CONTAINING something,
+   * so the evenings that contain nothing fell through to whatever was left.
+   * Two holes, both measured live:
+   *   - five consecutive immediate-retire nights printed three strings, night
+   *     4 repeating night 1 verbatim and night 5 repeating night 2;
+   *   - and from Mrs. Bramble affinity 5 onward, `bramble.night.warm`
+   *     (priority 110) outranked the entire flat pool and was the ONLY
+   *     goodnight in the game — one string, every night, for the rest of the
+   *     campaign, on the commonest night shape there is.
+   *
+   * The property, not the prose: on a day with nothing whatever on its event
+   * stream, at every affinity a real save can hold, the selector must have a
+   * pool to rotate — never a single beat it deals forever.
+   */
+  it('a day that contained nothing still has a pool to rotate (both end causes)', () => {
+    const file = getDialogueFile('bramble');
+    for (const cause of ['retired-early', 'steps-exhausted'] as const) {
+      for (const aff of [0, 3, 5, 9]) {
+        const picked: string[] = [];
+        const seen = new Set<string>();
+        for (let day = 2; day <= 7; day++) {
+          const node = selectTaggedLine(file, query({
+            day, seen: new Set(seen),
+            affinities: { bramble: aff, ellery: 0, posy: 0, fern: 0, dewey: 0, portrait: 0 },
+            counters: {},
+            recentEvents: stamp(day, [{ type: 'day-ended', day, cause }]),
+          }), NIGHT_PREFIX);
+          expect(node, `${cause} @${aff} day ${day} said nothing`).toBeDefined();
+          picked.push(node!.id);
+          seen.add(node!.id);
+        }
+        // `week` lands on day 7 and retires; the empty-day pool itself must
+        // carry at least four distinct evenings on its own.
+        const ordinary = picked.filter((id) => id !== 'bramble.night.week');
+        expect(
+          new Set(ordinary).size,
+          `${cause} at affinity ${aff}: ${[...new Set(ordinary)].join(', ')}`,
+        ).toBeGreaterThanOrEqual(NIGHT_FLOOR.minEmptyDayPool);
+        // …and never the same goodnight two nights running, which is the
+        // repeat a player actually notices. Driven live before the rotation
+        // was made stable, nights 1 and 2 of a fresh save were identical.
+        for (let i = 1; i < picked.length; i++) {
+          expect(picked[i], `${cause} @${aff}: night ${i + 1} repeated night ${i}`)
+            .not.toBe(picked[i - 1]);
+        }
+      }
     }
   });
 

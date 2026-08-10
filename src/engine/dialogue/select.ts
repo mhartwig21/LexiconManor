@@ -28,6 +28,24 @@ interface PickOptions {
    * under says nothing about whether it may play (see `gotoPrefix`).
    */
   chain?: boolean;
+  /**
+   * ── ONE ROTATION STEP PER DAY, NOT PER VISIT (round 25) ──────────────────
+   *
+   * The tie-break below advances by (day, visits-today) so that WALKING UP TO
+   * somebody twice in an afternoon does not get the same idle line twice. A
+   * QUOTED line has no visits: the night digest and the Sanctum door render an
+   * authored line into a surface the player did not choose to open, once, and
+   * the visit counter is then nothing but jitter — it is the count of
+   * conversations she happened to have earlier in the day.
+   *
+   * Measured: five consecutive empty evenings, driven by clicking at 375x667,
+   * printed the SAME goodnight on nights 1 and 2 out of a pool of four,
+   * because day 1's introduction spent two dialogue-seen events and day 2's
+   * morning spent one, and (0+2)%4 = (1+1)%4. Two identical bedtimes in a row
+   * is the most visible repeat there is. Stable rotation walks the pool one
+   * step a day, so a pool of four cannot repeat inside four nights.
+   */
+  stableRotation?: boolean;
 }
 
 /** How many dialogue-seen events this character has today (visit counter). */
@@ -68,7 +86,8 @@ function pick(nodes: DialogueNode[], q: DialogueQuery, opts: PickOptions = {}): 
     // (better than silence).
     const fresh = ties.filter((n) => !seenWithinDays(q, n.id, 0));
     if (fresh.length > 0) ties = fresh;
-    const idx = (Math.max(0, q.day - 1) + seenTodayCount(q)) % ties.length;
+    const step = opts.stableRotation ? 0 : seenTodayCount(q);
+    const idx = (Math.max(0, q.day - 1) + step) % ties.length;
     return ties[idx];
   }
   return ties[0];
@@ -109,7 +128,7 @@ export function selectTaggedLine(
   query: DialogueQuery,
   prefix: string,
 ): DialogueNode | undefined {
-  return pick(file.nodes.filter((n) => n.id.startsWith(prefix)), query);
+  return pick(file.nodes.filter((n) => n.id.startsWith(prefix)), query, { stableRotation: true });
 }
 
 /** Find a node by id (goto resolution). */

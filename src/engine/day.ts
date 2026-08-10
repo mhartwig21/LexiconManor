@@ -189,10 +189,58 @@ export function highestRowLine(record: DayRecord): string | null {
   return row > 0 ? `You reached ${rowName(row)}.` : null;
 }
 
-/** "The manor gave back +14" — or null on a day that earned nothing. */
-export function refundLine(record: DayRecord): string | null {
-  const given = record.stepsRefunded ?? 0;
-  return given > 0 ? `The manor gave back +${given}.` : null;
+/**
+ * ── THE NUMBER ALL THREE TESTERS CHASED (docs/COMPREHENSION.md, fix 10) ─────
+ *
+ * This used to be `refundLine`, and it led the digest as prose: "The manor
+ * gave back +20." Three strangers who played the live build read that as a
+ * PAYOUT — a climb bonus, a score, steps banked toward tomorrow — and all
+ * three went looking for the twenty in their inventory. One built a whole
+ * false model of a height bonus on it; the systems player called it "the one
+ * that bothers me most, because it looks like the game's main scoring signal."
+ *
+ * It is `stepsRefunded(ledger)`: a retrospective sum of everything today's
+ * ledger paid IN — solves, perfect bonuses, tea, snacks. Nothing is banked.
+ * It is a STAT, and the fix is to file it where the other stats live rather
+ * than to explain it: it is now a tally row directly under "Steps spent", in
+ * the same type, with the same weight, and the tally carries one line saying
+ * out loud that none of it survives the night. A number standing among five
+ * other numbers under the word "tally" is not a transaction, and the digest's
+ * prose goes back to being the day's story — the climb — which is the only
+ * thing on that screen that was ever meant to lead.
+ *
+ * The labels live here rather than in the scene because the FIT GATE counts
+ * them (ui/chrome/night-fit.ts): the digest's height budget is derived from
+ * this list's length, so a seventh row cannot be added without the gate
+ * re-deriving what is left for Mrs. Bramble to say.
+ */
+export const NIGHT_TALLY_LABELS = [
+  'Rooms drafted', 'Rooms solved', 'Steps spent', 'Steps given back',
+  'Fragments found', 'Letters read',
+] as const;
+
+/** What the tally is, said plainly — the half of fix 10 that is a sentence. */
+export const NIGHT_TALLY_NOTE = 'Today’s tally. None of it carries to tomorrow.';
+
+/**
+ * The digest's rows, in print order, with every zero suppressed — a quiet day
+ * says less, it never says you scored nothing (round-5 audit).
+ */
+export function nightTallyRows(
+  record: DayRecord,
+  lettersOpened: number,
+): Array<readonly [string, number]> {
+  const values: Record<(typeof NIGHT_TALLY_LABELS)[number], number> = {
+    'Rooms drafted': record.roomsDrafted,
+    'Rooms solved': record.roomsSolved,
+    'Steps spent': record.stepsSpent,
+    'Steps given back': record.stepsRefunded ?? 0,
+    'Fragments found': record.fragmentsFound,
+    'Letters read': lettersOpened,
+  };
+  return NIGHT_TALLY_LABELS
+    .map((label) => [label, values[label]] as const)
+    .filter(([, n]) => n > 0);
 }
 
 /**

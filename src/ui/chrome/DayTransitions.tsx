@@ -18,7 +18,7 @@ import { useLocation } from 'wouter';
 import { useManorStore } from '../../app/store';
 import { sfx } from '../../app/sound';
 import type { DayRecord, DayState } from '../../engine/types';
-import { highestRowLine, refundLine } from '../../engine/day';
+import { highestRowLine, nightTallyRows, NIGHT_TALLY_NOTE } from '../../engine/day';
 import { dawnCarryOver, dawnCarryOverLines } from '../../app/slices/manor';
 import {
   firstMorningPot, rowName, teaArcPoints, teaDawnPour, teaLandingPour, TEA_ARC, TEA_POUR,
@@ -33,6 +33,7 @@ import WhereaboutsAside from '../dialogue/WhereaboutsAside';
 import UnreadMark from '../journal/UnreadMark';
 import SealedMark from '../journal/SealedMark';
 import { useJournalUnread } from '../journal/useJournalUnread';
+import { ceremonyGate } from '../moment/ceremony';
 
 /**
  * THE SCENE'S OWN ROUTE TO SETTINGS (AAA 11.24, round-9 major).
@@ -139,6 +140,37 @@ function SceneAsides() {
   );
 }
 
+/**
+ * ── THE SEAL DOES NOT PRESS INTO A SCENE (round 25; AAA 11.13 / 11.27) ──────
+ *
+ * Measured at 375×667 the night round 15's goodnight shipped: `elementFromPoint`
+ * at the centre of BOTH `.chr-night__say` lines returned `span.mom__title` and
+ * `span.mom__where` — the wax seal, parked in its usual band under the chrome
+ * bar, sits exactly where a full-screen lifecycle scene puts its opening
+ * paragraph. At 390×844 with a keepsake grant behind a letter grant, the first
+ * line's centre returned `span.mom__where` too, and the queue is 5.6s + 4.0s:
+ * on precisely the nights the conditioned beat exists to describe — she found
+ * a page, she opened a letter, she earned a keepsake — Mrs. Bramble's goodnight
+ * was illegible for about ten seconds and then gone with the scene.
+ *
+ * The layer already knows how to wait. `ceremonyGate` was built in round 12
+ * for the introduction card: while it is held the seal renders nothing AND
+ * does not arm its dwell timer, so the grant is not dismissed behind something
+ * nobody saw (11.13) — it presses in the moment the scene hands off, on the
+ * blueprint, where it has a board to name and a tap that means something.
+ *
+ * The morning card releases the gate when it opens Mrs. Bramble's
+ * conversation: a dialogue overlay is not a full-glass ceremony, round 16
+ * already made the seal an ordinary tappable card over one, and a grant made
+ * inside a morning scene should land inside that scene.
+ */
+function useSceneCeremony(active = true): void {
+  useEffect(() => {
+    if (!active) return undefined;
+    return ceremonyGate.hold();
+  }, [active]);
+}
+
 const MORNING_LINES = [
   'Light through the tall windows. The manor is waiting.',
   'The kettle is already on.',
@@ -216,7 +248,18 @@ function DawnGrants({ day }: { day: DayState }) {
   if (carriedUp > 0) {
     rows.push([`The rest of the pot, left on ${rowName(TEA_POUR.landingRow0)}`, carriedUp]);
   }
-  if (welcome > 0) rows.push(['A welcome cup, poured before you asked', welcome]);
+  // ── THE RAISE THAT READ AS A CUT (docs/COMPREHENSION.md, fix 11) ─────────
+  // BASE_DAY_BUDGET is 18 on every day of the campaign; day 1 alone adds this
+  // scripted pot. Two of three blind testers finished the session certain the
+  // allowance had SHRUNK on day 2 — one filed it as a difficulty spike, one as
+  // a punishment for having retired early — because day 1's header read 21 and
+  // day 2's opens at 18 before her tea lands. The arithmetic was fixed at HEAD
+  // (round 23's TEA_POUR dawn cup makes the day-2 purse 21 again at one
+  // affinity point); this is the naming half, and it is the half that matters,
+  // because the row is where she is looking. Say it is a first morning's own
+  // and only, and tomorrow's smaller list is not a demotion, it is the house
+  // going back to normal.
+  if (welcome > 0) rows.push(['A welcome cup — this first morning only', welcome]);
   if (carried.steps > 0) rows.push(['What yesterday left steeping', carried.steps]);
 
   // The next rung, named. `teaArcPoints` is the ceiling shared mornings buy;
@@ -306,6 +349,7 @@ export function MorningCard() {
   // it plays her contextual morning scene (recaps react to yesterday's
   // events), and closing the scene opens the blueprint.
   const [greeting, setGreeting] = useState(false);
+  useSceneCeremony(!greeting);
   if (!day) return null;
   const line = MORNING_LINES[(day.day - 1) % MORNING_LINES.length];
   if (greeting) {
@@ -343,6 +387,7 @@ export function DuskVeil() {
   const advance = useManorStore((s) => s.advanceDayPhase);
   const soundOn = useManorStore((s) => s.settings.soundEnabled);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useSceneCeremony();
 
   useEffect(() => {
     if (soundOn) sfx.dusk();
@@ -395,37 +440,29 @@ export function DuskVeil() {
  * scored nothing.
  */
 function NightLedger({ record, lettersOpened }: { record: DayRecord; lettersOpened: number }) {
+  // The prose is the day's STORY now, and the story is the climb. What the
+  // manor gave back has gone down into the tally where it belongs — see
+  // engine/day.ts NIGHT_TALLY_LABELS for why (COMPREHENSION fix 10).
   const climb = highestRowLine(record);
-  const gave = refundLine(record);
-  const rows: Array<[string, number]> = [
-    ['Rooms drafted', record.roomsDrafted],
-    ['Rooms solved', record.roomsSolved],
-    ['Steps spent', record.stepsSpent],
-    ['Fragments found', record.fragmentsFound],
-    // Round 6 (AAA 11.12): the post was the one campaign channel the digest
-    // never mentioned — a letter could arrive, be read, and leave no trace
-    // anywhere outside the journal tab nobody had a reason to open.
-    ['Letters read', lettersOpened],
-  ];
-  const kept = rows.filter(([, n]) => n > 0);
+  // Round 6 (AAA 11.12): the post was the one campaign channel the digest
+  // never mentioned — a letter could arrive, be read, and leave no trace
+  // anywhere outside the journal tab nobody had a reason to open.
+  const kept = nightTallyRows(record, lettersOpened);
   return (
     <>
-      {(climb || gave) && (
-        <p className="chr-digest__prose">
-          {climb}
-          {climb && gave ? ' ' : null}
-          {gave}
-        </p>
-      )}
+      {climb && <p className="chr-digest__prose">{climb}</p>}
       {kept.length > 0 ? (
-        <dl className="chr-digest">
-          {kept.map(([label, n]) => (
-            <Fragment key={label}>
-              <dt>{label}</dt>
-              <dd className="tabular-nums">{n}</dd>
-            </Fragment>
-          ))}
-        </dl>
+        <>
+          <dl className="chr-digest">
+            {kept.map(([label, n]) => (
+              <Fragment key={label}>
+                <dt>{label}</dt>
+                <dd className="tabular-nums">{n}</dd>
+              </Fragment>
+            ))}
+          </dl>
+          <p className="chr-digest__note">{NIGHT_TALLY_NOTE}</p>
+        </>
       ) : null}
     </>
   );
@@ -488,6 +525,7 @@ export function NightDigest() {
   const startDay = useManorStore((s) => s.startDay);
   const recentEvents = useManorStore((s) => s.recentEvents);
   const [turning, setTurning] = useState(false);
+  useSceneCeremony();
   if (!day) return null;
 
   const lettersOpened = recentEvents.filter(

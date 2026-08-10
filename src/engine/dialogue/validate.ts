@@ -36,6 +36,8 @@ import type {
 import {
   CONDITION_KINDS, MAX_CHOICES, MAX_CHOICE_CHARS, MAX_LINE_CHARS, PORTRAIT_EXPRESSIONS,
 } from './schema';
+import { NIGHT_TALLY_LABELS } from '../day';
+import { beatVisualLines, nightBeatLineBudget, NIGHT_FIT } from './night-fit';
 
 // docs/flags.md grammar, verbatim.
 export const FLAG_REGEX = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,2}$/;
@@ -429,24 +431,51 @@ export function validateDialogueFile(file: DialogueFile): ValidationIssue[] {
 }
 
 /**
- * ── THE NIGHT'S OWN FLOORS (REVIEW_AA §5.11) ────────────────────────────────
+ * ── THE NIGHT'S OWN FLOORS (REVIEW_AA §5.11, re-derived round 25) ───────────
  *
  * The night is not a conversation — it is the last thing she reads before the
- * phone goes down, printed INSIDE the digest under the ledger. So it is held
- * to two numbers the morning is not: how many beats exist at all, and how much
- * of the glass any one of them may take at 390×844 with a full ledger above
- * it. The owner hates scrollbars; a three-line goodnight would push the
- * "To tomorrow" button off the bottom of the scene, and no screenshot would
- * ever show it.
+ * phone goes down, printed INSIDE the digest under the tally. So it is held to
+ * numbers the morning is not: how many beats exist at all, and how much of the
+ * glass any one of them may take. The owner hates scrollbars; a goodnight one
+ * line too long pushes the "To tomorrow" button off the bottom of the scene,
+ * and no screenshot would ever show it.
+ *
+ * `maxChars: 150` was the round-24 stand-in for that, and it was a guess: it
+ * is a per-LINE cap with no relationship to the glass, so two 150-char lines
+ * (300 characters, nine rendered lines) passed it, and the shipped worst case
+ * — 209 characters over two lines — overflowed 375x667 by 84px WITH it
+ * passing. The cap stays as a sanity rail on any single line, but the real
+ * gate is now `maxVisualLines`, derived from the measured scene in
+ * `night-fit.ts` and re-derived whenever the tally grows a row.
  */
 export const NIGHT_FLOOR = {
   /** Beats in the pool. The morning ships 6 rotating lines + a conversation. */
   minNodes: 20,
   /** …of which this many must be conditioned on what the day contained. */
   minReactive: 14,
-  /** Lines per beat, and characters per line, at 390×844 under the ledger. */
+  /** Paragraphs per beat, and a rail on any one of them. */
   maxLines: 2,
   maxChars: 150,
+  /**
+   * RENDERED lines the beat may occupy, on the fullest night, at 375x667.
+   * Derived, not chosen — see engine/dialogue/night-fit.ts.
+   */
+  maxVisualLines: nightBeatLineBudget(),
+  /**
+   * THE EMPTY-DAY POOL (round 25). 27 of the 30 beats round 24 shipped were
+   * conditioned on the day containing something, so the evenings that contain
+   * nothing — she came home early, or spent the day walking into locked doors
+   * — fell through to whatever was left. Driven live: five consecutive
+   * immediate-retire nights printed three strings, night 4 repeating night 1
+   * verbatim; and once Mrs. Bramble's affinity reached 5 a single beat
+   * (`bramble.night.warm`, priority 110) outranked the whole flat pool and
+   * became the ONLY goodnight in the game, every night, forever. That is the
+   * exact defect round 24 existed to fix, surviving in the corner it did not
+   * drive. The pool the selector can actually deal on a day with nothing on
+   * its event stream is now asserted, per end-cause, in
+   * tests/night-and-choices.test.ts.
+   */
+  minEmptyDayPool: 4,
 } as const;
 
 /** Characters who must keep a standing verb menu (REVIEW_AA §5.11). */
@@ -675,7 +704,16 @@ export function validateDialogueSet(files: DialogueFile[]): ValidationIssue[] {
     }
     for (const n of night) {
       if (n.lines.length > NIGHT_FLOOR.maxLines) {
-        issues.push({ file: 'bramble', nodeId: n.id, message: `night beat has ${n.lines.length} lines > ${NIGHT_FLOOR.maxLines} — it will not fit the digest at 390×844` });
+        issues.push({ file: 'bramble', nodeId: n.id, message: `night beat has ${n.lines.length} paragraphs > ${NIGHT_FLOOR.maxLines} — it will not fit the digest at 375×667` });
+      }
+      // The fit gate proper: how many RENDERED lines this beat takes against
+      // what the fullest night leaves it (engine/dialogue/night-fit.ts).
+      const drawn = beatVisualLines(n.lines);
+      if (drawn > NIGHT_FLOOR.maxVisualLines) {
+        issues.push({
+          file: 'bramble', nodeId: n.id,
+          message: `night beat wraps to ${drawn} lines > ${NIGHT_FLOOR.maxVisualLines} — on the fullest night (${NIGHT_TALLY_LABELS.length} tally rows and the climb line) that is ${Math.round((drawn - NIGHT_FLOOR.maxVisualLines) * NIGHT_FIT.linePx)}px off the bottom of a 375×667 screen`,
+        });
       }
       for (const l of n.lines) {
         if (l.text.length > NIGHT_FLOOR.maxChars) {
