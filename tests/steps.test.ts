@@ -276,25 +276,41 @@ describe('priceEntry (movement cannot be mispriced by a caller)', () => {
 describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () => {
   it('states micro payouts in numbers, from STEP_TABLE not hand-copy', () => {
     const stake = draftCardStake({ category: 'puzzle', puzzleKind: 'cipher' }, 1);
-    expect(stake).toEqual({ size: 'micro', label: 'micro · +3 steps on solve' });
-    expect(stake!.label).toContain(String(STEP_TABLE.solve('micro', 1)));
+    expect(stake).toEqual({
+      size: 'micro', label: 'micro · a few minutes · +4 steps · +1 key on solve',
+    });
+    expect(stake!.label).toContain(String(STEP_TABLE.solve('micro', 1, 'cipher')));
   });
 
-  it('states anchor payouts at the target row tier (+6/+5/+4)', () => {
+  /**
+   * ROUND 22 (REVIEW_AA §6) — THE CARD NAMES THE ROOM'S OWN PRICE, AND ITS
+   * OWN LENGTH. It used to say `+6/+5/+4` for every anchor alive, which is the
+   * defect in one string: the Gallery's twenty seconds and the Conservatory's
+   * quarter of an hour carried identical faces, so "the correct strategy is to
+   * abandon half of them on sight" was a lesson only a lost evening could
+   * teach. The numbers are still derived from the one table — nothing here is
+   * hand-copied — but the table has a room in it now.
+   */
+  it('states each room’s own payout and its own expected length', () => {
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'hive' }, 1)!.label)
-      .toBe('anchor · +6 steps on solve');
+      .toBe('anchor · a long sit · +12 steps · +1 key on solve');
+    expect(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 1)!.label)
+      .toBe('anchor · a minute or two · +4 steps on solve');
     // ROUND 10: the card face names the KEY too, because from tier 2 up the
     // solve is what buys the padlocked door above it — and the price of the
     // climb is exactly the thing a draft decision is made on (AAA 1.17/4.6).
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 2)!.label)
-      .toBe('anchor · +5 steps · +1 key on solve');
+      .toBe('anchor · a minute or two · +4 steps · +1 key on solve');
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'word-web' }, 3)!.label)
-      .toBe('anchor · +4 steps · +1 key on solve');
+      .toBe('anchor · five minutes or so · +6 steps · +1 key on solve');
+    // The long room and the short one can no longer wear the same face.
+    expect(draftCardStake({ category: 'puzzle', puzzleKind: 'sudoku' }, 1)!.label)
+      .not.toBe(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 1)!.label);
     // Derived from the table, never hand-copied: retuning solveKeys retunes
     // every card face.
     for (const tier of [1, 2, 3] as const) {
       const label = draftCardStake({ category: 'puzzle', puzzleKind: 'hive' }, tier)!.label;
-      expect(label.includes('key')).toBe(solveKeys(tier) > 0);
+      expect(label.includes('key')).toBe(solveKeys(tier, 'hive') > 0);
     }
   });
 

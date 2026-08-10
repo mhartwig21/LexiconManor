@@ -349,7 +349,12 @@ describe('4.10b — the decent day is 10–15 MINUTES (the owner-playtest fix)',
     const b = simulateDay(createRng(4242), PROFILE_DECENT, createRng(777));
     expect([a.rooms, a.maxRow, a.spent, a.refunded])
       .toEqual([b.rooms, b.maxRow, b.spent, b.refunded]);
-    expect(TIME_TABLE.anchorSolve[0]).toBeGreaterThan(TIME_TABLE.microSolve[1]);
+    // Round 22: durations are per KIND now, so the clock's own claim is that
+    // the Conservatory is a different room from the Linen Closet — which is
+    // the whole finding (`TIME_TABLE` used to price all five anchors at one
+    // 3–6 minute band, so 4.10b had never been measured against the hive).
+    expect(TIME_TABLE.solveSeconds('hive', 1))
+      .toBeGreaterThan(TIME_TABLE.solveSeconds('crossword', 1) * 5);
   });
 });
 
@@ -1253,8 +1258,20 @@ describe('the padlock is LIVE, and the live key supply can pay for it', () => {
     const early = campaigns.flatMap((c) => c.days.slice(0, 5));
     expect(share(early, (d) => d.lockedOut > 0)).toBeGreaterThan(0.25);
     // …and it is never a wall: keys do arrive, and the top does open up.
-    expect(share(campaigns.flatMap((c) => c.days), (d) => d.keysFound > 0))
-      .toBeGreaterThan(0.3);
+    // ROUND 22 — MEASURED ACROSS BOTH CHANNELS, and the reason is the finding.
+    // This used to count only `keysFound` (green cards taken for their key
+    // face) and require >30% of days. The honest per-room clock made the SOLVE
+    // channel bigger (a room that asks three minutes of real work now pays a
+    // key wherever it stands — `KEY_SUPPLY.workKeyMinutes`), and the simulated
+    // player only reaches for a key CARD when she is short — so the deck share
+    // fell to ~29% while keys-in-hand rose. Counting one channel and calling it
+    // "keys arrive" would therefore have failed the gate for the directive
+    // working. Both channels are measured now, and the deck keeps its own floor
+    // so it cannot quietly die.
+    const padlockDays = campaigns.flatMap((c) => c.days);
+    expect(share(padlockDays, (d) => d.keysFound + d.keysFromSolves > 0))
+      .toBeGreaterThan(0.5);
+    expect(share(padlockDays, (d) => d.keysFound > 0)).toBeGreaterThan(0.2);
   });
 
   it('models the live refusal: a door she cannot open charges nothing for the storey above', () => {
@@ -1478,10 +1495,25 @@ describe('4.10b — the FIRST evenings land inside 10–15 minutes too', () => {
     // retune has to come here and change the number on purpose.
     // 1 + 2 + 3 + 7 + 9 = 22, entrance (row 0) → the landing (row 5).
     expect(reserveToTop(1, { walkbackPerRow: 0 })).toBe(22);
-    // Without the pot, day 1 falls out of the window — which is the finding.
+    // Without the pot, day 1 sits on the very floor of the window — which is
+    // the finding, re-measured.
+    //
+    // ROUND 22 MOVED THIS NUMBER AND THE TEST SAYS HOW. The finding was "9.0
+    // minutes, under the promised 10–15 floor", measured when every anchor was
+    // clocked at a flat 3–6 minutes. With honest per-room durations
+    // (`ROOM_EFFORT`) the same bare evening measures ~10.3: the rooms she plays
+    // on it are longer than the old model believed, so the pot is no longer the
+    // difference between "under the floor" and "in band" — it is the difference
+    // between scraping the floor and sitting in the middle of the window. The
+    // pot's justification is therefore re-stated as the gap it opens, which is
+    // the quantity that actually mattered, and it is still worth ~2 minutes of
+    // her first evening.
     const bare = simulateDays(
       { ...PROFILE_DECENT, brambleAffinity: 0, dawnSteps: 0, dawnKeys: 0 }, 2000, 0xbeef);
-    expect(median(bare, (r) => r.minutes)).toBeLessThan(10);
+    const potted = simulateDays(campaignProfileForDay(PROFILE_DECENT, 1), 2000, 0xbeef);
+    const bareMin = median(bare, (r) => r.minutes);
+    expect(bareMin, `bare first evening ${bareMin.toFixed(2)} min`).toBeLessThan(11);
+    expect(median(potted, (r) => r.minutes)).toBeGreaterThan(bareMin + 1);
   });
 });
 

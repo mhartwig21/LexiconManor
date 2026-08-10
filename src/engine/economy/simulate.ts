@@ -99,6 +99,8 @@
 
 import { createRng } from '../rng';
 import type { Cell, RoomCard, Tier } from '../types';
+import type { RoomPuzzleKind } from '../rooms/room-puzzle';
+import { effortMinutes, paysInStages } from './effort';
 import { BASE_DECK, deckFor, isKeyBearing, UTILITY_EFFECTS } from '../manor/deck';
 import { categoryWeight, rollCards, RARITY_WEIGHTS, WING_AFFINITY } from '../manor/drafting';
 import { WING_MEMORY, type WingCharacter } from '../manor/wings';
@@ -155,8 +157,8 @@ const VOLUME_1 = volume1 as unknown as VolumeDef;
 import {
   appendEntry, createLedger, ledgerTotal, stepsRemaining, stepsRefunded, stepsSpent,
   fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, moveAt, solveKeys,
-  sanctumMercyArmed, sanctumPlanWarmth, teaArcPoints, teaBonus,
-  DOOR_LOCKS, SANCTUM_ARC, STEP_TABLE,
+  sanctumMercyArmed, sanctumPlanWarmth, stageSteps, teaArcPoints, teaBonus,
+  DOOR_LOCKS, ROOM_SIZE, SANCTUM_ARC, STEP_TABLE,
 } from './steps';
 import type { StepLedger } from '../types';
 
@@ -356,6 +358,62 @@ export function deckMixAt(
   return w;
 }
 
+/**
+ * WHICH PUZZLE ROOM SHE ACTUALLY MET, off the real draft weights (round 22).
+ *
+ * `deckMixAt` answers "micro or anchor", which was enough while every anchor
+ * was priced and clocked identically. It is not enough any more: the Gallery
+ * and the Counting House are both anchors, both offered on the ground floor at
+ * ~25% of 3-card offers, and one of them is twenty seconds and the other is
+ * twelve minutes. The clock and the payout both key off the KIND now, so the
+ * model has to draw one — through the same `categoryWeight × RARITY_WEIGHTS ×
+ * tierRange` product `deckMixAt` uses, so a deck edit moves this with it.
+ *
+ * Returns a normalised distribution over the kinds of the requested size that
+ * are eligible at this row; an empty object if the deck offers none.
+ */
+export function puzzleKindMixAt(
+  row0: number,
+  size: 'micro' | 'anchor',
+  deck: readonly RoomCard[] = BASE_DECK,
+): Partial<Record<RoomPuzzleKind, number>> {
+  const tier = rowTier(row0);
+  const w: Partial<Record<RoomPuzzleKind, number>> = {};
+  let total = 0;
+  for (const card of deck) {
+    if (card.category !== 'puzzle' || !card.puzzleKind) continue;
+    if (card.tierRange[0] > tier || tier > card.tierRange[1]) continue;
+    if (ROOM_SIZE[card.puzzleKind] !== size) continue;
+    const weight = categoryWeight('puzzle', row0) * RARITY_WEIGHTS[tier][card.rarity];
+    w[card.puzzleKind] = (w[card.puzzleKind] ?? 0) + weight;
+    total += weight;
+  }
+  if (total <= 0) return w;
+  for (const k of Object.keys(w) as RoomPuzzleKind[]) w[k]! /= total;
+  return w;
+}
+
+const kindMixCache = new Map<string, Partial<Record<RoomPuzzleKind, number>>>();
+
+function drawPuzzleKind(
+  rng: () => number, row0: number, size: 'micro' | 'anchor',
+): RoomPuzzleKind {
+  const cacheKey = `${row0}|${size}`;
+  let mix = kindMixCache.get(cacheKey);
+  if (!mix) {
+    mix = puzzleKindMixAt(row0, size);
+    kindMixCache.set(cacheKey, mix);
+  }
+  let r = rng();
+  let last: RoomPuzzleKind = size === 'micro' ? 'crossword' : 'twistle';
+  for (const [kind, p] of Object.entries(mix) as [RoomPuzzleKind, number][]) {
+    last = kind;
+    r -= p;
+    if (r <= 0) return kind;
+  }
+  return last;
+}
+
 /** Share of PUZZLE rooms that are micro at this 0-based row (post-cull ≈ 0.2). */
 export function microShareAt(row0: number, deck: readonly RoomCard[] = BASE_DECK): number {
   const mix = deckMixAt(row0, deck);
@@ -443,21 +501,89 @@ export const TIME_TABLE = {
   utilityBeat: 10,
   /** A mystery beat: read the fragment, watch it file itself in the journal. */
   mysteryBeat: 35,
-  /** Micro solves: the 30–90s design band. */
-  microSolve: [45, 90],
-  /** Anchor solves: Hive/Twistle/Web/Study/Counting House run long. */
-  anchorSolve: [180, 360],
-  /** Attempted but left unsolved for tomorrow (AAA 4.13) — she gives it a go. */
-  abandon: [70, 150],
+  /**
+   * ── ROUND 22: PUZZLE DURATIONS ARE PER KIND NOW (REVIEW_AA §6) ──────────
+   *
+   * This used to be two numbers — `microSolve: [45, 90]` and `anchorSolve:
+   * [180, 360]` — one uniform 3–6 minute band covering the twistle, the word
+   * web, the hive, the forgotten word AND the 9×9 expert sudoku, under a
+   * comment that said *"REPLACE with instrumented medians once 3.5's playtest
+   * lands"*. It never happened, so AAA 4.10b's published 10–15 minute median
+   * had never been measured against a room that takes a quarter of an hour:
+   * corrected for honest room times the median evening was ≈17 minutes and the
+   * p90 ≈32 against a published ≤23. One Counting House broke the band on its
+   * own, and the instrument could not see it.
+   *
+   * The durations live in `engine/economy/effort.ts` now — per kind, per tier,
+   * instrumented over the shipped pools and pinned to the content facts they
+   * were derived from — and the day model draws the ROOM SHE ACTUALLY MET
+   * (`puzzleKindMixAt`, off the real deck weights) rather than a size bucket.
+   */
+  solveSeconds: (kind: RoomPuzzleKind, tier: Tier): number =>
+    effortMinutes(kind, tier) * 60,
 } as const;
 
-const sampleSeconds = (
-  range: readonly [number, number] | readonly number[],
-  timeRng?: () => number,
-): number =>
-  timeRng
-    ? range[0]! + timeRng() * (range[1]! - range[0]!)
-    : (range[0]! + range[1]!) / 2;
+/**
+ * ── HOW LONG SHE IS WILLING TO SIT, AND WHY THE MODEL NEEDED IT ───────────
+ *
+ * With honest durations the old model became incoherent: it solved every
+ * attempted room at `profile.solveRate` and charged the room's full length,
+ * which says the median player finishes a fourteen-minute Spelling-Bee-Genius
+ * climb 70% of the time inside a twelve-minute evening. Both hostile reviewers
+ * pressed "Leave it for tomorrow" on the Counting House; the model had no way
+ * to express that at all.
+ *
+ * So a room now costs what she is WILLING to give it. `patienceMinutes` is her
+ * appetite for one room; the spread is the evening's mood. She finishes the
+ * room if the sitting she was willing to give it covers the work it asks for —
+ * which makes the per-kind solve rate a DERIVED quantity (twistle ≈ her skill,
+ * hive ≈ near zero at tier 1 for a median player) instead of seven hand-tuned
+ * constants nobody could check.
+ *
+ * And the work she did do is not thrown away: `stageSteps` pays the ladder she
+ * climbed (engine/economy/steps.ts), which is REVIEW_AA §6's whole ask and the
+ * reason abandoning a long room stopped being a wasted evening.
+ */
+export const PATIENCE_SPREAD: readonly [number, number] = [0.6, 1.8];
+
+/**
+ * THE LAST-WORD PULL. Patience is elastic in one direction only: a room whose
+ * END IS IN SIGHT gets the extra minutes ("one more group and the board is
+ * done"), while a room several times her appetite is banked and left however
+ * close the next rung looks. Without this the model claimed a player walks out
+ * of a four-minute Word Web at three minutes fifty with three groups placed,
+ * which nobody has ever done. It is deliberately a MULTIPLIER on the sitting
+ * she was already willing to give, not a flat grace period, so it stretches the
+ * Library and the Darkroom and cannot reach the Conservatory.
+ */
+export const PATIENCE_STRETCH = 1.5;
+
+/**
+ * ── THE EVENING WINDS DOWN ────────────────────────────────────────────────
+ *
+ * Patience is not only per-room: a player who has already been at it for a
+ * quarter of an hour does not open the Counting House. Without this the model's
+ * long tail was made of evenings that started a second fifteen-minute room at
+ * minute twenty — which is how a p90 gets to half an hour on paper while the
+ * real player is putting the kettle on. She still plays; she plays SHORT, and
+ * she banks the rungs of anything long instead of settling into it.
+ *
+ * `afterMinutes` is deliberately just under 4.10b's own published median band,
+ * so the wind-down describes the end of a normal evening rather than a rule
+ * that shapes it.
+ */
+export const SESSION_WIND_DOWN = { afterMinutes: 12, patienceFactor: 0.35 } as const;
+
+/**
+ * The clock's own jitter. `ROOM_EFFORT` gives the honest MEDIAN minutes; a real
+ * evening is faster or slower than the median, and that variance belongs to the
+ * clock, never to the economy — so it is sampled from the separate `timeRng`
+ * stream and the ledger cannot move because the clock model changed. Without a
+ * clock stream the day runs at exactly the median, which is what keeps
+ * `simulateDay(rng, profile)` a pure economy instrument.
+ */
+const clockJitter = (timeRng?: () => number): number =>
+  timeRng ? 0.8 + timeRng() * 0.4 : 1;
 
 // ---------------------------------------------------------------------------
 // Player profiles
@@ -467,8 +593,21 @@ export interface SimProfile {
   name: string;
   /** Chance an entered puzzle room is attempted at all (vs walked through). */
   attemptRate: number;
-  /** Chance an attempted puzzle is solved. */
+  /**
+   * Chance an attempted puzzle she was WILLING TO SIT OUT is solved — her
+   * hands, not her appetite. Round 22 split the two: the room's length is
+   * settled by `patienceMinutes` against `ROOM_EFFORT`, and this is what is
+   * left, i.e. skill. A room longer than the sitting she was willing to give it
+   * is left for tomorrow however good she is, and pays for the rungs she
+   * climbed (`stageSteps`) rather than nothing at all.
+   */
   solveRate: number;
+  /**
+   * Minutes she will give ONE room before banking what she has and stepping
+   * back out (AAA 4.13's "leave it for tomorrow", as a number). Multiplied by a
+   * per-room roll over `PATIENCE_SPREAD` — some evenings she settles in.
+   */
+  patienceMinutes: number;
   /** Of solves, share with zero costed mistakes (perfect, +2). */
   perfectRate: number;
   /** Costed mistakes on a non-perfect solve: [min, max] inclusive. */
@@ -524,6 +663,7 @@ export const PROFILE_SKIPPER: SimProfile = {
   name: 'skipper',
   attemptRate: 0,
   solveRate: 0,
+  patienceMinutes: 0,
   perfectRate: 0,
   mistakesSolved: [0, 0],
   mistakesUnsolved: [0, 0],
@@ -552,7 +692,8 @@ export const PROFILE_SKIPPER: SimProfile = {
 export const PROFILE_DECENT: SimProfile = {
   name: 'decent',
   attemptRate: 0.88,
-  solveRate: 0.7,
+  solveRate: 0.8,
+  patienceMinutes: 3,
   perfectRate: 0.18,
   mistakesSolved: [1, 3],
   mistakesUnsolved: [2, 4],
@@ -569,7 +710,8 @@ export const PROFILE_DECENT: SimProfile = {
 export const PROFILE_GREAT: SimProfile = {
   name: 'great',
   attemptRate: 0.92,
-  solveRate: 0.85,
+  solveRate: 0.9,
+  patienceMinutes: 4,
   perfectRate: 0.3,
   mistakesSolved: [0, 2],
   mistakesUnsolved: [1, 3],
@@ -593,7 +735,8 @@ export const PROFILE_GREAT: SimProfile = {
 export const PROFILE_SKILLED: SimProfile = {
   name: 'skilled',
   attemptRate: 0.68,
-  solveRate: 0.85,
+  solveRate: 0.9,
+  patienceMinutes: 5,
   perfectRate: 0.28,
   mistakesSolved: [0, 2],
   mistakesUnsolved: [1, 3],
@@ -963,21 +1106,36 @@ export function simulateDay(
       const attemptChance = profile.attemptRate
         * (lowOnSteps ? (kind === 'anchor' ? 0.2 : 0.7) : 1);
       if (rng() < attemptChance) {
-        const solved = rng() < profile.solveRate;
+        // ── WHICH ROOM, AND HOW LONG SHE GIVES IT (round 22). ───────────────
+        // The kind is drawn off the real draft weights, the work it asks for
+        // comes from `ROOM_EFFORT`, and the sitting she was willing to give it
+        // decides whether the evening contains a solved Conservatory or a
+        // Conservatory she banked three rungs of and left for tomorrow.
+        const puzzleKind = drawPuzzleKind(rng, targetRow - 1, kind);
+        const workMinutes = effortMinutes(puzzleKind, tier);
+        const windDown = seconds / 60 > SESSION_WIND_DOWN.afterMinutes
+          ? SESSION_WIND_DOWN.patienceFactor : 1;
+        const willing = profile.patienceMinutes * windDown
+          * (PATIENCE_SPREAD[0] + rng() * (PATIENCE_SPREAD[1] - PATIENCE_SPREAD[0]));
+        const inSight = workMinutes <= willing * PATIENCE_STRETCH;
+        const solved = inSight && rng() < profile.solveRate;
+        const playedMinutes = solved ? workMinutes : Math.min(willing, workMinutes);
+        const workedFraction = workMinutes > 0 ? playedMinutes / workMinutes : 1;
         const perfect = solved && rng() < profile.perfectRate;
         const [mMin, mMax] = solved ? profile.mistakesSolved : profile.mistakesUnsolved;
-        const mistakes = perfect ? 0 : randInt(rng, mMin, mMax);
+        // Mistakes scale with the time actually spent in the room: a board she
+        // looked at for ninety seconds cannot cost her four wrong claims.
+        const mistakes = perfect ? 0
+          : Math.round(randInt(rng, mMin, mMax) * (solved ? 1 : workedFraction));
         for (let m = 0; m < mistakes; m++) {
           ledger = appendEntry(ledger, {
             reason: 'mistake', delta: STEP_TABLE.mistake(1, tier), at: 0, roomKey,
           });
         }
+        seconds += TIME_TABLE.solveSeconds(puzzleKind, tier) * workedFraction * clockJitter(timeRng);
         if (solved) {
-          seconds += sampleSeconds(
-            kind === 'micro' ? TIME_TABLE.microSolve : TIME_TABLE.anchorSolve, timeRng,
-          );
           ledger = appendEntry(ledger, {
-            reason: 'solve', delta: STEP_TABLE.solve(kind, tier), at: 0, roomKey,
+            reason: 'solve', delta: STEP_TABLE.solve(kind, tier, puzzleKind), at: 0, roomKey,
           });
           if (perfect) {
             ledger = appendEntry(ledger, {
@@ -986,7 +1144,7 @@ export function simulateDay(
           }
           // ROUND 10 — the solve pays the padlock arc (app/slices/room.ts
           // applies exactly this, off the same `solveKeys` table).
-          const earned = solveKeys(tier);
+          const earned = solveKeys(tier, puzzleKind);
           if (earned > 0) {
             keys += earned;
             keysFromSolves += earned;
@@ -999,8 +1157,20 @@ export function simulateDay(
           sealed -= madeOut;
           pagesMadeOut += madeOut;
           roomsSolved += 1;
-        } else {
-          seconds += sampleSeconds(TIME_TABLE.abandon, timeRng);
+        } else if (paysInStages(puzzleKind, tier)) {
+          // ── THE LADDER PAYS (REVIEW_AA §6, round 22). ────────────────────
+          // She worked it and left it for tomorrow, and the rungs she crossed
+          // are hers: `stageSteps` is the same function the room slice calls
+          // off the adapters' own progress events, so what the model banks
+          // here is exactly what the live ledger prints. Before this, a hive
+          // worked for six minutes paid ZERO, which is why both reviewers
+          // stopped opening the long rooms at all.
+          const banked = stageSteps(puzzleKind, tier, workedFraction, 0);
+          if (banked > 0) {
+            ledger = appendEntry(ledger, {
+              reason: 'solve', delta: banked, at: 0, roomKey,
+            });
+          }
         }
       } else {
         seconds += TIME_TABLE.glance;

@@ -17,7 +17,8 @@ import type { SaveV2 } from '../save';
 // provisional const, per the handoff comment that stood here. Values are
 // identical: weight 1 → −2 (tier 3 −3), weight 2 doubles; micro +3,
 // anchor +6/+7/+8 by tier; perfect +2. Hints price through the mistake row.
-import { solveKeys, STEP_TABLE } from '../../engine/economy/steps';
+import { solveKeys, stageSteps, STEP_TABLE } from '../../engine/economy/steps';
+import { paysInStages, stageFractionOf } from '../../engine/economy/effort';
 import type { RoomSessionSnapshot } from '../../engine/rooms/room-session';
 
 export interface RoomSlice {
@@ -126,6 +127,37 @@ export const createRoomSlice =
             if (ev.detail === 'pangram' || ev.detail === 'every-petal' || ev.detail === 'tier-up:Full Bloom') {
               get().recordEvent({ type: 'room-notable', kind, note: ev.detail });
             }
+            // ── ROUND 22: THE LADDER PAYS (REVIEW_AA §6). ──────────────────
+            // "70% is NYT Spelling Bee Genius, and the room pays NOTHING below
+            // it — A typed 30 words, found 20, and got zero." A long room now
+            // pays as she climbs it, off the progress markers it was already
+            // broadcasting: each rung banks its share of the SAME total, and
+            // the `solved` branch below pays exactly the remainder, so a room's
+            // full price is unchanged and cannot be earned twice.
+            if (paysInStages(kind, tier)) {
+              const room = get().manor?.rooms[cellKey];
+              if (room && !room.solved) {
+                const earned = room.ladderEarned ?? 0;
+                const next = stageFractionOf(kind, ev.detail, earned);
+                if (next !== null && next > earned) {
+                  const total = STEP_TABLE.solve(size, tier, kind);
+                  const due = stageSteps(kind, tier, next, Math.floor(total * earned));
+                  if (due > 0) {
+                    get().applyStepEntry({ reason: 'solve', delta: due, at: now, roomKey: cellKey });
+                  }
+                  const manor = get().manor!;
+                  set({
+                    manor: {
+                      ...manor,
+                      rooms: {
+                        ...manor.rooms,
+                        [cellKey]: { ...manor.rooms[cellKey]!, ladderEarned: next },
+                      },
+                    },
+                  });
+                }
+              }
+            }
             break;
           }
           case 'solved': {
@@ -147,9 +179,16 @@ export const createRoomSlice =
             // NOTHING — not the steps, not the perfect bonus, not the key, not
             // the spine event that would file a second fragment for one solve.
             if (get().manor?.rooms[cellKey]?.solved) break;
+            // ROUND 22 — the room is priced for the WORK IT ASKS FOR
+            // (`solvePayout`, engine/economy/effort.ts), and anything already
+            // banked on the way up is deducted here, so the total a solved room
+            // pays is exactly its price whether it paid in one lump or four.
+            const paidOnTheWay = Math.floor(
+              STEP_TABLE.solve(size, tier, kind) * (get().manor?.rooms[cellKey]?.ladderEarned ?? 0),
+            );
             get().applyStepEntry({
               reason: 'solve',
-              delta: STEP_TABLE.solve(size, tier),
+              delta: STEP_TABLE.solve(size, tier, kind) - paidOnTheWay,
               at: now,
               roomKey: cellKey,
             });
@@ -169,7 +208,7 @@ export const createRoomSlice =
             // point, and a room kind registered tomorrow earns keys for free.
             // The chrome's key chip animates the delta like any other currency
             // (AAA 11.15).
-            const keys = solveKeys(tier);
+            const keys = solveKeys(tier, kind);
             if (keys > 0) {
               set((s) => ({ currencies: { ...s.currencies, keys: s.currencies.keys + keys } }));
             }

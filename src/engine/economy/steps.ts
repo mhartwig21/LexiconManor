@@ -89,6 +89,29 @@
  * Measured after the retune: solves supply ≈1.2 keys/day against ≈0.7 off the
  * green deck — keys are now primarily earned, not drafted.
  *
+ * ═══ ROUND-22 — A ROOM IS PAID FOR THE WORK IT ASKS FOR (REVIEW_AA §6) ═══
+ * Point 2 above ("anchor +6/+5/+4 by tier") priced FIVE anchors off one
+ * row-band table, and they are not one room: the Gallery is twenty seconds and
+ * the Counting House is half an hour. Measured, that was a **36× spread in
+ * seconds per step** — and 15× between two rooms on the same storey at the same
+ * tier — so the rational play was to farm the short room and abandon the long
+ * ones on sight, which is exactly what both hostile reviewers did. Three things
+ * carry the fix, all re-measured against every 4.10 band:
+ *
+ *   - `ROOM_EFFORT` (engine/economy/effort.ts) — the honest minutes each room
+ *     asks, per kind and tier, instrumented over the shipped pools and pinned
+ *     to the content facts they were derived from;
+ *   - `SOLVE_WAGE` / `solvePayout` — the payout IS that number at a house wage,
+ *     with a cozy floor and a day-budget ceiling. The two long rooms rose
+ *     (+6 → the tier ceiling) and the Gallery fell to the floor at tiers 1–2;
+ *     nothing else in the table was cut, and 4.10h is the gate;
+ *   - `stageSteps` — a room too long to finish in a sitting pays its LADDER out
+ *     of the same total, so leaving the Conservatory at Bower banks something
+ *     where it used to bank nothing, and a solved room's price is unchanged.
+ *
+ * `KEY_SUPPLY.workKeyMinutes` is the same idea applied to the padlock arc: a
+ * tier-1 solve used to pay 0 keys, and rows 0–2 are 62% of the rooms she plays.
+ *
  * Unchanged rulings:
  *   - weight 0 → free feedback moment, never ledgered (AAA R.1 / 3.2)
  *   - weight 1 → −2 (tier 3 rooms −3); weight 2 doubles (reserved risk rooms)
@@ -100,6 +123,8 @@
  */
 
 import type { StepEntry, StepLedger, Tier } from '../types';
+import type { RoomPuzzleKind } from '../rooms/room-puzzle';
+import { effortMinutes } from './effort';
 import { FRAGMENTS_TO_DEDUCE } from '../volume';
 
 /**
@@ -259,6 +284,146 @@ export function rowName(row: number): string {
  */
 export const SANCTUM_GUESS_COST = 0;
 
+/**
+ * ═══ ROUND 22 — THE WAGE (REVIEW_AA §6, "make the anchors cost and pay
+ * comparably") ════════════════════════════════════════════════════════════
+ *
+ * THE DEFECT, measured: `solve(size, tier)` had no room parameter, so the
+ * Gallery's twenty seconds and the Counting House's thirty-five minutes were
+ * paid off one row-band table — 7 seconds per step against 257, a **36×
+ * spread**, and 15× between two rooms on the SAME storey at the SAME tier. The
+ * deck offers them at the same rate (sudoku 25.8% of row-0 offers, twistle
+ * 24.8%), so the rational play was to farm the short room and abandon the long
+ * ones on sight. Both hostile reviewers did exactly that.
+ *
+ * THE FIX: a room is paid for the WORK IT ASKS FOR. `ROOM_EFFORT`
+ * (engine/economy/effort.ts) carries the honest median minutes per kind and
+ * tier, instrumented over the shipped pools, and the payout is that number at
+ * a house wage, with a floor and a ceiling:
+ *
+ *     payout = clamp(round(stepsPerMinute × honest minutes), floor, cap)
+ *
+ * THE FLOOR is the cozy half of the owner's own constraint — *a short puzzle
+ * must never be a bad choice.* No solved room ever pays less than a micro
+ * room's old +3, so choosing the Linen Closet on a tired evening is a small
+ * win, never a punishment.
+ *
+ * THE CEILING is what stops a fifteen-minute room from printing most of a
+ * day's budget in one go (`BASE_DAY_BUDGET` is 18), and it is where the old
+ * "leaner as you climb" ruling now lives: the ceiling drops by tier, so a
+ * tier-3 solve still softens the next mistake rather than bankrolling the next
+ * storey, and it still costs less than the −9 step it takes to walk up there.
+ *
+ * WHAT MOVED, and which direction: the two long rooms rose (the Conservatory
+ * and the Counting House, +6 → the tier ceiling) and the Gallery fell at
+ * tiers 1–2 (+6/+5 → the floor). The Gallery is the one cut in the table and
+ * the numbers force it: 5 target words from a median 106-word pool is a
+ * twenty-second room, and paying it a full anchor rate is what made it the
+ * highest-EV cell in the house. **It is priced by the same wage as everything
+ * else** — the day its content becomes a puzzle (REVIEW_AA §6 asks for
+ * `targetCount` to rise), `ROOM_EFFORT` moves and the payout rises with it,
+ * automatically. Nothing else in the table was cut.
+ */
+export const SOLVE_WAGE = {
+  /**
+   * Steps per honest minute — the house wage, and the only number in the
+   * payout that is a tuning knob rather than a derivation. It is set where the
+   * Library lands back on exactly the +6 the whole campaign was calibrated
+   * against (4.5 honest minutes × 1.4 ≈ 6), because the Word Web is the one
+   * anchor whose length was never in dispute: it is the room the old flat +6
+   * actually described. Every other room is now priced relative to it.
+   */
+  stepsPerMinute: 1.4,
+  /**
+   * THE COZY FLOOR. A solved room never pays less than this, however short it
+   * turned out to be — the owner's constraint in one constant: *a cozy game
+   * must not punish the player for choosing a short puzzle.* The Linen Closet
+   * on a tired evening is a small win, never a mistake.
+   *
+   * ONE floor for every room, deliberately, and `tests/economy-effort.test.ts`
+   * is why: with a floor per SIZE, the 75-second Linen Closet paid +3 while the
+   * 20-second Gallery paid +4, i.e. the shorter room paid more — the exact
+   * defect this round exists to delete, reintroduced by the clamp meant to
+   * soften it. The player does not experience "micro" and "anchor"; she
+   * experiences minutes.
+   */
+  floor: 4,
+  /**
+   * THE CEILING, in thirds of a day (`BASE_DAY_BUDGET`): two thirds at tier 1,
+   * a half at tier 2, a third at tier 3. Two rulings live here at once —
+   * no single room may print most of an evening's budget, and payouts still
+   * get LEANER AS YOU CLIMB (the 2026-08 owner retune), so a tier-3 solve
+   * softens the next mistake instead of bankrolling the next storey and still
+   * costs less than the −9 step it took to walk up there.
+   *
+   * The ceiling is also the honest limit of what pricing alone can do: the
+   * shipped rooms span 30× in length (75 seconds to half an hour) and no
+   * payout table with a floor and a ceiling can span 30×. What the wage
+   * guarantees is that BETWEEN the clamps a minute is worth a minute, and
+   * `tests/economy-effort.test.ts` publishes the residual spread as a ratchet
+   * that may fall and may never rise.
+   */
+  capByTier: [
+    Math.round((BASE_DAY_BUDGET * 2) / 3),
+    Math.round(BASE_DAY_BUDGET / 2),
+    Math.round(BASE_DAY_BUDGET / 3),
+  ] as readonly number[],
+} as const;
+
+/** Steps a full solve of `kind` pays at `tier` — the wage, floored and capped. */
+export function solvePayout(kind: RoomPuzzleKind, tier: Tier): number {
+  const i = Math.max(0, Math.min(2, Math.floor(tier) - 1));
+  const raw = Math.round(SOLVE_WAGE.stepsPerMinute * effortMinutes(kind, tier));
+  return Math.max(SOLVE_WAGE.floor, Math.min(SOLVE_WAGE.capByTier[i]!, raw));
+}
+
+/**
+ * Which rooms are anchors, for pricing purposes. Deliberately a local table
+ * rather than a call into `getRoomAdapter`: the economy must be importable by
+ * the simulation, the tests and the draft preview without dragging every room
+ * adapter (and its React-free-but-large puzzle engine) behind it, and
+ * `tests/economy-effort.test.ts` asserts this table agrees with the live
+ * registry room for room, so it cannot drift.
+ */
+export const ROOM_SIZE: Record<RoomPuzzleKind, 'micro' | 'anchor'> = {
+  'twistle': 'anchor',
+  'word-web': 'anchor',
+  'hive': 'anchor',
+  'forgotten-word': 'anchor',
+  'sudoku': 'anchor',
+  'cipher': 'micro',
+  'crossword': 'micro',
+};
+
+/**
+ * ── PAYING THE LADDER, NOT THE SUMMIT ──────────────────────────────────────
+ *
+ * REVIEW_AA §6: *"every anchor is 2–4 minutes to a payout, or it pays IN
+ * STAGES and carries across days. The hive pays at every ladder rung, not only
+ * at Full Bloom."* A player who typed thirty words into the Conservatory and
+ * found twenty of them got **zero**, because 70% of totalPoints — Spelling Bee
+ * Genius — is a quarter of an hour away and nothing below it paid at all.
+ *
+ * `stageSteps` is the whole mechanic: given how far up the room's own ladder
+ * she is (`engine/economy/effort.ts stageFractionOf`, read off progress events
+ * the adapters already emit) and what she has been paid so far, it returns the
+ * instalment due now. The `solved` event pays `total − alreadyPaid`.
+ *
+ * THE INVARIANT, and the reason no published band in AAA 4.10 moves for this:
+ * **a solved room pays exactly `solvePayout(kind, tier)`, staged or not.** The
+ * daily step arithmetic is untouched by construction; what changes is that
+ * six minutes of honest work in a long room is worth something when she leaves
+ * it for tomorrow (AAA 4.13), which is the difference between a room she opens
+ * and a room she declines on sight.
+ */
+export function stageSteps(
+  kind: RoomPuzzleKind, tier: Tier, earnedFraction: number, alreadyPaid: number,
+): number {
+  const total = solvePayout(kind, tier);
+  const due = Math.floor(total * Math.max(0, Math.min(1, earnedFraction)));
+  return Math.max(0, due - Math.max(0, alreadyPaid));
+}
+
 export const STEP_TABLE = {
   /** Start-of-day budget — the ledger's `budget` field. */
   dayStart: BASE_DAY_BUDGET,
@@ -278,12 +443,14 @@ export const STEP_TABLE = {
   /** Step-priced hint/clue purchase — same row as mistake (RoomEvent 'hint'). */
   hint: mistakeDelta,
   /**
-   * Solve payout by room size and row-band tier — LEANER AS YOU CLIMB
-   * (owner retune): micro +3/+3/+2, anchor +6/+5/+4. High-tier rooms are
-   * climbed TO, not climbed FROM: their payout softens the next mistake, it
-   * no longer bankrolls the next storey.
+   * Solve payout — by room KIND first, by size/tier only when the kind is not
+   * known (REVIEW_AA §6, round 22). See `SOLVE_WAGE` below for the curve and
+   * for what the two arguments now mean; the size/tier form is the legacy
+   * BAND, kept so a caller that genuinely does not know which room it is
+   * (a generic preview, an old test) still gets a sane number.
    */
-  solve(size: 'micro' | 'anchor', tier: Tier): number {
+  solve(size: 'micro' | 'anchor', tier: Tier, kind?: RoomPuzzleKind): number {
+    if (kind) return solvePayout(kind, tier);
     return size === 'micro' ? (tier === 3 ? 2 : 3) : 7 - tier;
   },
   /** No costed mistakes and no purchased hints → bonus. */
@@ -437,6 +604,34 @@ export const KEY_SUPPLY = {
    * lock rates below were re-tuned in the same change).
    */
   solveKeysByTier: [0, 1, 1] as readonly number[],
+  /**
+   * ── ROUND 22: THE GROUND FLOOR EARNS ITS OWN CLIMB, IF IT DID THE WORK ──
+   *
+   * `solveKeysByTier[0]` is 0, and the comment above defends it as *"a key
+   * there would be a key with nowhere to go"*. Measured, that turned out to be
+   * the largest hole in the round-10 directive: 0-based rows 0–2 are **62% of
+   * every room the median player enters**, so on nearly two thirds of the
+   * rooms she actually plays, playing the word games well bought steps she did
+   * not need and nothing else. Keys reset nightly (MANOR_DESIGN §9) but they do
+   * NOT reset at noon — a key earned on the ground floor at dusk is the key
+   * that opens row 4 the same evening, which is exactly the climb the directive
+   * is about.
+   *
+   * It is not granted flat, because a flat tier-1 key would also be paid by the
+   * Gallery's twenty seconds and the whole point of round 22 is that reward
+   * follows WORK. A tier-1 solve pays a key when the room asked at least
+   * `workKeyMinutes` of honest work (`ROOM_EFFORT`): the Library, the Darkroom,
+   * the Conservatory, the Counting House — never the twenty-second word search,
+   * and never the 75-second Linen Closet. The tier table is a FLOOR, so rows
+   * 3–6 are exactly what they were.
+   *
+   * Budgeted, not asserted: measured over 200 seeded campaigns × 45 days this
+   * is +0.4–0.5 keys/day, which replaces almost exactly what round 22's honest
+   * clock removed (a hive or a sudoku is now rarely *finished*, and an
+   * unfinished room pays no key) — AAA 4.10c/d are re-measured against it in
+   * tests/economy-simulation.test.ts rather than argued about here.
+   */
+  workKeyMinutes: 3,
   /**
    * ── INDEXED BY AFFINITY **POINTS**, NEVER BY RANK ──────────────────────
    * `fernMorningKeysByPoints[p]` is the answer for p RAW POINTS, the integer
@@ -685,9 +880,14 @@ export function fernMorningKeys(fernPoints: number): number {
  * room kind earns its keys the day it is registered, and no adapter can pay a
  * different rate than the table says.
  */
-export function solveKeys(tier: Tier): number {
+export function solveKeys(tier: Tier, kind?: RoomPuzzleKind): number {
   const i = Math.max(0, Math.min(KEY_SUPPLY.solveKeysByTier.length - 1, Math.floor(tier) - 1));
-  return KEY_SUPPLY.solveKeysByTier[i]!;
+  const byTier = KEY_SUPPLY.solveKeysByTier[i]!;
+  // Round 22: a room that asked for real work pays the padlock arc whatever
+  // storey it stands on (see `KEY_SUPPLY.workKeyMinutes`). The tier table is a
+  // floor — this can only ever add, and only on the storeys that paid nothing.
+  const byWork = kind && effortMinutes(kind, tier) >= KEY_SUPPLY.workKeyMinutes ? 1 : 0;
+  return Math.max(byTier, byWork);
 }
 
 /** Deterministic lock roll for a draft target cell (0-based row). */

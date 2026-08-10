@@ -40,7 +40,7 @@ import {
   sessionSnapshotOf, snapshotRoomSession, type RoomSession, type RoomSessionSnapshot,
 } from '../src/engine/rooms/room-session';
 import { roomSeed } from '../src/engine/manor/grid';
-import { solveKeys, stepsRemaining, STEP_TABLE } from '../src/engine/economy/steps';
+import { solveKeys, stageSteps, stepsRemaining, STEP_TABLE } from '../src/engine/economy/steps';
 import type { Cell, ManorState, PlacedRoom, Tier } from '../src/engine/types';
 
 import type { WordWebPuzzleEx, WordWebRoomState } from '../src/engine/rooms/adapters/word-web';
@@ -377,7 +377,14 @@ describe('§5.3 — in-room progress survives a reload', () => {
     hostDispatch(store, host, { type: 'submit', selection: puzzle.groups.map((g) => g.words[1]!) });
     hostDispatch(store, host, { type: 'submit', selection: [...puzzle.groups[0]!.words] });
 
-    expect(steps(store)).toBe(START_STEPS - 4);
+    // ROUND 22 (REVIEW_AA §6) — THE THREAD SHE WOVE IS PAID FOR. The Library
+    // is one of the rooms long enough to pay its rungs (`paysInStages`), so a
+    // solved group banks its quarter of the room's payout the moment it lands
+    // instead of paying nothing until all four are placed. −4 in penalties,
+    // +1 for the thread.
+    const rung = stageSteps('word-web', 1, 0.25, 0);
+    expect(rung, 'the Library stopped paying its rungs').toBeGreaterThan(0);
+    expect(steps(store)).toBe(START_STEPS - 4 + rung);
     const solvedTiers = (host.session.state as WordWebRoomState).web.solvedTiers;
     expect(solvedTiers).toHaveLength(1);
 
@@ -388,7 +395,10 @@ describe('§5.3 — in-room progress survives a reload', () => {
     expect(state.web.solvedTiers).toEqual(solvedTiers);
     expect(state.web.remainingWords).toHaveLength(12);   // NOT sixteen unsolved tiles
     expect(state.costedMistakes).toBe(2);
-    expect(steps(after)).toBe(START_STEPS - 4);
+    expect(steps(after)).toBe(START_STEPS - 4 + rung);
+    // …and the rung cannot be paid twice by coming back to the room: the
+    // fraction earned rides on the PlacedRoom, beside the board itself.
+    expect(after.getState().manor!.rooms[KEY]!.ladderEarned).toBeCloseTo(0.25, 6);
   });
 
   it('parks the board before the first move, so an eviction cannot re-roll it', () => {
@@ -524,8 +534,8 @@ describe('§5.4 — a room is paid for once', () => {
    */
   it('the reviewer\'s loop pays exactly once, however many laps you run', () => {
     const first = solveTheGallery();
-    expect(first.paidSteps).toBe(START_STEPS + STEP_TABLE.solve('anchor', 1) + STEP_TABLE.perfect);
-    expect(first.paidKeys).toBe(solveKeys(1));
+    expect(first.paidSteps).toBe(START_STEPS + STEP_TABLE.solve('anchor', 1, 'twistle') + STEP_TABLE.perfect);
+    expect(first.paidKeys).toBe(solveKeys(1, 'twistle'));
     expect(solveCount(first.store)).toBe(1);
     // The board is now marked seen — the precondition the exploit ran on.
     expect(first.store.getState().seenPuzzleIds.twistle).toContain(first.board);
@@ -609,7 +619,7 @@ describe('§5.4 — a room is paid for once', () => {
       [{ type: 'solved', perfect: true }],
       { status: 'solved', perfect: true },
     );
-    expect(steps(store)).toBe(before + STEP_TABLE.solve('anchor', 1) + STEP_TABLE.perfect);
+    expect(steps(store)).toBe(before + STEP_TABLE.solve('anchor', 1, 'twistle') + STEP_TABLE.perfect);
     expect(store.getState().manor!.rooms[KEY]!.solved).toBe(true);
   });
 });

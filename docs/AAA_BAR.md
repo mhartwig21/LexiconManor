@@ -648,6 +648,19 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     asymmetry itself asserted — in `tests/volume-pacing.test.ts` (the mystery's
     suite; the seal is the mystery's mechanic). So the mechanic bites in her
     evening roughly once a week.
+    **ROUND 22 RE-PUBLISHED BOTH OVERNIGHT ROWS: hers 10–20% → 10–25%
+    (measured 19–20%), his 25–50% → 25–55% (measured 52%).** 4.10h gave the day
+    model per-room durations, and the consequence is arithmetic: an honest
+    evening FINISHES about two rooms, not two and eight tenths (measured 1.99
+    for her, 1.82 for him, against 2.76 / 2.4 under the flat 3–6 minute clock),
+    because two of the four anchors cannot be finished in a cozy sitting at all.
+    A page can only be made out by a finished room, so a page waits for tomorrow
+    more often. The bands are re-measured rather than tuned back, because tuning
+    them back means either a longer evening (4.10b/f) or a shorter Conservatory
+    (content — REVIEW_AA §6 asks for the Gallery's `targetCount` and the hive's
+    rungs, and round 22 landed the rungs only). The bound that keeps the seal a
+    pressure rather than a debt spiral is the BACKLOG, and it did not move: her
+    median is still 0 and his ≤ 2.
     **Once a week is a measured fact, not yet an accepted one.** The lever that
     would raise it without touching violet share — *decoupling bite from row*: a
     page still smudged at dusk seeds one guaranteed violet offer on the lower
@@ -661,6 +674,38 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     read like a ramp while `RARITY_WEIGHTS[1]` scored tier 1's only two mystery cards 9
     and 1, for a realised **0.16%** of ground-floor draws. It is ≈2.0% at row 0 rising
     to ≈10.5% at row 6, strictly increasing, tuned with the sim rather than by feel.
+  - **4.10h — TIME FOR REWARD: what a room pays follows what it asks** (REVIEW_AA §6,
+    round 22). AAA_BAR carried ~130 criteria and not one of them constrained
+    time-for-reward, which is exactly why a **36× wage spread** survived twenty-one
+    build rounds, three critic panels and a hostile review that named the defect:
+    `STEP_TABLE.solve(size, tier)` had no room parameter, so the Gallery's twenty
+    seconds (5 target words of a 106-word pool) and the Counting House's half hour
+    (25 givens, 98% of tier-2 boards needing a wing, a fish or colouring) were paid
+    off one row-band table, and the correct strategy was to abandon half the deck on
+    sight. Both hostile reviewers did.
+    The criterion, pinned in `tests/economy-effort.test.ts`:
+    (a) every registered room kind carries an instrumented honest duration
+    (`engine/economy/effort.ts ROOM_EFFORT`, per kind AND tier) — **a room cannot ship
+    unpriced or unclocked**; (b) the payout is `clamp(wage × honest minutes)` and is
+    **monotone in the work** — no shorter room may out-earn a longer one at the same
+    tier; (c) between the cozy floor (+4, so a short puzzle is never a bad choice) and
+    the day-budget ceiling (⅔ / ½ / ⅓ of `BASE_DAY_BUDGET` by tier, so no single room
+    prints an evening and refunds still get leaner as you climb) **a minute is worth a
+    minute**; (d) the residual spread is a RATCHET — measured **45× → 20×** overall and
+    **≤ 2× across the rooms an ordinary evening is actually made of** — that may fall
+    and may never rise; (e) a room longer than a sitting **pays its ladder, not only its
+    summit** (`stageSteps`, off the progress markers the adapters already emit: the
+    Conservatory pays at Blossom / Bower / Garden, the Counting House per nine
+    placements, the Library per thread), out of the SAME total, so a solved room's price
+    is unchanged and 4.10a–g's daily arithmetic does not move; and (f) the durations
+    are pinned to the CONTENT FACTS they were measured from (target counts, pool sizes,
+    given counts, the hive's own 70% gate), so a content edit that changes a room's
+    workload fails a test instead of quietly re-opening the gap.
+    What still misses, named so nobody has to rediscover it: the two ends of the ratchet
+    are both content commissions REVIEW_AA §6 also asks for — the Gallery is not yet a
+    puzzle at tier 1, and the tier-2/3 Counting House should bank partial grids across
+    days. The test asserts both are still true, so fixing either FAILS 4.10h and forces
+    the bound to tighten.
   - **Levers, in the order they were pulled** (all in `engine/economy/steps.ts`, the one
     tunable file): per-row movement pricing (`MOVE_COST_BY_ROW`, −1 ground floor → −9 up
     top — *climbing is the expense*); leaner-as-you-climb refunds (anchor +6/+5/+4, micro

@@ -398,10 +398,14 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
 
   // AAA 1.17 [BEAT]: the payout is named in the room, in steps she can see on
   // the chrome meter — sourced from the same table the room slice pays from.
+  // ROUND 22 (REVIEW_AA §6): the Conservatory is the longest room in the house
+  // and it used to pay nothing at all below Full Bloom. It pays its rungs now,
+  // out of the same total — so the line names both halves, and the number is
+  // still sourced from the one table the room slice pays from.
   const payoutLine = useMemo(() => {
-    const solve = STEP_TABLE.solve('anchor', tier);
+    const solve = STEP_TABLE.solve('anchor', tier, 'hive');
     const clean = state.costedMistakes === 0;
-    return `+${solve} steps for the flowering${clean ? ` · +${STEP_TABLE.perfect} for a bed without a bent stem` : ''}`;
+    return `+${solve} steps in all, a share at every rung${clean ? ` · +${STEP_TABLE.perfect} for a bed without a bent stem` : ''}`;
   }, [tier, state.costedMistakes]);
 
   const found = [...state.hive.foundWords].reverse();
