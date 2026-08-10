@@ -25,7 +25,9 @@ import {
 } from '../../engine/economy/steps';
 import { getVolumeContent } from '../../app/content/volumes';
 import { arrivedLetters, legibleDroughtDays, openedLetterIds } from '../../engine/volume';
-import { mantelLine, unseenKeepsakes, unseenPlates } from '../moment/mantel';
+import { mantelLine, unseenKeepsakes } from '../moment/mantel';
+import { getDialogueFile } from '../../engine/dialogue/content';
+import { selectTaggedLine } from '../../engine/dialogue/select';
 import DialogueScene from '../dialogue/DialogueScene';
 import WhereaboutsAside from '../dialogue/WhereaboutsAside';
 import UnreadMark from '../journal/UnreadMark';
@@ -146,8 +148,26 @@ const MORNING_LINES = [
   'A good day for a long corridor.',
 ];
 
+/**
+ * ── THE LAST THING SHE READS (REVIEW_AA §5.11, round 24) ────────────────────
+ *
+ * This was a three-entry Record, keyed by end cause, and it was the whole of
+ * the night: six consecutive evenings printed "An early night, well chosen."
+ * or "The candles have burned down to their dishes." — alternating by nothing
+ * but why the day stopped — over a step-refund total and two unread badges.
+ * The morning gets six rotating lines AND a person; bedtime got a receipt.
+ *
+ * The night is now Mrs. Bramble's, authored on the engine's own `night`
+ * trigger (which had been declared and mounted by nobody since the spine was
+ * written), conditioned on what the day actually contained: a room left for
+ * tomorrow, a page made out, a wrong word at the door, the first climb, a
+ * question asked of somebody downstairs. These three strings survive as the
+ * BACKSTOP ONLY — if the pool ever has nothing to say, the digest still ends
+ * in a sentence rather than a blank.
+ */
+const NIGHT_FALLBACK = 'The candles have burned down to their dishes.';
 const NIGHT_LINES: Record<string, string> = {
-  'steps-exhausted': 'The candles have burned down to their dishes.',
+  'steps-exhausted': NIGHT_FALLBACK,
   'retired-early': 'An early night, well chosen.',
   'volume-solved': 'The Sanctum heard the word. The manor sleeps easy tonight.',
 };
@@ -228,6 +248,49 @@ function DawnGrants({ day }: { day: DayState }) {
   );
 }
 
+/**
+ * ── WHAT IS WAITING, ON THE DAY IT CAN BE OPENED (REVIEW_AA §5.11) ──────────
+ *
+ * The post tray and the mantel, moved here off the night digest. Both are
+ * derivations over the save (write-once flags and the letter tray), so they
+ * survive the roll and a force-quit; both name a surface this card carries a
+ * one-tap route to (11.12) — the Journal aside for the tray, Chronicles for
+ * the mantel. The CABINET line is deliberately not reprinted on either scene:
+ * neither carries a route to it, and 11.12 fails a scene that names a filed
+ * document it cannot reach. Unseen plates keep their marker where the cabinet
+ * actually is, on the blueprint's own entrance (ManorPage).
+ */
+function WaitingLines({ day }: { day: DayState }) {
+  const records = useManorStore((s) => s.chronicles.dayRecords);
+  const volume = useManorStore((s) => s.volume);
+  const flags = useManorStore((s) => s.flags);
+  const earned = useManorStore((s) => s.earnedAchievementIds);
+
+  const content = getVolumeContent(volume.volumeId);
+  const openedIds = content ? openedLetterIds(content.id, flags) : new Set<string>();
+  const tray = content
+    ? arrivedLetters(content, volume, day.day, {
+        droughtDays: legibleDroughtDays(volume.volumeId, flags, records),
+        openedIds,
+      })
+    : [];
+  const waitingPost = waitingPostLine(tray.filter((l) => !openedIds.has(l.id)).length);
+  const mantel = mantelLine(unseenKeepsakes(earned, flags).length, 0);
+
+  /* ONE thing, the nearest one. Measured at 375×667 on a day-9 save with three
+     sealed letters and four unseen keepsakes: both sentences in body type ran
+     the card 17px past the fold, and both in caption type still ran it 24px
+     past — and on a `justify-content: safe center` scene that means an
+     internal scroll, which is the one shape the owner will not have. The post
+     leads because it is today's; the mantel takes the line on the mornings the
+     tray is clear. Neither channel loses its marker either way — the Journal
+     aside carries the unread count and the Chronicles entrance the keepsake
+     one (the 11.19 chain), and this caption was only ever the prose. */
+  const line = waitingPost ?? mantel;
+  if (!line) return null;
+  return <p className="chr-wait">{line}</p>;
+}
+
 export function MorningCard() {
   const day = useManorStore((s) => s.day);
   const advance = useManorStore((s) => s.advanceDayPhase);
@@ -266,6 +329,7 @@ export function MorningCard() {
           two mornings in three that are not mention mornings, and nothing at
           all once the household is met, so the card grows no hole. */}
       <WhereaboutsAside />
+      <WaitingLines day={day} />
       <DawnGrants day={day} />
       <button className="chr-scene__btn" onClick={() => setGreeting(true)}>
         Begin the day
@@ -376,40 +440,56 @@ function waitingPostLine(n: number): string | null {
   return `${word} letters wait unopened in the post tray.`;
 }
 
+/**
+ * ── THE GOODNIGHT (REVIEW_AA §5.11) ─────────────────────────────────────────
+ *
+ * Bramble's night beat, QUOTED rather than played: the digest stays a digest —
+ * no portrait plate, no typewriter, no extra tap between the day and bed — and
+ * the pacing valve is untouched, exactly as the Sanctum door quotes the
+ * Portrait (AAA 4.16, `selectTaggedLine`). The chosen node IS marked seen, and
+ * that is the whole rotation: the once-only beats (the first climb, the first
+ * page made out, the night she nearly had it) retire after they land, and the
+ * repeatable pool carries the ordinary evenings.
+ *
+ * Frozen at mount for the same reason every other scene freezes its query:
+ * marking the node seen writes to the store, and a beat that re-selected
+ * itself mid-scene would swap the words under her eyes.
+ */
+function NightBeat({ fallback }: { fallback: string }) {
+  const buildDialogueQuery = useManorStore((s) => s.buildDialogueQuery);
+  const markNodeSeen = useManorStore((s) => s.markNodeSeen);
+  const [beat] = useState(() =>
+    selectTaggedLine(getDialogueFile('bramble'), buildDialogueQuery('bramble', 'night'), 'bramble.night.'));
+  const marked = useRef(false);
+
+  useEffect(() => {
+    if (!beat || marked.current) return;
+    marked.current = true;
+    markNodeSeen(beat.id, 'bramble');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, for the beat this night dealt
+  }, []);
+
+  if (!beat) return <p className="chr-scene__line">{fallback}</p>;
+  return (
+    <div className="chr-night">
+      {beat.lines.map((l, i) => (
+        <p key={i} className={`chr-night__say${l.narration ? ' chr-night__say--narration' : ''}`}>
+          {l.narration ? l.text : `“${l.text}”`}
+        </p>
+      ))}
+      <p className="chr-night__who">— Mrs. Bramble, turning down the lamps</p>
+    </div>
+  );
+}
+
 export function NightDigest() {
   const day = useManorStore((s) => s.day);
   const records = useManorStore((s) => s.chronicles.dayRecords);
   const startDay = useManorStore((s) => s.startDay);
-  // The post, read back with the rest of the day (AAA 11.12): what she opened
-  // today, and what is still sealed. Both are derivations over the save — they
-  // survive the day roll and a force-quit, which a moment on glass cannot.
-  const volume = useManorStore((s) => s.volume);
-  const flags = useManorStore((s) => s.flags);
   const recentEvents = useManorStore((s) => s.recentEvents);
-  // ROUND 9 (AAA 11.12): the mantel was the last campaign channel with no line
-  // here. A keepsake could be banked at the day roll and a floorplan plate
-  // filled by a favour, and the digest — the one surface that reads the day
-  // back — said nothing, exactly as the post used to. Both are derivations over
-  // write-once flags, so they survive the roll and a force-quit.
-  const earned = useManorStore((s) => s.earnedAchievementIds);
-  const unlockedCardIds = useManorStore((s) => s.cabinet.unlockedCardIds);
   const [turning, setTurning] = useState(false);
   if (!day) return null;
 
-  const mantel = mantelLine(
-    unseenKeepsakes(earned, flags).length,
-    unseenPlates(unlockedCardIds, flags).length,
-  );
-
-  const content = getVolumeContent(volume.volumeId);
-  const openedIds = content ? openedLetterIds(content.id, flags) : new Set<string>();
-  const tray = content
-    ? arrivedLetters(content, volume, day.day, {
-        droughtDays: legibleDroughtDays(volume.volumeId, flags, records),
-        openedIds,
-      })
-    : [];
-  const waitingPost = waitingPostLine(tray.filter((l) => !openedIds.has(l.id)).length);
   const lettersOpened = recentEvents.filter(
     (e) => e.day === day.day && e.event.type === 'letter-opened',
   ).length;
@@ -420,7 +500,7 @@ export function NightDigest() {
     const r = records[i];
     if (r && r.day === day.day) { record = r; break; }
   }
-  const line = NIGHT_LINES[record?.cause ?? 'steps-exhausted'] ?? NIGHT_LINES['steps-exhausted'];
+  const fallback = NIGHT_LINES[record?.cause ?? 'steps-exhausted'] ?? NIGHT_FALLBACK;
 
   const onTomorrow = () => {
     if (turning) return;
@@ -428,14 +508,22 @@ export function NightDigest() {
     startDay(); // night → next morning; the manor resets, the journal keeps
   };
 
+  /* ROUND 24 — WHAT THE NIGHT NO LONGER SAYS (REVIEW_AA §5.11).
+     The waiting-post and mantel lines moved to the MORNING card. Measured
+     live across six consecutive nights, they were the only two lines besides
+     the mood string that ever appeared, and both were nags: "A keepsake you
+     have not looked at sits on the mantel." printed identically every single
+     night, over "N letters wait unopened in the post tray." Blue Prince ends a
+     run on a discovery; this ended on a chore list — and on the one screen
+     where the correct answer to a chore is "tomorrow". They now open the day
+     they can actually be acted on, on a card that carries a route to both
+     (11.12: the Journal aside for the tray, Chronicles for the mantel). */
   return (
     <section className="chr-scene chr-scene--enter" aria-label="Night">
       <h1 className="chr-scene__title">Night</h1>
       <hr className="chr-scene__rule" />
-      <p className="chr-scene__line">{line}</p>
+      <NightBeat fallback={fallback} />
       {record ? <NightLedger record={record} lettersOpened={lettersOpened} /> : null}
-      {waitingPost && <p className="chr-digest__prose">{waitingPost}</p>}
-      {mantel && <p className="chr-digest__prose">{mantel}</p>}
       <button className="chr-scene__btn" onClick={onTomorrow}>
         To tomorrow
       </button>

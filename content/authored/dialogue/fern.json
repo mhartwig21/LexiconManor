@@ -1488,6 +1488,175 @@
         }
       ],
       "summary": "Fern: the cutting under the landing window manages without sun."
+    },
+    {
+      "id": "fern.ask.menu",
+      "trigger": "idle",
+      "priority": 30,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Ask, then. Hands are busy, ears are not."
+        }
+      ],
+      "choices": [
+        {
+          "text": "What did you grow for him?",
+          "goto": "fern.ask.master"
+        },
+        {
+          "text": "What is the unnamed bed?",
+          "goto": "fern.ask.bed"
+        },
+        {
+          "text": "How is the garden today?",
+          "gotoPrefix": "fern.ask.today."
+        }
+      ]
+    },
+    {
+      "id": "fern.ask.master",
+      "trigger": "idle",
+      "priority": 0,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Vowels, he called them. Five beds, five shapes. Said a garden was a sentence you could walk through."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "wistful",
+          "text": "Never told him it was just what grew. Let him have it. Some things you do not prune out of a man."
+        }
+      ],
+      "effects": {
+        "affinity": {
+          "fern": 1
+        },
+        "setFlags": [
+          "fern.asked.master"
+        ]
+      },
+      "chainOnly": true,
+      "summary": "Fern grew him five beds. He called them vowels."
+    },
+    {
+      "id": "fern.ask.bed",
+      "trigger": "idle",
+      "priority": 0,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Empty since. Kept turning it over for years, waiting on a name for it. Names come from the house, not from me."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Stopped waiting Tuesday. Planted it. Whatever comes up can name itself."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "fern.asked.bed"
+        ]
+      },
+      "chainOnly": true
+    },
+    {
+      "id": "fern.ask.today.quiet-1",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Growing. Slowly. Same as yesterday, which is the point of it."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "fern.ask.today.quiet-2",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "curious",
+          "text": "Warm corner is warmer. Something is coming up there I did not plant. I am letting it."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "fern.ask.today.quiet-3",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Rain on the glass all afternoon. Best sound there is. Plants agree — they lean."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "fern.ask.today.solved",
+      "trigger": "idle",
+      "priority": 300,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-solved",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Room you finished today. Felt it from here. Whole house breathes out when one comes right."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "fern.ask.today.abandoned",
+      "trigger": "idle",
+      "priority": 300,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-abandoned",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Left one half done. Good. Half done is still growing. Finished is just finished."
+        }
+      ],
+      "chainOnly": true
     }
   ]
 }

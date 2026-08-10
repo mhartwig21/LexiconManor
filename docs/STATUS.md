@@ -1,7 +1,7 @@
 # Lexicon Manor — where we are
 
 *Written 7 Aug 2026, after thirteen build rounds and one hostile editorial review.
-Updated 10 Aug 2026: §5.8, §5.6 and §5.10 landed.*
+Updated 10 Aug 2026: §5.8, §5.6, §5.10, §5.9 and §5.11 (the night, the verbs) landed.*
 
 **Live:** https://mhartwig21.github.io/LexiconManor/ — installable on iPhone via Add to
 Home Screen. Deploys from `main` on push; verify the run actually succeeded, because
@@ -85,6 +85,11 @@ Its one-line diagnosis, which has driven every round since:
 | §5.9 Darkroom plaintexts that are stock proverbs | **59 of 94 (62.8%)** | **0 of 121** |
 | §5.9 Stock-proverb share, tier 1 / tier 2 / tier 3 | 67% / 84% / 22% | 0% / 0% / 0% |
 | §5.9 Darkroom crib letters at tier 3 | **0** (below the frequency-analysis floor) | 2, mid-frequency |
+| §5.11 Night-line variants (the last thing she reads) | **3**, keyed by end cause alone | **30** authored beats, 27 keyed to the day |
+| §5.11 Distinct goodnights across consecutive nights, driven live | **2 in 6** | **8 in 8** |
+| §5.11 Player choices in the whole game | **20**, all spent by ~day 5 | **35**, and the menu is standing on day 21 |
+| §5.11 Conversations that end on a live choice | first meetings and quest asks only | **every one**, for every speaking character |
+| §5.11 Cabinet: the last plate at full scroll | under the Close button (2px, at every scroll position) | clear of it (−1.2px at 390, −1.7px at 375) |
 
 Also shipped outside the review's list: room orientation now follows the direction you
 enter (and the draft card shows the true placement); a fresh-start reset; the
@@ -106,8 +111,11 @@ Ordered as the review ordered them — most value first.
   the manor; the Gallery and the Conservatory carry no authored prose field at all, so
   neither can speak until its room shell grows a surface to speak from; the Study's
   113-entry pool is still the thinnest per tier in the game.
-- **§5.11 The night, and player choice.** Three night-line variants; ~20 player choices in
-  the whole game; notice cards can overlap; per-room palettes borrow from other products.
+- **§5.11 remainder.** The night and the verbs landed (above), and so did the Cabinet's
+  foot. Left: per-room palettes still borrow from other products, and the live pass
+  refuted the notice-card overlap claim (notices strictly queue) while finding a real one
+  a room deeper — the Linen Closet's clue list overflows into the key deck at 375×667, so
+  a tap aimed at a clue types a letter. That belongs to the room that owns it.
 
 **Open design questions, awaiting play rather than analysis**
 - **Is the skilled player's ground floor thin enough?** Round 23 took her from +0.36 net

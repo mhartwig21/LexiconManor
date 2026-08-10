@@ -17,7 +17,9 @@ import type { CharacterId } from '../../engine/types';
 import type { DialogueTrigger } from '../../engine/events';
 import type { DialogueChoice, DialogueNode, PortraitExpression } from '../../engine/dialogue/schema';
 import { getDialogueFile, CHARACTER_NAMES } from '../../engine/dialogue/content';
-import { selectDialogue, findNode } from '../../engine/dialogue/select';
+import {
+  availableChoices, resolveChoiceTarget, selectAskMenu, selectDialogue,
+} from '../../engine/dialogue/select';
 import { rankFor, MAX_AFFINITY_RANK } from '../../engine/dialogue/affinity';
 import { meetingCardFor } from '../../engine/dialogue/meeting';
 import { useManorStore } from '../../app/store';
@@ -59,8 +61,10 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
   );
 
   const file = getDialogueFile(character);
+  /** The frozen snapshot this scene was dealt from (ARCHITECTURE §5). */
+  const [mountQuery] = useState(() => buildDialogueQuery(character, slot));
   const [node, setNode] = useState<DialogueNode | null>(
-    () => selectDialogue(file, buildDialogueQuery(character, slot)) ?? null,
+    () => selectDialogue(file, mountQuery) ?? null,
   );
   /**
    * ROUND 12 — THE FIRST MEETING IS DELIVERED, NOT MERELY PLAYED.
@@ -106,12 +110,21 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
 
   const isLast = node ? lineIdx >= node.lines.length - 1 : true;
 
+  /**
+   * The verbs on offer RIGHT NOW. Recomputed against live state rather than
+   * the mount snapshot, because asking is the one thing in a scene that
+   * changes what may be asked next (REVIEW_AA §5.11) — a topic she has just
+   * heard must not still be on the menu when the panel comes back.
+   */
+  const liveChoices = (n: DialogueNode): DialogueChoice[] =>
+    availableChoices(file, buildDialogueQuery(character, n.trigger), n);
+
   // Choices surface as soon as the last line settles; node effects land here
   // so closing at the choice row can never lose the conversation's beat.
   useEffect(() => {
     if (node && phase === 'lines' && lineDone && isLast) {
       applyNode(node);
-      if (node.choices && node.choices.length > 0) setPhase('choices');
+      if (liveChoices(node).length > 0) setPhase('choices');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- transition on line completion
   }, [lineDone, isLast, phase, node]);
@@ -160,13 +173,15 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
       setLineDone(false);
       return;
     }
-    if (node.choices && node.choices.length > 0) return; // choice row is up
+    if (liveChoices(node).length > 0) return; // choice row is up
     setPhase('end');
   };
 
   const handleChoice = (choice: DialogueChoice) => {
     applyDialogueEffects(choice.effects);
-    const next = choice.goto ? findNode(file, choice.goto) : undefined;
+    // Resolved against live state: a `gotoPrefix` verb points at a FAMILY, and
+    // which member answers depends on what happened today (select.ts).
+    const next = resolveChoiceTarget(file, buildDialogueQuery(character, slot), choice);
     if (next) playNode(next);
     else setPhase('end');
   };
@@ -185,6 +200,16 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
   };
 
   const rank = rankFor(affinity);
+
+  /**
+   * The closing panel's verb menu — the character's own `ask.menu` node,
+   * quoted rather than played (no valve spent, nothing marked seen until she
+   * actually asks something). Empty for a character with no menu, and empty
+   * once every verb on it is exhausted, in which case the panel is exactly
+   * what it always was.
+   */
+  const askMenu = phase === 'end' ? selectAskMenu(file, buildDialogueQuery(character, 'idle')) : undefined;
+  const askChoices = askMenu ? availableChoices(file, buildDialogueQuery(character, 'idle'), askMenu) : [];
 
   return (
     <div className="dlg" role="dialog" aria-label={`Conversation with ${CHARACTER_NAMES[character]}`}>
@@ -232,12 +257,33 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
 
           {phase === 'choices' && node.choices && (
             <div onPointerDown={(e) => e.stopPropagation()}>
-              <ChoiceRow choices={node.choices} onChoose={handleChoice} />
+              <ChoiceRow choices={liveChoices(node)} onChoose={handleChoice} />
             </div>
           )}
 
           {phase === 'end' && (
             <div className="dlg-choices" onPointerDown={(e) => e.stopPropagation()}>
+              {/* ── THE STANDING VERBS (REVIEW_AA §5.11) ──────────────────
+                  The review counted twenty choices in the whole game and
+                  found all of them inside a first meeting, an arc opener or
+                  a quest ask — i.e. gone by about day five of a 22-day
+                  volume. These are the Hades answer: not plot forks, verbs,
+                  offered at the close of EVERY conversation with everyone
+                  who has an authored menu, for as long as the menu has
+                  something left to say. Two at a time, because the closing
+                  panel also carries the gift offer and Farewell and the
+                  whole panel has to fit above the fold at 390×844; the
+                  third surfaces as soon as one of these is spent. */}
+              {askChoices.slice(0, 2).map((ch) => (
+                <button
+                  key={ch.text}
+                  type="button"
+                  className="dlg-choice dlg-choice--ask"
+                  onClick={() => handleChoice(ch)}
+                >
+                  {ch.text}
+                </button>
+              ))}
               {canGift && !giftLocked && (
                 <button type="button" className="dlg-choice dlg-choice--gift" onClick={handleGift}>
                   Offer a bookmark ({bookmarks} in pocket)

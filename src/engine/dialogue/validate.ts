@@ -68,7 +68,21 @@ type Trigger = (typeof TRIGGERS)[number];
 export const TRIGGER_MOUNTS: Readonly<Record<CharacterId, Partial<Record<Trigger, string>>>> = {
   bramble: {
     morning: 'src/ui/chrome/DayTransitions.tsx (MorningCard → slot="morning")',
-    idle: 'engine/dialogue/select.ts (valve retarget / fallback off the morning scene)',
+    idle: 'engine/dialogue/select.ts (valve retarget / fallback off the morning scene; ui/dialogue/DialogueScene.tsx quotes the ask-menu family from every closing panel)',
+    /**
+     * ROUND 24 — SOMEBODY SAYS GOODNIGHT (REVIEW_AA §5.11).
+     *
+     * This entry read "'night' has no mount for anyone yet" for twenty-three
+     * rounds, and the comment was the finding: the engine declared a `night`
+     * trigger, the validator refused to let anyone author for it, and the
+     * screen the player ends EVERY day on printed one of three hard-coded
+     * strings picked by end-cause alone. She was handed a person at breakfast
+     * and a receipt at bedtime. The digest now quotes Bramble's night family
+     * in place (`selectTaggedLine`-shaped, the AAA 4.16 precedent: no valve
+     * spent, the scene stays a scene) and marks the chosen node seen so the
+     * once-only beats retire.
+     */
+    night: 'src/ui/chrome/DayTransitions.tsx (NightDigest → buildDialogueQuery(bramble, \'night\') → selectTaggedLine over bramble.night.*)',
   },
   ellery: {
     parlor: 'src/pages/ManorPage.tsx (PARLOR_CHARACTERS: reading-nook, drawing-room → slot="parlor")',
@@ -98,8 +112,6 @@ export const TRIGGER_MOUNTS: Readonly<Record<CharacterId, Partial<Record<Trigger
     'sanctum-after-guess':
       'src/ui/sanctum/SanctumView.tsx (wrong/won-portrait phases → slot="sanctum-after-guess")',
   },
-  // 'night' has no mount for anyone yet — authoring a night node fails the
-  // build until a screen mounts it and registers here.
 };
 
 /** Slots a screen can mount directly; `idle` is only ever reached from one. */
@@ -198,6 +210,11 @@ function* walkConditions(conds: DialogueCondition[] | undefined): Generator<Dial
   }
 }
 
+/** Every condition a node can be gated by — its own, and its choices' (§5.11). */
+function nodeConditions(node: DialogueNode): DialogueCondition[] {
+  return [...(node.conditions ?? []), ...(node.choices ?? []).flatMap((ch) => ch.conditions ?? [])];
+}
+
 function* nodeEffects(node: DialogueNode): Generator<DialogueEffects> {
   if (node.effects) yield node.effects;
   for (const ch of node.choices ?? []) if (ch.effects) yield ch.effects;
@@ -216,6 +233,11 @@ export function validateDialogueFile(file: DialogueFile): ValidationIssue[] {
 
   const ids = new Set<string>();
   const gotoTargets = new Set<string>();
+  /** Every `gotoPrefix` any choice in this file names (REVIEW_AA §5.11). */
+  const gotoPrefixes = new Set<string>();
+  /** Members of a prefix family, by prefix — filled after the id sweep. */
+  const familyOf = (prefix: string): DialogueNode[] =>
+    file.nodes.filter((n) => n.id.startsWith(prefix));
 
   for (const node of file.nodes) {
     const id = node.id;
@@ -259,10 +281,44 @@ export function validateDialogueFile(file: DialogueFile): ValidationIssue[] {
       if (ch.text.length > MAX_CHOICE_CHARS) {
         err(`choice text exceeds ${MAX_CHOICE_CHARS} chars: "${ch.text}"`, id);
       }
+      if (ch.goto && ch.gotoPrefix) {
+        err(`choice "${ch.text}" names both goto and gotoPrefix — one destination, or none`, id);
+      }
       if (ch.goto) gotoTargets.add(ch.goto);
+      if (ch.gotoPrefix) {
+        gotoPrefixes.add(ch.gotoPrefix);
+        const family = familyOf(ch.gotoPrefix).filter((n) => n.chainOnly);
+        if (family.length === 0) {
+          err(`gotoPrefix "${ch.gotoPrefix}" matches no chainOnly node in ${c}.json — the verb leads nowhere`, id);
+        }
+      }
     }
 
-    for (const cond of walkConditions(node.conditions)) {
+    /**
+     * ── A MENU THAT CANNOT EMPTY (REVIEW_AA §5.11) ─────────────────────────
+     *
+     * The review's count — 20 choices, all of them spent inside the first
+     * week — is a structural property, not an authoring accident: every verb
+     * hung off a `once` node, so the verb retired with it. A REPEATABLE node
+     * that offers choices is making a standing promise, and the only way to
+     * keep it is to carry at least one verb that can never be exhausted: no
+     * conditions, and either no destination at all or one that can play
+     * again. Without this the ask-menu quietly becomes a Continue button in
+     * week three and nothing goes red.
+     */
+    if (!node.once && choices.length > 0) {
+      const evergreen = choices.some((ch) => {
+        if (ch.conditions?.length) return false;
+        if (ch.goto) return file.nodes.find((n) => n.id === ch.goto)?.once === false;
+        if (ch.gotoPrefix) return familyOf(ch.gotoPrefix).some((n) => n.chainOnly && !n.once);
+        return true;
+      });
+      if (!evergreen) {
+        err(`repeatable node offers only exhaustible choices — the menu empties and becomes a Continue button (REVIEW_AA §5.11)`, id);
+      }
+    }
+
+    for (const cond of walkConditions(nodeConditions(node))) {
       if (!(CONDITION_KINDS as readonly string[]).includes(cond.kind)) {
         err(`unknown condition kind "${(cond as { kind: string }).kind}"`, id);
       }
@@ -316,11 +372,14 @@ export function validateDialogueFile(file: DialogueFile): ValidationIssue[] {
     }
   }
   for (const node of file.nodes) {
-    if (node.chainOnly && !gotoTargets.has(node.id)) {
-      err(`chainOnly node is unreachable (no goto points at it)`, node.id);
+    const reachedByPrefix = [...gotoPrefixes].some((p) => node.id.startsWith(p));
+    if (node.chainOnly && !gotoTargets.has(node.id) && !reachedByPrefix) {
+      err(`chainOnly node is unreachable (no goto or gotoPrefix points at it)`, node.id);
     }
   }
-  // Cycle walk over goto edges (a cycle would trap the scene player).
+  // Cycle walk over goto edges (a cycle would trap the scene player). A
+  // `gotoPrefix` edge is followed to every member of the family, because any
+  // member may be the one selection lands on.
   const visiting = new Set<string>();
   const done = new Set<string>();
   const dfs = (id: string): void => {
@@ -330,7 +389,10 @@ export function validateDialogueFile(file: DialogueFile): ValidationIssue[] {
       return;
     }
     visiting.add(id);
-    for (const ch of byId.get(id)?.choices ?? []) if (ch.goto) dfs(ch.goto);
+    for (const ch of byId.get(id)?.choices ?? []) {
+      if (ch.goto) dfs(ch.goto);
+      if (ch.gotoPrefix) for (const n of familyOf(ch.gotoPrefix)) dfs(n.id);
+    }
     visiting.delete(id);
     done.add(id);
   };
@@ -365,6 +427,32 @@ export function validateDialogueFile(file: DialogueFile): ValidationIssue[] {
 
   return issues;
 }
+
+/**
+ * ── THE NIGHT'S OWN FLOORS (REVIEW_AA §5.11) ────────────────────────────────
+ *
+ * The night is not a conversation — it is the last thing she reads before the
+ * phone goes down, printed INSIDE the digest under the ledger. So it is held
+ * to two numbers the morning is not: how many beats exist at all, and how much
+ * of the glass any one of them may take at 390×844 with a full ledger above
+ * it. The owner hates scrollbars; a three-line goodnight would push the
+ * "To tomorrow" button off the bottom of the scene, and no screenshot would
+ * ever show it.
+ */
+export const NIGHT_FLOOR = {
+  /** Beats in the pool. The morning ships 6 rotating lines + a conversation. */
+  minNodes: 20,
+  /** …of which this many must be conditioned on what the day contained. */
+  minReactive: 14,
+  /** Lines per beat, and characters per line, at 390×844 under the ledger. */
+  maxLines: 2,
+  maxChars: 150,
+} as const;
+
+/** Characters who must keep a standing verb menu (REVIEW_AA §5.11). */
+export const ASK_MENU_CHARACTERS: readonly CharacterId[] = [
+  'bramble', 'ellery', 'posy', 'fern', 'portrait',
+];
 
 // ---------------------------------------------------------------------------
 // Condition disjointness — deliberately conservative
@@ -508,7 +596,7 @@ export function validateDialogueSet(files: DialogueFile[]): ValidationIssue[] {
 
   for (const f of files) {
     for (const n of f.nodes) {
-      for (const cond of walkConditions(n.conditions)) {
+      for (const cond of walkConditions(nodeConditions(n))) {
         if (cond.kind === 'flag' && !settable.has(cond.flag)) {
           issues.push({
             file: f.character, nodeId: n.id,
@@ -568,6 +656,55 @@ export function validateDialogueSet(files: DialogueFile[]): ValidationIssue[] {
           message: `Hypnos coverage: no dry-room day-end reaction for room kind "${kind}" (AAA 5.2)`,
         });
       }
+    }
+
+    // ── The night, held to its own floors (REVIEW_AA §5.11) ────────────────
+    const night = bramble.nodes.filter((n) => n.trigger === 'night' && !n.chainOnly);
+    if (night.length < NIGHT_FLOOR.minNodes) {
+      issues.push({ file: 'bramble', message: `night floor: ${night.length} beats < ${NIGHT_FLOOR.minNodes} — the day ends in a receipt again (REVIEW_AA §5.11)` });
+    }
+    const reactive = night.filter((n) => (n.conditions ?? []).length > 0);
+    if (reactive.length < NIGHT_FLOOR.minReactive) {
+      issues.push({ file: 'bramble', message: `night floor: ${reactive.length} beats conditioned on the day < ${NIGHT_FLOOR.minReactive} — a night that does not remember is a loading screen` });
+    }
+    // Never silence at bedtime, and never a fallback into the daytime idle
+    // pool: at least one beat must be eligible with nothing whatever on the
+    // stream (the selector's own fallback would print a mid-morning line).
+    if (night.length > 0 && !night.some((n) => (n.conditions ?? []).length === 0 && !n.once)) {
+      issues.push({ file: 'bramble', message: 'night floor: no unconditioned repeatable beat — some night, the digest would have nothing to say' });
+    }
+    for (const n of night) {
+      if (n.lines.length > NIGHT_FLOOR.maxLines) {
+        issues.push({ file: 'bramble', nodeId: n.id, message: `night beat has ${n.lines.length} lines > ${NIGHT_FLOOR.maxLines} — it will not fit the digest at 390×844` });
+      }
+      for (const l of n.lines) {
+        if (l.text.length > NIGHT_FLOOR.maxChars) {
+          issues.push({ file: 'bramble', nodeId: n.id, message: `night line is ${l.text.length} chars > ${NIGHT_FLOOR.maxChars} — the digest is not a dialogue box` });
+        }
+      }
+      if (n.choices?.length) {
+        issues.push({ file: 'bramble', nodeId: n.id, message: 'night beats carry no choices — the digest has no choice row to render them in' });
+      }
+    }
+  }
+
+  // ── The standing verb menu (REVIEW_AA §5.11) ─────────────────────────────
+  // Every conversation's closing panel quotes `<character>.ask.menu`. A
+  // character without one ends every conversation on a single button forever,
+  // which is the shape the review counted.
+  for (const c of ASK_MENU_CHARACTERS) {
+    const f = files.find((x) => x.character === c);
+    if (!f) continue;
+    const menu = f.nodes.find((n) => n.id === `${c}.ask.menu`);
+    if (!menu) {
+      issues.push({ file: c, message: `no ${c}.ask.menu — the closing panel has no verb to offer (REVIEW_AA §5.11)` });
+      continue;
+    }
+    if (menu.once) {
+      issues.push({ file: c, nodeId: menu.id, message: 'the ask menu must be repeatable — a once menu is the 20-choices census all over again' });
+    }
+    if ((menu.choices ?? []).length < 2) {
+      issues.push({ file: c, nodeId: menu.id, message: 'the ask menu offers fewer than 2 verbs' });
     }
   }
 

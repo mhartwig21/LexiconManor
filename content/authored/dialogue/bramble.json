@@ -1824,6 +1824,874 @@
         }
       ],
       "summary": "Bramble found the stair-runner scuffed. You reached his door."
+    },
+    {
+      "id": "bramble.night.quiet-1",
+      "trigger": "night",
+      "priority": 100,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Doors locked, lamps down, and the house behaving itself for once. Sleep, pet — it will have moved everything by morning."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.quiet-2",
+      "trigger": "night",
+      "priority": 100,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "I have set your cup out for the morning already. Thirty years of setting one out for nobody; it is nice to have the habit back."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.quiet-3",
+      "trigger": "night",
+      "priority": 100,
+      "once": false,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Goodnight, then. The house is quiet, and tonight it is the friendly sort of quiet. I can always tell which one we have got."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.spent-1",
+      "trigger": "night",
+      "priority": 100,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Not a step left in you. Those are the evenings this house remembers. Boots off at the door — I shall see to them."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.spent-2",
+      "trigger": "night",
+      "priority": 100,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Walked down to the last candle again. Fire banked, bread proving, and nothing in the world wanting you before morning."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.early-1",
+      "trigger": "night",
+      "priority": 100,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "retired-early"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Stopping while there is still lamp in the lamp. Sensible. The house sulks at sense, and the house may sulk."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.early-2",
+      "trigger": "night",
+      "priority": 100,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "retired-early"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "In early with steps still in your pocket. Spend them on the stairs tomorrow; stairs are dearer than they look, and they keep."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.warm",
+      "trigger": "night",
+      "priority": 110,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "affinity",
+          "character": "bramble",
+          "gte": 5
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "Goodnight, pet. I shall listen for your door the way I used to listen for his. Old ears want a use."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.abandoned",
+      "trigger": "night",
+      "priority": 300,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-abandoned",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "You left a room standing with its work half done. Good. Rooms keep overnight. People are the ones that spoil."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.perfect",
+      "trigger": "night",
+      "priority": 300,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-solved",
+          "withinDays": 0,
+          "where": {
+            "perfect": true
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Not one wrong step in that room today. The floorboards told on you before you were down for supper. Show-off. Sleep well."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.pangram",
+      "trigger": "night",
+      "priority": 300,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-notable",
+          "withinDays": 0,
+          "where": {
+            "note": "pangram"
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Fern came through my kitchen still talking about that word of yours. Fern does not talk. Whatever you built, it carried."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.guess",
+      "trigger": "night",
+      "priority": 300,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "curious",
+          "text": "You spoke at his door today and the kettle went quiet to listen. It was not the word. It was nearer than yesterday."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.fragment",
+      "trigger": "night",
+      "priority": 300,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "fragment-found",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "Another of his scraps in your journal tonight. Shut it before you sleep, mind — old handwriting will keep you up if you let it."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.letter",
+      "trigger": "night",
+      "priority": 300,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "letter-opened",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Posy will want to know what you made of that letter. She will not ask. She will simply be near the kettle at eight."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.dewey",
+      "trigger": "night",
+      "priority": 300,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "dewey-petted",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Cat hair on the stair-runner and a very smug animal on the landing. He will deny the whole affair at breakfast."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.gift",
+      "trigger": "night",
+      "priority": 300,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "gift-given",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Somebody under this roof is going to bed happier than they woke, and it was not the house that managed it."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.interpreted",
+      "trigger": "night",
+      "priority": 300,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "fragment-interpreted",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Ellery had that look at supper — the one she gets when a page finally admits what it means. You gave her that."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.dry",
+      "trigger": "night",
+      "priority": 320,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-solved",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-abandoned",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "fragment-found",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "sanctum-guess-wrong",
+            "withinDays": 0
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "concerned",
+          "text": "A whole day of locked doors and long looks. It did the same to him for a year before it trusted him. Bed, pet."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.first-page",
+      "trigger": "night",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "fragment-found",
+          "withinDays": 0
+        },
+        {
+          "kind": "counter",
+          "event": "fragment-found",
+          "lte": 1
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "Your first of his pages tonight. I found one under the butter dish once, read a line, and put it straight back."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "It was not for me. This one is for you, it seems. Mind how you carry it up the stairs."
+        }
+      ],
+      "summary": "Mrs. Bramble found one of his pages once, and put it back."
+    },
+    {
+      "id": "bramble.night.first-guess",
+      "trigger": "night",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong",
+          "withinDays": 0
+        },
+        {
+          "kind": "counter",
+          "event": "sanctum-guess-wrong",
+          "lte": 1
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "curious",
+          "text": "That is the first word anybody has said to that door since the year it shut. I have dusted past it and never dared."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "It was the wrong one. Say another tomorrow. I shall be listening from the pantry, shamelessly."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.first-solve",
+      "trigger": "night",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-solved",
+          "withinDays": 0
+        },
+        {
+          "kind": "counter",
+          "event": "room-solved",
+          "lte": 1
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "You finished a room. Nobody has finished with a room in this house in years — it will be showing off tomorrow, mark me."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.first-letter",
+      "trigger": "night",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "letter-opened",
+          "withinDays": 0
+        },
+        {
+          "kind": "counter",
+          "event": "letter-opened",
+          "lte": 1
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Your first letter under this roof. Posy franked it twice, she was that pleased. Do not tell her I told you."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.asked-him",
+      "trigger": "night",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "bramble.asked.master"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "You asked after him today, and I have been turning it over since. Nobody has asked me about him in eleven years."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Goodnight. I shall sleep the better for having said his name out loud."
+        }
+      ],
+      "summary": "You asked after the master. Nobody had, in eleven years."
+    },
+    {
+      "id": "bramble.night.asked-of-her",
+      "trigger": "night",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "ellery.asked.bramble"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Ellery says you asked her about me. About me. I have put an extra spoon in the morning pot over it and I am not sorry."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.asked-keys",
+      "trigger": "night",
+      "priority": 700,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "bramble.asked.keys"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "You had the keys off me today and put every one back on its hook. He never did. Small thing. I noticed it twice."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.week",
+      "trigger": "night",
+      "priority": 900,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "day",
+          "gte": 7,
+          "lte": 8
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "A week under this roof tonight. The house has stopped putting the cold rooms where you walk. From a house, that is affection."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.landing",
+      "trigger": "night",
+      "priority": 900,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "flag",
+          "flag": "vol.volume-1.landing-reached"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "You stood on his landing today. I saw the stair-runner scuffed and sat down on the step, and I am not a sitting woman."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Goodnight, pet. Whatever is behind that door, it heard you come up."
+        }
+      ],
+      "summary": "Bramble sat down on the stairs the day you reached his landing."
+    },
+    {
+      "id": "bramble.night.close",
+      "trigger": "night",
+      "priority": 900,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "fragmentsLegible",
+          "gte": 20
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "curious",
+          "text": "You have read more of him now than I ever did. It is nearly a word, is it not. I can hear you thinking through the floor."
+        }
+      ]
+    },
+    {
+      "id": "bramble.night.won",
+      "trigger": "night",
+      "priority": 900,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "volume-solved",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "The landing door stands open and the whole house has settled two inches. Go up, before I cry into the marmalade again."
+        }
+      ]
+    },
+    {
+      "id": "bramble.ask.menu",
+      "trigger": "idle",
+      "priority": 30,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Was there something you wanted to ask, pet? The kettle has a minute in it and so have I."
+        }
+      ],
+      "choices": [
+        {
+          "text": "Tell me about the master.",
+          "goto": "bramble.ask.master"
+        },
+        {
+          "text": "What are all those keys for?",
+          "goto": "bramble.ask.keys"
+        },
+        {
+          "text": "Anything worth hearing today?",
+          "gotoPrefix": "bramble.ask.today."
+        }
+      ]
+    },
+    {
+      "id": "bramble.ask.master",
+      "trigger": "idle",
+      "priority": 0,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "wistful",
+          "text": "Thirty years I poured for that man and he never once said thank you. He said sit, and I sat, and we worked. Better than thanks."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "He lost a word, and it took the rest of him with it. I have never been sure which of those two was the illness."
+        }
+      ],
+      "effects": {
+        "affinity": {
+          "bramble": 1
+        },
+        "setFlags": [
+          "bramble.asked.master"
+        ]
+      },
+      "chainOnly": true,
+      "summary": "Mrs. Bramble: he lost a word, and it took the rest of him."
+    },
+    {
+      "id": "bramble.ask.keys",
+      "trigger": "idle",
+      "priority": 0,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Every key here opens a door that has since moved. I keep them anyway. A housekeeper without keys is a woman with opinions."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "concerned",
+          "text": "There is one I cannot place. Small, brass, and warm to the hand. Warm, pet. I have stopped asking it questions."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "bramble.asked.keys"
+        ]
+      },
+      "chainOnly": true
+    },
+    {
+      "id": "bramble.ask.today.quiet-1",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "The east corridor sighed twice at four and has not explained itself. I am choosing not to pursue it."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "bramble.ask.today.quiet-2",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "neutral",
+          "text": "Nothing but weather and dust. Which in this house counts as a peaceful day, and I shall take it."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "bramble.ask.today.quiet-3",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "Dewey sat on the blueprint for an hour, and the blueprint let him. They have an understanding I am not party to."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "bramble.ask.today.solved",
+      "trigger": "idle",
+      "priority": 300,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-solved",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "amused",
+          "text": "The room you finished has been smug all afternoon. I could hear it being smug through two walls."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "bramble.ask.today.abandoned",
+      "trigger": "idle",
+      "priority": 300,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "room-abandoned",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "That room you left standing has kept your place. They do, you know. It is the one manners this house has."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "bramble.night.dry-2",
+      "trigger": "night",
+      "priority": 320,
+      "once": false,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "day-ended",
+          "where": {
+            "cause": "steps-exhausted"
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-solved",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "room-abandoned",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "fragment-found",
+            "withinDays": 0
+          }
+        },
+        {
+          "kind": "not",
+          "cond": {
+            "kind": "event",
+            "event": "sanctum-guess-wrong",
+            "withinDays": 0
+          }
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "The house gave you nothing today and took your steps for it. It will be sheepish in the morning. They always are."
+        }
+      ]
     }
   ]
 }

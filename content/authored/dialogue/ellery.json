@@ -1630,6 +1630,175 @@
         }
       ],
       "summary": "Ellery: the reading is done. What is left is the climb."
+    },
+    {
+      "id": "ellery.ask.menu",
+      "trigger": "idle",
+      "priority": 30,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "You have the look of someone with a question, dear. Ask it. Reference is the one duty I still enjoy."
+        }
+      ],
+      "choices": [
+        {
+          "text": "What do you make of Mrs. Bramble?",
+          "goto": "ellery.ask.bramble"
+        },
+        {
+          "text": "Why did you stay?",
+          "goto": "ellery.ask.staying"
+        },
+        {
+          "text": "What have the shelves been saying?",
+          "gotoPrefix": "ellery.ask.today."
+        }
+      ]
+    },
+    {
+      "id": "ellery.ask.bramble",
+      "trigger": "idle",
+      "priority": 0,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "That woman has kept this house breathing for thirty years on tea and sheer refusal. Do not tell her I said so; she would dust me."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "She has never once come up to the Library. Not since. I do not blame her — I am rather a lot to explain to a woman with a mop."
+        }
+      ],
+      "effects": {
+        "affinity": {
+          "ellery": 1
+        },
+        "setFlags": [
+          "ellery.asked.bramble"
+        ]
+      },
+      "chainOnly": true,
+      "summary": "Ellery on Mrs. Bramble: thirty years of tea and sheer refusal."
+    },
+    {
+      "id": "ellery.ask.staying",
+      "trigger": "idle",
+      "priority": 0,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "I had eleven books out on loan the week I died. Eleven. One cannot simply leave on those terms."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "And then he needed a librarian more than ever, and I found I was still one. Departments change. Vocations are stubborn."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "ellery.asked.staying"
+        ]
+      },
+      "chainOnly": true
+    },
+    {
+      "id": "ellery.ask.today.quiet-1",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "The shelves reordered themselves alphabetically by regret last night. I have put them back. Nobody thanks me."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "ellery.ask.today.quiet-2",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "neutral",
+          "text": "A moth has been reading over my shoulder since Tuesday. Poor taste, excellent manners."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "ellery.ask.today.quiet-3",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "Nothing at all, and that is itself a fact worth filing. Quiet days are how this house saves up for loud ones."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "ellery.ask.today.fragment",
+      "trigger": "idle",
+      "priority": 300,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "fragment-found",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "The page you filed today has an edge that matches another one. I shall not say which. Reference, not answers."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "ellery.ask.today.guess",
+      "trigger": "idle",
+      "priority": 300,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "The whole west wing heard you speak at that door. The Library applauded, in its way. Dust came down."
+        }
+      ],
+      "chainOnly": true
     }
   ]
 }

@@ -569,6 +569,51 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   text-wrap: balance;
 }
 
+/* What is waiting, on the morning it can be opened (REVIEW_AA §5.11) — the
+   post tray and the mantel, moved off the night digest. A caption, so it is
+   deliberately smaller and softer than the morning's own line: it is the only
+   thing on either lifecycle scene that asks her for something, and it must
+   never be the loudest voice on the card. */
+.chr-wait {
+  margin: 0;
+  /* Wider than the scene's prose measure on purpose: one sentence on one line
+     at 375px is the whole budget this caption gets (see WaitingLines). */
+  max-width: 44ch;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  text-wrap: balance;
+}
+
+/* The goodnight (REVIEW_AA §5.11). Spoken, so it takes the body face and the
+   full ink the mood string never had — this is a person, not a caption — and
+   the attribution is deliberately small: the voice is the point, the label is
+   only there so the quotation marks have an owner. Two lines is the authored
+   ceiling (engine/dialogue/validate.ts NIGHT_FLOOR), which is what keeps the
+   digest fitting 390×844 above the fold with a full ledger under it. */
+.chr-night {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 34ch;
+  margin: 2px 0 2px;
+}
+.chr-night__say {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--ink);
+  text-wrap: balance;
+}
+.chr-night__say--narration { font-style: italic; color: var(--ink-soft); }
+.chr-night__who {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+}
+
 .chr-digest {
   display: grid;
   grid-template-columns: auto auto;

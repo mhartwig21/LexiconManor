@@ -712,6 +712,175 @@
         ]
       },
       "summary": "The Portrait, unprompted: he did not destroy it — he unhoused it."
+    },
+    {
+      "id": "portrait.ask.menu",
+      "trigger": "idle",
+      "priority": 30,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "You have climbed all this way. You may as well ask something while the candle holds."
+        }
+      ],
+      "choices": [
+        {
+          "text": "Why that word?",
+          "goto": "portrait.ask.word"
+        },
+        {
+          "text": "What is it like, being a portrait?",
+          "goto": "portrait.ask.frame"
+        },
+        {
+          "text": "What can you see from up here?",
+          "gotoPrefix": "portrait.ask.today."
+        }
+      ]
+    },
+    {
+      "id": "portrait.ask.word",
+      "trigger": "idle",
+      "priority": 0,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "stern",
+          "text": "Because it was the only one I could not keep. I had a card for every word in the language. That one had a card for me."
+        },
+        {
+          "speaker": "portrait",
+          "portrait": "wistful",
+          "text": "So I un-happened it, and the house has been quietly wrong ever since. You may draw your own conclusions. You usually do."
+        }
+      ],
+      "effects": {
+        "affinity": {
+          "portrait": 1
+        },
+        "setFlags": [
+          "portrait.asked.word"
+        ]
+      },
+      "chainOnly": true,
+      "summary": "The Portrait: the word had a card for him, so he un-happened it."
+    },
+    {
+      "id": "portrait.ask.frame",
+      "trigger": "idle",
+      "priority": 0,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "Narrow. Rather like remembering a room you are standing in. I have the whole of my vocabulary and none of my hands."
+        },
+        {
+          "speaker": "portrait",
+          "portrait": "amused",
+          "text": "The candle beneath me is lit every evening by nobody at all. I have decided not to look into it. One needs a mystery."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "portrait.asked.frame"
+        ]
+      },
+      "chainOnly": true
+    },
+    {
+      "id": "portrait.ask.today.quiet-1",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "neutral",
+          "text": "The stairwell, mostly. Dust going up, which is the wrong direction, and nobody but you coming after it."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "portrait.ask.today.quiet-2",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "wistful",
+          "text": "A house rearranging itself to be walked through. It does that for very few people. It did it for him."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "portrait.ask.today.quiet-3",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "curious",
+          "text": "From here the floors read like a page with a word taken out of it. You are the one closing the gap."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "portrait.ask.today.guess",
+      "trigger": "idle",
+      "priority": 300,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "sanctum-guess-wrong",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "concerned",
+          "text": "I heard what you said at the door today. Wrong. Nearer. I find I dislike how much I wanted it to be right."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "portrait.ask.today.fragment",
+      "trigger": "idle",
+      "priority": 300,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "fragment-found",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "portrait",
+          "portrait": "curious",
+          "text": "You brought another page up with you. I can feel it from here, the way one feels a draught. Keep going."
+        }
+      ],
+      "chainOnly": true
     }
   ]
 }

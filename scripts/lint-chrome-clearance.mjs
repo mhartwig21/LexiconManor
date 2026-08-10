@@ -31,6 +31,18 @@
  *       a token that may not have landed yet, and it is inert the moment the
  *       token exists — but the fallback must be one of the declared heights.
  *       A fallback nobody keeps up to date is a literal with an alibi.
+ *   R5  THE OTHER END OF THE SAME DEFECT (REVIEW_AA §5.11, round 24). A
+ *       `position: sticky` bar pinned with a NON-ZERO `bottom` is an opaque
+ *       layer floating above its scrollport's floor: everything under it in
+ *       the scroll is unreachable unless the scroller reserves that lift at
+ *       the end of its content. The Cabinet shipped exactly that — "the
+ *       Cabinet's close button covers The Study's row", live-measured again
+ *       this round with the last plate crossing the foot at FULL scroll — and
+ *       it shipped because the lift was written as a literal in one rule with
+ *       nothing anywhere answering it. So: the lift must be a `var()`, and
+ *       that same custom property must be consumed by a `padding-bottom` (or
+ *       `scroll-padding-bottom`) somewhere in the file. `bottom: 0` is exempt
+ *       — a bar resting on the floor hides nothing at full scroll.
  *
  * Run: `node scripts/lint-chrome-clearance.mjs`
  * Also asserted by `tests/chrome-clearance.test.ts`, which is what puts it in
@@ -124,7 +136,9 @@ function stripVarFallbacks(value) {
   return out;
 }
 
-/** Every declaration in a stylesheet, with 1-based line numbers. */
+/** Every declaration in a stylesheet, with 1-based line numbers. Each carries
+ *  the id of the block it sits in, so a rule-level check (R5 needs
+ *  `position: sticky` and `bottom:` in the SAME rule) can group them. */
 function declarations(css) {
   const src = stripComments(css);
   const out = [];
@@ -132,10 +146,12 @@ function declarations(css) {
   let buf = '';
   let bufLine = 1;
   let depth = 0;
+  let blocks = 0;
+  const stack = [];
   for (const ch of src) {
     if (ch === '\n') line++;
-    if (ch === '{') { depth++; buf = ''; bufLine = line; continue; }
-    if (ch === '}') { depth--; buf = ''; bufLine = line; continue; }
+    if (ch === '{') { depth++; stack.push(++blocks); buf = ''; bufLine = line; continue; }
+    if (ch === '}') { depth--; stack.pop(); buf = ''; bufLine = line; continue; }
     if (ch === ';') {
       if (depth > 0) {
         const idx = buf.indexOf(':');
@@ -144,6 +160,7 @@ function declarations(css) {
             property: buf.slice(0, idx).trim().toLowerCase(),
             value: buf.slice(idx + 1).trim(),
             line: bufLine,
+            block: stack[stack.length - 1],
           });
         }
       }
@@ -173,9 +190,58 @@ export function chromeHeights(root = REPO_ROOT) {
  * shipped the bug and prove the lint still catches it — a lint nobody has
  * seen fail is a lint nobody knows works.
  */
+/**
+ * R5 — a sticky bottom bar, and the room the scroller keeps for it.
+ * See the header. Runs over the whole sheet because the two halves of the
+ * contract live in two different rules by construction: the bar states its
+ * lift, the scroller reserves it.
+ */
+function scanStickyFeet(rel, decls) {
+  const violations = [];
+  /** Custom properties consumed by a bottom-padding declaration anywhere. */
+  const reserved = new Set();
+  const PADDING_PROPS = new Set(['padding-bottom', 'scroll-padding-bottom', 'padding', 'padding-block']);
+  for (const d of decls) {
+    if (!PADDING_PROPS.has(d.property)) continue;
+    for (const m of d.value.matchAll(/var\(\s*(--[\w-]+)/g)) reserved.add(m[1]);
+  }
+
+  const byBlock = new Map();
+  for (const d of decls) {
+    if (!byBlock.has(d.block)) byBlock.set(d.block, []);
+    byBlock.get(d.block).push(d);
+  }
+
+  for (const block of byBlock.values()) {
+    const sticky = block.some((d) => d.property === 'position' && /sticky/.test(d.value));
+    if (!sticky) continue;
+    const bottom = block.find((d) => d.property === 'bottom');
+    if (!bottom) continue;
+    // A bar resting on the scrollport floor hides nothing at full scroll.
+    if (/^0(px|rem|%)?$/.test(bottom.value.trim())) continue;
+    const vars = [...bottom.value.matchAll(/var\(\s*(--[\w-]+)/g)].map((m) => m[1]);
+    if (vars.length === 0) {
+      violations.push({
+        file: rel, line: bottom.line, rule: 'R5', property: 'bottom', value: bottom.value,
+        message: 'a sticky bar lifted off the scrollport floor by a literal — the content under it can never be scrolled clear. Name the lift as a custom property and reserve it with padding-bottom on the scroller.',
+      });
+      continue;
+    }
+    if (!vars.some((v) => reserved.has(v))) {
+      violations.push({
+        file: rel, line: bottom.line, rule: 'R5', property: 'bottom', value: bottom.value,
+        message: `nothing reserves ${vars.join(' / ')} — the sticky bar floats above the scrollport floor and the last row stays under it. Add it to the scroller's padding-bottom.`,
+      });
+    }
+  }
+  return violations;
+}
+
 export function scanCss(rel, css, heights, onPending) {
   const violations = [];
-  for (const raw of declarations(css)) {
+  const decls = declarations(css);
+  violations.push(...scanStickyFeet(rel, decls));
+  for (const raw of decls) {
       // R4 — a --chrome-h fallback must name a height the token really takes.
       for (const m of raw.value.matchAll(/var\(\s*--chrome-h\s*,\s*(\d+(?:\.\d+)?)px\s*\)/g)) {
         if (!heights.has(Number(m[1]))) {
@@ -276,6 +342,20 @@ export function selfTest(heights = new Set([52, 50])) {
     { name: 'a var fallback tokens.css never declares',
       css: '.mom-layer { top: calc(var(--chrome-h, 64px) + env(safe-area-inset-top, 0px)); }',
       expect: ['R4'] },
+    // R5 — the Cabinet's foot, in all four of its shapes (REVIEW_AA §5.11).
+    { name: 'the sticky foot that shipped over the last row',
+      css: '.bp-modal__foot { position: sticky; bottom: calc(0.9rem + env(safe-area-inset-bottom, 0px)); }',
+      expect: ['R5'] },
+    { name: 'a lift named as a token but reserved by nobody',
+      css: '.bp-modal__foot { position: sticky; bottom: var(--bp-foot-lift); }',
+      expect: ['R5'] },
+    { name: 'the fixed form: one lift, pinned once and reserved once',
+      css: '.bp-modal__sheet { padding-bottom: calc(var(--bp-foot-lift) + 0.8rem); }\n'
+         + '.bp-modal__foot { position: sticky; bottom: var(--bp-foot-lift); }',
+      expect: [] },
+    { name: 'a sticky deck resting on the scrollport floor is not lifted',
+      css: '.room-deck { position: sticky; bottom: 0; }',
+      expect: [] },
     { name: 'comments are not code',
       css: '/* was: padding-top: calc(52px + env(safe-area-inset-top)) */\n.x { color: red; }',
       expect: [] },

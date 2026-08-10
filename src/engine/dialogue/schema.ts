@@ -122,8 +122,30 @@ export interface DialogueLine {
 
 export interface DialogueChoice {
   text: string;
+  /**
+   * ── A CHOICE THAT IS STILL THERE ON DAY TWENTY (REVIEW_AA §5.11) ─────────
+   *
+   * Choices used to be unconditional, which is why the game's twenty of them
+   * were all spent by day five: every one hung off a first meeting or a quest
+   * ask, both `once` shapes, and once the node retired the verb went with it.
+   * A choice may now carry the same conditions a node can, evaluated against
+   * the same frozen snapshot — so a REPEATABLE node can hold a menu of verbs
+   * whose membership changes as the volume goes on ("Ask about Mrs. Bramble"
+   * is offered until she has, and then it is not).
+   */
+  conditions?: DialogueCondition[];
   /** Continue into a chainOnly node in the same file. */
   goto?: string;
+  /**
+   * Continue into the best chainOnly node whose id starts with this prefix —
+   * resolved at play time by the same salience rules the selector uses
+   * (conditions, seen, cooldown, priority, deterministic rotation). This is
+   * what makes an evergreen verb possible: "Ask what the house has been
+   * saying" points at a family, not a paragraph, so the answer is about
+   * today. A prefix with no eligible member hides the choice rather than
+   * offering a button that leads nowhere.
+   */
+  gotoPrefix?: string;
   effects?: DialogueEffects;
 }
 

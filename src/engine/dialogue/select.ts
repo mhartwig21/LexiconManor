@@ -17,8 +17,18 @@
  */
 
 import type { DialogueQuery } from '../events';
-import type { DialogueFile, DialogueNode } from './schema';
+import type { DialogueChoice, DialogueFile, DialogueNode } from './schema';
 import { evaluateAll } from './conditions';
+
+/** How a pool is narrowed. Both defaults are the ordinary scene selection. */
+interface PickOptions {
+  /**
+   * Include `chainOnly` nodes and ignore the trigger. A chain member is
+   * reached by its PARENT, not by a slot, so the slot it happens to be filed
+   * under says nothing about whether it may play (see `gotoPrefix`).
+   */
+  chain?: boolean;
+}
 
 /** How many dialogue-seen events this character has today (visit counter). */
 function seenTodayCount(q: DialogueQuery): number {
@@ -33,16 +43,20 @@ function seenWithinDays(q: DialogueQuery, nodeId: string, days: number): boolean
   );
 }
 
-function eligible(node: DialogueNode, q: DialogueQuery): boolean {
-  if (node.chainOnly) return false;
-  if (node.trigger !== q.slot) return false;
+function eligible(node: DialogueNode, q: DialogueQuery, opts: PickOptions = {}): boolean {
+  if (opts.chain) {
+    if (!node.chainOnly) return false;
+  } else {
+    if (node.chainOnly) return false;
+    if (node.trigger !== q.slot) return false;
+  }
   if (node.once && q.seen.has(node.id)) return false;
   if (node.cooldownDays !== undefined && seenWithinDays(q, node.id, node.cooldownDays)) return false;
   return evaluateAll(node.conditions, q);
 }
 
-function pick(nodes: DialogueNode[], q: DialogueQuery): DialogueNode | undefined {
-  const pool = nodes.filter((n) => eligible(n, q));
+function pick(nodes: DialogueNode[], q: DialogueQuery, opts: PickOptions = {}): DialogueNode | undefined {
+  const pool = nodes.filter((n) => eligible(n, q, opts));
   if (pool.length === 0) return undefined;
 
   const top = Math.max(...pool.map((n) => n.priority));
@@ -101,4 +115,84 @@ export function selectTaggedLine(
 /** Find a node by id (goto resolution). */
 export function findNode(file: DialogueFile, id: string): DialogueNode | undefined {
   return file.nodes.find((n) => n.id === id);
+}
+
+// ---------------------------------------------------------------------------
+// Choices (REVIEW_AA §5.11) — the verb menu, and why it is still there in
+// week three
+// ---------------------------------------------------------------------------
+
+/**
+ * The continuation a choice leads to, or undefined for a choice that simply
+ * ends the conversation. `goto` names one node; `gotoPrefix` names a FAMILY
+ * and lets the salience rules pick today's member — that is the difference
+ * between an answer and an answer about this week.
+ */
+export function resolveChoiceTarget(
+  file: DialogueFile,
+  query: DialogueQuery,
+  choice: DialogueChoice,
+): DialogueNode | undefined {
+  if (choice.goto) return findNode(file, choice.goto);
+  if (choice.gotoPrefix) {
+    return pick(file.nodes.filter((n) => n.id.startsWith(choice.gotoPrefix!)), query, { chain: true });
+  }
+  return undefined;
+}
+
+/**
+ * The choices a node may actually SHOW right now.
+ *
+ * Three ways a verb leaves the menu, all of them the authored intent:
+ *   1. its own `conditions` do not hold (she has not met the person it is
+ *      about; the volume is not far enough along);
+ *   2. it leads to a `once` node she has already been told (asking twice is
+ *      how a menu turns into a vending machine);
+ *   3. it leads to a family with no member eligible today (the evergreen
+ *      verbs carry `cooldownDays: 0`, so one answer per day, not four).
+ *
+ * A choice with no destination at all is never withdrawn — it is a stance,
+ * not a door, and stances stay available.
+ */
+export function availableChoices(
+  file: DialogueFile,
+  query: DialogueQuery,
+  node: DialogueNode,
+): DialogueChoice[] {
+  return (node.choices ?? []).filter((ch) => {
+    if (!evaluateAll(ch.conditions, query)) return false;
+    if (!ch.goto && !ch.gotoPrefix) return true;
+    const target = resolveChoiceTarget(file, query, ch);
+    if (!target) return false;
+    if (target.once && query.seen.has(target.id)) return false;
+    return true;
+  });
+}
+
+/**
+ * ── THE VERB THAT OUTLIVES THE INTRODUCTIONS (REVIEW_AA §5.11) ─────────────
+ *
+ * The census that opened this round: 20 choices in the whole game, every one
+ * of them inside a first meeting, an arc opener or a quest ask — so after
+ * about day five a 22-day campaign contains no decision at all. The fix the
+ * review asks for is not plot forks, it is Hades' repeatable verbs, and this
+ * is where they mount: the conversation's closing panel offers the character's
+ * ask-menu beside Farewell, so EVERY conversation with EVERY character ends on
+ * a live choice for the whole volume.
+ *
+ * It is an ordinary authored node (`<character>.ask.menu`, idle trigger,
+ * repeatable) rather than a hard-coded UI list, so a new verb is one JSON
+ * entry and zero code (AAA 5.13) — and because it is ordinary, the idle pool
+ * can serve it as a scene in its own right too. The slot is ignored on
+ * purpose: the closing panel of a MORNING conversation must be able to offer
+ * it, and the menu is being quoted by a surface rather than dealt by the
+ * pacing valve (the `selectTaggedLine` precedent, AAA 4.16).
+ */
+export function selectAskMenu(file: DialogueFile, query: DialogueQuery): DialogueNode | undefined {
+  const menus = file.nodes.filter((n) => n.id === `${file.character}.ask.menu`);
+  if (menus.length === 0) return undefined;
+  const menu = menus[0]!;
+  if (!evaluateAll(menu.conditions, query)) return undefined;
+  if (menu.once && query.seen.has(menu.id)) return undefined;
+  return availableChoices(file, query, menu).length > 0 ? menu : undefined;
 }

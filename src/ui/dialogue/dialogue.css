@@ -288,6 +288,19 @@
   content: '❦ ';
 }
 
+/* The standing verbs on the closing panel (REVIEW_AA §5.11). Marked as a
+   QUESTION rather than an action — the leading mark is the one piece of
+   punctuation that says "you may ask" without a label saying so — and quieter
+   than the gift, which spends a real currency. */
+.dlg-choice--ask {
+  border-style: dashed;
+  border-color: var(--paper-edge);
+}
+.dlg-choice--ask::before {
+  content: '· ';
+  color: var(--ink-faint);
+}
+
 /* Zero bookmarks: a warm pointer, never a greyed button (AAA 5.9). */
 .dlg-gift-empty {
   padding: 0.2rem 0.2rem 0;

@@ -644,7 +644,10 @@
   border-bottom: none;
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   box-shadow: var(--shadow-lift);
-  padding: 0.9rem 0.9rem calc(0.9rem + env(safe-area-inset-bottom));
+  /* Bottom padding = the foot's lift + the gap it holds above the content, so
+     at full scroll the sticky foot comes to rest exactly where the flow puts
+     it and the last row is clear of it (see .bp-modal__foot). */
+  padding: 0.9rem 0.9rem calc(var(--bp-foot-lift) + var(--bp-foot-gap));
   animation: bp-sheet-up 240ms var(--ease-settle) both;
 }
 
@@ -864,13 +867,41 @@
    not. `bottom` is the sheet's own bottom padding, so the resting position and
    the stuck position are the same point and the foot never jumps at full
    scroll; the safe-area inset keeps it off the home indicator (7.8). */
+/* …AND THE LAST ROW CAN BE SCROLLED OUT FROM UNDER IT (REVIEW_AA §5.11,
+   round-24 live pass). Sticking the foot fixed the exit and created the other
+   half of the same defect: an opaque bar lifted off the scrollport's floor
+   covers the bottom of the sheet, and the sheet's own bottom padding was the
+   only thing reserving room for it. Measured at 390×844 in the Cabinet — the
+   longest sheet in the game, 3361px of deck in a 742px port — "The Long
+   Gallery" answered `elementFromPoint` as `button.bp-btn` at scroll 0, and AT
+   FULL SCROLL the last plate still crossed the foot's top edge by 2px, so
+   there was no scroll position at which that row was the player's. §5.11
+   called this out ("the Cabinet's close button covers The Study's row") and it
+   had not moved since.
+
+   The lift is now ONE number, declared once and consumed twice: the foot pins
+   itself by it, and the sheet reserves it (plus the foot's own top margin) at
+   the end of its scroll. Two literals for one measurement is the drift
+   scripts/lint-chrome-clearance.mjs exists to prevent — R5 there now fails the
+   build for a sticky bottom bar written as a literal, or written with nothing
+   reserving it. */
+.bp-modal__sheet,
+.bp-modal__foot {
+  --bp-foot-lift: calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  /* The clear air between the last row and the foot's hairline — it is the
+     foot's own top margin AND the sheet's reserve, which is the point: one
+     number, so they cannot disagree. Measured at 390×844 and 375×667 with the
+     Cabinet at full scroll, the last plate's border-box now stops above the
+     rule instead of 2px under it. */
+  --bp-foot-gap: 1rem;
+}
 .bp-modal__foot {
   display: flex;
   justify-content: space-between;
   gap: 0.6rem;
-  margin-top: 0.8rem;
+  margin-top: var(--bp-foot-gap);
   position: sticky;
-  bottom: calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  bottom: var(--bp-foot-lift);
   z-index: 1;
   padding-top: 0.55rem;
   /* Opaque, or the deck scrolls visibly through the exit. */

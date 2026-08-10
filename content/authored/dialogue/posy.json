@@ -1464,6 +1464,175 @@
         ]
       },
       "summary": "Posy’s testimony: a weekly envelope to an address that is not anywhere."
+    },
+    {
+      "id": "posy.ask.menu",
+      "trigger": "idle",
+      "priority": 30,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Ask away, love. I sort faster with my mouth going; it is the one thing the string cannot object to."
+        }
+      ],
+      "choices": [
+        {
+          "text": "Who else writes to this house?",
+          "goto": "posy.ask.writers"
+        },
+        {
+          "text": "Do you ever read them?",
+          "goto": "posy.ask.reading"
+        },
+        {
+          "text": "What came through today?",
+          "gotoPrefix": "posy.ask.today."
+        }
+      ]
+    },
+    {
+      "id": "posy.ask.writers",
+      "trigger": "idle",
+      "priority": 0,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "Old students of his, mostly, who never learned he stopped answering. I send back a card each year. A kind lie, franked properly."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "And one hand I have never placed. Twice a winter, no return address, and always exactly one line. I keep those in the good drawer."
+        }
+      ],
+      "effects": {
+        "setFlags": [
+          "posy.asked.writers"
+        ]
+      },
+      "chainOnly": true
+    },
+    {
+      "id": "posy.ask.reading",
+      "trigger": "idle",
+      "priority": 0,
+      "once": true,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "stern",
+          "text": "Never. Fifty years and not one seal broken, and I shall have that on my stone. Guessing, though — guessing is free and I am gifted at it."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Yours I do not have to guess at. You come down and tell me. Do you know how rare that is, in a post room?"
+        }
+      ],
+      "effects": {
+        "affinity": {
+          "posy": 1
+        },
+        "setFlags": [
+          "posy.asked.reading"
+        ]
+      },
+      "chainOnly": true,
+      "summary": "Posy has never opened a letter in fifty years. She guesses instead."
+    },
+    {
+      "id": "posy.ask.today.quiet-1",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Two circulars and a leaf. The leaf was addressed. I have filed it under correspondence and dared anyone to argue."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "posy.ask.today.quiet-2",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "neutral",
+          "text": "A quiet sort. The Gallery wrote to the Study again and the Study has not replied. Forty years of that, now."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "posy.ask.today.quiet-3",
+      "trigger": "idle",
+      "priority": 100,
+      "once": false,
+      "cooldownDays": 0,
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "Nothing for you yet, love, but the house drafts overnight. It always has more to say at three in the morning."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "posy.ask.today.letter",
+      "trigger": "idle",
+      "priority": 300,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "letter-opened",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "You opened one today. I could hear the seal go from here — a good sound, that. Best sound in the building."
+        }
+      ],
+      "chainOnly": true
+    },
+    {
+      "id": "posy.ask.today.gift",
+      "trigger": "idle",
+      "priority": 300,
+      "once": false,
+      "cooldownDays": 0,
+      "conditions": [
+        {
+          "kind": "event",
+          "event": "gift-given",
+          "withinDays": 0
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "Somebody has been given a bookmark today and half the house knows. Not from me. The string talks."
+        }
+      ],
+      "chainOnly": true
     }
   ]
 }
