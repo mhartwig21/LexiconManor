@@ -329,7 +329,7 @@ try {
   const roomHash = await hash();
   const roomExit = await probe('.room-host__footer .btn');
   const roomScroll = await probeScrolled('.room-host__footer .btn');
-  record(`/room (${roomHash}, hive)`, '.room-host__footer .btn', 'Leave it for tomorrow',
+  record(`/room (${roomHash}, hive)`, '.room-host__footer .btn', 'Step away',
     summarise(roomExit), 'pending click', `scrolled: ${summarise(roomScroll)}; retire: ${await retireProbe('room')}`);
 
   // grant a campaign fragment while INSIDE the room (11.11)

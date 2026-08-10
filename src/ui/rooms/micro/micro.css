@@ -232,7 +232,34 @@
      were actually starved. */
   margin-block: auto;
 }
-.dk-word { display: flex; gap: var(--dk-letter-gap); }
+.dk-word { display: flex; gap: var(--dk-letter-gap); position: relative; }
+/* ROUND 24 (COMPREHENSION, fix 13) — WORD BOUNDARIES YOU CAN SEE.
+   The words were separated by gap alone: 14.4px between words against 6px
+   between letters, on 30–38px slots, and the sheet wraps — so a word could
+   also be broken across two ranks with nothing to say where it ended. Word
+   SHAPE is the primary read in a cryptogram (it is why `--dk-word-gap` and
+   the 8-letter unbroken-word bound exist at all), and the blind tester who
+   never solved this room could not see it.
+   Each word now sits on its own slip of tray paper. Drawn as an absolutely
+   positioned underlay so it costs NOTHING in layout — the letter gutters, the
+   rank gutters, the slot sizes and the `.dk-cell::after` hit tiling are all
+   exactly as round 20 measured them — and it is a VALUE difference, not a hue,
+   so it survives the grayscale pass (AAA 6.3). Pointer-transparent, and behind
+   the cells, so it cannot take a tap meant for a letter. */
+.dk-word::before {
+  content: '';
+  position: absolute;
+  inset: -3px calc(var(--dk-word-gap) / -2 + 3px);
+  border-radius: 3px;
+  /* Deliberately WEAKER than `--paper-shade`: that exact token is the locked
+     cell's own chip, and a slip painted in it would swallow the one state in
+     this room that means "verified true" (AAA 3.3). Half-strength keeps the
+     three tones — sheet, slip, locked chip — apart in grayscale. */
+  background: color-mix(in srgb, var(--paper-shade) 55%, var(--paper-raised));
+  pointer-events: none;
+  z-index: 0;
+}
+.dk-word > .dk-cell { z-index: 1; }
 /* ROUND 5 — the tray must fit the glass. At 33 letters the final rank was
    already sliced in half by the sticky `.room-deck`, and the shipped pool runs
    to 41 letters / 48 characters ("THE HOUSE LEARNS EVERY GUEST FROM THEIR

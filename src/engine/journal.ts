@@ -756,7 +756,29 @@ export function journalNudge(
 ): string | null {
   if (state.status === 'solved') return null;
   const found = state.foundFragmentIds.length;
-  if (found === 0) return 'Draft toward the violet rooms, dear — the manor files what it finds, all by itself.';
+  /**
+   * ROUND 24 (COMPREHENSION, fix 3) — THE ONE LINE THAT TAUGHT THE WRONG RULE.
+   *
+   * This said "Draft toward the violet rooms, dear" and had said it since
+   * before round 21 re-routed the mystery's supply: the LINTEL CHANNEL —
+   * finishing any ordinary word game — now stocks 16 of Volume 1's 28 pages,
+   * one per channel per day (engine/volume.ts LINTEL_CHANNEL, watched in
+   * app/slices/journal.ts). Violet is the extra drip, and it is deliberately
+   * ~2% of ground-floor offers.
+   *
+   * So the first sentence the game ever says about its own mystery pointed two
+   * blind testers at a room type they would not see for days, and NOBODY in the
+   * comprehension test learned the actual rule — solve a puzzle, get a page.
+   * Both cited it as a probable quit reason ("the game told me to draft toward
+   * the violet rooms and then never offered me one").
+   *
+   * The rule is stated in Ellery's own register, and violet keeps its real job:
+   * MORE of them, and more the higher you go. Same two words the rail and the
+   * moment card use for the act — "finish a room", never "solve a room".
+   */
+  if (found === 0) {
+    return 'Finish a room, dear — any room, any puzzle — and a page files itself in here. The violet rooms keep more of them, and the higher you go the more they keep.';
+  }
   // The backlog outranks every other pointer: a page she cannot read yet is
   // the most useful thing anyone could point at, and the answer to it is a
   // word game (the round-10 loop, in Ellery's voice).
@@ -778,7 +800,16 @@ export function journalNudge(
     return 'No engravings yet. They are cut into lintels and inkstands about the house — the alphabet plate is waiting for them.';
   }
   if (uninterpreted && found >= 3) {
-    return 'Bring me one of these over something warm and I will read it again, more slowly.';
+    /**
+     * ROUND 24 (COMPREHENSION, fix 12) — A GESTURE WITH NO MECHANIC.
+     * "over something warm" invented a tea-giving verb the game does not have,
+     * and the tester who reads every word finished certain he was failing to
+     * perform it. The real lever is `ellery.arc.interpret-offer`: Ellery
+     * affinity >= 2 with >= 1 legible fragment, met in a parlor. So she names
+     * the lever she actually has — being called on, and being trusted a little
+     * further — instead of a kettle.
+     */
+    return 'Bring me one of these when you next call on me, dear. I read closer for a friend than for a stranger.';
   }
   if (found < content.fragments.length) {
     return 'You might reread what the engravings say, dear — side by side, they narrow wonderfully.';

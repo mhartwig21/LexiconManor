@@ -52,6 +52,16 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
   const won = state.engine.status === 'won';
   const hintCost = tier === 3 ? 3 : 2;
   const penciled = letters.filter((c) => !!state.engine.guesses[c]).length;
+  /**
+   * Marks SHE made — the starting reveals are in `guesses` too, and they are in
+   * there before she has touched anything (measured: `penciled` is 3 of 12 on
+   * entry to a fresh print). So the round-24 rule line below hung on a
+   * condition that was never true, which is the same class of defect as the
+   * rule being hidden by a media query. It hangs on her own first mark now.
+   */
+  const herMarks = letters.filter(
+    (c) => !!state.engine.guesses[c] && !state.engine.locked.includes(c),
+  ).length;
 
   // A new puzzle in the same mounted view (same-kind room, different cell)
   // must not inherit the previous session's selection.
@@ -205,6 +215,23 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
 
   return (
     <div className="mic mic--darkroom">
+      {/* ═══ ROUND 24 — THE ONE ROOM WITH NO NYT TWIN (COMPREHENSION, fix 13) ══
+          Every other room in the manor is carried by the player's existing
+          habit: the Conservatory is a Spelling Bee, the Linen Closet is a mini
+          crossword, the Gallery is a word search. The Darkroom is a cryptogram,
+          which most people have never played, and it shipped with no statement
+          of its rule anywhere on the glass — the sub-line said the letters were
+          "swapped" and left her to infer that the swap is CONSISTENT, which is
+          the only fact that makes the puzzle solvable at all. It stopped a
+          blind tester outright and he named it the room that would strand a
+          non-cryptogram player.
+          THE RULE IS NOT WRITTEN HERE. Measured live: `.mic__sub` is
+          `display: none` under `@media (max-height: 900px)` (micro.css, round
+          5's fit pass), which is BOTH shipped phone sizes — so a sentence added
+          to this line would have been authored, committed, and invisible on
+          every device the game is played on. That is this repo's signature
+          failure and it very nearly happened again. The rule lives in the
+          reserved line above the keys instead; see `.mic-toastslot` below. */}
       <header className="mic__head">
         <h2 className="mic__title">The Darkroom</h2>
         <p className="mic__sub">A phrase sits in the tray, its letters swapped. Pencil freely — develop when sure.</p>
@@ -313,10 +340,25 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
           <div className="mic-toastslot">
             {/* Same denominator, same idiom as the prints strip and the develop
                 toast — the room counts part-of-whole exactly one way (r10). */}
+            {/* ROUND 24 (COMPREHENSION, fix 13) — THE RULE, WHERE IT IS
+                ACTUALLY VISIBLE. This reserved line is the only chrome in the
+                room that survives every glass (the sub-line under the title is
+                `display: none` below 900px tall, i.e. on both phones), it sits
+                directly above the keys her thumb is already on, and it costs
+                nothing: the slot is reserved and stands empty at rest anyway.
+                It is a SELF-RETIRING label, not a tutorial — the moment she has
+                pencilled a single letter she has demonstrably got it, and the
+                line goes back to being the count it has always been. */}
             {!toast && (
-              <span className="mic__meta tabular-nums">
-                {penciled}/{letters.length} letters penciled
-              </span>
+              herMarks === 0 ? (
+                <span className="mic__meta">
+                  One letter stands for one letter, all the way through.
+                </span>
+              ) : (
+                <span className="mic__meta tabular-nums">
+                  {penciled}/{letters.length} letters penciled
+                </span>
+              )
             )}
             <span className="mic-toast-live" aria-live="polite">
               {toast && <span className={`mic-toast mic-toast--${toast.kind}`}>{toast.text}</span>}

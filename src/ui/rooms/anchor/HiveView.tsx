@@ -532,14 +532,36 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
         </p>
       </header>
 
+      {/* ═══ ROUND 24 — FULL BLOOM IS THE DOOR (COMPREHENSION, fix 7) ═══════
+          The Conservatory is the longest room in the house and the ladder never
+          said which rung ENDS it. `solveAt = ladderThreshold(maxScore, 70)` has
+          been computed here since the room was written and was used only to
+          scale the bar. Two blind testers could not tell what counted as
+          solving it; one reached Garden with 39 words still on the board and
+          quit the room. So the last rung is drawn as a threshold — a taller
+          gilt post at the end of the bar, shape first, not hue — and it is
+          named in words down in the toast slot's at-rest line (see below for
+          why there and not here). Nothing new is computed: the number is
+          `solveAt`, the payout is the same STEP_TABLE the slice pays from, and
+          both were already on this screen. */}
       <div className="hv-ladder">
         <span key={rungBeat} className="hv-ladder__name anch-pop">{tierName}</span>
-        <div className="hv-bar" role="progressbar" aria-valuenow={state.hive.score} aria-valuemax={solveAt}>
+        <div
+          className="hv-bar"
+          role="progressbar"
+          aria-valuenow={state.hive.score}
+          aria-valuemax={solveAt}
+          aria-label={`${state.hive.score} of ${solveAt} points — Full Bloom finishes the room`}
+        >
           <div className="hv-bar__fill" style={{ width: `${fillPct}%` }} />
           {HIVE_LADDER.map((t) => (
             <span
               key={t.name}
-              className={`hv-bar__dot${state.hive.score >= ladderThreshold(state.maxScore, t.pct) ? ' hv-bar__dot--lit' : ''}`}
+              className={
+                'hv-bar__dot'
+                + (state.hive.score >= ladderThreshold(state.maxScore, t.pct) ? ' hv-bar__dot--lit' : '')
+                + (t.pct === 70 ? ' hv-bar__dot--door' : '')
+              }
               style={{ left: `${Math.min(100, (ladderThreshold(state.maxScore, t.pct) / solveAt) * 100)}%` }}
             />
           ))}
@@ -670,13 +692,34 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
             )}
           </div>
 
-          <div className="anch-toastslot" aria-live="polite">
-            {toast && (
-              <span className={`anch-toast anch-toast--${toast.kind}`}>
-                {toast.text}
-                {toast.fern && <span className="anch-toast__fern">{toast.fern}</span>}
+          {/* ROUND 24 — THE DOOR RIDES IN A RESERVED LINE, NOT A NEW ONE.
+              First attempt at fix 7 was a line of its own under the ladder. It
+              is correct copy and it cost 19–20px on a room that MEASURED at
+              exactly zero spare at both 390x844 and 375x667 (`.hv-board` never
+              shrinks, by design — the hexes are positioned in percentages), so
+              it put a scrollbar in the Conservatory. That is a defect, not a
+              trade.
+              This slot already reserves 3.3rem / 2.5rem and stands EMPTY at
+              rest, which is the Darkroom's own pattern ("progress at rest, the
+              toast when there is one"). So the door is stated where there is
+              already room for it, costs nothing, and yields to the room's
+              feedback the instant there is any. It retires at Full Bloom.
+              The live region moved INSIDE, so a screen reader still hears every
+              verdict and does not hear a static fact re-read on every word. */}
+          <div className="anch-toastslot">
+            {!toast && !fullBloom && (
+              <span className="hv-door">
+                Full Bloom finishes the room · +{STEP_TABLE.solve('anchor', tier, 'hive')} steps
               </span>
             )}
+            <span className="anch-toast-live" aria-live="polite">
+              {toast && (
+                <span className={`anch-toast anch-toast--${toast.kind}`}>
+                  {toast.text}
+                  {toast.fern && <span className="anch-toast__fern">{toast.fern}</span>}
+                </span>
+              )}
+            </span>
           </div>
 
           {hiveBoard}

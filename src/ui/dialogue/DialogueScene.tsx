@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { CharacterId } from '../../engine/types';
 import type { DialogueTrigger } from '../../engine/events';
 import type { DialogueChoice, DialogueNode, PortraitExpression } from '../../engine/dialogue/schema';
@@ -20,7 +21,9 @@ import { getDialogueFile, CHARACTER_NAMES } from '../../engine/dialogue/content'
 import {
   availableChoices, resolveChoiceTarget, selectAskMenu, selectDialogue,
 } from '../../engine/dialogue/select';
-import { rankFor, MAX_AFFINITY_RANK } from '../../engine/dialogue/affinity';
+import {
+  rankFor, pointsToNextRank, rankProgress, MAX_AFFINITY_RANK,
+} from '../../engine/dialogue/affinity';
 import { meetingCardFor } from '../../engine/dialogue/meeting';
 import { useManorStore } from '../../app/store';
 import CharacterPortrait from './portraits';
@@ -199,7 +202,43 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
     if (reaction && reaction.id !== node.id) playNode(reaction);
   };
 
+  /**
+   * ═══ ROUND 24 — THE POINTS, NOT ONLY THE RANK (COMPREHENSION, fix 4) ══════
+   *
+   * THE MOST WIDELY SHARED WRONG BELIEF IN THE COMPREHENSION TEST: *"gifts do
+   * nothing — the four diamonds by each name never move, so either they aren't
+   * a friendship meter or the gift system is broken."* All three testers held
+   * it. One gave away every bookmark he owned across three characters and
+   * listed it as the thing to fix before recommending the game.
+   *
+   * They were reading the meter correctly. A gift is +1 POINT; the pips render
+   * RANK; and rank 1 costs 2 points (AFFINITY_RANK_THRESHOLDS = [0,2,5,9,14]).
+   * So the first gift to anybody, ever, moved nothing on screen — in a game
+   * whose tea arc, Ellery's interpretation service and Fern's key are all
+   * affinity-gated, and whose scarcest currency is the thing being spent.
+   *
+   * `pointsToNextRank` has existed in engine/dialogue/affinity.ts since the
+   * ranks were written and no surface has ever called it. Two calls, here:
+   *
+   *   1. THE NEXT PIP FILLS BY THE POINT. The diamond she is working on carries
+   *      a proportional gilt fill (`--pip-fill`), so one gift is visibly half
+   *      of the first rank rather than nothing at all. Shape, not hue: the
+   *      filled area survives the grayscale pass (AAA 6.3).
+   *   2. THE CLOSING PANEL COUNTS IT OUT, in words, beside the gift button —
+   *      which is also where the gift CONFIRMATION lands, because the reaction
+   *      node returns to `phase === 'end'` with the pip already moved and this
+   *      line already decremented. "Two more kindnesses" → "One more kindness"
+   *      is the receipt the test said the gift never gave.
+   */
   const rank = rankFor(affinity);
+  const toNextRank = pointsToNextRank(affinity);
+  /** How far into the CURRENT rank she is, 0–1 (engine/dialogue/affinity.ts). */
+  const pipFill = rankProgress(affinity);
+  const kindnessLine = toNextRank === undefined
+    ? null
+    : toNextRank === 1
+      ? 'One more kindness lights the next diamond.'
+      : `${toNextRank} more kindnesses light the next diamond.`;
 
   /**
    * The closing panel's verb menu — the character's own `ask.menu` node,
@@ -222,9 +261,26 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
           <div className="dlg__plate-row">
             <span className="dlg__nameplate">{CHARACTER_NAMES[character]}</span>
             {character !== 'dewey' && (
-              <span className="dlg__pips" aria-label={`Affinity rank ${rank} of ${MAX_AFFINITY_RANK}`}>
+              <span
+                className="dlg__pips"
+                aria-label={
+                  `Affinity rank ${rank} of ${MAX_AFFINITY_RANK}`
+                  + (kindnessLine ? ` — ${kindnessLine}` : ' — as close as this house gets.')
+                }
+              >
                 {Array.from({ length: MAX_AFFINITY_RANK }, (_, i) => (
-                  <span key={i} className={`dlg__pip${i < rank ? ' dlg__pip--lit' : ''}`} aria-hidden="true" />
+                  <span
+                    key={i}
+                    className={
+                      'dlg__pip'
+                      + (i < rank ? ' dlg__pip--lit' : '')
+                      + (i === rank && pipFill > 0 ? ' dlg__pip--part' : '')
+                    }
+                    style={i === rank && pipFill > 0
+                      ? ({ '--pip-fill': `${Math.round(pipFill * 100)}%` } as CSSProperties)
+                      : undefined}
+                    aria-hidden="true"
+                  />
                 ))}
               </span>
             )}
@@ -284,6 +340,13 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
                   {ch.text}
                 </button>
               ))}
+              {/* The price of a kindness, in the currency the pips are kept in
+                  (round 24). It stands whether or not she can gift right now,
+                  because the sentence it answers — "do gifts do anything?" —
+                  was asked by a player who had already spent every bookmark. */}
+              {character !== 'dewey' && kindnessLine && (
+                <p className="dlg-kindness">{kindnessLine}</p>
+              )}
               {canGift && !giftLocked && (
                 <button type="button" className="dlg-choice dlg-choice--gift" onClick={handleGift}>
                   Offer a bookmark ({bookmarks} in pocket)

@@ -128,6 +128,26 @@
   background: var(--gilt);
   border-color: var(--gilt);
 }
+/* ROUND 24 (COMPREHENSION, fix 4) — THE DIAMOND SHE IS WORKING ON.
+   Rank 1 costs two points and a gift is one, so the first gift anybody ever
+   gave moved nothing on this meter and all three blind testers concluded the
+   gift economy was inert. The pip at the current rank now carries a
+   proportional fill (`--pip-fill`, set per-render from `pointsToNextRank`'s
+   own thresholds), so a single kindness is visibly half of the first rank.
+   Encoded as AREA, not hue — a half-filled diamond survives the grayscale
+   pass (AAA 6.3) exactly as the padlock's swung shackle does. The gradient
+   runs in the element's own axes; the pip is rotated 45deg, so on screen it
+   fills the diamond from one corner, which reads as "part way" and cannot be
+   mistaken for lit. */
+.dlg__pip--part {
+  background: linear-gradient(
+    to top,
+    var(--gilt) 0,
+    var(--gilt) var(--pip-fill, 50%),
+    transparent var(--pip-fill, 50%)
+  );
+  border-color: color-mix(in srgb, var(--gilt) 60%, var(--ink-faint));
+}
 
 /* ROUND 5 — the same failure class as the journal back button. `.dlg` is a
    full-screen overlay (fixed, inset 0, z-index 40) mounted from five call
@@ -302,6 +322,19 @@
 }
 
 /* Zero bookmarks: a warm pointer, never a greyed button (AAA 5.9). */
+/* The kindness count, beside the gift button (round 24). Same quiet register
+   as `.dlg-gift-empty` — it is a caption on the meter above, never a control,
+   and it is the receipt a gift never gave: it decrements the moment the
+   reaction node returns the panel. */
+.dlg-kindness {
+  padding: 0.1rem 0.2rem 0;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--text-small, 0.85rem);
+  font-style: italic;
+  line-height: 1.25;
+}
+
 .dlg-gift-empty {
   padding: 0.2rem 0.2rem 0;
   color: var(--ink-soft);

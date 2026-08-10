@@ -8,7 +8,7 @@ import {
 } from '../src/engine/dialogue/conditions';
 import { selectDialogue, findNode } from '../src/engine/dialogue/select';
 import {
-  AFFINITY_RANK_THRESHOLDS, MAX_AFFINITY_RANK, pointsToNextRank, rankFor,
+  AFFINITY_RANK_THRESHOLDS, MAX_AFFINITY_RANK, pointsToNextRank, rankFor, rankProgress,
 } from '../src/engine/dialogue/affinity';
 import { getDialogueFile } from '../src/engine/dialogue/content';
 
@@ -279,6 +279,31 @@ describe('affinity ranks', () => {
     expect(rankFor(14)).toBe(MAX_AFFINITY_RANK);
     expect(pointsToNextRank(0)).toBe(2);
     expect(pointsToNextRank(14)).toBeUndefined();
+  });
+
+  /**
+   * ROUND 24 (COMPREHENSION, fix 4). The comprehension test's most widely
+   * shared wrong belief was "gifts do nothing", and it was a fair reading: the
+   * pips draw RANK, a gift is one POINT, and the first rank costs two. This is
+   * the gate on the fix — EVERY single point must move the meter, at every
+   * rank, or the belief is true again. It can fail: give any rank a span of one
+   * (or drop `rankProgress` back to a constant) and the first two assertions
+   * go red.
+   */
+  it('every single point moves the meter, at every rank (round 24)', () => {
+    expect(rankProgress(0)).toBe(0);
+    // One gift, from cold: half of the first rank, not nothing.
+    expect(rankProgress(1)).toBeCloseTo(0.5);
+    for (let p = 0; p < AFFINITY_RANK_THRESHOLDS[MAX_AFFINITY_RANK]!; p++) {
+      const moved = rankFor(p + 1) > rankFor(p) || rankProgress(p + 1) > rankProgress(p);
+      expect(moved, `a point at ${p} moved nothing on the meter`).toBe(true);
+    }
+    // At a threshold the pip has just been spent: the rank ticks, the fill zeroes.
+    expect(rankFor(2)).toBe(1);
+    expect(rankProgress(2)).toBe(0);
+    // At the top there is nothing left to fill, and no partial pip is drawn.
+    expect(rankProgress(14)).toBe(0);
+    expect(rankProgress(99)).toBe(0);
   });
 });
 

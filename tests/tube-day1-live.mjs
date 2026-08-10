@@ -50,6 +50,22 @@ const VOLUME = JSON.parse(
 );
 const ANSWER = String(VOLUME.answer).toUpperCase();
 
+/**
+ * The dawn purse on a fresh day 1: `BASE_DAY_BUDGET` (18) + `FIRST_MORNING_POT`
+ * (4), both in src/engine/economy/steps.ts.
+ *
+ * ROUND 24: this file carried the literal `21` in two places, and had done
+ * since before round 23 raised `FIRST_MORNING_POT` to 4 — so the §5.2 gate had
+ * been reporting two failures on a clean HEAD that had nothing to do with the
+ * speaking tube (verified by running this file on a stashed tree). A stale
+ * literal in a gate is worse than no gate: it trains the next reader to skip
+ * two red lines. It is named and derived here, and the "the word cost nothing"
+ * claim below is now made RELATIVELY, against the purse the page actually
+ * dealt, so it can never go stale again while still failing the moment a guess
+ * starts charging.
+ */
+const DAY1_PURSE = 18 + 4;
+
 async function freePort(from = 5431, to = 5490) {
   for (let p = from; p <= to; p++) {
     let taken = false;
@@ -154,6 +170,134 @@ try {
   check(start.status === 'active' && start.guesses.length === 0,
     'the volume is open and no word has been said',
     `volume ${start.status}, ${start.guesses.length} guess(es) already`);
+
+  /* --- 1b. THE BRASS IS ON THE PLAN (round 24 — COMPREHENSION fix 5) ------
+   *
+   * The comprehension test's largest wrong belief, held by two of three blind
+   * players for a whole session: "you can only guess at the Sanctum door, four
+   * floors up." Round 17's mechanic was real; its only surface was the journal
+   * rail below, which needs her standing in the hall AND holding four LEGIBLE
+   * fragments — so the affordance was gated on the content it exists to test.
+   *
+   * This is the reachability claim, and it is deliberately made on the HARDEST
+   * save the game has: day 1, an EMPTY case file, on the first screen she ever
+   * sees. Screenshots are not evidence here — `elementFromPoint` is asked at
+   * the control's own centre AND its four inset corners, because a control
+   * buried under fixed chrome photographs exactly like a working one.
+   */
+  log('');
+  log('— 1b. the brass, drawn on the Entrance Hall, with an empty journal —');
+  const filedNow = await page.evaluate(
+    () => window.__manorStore.getState().volume.foundFragmentIds.length,
+  );
+  check(filedNow === 0,
+    'her case file is empty — nothing has been filed yet',
+    `expected an empty journal for this claim, saw ${filedNow} fragment(s) filed`);
+  await page.waitForSelector('.bp-sheet', { timeout: 20000 });
+  await sleep(500);
+
+  /** The tube's hit target, asked five times with elementFromPoint. */
+  const probeTube = (p) => p.evaluate(() => {
+    const drawn = document.querySelectorAll('.bp-tube').length;
+    const live = document.querySelectorAll('.bp-tube--live').length;
+    const zone = document.querySelector('.bp-tubehit .bp-hit__zone');
+    if (!zone) return { drawn, live, zone: null };
+    const r = zone.getBoundingClientRect();
+    const IN = 4;
+    const pts = [
+      ['centre', r.x + r.width / 2, r.y + r.height / 2],
+      ['top-left', r.x + IN, r.y + IN],
+      ['top-right', r.right - IN, r.y + IN],
+      ['bottom-left', r.x + IN, r.bottom - IN],
+      ['bottom-right', r.right - IN, r.bottom - IN],
+    ];
+    const owns = pts.map(([name, x, y]) => {
+      const el = document.elementFromPoint(x, y);
+      return { name, ok: Boolean(el && el.closest('.bp-tubehit')),
+        got: el ? (el.closest('[class]')?.getAttribute('class') ?? el.tagName) : 'nothing' };
+    });
+    return {
+      drawn, live,
+      zone: { x: +r.x.toFixed(1), y: +r.y.toFixed(1), w: +r.width.toFixed(1), h: +r.height.toFixed(1) },
+      centre: [r.x + r.width / 2, r.y + r.height / 2],
+      owns,
+      label: document.querySelector('.bp-tubehit')?.getAttribute('aria-label') ?? null,
+      inView: r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0
+        && r.right <= window.innerWidth,
+    };
+  });
+
+  const tube390 = await probeTube(page);
+  check(tube390.drawn === 1,
+    'the brass is drawn on the Entrance Hall cell',
+    `expected exactly one speaking tube on the plan, saw ${tube390.drawn}`);
+  check(tube390.live === 1,
+    'and it is gilt — she is standing in the hall, so it is a live control',
+    'the tube is drawn in quiet ink while she stands on its own cell');
+  check(Boolean(tube390.zone) && tube390.zone.w >= 44 && tube390.zone.h >= 44,
+    `its tap target is a full cell: ${tube390.zone ? `${tube390.zone.w}x${tube390.zone.h} at (${tube390.zone.x}, ${tube390.zone.y})` : 'MISSING'}`,
+    `the tube has no full-cell hit zone: ${JSON.stringify(tube390.zone)}`);
+  check(tube390.inView === true,
+    'wholly inside the glass at 390x844',
+    'the tube cell is not wholly on screen at 390x844');
+  const missed390 = (tube390.owns ?? []).filter((o) => !o.ok);
+  check(missed390.length === 0,
+    'hit-tested at its centre and all four inset corners — every point returns the tube',
+    `buried at ${missed390.map((o) => `${o.name} (${o.got})`).join(', ')}`);
+
+  const beforeTap = (await state()).steps;
+  await page.mouse.click(tube390.centre[0], tube390.centre[1]);
+  await page.waitForSelector('.snc', { timeout: 20000 });
+  await sleep(400);
+  const tubeHeading = (await page.locator('.snc__title').innerText()).trim();
+  const afterTap = await state();
+  check(/speaking tube/i.test(tubeHeading),
+    `tapping the hall opens the brass: "${tubeHeading}"`,
+    `tapping the hall opened "${tubeHeading}" instead of the Speaking Tube`);
+  check((await page.locator('.snc-row').count()) === 1,
+    'with the mouthpiece on it — an input and a Speak button, on day 1, with nothing filed',
+    'the tube screen offered no way to say a word');
+  check(afterTap.steps === beforeTap,
+    `and the walk to it cost nothing — still ${afterTap.steps} steps`,
+    `reaching the brass from the plan charged her: ${beforeTap} → ${afterTap.steps}`);
+
+  /* The same claim on the small glass. Every defect this project shipped this
+     year lived only at 375x667. A SECOND CONTEXT, never a second browser. */
+  const smallCtx = await browser.newContext({
+    viewport: { width: 375, height: 667 },
+    deviceScaleFactor: 2,
+  });
+  const small = await smallCtx.newPage();
+  small.setDefaultTimeout(20000);
+  small.on('pageerror', (e) => errors.push(String(e)));
+  await small.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 90000 });
+  await small.waitForFunction(() => !!window.__manorStore, null, { timeout: 60000 });
+  await small.evaluate(() => {
+    const s = () => window.__manorStore.getState();
+    s().startDay();
+    s().advanceDayPhase();
+    location.hash = '#/';
+  });
+  await small.waitForFunction(() => !!window.__manorStore.getState().manor, null, { timeout: 20000 });
+  await small.waitForSelector('.bp-sheet', { timeout: 20000 });
+  await sleep(600);
+  const tube375 = await probeTube(small);
+  const missed375 = (tube375.owns ?? []).filter((o) => !o.ok);
+  check(tube375.drawn === 1 && tube375.live === 1 && missed375.length === 0 && tube375.inView,
+    `and at 375x667: drawn, gilt, wholly in view, and all five points return it (${tube375.zone ? `${tube375.zone.w}x${tube375.zone.h} at (${tube375.zone.x}, ${tube375.zone.y})` : 'no zone'})`,
+    `at 375x667 the tube failed: drawn ${tube375.drawn}, live ${tube375.live}, inView ${tube375.inView}, buried at ${missed375.map((o) => `${o.name} (${o.got})`).join(', ') || 'nowhere'}`);
+  await small.mouse.click(tube375.centre[0], tube375.centre[1]);
+  await small.waitForSelector('.snc', { timeout: 20000 });
+  await sleep(400);
+  const smallHeading = (await small.locator('.snc__title').innerText()).trim();
+  check(/speaking tube/i.test(smallHeading),
+    `the small glass opens the same brass: "${smallHeading}"`,
+    `at 375x667 the hall opened "${smallHeading}"`);
+  await smallCtx.close();
+
+  // Back to the plan for the rail's own claim below.
+  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.bp-sheet', { timeout: 20000 });
 
   /* --- 2. the journal offers the tube, for nothing ------------------------ */
   log('');
@@ -290,9 +434,9 @@ try {
   await page2.waitForSelector('.snc-input', { timeout: 20000 });
   await sleep(500);
   const day1 = await state2();
-  check(day1.day === 1 && day1.guesses.length === 0 && day1.steps === 21,
+  check(day1.day === 1 && day1.guesses.length === 0 && day1.steps === DAY1_PURSE,
     `a fresh install: day ${day1.day}, ${day1.steps} steps, nothing said yet`,
-    `expected a fresh day 1 with 21 steps, saw day ${day1.day} / ${day1.steps} steps / ${day1.guesses.length} guess(es)`);
+    `expected a fresh day 1 with ${DAY1_PURSE} steps, saw day ${day1.day} / ${day1.steps} steps / ${day1.guesses.length} guess(es)`);
 
   await page2.fill('.snc-input', ANSWER);
   await page2.click('.snc-speak');
@@ -304,9 +448,9 @@ try {
   check(answered.status === 'active',
     'and the volume is STILL OPEN — the ceremony is four floors up (tube.ts clause 3)',
     `the tube closed the volume outright (status ${answered.status})`);
-  check(answered.steps === 21,
+  check(answered.steps === day1.steps,
     `still ${answered.steps} steps: the word cost nothing, exactly as SANCTUM_GUESS_COST says`,
-    `saying the word charged her (${answered.steps} steps left)`);
+    `saying the word charged her (${day1.steps} → ${answered.steps} steps)`);
   const answeredLine = (await page2.locator('.snc-line').first().innerText()).trim();
   check(/say it again|face|doors/i.test(answeredLine),
     `he answers down the pipe: "${answeredLine.slice(0, 100)}…"`,

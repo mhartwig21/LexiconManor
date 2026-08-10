@@ -310,7 +310,7 @@ try {
         .first().click();
       await page.waitForSelector('.bp-modal', { state: 'detached', timeout: 8000 }).catch(() => {});
       // Anchors open on entry — leave every one of them for tomorrow (AAA 4.13).
-      const leave = page.getByRole('button', { name: /Leave it for tomorrow|Step back out/ });
+      const leave = page.getByRole('button', { name: /Step away|Step back out/ });
       if (await leave.first().isVisible().catch(() => false)) {
         await leave.first().click();
         await page.waitForSelector('.bp-sheet', { timeout: 8000 }).catch(() => {});
@@ -390,7 +390,7 @@ try {
   {
     for (let i = 0; i < 3; i++) {
       if (await page.locator('.bp-sheet').isVisible().catch(() => false)) break;
-      const out = page.getByRole('button', { name: /Leave it for tomorrow|Step back out|Back to the manor/ });
+      const out = page.getByRole('button', { name: /Step away|Step back out|Back to the manor/ });
       if (await out.first().isVisible().catch(() => false)) await out.first().click();
       else await page.goto(`${BASE}#/`, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(400);

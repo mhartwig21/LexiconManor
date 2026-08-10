@@ -378,6 +378,43 @@ describe('nudges — sympathetic, never silence (AAA 4.16)', () => {
     expect(journalNudge(volume, { ...all, status: 'solved' })).toBeNull();
   });
 
+  /**
+   * ROUND 24 (COMPREHENSION, fix 3) — THE FIRST SENTENCE THE MYSTERY EVER SAYS.
+   *
+   * The zero-fragment nudge read "Draft toward the violet rooms, dear" and had
+   * done since before round 21 re-routed 16 of Volume 1's 28 pages through the
+   * LINTEL channel — finishing any ordinary word game. Violet is ~2% of
+   * ground-floor offers by design. Two blind testers hunted violet rooms for
+   * two days, never saw one, concluded the game had starved them of its own
+   * core content, and cited it as a probable quit reason; not one of the three
+   * learned the true rule.
+   *
+   * This gate is on the RULE, not on the wording: the empty-file pointer must
+   * name finishing a room, and must not issue "draft toward the violet rooms"
+   * as the instruction. It fails on a revert.
+   */
+  it('the empty case file points at the real supply line, not at violet (round 24)', () => {
+    const nudge = journalNudge(volume, fresh())!;
+    expect(nudge).toMatch(/finish a room/i);
+    expect(nudge).not.toMatch(/draft toward the violet/i);
+    // Violet is not deleted from the fiction — it keeps MORE of them, higher up.
+    expect(nudge).toMatch(/violet/i);
+  });
+
+  /**
+   * ROUND 24 (COMPREHENSION, fix 12). Ellery used to answer an uninterpreted
+   * fragment with "bring me one of these over something warm", naming a gesture
+   * the game has no verb for; the interpretation service is `affinity >= 2` +
+   * `fragmentsLegible >= 1`, met in a parlor. The tester who reads every word
+   * finished with two half-read engravings, sure he was failing to perform an
+   * action that does not exist.
+   */
+  it('Ellery points at a lever the game actually has (round 24)', () => {
+    const nudge = journalNudge(volume, withFound('v1-d1', 'v1-e1', 'v1-d2', 'v1-t2'))!;
+    expect(nudge).toMatch(/call on me/i);
+    expect(nudge).not.toMatch(/something warm/i);
+  });
+
 });
 
 // ---------------------------------------------------------------------------

@@ -318,6 +318,36 @@
   background: var(--paper-edge);
 }
 .hv-bar__dot--lit { background: var(--room-accent); }
+/* ROUND 24 (COMPREHENSION, fix 7) — THE LAST RUNG IS A DOORWAY, NOT A DOT.
+   Full Bloom sits at the right end of the bar (the bar is scaled to it), and
+   it was drawn as the eighth identical 6px dot on a row of dots. It is now a
+   THRESHOLD POST: taller than the bar, square, and gilt — three shape
+   differences, so it survives the grayscale pass (AAA 6.3) without leaning on
+   hue. No layout cost: the dot was already absolutely positioned. */
+.hv-bar__dot--door {
+  width: 4px;
+  height: 15px;
+  border-radius: 1px;
+  background: var(--paper-edge);
+  box-shadow: 0 0 0 1.5px var(--paper-raised);
+}
+.hv-bar__dot--door.hv-bar__dot--lit { background: var(--gilt); }
+
+/* The door, said in words in the toast slot's at-rest line (round 24). Quiet
+   caption weight — a fact about the room, never a control — and it yields to
+   the room's own feedback the moment there is any. */
+.hv-door {
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--text-small, 0.85rem);
+  font-style: italic;
+  line-height: 1.2;
+  color: var(--ink-soft);
+}
+/* Plain block, never `display: contents` — that has a history of dropping
+   elements out of the accessibility tree, and this is a live region. (Same
+   note, same reason, as `.mic-toast-live` next door.) */
+.anch-toast-live { display: block; max-width: 100%; }
 
 /* Found-words drawer: one collapsed line, tap to unfold (no scrollbars). */
 .hv-found {
@@ -944,6 +974,16 @@
 }
 .tw-word__hint { font-size: 1rem; font-weight: 400; color: var(--ink-faint); letter-spacing: normal; text-transform: none; }
 .tw-lists { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center; min-height: 1.8rem; }
+/* The struck strip's header (round 24). It rides IN the chip flow rather than
+   above it, so a Gallery where nothing has been struck pays nothing for it. */
+.tw-lists__cap {
+  align-self: center;
+  font-family: var(--font-body);
+  font-size: var(--text-small, 0.85rem);
+  font-style: italic;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
 
 /* --------------------------------------------------------------------------
    The Study (Forgotten Word) — AAA §3.7

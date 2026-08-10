@@ -724,7 +724,16 @@ function EngravingCard({
       {sealed ? null : interpreted && frag.interpretation ? (
         <div className="jrn-note">{frag.interpretation}</div>
       ) : (
-        <div className="jrn-card__sealednote">Ellery might read more in this, over something warm.</div>
+        /* ROUND 24 (COMPREHENSION, fix 12). This read "Ellery might read more in
+           this, over something warm" — a gesture the game has no verb for. The
+           service is `ellery.arc.interpret-offer`: Ellery affinity >= 2 with
+           >= 1 legible fragment, met in a PARLOR. The tester who reads every
+           word finished with two half-read engravings, certain he was failing
+           at an action that does not exist, one bookmark from the real lever. */
+        <div className="jrn-card__sealednote">
+          Ellery would read more in this, once she trusts you a little further — call on her in a
+          parlor, a bookmark in hand.
+        </div>
       )}
       {refs.length > 0 && (
         <div className="jrn-refs">

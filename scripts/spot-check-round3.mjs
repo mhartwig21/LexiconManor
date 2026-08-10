@@ -112,7 +112,7 @@ try {
     log('no wrong arrangement available; shooting the room plain');
     await shot('04-vestibule-refusal');
   }
-  await page.click('text=Leave it for tomorrow');
+  await page.click('text=Step away');
   await page.waitForSelector('.bp-sheet');
 
   // 05 — Sanctum: placeholder + nameplate at 390px, then a typed long guess.

@@ -235,8 +235,15 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
             drops — at tier 3 the marked-tile rule is what a −3-step mistake
             hangs on, and this line is its only statement in words. */}
         <p className="anch__flavour">Trace words through touching tiles.</p>
+        {/* ROUND 24 (COMPREHENSION, fix 6): the minimum length is a RULE OF
+            PLAY and it was nowhere on the glass. Its only statement was a
+            toast — `Words need N+ letters` — behind a Claim button disabled
+            below exactly that length, i.e. authored and unreachable. It is
+            stated here at rest now, and the button below has been un-disabled
+            so the toast can fire as well. Read from the puzzle, never a
+            literal: a tier-3 Gallery may raise it. */}
         <p className="anch__rule">
-          {puzzle.targetCount} words
+          {puzzle.targetCount} words · {puzzle.rules.minLength}+ letters
           {puzzle.rules.centerRequired && ' · every word crosses the marked tile'}
         </p>
       </header>
@@ -369,7 +376,18 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
               <button className="anch-btn" {...pressProps<HTMLButtonElement>()} onClick={() => setPath([])} disabled={path.length === 0}>
                 Clear
               </button>
-              <button className="anch-btn anch-btn--primary" {...pressProps<HTMLButtonElement>()} onClick={() => submit(word)} disabled={word.length < puzzle.rules.minLength}>
+              {/* ROUND 24 (COMPREHENSION, fix 6) — THE CONTROL THAT PHOTOGRAPHS
+                  LIKE A WORKING ONE. This was `disabled={word.length <
+                  minLength}`, which made the room's own authored answer to a
+                  short word ("Words need 4+ letters") unreachable by
+                  construction: the only way to hear the rule was to already
+                  obey it. The systems tester had to discover the minimum by
+                  experiment against a dead button — this repo's own STATUS
+                  lesson, shipped. A short claim is mistake weight 0 in the
+                  adapter (only `breaks-rule` is costed), so enabling it prices
+                  nothing; it only lets the room speak. Still disabled on an
+                  EMPTY trace, because there is no word there to refuse. */}
+              <button className="anch-btn anch-btn--primary" {...pressProps<HTMLButtonElement>()} onClick={() => submit(word)} disabled={path.length === 0}>
                 Claim
               </button>
             </div>
@@ -378,6 +396,17 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
               {state.twistle.foundWords.map((w) => (
                 <span key={w} className="anch-chip anch-chip--accent">{w}</span>
               ))}
+              {/* ROUND 24 (COMPREHENSION, fix 6): the struck strip had no
+                  header, so two testers watched words they had traced go up
+                  crossed-through with no reason given and concluded the room
+                  had changed its mind about them. It has not: a struck chip is
+                  a trace the curator's list does not carry (`not-a-word` in
+                  the adapter — the ONLY reason a word lands here), which is the
+                  same vocabulary the toast uses. Inline, so it costs no line
+                  when nothing has been struck. */}
+              {state.missedWords.length > 0 && (
+                <span className="tw-lists__cap">not in his lexicon:</span>
+              )}
               {state.missedWords.map((w) => (
                 <span key={w} className="anch-chip anch-chip--muted">{w}</span>
               ))}

@@ -302,7 +302,7 @@ async function run(page, dir) {
       if (await page.$('.room-host')) {
         await sleep(500);
         await shot('06-first-room-entered');
-        await page.click('text=Leave it for tomorrow').catch(() => {});
+        await page.click('text=Step away').catch(() => {});
         await sleep(500);
       }
     } else {

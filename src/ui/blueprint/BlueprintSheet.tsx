@@ -42,6 +42,7 @@ import { MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../../engine/types';
 import {
   cellKey, deadDoors, deweyCell, doorsConnect, draftTargets, ENTRANCE_CARD_ID,
   roomAt, sameCell, sanctumStanding, walkableNeighbors, SANCTUM_DOOR_CELL,
+  SPEAKING_TUBE_CELL,
 } from '../../engine/manor/grid';
 import { isDoorLocked, visibleLocks, KEY_COST, type LockView } from '../../engine/manor/locks';
 import { useManorStore } from '../../app/store';
@@ -176,6 +177,66 @@ function Padlock({ x, y, ready }: { x: number; y: number; ready: boolean }) {
       />
       <circle className="bp-padlock__hole" cx={cx} cy={cy + 3} r={1.9} />
       <path className="bp-padlock__slot" d={`M${cx} ${cy + 4.4}v3`} />
+    </g>
+  );
+}
+
+/**
+ * ═══ THE BRASS, ON THE PLAN (ROUND 24 — COMPREHENSION, fix 5) ════════════════
+ *
+ * THE LARGEST WRONG BELIEF IN THE WHOLE COMPREHENSION TEST, held by two of
+ * three blind players for their entire session: *"you can only guess the word
+ * at the Sanctum door, four floors up — there is no way to test a guess until
+ * you climb."* The systems player named it as the thing that would make him
+ * quit ("twelve fragments' worth of mystery and no surface to interact with
+ * it"); the NYT player finished reporting he had never played the actual game.
+ *
+ * It is not true and has not been since round 17. The tube hears one word a
+ * day, from day 1, at ZERO steps, standing where every single day already
+ * begins (`SPEAKING_TUBE_CELL === ENTRANCE_CELL`, engine/manor/tube.ts). Round
+ * 17 built the mechanic precisely to decouple the guess from the climb — and
+ * gave it exactly one surface: a Journal rail button that requires her to be
+ * standing on the entrance cell AND holding four LEGIBLE fragments. So the
+ * affordance was gated on the very content the affordance exists to test, and
+ * the game's best teaching moment — Posy's welcome letter — taught the door.
+ *
+ * The brass is drawn on the plan now, on the Entrance Hall cell, every day,
+ * whatever is in her journal. It follows the padlock's grammar exactly, which
+ * is the grammar this sheet already uses for "a thing that is there":
+ *
+ *   - it is INK when she is elsewhere in the house — information, like a
+ *     padlock, so she can read the hall before spending a step toward it;
+ *   - it takes the GILT every other live interactable on this sheet wears, and
+ *     a full-cell tap target, when she is standing on it — which on day 1 is
+ *     the very first thing she sees, because `createManor` puts her there.
+ *
+ * NO GATE ON THE AFFORDANCE. The thin-file gate stays where it belongs, on the
+ * journal rail's PROSE (`sanctumReadiness.enough`) — a nudge may wait until the
+ * file is worth carrying; a door may not wait until she has read enough to
+ * knock. And no false affordance either: away from the hall the cell is either
+ * an ordinary walk target (one tap, one step, and then the brass is live) or
+ * out of reach entirely, exactly like every other room on the plan.
+ */
+function SpeakingTube({ x, y, live }: { x: number; y: number; live: boolean }) {
+  // Hung on the hall's west wall: a brass horn on a short elbow, with the pipe
+  // running up out of the cell as a dashed service run — the surveyor's own
+  // notation for a line concealed in a wall, which is exactly what it is. The
+  // drawing says "this goes somewhere above" without needing a word. Measured
+  // at ~14x40px on a 390px phone and ~13x38px at 375.
+  const cx = x + 16;
+  const cy = y + CELL - 20;
+  return (
+    <g className={`bp-tube${live ? ' bp-tube--live' : ''}`} aria-hidden="true">
+      {/* the pipe, climbing the wall and out of the top of the cell */}
+      <path className="bp-tube__pipe" d={`M${cx} ${cy - 7}V${y + 10}`} />
+      {/* the elbow off the top of the horn */}
+      <path className="bp-tube__elbow" d={`M${cx} ${cy - 2.2}Q${cx + 2.6} ${cy - 5} ${cx} ${cy - 7}`} />
+      {/* the horn she speaks into, mouth open into the hall */}
+      <path
+        className="bp-tube__bell"
+        d={`M${cx} ${cy - 2.2}L${cx - 10} ${cy - 5.6}L${cx - 10} ${cy + 5.6}L${cx} ${cy + 2.2}Z`}
+      />
+      <ellipse className="bp-tube__mouth" cx={cx - 10} cy={cy} rx={1.7} ry={5.6} />
     </g>
   );
 }
@@ -320,6 +381,8 @@ export default function BlueprintSheet({
   const standing = interactive ? sanctumStanding(manor) : 'away';
   const sanctumReachable = standing === 'at-door';
   const landingSealed = standing === 'landing-sealed';
+  /** She is in the hall, and the brass is a control (see `SpeakingTube`). */
+  const atTube = standing === 'at-tube';
 
   const roomNodes: ReactNode[] = rooms.map((room) => {
     const x = px(room.cell.col), y = py(room.cell.row);
@@ -350,6 +413,11 @@ export default function BlueprintSheet({
           <g className="bp-room__tick" transform={`translate(${x + CELL - 15} ${y + 8})`}>
             <path d="M0 3.5 2.6 6 7 0.5" />
           </g>
+        )}
+        {/* The brass, drawn every day the hall exists — which is every day
+            (round 24; see `SpeakingTube` above for why this is not gated). */}
+        {sameCell(room.cell, SPEAKING_TUBE_CELL) && (
+          <SpeakingTube x={x} y={y} live={atTube} />
         )}
         {isSanctum && (
           <g className="bp-seal" transform={`translate(${x + CELL / 2} ${y + CELL - INSET})`}>
@@ -605,6 +673,29 @@ export default function BlueprintSheet({
           {sanctumReachable && (
             <rect className="bp-walk__wash" x={px(SANCTUM_CELL.col) + INSET + 1} y={py(SANCTUM_CELL.row) + INSET + 1} width={CELL - 2 * INSET - 2} height={CELL - 2 * INSET - 2} rx={2} />
           )}
+        </g>
+      )}
+
+      {/* THE TUBE, TAPPABLE FROM THE HALL (round 24 — COMPREHENSION fix 5).
+          A FULL CELL, like every other target on this sheet (AAA 6.19): the
+          Entrance Hall is a solved parlor, so `canEnterCurrent` is false on it
+          and the cell she is standing in carries no other hit — there is
+          nothing here to contest and nothing to swallow. Zero steps: it opens
+          the same screen the journal rail opens, and `SANCTUM_GUESS_COST` is 0
+          on the far side of it. */}
+      {atTube && (
+        <g
+          className="bp-hit bp-tubehit"
+          role="button"
+          aria-label="Speak down the brass tube in the entrance hall. It carries one word a day up to the Sanctum door, and costs no steps."
+          {...pressProps}
+          onClick={onSanctum}
+        >
+          <rect
+            className="bp-hit__zone"
+            x={px(SPEAKING_TUBE_CELL.col)} y={py(SPEAKING_TUBE_CELL.row)}
+            width={CELL} height={CELL}
+          />
         </g>
       )}
 

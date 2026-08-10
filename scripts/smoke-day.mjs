@@ -285,7 +285,7 @@ try {
     s = await sample();
     if (s.activeRoom) {
       await page.waitForSelector('.room-host');
-      await page.click('text=Leave it for tomorrow');
+      await page.click('text=Step away');
       await page.waitForSelector('.bp-sheet');
     } else if (pick.category === 'parlor') {
       const visitBtn = await page.waitForSelector('.bp-foot__actions .bp-btn:has-text("Call on")', { timeout: 4000 }).catch(() => null);

@@ -267,7 +267,17 @@ export default function RoomHost() {
         {session.done || session.solvedOnce ? (
           <button className="btn btn--primary" onClick={leaveRoom}>Step back out</button>
         ) : (
-          <button className="btn" onClick={abandonRoom}>Leave it for tomorrow</button>
+          /* ROUND 24 (COMPREHENSION, fix 8) — A PROMISE THE MANOR BREAKS.
+             This read "Leave it for tomorrow", and there is no tomorrow for
+             this room: `endDay` wipes the layout, the gems, the keys and every
+             solve state, and session restore only holds within the same day.
+             The copy delivered false reassurance at the precise moment a player
+             decides to abandon content, and it quietly contradicted the nightly
+             reset the game works hard elsewhere to justify in Bramble's voice.
+             "Step away" says only what is true: she is leaving, now, for
+             nothing. It also pairs with "Step back out" on the solved side, so
+             the two exits are one idiom (AAA 6.16). */
+          <button className="btn" onClick={abandonRoom}>Step away</button>
         )}
       </div>
     </div>
