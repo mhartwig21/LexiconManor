@@ -1,12 +1,13 @@
 # Lexicon Manor — where we are
 
-*Written 7 Aug 2026, after thirteen build rounds and one hostile editorial review.*
+*Written 7 Aug 2026, after thirteen build rounds and one hostile editorial review.
+Updated 10 Aug 2026: §5.8 landed.*
 
 **Live:** https://mhartwig21.github.io/LexiconManor/ — installable on iPhone via Add to
 Home Screen. Deploys from `main` on push; verify the run actually succeeded, because
 three in a row silently did not (see *Lessons* below).
 
-**Repo:** github.com/mhartwig21/LexiconManor · 33 commits · working tree at `c673921`.
+**Repo:** github.com/mhartwig21/LexiconManor · 35 commits · working tree at `04f9e87`.
 
 ---
 
@@ -21,7 +22,7 @@ decipher.
 
 | Room | Game | Puzzles |
 |---|---|---|
-| The Library | Word Web (Connections-style) | 156 |
+| The Library | Word Web (Connections-style) | 153 |
 | The Conservatory | Hive Builder (Spelling Bee-style) | 300 |
 | The Gallery | Twistle (grid word search) | 210 |
 | The Study | Forgotten Word (poetic definitions) | 113 |
@@ -70,6 +71,10 @@ Its one-line diagnosis, which has driven every round since:
 | §5.4 Re-solve exploit (printed steps *and* keys) | open | closed |
 | §5.3 Mid-puzzle reload | lost the board, kept the penalty | restores both |
 | §5.5 Review loop measuring a stale build | open | guarded |
+| §5.8 Word Web colour ladder (yellow→purple spread) | **0.33** | **4.06** |
+| §5.8 Boards whose colours mis-state their difficulty | **89.7%** | **0%** |
+| §5.8 Groups that are one of eleven templates | 67.3% | 63.1% (top one 14.7%) |
+| §5.8 Distinct board architectures / dominant one | — | 63 across 153 boards / 9.8% |
 
 Also shipped outside the review's list: room orientation now follows the direction you
 enter (and the draft card shows the true placement); a fresh-start reset; the
@@ -83,10 +88,7 @@ the manor means something.
 Ordered as the review ordered them — most value first.
 
 **In flight**
-- **§5.8 Word Web variety.** ~67% of groups are one of eleven mechanical templates and
-  the difficulty colours are decorative. The Library is the marquee game and our
-  head-to-head with Connections. An agent is measuring the true distribution with a
-  re-runnable classifier before changing anything.
+- *(nothing)*
 
 **Queued**
 - **§5.6 Anchor time/reward parity.** A forty-minute sudoku pays the same +6 as a
