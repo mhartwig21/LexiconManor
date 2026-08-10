@@ -87,6 +87,27 @@ const AUTHORED_FERN = authoredAffinity(fernDialogue as DialogueFile, 'fern');
 const HEAVY_MS = 60_000;
 
 const DAYS = 3000;
+/**
+ * ROUND 26 — WHY THESE CAMPAIGN GATES AWAIT.
+ *
+ * Round 25 put `simulateDay` on the real 5x7 grid, which is the right thing and
+ * roughly quadrupled this file's cost: 64s locally, 70s on a runner. Each
+ * multi-seed gate below runs three or four 200-250 campaign sweeps back to
+ * back, ~2.5s apiece, so one `it()` held its worker for ~10s of unbroken
+ * synchronous compute. Vitest's worker answers the reporter over birpc with no
+ * configurable timeout; starve it long enough on a shared CI core and the run
+ * dies with `[vitest-worker]: Timeout calling "onTaskUpdate"` — which is
+ * exactly how the round-25 deploy failed with all 1298 tests PASSING.
+ *
+ * `breathe()` yields the event loop between seeds. It changes no count, no
+ * seed, no threshold and no assertion — these gates are byte-for-byte the ones
+ * that were here before. It only stops one test file from looking like a hung
+ * worker. If a future round adds a fifth seed or a heavier profile, add the
+ * await; do not thin the sweep. The seed count is the whole reason these bands
+ * are something other than a lucky stream.
+ */
+const breathe = () => new Promise<void>((resolve) => { setImmediate(resolve); });
+
 const CAMPAIGNS = 400;
 const CAMPAIGN_LENGTH = 45;
 
@@ -363,8 +384,9 @@ describe('4.10b — the decent day is 10–15 MINUTES (the owner-playtest fix)',
     expect(median(decent, (r) => r.roomsSolved)).toBeGreaterThanOrEqual(2);
   });
 
-  it('holds the window across independent seeds (not a lucky stream)', () => {
+  it('holds the window across independent seeds (not a lucky stream)', async () => {
     for (const seed of [0xbeef, 0x1111, 0x7777, 0x51de]) {
+      await breathe();
       const days = simulateDays(PROFILE_DECENT, 1500, seed);
       const m = median(days, (r) => r.minutes);
       expect(m).toBeGreaterThanOrEqual(10);
@@ -457,8 +479,9 @@ describe('4.10d — the SKILLED player first reaches the Sanctum DOOR on day 14�
     expect(share(reachOrNever, (d) => d === NEVER)).toBeLessThan(0.02);
   });
 
-  it('is stable across independent campaign seeds', () => {
+  it('is stable across independent campaign seeds', async () => {
     for (const seed of [0x1234, 0x9911, 0x2f2f, 0xabc1]) {
+      await breathe();
       const runs = simulateCampaigns(PROFILE_SKILLED, 200, CAMPAIGN_LENGTH, seed);
       const m = medianOf(runs.map((c) => c.firstSanctumReachDay ?? NEVER));
       // Round 24: measured 18 on every one of the four seeds.
@@ -781,8 +804,9 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
     expect(medianOf(late) / medianOf(early)).toBeLessThan(1.2);
   });
 
-  it('holds both medians across independent campaign seeds', () => {
+  it('holds both medians across independent campaign seeds', async () => {
     for (const seed of [0x1234, 0x9911, 0x2f2f, 0xabc1]) {
+      await breathe();
       const runs = simulateCampaigns(PROFILE_DECENT, 150, CAMPAIGN_LENGTH, seed);
       const reach = medianOf(runs.map((c) => c.firstSanctumReachDay ?? NEVER));
       const win = medianOf(runs.map((c) => c.volumeWinDay ?? NEVER));
@@ -1044,13 +1068,14 @@ describe('4.10d/e + 4.14 — the landing arc: earned, progressive, and floored',
     expect(sanctumPlanWarmth(0)).toBe(0);
   });
 
-  it('does not flatten after day 12 — the finding, as a gate', () => {
+  it('does not flatten after day 12 — the finding, as a gate', async () => {
     // THE CLAUSE THE FINDING WAS ABOUT. Before round 13 the median player's
     // evening was statistically identical from day 13 to day 60: P(door) flat
     // at 7–8%, because every arc in the game had already capped. Measured
     // after, across four independent seeds: the day-26–45 door rate is 10–24%
     // higher than the day-11–20 one, and the lift is the arc plus the mercy.
     for (const seed of [0x1234, 0x9911, 0x2f2f, 0xabc1]) {
+      await breathe();
       const runs = simulateCampaigns(PROFILE_DECENT, 250, CAMPAIGN_LENGTH, seed);
       const early = runs.flatMap((c) => c.days.slice(10, 20));
       const late = runs.flatMap((c) => c.days.slice(25, 45));
@@ -1275,8 +1300,9 @@ describe('4.10g — the SEAL bites: entering gets the page, solving makes it out
     expect(walker.every((c) => c.days.at(-1)!.sealedBacklog > 0)).toBe(true);
   });
 
-  it('holds the band across independent campaign seeds', () => {
+  it('holds the band across independent campaign seeds', async () => {
     for (const seed of [0x1234, 0x9911, 0x2f2f, 0xabc1]) {
+      await breathe();
       const runs = simulateCampaigns(PROFILE_SKILLED, 150, CAMPAIGN_LENGTH, seed);
       const days = runs.flatMap((c) => c.days);
       const overnight = runs.reduce((s, c) => s + c.sealedOvernightDays, 0) / days.length;
@@ -1663,11 +1689,12 @@ describe('4.10b — the FIRST evenings land inside 10–15 minutes too', () => {
   // profile. Measured at the live values, day 1 came in at 9.0 minutes: under
   // the promised floor, on the evening that decides whether she comes back.
   for (const day of [1, 2, 3]) {
-    it(`holds the window on day ${day}, at the affinity the live game can reach`, () => {
+    it(`holds the window on day ${day}, at the affinity the live game can reach`, async () => {
       const profile = campaignProfileForDay(PROFILE_DECENT, day);
       expect(profile.brambleAffinity).toBe(teaArcPoints(day));
       expect(profile.dawnSteps).toBe(firstMorningPot(day));
       for (const seed of [0xbeef, 0x1111, 0x7777]) {
+        await breathe();
         const days = simulateDays(profile, 1500, seed + day);
         const m = median(days, (r) => r.minutes);
         expect(m).toBeGreaterThanOrEqual(10);
