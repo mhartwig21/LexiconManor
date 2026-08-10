@@ -231,7 +231,10 @@ describe('4.10 — climbing IS the expense', () => {
     for (let r = 1; r < MOVE_COST_BY_ROW.length; r++) {
       expect(MOVE_COST_BY_ROW[r]!).toBeLessThanOrEqual(MOVE_COST_BY_ROW[r - 1]!);
     }
-    expect(MOVE_COST_BY_ROW[0]).toBe(-1);
+    // ROUND 23 — the ground floor is −2, not −1 (REVIEW_AA §5.10). Changing
+    // this number is how §5.10 was answered; tests/economy-pressure.test.ts is
+    // the gate that stops it drifting back.
+    expect(MOVE_COST_BY_ROW[0]).toBe(-2);
     expect(MOVE_COST_BY_ROW[6]).toBeLessThanOrEqual(-4);
   });
 

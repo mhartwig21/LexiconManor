@@ -13,7 +13,7 @@
  * tests/economy-simulation.test.ts):
  *
  *   1. CLIMBING IS THE EXPENSE. Movement is priced per row band
- *      (`MOVE_COST_BY_ROW`): −1 on the ground floor, −9 up top. A single
+ *      (`MOVE_COST_BY_ROW`): −2 on the ground floor, −9 up top. A single
  *      minimum-length ascent to THE SANCTUM LANDING (0-based row 5 — the cell
  *      the word is spoken from, not the sealed Sanctum above it) costs 22
  *      steps of pure walking — more than the entire base budget — and every
@@ -165,7 +165,7 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
  *
  * Minimum pure ascent, entrance (row 0) → THE SANCTUM LANDING (row 5) — the
  * ascent the player actually has to pay for:
- *   1 + 2 + 3 + 7 + 9 = 22 steps — MORE than the whole base budget, in a
+ *   2 + 2 + 2 + 7 + 9 = 22 steps — MORE than the whole base budget, in a
  *   straight line, before a single card is drafted or a single door is
  *   re-walked. The landing is therefore never reachable on the budget alone:
  *   it has to be paid for with tea, snacks and solves. That is the
@@ -181,11 +181,26 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
  * push-your-luck decision hinges on and it does not touch the decent day
  * (whose median top row is 4, 1-based — i.e. row 3, 0-based).
  *
- * The two lower bands are UNTOUCHED (−1/−1/−2/−3): the decent day lives on
- * rows 0–3 and its 10–15 minute window is calibrated there. Every added step
- * sits on the last two storeys, where the climb is the whole point.
+ * ═══ ROUND-23 RETUNE — THE GROUND FLOOR WAS FREE (REVIEW_AA §5.10) ═══
+ * "The two lower bands are UNTOUCHED (−1/−1/−2/−3)" was the previous note
+ * here, and measured, that sentence is the whole of §5.10: **a ground-floor
+ * room cost 1 step and a solved one paid up to 12.** Rows 0–2 are 62% of the
+ * rooms the median player enters, her mean NET on rows 0–1 was −0.84 and
+ * −0.25 steps per room entered, and 0.2% of her evenings ever contained a
+ * moment down there with fewer than four steps in hand. A resource that is
+ * never scarce is not a resource.
+ *
+ * The tier-1 band is now ONE PRICE — −2 across rows 0–2, the storeys `rowTier`
+ * calls tier 1 — so the ground floor costs something every time she crosses
+ * it, and the solve:walk ratio on row 0 falls from 12:1 to 6:1. It is
+ * deliberately the smallest lever that bites: the payout side is wage-locked
+ * by 4.10h (round 22) and cutting it would re-open the 36× spread, and the
+ * refill side is Bramble's arc, which round 23 moved rather than cut (see
+ * `TEA_POUR`). Bare ascent 22 → 23; every 4.10 band re-measured in
+ * tests/economy-simulation.test.ts and the ground floor pinned in
+ * tests/economy-pressure.test.ts.
  */
-export const MOVE_COST_BY_ROW: readonly number[] = [-1, -1, -2, -3, -7, -9, -9];
+export const MOVE_COST_BY_ROW: readonly number[] = [-2, -2, -2, -2, -7, -9, -9];
 
 export function moveAt(row: number): number {
   const i = Math.max(0, Math.min(MOVE_COST_BY_ROW.length - 1, Math.floor(row)));
@@ -433,7 +448,7 @@ export const STEP_TABLE = {
    * entry's `roomKey` ("col,row"), so per-row pricing holds even for callers
    * still passing this. Equals moveAt(0). A1: prefer `moveAt(cell.row)`.
    */
-  move: -1,
+  move: moveAt(0),
   /** Row-priced move (see moveAt / MOVE_COST_BY_ROW). */
   moveAt,
   /** −1, worth it. */
@@ -979,6 +994,77 @@ export function teaBonus(bramblePoints: number): number {
 }
 
 /**
+ * ═══ ROUND 23 — A CUP AT THE DOOR, THE POT ON THE LANDING (REVIEW_AA §5.10)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * THE DEFECT, measured before this existed: **the ground floor got richer
+ * every week and never got dearer.** `TEA_BY_POINTS` climbs 0 → +13 and it
+ * all landed at dawn, so the purse she carried around rows 0–2 ran 21 steps
+ * on day 1 and 31 by day 12 against a ground floor that charged 1 step a
+ * room. Median steps in hand down there: **28 (median player) / 30 (skilled)
+ * against an 18-step budget**, p10 20/26 — she was never once poor on the
+ * storeys where she spends 62% of her evening, and she arrived at the first
+ * padlocked storey holding more than she started the day with. The campaign's
+ * main economic arc was being spent slackening the floor it was never about.
+ *
+ * THE FIX IS NOT A CUT. Bramble's pot is the same size it has always been and
+ * grows on the same schedule (`TEA_ARC`); what changed is WHERE she puts it
+ * down. She pours a cup at the door — `dawnCup`, the same 3 steps the scripted
+ * first morning is worth, so **the ground floor runs on 21 steps on day 1 and
+ * on day 30 alike** — and carries the rest of the pot up to the second
+ * landing, which is where the climb the arc exists to fund actually begins.
+ *
+ * Why the SECOND landing (0-based row 3) and not higher or lower:
+ *   - it is the first storey ABOVE the tier-1 band (`rowTier`), i.e. exactly
+ *     the boundary §5.10 is drawn at ("below row 4");
+ *   - it is the storey BELOW the first padlock (`DOOR_LOCKS.chanceByRow[4]`),
+ *     so the pot is in her hand when the gate she has to prepare for appears;
+ *   - it costs 2+2+3 = 7 steps to reach from the entrance out of a 21-step
+ *     purse, so a timid evening can always go and get it. It is a pour she
+ *     walks to, never a pour she can be denied.
+ *
+ * WHAT THIS DOES NOT TOUCH, by construction: day 1. `teaBonus(0)` is 0, so on
+ * the first evening there is no pot to split and AAA 4.10d's "<8% stand at the
+ * door on day 1" cannot move because of this at all.
+ *
+ * The total is unchanged, so the ARC is unchanged — a warmer Bramble is worth
+ * exactly what she always was, over the course of an evening. What is no
+ * longer true is that her friendship is spendable on the ground floor.
+ */
+export const TEA_POUR = {
+  /**
+   * The cup at the door. Deliberately `FIRST_MORNING_POT`-sized: with it, the
+   * dawn purse is `BASE_DAY_BUDGET + 4 = 22` on every evening of the campaign,
+   * which is the exact purse day 1 has always had. The ground floor stops
+   * getting easier — that invariant is the §5.10 gate
+   * (tests/economy-pressure.test.ts).
+   */
+  dawnCup: 4,
+  /**
+   * 0-based grid row the rest of the pot is set down on: the second landing,
+   * the first storey above the tier-1 band and the last one below a padlock.
+   */
+  landingRow0: 3,
+  /**
+   * Ledger `roomKey` the landing pour is stamped with. It is how the live
+   * slice knows the pot has already been carried up today (the ledger resets
+   * at dawn, so no save field can go stale) — and 'move' is the only reason
+   * `priceEntry` re-prices by roomKey, so stamping a 'tea' entry is inert.
+   */
+  key: 'tea:landing',
+} as const;
+
+/** The cup poured at dawn for `bramblePoints` raw points (never a rank). */
+export function teaDawnPour(bramblePoints: number): number {
+  return Math.min(teaBonus(bramblePoints), TEA_POUR.dawnCup);
+}
+
+/** The rest of the pot, carried up to the second landing. */
+export function teaLandingPour(bramblePoints: number): number {
+  return teaBonus(bramblePoints) - teaDawnPour(bramblePoints);
+}
+
+/**
  * THE LIVE TEA ARC — the source of the points `TEA_BY_POINTS` indexes.
  *
  * Round-5 audit: `TEA_BY_POINTS` needs 6 points for its full pot, and Bramble's
@@ -1065,7 +1151,7 @@ export function teaArcFloor(day: number): number {
  * Deliberately NOT a bigger `BASE_DAY_BUDGET`: 20 would equal the bare ascent
  * cost and break the headline invariant `reserveToTop(1) > BASE_DAY_BUDGET`.
  */
-export const FIRST_MORNING_POT = 3;
+export const FIRST_MORNING_POT = 4;
 
 /** The scripted welcome pot, on day 1 only. */
 export function firstMorningPot(day: number): number {

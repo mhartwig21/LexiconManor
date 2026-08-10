@@ -21,7 +21,7 @@ import { createRng } from './rng';
 import { wingCharacterOf } from './manor/wings';
 import {
   createLedger, firstMorningPot, highestRowVisited, ledgerTotal, rowName, stepsRefunded,
-  stepsSpent, teaBonus, STEP_TABLE,
+  stepsSpent, teaDawnPour, STEP_TABLE,
 } from './economy/steps';
 
 /**
@@ -99,7 +99,11 @@ export function beginDay(
       activeRoom: null,
     },
     ledger: createLedger(STEP_TABLE.dayStart),
-    teaSteps: teaBonus(opts.brambleAffinity),
+    // ROUND 23 (REVIEW_AA §5.10) — the CUP at the door. The rest of the pot is
+    // carried up to the second landing by app/slices/manor.ts on the placement
+    // that takes her there (`TEA_POUR`), so the arc funds the climb it exists
+    // for instead of slackening the ground floor it was never about.
+    teaSteps: teaDawnPour(opts.brambleAffinity),
     potSteps: firstMorningPot(dayNumber),
   };
 }

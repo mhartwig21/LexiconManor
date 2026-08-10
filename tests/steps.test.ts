@@ -40,8 +40,15 @@ describe('STEP_TABLE (the one tunable const)', () => {
   });
 
   it('prices movement per row — climbing IS the expense', () => {
-    expect(moveAt(0)).toBe(-1);                        // the ground floor stroll
-    expect(moveAt(3)).toBe(-3);
+    // ROUND 23 (REVIEW_AA §5.10): the ground floor stopped being free. Rows
+    // 0–2 are 62% of the rooms she enters and they charged ONE step against a
+    // solve worth up to twelve — measured, her purse down there ran a median
+    // 28 steps against an 18-step budget and 0.2% of her evenings ever
+    // contained a moment with fewer than four in hand. The tier-1 band is one
+    // price now; the bare ascent is unchanged at 22.
+    expect(moveAt(0)).toBe(-2);                        // the ground floor, priced
+    expect(moveAt(2)).toBe(moveAt(0));                 // …one band, one price
+    expect(moveAt(3)).toBe(-2);
     // Round 7: the two upper storeys carry the climb, because the ascent the
     // player must actually pay for ends at the Sanctum LANDING (0-based row
     // 5), not at the sealed Sanctum above it.

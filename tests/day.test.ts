@@ -6,6 +6,7 @@ import {
 } from '../src/engine/day';
 import {
   appendEntry, climbKey, createLedger, moveAt, rowName, teaArcFloor, teaArcPoints, teaBonus,
+  teaDawnPour, teaLandingPour,
   FIRST_MORNING_POT, STEP_TABLE, TEA_ARC,
 } from '../src/engine/economy/steps';
 import { CARRY_OVER_EFFECTS, carryOverFrom } from '../src/engine/manor/deck';
@@ -89,7 +90,10 @@ describe('beginDay', () => {
   it('pours the welcome pot once, on day 1 only', () => {
     const later = beginDay(day({ phase: 'night', day: 4 }), { brambleAffinity: 2, entropy: 1 });
     expect(later!.potSteps).toBe(0);
-    expect(later!.teaSteps).toBe(teaBonus(2));
+    // ROUND 23 (`TEA_POUR`): what dawn hands her is the CUP; the rest of the
+    // pot is carried up to the second landing by the manor slice.
+    expect(later!.teaSteps).toBe(teaDawnPour(2));
+    expect(later!.teaSteps + teaLandingPour(2)).toBe(teaBonus(2));
   });
 
   it('rolls to the next morning only from night', () => {
@@ -97,7 +101,7 @@ describe('beginDay', () => {
     expect(beginDay(day({ phase: 'dusk' }), { brambleAffinity: 0, entropy: 1 })).toBeNull();
     const begun = beginDay(day({ phase: 'night', day: 7 }), { brambleAffinity: 2, entropy: 1 });
     expect(begun!.day.day).toBe(8);
-    expect(begun!.teaSteps).toBe(teaBonus(2));
+    expect(begun!.teaSteps).toBe(teaDawnPour(2));
   });
 
   it('derives a deterministic, day-distinct seed', () => {
@@ -588,11 +592,17 @@ describe("the tea arc has a live source: shared mornings (AAA 4.10d / 5.9)", () 
     expect(late.at(-1)!).toBeGreaterThan(skipped.at(-1)!);
   });
 
-  it('tops the pot up in the same breath, so the +N lands where she can see it', () => {
-    // The dawn pot is poured before the scene; the shared morning's rung is
-    // added AS THE SCENE CLOSES, through the audited ledger, so the largest
-    // step grant in the game is a visible floating +N instead of a number that
-    // moved between glances (AAA 4.9 / 11.15).
+  it('never loses a rung to the split pour — the pot she earned is all there', () => {
+    // ROUND 23 (`TEA_POUR`, REVIEW_AA §5.10). The dawn pot is poured before the
+    // scene and the shared morning's rung is added AS THE SCENE CLOSES, through
+    // the audited ledger. What changed is WHERE the rung is drinkable: the cup
+    // at the door is capped at `TEA_POUR.dawnCup`, so past the first rung the
+    // increase is waiting on the second landing instead of floating at dawn
+    // (the dawn card itemises both lines — ui/chrome/DayTransitions.tsx).
+    //
+    // The invariant this test exists for is the one that must never break: a
+    // rung she earned is never LOST, only relocated. Cup + landing pour is
+    // exactly `teaBonus` of her new warmth, on the same morning she bought it.
     const store = makeStore();
     for (let d = 1; d < 4; d++) {           // roll to day 4: a rung morning
       store.getState().startDay();
@@ -606,12 +616,19 @@ describe("the tea arc has a live source: shared mornings (AAA 4.10d / 5.9)", () 
     const known = store.getState().affinities.bramble;
     store.getState().shareMorningTea();
     const after = store.getState().ledger.entries.filter((e) => e.reason === 'tea');
-    expect(store.getState().affinities.bramble).toBe(known + 1);
-    expect(after.length).toBe(before.length + 1);
-    expect(after.at(-1)!.delta).toBe(teaBonus(known + 1) - teaBonus(known));
-    // The day's whole pot is exactly what the simulation models for day 4.
-    const total = after.reduce((s, e) => s + e.delta, 0);
-    expect(total).toBe(teaBonus(teaArcPoints(4)));
+    const warmed = known + 1;
+    expect(store.getState().affinities.bramble).toBe(warmed);
+    // The cup only grows while it has room; past that the rung goes upstairs.
+    const dawnDelta = teaDawnPour(warmed) - teaDawnPour(known);
+    expect(after.length).toBe(before.length + (dawnDelta > 0 ? 1 : 0));
+    if (dawnDelta > 0) expect(after.at(-1)!.delta).toBe(dawnDelta);
+    // NOTHING IS LOST. The day's dawn pot plus what waits on the landing is
+    // exactly the pot her warmth entitles her to — the same number the whole
+    // campaign arc was ever calibrated on (AAA 4.10d).
+    const dawn = after.reduce((s, e) => s + e.delta, 0);
+    expect(dawn).toBe(teaDawnPour(teaArcPoints(4)));
+    expect(dawn + teaLandingPour(warmed)).toBe(teaBonus(warmed));
+    expect(teaBonus(warmed)).toBeGreaterThan(teaBonus(known));
   });
 
   it('never lifts her past the mornings she has actually had', () => {

@@ -25,7 +25,9 @@
  */
 import {
   PROFILE_DECENT, PROFILE_SKILLED, simulateCampaigns, medianOf, quantileOf,
+  FIRST_LOCKED_ROW, GROUND_ROWS,
 } from '../src/engine/economy/simulate';
+import { BASE_DAY_BUDGET, FIRST_MORNING_POT } from '../src/engine/economy/steps';
 import { fragmentDays, legibleDayShare, legibleOwedDayShare } from '../tests/support/fragment-drip';
 
 const NEVER = 1e9;
@@ -33,7 +35,7 @@ const N = 200;
 const DAYS = 45;
 const SEEDS = [0x1234, 0x9911, 0x2f2f, 0xabc1];
 
-const share = (xs: number[], p: (n: number) => boolean) => xs.filter(p).length / xs.length;
+const share = <T,>(xs: T[], p: (n: T) => boolean) => xs.filter(p).length / xs.length;
 const fmt = (n: number) => (n >= NEVER ? 'never' : String(n));
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
@@ -61,6 +63,28 @@ function campaignMetrics(profile: typeof PROFILE_DECENT, label: string) {
     const budget = d.spent - d.refunded + d.stepsLeft;
     return budget > 0 ? d.stepsLeft / budget : 0;
   }));
+  // ROUND 23 — (d) USED TO ANSWER ITSELF. `simulateDay`'s only exit was an
+  // empty ledger, so 100.0% of days ended at exactly 0 and this line printed
+  // "0.0% / 0.0%" as a PASS of the review's own gate, by construction. The day
+  // model has two endings now (`RETIREMENT`), so the honest report is the
+  // SHARE of each beside the number — a 0.0% median that comes with "94.6% of
+  // evenings spent out" is a measurement; the same 0.0% alone was not.
+  const endings = all.flatMap((c) => c.days.map((d) => d.endReason));
+  const retired = all.flatMap((c) => c.days.filter((d) => d.endReason === 'retired'));
+  const retiredUnspent = retired.map((d) => {
+    const budget = d.spent - d.refunded + d.stepsLeft;
+    return budget > 0 ? d.stepsLeft / budget : 0;
+  });
+
+  // ROUND 23 (REVIEW_AA §5.10) — THE GROUND FLOOR, which no published number
+  // could see: every metric above is a whole-day aggregate, so a floor that
+  // charged one step a room while a solve paid twelve looked exactly like a
+  // floor that bit. Pinned in tests/economy-pressure.test.ts (AAA 4.10i).
+  const inHand = all.flatMap((c) => c.days.flatMap((d) => [...d.pressure.inHand]));
+  const atLock = all.flatMap((c) => c.days.map((d) => d.pressure.atFirstLock))
+    .filter((n): n is number => n !== null);
+  const groundNet = all.reduce((t, c) => t + c.days.reduce((s, d) => s + d.pressure.groundNet, 0), 0);
+  const groundRooms = all.reduce((t, c) => t + c.days.reduce((s, d) => s + d.pressure.groundRooms, 0), 0);
 
   console.log(`\n### ${label}  (n=${all.length}, ${DAYS}-day window)`);
   console.log(`  (a) first SAYS A WORD to the Sanctum   median ${fmt(medianOf(speak))}   p90 ${fmt(quantileOf(speak, 0.9))}   <=3: ${pct(share(speak, (d) => d <= 3))}   never: ${pct(share(speak, (d) => d >= NEVER))}`);
@@ -72,6 +96,11 @@ function campaignMetrics(profile: typeof PROFILE_DECENT, label: string) {
   console.log(`      VOLUME WIN day                     median ${fmt(medianOf(win))}   p10 ${fmt(quantileOf(win, 0.1))}  p90 ${fmt(quantileOf(win, 0.9))}`);
   console.log(`      win <=45 ${pct(share(win, (d) => d <= 45))} · <=35 ${pct(share(win, (d) => d <= 35))} · <=28 ${pct(share(win, (d) => d <= 28))} · <=14 ${pct(share(win, (d) => d <= 14))} · <=7 ${pct(share(win, (d) => d <= 7))} · never ${pct(share(win, (d) => d >= NEVER))}`);
   console.log(`  (d) unspent budget at day end          median ${pct(medianOf(unspent))}  p90 ${pct(quantileOf(unspent, 0.9))}`);
+  console.log(`      …how the evening ENDED               spent out ${pct(share(endings, (e) => e === 'broke'))} · early night ${pct(share(endings, (e) => e === 'retired'))}`);
+  console.log(`      …unspent on the early nights         median ${retiredUnspent.length ? pct(medianOf(retiredUnspent)) : 'n/a'}`);
+  console.log(`  (§5.10) steps in hand, rows 0-${GROUND_ROWS}         median ${medianOf(inHand)}  p10 ${quantileOf(inHand, 0.1)}  p90 ${quantileOf(inHand, 0.9)}   [day-1 purse ${BASE_DAY_BUDGET + FIRST_MORNING_POT}]`);
+  console.log(`      net steps per ground-floor room     ${(groundNet / groundRooms).toFixed(2)}   (${(groundRooms / endings.length).toFixed(2)} of them an evening)`);
+  console.log(`      in hand entering row ${FIRST_LOCKED_ROW} (1st padlock)  median ${atLock.length ? medianOf(atLock) : 'n/a'}   [dawn budget ${BASE_DAY_BUDGET}]`);
   console.log(`      per-seed win medians:   ${SEEDS.map((s) => medianOf(simulateCampaigns(profile, 150, DAYS, s).map((c) => c.volumeWinDay ?? NEVER))).map(fmt).join(', ')}`);
   console.log(`      per-seed reach medians: ${SEEDS.map((s) => medianOf(simulateCampaigns(profile, 150, DAYS, s).map((c) => c.firstSanctumReachDay ?? NEVER))).map(fmt).join(', ')}`);
 }

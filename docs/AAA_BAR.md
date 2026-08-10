@@ -549,14 +549,20 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     measured**:
     - **the skilled player** (4.10d's): first landing day 6–10, volume won at
       median **12–20** (round 21; was 8–16, and 14–28 before that), 100% by
-      day 28.
+      day 28. *(Round 23 re-measurement, after 4.10i priced the ground floor:
+      landing 9–10, win 16, 100% by day 28.)*
     - **the median player** (`PROFILE_DECENT`, 4.10b's): first landing at median
-      day **12–20** (measured 16–18, 0% never inside 45 days), the word
-      deducible at median day **14–24** (round 21, was 10–20; measured 18),
-      the volume won at median day **18–28** (round 21, was 14–24; measured
-      21–22 across the four campaign seeds, p10 17, p90 29), <2% inside the
-      first week (measured 0), **>80% inside 45 evenings** (measured 100%), and
-      her evening stays inside 10–15 minutes start to finish (4.10f).
+      day **12–20** (round 23: measured 19, was 16–18; 0% never inside 45 days),
+      the word deducible at median day **14–24** (round 21, was 10–20; measured
+      19), the volume won at median day **18–28** (round 21, was 14–24; round 23:
+      measured 22–23 across the four campaign seeds, was 21–22; p10 18, p90 30),
+      <2% inside the first week (measured 0.5%), **>80% inside 45 evenings**
+      (measured 100%), and her evening stays inside 10–15 minutes start to
+      finish (4.10f). *(Round 23 moved both of her numbers by a day or two and
+      nothing else: the ground floor now costs two steps a room and Bramble's
+      pot waits on the landing — 4.10i — so the evening she banks the climb out
+      of is leaner. Both remain inside the published bands, which is the reason
+      the bands are ranges.)*
     *Round 21 — BOTH KNOWLEDGE BANDS MOVED AGAIN, AND THIS TIME THE CONTENT
     MOVED THEM. Her two ACCESS bands are untouched for the third round running:
     the climb did not change, the volume did. Volume 1 authors 28 pages against
@@ -706,8 +712,54 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     puzzle at tier 1, and the tier-2/3 Counting House should bank partial grids across
     days. The test asserts both are still true, so fixing either FAILS 4.10h and forces
     the bound to tighten.
+  - **4.10i — THE GROUND FLOOR IS A RESOURCE, NOT A FORMALITY** (REVIEW_AA §5.10, round
+    23). *"If a resource is never scarce it is not a resource."* Nothing in 4.10a–h
+    constrained the storeys the median player spends 62% of her evening on, and measured
+    over 300 campaigns × 45 days the tier-1 band (0-based rows 0–2) was a formality: her
+    purse while walking it ran a **median 28 steps (skilled 30) against an 18-step
+    budget**, p10 20 / 26; **net −0.84 / −0.36 steps per room entered** — a wash, not a
+    cost; **0.2% / 0.0%** of evenings ever contained a moment down there with fewer than
+    four steps in hand; and she arrived at the first PADLOCKED storey holding 15 / 21,
+    i.e. the skilled player reached the gate *richer than she started the day*.
+    Two causes, and both are now gated by `tests/economy-pressure.test.ts`:
+    (a) **the band charged one step a room against a solve worth up to twelve.** It is
+    one price now, −2 across rows 0–2, which drops the solve:walk ratio from 12:1 to
+    6:1. The payout half is deliberately untouched — cutting it would re-open 4.10h's
+    36× wage spread, which is a worse trade — and the **bare ascent is still 22**, so
+    the headline invariant and every band calibrated on it are unmoved by this half.
+    (b) **the campaign arc was landing on the floor.** `TEA_BY_POINTS` climbs 0 → +13
+    and all of it arrived at dawn, so the ground floor got a third richer every fortnight
+    while never getting dearer. `TEA_POUR` pours a **cup at the door** (`dawnCup`, the
+    same size as `FIRST_MORNING_POT`) and leaves **the rest of the pot on the second
+    landing** — 0-based row 3, the first storey above the band and the last below a
+    padlock, 6 steps' walk out of a 22-step purse. Same total, same arc, so a warmer
+    Bramble is worth exactly what she always was *over an evening*; what she is no
+    longer worth is anything extra on the ground floor. **The invariant: the dawn purse
+    is 22 on day 1 and 22 on day 30.** Day 1 cannot move at all — `teaBonus(0)` is 0, so
+    there is no pot to split — which is what protects 4.10d's "<8% on day 1" by
+    construction rather than by tuning.
+    Measured after: purse **28 → 18** (median player) and **30 → 20** (skilled), net per
+    ground-floor room **−0.84 → −2.58** and **−0.36 → −0.96**, in hand at the first
+    padlock **15 → 12** and **21 → 18**, evenings with a sub-four moment down there
+    **0.2% → 6.0%**. The costs, published rather than buried: her first landing moved
+    day **16–18 → 19** and her volume win **21–22 → 23**, both still inside the bands
+    below; the skilled player's landing **8 → 9–10** and win **15 → 16**, likewise.
+    *The bounds in `tests/economy-pressure.test.ts` are a RATCHET, like 4.10h's: they
+    may be tightened and may not be loosened without a finding to point at.*
+  - **THE DAY MODEL HAS TWO ENDINGS** (round 23). REVIEW_AA §8's third gate is *"no day
+    ending with more than ~20% of the budget unspent"*, and `metrics:review` printed
+    `0.0% / 0.0%` as a pass — **by construction**: `simulateDay`'s only exit was an
+    empty ledger, so 100.0% of days ended at exactly 0. A gate whose answer is fixed by
+    the loop condition is worse than no gate, and this list has named that failure mode
+    twice already. `SimProfile.sessionMinutes` is the live game's other ending ("An
+    early night, well chosen", `NIGHT_LINES`) as a rule: appetite, not affordability,
+    because `openDraft` refuses only below one step and its own comment says *"even if
+    it was her last step, the offer still opens"* — an affordability retirement would
+    have modelled a game we do not ship. Reported now as the SHARE of each ending beside
+    the number (measured: **spent out 94.5% · early night 5.5%**, and the early nights
+    keep back a median 55.6%), which is a measurement where the bare 0.0% was not.
   - **Levers, in the order they were pulled** (all in `engine/economy/steps.ts`, the one
-    tunable file): per-row movement pricing (`MOVE_COST_BY_ROW`, −1 ground floor → −9 up
+    tunable file): per-row movement pricing (`MOVE_COST_BY_ROW`, −2 ground floor → −9 up
     top — *climbing is the expense*); leaner-as-you-climb refunds (anchor +6/+5/+4, micro
     +3/+3/+2 — a tier-3 solve no longer funds the storey that reached it); a lean base
     budget (18); locked upper-row doors (`DOOR_LOCKS`, **rows 4–5 carry the gate at

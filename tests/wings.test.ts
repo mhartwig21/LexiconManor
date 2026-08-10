@@ -33,6 +33,7 @@ import {
 import { BASE_DECK, deckFor } from '../src/engine/manor/deck';
 import { cellKey, createManor, ENTRANCE_KEY, rowTier } from '../src/engine/manor/grid';
 import { draftLabel } from '../src/ui/blueprint/pricing';
+import { moveAt } from '../src/engine/economy/steps';
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -270,6 +271,6 @@ describe('5. the three doors stop reading as one sentence (REVIEW_AA §4)', () =
   });
 
   it('still names the price it always named', () => {
-    expect(draftLabel(0, 1, 'stair')).toContain('1 step');
+    expect(draftLabel(0, 1, 'stair')).toContain(`${-moveAt(0)} steps`);
   });
 });

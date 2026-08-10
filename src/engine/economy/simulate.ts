@@ -157,8 +157,8 @@ const VOLUME_1 = volume1 as unknown as VolumeDef;
 import {
   appendEntry, createLedger, ledgerTotal, stepsRemaining, stepsRefunded, stepsSpent,
   fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, moveAt, solveKeys,
-  sanctumMercyArmed, sanctumPlanWarmth, stageSteps, teaArcPoints, teaBonus,
-  DOOR_LOCKS, ROOM_SIZE, SANCTUM_ARC, STEP_TABLE,
+  sanctumMercyArmed, sanctumPlanWarmth, stageSteps, teaArcPoints, teaDawnPour, teaLandingPour,
+  DOOR_LOCKS, ROOM_SIZE, SANCTUM_ARC, STEP_TABLE, TEA_POUR,
 } from './steps';
 import type { StepLedger } from '../types';
 
@@ -275,6 +275,63 @@ export const MOVEMENT = {
    */
   lockoutDetourChance: 0.5,
 } as const;
+
+/**
+ * ═══ ROUND 23 — THE EVENING HAS TWO ENDINGS, AND THE MODEL ONLY HAD ONE ═══
+ *
+ * `simulateDay`'s only exits were `ledgerTotal(ledger) <= 0` and the runaway
+ * cap, so **100.0% of simulated days ended at exactly 0 steps** — and
+ * `scripts/review-metrics.ts` printed *"(d) unspent budget at day end median
+ * 0.0% p90 0.0%"* as clearing REVIEW_AA §8's *"no day ending with more than
+ * ~20% of the budget unspent"*. It cleared it by construction. A gate whose
+ * answer is fixed by the loop condition is worse than no gate, and this
+ * repo's own STATUS.md lesson list names that failure mode twice.
+ *
+ * The live game ships both endings: dusk when the steps run out, and "An early
+ * night, well chosen" (`NIGHT_LINES`) when she puts the kettle on with steps
+ * still in hand. The second one is APPETITE, and it cannot be anything else —
+ * the live `openDraft` refuses only below one step and its own comment says
+ * *"even if it was her last step, the offer still opens"*, so there is no
+ * affordability rule that would ever stop her. A model that retired her when
+ * the next door out-priced her purse would be modelling a game we do not ship;
+ * what actually happens is that she looks at the clock.
+ *
+ * `SimProfile.sessionMinutes` is that clock: the evening she came for. It sits
+ * well above 4.10b's published 10–15 minute median on purpose — it describes
+ * the TAIL of the distribution (the evening that got away from her), never the
+ * shape of a normal one, so it cannot be the thing that makes 4.10b pass.
+ *
+ * What it buys is an honest `(d)`: `scripts/review-metrics.ts` can now print
+ * the share of evenings that end each way beside the unspent number, instead
+ * of a 0.0% that was fixed by the loop condition.
+ */
+export const RETIREMENT = {
+  /**
+   * Longest an evening runs before she stops, as a multiple of
+   * `SESSION_WIND_DOWN.afterMinutes` — the profile field is the tunable, this
+   * is the floor a profile may not sit under without saying why.
+   */
+  minSessionFactor: 1.25,
+} as const;
+
+/** Why an evening ended (round 23) — see `RETIREMENT`. */
+export type SimEndReason = 'broke' | 'retired' | 'capped';
+
+/**
+ * Last 0-based row of THE GROUND FLOOR for §5.10's purposes — the tier-1 band,
+ * the storeys 62% of the median player's rooms stand on and the ones the
+ * economy critic measured. DERIVED from `rowTier`, never written down twice:
+ * a tier retune moves the band the gate is measured over, rather than leaving
+ * the gate pointing at storeys that stopped being the ground floor.
+ */
+export const GROUND_ROWS = (() => {
+  let r = 0;
+  while (rowTier(r + 1) === rowTier(0)) r += 1;
+  return r;
+})();
+
+/** 0-based row of the first storey a padlock can stand on (`DOOR_LOCKS`). */
+export const FIRST_LOCKED_ROW = DOOR_LOCKS.chanceByRow.findIndex((c) => c > 0);
 
 // ---------------------------------------------------------------------------
 // The deck mix — derived from the REAL deck, not from vibes
@@ -603,6 +660,16 @@ export interface SimProfile {
    */
   solveRate: number;
   /**
+   * ROUND 23 — THE EVENING SHE CAME FOR, in minutes: past this she is out on
+   * the blueprint with steps still in hand and she stops ("An early night,
+   * well chosen", `NIGHT_LINES`). See `RETIREMENT` for why this is the ONLY
+   * honest second ending — the live game has no affordability refusal above
+   * one step. Omitted, she plays until the ledger is empty, which is what
+   * every profile did for twenty-two rounds and what made REVIEW_AA §8's
+   * unspent-budget gate vacuous.
+   */
+  sessionMinutes?: number;
+  /**
    * Minutes she will give ONE room before banking what she has and stepping
    * back out (AAA 4.13's "leave it for tomorrow", as a number). Multiplied by a
    * per-room roll over `PATIENCE_SPREAD` — some evenings she settles in.
@@ -691,6 +758,7 @@ export const PROFILE_SKIPPER: SimProfile = {
  */
 export const PROFILE_DECENT: SimProfile = {
   name: 'decent',
+  sessionMinutes: 18,
   attemptRate: 0.88,
   solveRate: 0.8,
   patienceMinutes: 3,
@@ -709,6 +777,7 @@ export const PROFILE_DECENT: SimProfile = {
 /** A great day with refills: warm tea, snacks found, sharp solving (4.10c). */
 export const PROFILE_GREAT: SimProfile = {
   name: 'great',
+  sessionMinutes: 22,
   attemptRate: 0.92,
   solveRate: 0.9,
   patienceMinutes: 4,
@@ -734,6 +803,7 @@ export const PROFILE_GREAT: SimProfile = {
  */
 export const PROFILE_SKILLED: SimProfile = {
   name: 'skilled',
+  sessionMinutes: 20,
   attemptRate: 0.68,
   solveRate: 0.9,
   patienceMinutes: 5,
@@ -783,6 +853,35 @@ export function reserveToTop(
   let cost = 0;
   for (let r = Math.max(1, fromRow); r < SANCTUM_LANDING_ROW; r++) cost += climbStepCost(r, profile);
   return cost;
+}
+
+/**
+ * What the ground floor cost and what it left in her hand (REVIEW_AA §5.10).
+ * "Ground floor" is the tier-1 band — 0-based rows 0–2, `rowTier` tier 1 —
+ * which is 62% of the rooms the median player enters, and "below row 4" in the
+ * review's own words.
+ */
+export interface GroundPressure {
+  /**
+   * Steps in hand at every moment she spent on rows 0–2 BEFORE first climbing
+   * above them. Sampled after each ledger entry, so it is her purse as she
+   * walks the floor, not a day-end aggregate. The median of this pooled across
+   * a campaign is the §5.10 headline: it must not exceed the purse day 1 has
+   * always had (`BASE_DAY_BUDGET + FIRST_MORNING_POT`).
+   */
+  inHand: readonly number[];
+  /** Steps she spent, net of everything the floor paid back, on rows 0–2. */
+  groundNet: number;
+  /** Rooms entered on rows 0–2 (the denominator of the drain). */
+  groundRooms: number;
+  /**
+   * Steps in hand the moment she first stepped onto the first PADLOCKED storey
+   * (0-based row 4) — the review's *"she arrives at the first real gate richer
+   * than she started"*. Null on an evening that never got there.
+   */
+  atFirstLock: number | null;
+  /** Highest total she ever held today. */
+  peak: number;
 }
 
 export interface SimDayResult {
@@ -847,6 +946,24 @@ export interface SimDayResult {
   couldSpeak: boolean;
   /** Estimated wall-clock length of the day (TIME_TABLE model), in minutes. */
   minutes: number;
+  /**
+   * ROUND 23 — how the evening ENDED. Before this the answer was 'broke' by
+   * construction on 100.0% of days, which is what made REVIEW_AA §8's unspent
+   * budget gate vacuous. See `RETIREMENT`.
+   */
+  endReason: SimEndReason;
+  /**
+   * ROUND 23 (REVIEW_AA §5.10) — THE GROUND FLOOR, MEASURED.
+   *
+   * The review's item is *"if a resource is never scarce it is not a resource,
+   * it is a formality"*, and nothing in this model could see it: every
+   * published number was a whole-day aggregate, so a floor that charged 1 step
+   * a room while a solve paid 12 looked exactly like a floor that bit. These
+   * are the per-storey facts the §5.10 gate is written against
+   * (tests/economy-pressure.test.ts), collected in the order the evening
+   * really happens.
+   */
+  pressure: GroundPressure;
   ledger: StepLedger;
   /**
    * Pages she could actually READ today, from every faucet (round 18). Written
@@ -949,8 +1066,13 @@ export function simulateDay(
   },
 ): SimDayResult {
   let ledger = createLedger(STEP_TABLE.dayStart);
-  const tea = teaBonus(profile.brambleAffinity);
+  // ROUND 23 — the cup at the door; the rest of the pot is carried up to the
+  // second landing (`TEA_POUR`, REVIEW_AA §5.10). Same total, same arc, and
+  // the ground floor stops getting richer every week.
+  const tea = teaDawnPour(profile.brambleAffinity);
   if (tea > 0) ledger = appendEntry(ledger, { reason: 'tea', delta: tea, at: 0 });
+  const landingPot = teaLandingPour(profile.brambleAffinity);
+  let landingPoured = false;
   // The welcome pot / yesterday's risen dough — through the same audited path
   // and the same 'tea' reason the live day slice uses (AAA 4.9).
   const dawnSteps = profile.dawnSteps ?? 0;
@@ -988,15 +1110,52 @@ export function simulateDay(
     keyAccess: carry?.keyAccess ?? 0,
   };
 
+  // ── THE GROUND FLOOR, MEASURED (round 23, REVIEW_AA §5.10). ─────────────
+  // Sampled as the evening happens rather than reconstructed at dusk: the
+  // question is what she is holding while she walks rows 0–2, and once she has
+  // climbed out of the band the samples stop, because a purse she carries back
+  // down at dusk is not the ground floor's tension, it is the day's residue.
+  const pressure: GroundPressure = {
+    inHand: [], groundNet: 0, groundRooms: 0, atFirstLock: null, peak: STEP_TABLE.dayStart,
+  };
+  const inHandSamples = pressure.inHand as number[];
+  let leftGround = false;
+  let lastTotal = ledgerTotal(ledger);   // after the dawn pour: the arc is not the floor's
+  pressure.peak = lastTotal;
+  /** Reconcile the ledger since the last mark: her purse, her peak, the drain. */
+  const mark = () => {
+    const total = ledgerTotal(ledger);
+    if (total > pressure.peak) pressure.peak = total;
+    if (!leftGround) {
+      pressure.groundNet += total - lastTotal;
+      inHandSamples.push(Math.max(0, total));
+    }
+    lastTotal = total;
+  };
+  mark();
+
   /** Charge one move into 0-based `intoRow0`. */
   const move = (intoRow0: number) => {
+    // The step OUT of the tier-1 band belongs to the climb, not to the floor.
+    if (intoRow0 > GROUND_ROWS) leftGround = true;
     ledger = appendEntry(ledger, {
       reason: 'move', delta: moveAt(intoRow0), at: 0, roomKey: `2,${intoRow0}`,
     });
     seconds += TIME_TABLE.moveTap;
+    mark();
   };
 
+  let endReason: SimEndReason = 'capped';
   outer: while (rooms < MOVEMENT.maxRoomsPerDay) {
+    // ── THE EVENING'S SECOND ENDING (round 23, `RETIREMENT`). ─────────────
+    // "An early night, well chosen" — she is out on the blueprint with steps
+    // still in hand and she puts the kettle on. Before this the loop only ever
+    // exited broke, which is what made REVIEW_AA §8's unspent-budget gate
+    // answer itself: 100.0% of days ended at exactly 0.
+    if (profile.sessionMinutes !== undefined && seconds / 60 >= profile.sessionMinutes) {
+      endReason = 'retired';
+      break outer;
+    }
     // Push or farm? Real push-your-luck play is not a coin flip: she climbs
     // while she can still SEE the top from where she stands, and settles into
     // the lower floors to bank refunds when she cannot. `reserveToTop` prices
@@ -1023,7 +1182,7 @@ export function simulateDay(
     const midRow0 = Math.max(0, Math.floor((row - 1) / 2));
     for (let i = 0; i < walkbacks; i++) {
       move(midRow0);
-      if (ledgerTotal(ledger) <= 0) break outer; // dusk, out on the blueprint
+      if (ledgerTotal(ledger) <= 0) { endReason = 'broke'; break outer; } // dusk, out on the blueprint
     }
 
     // --- The padlock (DOOR_LOCKS): the hard gate on the upper storeys. -----
@@ -1046,13 +1205,21 @@ export function simulateDay(
           targetRow = row;
           if (rng() < MOVEMENT.lockoutDetourChance) {
             move(Math.max(0, row - 1));
-            if (ledgerTotal(ledger) <= 0) break outer;
+            if (ledgerTotal(ledger) <= 0) { endReason = 'broke'; break outer; }
           }
         }
       }
     }
     move(targetRow - 1);
-    if (ledgerTotal(ledger) <= 0) break outer;
+    // She has paid for the storey, so she is STANDING on it — even if that was
+    // her last step. The live game agrees and is explicit about it
+    // (app/slices/manor.ts openDraft: "even if it was her last step, the offer
+    // still opens", dusk deferred until it resolves), so recording the arrival
+    // before the dusk check is what stops the model from charging her for a
+    // floor it then says she never reached.
+    row = targetRow;
+    maxRow = Math.max(maxRow, row);
+    if (ledgerTotal(ledger) <= 0) { endReason = 'broke'; break outer; }
 
     // --- Draft: three cards from the real deck mix, one taken. ------------
     seconds += TIME_TABLE.draft;
@@ -1078,10 +1245,26 @@ export function simulateDay(
     }
 
     rooms += 1;
-    row = targetRow;
-    maxRow = Math.max(maxRow, row);
     const tier: Tier = rowTier(row - 1);
     const roomKey = `sim-${rooms}`;
+    if (!leftGround) pressure.groundRooms += 1;
+    if (row - 1 >= FIRST_LOCKED_ROW && pressure.atFirstLock === null) {
+      pressure.atFirstLock = stepsRemaining(ledger);
+    }
+
+    // ── BRAMBLE CARRIES THE POT UP (round 23, `TEA_POUR`, REVIEW_AA §5.10). ─
+    // The live counterpart is app/slices/manor.ts, on the placement that puts
+    // her on the second landing — same row, same one-per-evening rule, and the
+    // same audited 'tea' entry, so what floats on her counter here is what
+    // floats on it in the game.
+    if (!landingPoured && row - 1 >= TEA_POUR.landingRow0) {
+      landingPoured = true;
+      if (landingPot > 0) {
+        ledger = appendEntry(ledger, {
+          reason: 'tea', delta: landingPot, at: 0, roomKey: TEA_POUR.key,
+        });
+      }
+    }
 
     // ── THE SECOND GATE, DRAFTED FOR REAL (round 13, AAA 4.10d/e). ─────────
     // Arriving on the landing is the CLIMB; opening the door is the GATE, and
@@ -1211,9 +1394,10 @@ export function simulateDay(
       seconds += TIME_TABLE.parlorBeat;
     }
 
+    mark();
     // Dusk never fires inside a room; it fires on exit (AAA 4.12) — a
     // mid-puzzle overdraft is allowed, then the day ends out on the floor.
-    if (ledgerTotal(ledger) <= 0) break;
+    if (ledgerTotal(ledger) <= 0) { endReason = 'broke'; break; }
   }
 
   return {
@@ -1233,6 +1417,8 @@ export function simulateDay(
     refunded: stepsRefunded(ledger),
     couldSpeak: canSpeakAtDawn(),
     minutes: seconds / 60,
+    endReason,
+    pressure,
     ledger,
   };
 }

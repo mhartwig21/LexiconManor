@@ -38,7 +38,7 @@ import { isDoorLocked, KEY_COST, type LockView } from '../../engine/manor/locks'
 import { doorsHeldOpen, sanctumAnswered } from '../../engine/manor/tube';
 import {
   climbKey, fernMorningKeys, keyAccessFor, moveAt, sanctumMercyArmed, sanctumPlanWarmth,
-  surveyEveningsIn, STEP_TABLE,
+  surveyEveningsIn, teaLandingPour, STEP_TABLE, TEA_POUR,
 } from '../../engine/economy/steps';
 import { sealedFragmentIds } from '../../engine/volume';
 import { getRoomAdapter } from '../../engine/rooms/registry';
@@ -454,6 +454,27 @@ export const createManorSlice =
         // heading the card face drew with, so the stamp she read on the card and
         // the gem she is handed are the same computation — the round-9 ruling
         // about `resolveDoors`, applied to the other half of the same decision.
+        // ── BRAMBLE CARRIES THE POT UP (round 23, REVIEW_AA §5.10). ───────
+        // Her arc is the same size it has always been; what moved is where she
+        // sets it down. The cup was at the door (engine/day.ts `beginDay`); the
+        // rest of the pot is waiting on the second landing — the first storey
+        // above the tier-1 band and the last one below a padlock — so the
+        // friendship funds the climb it is about instead of slackening a ground
+        // floor that already charges two steps a room.
+        //
+        // Once per evening, and the LEDGER is what remembers: it is rebuilt at
+        // dawn, so a stamped entry cannot go stale and no save field is added.
+        // 'tea' entries are not re-priced by `priceEntry` (only 'move' is), so
+        // the roomKey is free to be a marker.
+        if (target.row >= TEA_POUR.landingRow0
+          && !get().ledger.entries.some((e) => e.roomKey === TEA_POUR.key)) {
+          const pot = teaLandingPour(get().affinities?.bramble ?? 0);
+          if (pot > 0) {
+            get().applyStepEntry({
+              reason: 'tea', delta: pot, at: Date.now(), roomKey: TEA_POUR.key,
+            });
+          }
+        }
         const sealed = sealsItself(doors, draftOffer.atDoor, manor, target);
         if (sealed) {
           set((s) => ({

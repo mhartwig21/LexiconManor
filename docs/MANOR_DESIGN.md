@@ -79,13 +79,13 @@ from v2 carry over (see §10).
 
 | Event | Steps |
 |---|---|
-| Start-of-day budget | 18 (`BASE_DAY_BUDGET`; day 1 adds a scripted `FIRST_MORNING_POT` of +3) |
-| Enter a room (move one cell) | priced per row (`MOVE_COST_BY_ROW`): −1, −1, −2, −3, −7, −9, −9 |
+| Start-of-day budget | 18 (`BASE_DAY_BUDGET`; day 1 adds a scripted `FIRST_MORNING_POT` of +4) |
+| Enter a room (move one cell) | priced per row (`MOVE_COST_BY_ROW`): −2, −2, −2, −2, −7, −9, −9 |
 | Puzzle mistake (wrong guess / invalid word) | −2 (tier 3 rooms: −3) |
 | Solve a small room (micro-puzzle) | +3 |
 | Solve a large room (anchor mode) | `7 − tier` = +6 / +5 / +4 — deliberately INVERTED from the old +6..+8 in the round-4 overhaul, so a tier-3 solve softens the next mistake instead of bankrolling the next storey |
 | Perfect solve (no mistakes) | +2 bonus |
-| Kitchen snack / Bramble's tea | green-room refills +2..+6 (Kitchen +6, Larder +5, Boot Room +3, Still Room +2; compounding hooks +1..+2) · tea 0 → +13 across the friendship |
+| Kitchen snack / Bramble's tea | green-room refills +2..+6 (Kitchen +6, Larder +5, Boot Room +3, Still Room +2; compounding hooks +1..+2) · tea 0 → +13 across the friendship, poured as a cup at the door (`TEA_POUR.dawnCup`) and the rest of the pot on the second landing |
 | Petting Dewey (the cat) | −1 (worth it) |
 
 - Steps never go negative mid-puzzle: a puzzle can always be *abandoned* (the room stays
@@ -95,9 +95,9 @@ from v2 carry over (see §10).
   visits **5–8 rooms** and solves 2–4 puzzles in **10–15 minutes**; a great day reaches
   row 5–6, and the Sanctum row is a *campaign* event (first reached around day 6–10),
   not something refills buy on a Tuesday. Base budget is **18 steps**, and movement is
-  priced per row (−1 on the ground floor rising to −9 up top), so the climb — not the
+  priced per row (−2 on the ground floor rising to −9 up top), so the climb — not the
   puzzle count — is what a day is spent on. A single minimum-length ascent to the
-  Sanctum landing therefore costs 22 steps of pure walking against a day-1 pot of 21
+  Sanctum landing therefore costs 22 steps of pure walking against a day-1 pot of 22
   — the ascent is a campaign arc, not a day-1 option (AAA 4.10d/4.10e).
 
   *(Round 19 — what the climb is FOR changed, and these numbers did not. The speaking
@@ -115,6 +115,18 @@ from v2 carry over (see §10).
   are now pinned against `BASE_DAY_BUDGET`, `MOVE_COST_BY_ROW` and `STEP_TABLE.solve` by
   `tests/steps.test.ts`, the same contract treatment `STEP_TABLE.snack` already had, so
   the table cannot drift selectively again.)*
+
+  *(Round 23 — REVIEW_AA §5.10, THE GROUND FLOOR WAS A FORMALITY. The tier-1 band
+  (rows 0–2) charged ONE step a room against a solve worth up to twelve, and every
+  rung of Bramble's arc landed at dawn — so her purse down there ran a median 28
+  steps against an 18-step budget, rose to 31 by day 12, and 0.2% of her evenings ever
+  held fewer than four steps below row 4. Two changes, and the bare ascent is still 22:
+  the band is one price (−2) rather than −1/−1/−2, and the pot is poured in two ——
+  a cup at the door and the rest carried up to the second landing (`TEA_POUR`), so the
+  arc funds the climb it was always about instead of slackening the floor. Measured
+  after: purse 28 → 18 (median player) and 30 → 20 (skilled), net steps per
+  ground-floor room −0.84 → −2.55 and −0.36 → −0.96, and the ground floor now runs on
+  the same 22 steps on day 30 as on day 1. Pinned by `tests/economy-pressure.test.ts`.)*
 
 **Other currencies** (secondary, all reset nightly except keys' meta-variants):
 - **Gems** — spent to draft premium room cards and reroll a draft offer (1 gem).

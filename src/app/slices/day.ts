@@ -20,7 +20,7 @@ import {
   beginDay, buildDayRecord, canAdvancePhase, canEndDay, pruneEventsAtDusk, shouldTriggerDusk,
 } from '../../engine/day';
 import {
-  appendEntry, stepsRemaining as remaining, teaArcFloor, teaArcPoints, teaBonus,
+  appendEntry, stepsRemaining as remaining, teaArcFloor, teaArcPoints, teaDawnPour,
   STEP_TABLE,
 } from '../../engine/economy/steps';
 import { carryOverFrom } from '../../engine/manor/deck';
@@ -249,7 +249,11 @@ export const createDaySlice =
       // ledger, so the single largest step grant in the game is a visible
       // floating +N at the moment the friendship pays out (AAA 4.9 / 11.15) —
       // rather than a silent dawn entry the StepMeter used to swallow.
-      const topUp = teaBonus(warmed) - teaBonus(known);
+      // ROUND 23 (`TEA_POUR`, REVIEW_AA §5.10): what she is handed HERE is the
+      // cup — the rest of the warmer pot is carried up to the second landing
+      // when she gets there (app/slices/manor.ts). The rung is still granted in
+      // full; only the place it is drinkable moved.
+      const topUp = teaDawnPour(warmed) - teaDawnPour(known);
       if (topUp > 0) {
         get().applyStepEntry({ reason: 'tea', delta: topUp, at: Date.now() });
       }

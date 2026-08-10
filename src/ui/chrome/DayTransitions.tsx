@@ -20,7 +20,9 @@ import { sfx } from '../../app/sound';
 import type { DayRecord, DayState } from '../../engine/types';
 import { highestRowLine, refundLine } from '../../engine/day';
 import { dawnCarryOver, dawnCarryOverLines } from '../../app/slices/manor';
-import { firstMorningPot, teaArcPoints, teaBonus, TEA_ARC } from '../../engine/economy/steps';
+import {
+  firstMorningPot, rowName, teaArcPoints, teaDawnPour, teaLandingPour, TEA_ARC, TEA_POUR,
+} from '../../engine/economy/steps';
 import { getVolumeContent } from '../../app/content/volumes';
 import { arrivedLetters, legibleDroughtDays, openedLetterIds } from '../../engine/volume';
 import { mantelLine, unseenKeepsakes, unseenPlates } from '../moment/mantel';
@@ -180,12 +182,20 @@ function DawnGrants({ day }: { day: DayState }) {
   // What today's pot comes to once she has sat down with her (the shared
   // morning tops it up as the scene closes — DaySlice.shareMorningTea).
   const points = Math.max(known, teaArcPoints(dayNumber));
-  const pot = teaBonus(points);
+  // ROUND 23 (`TEA_POUR`): the cup is on the table; the rest of the pot is
+  // waiting on the second landing. Two lines because they are two different
+  // promises, and the second is the whole reason the ground floor is thin
+  // again (REVIEW_AA §5.10).
+  const cup = teaDawnPour(points);
+  const carriedUp = teaLandingPour(points);
   const welcome = firstMorningPot(dayNumber);
   const carried = dawnCarryOver({ day, recentEvents });
 
   const rows: Array<[string, number]> = [];
-  if (pot > 0) rows.push([`Her ${ordinal(dayNumber)} pot`, pot]);
+  if (cup > 0) rows.push([`Her ${ordinal(dayNumber)} cup, poured at the door`, cup]);
+  if (carriedUp > 0) {
+    rows.push([`The rest of the pot, left on ${rowName(TEA_POUR.landingRow0)}`, carriedUp]);
+  }
   if (welcome > 0) rows.push(['A welcome cup, poured before you asked', welcome]);
   if (carried.steps > 0) rows.push(['What yesterday left steeping', carried.steps]);
 

@@ -901,7 +901,7 @@ describe('the blueprint names its prices (AAA 4.6 / 4.9 / 4.10)', () => {
       expect(html).toContain(`>${priceStamp(row)}<`);
     }
     // …and the numbers on the sheet ARE the ledger's numbers.
-    expect(priceStamp(0)).toBe('−1');
+    expect(priceStamp(0)).toBe(`−${-moveAt(0)}`);
     expect(priceStamp(6)).toBe(`−${-moveAt(6)}`);
   });
 
@@ -948,7 +948,11 @@ describe('the blueprint names its prices (AAA 4.6 / 4.9 / 4.10)', () => {
     // A price stamped on everything stops being read; a price stamped on the
     // thing that costs more is the push-your-luck decision, in ink.
     expect(stampsPrice(2, 2)).toBe(false);
-    expect(stampsPrice(2, 3)).toBe(true);
+    // ROUND 23: rows 0–3 are one price now (REVIEW_AA §5.10), so the storey
+    // that reads as dearer is the first PADLOCKED one — which is also the only
+    // place the push-your-luck decision was ever really made.
+    expect(stampsPrice(3, 3)).toBe(false);
+    expect(stampsPrice(3, 4)).toBe(true);
     expect(stampsDraftPrice(3, 3)).toBe(false);
     expect(stampsDraftPrice(3, 4)).toBe(true);
     // Downstairs is never advertised as a discount it will not give: the

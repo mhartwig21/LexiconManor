@@ -21,7 +21,8 @@
 
 import { useManorStore } from '../../app/store';
 import {
-  fernMorningKeys, keyAccessFor, teaArcPoints, teaBonus, TEA_ARC, TEA_BY_POINTS,
+  fernMorningKeys, keyAccessFor, rowName, teaArcPoints, teaBonus, teaLandingPour,
+  TEA_ARC, TEA_BY_POINTS, TEA_POUR,
 } from '../../engine/economy/steps';
 import { UNLOCKABLE_CARDS } from '../../engine/manor/deck';
 import './chrome.css';
@@ -39,6 +40,7 @@ export default function HouseSoFar() {
 
   const points = potRung(bramble);
   const pot = teaBonus(points);
+  const carriedUp = teaLandingPour(points);
   const atTop = points >= TEA_ARC.maxPoints;
   // The ceiling shared mornings can have bought by now, and when the next rung
   // opens (`teaArcPoints` moves one rung every `morningsPerPoint` days).
@@ -62,6 +64,11 @@ export default function HouseSoFar() {
             : behind
               ? 'Sit down with her tomorrow morning and she pours a little deeper.'
               : `${mornings} more shared morning${mornings === 1 ? '' : 's'} and she pours a little deeper.`}
+        </p>
+        <p className="chr-house__note">
+          {carriedUp > 0
+            ? `A cup at the door; she carries the other +${carriedUp} up to ${rowName(TEA_POUR.landingRow0)}.`
+            : 'A cup at the door. There is no pot to carry up yet.'}
         </p>
       </div>
 
