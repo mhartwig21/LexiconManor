@@ -1,0 +1,1426 @@
+{
+ "390x844": {
+  "library": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 52,
+    "w": 390,
+    "h": 720.8,
+    "bottom": 772.8
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 599.8,
+    "to": 679.8,
+    "h": 80
+   },
+   "gaps": [
+    {
+     "from": 599.8,
+     "to": 679.8,
+     "h": 80
+    },
+    {
+     "from": 52,
+     "to": 104.2,
+     "h": 52.2
+    },
+    {
+     "from": 723.8,
+     "to": 772.8,
+     "h": 49
+    },
+    {
+     "from": 169.4,
+     "to": 191.8,
+     "h": 22.4
+    }
+   ],
+   "controls": 19,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": null,
+   "named": {}
+  },
+  "conservatory": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 52,
+    "w": 390,
+    "h": 720.8,
+    "bottom": 772.8
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 282.6,
+    "to": 388.6,
+    "h": 106
+   },
+   "gaps": [
+    {
+     "from": 282.6,
+     "to": 388.6,
+     "h": 106
+    },
+    {
+     "from": 676.1,
+     "to": 718.4,
+     "h": 42.3
+    },
+    {
+     "from": 218,
+     "to": 256.4,
+     "h": 38.4
+    },
+    {
+     "from": 52,
+     "to": 63.2,
+     "h": 11.2
+    }
+   ],
+   "controls": 11,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": null,
+   "named": {
+    ".room-deck": {
+     "x": 0,
+     "y": 711.2,
+     "w": 390,
+     "h": 53.6,
+     "bottom": 764.8
+    }
+   }
+  },
+  "gallery": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 52,
+    "w": 390,
+    "h": 720.8,
+    "bottom": 772.8
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 500.9,
+    "to": 610,
+    "h": 109.2
+   },
+   "gaps": [
+    {
+     "from": 500.9,
+     "to": 610,
+     "h": 109.2
+    },
+    {
+     "from": 633.2,
+     "to": 681.6,
+     "h": 48.4
+    },
+    {
+     "from": 725.6,
+     "to": 772.8,
+     "h": 47.2
+    },
+    {
+     "from": 52,
+     "to": 63.2,
+     "h": 11.2
+    }
+   ],
+   "controls": 38,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": null,
+   "named": {
+    ".room-deck": {
+     "x": 0,
+     "y": 597.7,
+     "w": 390,
+     "h": 167.2,
+     "bottom": 764.8
+    }
+   }
+  },
+  "study": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 52,
+    "w": 390,
+    "h": 720.8,
+    "bottom": 772.8
+   },
+   "stageScroll": 32,
+   "biggestGap": {
+    "from": 665.3,
+    "to": 722.9,
+    "h": 57.6
+   },
+   "gaps": [
+    {
+     "from": 665.3,
+     "to": 722.9,
+     "h": 57.6
+    },
+    {
+     "from": 128.4,
+     "to": 150.2,
+     "h": 21.8
+    },
+    {
+     "from": 429.6,
+     "to": 451.4,
+     "h": 21.8
+    },
+    {
+     "from": 553.2,
+     "to": 566.9,
+     "h": 13.8
+    }
+   ],
+   "controls": 4,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": null,
+   "named": {
+    ".room-deck": {
+     "x": 0,
+     "y": 499.6,
+     "w": 390,
+     "h": 273.2,
+     "bottom": 772.8
+    }
+   }
+  },
+  "darkroom": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 41
+   },
+   "stage": {
+    "x": 0,
+    "y": 52,
+    "w": 390,
+    "h": 720.8,
+    "bottom": 772.8
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 371.3,
+    "to": 499.2,
+    "h": 127.9
+   },
+   "gaps": [
+    {
+     "from": 371.3,
+     "to": 499.2,
+     "h": 127.9
+    },
+    {
+     "from": 90.3,
+     "to": 106.5,
+     "h": 16.2
+    },
+    {
+     "from": 521,
+     "to": 535.7,
+     "h": 14.7
+    },
+    {
+     "from": 712.8,
+     "to": 720.8,
+     "h": 8
+    }
+   ],
+   "controls": 70,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": {
+    "sampled": 35,
+    "misses": 2,
+    "sample": [
+     {
+      "x": 157.8,
+      "y": 125.9,
+      "gap": 8.8,
+      "hit": "div.dk-sheet.dk-sheet--dense"
+     },
+     {
+      "x": 213.6,
+      "y": 261.5,
+      "gap": 8.8,
+      "hit": "div.dk-sheet.dk-sheet--dense"
+     }
+    ],
+    "cell": {
+     "w": 31.2,
+     "h": 38.8
+    }
+   },
+   "named": {
+    ".dk-sheet": {
+     "x": 14.4,
+     "y": 97.5,
+     "w": 361.2,
+     "h": 282.8,
+     "bottom": 380.3
+    },
+    ".mic-keys": {
+     "x": 14.4,
+     "y": 535.7,
+     "w": 361.2,
+     "h": 177.1,
+     "bottom": 712.8
+    },
+    ".room-deck": {
+     "x": 14.4,
+     "y": 485.3,
+     "w": 361.2,
+     "h": 279.5,
+     "bottom": 764.8
+    },
+    ".mic-toastslot": {
+     "x": 14.4,
+     "y": 492.5,
+     "w": 361.2,
+     "h": 35.2,
+     "bottom": 527.7
+    }
+   }
+  },
+  "linen-closet": {
+   "counts": {
+    "clues": 5,
+    "squares": 17,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 52,
+    "w": 390,
+    "h": 720.8,
+    "bottom": 772.8
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 322.4,
+    "to": 448.5,
+    "h": 126.1
+   },
+   "gaps": [
+    {
+     "from": 322.4,
+     "to": 448.5,
+     "h": 126.1
+    },
+    {
+     "from": 544.1,
+     "to": 552.3,
+     "h": 8.2
+    },
+    {
+     "from": 764.8,
+     "to": 772.8,
+     "h": 8
+    },
+    {
+     "from": 52,
+     "to": 59.2,
+     "h": 7.2
+    }
+   ],
+   "controls": 50,
+   "stolen": [],
+   "partial": [
+    {
+     "sel": "button.lc-clue",
+     "text": "3DIt turns pages nobody aske",
+     "box": {
+      "x": 26.6,
+      "y": 539.7,
+      "w": 336.8,
+      "h": 44,
+      "bottom": 583.7
+     },
+     "w": 336.8,
+     "h": 44,
+     "centreOwn": false,
+     "centreHit": "div.lc-keys__row",
+     "corners": [
+      true,
+      true,
+      false,
+      false
+     ],
+     "cornersOk": 2,
+     "clippedOut": false,
+     "shown": 0.1
+    }
+   ],
+   "offPanel": 2,
+   "scrollers": [
+    {
+     "sel": "div.lc-clues.m2-card",
+     "box": {
+      "x": 14.4,
+      "y": 440.3,
+      "w": 361.2,
+      "h": 104.8,
+      "bottom": 545.1
+     },
+     "scrollH": 241,
+     "clientH": 103,
+     "over": 138
+    }
+   ],
+   "cellGaps": null,
+   "named": {
+    ".lc-grid": {
+     "x": 14.4,
+     "y": 59.2,
+     "w": 361.2,
+     "h": 263.2,
+     "bottom": 322.4
+    },
+    ".lc-clues": {
+     "x": 14.4,
+     "y": 440.3,
+     "w": 361.2,
+     "h": 104.8,
+     "bottom": 545.1
+    },
+    ".lc-keys": {
+     "x": 14.4,
+     "y": 552.3,
+     "w": 361.2,
+     "h": 161.4,
+     "bottom": 713.6
+    },
+    ".room-deck": {
+     "x": 14.4,
+     "y": 393.9,
+     "w": 361.2,
+     "h": 370.9,
+     "bottom": 764.8
+    },
+    ".m2-toastslot": {
+     "x": 14.4,
+     "y": 401.1,
+     "w": 361.2,
+     "h": 32,
+     "bottom": 433.1
+    }
+   }
+  },
+  "counting-house": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 52,
+    "w": 390,
+    "h": 720.8,
+    "bottom": 772.8
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 480.9,
+    "to": 573,
+    "h": 92.1
+   },
+   "gaps": [
+    {
+     "from": 480.9,
+     "to": 573,
+     "h": 92.1
+    },
+    {
+     "from": 594.7,
+     "to": 608.6,
+     "h": 13.9
+    },
+    {
+     "from": 52,
+     "to": 60,
+     "h": 8
+    },
+    {
+     "from": 652.6,
+     "to": 660.6,
+     "h": 8
+    }
+   ],
+   "controls": 97,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": null,
+   "named": {
+    ".room-deck": {
+     "x": 0,
+     "y": 559.8,
+     "w": 390,
+     "h": 209.8,
+     "bottom": 769.6
+    }
+   }
+  },
+  "darkroom-light": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 16
+   },
+   "stage": {
+    "x": 0,
+    "y": 52,
+    "w": 390,
+    "h": 720.8,
+    "bottom": 772.8
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 261,
+    "to": 499.2,
+    "h": 238.2
+   },
+   "gaps": [
+    {
+     "from": 261,
+     "to": 499.2,
+     "h": 238.2
+    },
+    {
+     "from": 90.3,
+     "to": 106.5,
+     "h": 16.2
+    },
+    {
+     "from": 521,
+     "to": 535.7,
+     "h": 14.7
+    },
+    {
+     "from": 712.8,
+     "to": 720.8,
+     "h": 8
+    }
+   ],
+   "controls": 45,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": {
+    "sampled": 13,
+    "misses": 0,
+    "sample": [],
+    "cell": {
+     "w": 31.2,
+     "h": 47.3
+    }
+   },
+   "named": {
+    ".dk-sheet": {
+     "x": 14.4,
+     "y": 97.5,
+     "w": 361.2,
+     "h": 172.5,
+     "bottom": 270
+    },
+    ".mic-keys": {
+     "x": 14.4,
+     "y": 535.7,
+     "w": 361.2,
+     "h": 177.1,
+     "bottom": 712.8
+    },
+    ".room-deck": {
+     "x": 14.4,
+     "y": 485.3,
+     "w": 361.2,
+     "h": 279.5,
+     "bottom": 764.8
+    },
+    ".mic-toastslot": {
+     "x": 14.4,
+     "y": 492.5,
+     "w": 361.2,
+     "h": 35.2,
+     "bottom": 527.7
+    }
+   }
+  },
+  "linen-light": {
+   "counts": {
+    "clues": 3,
+    "squares": 8,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 52,
+    "w": 390,
+    "h": 720.8,
+    "bottom": 772.8
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 268.8,
+    "to": 448.5,
+    "h": 179.7
+   },
+   "gaps": [
+    {
+     "from": 268.8,
+     "to": 448.5,
+     "h": 179.7
+    },
+    {
+     "from": 52,
+     "to": 112.8,
+     "h": 60.8
+    },
+    {
+     "from": 544.1,
+     "to": 552.3,
+     "h": 8.2
+    },
+    {
+     "from": 764.8,
+     "to": 772.8,
+     "h": 8
+    }
+   ],
+   "controls": 39,
+   "stolen": [],
+   "partial": [
+    {
+     "sel": "button.lc-clue",
+     "text": "3ASturdy cup, no saucer",
+     "box": {
+      "x": 26.6,
+      "y": 539.7,
+      "w": 336.8,
+      "h": 44,
+      "bottom": 583.7
+     },
+     "w": 336.8,
+     "h": 44,
+     "centreOwn": false,
+     "centreHit": "div.lc-keys__row",
+     "corners": [
+      true,
+      true,
+      false,
+      false
+     ],
+     "cornersOk": 2,
+     "clippedOut": false,
+     "shown": 0.1
+    }
+   ],
+   "offPanel": 0,
+   "scrollers": [
+    {
+     "sel": "div.lc-clues.m2-card",
+     "box": {
+      "x": 14.4,
+      "y": 440.3,
+      "w": 361.2,
+      "h": 104.8,
+      "bottom": 545.1
+     },
+     "scrollH": 150,
+     "clientH": 103,
+     "over": 47
+    }
+   ],
+   "cellGaps": null,
+   "named": {
+    ".lc-grid": {
+     "x": 14.4,
+     "y": 59.2,
+     "w": 361.2,
+     "h": 209.6,
+     "bottom": 268.8
+    },
+    ".lc-clues": {
+     "x": 14.4,
+     "y": 440.3,
+     "w": 361.2,
+     "h": 104.8,
+     "bottom": 545.1
+    },
+    ".lc-keys": {
+     "x": 14.4,
+     "y": 552.3,
+     "w": 361.2,
+     "h": 161.4,
+     "bottom": 713.6
+    },
+    ".room-deck": {
+     "x": 14.4,
+     "y": 393.9,
+     "w": 361.2,
+     "h": 370.9,
+     "bottom": 764.8
+    },
+    ".m2-toastslot": {
+     "x": 14.4,
+     "y": 401.1,
+     "w": 361.2,
+     "h": 32,
+     "bottom": 433.1
+    }
+   }
+  }
+ },
+ "375x667": {
+  "library": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 50,
+    "w": 375,
+    "h": 550.6,
+    "bottom": 600.6
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 451.3,
+    "to": 508.9,
+    "h": 57.6
+   },
+   "gaps": [
+    {
+     "from": 451.3,
+     "to": 508.9,
+     "h": 57.6
+    },
+    {
+     "from": 50,
+     "to": 100.9,
+     "h": 50.9
+    },
+    {
+     "from": 552.9,
+     "to": 600.6,
+     "h": 47.7
+    },
+    {
+     "from": 145.8,
+     "to": 155.3,
+     "h": 9.6
+    }
+   ],
+   "controls": 19,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": null,
+   "named": {}
+  },
+  "conservatory": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 50,
+    "w": 375,
+    "h": 550.6,
+    "bottom": 600.6
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 219.9,
+    "to": 291.7,
+    "h": 71.7
+   },
+   "gaps": [
+    {
+     "from": 219.9,
+     "to": 291.7,
+     "h": 71.7
+    },
+    {
+     "from": 522.2,
+     "to": 551,
+     "h": 28.8
+    },
+    {
+     "from": 178.1,
+     "to": 193.8,
+     "h": 15.7
+    },
+    {
+     "from": 50,
+     "to": 56.4,
+     "h": 6.4
+    }
+   ],
+   "controls": 11,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": null,
+   "named": {
+    ".room-deck": {
+     "x": 0,
+     "y": 546.2,
+     "w": 375,
+     "h": 51.2,
+     "bottom": 597.4
+    }
+   }
+  },
+  "gallery": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 50,
+    "w": 375,
+    "h": 550.6,
+    "bottom": 600.6
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 436,
+    "to": 469.1,
+    "h": 33.1
+   },
+   "gaps": [
+    {
+     "from": 436,
+     "to": 469.1,
+     "h": 33.1
+    },
+    {
+     "from": 567.8,
+     "to": 600.6,
+     "h": 32.8
+    },
+    {
+     "from": 492.3,
+     "to": 523.8,
+     "h": 31.6
+    },
+    {
+     "from": 50,
+     "to": 56.4,
+     "h": 6.4
+    }
+   ],
+   "controls": 38,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": null,
+   "named": {
+    ".room-deck": {
+     "x": 0,
+     "y": 461.5,
+     "w": 375,
+     "h": 136,
+     "bottom": 597.4
+    }
+   }
+  },
+  "study": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 50,
+    "w": 375,
+    "h": 550.6,
+    "bottom": 600.6
+   },
+   "stageScroll": 65,
+   "biggestGap": {
+    "from": 507.5,
+    "to": 550.7,
+    "h": 43.2
+   },
+   "gaps": [
+    {
+     "from": 507.5,
+     "to": 550.7,
+     "h": 43.2
+    },
+    {
+     "from": 76,
+     "to": 89.8,
+     "h": 13.8
+    },
+    {
+     "from": 332.5,
+     "to": 346.3,
+     "h": 13.8
+    },
+    {
+     "from": 398.7,
+     "to": 409.9,
+     "h": 11.3
+    }
+   ],
+   "controls": 4,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": null,
+   "named": {
+    ".room-deck": {
+     "x": 0,
+     "y": 341,
+     "w": 375,
+     "h": 259.7,
+     "bottom": 600.6
+    }
+   }
+  },
+  "darkroom": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 41
+   },
+   "stage": {
+    "x": 0,
+    "y": 50,
+    "w": 375,
+    "h": 550.6,
+    "bottom": 600.6
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 273.4,
+    "to": 363.8,
+    "h": 90.3
+   },
+   "gaps": [
+    {
+     "from": 273.4,
+     "to": 363.8,
+     "h": 90.3
+    },
+    {
+     "from": 50,
+     "to": 64.3,
+     "h": 14.3
+    },
+    {
+     "from": 592.6,
+     "to": 600.6,
+     "h": 8
+    },
+    {
+     "from": 385.5,
+     "to": 393,
+     "h": 7.5
+    }
+   ],
+   "controls": 70,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": {
+    "sampled": 35,
+    "misses": 2,
+    "sample": [
+     {
+      "x": 151.5,
+      "y": 80.7,
+      "gap": 8,
+      "hit": "div.dk-sheet.dk-sheet--dense"
+     },
+     {
+      "x": 205.5,
+      "y": 187.1,
+      "gap": 8,
+      "hit": "div.dk-sheet.dk-sheet--dense"
+     }
+    ],
+    "cell": {
+     "w": 30,
+     "h": 30.7
+    }
+   },
+   "named": {
+    ".dk-sheet": {
+     "x": 14.4,
+     "y": 56.4,
+     "w": 346.2,
+     "h": 226,
+     "bottom": 282.4
+    },
+    ".mic-keys": {
+     "x": 5.6,
+     "y": 393,
+     "w": 363.8,
+     "h": 150,
+     "bottom": 543
+    },
+    ".room-deck": {
+     "x": 14.4,
+     "y": 357,
+     "w": 346.2,
+     "h": 235.6,
+     "bottom": 592.6
+    },
+    ".mic-toastslot": {
+     "x": 14.4,
+     "y": 361.8,
+     "w": 346.2,
+     "h": 25.6,
+     "bottom": 387.4
+    }
+   }
+  },
+  "linen-closet": {
+   "counts": {
+    "clues": 5,
+    "squares": 17,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 50,
+    "w": 375,
+    "h": 550.6,
+    "bottom": 600.6
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 246.2,
+    "to": 346,
+    "h": 99.8
+   },
+   "gaps": [
+    {
+     "from": 246.2,
+     "to": 346,
+     "h": 99.8
+    },
+    {
+     "from": 392,
+     "to": 397.8,
+     "h": 5.8
+    },
+    {
+     "from": 50,
+     "to": 55.6,
+     "h": 5.6
+    },
+    {
+     "from": 89.7,
+     "to": 94.7,
+     "h": 5
+    }
+   ],
+   "controls": 50,
+   "stolen": [],
+   "partial": [
+    {
+     "sel": "button.lc-clue",
+     "text": "2DWhat the Gallery writes to",
+     "box": {
+      "x": 23.4,
+      "y": 390,
+      "w": 328.2,
+      "h": 44,
+      "bottom": 434
+     },
+     "w": 328.2,
+     "h": 44,
+     "centreOwn": false,
+     "centreHit": "div.lc-keys__row",
+     "corners": [
+      true,
+      true,
+      false,
+      false
+     ],
+     "cornersOk": 2,
+     "clippedOut": false,
+     "shown": 0.045
+    }
+   ],
+   "offPanel": 3,
+   "scrollers": [
+    {
+     "sel": "div.lc-clues.m2-card",
+     "box": {
+      "x": 14.4,
+      "y": 341,
+      "w": 346.2,
+      "h": 52,
+      "bottom": 393
+     },
+     "scrollH": 228,
+     "clientH": 50,
+     "over": 178
+    }
+   ],
+   "cellGaps": null,
+   "named": {
+    ".lc-grid": {
+     "x": 14.4,
+     "y": 55.6,
+     "w": 346.2,
+     "h": 190.6,
+     "bottom": 246.2
+    },
+    ".lc-clues": {
+     "x": 14.4,
+     "y": 341,
+     "w": 346.2,
+     "h": 52,
+     "bottom": 393
+    },
+    ".lc-keys": {
+     "x": 5.6,
+     "y": 397.8,
+     "w": 363.8,
+     "h": 150,
+     "bottom": 547.8
+    },
+    ".room-deck": {
+     "x": 14.4,
+     "y": 307.4,
+     "w": 346.2,
+     "h": 289.2,
+     "bottom": 596.6
+    },
+    ".m2-toastslot": {
+     "x": 14.4,
+     "y": 312.2,
+     "w": 346.2,
+     "h": 24,
+     "bottom": 336.2
+    }
+   }
+  },
+  "counting-house": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 50,
+    "w": 375,
+    "h": 550.6,
+    "bottom": 600.6
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 411.8,
+    "to": 427.4,
+    "h": 15.6
+   },
+   "gaps": [
+    {
+     "from": 411.8,
+     "to": 427.4,
+     "h": 15.6
+    },
+    {
+     "from": 449.1,
+     "to": 455.8,
+     "h": 6.7
+    },
+    {
+     "from": 499.8,
+     "to": 505.4,
+     "h": 5.6
+    },
+    {
+     "from": 50,
+     "to": 54.8,
+     "h": 4.8
+    }
+   ],
+   "controls": 97,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": null,
+   "named": {
+    ".room-deck": {
+     "x": 0,
+     "y": 421.4,
+     "w": 375,
+     "h": 176,
+     "bottom": 597.4
+    }
+   }
+  },
+  "darkroom-light": {
+   "counts": {
+    "clues": 0,
+    "squares": 0,
+    "slots": 16
+   },
+   "stage": {
+    "x": 0,
+    "y": 50,
+    "w": 375,
+    "h": 550.6,
+    "bottom": 600.6
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 192.2,
+    "to": 363.8,
+    "h": 171.6
+   },
+   "gaps": [
+    {
+     "from": 192.2,
+     "to": 363.8,
+     "h": 171.6
+    },
+    {
+     "from": 50,
+     "to": 64.4,
+     "h": 14.4
+    },
+    {
+     "from": 592.6,
+     "to": 600.6,
+     "h": 8
+    },
+    {
+     "from": 385.5,
+     "to": 393,
+     "h": 7.5
+    }
+   ],
+   "controls": 45,
+   "stolen": [],
+   "partial": [],
+   "offPanel": 0,
+   "scrollers": [],
+   "cellGaps": {
+    "sampled": 13,
+    "misses": 0,
+    "sample": [],
+    "cell": {
+     "w": 30,
+     "h": 38
+    }
+   },
+   "named": {
+    ".dk-sheet": {
+     "x": 14.4,
+     "y": 56.4,
+     "w": 346.2,
+     "h": 144.8,
+     "bottom": 201.2
+    },
+    ".mic-keys": {
+     "x": 5.6,
+     "y": 393,
+     "w": 363.8,
+     "h": 150,
+     "bottom": 543
+    },
+    ".room-deck": {
+     "x": 14.4,
+     "y": 357,
+     "w": 346.2,
+     "h": 235.6,
+     "bottom": 592.6
+    },
+    ".mic-toastslot": {
+     "x": 14.4,
+     "y": 361.8,
+     "w": 346.2,
+     "h": 25.6,
+     "bottom": 387.4
+    }
+   }
+  },
+  "linen-light": {
+   "counts": {
+    "clues": 3,
+    "squares": 8,
+    "slots": 0
+   },
+   "stage": {
+    "x": 0,
+    "y": 50,
+    "w": 375,
+    "h": 550.6,
+    "bottom": 600.6
+   },
+   "stageScroll": 0,
+   "biggestGap": {
+    "from": 207.1,
+    "to": 346,
+    "h": 138.9
+   },
+   "gaps": [
+    {
+     "from": 207.1,
+     "to": 346,
+     "h": 138.9
+    },
+    {
+     "from": 50,
+     "to": 94.7,
+     "h": 44.7
+    },
+    {
+     "from": 392,
+     "to": 397.8,
+     "h": 5.8
+    },
+    {
+     "from": 128.8,
+     "to": 133.8,
+     "h": 5
+    }
+   ],
+   "controls": 39,
+   "stolen": [],
+   "partial": [
+    {
+     "sel": "button.lc-clue",
+     "text": "2DFloor warmer",
+     "box": {
+      "x": 23.4,
+      "y": 390,
+      "w": 328.2,
+      "h": 44,
+      "bottom": 434
+     },
+     "w": 328.2,
+     "h": 44,
+     "centreOwn": false,
+     "centreHit": "div.lc-keys__row",
+     "corners": [
+      true,
+      true,
+      false,
+      false
+     ],
+     "cornersOk": 2,
+     "clippedOut": false,
+     "shown": 0.045
+    }
+   ],
+   "offPanel": 1,
+   "scrollers": [
+    {
+     "sel": "div.lc-clues.m2-card",
+     "box": {
+      "x": 14.4,
+      "y": 341,
+      "w": 346.2,
+      "h": 52,
+      "bottom": 393
+     },
+     "scrollH": 140,
+     "clientH": 50,
+     "over": 90
+    }
+   ],
+   "cellGaps": null,
+   "named": {
+    ".lc-grid": {
+     "x": 14.4,
+     "y": 55.6,
+     "w": 346.2,
+     "h": 151.5,
+     "bottom": 207.1
+    },
+    ".lc-clues": {
+     "x": 14.4,
+     "y": 341,
+     "w": 346.2,
+     "h": 52,
+     "bottom": 393
+    },
+    ".lc-keys": {
+     "x": 5.6,
+     "y": 397.8,
+     "w": 363.8,
+     "h": 150,
+     "bottom": 547.8
+    },
+    ".room-deck": {
+     "x": 14.4,
+     "y": 307.4,
+     "w": 346.2,
+     "h": 289.2,
+     "bottom": 596.6
+    },
+    ".m2-toastslot": {
+     "x": 14.4,
+     "y": 312.2,
+     "w": 346.2,
+     "h": 24,
+     "bottom": 336.2
+    }
+   }
+  }
+ }
+}

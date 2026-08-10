@@ -196,7 +196,23 @@
    The Darkroom (Cipher) — AAA §3
    -------------------------------------------------------------------------- */
 
+/* ROUND 20 — THE THREE GUTTERS ARE NAMED, BECAUSE THE HIT AREA IS BUILT FROM
+   THEM. The sheet has three different gaps (letter, word, rank) and the cell's
+   extended tap target has to tile EXACTLY half of each one, or the leftover is
+   a dead zone. Round 7 tiled the letter gutter (3px against a 6px gap) and
+   nobody tiled the WORD gutter, which is the wider one: measured live at HEAD,
+   sampling every inter-slot gap <=14px, 3 of 19 midpoints on the board the
+   critic drew and 2 of 35 on the pool's worst phrase answered as `div.dk-sheet`
+   instead of a slot — every one of them an inter-WORD gutter (8.8px at 390x844,
+   8px at 375x667) against a +-3px extension authored for the 6px inter-LETTER
+   one, i.e. ~2.8px of parchment between two slots that both look tappable.
+   6.19(c) exempts the slot's SIZE; it has never exempted a dead zone, and says
+   so in its own text. The gutters are variables now and the ::after reads them,
+   so the tiling cannot drift out of step with the layout again. */
 .dk-sheet {
+  --dk-letter-gap: 6px;
+  --dk-word-gap: 0.9rem;
+  --dk-rank-gap: 0.55rem;
   background: var(--paper-raised);
   border: var(--rule);
   border-radius: var(--radius-sheet);
@@ -204,11 +220,19 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.55rem 0.9rem;
+  gap: var(--dk-rank-gap) var(--dk-word-gap);
+  /* A SHORT phrase has slack no cell size can spend: the pool's lightest
+     cryptogram is 16 glyphs and fills three ranks at the slot's ceiling, and
+     every pixel left over used to pool underneath it because `.room-deck`
+     carries `margin-top: auto` and took the lot — 217.8px of it at 390x844,
+     measured. The shell's own contract says the stage "grows to fill so sparse
+     rooms centre their play surface in the thumb zone (AAA 6.20)"; this is the
+     auto margin that makes that true of the print. On a full sheet there is no
+     free space and this resolves to zero, so nothing moves on the boards that
+     were actually starved. */
+  margin-block: auto;
 }
-/* Letter gap 6px so each cell's extended hit area (::after, below) never
-   overlaps its neighbor. */
-.dk-word { display: flex; gap: 6px; }
+.dk-word { display: flex; gap: var(--dk-letter-gap); }
 /* ROUND 5 — the tray must fit the glass. At 33 letters the final rank was
    already sliced in half by the sticky `.room-deck`, and the shipped pool runs
    to 41 letters / 48 characters ("THE HOUSE LEARNS EVERY GUEST FROM THEIR
@@ -218,10 +242,25 @@
    wide-alphabet tier. The cell is now adaptive on both axes, and long phrases
    add `--dense` (set by CipherView above 30 glyphs), which fits the pool's
    worst case above the deck at 375x667 with room to spare. */
+/* ROUND 20 — THE PARCHMENT ABOVE THE PRINT PAYS FOR THE PRINT'S HEIGHT.
+   6.19(c) waived this slot at 31.2x47.3 (390x844) and 30.0x38.0 (375x667) on
+   the written argument that a bigger slot "pushes the print off the glass".
+   MEASURED at HEAD: on a 16-glyph phrase the `.dk-cell` block ended at y=290
+   and `.mic-keys` began at y=536 — 238.2px of empty stage at 390x844, 171.6px
+   at 375x667. On the pool's WORST phrase, the one the exemption is written
+   about, it is still 127.9px and 90.3px. The vertical half of that argument was
+   simply false at every board size, so the HEIGHT goes to the 44pt floor on
+   both glasses and the exemption stops resting on it.
+   The horizontal half is true, and it is arithmetic, not taste: the pool's
+   longest phrase carries an 8-letter word (FOOTFALL), which must sit unbroken
+   on one rank or word shape — the primary read in a cryptogram — is gone. Eight
+   slots plus seven letter gutters inside a 346.4px sheet is 38.05px a slot at
+   390x844 and 36.2px at 375x667, ceiling. That is the real bound, it is
+   horizontal, and 6.19(c)'s text now says so. */
 .dk-cell {
   position: relative;
-  width: clamp(26px, 8vw, 38px);
-  height: clamp(38px, 5.6vh, 52px);
+  width: clamp(30px, 9.6vw, 38px);
+  height: clamp(44px, calc(var(--stage-h, 100vh) * 0.075), 56px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -258,8 +297,17 @@
 .dk-cell::after {
   content: '';
   position: absolute;
-  inset: -5px -3px;
+  /* Exactly half of each gutter, on every side, so adjacent targets tile edge
+     to edge: no overlap (which hands contested points to whichever cell is
+     later in DOM order and shrinks the EXCLUSIVE target — the round-7 bug) and
+     no gap (which is a dead zone — the round-20 bug). */
+  inset: calc(var(--dk-rank-gap) / -2) calc(var(--dk-letter-gap) / -2);
 }
+/* The word gutter is the wide one, and only the first and last slot of a word
+   border it. They reach half way across it; their inside edge keeps the letter
+   gutter's half. */
+.dk-word > .dk-cell:first-child::after { left: calc(var(--dk-word-gap) / -2); }
+.dk-word > .dk-cell:last-child::after  { right: calc(var(--dk-word-gap) / -2); }
 /* Long phrases: a denser letter so the whole print clears the deck. The floor
    keeps the plain letter at 1rem (16px — the AAA 6.6 body floor; it is the
    glyph she actually reads) with the small cipher label above it. */
@@ -269,10 +317,23 @@
    8vw is 31.2px at 390 → a 45.2px target, and the extra row it costs the
    longest phrase in the pool lands inside the 88px of dead parchment the same
    audit measured between this sheet and the deck. */
-.dk-sheet--dense .dk-cell { width: clamp(26px, 8vw, 34px); height: clamp(30px, 4.6vh, 42px); }
+/* ROUND 20: the dense slot keeps its narrower width (packing the pool's worst
+   phrase — 41 letters, 8 words — into six ranks instead of seven is what keeps
+   the whole print above the deck) but it no longer keeps a 30.7px HEIGHT. Six
+   ranks at the 44px floor, with the rank gutters and the sheet's own padding,
+   measures 291.5px against the 316.4px the sheet plus its dead parchment
+   already occupied at 375x667 — measured, not derived, on `cipher-t3-40`. */
+.dk-sheet--dense .dk-cell {
+  width: clamp(28px, 8.2vw, 34px);
+  height: clamp(44px, calc(var(--stage-h, 100vh) * 0.075), 54px);
+}
 .dk-sheet--dense .dk-cell__plain { font-size: 1rem; min-height: 1.2rem; line-height: 1.15; }
 .dk-sheet--dense .dk-cell__cipher { font-size: 0.6rem; line-height: 1; }
-.dk-sheet--dense { gap: 0.3rem 0.55rem; }
+/* The dense rank gutter is set in the two short-glass bands below, not here: a
+   `.dk-sheet--dense` rule at this point in the file has the same specificity as
+   the `.dk-sheet` rules inside those media queries and LOSES to them on source
+   order, so a value written here would silently not be the one on the phone.
+   That is exactly the kind of number this file has been burned by before. */
 .dk-cell__cipher {
   font-size: 0.68rem;
   letter-spacing: 0.04em;
@@ -362,7 +423,7 @@
   .mic__sub { display: none; }
   .mic-toastslot { min-height: 2.2rem; }
   .mic-keys { gap: 5px; }
-  .dk-sheet { padding: 0.5rem 0.4rem; gap: 0.4rem 0.55rem; }
+  .dk-sheet { padding: 0.5rem 0.4rem; --dk-word-gap: 0.55rem; --dk-rank-gap: 0.4rem; }
 }
 
 /* 667-tall glass (SE/8-class, and any 12-class phone in a compact standalone
@@ -374,7 +435,8 @@
   .mic__head { display: none; }
   .mic-keys { gap: 3px; }
   .mic-keys__row { gap: 3px; }
-  .dk-sheet--dense { gap: 0.3rem 0.5rem; }
+  .dk-sheet { padding: 0.3rem 0.4rem; }
+  .dk-sheet--dense { --dk-word-gap: 0.5rem; --dk-rank-gap: 0.2rem; }
   /* Round 8: the 12px the taller keys cost, taken out of the reserve that is
      empty for most of the session — never out of the print. */
   .mic-toastslot { min-height: 1.6rem; }

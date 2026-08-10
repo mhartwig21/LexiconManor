@@ -178,7 +178,15 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
   const activeCells = new Set(entryCells(puzzle, activeEntry));
 
   return (
-    <div className="m2 m2--linen">
+    /* ROUND 20: a tier-1 closet is a 4x4 and a tier-2/3 closet is a 5x5, and
+       at 375x667 that one missing rank is 41.3px — almost exactly one clue row.
+       The clue panel's cap is a whole number of rows measured against the worst
+       case, so on the small board it can afford one more, and a tier-1 closet
+       then shows all three of its clues at rest with nothing to scroll. The
+       class carries the BOARD SIZE, not the tier: the arithmetic is about ranks
+       of squares, and a pool that one day pairs a 4x4 with tier 2 must still
+       get the right answer. */
+    <div className={`m2 m2--linen${puzzle.size <= 4 ? ' m2--linen-sm' : ''}`}>
       <header className="m2__head">
         <h2 className="m2__title">The Linen Closet</h2>
         <p className="m2__sub">Small words, neatly folded. Fill every square.</p>

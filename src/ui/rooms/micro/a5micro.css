@@ -163,6 +163,12 @@
      than the whole 481.6px stage before the board is measured — so the
      SE-class square stays at 30px and is REPORTED as a residual rather than
      waved through. */
+  /* ROUND 20 LEAVES THIS NUMBER ALONE, ON PURPOSE. The clue panel doubled (two
+     whole rows -> four) and the square did not have to pay a pixel for it: the
+     65.1px of dead parchment measured between this grid and the deck, 8px off
+     the toast reserve and 7.4px off the key ceiling came to 80.5px against the
+     73.2px the panel needed. A board shrunk to buy chrome is the trade round 8
+     refused, and it is still refused — it just turned out not to be on offer. */
   --lc-cell: clamp(44px, min(15vw, calc(var(--stage-h, 100vh) * 0.0675)), 52px);
   display: grid;
   gap: 5px;
@@ -170,6 +176,12 @@
   /* Never stretch: the grid is exactly its squares, and the slack belongs to
      the clue panel below it, not to empty parchment (round 5). */
   flex: 0 0 auto;
+  /* Same reason as the Darkroom's sheet: a tier-1 closet is a 4x4 with three
+     clues and leaves slack the cap deliberately will not spend, and all of it
+     used to pool between the board and the deck (150.7px at 390x844, measured
+     on `crossword-t1-1`). Auto margins split it, which is what room-host.css
+     says a sparse room is supposed to do. Zero on a tier-3 board. */
+  margin-block: auto;
   touch-action: manipulation;
 }
 .lc-cell {
@@ -233,6 +245,9 @@
   text-align: left;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  /* Round 20: the panel rests on a row boundary, never through one. See the
+     `.lc-clues` note below for what a straddling row did to the hit test. */
+  scroll-snap-align: start;
 }
 .lc-clue.is-pressed { background: color-mix(in srgb, var(--room-accent) 8%, transparent); }
 .lc-clue--active { background: color-mix(in srgb, var(--room-accent) 14%, transparent); }
@@ -275,7 +290,10 @@
      fallen out of its own exemption is not exempt, so the floor is the ruled
      48 and the harness now says so rather than counting the row as forgiven
      (scripts/r7-compose-audit.mjs). */
-  min-height: clamp(48px, calc(var(--stage-h, 100vh) * 0.07), 52px);
+  /* ROUND 20: the ceiling comes down 52 -> 50 and the term 0.07 -> 0.066, i.e.
+     50.5px -> 48px at 390x844. 6.19(b)'s ruled floor is 48 and the key is still
+     on it; the 7.4px is in the clue panel, which had two rows for five clues. */
+  min-height: clamp(48px, calc(var(--stage-h, 100vh) * 0.066), 50px);
   border: 1px solid var(--paper-edge);
   border-radius: var(--radius-card);
   background: var(--paper-raised);
@@ -329,10 +347,48 @@
      The cap is a WHOLE NUMBER OF ROWS, not a share of the stage: a fraction of
      the stage put the third clue's cap-height through the middle of its own
      text, which is the sliced glyph again in a different disguise. Two rows +
-     the panel's own padding, arithmetically. */
-  max-height: calc(2 * var(--tap-target) + 1.05rem);
+     the panel's own padding, arithmetically.
+
+     ═══ ROUND 20 — THE STAGE WAS MIS-APPORTIONED, NOT SHORT ═══════════════
+     Round 8's arithmetic was right about the SHAPE (whole rows) and wrong about
+     the BUDGET, because it never asked what was above the panel. Measured live
+     at HEAD: at 375x667 the grid ended at y=246.2 and this panel began at
+     y=341 — 99.8px of blank parchment sitting directly on top of a panel capped
+     at ONE row for a five-clue closet (scrollHeight 184 in a 50px scrollport).
+     At 390x844 it was 65.1px of parchment against a two-row cap. The panel was
+     not starved by the glass; it was starved by an auto margin.
+
+     It takes the parchment now, and the cap is the largest whole number of rows
+     that space buys, measured against the pool's worst board and then checked
+     against its lightest: FOUR rows at 390x844, TWO at 375x667 — THREE there on
+     a 4x4 board, which is every tier-1 closet in the pool (see `m2--linen-sm`).
+     A tier-1 closet (3 clues) now scrolls on neither glass and a tier-2 closet
+     (4) does not scroll at 390x844; before this, the panel held two rows and
+     one. Where a row is still off the panel it is signposted by the shadow pair
+     below and walked into view by `activeClueRef` (CrosswordView), which is the
+     round-5 complaint answered.
+
+     AND THE ROWS NO LONGER STRADDLE. A free-scrolling panel rests wherever the
+     finger left it, so a row could come to rest half in and half out — painted,
+     tappable on its visible sliver, and with its own CENTRE outside the panel
+     on top of the QWERTY. Measured at HEAD on `crossword-t3-19`: a row painted
+     to 10% at 390x844 and to 4.5% at 375x667, its centre hit-testing as
+     `div.lc-keys__row`; driven, a click at that centre selected the WRONG clue,
+     and the owner's report has it typing a letter into the grid. Scroll
+     snapping makes every rest position a row boundary, so a row is either
+     wholly on the panel or wholly off it.
+
+     AND THE PANEL HAS NO BLOCK PADDING. `overflow` clips at the PADDING box, so
+     a panel with 7.2px of bottom padding shows 7.2px of the next row however
+     exactly the cap is cut — a permanent sliver of a control whose middle is
+     over the keyboard. The rows carry their own inner padding, so the card
+     loses nothing but the peek, and the cap becomes N x 44 + the rule, which is
+     an arithmetic anyone can check against a screenshot. */
+  padding-block: 0;
+  max-height: calc(5 * var(--tap-target) + 2px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scroll-snap-type: y mandatory;
   scrollbar-width: none;
   background:
     linear-gradient(var(--paper-raised) 40%, transparent) top / 100% 1.1rem local no-repeat,
@@ -356,8 +412,19 @@
      from 40.4 to 44 (AAA 6.19). The room is named on the blueprint she walked
      in from, and RoomHost already hides this head whenever the keyboard is up. */
   .m2__head { display: none; }
-  .m2-toastslot { min-height: 2rem; }
-  .lc-clues { padding: 0.45rem 0.7rem; gap: 0.1rem; }
+  /* Round 20: 2rem -> 1.5rem. The reserve still holds two lines of the room's
+     longest toast at this width (measured: one line, 15px, 336.8px of column),
+     and the 8px is in the clue panel. */
+  .m2-toastslot { min-height: 1.5rem; }
+  /* `gap: 0` deliberately: the cap below is N x 44px exactly, and a gap between
+     rows makes N rows taller than N x 44, which puts the cap back through the
+     middle of a row. The active row's fill is the separator. */
+  .lc-clues {
+    padding: 0 0.7rem;
+    gap: 0;
+    /* Four whole rows + the panel's rule. Nothing else is in this number. */
+    max-height: calc(4 * var(--tap-target) + 2px);
+  }
   .lc-clue { padding: 0.2rem 0.45rem; line-height: 1.3; }
   /* Scoped to this room's deck — `.room-deck` is the shell's (room-host.css)
      and every room uses it. */
@@ -379,13 +446,32 @@
   .m2 { gap: 0.35rem; padding: 0.35rem 0.9rem 0.25rem; }
   .m2__head { display: none; }
   .m2-toastslot { min-height: 1.5rem; }
-  .lc-grid { --lc-cell: clamp(30px, min(15vw, calc(var(--stage-h, 100vh) * 0.062)), 48px); }
+  /* ROUND 20: 0.062 -> 0.066 of the stage, i.e. 34.1px -> 36.3px. The SE-class
+     square grows for the first time since round 8 cut it to 30px, out of the
+     same 99.8px of dead parchment the clue panel is paid from. It is still
+     under the 44pt floor and is still reported as a residual in 6.19(c); it is
+     2.2px less of one. */
+  .lc-grid { --lc-cell: clamp(30px, min(15vw, calc(var(--stage-h, 100vh) * 0.066)), 48px); }
   .lc-clues {
-    padding: 0.25rem 0.5rem;
+    padding: 0 0.5rem;
     gap: 0;
-    /* One whole row + the panel's padding (see the note above). */
-    max-height: calc(var(--tap-target) + 0.5rem);
+    /* TWO whole rows + the panel's rule. Round 8 wrote `calc(var(--tap-target)
+       + 0.5rem)` here and measured 52px against a 44px row — the panel's own
+       padding and rule ate the difference, so even the ONE row it claimed was
+       short of whole.
+
+       THREE rows was built, measured and rejected, which is the honest way to
+       arrive at two: at three the column ran 34px past its own stage, the stage
+       began to scroll, and the sticky deck came down over the crossword's
+       bottom RANK — a square whose centre hit-tested as `div.m2-toastslot`.
+       Trading a buried board row for a third clue row is the round-7 failure
+       again, so the third row is not taken. */
+    max-height: calc(2 * var(--tap-target) + 2px);
   }
+  /* A 4x4 board is one rank shorter — 41.3px at this size, which buys the third
+     row back. Every closet in the shipped pool with a 4x4 board has exactly
+     three clues, so this is the case where the panel holds the whole list. */
+  .m2--linen-sm .lc-clues { max-height: calc(3 * var(--tap-target) + 2px); }
   .lc-clue { padding: 0.15rem 0.4rem; line-height: 1.25; }
   .lc-keys { gap: 3px; }
   .lc-keys__row { gap: 3px; }

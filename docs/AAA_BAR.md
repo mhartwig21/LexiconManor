@@ -1125,34 +1125,89 @@ list." These four clauses are what that answer is measured against;
     zone, and every costed verb on the surface at ≥44pt.** The exemption rests on the
     same argument as (a) and on nothing else — **a slot moves a cursor and commits
     nothing**; `Develop the print`, `Weigh the books` and every letter key are ≥44pt or
-    inside (b). The arithmetic that forces it: the cipher's longest phrase is 41 letters
-    with an 8-letter longest word, and a 44px slot needs ~2 more ranks, which pushes the
-    print — the primary solving channel, since the read is letter-frequency across the
-    whole phrase — off the glass. The crossword is 5 squares plus a 3-row 48px QWERTY
-    plus a clue row plus the room's verb inside a 481.6px stage at 375×667.
+    inside (b).
+
+    **ROUND 20 — THE ARITHMETIC THIS CLAUSE RESTED ON WAS HALF FALSE, AND THE HALF
+    THAT WAS FALSE IS THE HALF IT LEANED ON.** Round 8 wrote: "a 44px slot needs ~2
+    more ranks, which pushes the print off the glass." That is a claim about VERTICAL
+    space, and it was tested against nothing. Measured live at HEAD on the pool's own
+    worst phrase (`cipher-t3-40`, 41 letters, 8 words, longest word FOOTFALL), the
+    `.dk-cell` block ended and `.mic-keys` began with **127.9px of empty stage between
+    them at 390×844 and 90.3px at 375×667** — the slot was being waived at 38.8px tall
+    with two-and-a-half ranks' worth of parchment sitting directly underneath it. The
+    height is now **54.0px (390×844) and 44.0px (375×667)**, effective 61 and 47, i.e.
+    the slot is inside 44pt on the axis the old argument claimed was impossible, at
+    both viewports, on the worst board in the pool.
+
+    What is true, and is the only thing this clause now rests on, is **horizontal and
+    arithmetic**: the longest word must sit unbroken on one rank or word shape — the
+    first read in a cryptogram, before letter frequency — is gone. Eight slots plus
+    seven letter gutters inside the sheet's 346.4px content width is **38.05px a slot
+    at 390×844, 36.2px at 375×667, ceiling**, before any question of taste. That bound
+    does not move with the stage height, so no amount of reclaimed parchment reaches it.
+
+    The dead-zone half of the ruled floor was also **being violated while the clause was
+    read as satisfied**: sampling every inter-slot gutter ≤14px, 2 of 35 midpoints
+    answered as `div.dk-sheet` at HEAD (both of them the wide inter-WORD gutter, tiled
+    by a ±3px extension authored against the narrow inter-LETTER one). The extension now
+    reads the gutters as variables and tiles exactly half of each; **0 of 35 at both
+    viewports, driven** (`scripts/r20-glass-drive.mjs` clicks every midpoint and asserts the
+    selection lands on one of the two slots either side).
+
+    The crossword square's own residual is unchanged in kind and smaller in size: 5
+    squares plus a 3-row 48px QWERTY plus the clue panel plus the room's verb still do
+    not leave 44px a square inside a 550.6px stage at 375×667. The square is **36.3px
+    there (was 34.1)** and stays a recorded residual; at 390×844 it is 48.6px and inside
+    the floor.
   - All three classes must be **measured and recorded** every round — the exemption is
     from the number, never from the measurement. *Round 7 (verifier): this ruling was
     requested by three separate passes and was being silently waived in the meantime,
     which is worse than either answer — a criterion no critic can pass or fail.*
 
-  **MEASURED, ROUND 8** (`scripts/r8-tap-targets.mjs`, real Edge, effective tap target
+  **MEASURED, ROUND 20** (`scripts/r8-tap-targets.mjs`, real Edge, effective tap target
   derived by hit-testing outward from each control's centre, so `::after` extenders and
-  inter-cell dead zones are both caught — a bounding-rect read cannot tell them apart):
+  inter-cell dead zones are both caught — a bounding-rect read cannot tell them apart).
+  *Round 20 pinned the harness to the WORST board in each pool (`cipher-t3-40`,
+  `crossword-t3-19`, `sudoku-t3-01`) rather than whichever board the day seed handed it.
+  Every number here is a floor, and a floor read off a soft board is not a floor: the
+  cipher slot measures 37.4×54 on a 16-glyph phrase and 32.0×54 on the 41-glyph one, and
+  only the second is the number this clause has to justify. The round-8 column below is
+  re-measured on the same pinned boards, at HEAD, so before and after are the same
+  question asked twice.*
 
-  | control | clause | 390×844 (css / effective) | 375×667 (css / effective) |
+  | control | clause | 390×844 was → now (css / effective) | 375×667 was → now |
   |---|---|---|---|
-  | `.ch-cell` ledger cell | (a) | 43.3×43.3 / 43×43 | 39.7×39.7 / 39×39 |
-  | `.mic-key` Darkroom key | (b) | 32.5×55.7 / 34×56 | 33.7×48.0 / 34×48 |
-  | `.lc-key` Linen QWERTY key | (b) | 32.5×50.5 / 34×52 | 33.7×48.0 / 34×48 |
-  | `.dk-cell` cipher slot | (c) | 31.2×47.3 / 38×54 | 30.0×38.0 / 36×44 |
-  | `.lc-cell` crossword square | (c) | 48.6×48.6 / 50×49 | 34.1×34.1 / 35×35 |
-  | `.ch-pad` ledger pad key | none | 59.0×52.0 | 57.3×44.0 |
-  | `.mic-btn--primary` Darkroom verb | none | 150.5×44.0 | 150.5×44.0 |
-  | `.lc-clue` clue row | none | 336.8×44.0 | 328.2×44.0 |
+  | `.ch-cell` ledger cell | (a) | 43.3×43.3 / 44×44 (unchanged) | 39.7×39.7 / 40×40 (unchanged) |
+  | `.mic-key` Darkroom key | (b) | 32.5×55.7 / 34×56 (unchanged) | 33.7×48.0 / 34×48 (unchanged) |
+  | `.lc-key` Linen QWERTY key | (b) | 32.5×50.5 / 34×52 → **32.5×48.0 / 34×48** | 33.7×48.0 / 34×48 (unchanged) |
+  | `.dk-cell` cipher slot | (c) | 31.2×38.8 / 37×49 → **32.0×54.0 / 39×61** | 30.0×30.7 / 36×41 → **30.8×44.0 / 38×47** |
+  | `.lc-cell` crossword square | (c) | 48.6×48.6 / 50×50 (unchanged) | 34.1×34.1 / 35×35 → **36.3×36.3 / 37×37** |
+  | `.ch-pad` ledger pad key | none | 59.0×52.0 (unchanged) | 57.3×44.0 (unchanged) |
+  | `.mic-btn--primary` Darkroom verb | none | 150.5×44.0 (unchanged) | 150.5×44.0 (unchanged) |
+  | `.lc-clue` clue row | none | 336.8×44.0 (unchanged) | 328.2×44.0 (unchanged) |
 
   Both keyboards are inside (b)'s floor at both viewports — including the 48px height,
-  which round 12 found them under and fixed. **Zero costed controls are under 44pt on
-  any surface at either viewport.** *Round 8 correction to the record: a round-13 pass
+  which round 12 found them under and fixed, and which the Linen Closet's key now sits
+  exactly on rather than 2.5px above (round 20 spent the difference on the clue panel;
+  a key ON its floor is inside the exemption, a key under it is not). **Zero costed
+  controls are under 44pt on any surface at either viewport.**
+
+  *Two honest discrepancies with the round-8 printing, both from the same cause and
+  neither hidden: `.ch-cell`'s effective box reads 44×44 / 40×40 today where round 8
+  recorded 43×43 / 39×39, and `.lc-cell`'s reads 50×50 where round 8 recorded 50×49.
+  The walk-out probe counts whole pixels outward from a fractional centre, so it is
+  ±1 on a cell whose css size is fractional (43.3, 39.7, 48.6). Nothing in the tree
+  moved these three controls this round; the numbers above are simply what the same
+  script prints today on a pinned board.*
+
+  **The `.lc-clue` row's own geometry is unchanged and was never the defect.** What
+  changed is how many of them the panel holds at rest — 2 → 4 rows at 390×844, 1 → 2 at
+  375×667 (3 on a 4×4 board, which is every tier-1 closet in the pool) — and that a row
+  is now either wholly on the panel or wholly off it. At HEAD a row could rest painted
+  in part (measured: 10% of a row at 390×844, 4.5% at 375×667) with its own centre over
+  the QWERTY; driven, a click at that centre selected the WRONG clue at 390×844 and the
+  owner's report has it typing a letter into the grid. `scroll-snap-type: y mandatory`
+  plus a cap that is exactly N × 44 + the panel's rule makes the straddle unreachable. *Round 8 correction to the record: a round-13 pass
   asked for 6.19(a)'s recorded 43.3×43.3 to be corrected to "42×42", on the grounds that
   the round-7 height reserve had shrunk the leaf to 39×39. The reserve fix is in the tree
   (`counting-house.css`, 18.8rem → 17.1rem) and the cell re-measures at **43.3×43.3**,

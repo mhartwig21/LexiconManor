@@ -70,10 +70,16 @@ const TARGETS = {
   ],
 };
 
+/* ROUND 20 — MEASURED ON THE WORST BOARD IN THE POOL, NOT ON WHICHEVER ONE
+   THE SEED HANDED US. Every number 6.19 records is a floor, and a floor read
+   off a soft board is not a floor: the cipher slot measures 37.4x54 on a
+   16-glyph phrase and 32x54 on the 41-glyph one, and only the second is the
+   number the exemption has to justify. The third element pins `puzzleId` on the
+   placed room, which `openRoomSession` honours. */
 const ROOMS = [
-  ['cipher', 'darkroom'],
-  ['crossword', 'linen-closet'],
-  ['sudoku', 'counting-house'],
+  ['cipher', 'darkroom', 'cipher-t3-40'],
+  ['crossword', 'linen-closet', 'crossword-t3-19'],
+  ['sudoku', 'counting-house', 'sudoku-t3-01'],
 ];
 
 let browser;
@@ -120,15 +126,15 @@ try {
     await page.setViewportSize(vp);
     await page.waitForTimeout(300);
     console.log(`\n================ ${vp.width}x${vp.height} ================`);
-    for (const [kind, cardId] of ROOMS) {
-      await page.evaluate(([k, c]) => {
+    for (const [kind, cardId, pin] of ROOMS) {
+      await page.evaluate(([k, c, p]) => {
         const store = window.__manorStore;
         const m = store.getState().manor;
         const cell = { col: m.playerCell.col, row: m.playerCell.row };
         const key = `${cell.col},${cell.row}`;
-        store.setState({ manor: { ...m, rooms: { ...m.rooms, [key]: { cardId: c, cell, doors: ['N', 'S'], solved: false, kind: k } } } });
+        store.setState({ manor: { ...m, rooms: { ...m.rooms, [key]: { cardId: c, cell, doors: ['N', 'S'], solved: false, kind: k, puzzleId: p } } } });
         store.getState().enterRoom(key);
-      }, [kind, cardId]);
+      }, [kind, cardId, pin]);
       await page.waitForTimeout(900);
       await drain();
       if (!(await page.$('.room-host__stage'))) { console.log(`${kind}: no stage`); continue; }
