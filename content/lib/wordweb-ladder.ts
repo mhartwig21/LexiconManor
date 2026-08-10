@@ -119,6 +119,18 @@ const SHAPE_THEMES = new Set([
   'Contains Roman Numerals',
   'Two Pairs of Double Letters',
   'Starts and Ends with the Same Letter',
+  // ROUND 13 (REVIEW_AA §5.8) — six mechanics that are not one of the eleven
+  // templates at all. The shelf's variety problem was partly a supply problem:
+  // `letter-shape` was the trick on 12.9% of boards because there were only
+  // eight of these to draw on, so the composer reached for a rhyme or a
+  // substring instead. Every one is provable on the tile and none of them is a
+  // sentence frame with a token dropped into it.
+  'Words with All Five Vowels',
+  'Letters in Alphabetical Order',
+  'Spelled Without a Vowel',
+  'Three Vowels in a Row',
+  'The Same Letter Three Times',
+  'Made of a Repeated Syllable',
 ]);
 
 /**
@@ -155,7 +167,15 @@ export function familyOfTheme(rawTheme: string): CensusFamily {
     case 'compound-blank':
     case 'can-follow':
     case 'can-precede': return 'compound';
-    default: return 'semantic';
+    default:
+      // `Can Be "RUNNING"` (JOKE / WATER / MATE / ORDER) is `RUNNING ___`
+      // wearing a different label, and the generator's own `normaliseTheme`
+      // already makes that ruling for the `Things That Can Be X` form. It is
+      // deliberately NOT one of `TEMPLATES`: the eleven there are the eleven
+      // REVIEW_AA counted, and the before/after figures are only comparable
+      // if that list does not grow.
+      if (/^Can Be /.test(t)) return 'compound';
+      return 'semantic';
   }
 }
 
@@ -243,8 +263,8 @@ export interface LateralParts {
   total: number;
 }
 
-/** The widest total `lateralOf` can return: 3 + 2 + 2 + 2. */
-export const LATERAL_MAX = 9;
+/** The widest total `lateralOf` can return: 3 + 1 + 2 + 2. */
+export const LATERAL_MAX = 8;
 
 /** 0 = read it; 1 = look at it; 2 = hear it; 3 = perform an operation on it. */
 function readingDistance(theme: string, family: CensusFamily): number {
@@ -288,12 +308,16 @@ function surfaceDistance(theme: string, words: readonly string[]): number {
     t.match(/^Contains "([A-Z]+)"$/)?.[1] ??
     t.match(/^Hidden .*"([A-Z]+)"$/)?.[1] ??
     null;
-  if (!tok) {
-    // A compound frame's token is not IN the words at all — it is the phrase
-    // the player must build. Visible as a label, invisible as letters.
-    if (templateOf(t) === 'compound-blank' || familyOfTheme(t) === 'compound') return 1;
-    return 2;
-  }
+  // NO TOKEN AT ALL — `Breakfast Items`, `Rhymes with "SNOW"`, `___ BAR`.
+  // This axis measures how hard the thread is to SPOT once you know to look
+  // for it, and where there is nothing printed to spot, the axis has nothing
+  // to say; it must not become a second charge for difficulty the other two
+  // axes have already counted. Scoring it 2 was doing exactly that, and the
+  // symptom was specific and repeated: a plain taxonomy came out at 2, a
+  // taxonomy with one planted intruder came out at 3, and a PROPERTY category
+  // with one intruder came out at 4 — outside yellow's band, on eight boards
+  // whose easiest group was `Things That Float`. Neutral is 1.
+  if (!tok) return 1;
   const at = words.map((w) => w.indexOf(tok));
   if (at.some((i) => i < 0)) return 1;
   if (words.every((w) => w.startsWith(tok))) return 0;
@@ -325,7 +349,11 @@ function meaningDistance(theme: string, family: CensusFamily, surface: number): 
   if (family === 'trivia') return 0;
   if (family === 'semantic') return /^Things (That|You) /.test(t) ? 1 : 0;
   if (family === 'compound') return 2;
-  if (family === 'contains' && surface === 0) return 0;
+  // …but the floor is a plain taxonomy, not below it. A pop-out sort is as
+  // easy as `Breakfast Items` (both score 2); it is not EASIER than knowing
+  // what a waffle is, and scoring it at 1 pushed honest semantic categories
+  // out of yellow on boards that carried one.
+  if (family === 'contains' && surface === 0) return 1;
   // Every remaining family is a letters-or-sound thread, which by construction
   // ignores what the word means. That IS a redefinition of the tile.
   return 2;
@@ -385,7 +413,7 @@ export type Slot = (typeof SLOTS)[number];
 
 /**
  * The promise each colour makes, stated so a player could feel it and a test
- * can check it. Bands are inclusive ranges over `lateralOf().total` (0–9).
+ * can check it. Bands are inclusive ranges over `lateralOf().total` (0–8).
  *
  *   YELLOW  "You already know this."  0–3
  *     Read the four tiles and the thread is the thing they plainly are, or a
@@ -428,9 +456,9 @@ export type Slot = (typeof SLOTS)[number];
  */
 export const LATERAL_BANDS: Record<Slot, readonly [number, number]> = {
   yellow: [0, 3],
-  green: [2, 6],
-  blue: [3, 7],
-  purple: [5, 9],
+  green: [1, 5],
+  blue: [3, 6],
+  purple: [5, 8],
 };
 
 /** The minimum climb from the yellow group to the purple one. */

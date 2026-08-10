@@ -126,6 +126,12 @@ const WORDPLAY_THEMES = new Set([
   'Contronyms (Own Opposite)', 'Onomatopoeia', 'Portmanteau Words',
   'Contains Roman Numerals', 'Hidden Numbers (Spelled Out)',
   'Things That Can Be "Iron"',
+  // ROUND 13 — the six new shape mechanics (see SHAPE_THEMES in
+  // lib/wordweb-ladder.ts). Wordplay by 2.9's definition: everything you need
+  // to prove them is printed on the tile.
+  'Words with All Five Vowels', 'Letters in Alphabetical Order',
+  'Spelled Without a Vowel', 'Three Vowels in a Row',
+  'The Same Letter Three Times', 'Made of a Repeated Syllable',
 ]);
 
 /**
@@ -174,6 +180,12 @@ const SUBTLE_THEMES = new Set([
   'Palindromes', 'Semordnilaps', 'Heteronyms', 'Contronyms',
   'Contronyms (Own Opposite)', 'Onomatopoeia', 'Portmanteau Words',
   'Contains Roman Numerals',
+  // ROUND 13 — subtle in exactly the sense tier 3 means: real, provable on the
+  // tile, invisible on a first read. Nobody looks at QUEUE, BEAUTY, AQUEOUS
+  // and PLATEAU and sees three vowels in a row; they see four unrelated words.
+  'Words with All Five Vowels', 'Letters in Alphabetical Order',
+  'Spelled Without a Vowel', 'Three Vowels in a Row',
+  'The Same Letter Three Times', 'Made of a Repeated Syllable',
 ]);
 
 function isSubtleTheme(rawTheme: string): boolean {
@@ -223,6 +235,9 @@ const LETTER_SHAPE_THEMES = new Set([
   'Contronyms (Own Opposite)', 'Onomatopoeia', 'Portmanteau Words',
   'Contains Roman Numerals', 'Two Pairs of Double Letters',
   'Starts and Ends with the Same Letter',
+  'Words with All Five Vowels', 'Letters in Alphabetical Order',
+  'Spelled Without a Vowel', 'Three Vowels in a Row',
+  'The Same Letter Three Times', 'Made of a Repeated Syllable',
 ]);
 
 function familyOf(rawTheme: string): Family {
@@ -236,7 +251,7 @@ function familyOf(rawTheme: string): Family {
   if (/^Homophones/.test(theme)) return 'homophone';
   if (/^Silent /.test(theme)) return 'silent';
   if (/^(Add an? |Drop )/.test(theme)) return 'letter-swap';
-  if (theme.includes('___') || /^Can (Follow|Precede) /.test(theme)) return 'compound';
+  if (theme.includes('___') || /^Can (Be|Follow|Precede) /.test(theme)) return 'compound';
   if (/^Contains /.test(theme)) return 'contains';
   if (typeOfTheme(theme) === 'wordplay') return 'letter-shape';
   return 'semantic';
@@ -630,7 +645,217 @@ const WORDPLAY_BANK: BankGroup[] = [
   { theme: 'Can Follow "TABLE"', words: ['CLOTH', 'SPOON', 'TOP', 'WARE', 'LAND', 'MAT', 'TALK', 'LEG'] },
   { theme: 'Can Follow "STAR"', words: ['FISH', 'LIGHT', 'GAZER', 'DUST', 'BOARD', 'LET', 'BURST', 'STRUCK'] },
   { theme: 'Can Precede "FLOWER"', words: ['SUN', 'WALL', 'MAY', 'WILD', 'BELL', 'CORN', 'ELDER', 'PASSION'] },
+
+  /**
+   * ═══════════════════════════════════════════════════════════════════════
+   * ROUND 13 (REVIEW_AA §5.8) — THE VARIETY BATCH.
+   * ═══════════════════════════════════════════════════════════════════════
+   *
+   * ARCHITECTURE_BUDGET's own docstring predicted this work and named its
+   * size: *"Getting every family under 40% needs roughly forty more authored
+   * pools in those five families, which is an AUTHORING task the generator
+   * cannot do for itself."* This is that task. The five thin families —
+   * anagram, homophone, letter-shape, hidden, letter-swap — supplied about 165
+   * hands between them against a shelf that needs ~330 wordplay slots, so the
+   * composer reached for `Contains "X"` and `Rhymes with "X"` not because they
+   * are good but because they are infinite: English will hand you a fifth
+   * carrier for any substring and a fifth rhyme for any sound, and it will not
+   * hand you a fifth anagram of SPRITE.
+   *
+   * SIX OF THESE ARE MECHANICS THE SHELF HAS NEVER HAD, and they are the
+   * direct answer to "eleven templates". `Words with All Five Vowels`,
+   * `Letters in Alphabetical Order`, `Spelled Without a Vowel`, `Three Vowels
+   * in a Row`, `The Same Letter Three Times` and `Made of a Repeated Syllable`
+   * are not sentence frames with a token dropped in — there is no token, and
+   * no twelfth template to learn. Each is provable on the tile with nothing
+   * but the printed letters, which is what AAA 2.9 [BEAT] means by solvable
+   * from the tiles, and none of them is visible on a first read, which is what
+   * tier 3 means by subtle. Nobody looks at QUEUE / BEAUTY / AQUEOUS / PLATEAU
+   * and sees three vowels in a row. They see four unrelated words, and then
+   * they see it, and that second moment is the whole product.
+   */
+
+  // ── Six new shape mechanics ────────────────────────────────────────────
+  { theme: 'Words with All Five Vowels', words: ['SEQUOIA', 'EDUCATION', 'DIALOGUE', 'EQUATION', 'FACETIOUS', 'MENDACIOUS', 'HOUSEMAID', 'TAMBOURINE'] },
+  { theme: 'Letters in Alphabetical Order', words: ['ALMOST', 'BILLOWY', 'CHINTZ', 'EFFORT', 'KNOTTY', 'ACCEPT', 'CHIMPS', 'BEEFY'] },
+  // GYPSY is the obvious eighth member and is a slur for Romani people; GLYPH
+  // is a better word anyway in a lexicographer's house.
+  { theme: 'Spelled Without a Vowel', words: ['RHYTHM', 'MYTH', 'NYMPH', 'LYNX', 'SYLPH', 'GLYPH', 'TRYST', 'SHYLY'] },
+  { theme: 'Three Vowels in a Row', words: ['QUEUE', 'BEAUTY', 'AQUEOUS', 'GASEOUS', 'NAUSEOUS', 'OBSEQUIOUS', 'MIAOW', 'RADIOED'] },
+  { theme: 'The Same Letter Three Times', words: ['BANANA', 'ELEVEN', 'TATTOO', 'INDIVIDUAL', 'ENTERTAINMENT', 'DEFENDED', 'ASSESSED', 'SEVENTEEN'] },
+  { theme: 'Made of a Repeated Syllable', words: ['MURMUR', 'CANCAN', 'BONBON', 'COUSCOUS', 'POMPOM', 'TUTU', 'DODO', 'TOMTOM'] },
+
+  // ── Anagram: the family English is stingiest with ──────────────────────
+  // Only sets with four or more members BESIDES the anchor are usable, and
+  // there are not many. These four are the richest the language offers at
+  // familiar-word frequency.
+  { theme: 'Anagrams of "SPOT"', words: ['POTS', 'TOPS', 'STOP', 'OPTS', 'POST'] },
+  { theme: 'Anagrams of "SPRITE"', words: ['STRIPE', 'PRIEST', 'ESPRIT', 'RIPEST', 'TRIPES'] },
+  { theme: 'Anagrams of "TRIANGLE"', words: ['INTEGRAL', 'ALTERING', 'ALERTING', 'RELATING'] },
+  { theme: 'Anagrams of "PAINTERS"', words: ['PANTRIES', 'PERTAINS', 'REPAINTS', 'PINASTER'] },
+
+  // ── Homophone: heard, never seen ───────────────────────────────────────
+  { theme: 'Homophones of Letters', words: ['BEE', 'SEA', 'JAY', 'QUEUE', 'WHY', 'TEE', 'ARE', 'EX'] },
+  { theme: 'Homophones of Countries', words: ['GREASE', 'CHILLY', 'WHALES', 'HUNGRY', 'ROAM', 'SOUL'] },
+  { theme: 'Homophones of Fruit', words: ['PAIR', 'PARE', 'PLUMB', 'BURY', 'CURRENT'] },
+  { theme: 'Homophones of Musical Instruments', words: ['LOOT', 'LIAR', 'VIAL', 'BASE'] },
+  { theme: 'Homophones of Body Parts', words: ['WASTE', 'HEAL', 'NAVAL', 'MUSSEL', 'TOW'] },
+
+  // ── Letter-swap: the operation you perform before the thread exists ────
+  { theme: 'Add an "H" for a New Word', words: ['SOP', 'TIN', 'CAT', 'WERE', 'SORE', 'TREAD', 'TICK', 'COP'] },
+  { theme: 'Add a "G" for a New Word', words: ['RAIN', 'LOVE', 'OLD', 'LEAN', 'RIM', 'ROAN', 'RAVE', 'LARE'] },
+  { theme: 'Add an "M" for a New Word', words: ['ILK', 'OTHER', 'ASK', 'ICE', 'ARCH', 'EAT', 'ORE', 'ATE'] },
+  { theme: 'Add a "D" for a New Word', words: ['EAR', 'RIFT', 'ONE', 'RAG', 'ROLL', 'OWN', 'RIP', 'ROVE'] },
+
+  // ── Silent letters: the one silent pool the shelf kept running out of ──
+  { theme: 'Silent "GH"', words: ['THOUGH', 'DAUGHTER', 'NEIGHBOUR', 'WEIGHT', 'HEIGHT', 'BOUGHT', 'DELIGHT', 'STRAIGHT'] },
+
+  // ── Hidden: two more things to conceal ─────────────────────────────────
+  { theme: 'Hidden Drinks', words: ['WHALE', 'ORIGIN', 'CRUMB', 'IMPORTANT', 'MEADOW', 'IMAGINE', 'DRUMMER', 'REPORTER'] },
+  { theme: 'Hidden Tools', words: ['TRAWLER', 'SHAWL', 'PROFILE', 'PLANET', 'GRASP', 'WAXED', 'SERVICE', 'ADVICE'] },
+
+  /**
+   * ── Compound frames ───────────────────────────────────────────────────
+   * The compound family carries the highest board share on the shelf and
+   * that is a consequence of arithmetic rather than of taste: AAA 2.9 puts a
+   * hard floor of two tiles-solvable categories on every board, the round-13
+   * cap allows at most one letter puzzle below tier 3, so the second slot is a
+   * compound on almost every board it can be. What matters, then, is that the
+   * FRAME is never the same frame — the deduction is a search of English and
+   * the search is only fresh if the phrase is. These take the shelf past
+   * ninety distinct compound labels, which at three boards apiece is more than
+   * the pool can spend.
+   */
+  { theme: '___ WORD', words: ['CROSS', 'PASS', 'BY', 'FORE', 'KEY', 'WATCH', 'BUZZ', 'CATCH'] },
+  { theme: '___ PLATE', words: ['NAME', 'BOOK', 'HOT', 'COPPER', 'NUMBER', 'SIDE', 'FACE', 'BREAST'] },
+  { theme: '___ LEAF', words: ['GOLD', 'TEA', 'FIG', 'LOOSE', 'FLY', 'OVER', 'CLOVER', 'BAY'] },
+  { theme: '___ SCAPE', words: ['LAND', 'SEA', 'CITY', 'MOON', 'SOUND', 'DREAM', 'TOWN', 'ESCAPE'] },
+  { theme: '___ CRAFT', words: ['AIR', 'WITCH', 'SPACE', 'HOVER', 'STAGE', 'WOOD', 'STATE', 'PRIEST'] },
+  { theme: '___ HOLDER', words: ['CANDLE', 'PLACE', 'SHARE', 'PEN', 'CUP', 'TITLE', 'RECORD', 'STAKE'] },
+  { theme: '___ BELL', words: ['BLUE', 'DOOR', 'HARE', 'COW', 'HAND', 'SLEIGH', 'BAR', 'SCHOOL'] },
+  { theme: '___ STAND', words: ['BAND', 'GRAND', 'HAT', 'INK', 'KICK', 'NEWS', 'UMBRELLA', 'WITNESS'] },
+  { theme: 'Can Follow "PAPER"', words: ['WEIGHT', 'BACK', 'CLIP', 'WORK', 'MILL', 'CHASE', 'THIN', 'TRAIL'] },
+  { theme: 'Can Follow "INK"', words: ['WELL', 'POT', 'STAND', 'BLOT', 'JET', 'PAD', 'HORN', 'STONE'] },
+  // Eight more frames, for margin. A composed board spends one compound and a
+  // theme may only appear on three boards, so the compound shelf is what caps
+  // the composed batch; at fifty-eight frames the shelf landed exactly on its
+  // 150-board floor, which is the round-9 anti-pattern (a pool-size test
+  // policing a fairness decision). These buy it room to breathe.
+  { theme: '___ TRAP', words: ['SAND', 'FIRE', 'SPEED', 'MOUSE', 'CLAP', 'TOUR', 'BEAR', 'FLY'] },
+  { theme: '___ ROOT', words: ['BEET', 'GRASS', 'TAP', 'SQUARE', 'ARROW', 'BURDOCK', 'HORSE', 'GINGER'] },
+  { theme: '___ LOCK', words: ['PAD', 'GRID', 'WED', 'FET', 'AIR', 'OAR', 'INTER', 'FORE'] },
+  { theme: '___ TABLE', words: ['TIME', 'VEGE', 'DRESSING', 'TURN', 'ROUND', 'CARD', 'BEDSIDE', 'PICNIC'] },
+  { theme: 'Can Follow "SEA"', words: ['SHORE', 'WEED', 'FARER', 'SHELL', 'BOARD', 'SON', 'SCAPE', 'PLANE'] },
+  { theme: 'Can Follow "DAY"', words: ['BREAK', 'DREAM', 'LIGHT', 'TIME', 'BOOK', 'CARE', 'ROOM', 'BED'] },
+  { theme: 'Can Precede "STONE"', words: ['LIME', 'BRIM', 'CORNER', 'MILE', 'GRIND', 'HAIL', 'CURB', 'KERB'] },
+  { theme: 'Can Precede "BOARD"', words: ['CUP', 'SKIRT', 'DASH', 'SIGN', 'CHESS', 'HEAD', 'SNOW', 'CARD'] },
 ];
+/**
+ * ROUND 13 (REVIEW_AA §5.8) — THE PLAIN-ENGLISH BANK, AND WHY THERE WASN'T ONE.
+ *
+ * The review's charge was that 67.3% of shipped groups are one of eleven
+ * mechanical templates. Measuring the AUTHORED file against the SHIPPED pool
+ * settles where that came from, and it is not the authors: 398 of 668 authored
+ * groups (59.6%) are plain-English categories, and only 204 of 624 shipped ones
+ * (32.7%) were. The composer ate 194 of them.
+ *
+ * It ate them because it had no choice. AAA 2.9 gives every board a floor of
+ * two categories solvable from the tiles, `replaceGroups` reaches for the bank
+ * when a board is short, and every group in the bank was wordplay — so the only
+ * move available to a composer that needed to change something was to make the
+ * board MORE mechanical. Nine rounds of anti-wallpaper caps were all pushing on
+ * the same rope: they could change WHICH letter puzzle landed, never whether a
+ * letter puzzle landed.
+ *
+ * This is the missing half. These pools are the way in — the category she reads
+ * rather than decodes — and they exist so the letter-mechanic cap has somewhere
+ * to evict TO. Two authoring rules, both load-bearing:
+ *
+ *   - CONCRETE, NOT CLEVER. Every member is a thing you can picture. A plain
+ *     taxonomy is the correct yellow group and it is not supposed to be
+ *     interesting on its own; it is supposed to be the door.
+ *   - IN THE HOUSE'S VOICE WHERE THE HOUSE WOULD PLAUSIBLY SAY IT. `Rooms
+ *     Below Stairs`, `Marks on Paper`, `Things a Cat Sleeps On`, `Sounds a
+ *     House Makes at Night` are all true categories of English AND true of this
+ *     manor, which costs nothing and is the difference between a puzzle set in
+ *     a lexicographer's house and a puzzle. (§5.9 is a separate item and this
+ *     does not discharge it; it is the part of it that was free.)
+ */
+const SEMANTIC_BANK: BankGroup[] = [
+  { theme: 'Words for Rain', words: ['DRIZZLE', 'DOWNPOUR', 'SQUALL', 'DELUGE', 'TORRENT', 'CLOUDBURST', 'SPRINKLE', 'SHOWER'] },
+  { theme: 'Kitchen Utensils', words: ['WHISK', 'LADLE', 'SPATULA', 'COLANDER', 'GRATER', 'SIEVE', 'TONGS', 'PEELER'] },
+  { theme: 'Parts of a Book', words: ['SPINE', 'PREFACE', 'INDEX', 'MARGIN', 'CHAPTER', 'GLOSSARY', 'ENDPAPER', 'COLOPHON'] },
+  { theme: 'Things Found in an Attic', words: ['TRUNK', 'COBWEB', 'RAFTER', 'HEIRLOOM', 'CRATE', 'LANTERN', 'ALBUM', 'MOTHBALL'] },
+  { theme: 'Garden Birds', words: ['ROBIN', 'SPARROW', 'STARLING', 'BLACKBIRD', 'WARBLER', 'FINCH', 'WAGTAIL', 'NUTHATCH'] },
+  { theme: 'Kinds of Soup', words: ['BROTH', 'CHOWDER', 'BISQUE', 'MINESTRONE', 'GAZPACHO', 'POTTAGE', 'BOUILLON', 'GUMBO'] },
+  // Dewey. The category is true of any cat and every one of these is a thing
+  // he is found on somewhere in the manor's own dialogue.
+  { theme: 'Things a Cat Sleeps On', words: ['CUSHION', 'WINDOWSILL', 'MANUSCRIPT', 'RADIATOR', 'ARMCHAIR', 'LAUNDRY', 'KEYBOARD', 'DOORMAT'] },
+  { theme: 'Units of Measurement', words: ['FURLONG', 'FATHOM', 'HECTARE', 'GALLON', 'OUNCE', 'LEAGUE', 'CUBIT', 'ACRE'] },
+  { theme: 'Mountain Features', words: ['SUMMIT', 'RIDGE', 'CREVASSE', 'SCREE', 'CORRIE', 'GULLY', 'SADDLE', 'PRECIPICE'] },
+  { theme: 'Kinds of Cloud', words: ['CIRRUS', 'CUMULUS', 'STRATUS', 'NIMBUS', 'THUNDERHEAD', 'WISP', 'VAPOUR', 'HAZE'] },
+  { theme: 'Things That Come in Pairs', words: ['TROUSERS', 'BINOCULARS', 'PLIERS', 'TWEEZERS', 'CUFFLINKS', 'EARRINGS', 'SPECTACLES', 'BOOKENDS'] },
+  { theme: 'Things That Melt', words: ['BUTTER', 'GLACIER', 'WAX', 'SNOWMAN', 'FONDUE', 'ICICLE', 'TARMAC', 'SORBET'] },
+  { theme: 'Things That Creak', words: ['FLOORBOARD', 'HINGE', 'ROWLOCK', 'STAIRCASE', 'BEDSTEAD', 'GATEPOST', 'WICKER', 'MAST'] },
+  { theme: 'Things You Post', words: ['LETTER', 'PARCEL', 'BANNS', 'INVITATION', 'TELEGRAM', 'NOTICE', 'CIRCULAR', 'PACKET'] },
+  { theme: 'Herbs', words: ['THYME', 'SAGE', 'BASIL', 'OREGANO', 'ROSEMARY', 'TARRAGON', 'CHERVIL', 'MARJORAM'] },
+  { theme: 'Fabrics', words: ['VELVET', 'LINEN', 'TWEED', 'MUSLIN', 'CHIFFON', 'CORDUROY', 'TAFFETA', 'HESSIAN'] },
+  { theme: 'Things in a Toolbox', words: ['SPANNER', 'CHISEL', 'AWL', 'MALLET', 'BRADAWL', 'RASP', 'SCRIBER', 'GIMLET'] },
+  { theme: 'Things That Ring', words: ['DOORBELL', 'ALARM', 'TELEPHONE', 'CHIME', 'CARILLON', 'HANDBELL', 'TAMBOURINE', 'TRIANGLE'] },
+  { theme: 'Sounds a House Makes at Night', words: ['CREAK', 'TICK', 'DRIP', 'SETTLE', 'GURGLE', 'SIGH', 'GROAN', 'KNOCK'] },
+  { theme: 'Kinds of Path', words: ['LANE', 'TOWPATH', 'BRIDLEWAY', 'ALLEY', 'CAUSEWAY', 'BOARDWALK', 'TRACK', 'GINNEL'] },
+  { theme: 'Kinds of Light', words: ['GLIMMER', 'GLARE', 'SHIMMER', 'BEAM', 'GLINT', 'RADIANCE', 'FLICKER', 'DAZZLE'] },
+  { theme: 'Things That Are Kept', words: ['SECRET', 'PROMISE', 'DIARY', 'LEDGER', 'VIGIL', 'COUNSEL', 'ACCOUNT', 'RECORD'] },
+  { theme: 'Old Words for Money', words: ['GUINEA', 'FLORIN', 'GROAT', 'SHILLING', 'FARTHING', 'SOVEREIGN', 'DOUBLOON', 'DUCAT'] },
+  { theme: 'Things That Fold', words: ['MAP', 'DECKCHAIR', 'ORIGAMI', 'NAPKIN', 'ACCORDION', 'WALLET', 'EASEL', 'LADDER'] },
+  { theme: 'Rooms Below Stairs', words: ['SCULLERY', 'PANTRY', 'LARDER', 'CELLAR', 'BOOTROOM', 'STILLROOM', 'KITCHEN', 'BUTTERY'] },
+  { theme: 'Kinds of Handwriting', words: ['COPPERPLATE', 'SCRAWL', 'CURSIVE', 'SHORTHAND', 'ITALIC', 'LONGHAND', 'PRINTING', 'SCRIPT'] },
+  { theme: 'Things That Tick', words: ['CLOCK', 'METRONOME', 'STOPWATCH', 'TIMER', 'CRICKET', 'WOODWORM', 'PENDULUM', 'GEIGER'] },
+  { theme: 'Things in a Sewing Basket', words: ['THIMBLE', 'BOBBIN', 'PINCUSHION', 'BODKIN', 'SKEIN', 'HANK', 'REEL', 'NEEDLE'] },
+  { theme: 'Kinds of Wind', words: ['GALE', 'BREEZE', 'ZEPHYR', 'GUST', 'SIROCCO', 'MISTRAL', 'DRAUGHT', 'TRADEWIND'] },
+  { theme: 'Things That Are Sealed', words: ['ENVELOPE', 'JAR', 'VERDICT', 'DEPOSITION', 'PACT', 'HATCH', 'DOCUMENT', 'CANISTER'] },
+  // The best of them, and the reason the house should own this room: every one
+  // of these is a mark a lexicographer would recognise on his own foul papers.
+  { theme: 'Marks on Paper', words: ['BLOT', 'CREASE', 'WATERMARK', 'FOXING', 'DOGEAR', 'SMUDGE', 'ASTERISK', 'RULING'] },
+  { theme: 'Kinds of Knot', words: ['BOWLINE', 'HITCH', 'SHEEPSHANK', 'GRANNY', 'REEF', 'TANGLE', 'LASHING', 'BIGHT'] },
+
+  /**
+   * The second half of the plain bank, and the reason there is a second half:
+   * a composed board spends TWO of these and the shelf wants a hundred of
+   * them, so thirty-two pools ran the synthesiser dry at seventy boards. These
+   * eighteen are what took it to a hundred and sixty-five.
+   *
+   * The house keeps creeping into them and that is deliberate — `Kinds of
+   * Poem`, `Things Written in Margins`, `Kinds of Puzzle`, `Parts of a
+   * Fireplace`, `Kinds of Doorway` (whose LINTEL is the name of the channel
+   * that carries his engravings) are all ordinary English categories that a
+   * lexicographer's manor would also happen to contain. A Word Web board is
+   * sixteen words on a page; the cheapest way for it to belong to this game
+   * rather than to any game is for those sixteen words to be things that are
+   * in the building.
+   */
+  { theme: 'Types of Cheese', words: ['CHEDDAR', 'STILTON', 'BRIE', 'GOUDA', 'WENSLEYDALE', 'ROQUEFORT', 'HALLOUMI', 'MASCARPONE'] },
+  { theme: 'Things That Have Teeth', words: ['COMB', 'ZIP', 'COG', 'RAKE', 'KEY', 'GEAR', 'SPROCKET', 'PINION'] },
+  { theme: 'Parts of a Staircase', words: ['TREAD', 'RISER', 'NEWEL', 'BANISTER', 'LANDING', 'NOSING', 'STRINGER', 'BALUSTER'] },
+  { theme: 'Kinds of Hat', words: ['BOWLER', 'FEDORA', 'BERET', 'TRILBY', 'BONNET', 'TURBAN', 'PANAMA', 'SOMBRERO'] },
+  { theme: 'Kinds of Pasta', words: ['PENNE', 'FUSILLI', 'RIGATONI', 'TAGLIATELLE', 'ORZO', 'FARFALLE', 'LINGUINE', 'MACARONI'] },
+  { theme: 'Trees of the Hedgerow', words: ['HAWTHORN', 'BLACKTHORN', 'HAZEL', 'ELDER', 'HOLLY', 'ROWAN', 'WILLOW', 'ALDER'] },
+  { theme: 'Musical Directions', words: ['LEGATO', 'STACCATO', 'FORTE', 'ADAGIO', 'CRESCENDO', 'PIANISSIMO', 'ANDANTE', 'VIVACE'] },
+  { theme: 'Kinds of Puzzle', words: ['ACROSTIC', 'REBUS', 'CRYPTOGRAM', 'CONUNDRUM', 'RIDDLE', 'LABYRINTH', 'SUDOKU', 'TANGRAM'] },
+  { theme: 'Parts of a Fireplace', words: ['GRATE', 'FENDER', 'ANDIRON', 'HEARTH', 'POKER', 'BELLOWS', 'SCUTTLE', 'TRIVET'] },
+  { theme: 'Things Kept in a Drawer', words: ['CUTLERY', 'RECEIPTS', 'STRING', 'BATTERIES', 'CANDLES', 'TEATOWELS', 'SHOELACES', 'CORKS'] },
+  { theme: 'Kinds of Ship', words: ['SCHOONER', 'FRIGATE', 'GALLEON', 'CLIPPER', 'KETCH', 'BARQUE', 'SLOOP', 'CUTTER'] },
+  { theme: 'Things That Are Ironed', words: ['SHIRT', 'PLEAT', 'TABLECLOTH', 'HANDKERCHIEF', 'CUFF', 'COLLAR', 'PILLOWCASE', 'APRON'] },
+  { theme: 'Kinds of Window', words: ['CASEMENT', 'DORMER', 'ORIEL', 'SASH', 'SKYLIGHT', 'LANCET', 'FANLIGHT', 'MULLION'] },
+  // A property category with a joke in it: three of these are weather and the
+  // rest are trouble, and both are genuinely "brewed".
+  { theme: 'Things That Are Brewed', words: ['COFFEE', 'STORM', 'TROUBLE', 'MISCHIEF', 'POTION', 'KOMBUCHA', 'REBELLION', 'SCANDAL'] },
+  { theme: 'Kinds of Doorway', words: ['ARCHWAY', 'PORCH', 'THRESHOLD', 'LINTEL', 'PORTAL', 'GATEWAY', 'VESTIBULE', 'ALCOVE'] },
+  { theme: 'Things Written in Margins', words: ['GLOSS', 'QUERY', 'CORRECTION', 'DOODLE', 'INITIALS', 'OBJECTION', 'REMINDER', 'ASIDE'] },
+  { theme: 'Kinds of Nail', words: ['TACK', 'BRAD', 'RIVET', 'SPIKE', 'CLOUT', 'DOWEL', 'SPRIG', 'BOLT'] },
+  { theme: 'Kinds of Poem', words: ['SONNET', 'HAIKU', 'ELEGY', 'LIMERICK', 'BALLAD', 'VILLANELLE', 'EPIGRAM', 'SESTINA'] },
+];
+
 /**
  * How many boards may share one THEME before it feels like wallpaper.
  *
@@ -663,10 +888,46 @@ const BANK_REUSE_CAP = 3;
  * expressed as a share and turned into a board count against the authored
  * corpus, so it does not silently loosen when the shelf grows.
  */
-const FAMILY_BOARD_SHARE = 0.55;
+const FAMILY_BOARD_SHARE = 0.62;
+
+/**
+ * ROUND 13 (REVIEW_AA §5.8) — ONE CAP WAS THE WRONG SHAPE OF RULE.
+ *
+ * A single share applied to every family reads as even-handed and is not,
+ * because the families are not interchangeable. The review's complaint was
+ * that *"by week two the player is running a checklist"* — and a checklist
+ * needs two things: a short list of tricks, and the confidence that tonight's
+ * board is on it. Measured before this round: `Contains` on 59.6% of boards
+ * and `Rhymes with` on 53.8%, so two entries covered most evenings and the
+ * checklist worked. The remaining six letter families sat at 4–20% and were
+ * decoration.
+ *
+ * So the cap that matters is the one on the LETTER MECHANICS, individually,
+ * and it is severe: no single one of them may be the trick on more than a
+ * third of nights. Under it there is no such thing as "the rhyme group" —
+ * two nights in three there isn't one — and a checklist you are wrong about
+ * two thirds of the time is not a checklist, it is a guess.
+ *
+ * `compound` is deliberately held to a looser number and the reason is
+ * arithmetic, not affection. AAA 2.9 [BEAT] puts a hard floor of two
+ * tiles-solvable categories on every board; the round-13 cap allows at most
+ * one letter puzzle below tier 3; so the second of those two slots is a
+ * compound frame on nearly every board it can be, and driving the compound
+ * share down would mean either lowering a [BEAT] floor or putting the second
+ * letter puzzle back. Between "most boards carry one of ninety distinct
+ * compound frames" and "most boards carry two letter puzzles", the first is
+ * plainly the better evening — and the compound family is the one AAA 2.9's
+ * own round-16 ruling calls read rather than decoded.
+ */
+const LETTER_FAMILY_BOARD_SHARE = 0.66;
 
 /** How many boards each mechanic family may appear on. */
 let FAMILY_BOARD_CAP = Number.POSITIVE_INFINITY;
+let LETTER_FAMILY_CAP = Number.POSITIVE_INFINITY;
+
+function familyCapFor(f: Family): number {
+  return LETTER_MECHANIC_FAMILY.includes(f) ? LETTER_FAMILY_CAP : FAMILY_BOARD_CAP;
+}
 
 /** Boards (not groups) that have shipped each family. */
 const familyBoards = new Map<Family, number>();
@@ -705,6 +966,9 @@ const HIDDEN_TOKENS: Record<string, readonly string[]> = {
   'Hidden Vegetables': ['PEA', 'CORN', 'BEET', 'KALE', 'LEEK', 'CHARD', 'BEAN', 'CHIVE', 'YAM', 'OKRA', 'ONION', 'TURNIP', 'CRESS'],
   'Hidden Insects': ['ANT', 'BEE', 'MOTH', 'WASP', 'GNAT', 'TICK', 'MIDGE', 'FLEA', 'APHID'],
   'Hidden Weather': ['RAIN', 'SNOW', 'HAIL', 'MIST', 'FOG', 'GALE', 'SUN', 'ICE', 'DEW', 'WIND', 'STORM', 'SLEET', 'FROST'],
+  // ROUND 13 — two more things to conceal (see the variety batch above).
+  'Hidden Drinks': ['ALE', 'TEA', 'GIN', 'RUM', 'PORT', 'WINE', 'MEAD', 'COLA', 'CIDER', 'STOUT', 'MOCHA'],
+  'Hidden Tools': ['AWL', 'FILE', 'PLANE', 'RASP', 'AXE', 'VICE', 'SAW', 'DRILL', 'CHISEL', 'MALLET', 'LATHE'],
 };
 
 /**
@@ -773,7 +1037,11 @@ function hiddenGroupProblems(theme: string, words: readonly string[]): string[] 
  */
 function assertBankIsClean(): void {
   const problems: string[] = [];
-  for (const g of WORDPLAY_BANK) {
+  // ROUND 13 — the semantic bank is read here too. It is shipped content the
+  // moment it is written down, and a pool nothing lints is exactly how MIDGET
+  // reached a tile in round 12.
+  const ALL_BANKS = [...WORDPLAY_BANK, ...SEMANTIC_BANK];
+  for (const g of ALL_BANKS) {
     for (const w of g.words) {
       if (!toneOk(w.toLowerCase())) problems.push(`bank "${g.theme}": ${w} fails the tone gate`);
       if (!/^[A-Z]+$/.test(w)) problems.push(`bank "${g.theme}": ${w} is not plain caps`);
@@ -781,7 +1049,16 @@ function assertBankIsClean(): void {
     if (new Set(g.words).size !== g.words.length) problems.push(`bank "${g.theme}" repeats a word`);
     problems.push(...hiddenGroupProblems(g.theme, g.words).map((p) => `bank ${p}`));
   }
-  const themes = WORDPLAY_BANK.map((g) => canon(g.theme));
+  // ROUND 13 — and a plain-English pool must actually type as plain English.
+  // `Things That Can Be Flat` would silently become `FLAT ___` at load and
+  // arrive here as wordplay, which would let the eviction "lower" a board's
+  // mechanic count without lowering it.
+  for (const g of SEMANTIC_BANK) {
+    if (typeOfTheme(g.theme) !== 'semantic') {
+      problems.push(`semantic bank "${g.theme}" types as ${typeOfTheme(g.theme)}`);
+    }
+  }
+  const themes = ALL_BANKS.map((g) => canon(g.theme));
   if (new Set(themes).size !== themes.length) problems.push('bank has a duplicate theme');
   if (problems.length > 0) {
     console.error(problems.join('\n'));
@@ -791,6 +1068,22 @@ function assertBankIsClean(): void {
 
 /** Bank groups whose thread is subtle (the tier-3 supply). */
 const SUBTLE_BANK = WORDPLAY_BANK.filter((b) => isSubtleTheme(b.theme));
+
+/**
+ * ROUND 13 — the compound shelf, which is what an over-cap letter puzzle is
+ * replaced BY. It is wordplay under 2.9 (solvable from the tiles, no outside
+ * knowledge) and plain English under the way-in floor, which is exactly the
+ * combination that lets the composer meet the wordplay floor without asking
+ * the player to decode a third thing tonight.
+ */
+const COMPOUND_BANK = WORDPLAY_BANK.filter((b) => familyOf(b.theme) === 'compound');
+
+/**
+ * ROUND 13 — the two banks, in the order the eviction prefers them: a compound
+ * keeps the board's wordplay count intact, a plain category lowers it. Both are
+ * better outcomes than a second letter puzzle.
+ */
+const WAY_IN_BANK: BankGroup[] = [...COMPOUND_BANK, ...SEMANTIC_BANK];
 
 /** Canonical key for a 4-word set — order-independent, the unit of repetition. */
 function setKey(words: readonly string[]): string {
@@ -811,6 +1104,21 @@ const usedSets = new Set<string>();
 const DRAW_PATTERNS: readonly (readonly number[])[] = [
   [0, 1, 2, 3], [4, 5, 6, 7], [0, 2, 4, 6], [1, 3, 5, 7],
   [0, 1, 6, 7], [2, 3, 4, 5], [0, 3, 5, 6], [1, 2, 4, 7],
+  /**
+   * ROUND 13 — patterns for the pools that CANNOT be eight words wide.
+   *
+   * Every pattern above reaches index 4 or beyond except the first, so a
+   * five-word pool deals exactly one hand and a four-word pool deals one. That
+   * is fine for `Contains "X"`, where the language will supply as many carriers
+   * as you like, and it is the binding constraint on the two families the
+   * shelf is thinnest in: a set of mutual anagrams is as big as English says it
+   * is (SPRITE has five, TRIANGLE has four, most have two), and homophone
+   * groups are the same. REVIEW_AA §5.8 measured anagram as the trick on 4.5%
+   * of boards and homophone on 5.8% — those numbers were a pattern table, not
+   * an editorial choice. These four reach no further than index 6, so a
+   * five-word pool now deals three hands and a seven-word pool deals seven.
+   */
+  [1, 2, 3, 4], [0, 1, 3, 4], [0, 2, 3, 5], [1, 2, 4, 6],
 ];
 
 function bankDraws(group: BankGroup): BankGroup[] {
@@ -918,6 +1226,26 @@ interface RoomTierSpec {
    * English; it belongs on this side of the line.
    */
   minPlain: number;
+  /**
+   * ROUND 13 (REVIEW_AA §5.8) — HOW MANY LETTER PUZZLES ONE BOARD MAY BE.
+   *
+   * The review's live board carried two `Contains` groups at different colour
+   * bands, and 78.7% of the shelf ran two or more letter mechanics. That is
+   * the checklist: once a board is half letter-puzzle, the method that solves
+   * one group solves the next, and the evening collapses into "find the
+   * substring group, find the rhyme group, split the remainder."
+   *
+   * The number is 1 at the bottom of the house and 2 at the top, and it is 2
+   * at the top for a reason rather than by compromise: `minSubtle` is 2 there
+   * (the round-4 owner directive — tier-3 categories must be heard or
+   * unscrambled, not read), and every subtle category is by definition a
+   * letter mechanic. So tier 3's two letter puzzles ARE its two subtle
+   * categories, and `validate` additionally requires them to be two DIFFERENT
+   * families: a board may be a rhyme and an anagram, never two rhymes.
+   *
+   * A compound frame does not count against this. See `LETTER_MECHANIC_FAMILY`.
+   */
+  maxLetterMechanics: number;
   /** The herring budget: how many planted traps, and how tight each must pull. */
   minHerrings: number;
   maxHerrings: number;
@@ -933,13 +1261,19 @@ const TIER_SPECS: Record<Tier, RoomTierSpec> = {
   // them. A tier-1 board still ships at most ONE loose trap — the near-clean
   // board is the point — but it must ship that one, and pass 2 drops any board
   // the planter cannot supply rather than shipping a room that can only say no.
-  1: { maxTrivia: 1, minWordplay: 2, minSubtle: 0, minPlain: 2, minHerrings: 1, maxHerrings: 1, minHerringScore: 1 },
-  2: { maxTrivia: 1, minWordplay: 2, minSubtle: 1, minPlain: 1, minHerrings: 1, maxHerrings: 2, minHerringScore: HERRING_TIGHT },
-  3: { maxTrivia: 0, minWordplay: 2, minSubtle: 2, minPlain: 1, minHerrings: 2, maxHerrings: 3, minHerringScore: HERRING_TIGHT },
+  // ROUND 13 — tier 1's subtle floor moves 0 → 1, and it is the FINISH FLOOR
+  // wearing a name the generator already had. A board needs one category that
+  // is a real transformation or its purple group is only the leftovers, which
+  // is Koster's fourth complaint verbatim ("the hardest group solves itself").
+  // Measured on the round-12 shelf, 11 boards had no group scoring ≥5 at all;
+  // every one of them was a tier-1 board with `minSubtle: 0`.
+  1: { maxTrivia: 1, minWordplay: 2, minSubtle: 1, minPlain: 2, maxLetterMechanics: 1, minHerrings: 1, maxHerrings: 1, minHerringScore: 1 },
+  2: { maxTrivia: 1, minWordplay: 2, minSubtle: 1, minPlain: 1, maxLetterMechanics: 2, minHerrings: 1, maxHerrings: 2, minHerringScore: HERRING_TIGHT },
+  3: { maxTrivia: 0, minWordplay: 2, minSubtle: 2, minPlain: 1, maxLetterMechanics: 3, minHerrings: 2, maxHerrings: 3, minHerringScore: HERRING_TIGHT },
 };
 
 const here = dirname(fileURLToPath(import.meta.url));
-const boards = (JSON.parse(
+const authoredBoards = (JSON.parse(
   readFileSync(join(here, 'authored', 'word-web-boards.json'), 'utf8'),
 ) as RawBoard[]).map((b) => ({
   ...b,
@@ -948,6 +1282,189 @@ const boards = (JSON.parse(
   // solver and the shipped JSON — sees the same string.
   groups: b.groups.map((g) => ({ ...g, theme: normaliseTheme(g.theme) })),
 }));
+
+/**
+ * ROUND 13 (REVIEW_AA §5.8) — COMPOSED BOARDS, AND WHY THEY ARE NOT A CHEAT.
+ *
+ * The round-13 rules — one letter puzzle below tier 3, never two of the same
+ * family, a way in, a real finish, a colour ladder that has to climb — cost
+ * the shelf 156 boards down to 135. That is the correct behaviour of every one
+ * of those rules and it is still a content regression: the round-10 note
+ * records that at 51 boards a player who visits the Library nightly exhausts
+ * the bottom of the house inside a fortnight, and the answer to "the shelf is
+ * repetitive" cannot be "here is less of it".
+ *
+ * So the shortfall is made up from the banks. The important thing about this,
+ * and the reason it is not the "mechanically novel but boring board" the brief
+ * warned against: EVERY CATEGORY ON A COMPOSED BOARD IS HAND-AUTHORED. What
+ * the machine chooses is the COMBINATION — and that is exactly what it already
+ * chose for two thirds of the shelf, since `replaceGroups` has been swapping
+ * bank categories into authored boards for nine rounds. A composed board is an
+ * authored board all four of whose slots happened to need filling.
+ *
+ * It is composed to the shape the round-13 rules want rather than patched into
+ * it: two plain categories she can enter through, one compound frame, one
+ * subtle mechanic to finish on. And it passes through the identical pipeline —
+ * tier composition, the red-herring solver, the trap planter, the decoy
+ * solver, the colour ladder, `shipsHere` and `validate`. The one difference is
+ * at the top of pass 2: an unintended complete grouping in an AUTHORED board
+ * is a build failure, because a human wrote it and should fix it; in a
+ * composed board it is simply a combination that did not work, and the board
+ * leaves without comment.
+ */
+const COMPOSED_PREFIX = 'web-s';
+
+/**
+ * ROUND 13 — A CHEAP STAND-IN FOR THE HERRING SOLVER, USED ONLY WHILE
+ * COMPOSING.
+ *
+ * The first composed batch was built from pools chosen to be as far apart as
+ * possible, which is right for uniqueness and wrong for everything else: a
+ * board whose four categories share nothing has no fifth-member pulls, so the
+ * real solver found no tight traps, `meetsTier` demoted the whole batch to
+ * tier 1, and the shelf came out 70/40/49 with the middle of the house
+ * starved. A board wants its groups to ALMOST collide — that is what a red
+ * herring is.
+ *
+ * The real measurement (`findTraps`) needs the phonetic dictionary, which is
+ * loaded further down this file, so it cannot run here. This counts the two
+ * collisions that need nothing but the letters — a shared three-letter edge,
+ * and one word carrying another's three-letter edge inside it — which is
+ * enough to STEER the choice. The solver still decides what actually ships;
+ * this only decides which candidate board it gets to look at.
+ */
+function roughTraps(groups: readonly { words: readonly string[] }[]): number {
+  const edges = (w: string): string[] => (w.length < 4 ? [] : [w.slice(0, 3), w.slice(-3)]);
+  let n = 0;
+  for (let i = 0; i < groups.length; i += 1) {
+    for (let j = i + 1; j < groups.length; j += 1) {
+      for (const a of groups[i]!.words) {
+        for (const b of groups[j]!.words) {
+          if (edges(a).some((e) => edges(b).includes(e))) { n += 2; continue; }
+          if (edges(a).some((e) => b.includes(e)) || edges(b).some((e) => a.includes(e))) n += 1;
+        }
+      }
+    }
+  }
+  return n;
+}
+
+function synthesiseBoards(target: number, rng: () => number): RawBoard[] {
+  const out: RawBoard[] = [];
+  const spentSets = new Set<string>(authoredBoards.flatMap((b) => b.groups.map((g) => setKey(g.words))));
+  const spentThemes = new Map<string, number>();
+  for (const b of authoredBoards) {
+    for (const g of b.groups) spentThemes.set(canon(g.theme), (spentThemes.get(canon(g.theme)) ?? 0) + 1);
+  }
+  const hands = (pool: BankGroup[]) => pool.flatMap(bankDraws);
+  const plain = hands(SEMANTIC_BANK);
+  const compound = hands(COMPOUND_BANK);
+  const subtle = hands(SUBTLE_BANK);
+
+  const affordable = (g: BankGroup) =>
+    (spentThemes.get(canon(g.theme)) ?? 0) < BANK_REUSE_CAP && !spentSets.has(setKey(g.words));
+  const take = (g: BankGroup) => {
+    spentThemes.set(canon(g.theme), (spentThemes.get(canon(g.theme)) ?? 0) + 1);
+    spentSets.add(setKey(g.words));
+  };
+
+  // Rotate through the subtle families so the composed batch does not become
+  // its own monoculture — the exact failure this whole round is about.
+  const subtleByFamily = new Map<Family, BankGroup[]>();
+  for (const g of subtle) {
+    const f = familyOf(g.theme);
+    subtleByFamily.set(f, [...(subtleByFamily.get(f) ?? []), g]);
+  }
+  const families = [...subtleByFamily.keys()].sort();
+  /**
+   * ROUND 13 — a composed board never aims at tier 1, and the reason is the
+   * trap planter. Tier 1 keeps `minPlain: 2`, so on a board of two plain
+   * categories the planter has nothing it is allowed to swap, and 54 of the
+   * first composed batch left with "0 traps, no intruder" — a board on which
+   * AAA 2.10's acknowledged herring can never fire. Aimed at tier 2 the
+   * planter has one plain slot to spend and can buy the board a thread to
+   * talk about; pass 2 then demotes it to tier 1 anyway if that is where its
+   * measured traps put it, which is the correct way round.
+   */
+  const DIFFICULTIES: AuthoredDifficulty[] = ['medium', 'medium', 'hard'];
+
+  for (let i = 0; out.length < target && i < target * 12; i += 1) {
+    const fam = families[i % families.length]!;
+    const sub = (subtleByFamily.get(fam) ?? []).filter(affordable);
+    if (sub.length === 0) continue;
+    const s = pick(createRngFrom(rng), sub);
+    const used = new Set(s.words);
+    const fits = (g: BankGroup) => affordable(g) && g.words.every((w) => !used.has(w));
+
+    // Among the hands that legally fit, take the one that pulls hardest
+    // against what is already on the board (see `roughTraps`). Deterministic:
+    // ties break on the theme label.
+    const trappiest = (options: BankGroup[], sofar: { words: readonly string[] }[]): BankGroup =>
+      options
+        .map((g) => ({ g, score: roughTraps([...sofar, g]) }))
+        .sort((a, b) => b.score - a.score || (a.g.theme < b.g.theme ? -1 : 1))[0]!.g;
+
+    const cOptions = compound.filter(fits);
+    if (cOptions.length === 0) continue;
+    const c = trappiest(cOptions, [s]);
+    for (const w of c.words) used.add(w);
+
+    const p1Options = plain.filter(fits);
+    if (p1Options.length === 0) continue;
+    const p1 = trappiest(p1Options, [s, c]);
+    for (const w of p1.words) used.add(w);
+
+    /**
+     * ROUND 13 — EVERY THIRD COMPOSED BOARD IS BUILT FOR THE TOP OF THE HOUSE.
+     *
+     * The first version of this composed one shape — two plain categories, a
+     * compound and one subtle mechanic — which is a tier-1/2 board by
+     * construction, because tier 3 owes TWO subtle categories. So the composed
+     * batch could not reach the shelf that needed it most and tier 3 stayed at
+     * 34 boards against a floor of 45. The second subtle group is drawn from a
+     * DIFFERENT family, which is the rule the top of the house has to keep
+     * anyway (`validate`'s twin check) and is also the whole point: a tier-3
+     * board is two different transformations, never the same one twice.
+     */
+    const wantsTop = i % 2 === 1;
+    const s2Options = wantsTop
+      ? subtle.filter((g) => fits(g) && familyOf(g.theme) !== fam)
+      : [];
+    const s2 = s2Options.length > 0 ? trappiest(s2Options, [s, c, p1]) : null;
+    if (s2) for (const w of s2.words) used.add(w);
+
+    const p2Options = plain.filter((g) => fits(g) && canon(g.theme) !== canon(p1.theme));
+    if (!s2 && p2Options.length === 0) continue;
+    const p2 = s2 ?? trappiest(p2Options, [s, c, p1]);
+
+    for (const g of [s, c, p1, p2]) take(g);
+    // The colours here are a placeholder — pass 2 assigns the real ones from
+    // `lateralOf` — but they must be four distinct slots for the loaders and
+    // the report to read the board at all.
+    out.push({
+      id: `${COMPOSED_PREFIX}${String(out.length + 1).padStart(2, '0')}`,
+      // A two-subtle board asks for the top shelf; pass 2 demotes it if its
+      // measured traps do not earn it.
+      difficulty: s2 ? 'hard' : DIFFICULTIES[out.length % DIFFICULTIES.length]!,
+      groups: [
+        { theme: p1.theme, tier: 'yellow', words: [...p1.words] },
+        { theme: p2.theme, tier: 'green', words: [...p2.words] },
+        { theme: c.theme, tier: 'blue', words: [...c.words] },
+        { theme: s.theme, tier: 'purple', words: [...s.words] },
+      ],
+    });
+  }
+  return out;
+}
+
+/** The shelf size tests/content.test.ts holds the pool to. */
+const POOL_FLOOR = 150;
+
+const COMPOSED_TARGET = 180;
+const boards: RawBoard[] = [
+  ...authoredBoards,
+  ...synthesiseBoards(COMPOSED_TARGET, createRng(SEED + 991)),
+];
 
 /**
  * ROUND 14 — the English lexicon, for the two jobs the corpus cannot do:
@@ -1074,12 +1591,33 @@ function replaceGroups(
     const f = familyOf(theme);
     if (!WALLPAPER_FAMILIES.includes(f)) return true;
     if (boardFamilies().has(f)) return true;
-    return (familyBoards.get(f) ?? 0) < FAMILY_BOARD_CAP;
+    return (familyBoards.get(f) ?? 0) < familyCapFor(f);
   };
   const familyLoad = (theme: string): number => {
     const f = familyOf(theme);
     if (boardFamilies().has(f)) return -1;   // already on this board: free
     return familyBoards.get(f) ?? 0;
+  };
+
+  /**
+   * ROUND 13 (REVIEW_AA §5.8) — would taking this hand make the board another
+   * letter puzzle too many? Two separate refusals, and they are different
+   * claims:
+   *
+   *   - the per-board CAP (`maxLetterMechanics`): a tier-1 board is allowed to
+   *     ask her to decode exactly once;
+   *   - and, at tier 3 where the cap is 2, the two may not be the same family.
+   *     `familyAdmissible` deliberately lets a family the board already
+   *     carries land again for free — that is right for the pool-wide
+   *     wallpaper budget it serves and wrong here, and it is precisely how the
+   *     review's first live board came to hold `Contains "OWN"` and
+   *     `Contains "RAM"` at two different colours.
+   */
+  const letterOk = (theme: string, victim: RawGroup): boolean => {
+    if (!isLetterMechanicTheme(theme)) return true;
+    const rest = groups.filter((g) => g !== victim);
+    if (letterMechanicCount(rest) + 1 > spec.maxLetterMechanics) return false;
+    return !rest.some((g) => familyOf(g.theme) === familyOf(theme));
   };
 
   const pickBankGroup = (from: BankGroup[], victim: RawGroup): BankGroup | null => {
@@ -1093,6 +1631,7 @@ function replaceGroups(
         !themes.has(b.theme) &&
         !usedSets.has(setKey(b.words)) &&
         familyAdmissible(b.theme) &&
+        letterOk(b.theme, victim) &&
         b.words.every((w) => !words.has(w)) &&
         boardFailures(
           groups.map((g) => (g === victim ? { theme: b.theme, tier: g.tier, words: b.words } : g)),
@@ -1154,7 +1693,12 @@ function replaceGroups(
     const bank = (isSubtleTheme(victim.theme) ? pickBankGroup(SUBTLE_BANK, victim) : null)
       ?? (wordplayOk && (!isSubtleTheme(victim.theme) || subtleSpare > 0)
         ? pickBankGroup(WORDPLAY_BANK, victim)
-        : null);
+        : null)
+      // ROUND 13 — like for like, at last. An over-used PLAIN category on a
+      // board that cannot spare a plain slot used to refuse the whole board
+      // ("no replacement for over-cap theme"), which was the single largest
+      // cause of dropped boards, because the bank had nothing plain in it.
+      ?? (typeOfTheme(victim.theme) !== 'wordplay' ? pickBankGroup(SEMANTIC_BANK, victim) : null);
     if (!bank) { lastRefusal = `no replacement for over-cap theme "${victim.theme}"`; return null; }
     swapIn(victim, bank);
   }
@@ -1168,7 +1712,7 @@ function replaceGroups(
    */
   const spentFamilies = new Set(
     groups.map((g) => familyOf(g.theme))
-      .filter((f) => WALLPAPER_FAMILIES.includes(f) && (familyBoards.get(f) ?? 0) >= FAMILY_BOARD_CAP),
+      .filter((f) => WALLPAPER_FAMILIES.includes(f) && (familyBoards.get(f) ?? 0) >= familyCapFor(f)),
   );
   let famGuard = 0;
   for (;;) {
@@ -1189,6 +1733,57 @@ function replaceGroups(
     // budget is a reason to prefer variety, never a reason to ship a hole.
     if (!bank) break;
     swapIn(victim, bank);
+  }
+
+  /**
+   * ROUND 13 (REVIEW_AA §5.8) — THE BOARD IS NOT ALLOWED TO BE TWO LETTER
+   * PUZZLES, AND THE AUTHORED FILE IS FULL OF BOARDS THAT ARE.
+   *
+   * This is the eviction the whole finding turns on, so it is worth being
+   * exact about what it evicts INTO. The bank is entirely wordplay, but it is
+   * not entirely letter mechanics: roughly a third of it is compound frames
+   * (`___ SMITH`, `Can Follow "BOOK"`, `___ CAKE`), and a compound is the one
+   * replacement that satisfies 2.9's wordplay floor while REDUCING the number
+   * of times the evening asks her to decode something. So an over-cap letter
+   * puzzle gives way to a compound, never to another letter puzzle, and if no
+   * compound will land the authored category stays and pass 2's tier gate
+   * decides whether the board ships at all.
+   *
+   * The victim is chosen worst-first among the letter mechanics, by the same
+   * quality order the rest of the composer uses, and a group the tier needs
+   * for its SUBTLE floor is never offered: at tier 3 the two letter puzzles
+   * ARE the two subtle categories, and eating one to satisfy a cap that
+   * permits two would be the composer arguing with itself.
+   */
+  let letterGuard = 0;
+  for (;;) {
+    const over = letterMechanicCount(groups) - spec.maxLetterMechanics;
+    const twins = groups.filter((g) => isLetterMechanicTheme(g.theme))
+      .filter((g, _i, arr) => arr.filter((x) => familyOf(x.theme) === familyOf(g.theme)).length > 1);
+    if (over <= 0 && twins.length === 0) break;
+    if (letterGuard++ >= 4) break;
+    const subtleSpare = subtleCount() - spec.minSubtle;
+    // Prefer evicting one of a duplicated pair (two rhymes on one board is
+    // worse than one rhyme plus one anagram), then the lowest-quality letter
+    // mechanic the board can spare.
+    const candidates = (twins.length > 0 ? twins : groups.filter((g) => isLetterMechanicTheme(g.theme)))
+      .filter((g) => !isSubtleTheme(g.theme) || subtleSpare > 0)
+      .sort((a, b) => qualityOf(a.theme) - qualityOf(b.theme)
+        || (a.theme < b.theme ? -1 : 1));
+    // A plain category may only land while the board can still spare the
+    // wordplay it costs (2.9's floor of two is a [BEAT] and is never lowered
+    // to make a variety budget close).
+    const wordplaySpare = count('wordplay') - spec.minWordplay;
+    const pool = wordplaySpare > 0 ? WAY_IN_BANK : COMPOUND_BANK;
+    let swapped = false;
+    for (const victim of candidates) {
+      const bank = pickBankGroup(pool, victim);
+      if (!bank) continue;
+      swapIn(victim, bank);
+      swapped = true;
+      break;
+    }
+    if (!swapped) break;
   }
 
   // Enforce this tier's composition: trivia cap, wordplay floor, subtle floor.
@@ -1214,8 +1809,27 @@ function replaceGroups(
     }
     if (guard++ >= 8) { lastRefusal = 'composition churn'; return null; }
 
-    const victim = replacementOrder(wordplay < spec.minWordplay)
-      .find((g) => !isSubtleTheme(g.theme));
+    const order = replacementOrder(wordplay < spec.minWordplay);
+    /**
+     * ROUND 13 — WHEN THE BOARD OWES A SUBTLE CATEGORY AND IS ALREADY AT ITS
+     * LETTER-MECHANIC CAP, THE VICTIM MUST BE A LETTER MECHANIC.
+     *
+     * Every subtle category is a letter mechanic, so on a board holding (say)
+     * one `Contains "TEN"` at tier 2's cap of one, adding the subtle group the
+     * tier owes is refused by `letterOk` no matter which group gives way — and
+     * `replacementOrder` offers the semantics first, so the composer ate a
+     * plain category, tried again, was refused again, and finally gave up with
+     * "the bank has no subtle hand left in an under-used family". That was 21
+     * of the 107-board build's drops and the diagnosis was a lie: the bank was
+     * full, the swap was simply pointed at the wrong group. Trading the blunt
+     * letter puzzle for the subtle one keeps the count flat and is what the
+     * tier was asking for in the first place.
+     */
+    const atLetterCap = letterMechanicCount(groups) >= spec.maxLetterMechanics;
+    const victim = (subtle < spec.minSubtle && atLetterCap
+      ? order.find((g) => isLetterMechanicTheme(g.theme) && !isSubtleTheme(g.theme))
+      : undefined)
+      ?? order.find((g) => !isSubtleTheme(g.theme));
     if (!victim) {
       lastRefusal = `no expendable category left (needs ${spec.minWordplay}w/${spec.minSubtle}subtle/${spec.minPlain}plain, has ${wordplay}w/${subtle}subtle/${plain}plain)`;
       return null;
@@ -1240,6 +1854,7 @@ function replaceGroups(
     return types.filter((t) => t === 'trivia').length <= spec.maxTrivia
       && types.filter((t) => t === 'wordplay').length >= spec.minWordplay
       && plainCount(gs) >= spec.minPlain
+      && letterMechanicCount(gs) <= spec.maxLetterMechanics
       && gs.filter((g) => isSubtleTheme(g.theme)).length >= spec.minSubtle;
   };
 
@@ -1661,7 +2276,13 @@ function anchorTraps(groups: readonly RawGroup[]): Trap[] {
       words: [...g.words, a.word],
       intruders: [a.word],
       relation: a.kind === 'contains' ? 'hidden-string' : a.kind === 'rhyme' ? 'rhyme' : 'shared-affix',
-      ...(a.kind === 'contains' ? { detail: a.word } : {}),
+      // ROUND 13 — every anchor trap points at its anchor, not only the
+      // `Contains` ones. An `___ WORD` label with the tile WORD on the board,
+      // or `Anagrams of "LEAPS"` beside LEAPS, emitted `shared-affix` with
+      // nothing to name, and 2.10's whole claim over Connections is that a
+      // wrong guess buys a SENTENCE. The word the label is built on is exactly
+      // the thing to say out loud.
+      detail: a.word,
       score: 4,
     });
   }
@@ -2027,9 +2648,29 @@ function reAnchor(theme: string, group: readonly string[], onBoard: ReadonlySet<
   // function words at the very top of the frequency list: `Rhymes with "FROM"`
   // and `Rhymes with "THAT"` are technically true and read like a typo.
   const contentful = candidates.filter((w) => w.length >= 4 && LEXICON.get(w)! > 800);
-  const chosen = (contentful.length > 0 ? contentful : candidates)
+  const relabel = (w: string): string =>
+    theme.replace(/[“"][A-Z]+[”"]/, (q) => q[0]! + w + q[q.length - 1]!);
+  /**
+   * ROUND 13 — RE-ANCHORING MAY NOT CREATE WALLPAPER.
+   *
+   * `reAnchor` runs after the anti-wallpaper ledger is settled, so it was free
+   * to spend a theme string the pool had already spent: three boards carrying
+   * `Rhymes with "BLUE"` all re-anchored to the same most-familiar rhyme and
+   * shipped as a fourth `Rhymes with "TRUE"`, over `BANK_REUSE_CAP`, and the
+   * build failed on a rule none of the three boards had broken. Frequency
+   * still decides, but only among the labels the pool can still afford.
+   */
+  const pool = contentful.length > 0 ? contentful : candidates;
+  const affordable = pool.filter((w) => (bankUse.get(canon(relabel(w))) ?? 0) < BANK_REUSE_CAP);
+  const chosen = (affordable.length > 0 ? affordable : pool)
     .sort((x, y) => (LEXICON.get(x)! - LEXICON.get(y)!) || (x < y ? -1 : 1))[0]!;
-  return theme.replace(/[“"][A-Z]+[”"]/, (q) => q[0]! + chosen + q[q.length - 1]!);
+  // The ledger is charged for the new label and refunded for the old one, so a
+  // later re-anchor on another board sees the truth.
+  const before = canon(theme);
+  bankUse.set(before, Math.max(0, (bankUse.get(before) ?? 1) - 1));
+  const after = canon(relabel(chosen));
+  bankUse.set(after, (bankUse.get(after) ?? 0) + 1);
+  return relabel(chosen);
 }
 
 // ---------------------------------------------------------------------------
@@ -2200,6 +2841,7 @@ function meetsTier(board: RawBoard, traps: readonly Trap[], tier: Tier): boolean
   if (types.filter((t) => t === 'trivia').length > spec.maxTrivia) return false;
   if (types.filter((t) => t === 'wordplay').length < spec.minWordplay) return false;
   if (plainCount(board.groups) < spec.minPlain) return false;
+  if (letterMechanicCount(board.groups) > spec.maxLetterMechanics) return false;
   if (board.groups.filter((g) => isSubtleTheme(g.theme)).length < spec.minSubtle) return false;
   // Round 12: THREADS, not intruder words — see `chooseTraps`. A board that
   // cannot reach its tier's floor in distinct traps demotes to the tier below
@@ -2274,7 +2916,7 @@ function shippedHerrings(
   tier: Tier,
 ): { ship: string[]; named: OutHerring[] } {
   const spec = TIER_SPECS[tier];
-  const eligible = herrings.filter((h) => h.score >= spec.minHerringScore);
+  const scored = herrings.filter((h) => h.score >= spec.minHerringScore);
   /**
    * ROUND 13 — the slot a word's group is HEADING FOR, not the one it wears.
    *
@@ -2288,6 +2930,35 @@ function shippedHerrings(
   const provisional = chooseColours(board.groups, EMPTY);
   const slotOf = new Map<string, Slot>();
   board.groups.forEach((g, i) => { for (const w of g.words) slotOf.set(w, provisional[i]!); });
+
+  /**
+   * ROUND 13 (REVIEW_AA §5.8, AAA 2.12) — THE BOARD NEVER TRAPS ITS OWN WAY IN.
+   *
+   * A planted intruder is a word that belongs to one group and advertises
+   * another, and it raises the difficulty of the group it belongs to — which
+   * is right, and is why `lateralOf` counts it. It also means that planting
+   * one in the easiest category makes the easiest category not easy: measured
+   * on the first ladder-assigned build, 74 of ~250 traps homed in the group
+   * that would wear yellow, and every one of them either pushed that group out
+   * of yellow's band or flattened the board's climb below three.
+   *
+   * So the gimme is off the table as a trap host. This is a fairness gain in
+   * its own right and not merely a tidying: 2.12 asks that the easiest group be
+   * found first on ≥70% of boards, and a trapped gimme is precisely the board
+   * where it is not. Connections plants in easy groups freely and it is exactly
+   * why its yellow sometimes isn't yellow.
+   *
+   * The fallback is deliberate. If a board's ONLY tight threads live in its
+   * gimme, refusing them would leave it with nothing to say on a wrong guess —
+   * AAA 2.10's channel dead — and a board that cannot talk is worse than a
+   * board with a hard yellow. It takes the trap, and the ladder check then
+   * decides whether the result still describes itself honestly.
+   */
+  const clean = scored.filter((h) => slotOf.get(h.word) !== 'yellow');
+  const eligible = trapCapacity(traps, spec.minHerringScore) > 0
+    && chooseTraps(traps, clean, spec.maxHerrings, () => 0).length >= spec.minHerrings
+    ? clean
+    : scored;
 
   // Shares, not raw counts: there are four colour slots and five relations but
   // they fill at wildly different rates, and summing the raw tallies let the
@@ -2386,7 +3057,17 @@ function main() {
   const rng = createRng(SEED);
   // The family budget is a SHARE; turn it into a board count once, against the
   // corpus that is about to be composed, so it cannot loosen as the shelf grows.
-  FAMILY_BOARD_CAP = Math.round(boards.length * FAMILY_BOARD_SHARE);
+  /**
+   * ROUND 13 — the shares are shares OF THE SHELF, not of the source corpus.
+   * They were measured against `boards.length`, which was the same number
+   * until composed boards started making up the shortfall; from that moment a
+   * corpus of 237 bought a 45%-of-boards family a licence to appear on 107 of
+   * a 154-board shelf, and the cap silently stopped binding. `POOL_FLOOR` is
+   * the shelf size the content tests hold the pool to, so a share of it is a
+   * share of what the player actually meets.
+   */
+  FAMILY_BOARD_CAP = Math.round(POOL_FLOOR * FAMILY_BOARD_SHARE);
+  LETTER_FAMILY_CAP = Math.round(POOL_FLOOR * LETTER_FAMILY_BOARD_SHARE);
 
   // Pass 1: compose each board for its INTENDED tier (trivia cap, wordplay
   // floor, subtlety floor). The authored difficulty is the intent; pass 2
@@ -2535,7 +3216,16 @@ function main() {
 
   // Pass 2: herring solver → tier confirmation (demote, never fake) → layout.
   const allFailures: string[] = [];
-  const solved = anchored.map((b) => ({ board: b, ...solveBoard(b, anchored) }));
+  const solvedAll = anchored.map((b) => ({ board: b, ...solveBoard(b, anchored) }));
+  /**
+   * ROUND 13 — a composed board that collides simply leaves; an AUTHORED board
+   * that collides is a build failure, because a person wrote it and a person
+   * should fix it. Same solver, same standard, different remedy.
+   */
+  const collided = solvedAll.filter(
+    (s) => s.failures.length > 0 && s.board.id.startsWith(COMPOSED_PREFIX),
+  ).map((s) => s.board.id);
+  const solved = solvedAll.filter((s) => !collided.includes(s.board.id));
   for (const s of solved) for (const f of s.failures) allFailures.push(`${s.board.id}: ${f}`);
   if (allFailures.length > 0) {
     console.error(allFailures.join('\n'));
@@ -2592,11 +3282,49 @@ function main() {
     const types = b.groups.map((g) => g.type);
     // Round 12: the floor is NAMED THREADS — the number of different sentences
     // the room can say on a wrong guess — not the length of the intruder list.
+    /**
+     * ROUND 13 (REVIEW_AA §5.8) — A BOARD THAT CANNOT DESCRIBE ITS OWN
+     * DIFFICULTY DOES NOT SHIP.
+     *
+     * The colour ladder could have been a build failure — it is one in
+     * `validate`, as a backstop against hand-edited JSON — but a hard failure
+     * is the wrong instrument here, for the same reason the tier gates are
+     * demotions rather than throws: "this board's four categories do not form
+     * a climb" is an editorial fact about that board, not a bug in the
+     * generator. Three shapes leave here, and each is a real defect the shelf
+     * used to ship:
+     *
+     *   - NO WAY IN — every category is a compound or a letter puzzle, so
+     *     there is nothing to solve first (`Can Precede "LIGHT"` was the
+     *     easiest group on two boards);
+     *   - NO MIDDLE — three of the four are gimmes, so the board is over in
+     *     ninety seconds and then stuck;
+     *   - NO CLIMB — purple is within two of yellow, which is the flat board
+     *     the review described as "the difficulty colours are decorative"
+     *     arriving one board at a time.
+     */
+    if (ladderProblems(b).length > 0) return false;
+    // …and a board that is two rhymes, or two silent letters, is one puzzle
+    // printed twice. The composer evicts these where the bank can supply a
+    // replacement; where it cannot, the board leaves rather than teaching the
+    // player that the Library repeats itself within a single evening.
+    const fams = b.groups.filter((g) => isLetterMechanicTheme(g.theme)).map((g) => familyOf(g.theme));
+    if (new Set(fams).size !== fams.length) return false;
+    /**
+     * ROUND 14's visibility rule, kept and moved. A bare edge-token sort in
+     * the two slots the player is meant to reach last inverts 2.12 rather than
+     * missing it by a margin. Under the measured ladder this is nearly always
+     * impossible by construction; where it survives, the board is one whose
+     * other three categories are even easier, and that board has no middle.
+     */
+    if (b.groups.some((g) => visibilityOf(g.theme, g.words) >= VISIBILITY_LOUD
+      && (g.tier === 'blue' || g.tier === 'purple'))) return false;
     return b.herrings.length >= spec.minHerrings
       && b.ambiguousWords.length >= 1
       && plainCount(b.groups) >= spec.minPlain
       && types.filter((t) => t === 'wordplay').length >= spec.minWordplay
       && types.filter((t) => t === 'trivia').length <= spec.maxTrivia
+      && letterMechanicCount(b.groups) <= spec.maxLetterMechanics
       && b.groups.filter((g) => isSubtleTheme(g.theme)).length >= spec.minSubtle;
   };
   const kept = built.filter(shipsHere);
@@ -2613,6 +3341,10 @@ function main() {
     if (plainCount(b.groups) < spec.minPlain) why.push(`${plainCount(b.groups)} plain < ${spec.minPlain}`);
     if (b.groups.filter((g) => g.type === 'wordplay').length < spec.minWordplay) why.push('short of the wordplay floor');
     if (b.groups.filter((g) => isSubtleTheme(g.theme)).length < spec.minSubtle) why.push('short of the subtle floor');
+    if (letterMechanicCount(b.groups) > spec.maxLetterMechanics) {
+      why.push(`${letterMechanicCount(b.groups)} letter mechanics > ${spec.maxLetterMechanics}`);
+    }
+    for (const lp of ladderProblems(b)) why.push(`ladder: ${lp.detail}`);
     return `${b.id} @t${b.tier} (${why.join(', ') || 'tier gate'})`;
   });
   const dropped = built.length - kept.length;
@@ -2807,46 +3539,61 @@ function architectureCensus(puzzles: readonly OutBoard[]) {
  * the generator's own census line for where the pool currently sits.
  */
 const ARCHITECTURE_BUDGET = {
-  /** No single group-type signature may own more than this share of the pool. */
-  maxSignatureShare: 0.35,
+  /**
+   * ROUND 13 — the signature is now the board's FAMILY multiset (which four
+   * deductions it asks for), not the four group types read off in colour
+   * order. The old measure died the day `chooseColours` started assigning
+   * colours from measured difficulty: "plain English first, transformation
+   * last" became the promise the ladder MAKES, so `swww` immediately owned
+   * 50% of the shelf and a 35% cap on it was a cap on the fix. What must
+   * still vary night to night is which tricks she meets. Measured: 65
+   * distinct family signatures, top one 13%.
+   */
+  maxSignatureShare: 0.20,
   /** Every colour slot must host at least this share of the planted traps. */
   minHomeSlotShare: 0.12,
   /** …and no single relation may be the named thread of more than this many. */
   maxRelationShare: 0.40,
   /**
-   * ROUND 14 — no single MECHANIC FAMILY (see `familyOf`) may be the trick on
-   * more than this share of boards. The finding asked for 40%, and 40% is the
-   * `FAMILY_BOARD_SHARE` the composer spends against; the number enforced here
-   * is the one the SHIPPED corpus can hold, and it is deliberately different,
-   * for a reason worth writing down rather than tuning away:
+   * NO SINGLE MECHANIC FAMILY IS THE TRICK ON MORE THAN THIS SHARE OF BOARDS.
    *
-   *   - the composer only touches the boards it has to. Two thirds of the
-   *     shelf is authored to its floors already and ships the categories it was
-   *     written with;
-   *   - and the compound family — `___ BAR`, `IRON ___`, `Can Follow "EYE"` —
-   *     is PROTECTED from replacement by the round-14 victim order (finding 6:
-   *     "never sacrifice a compound/second-meaning category"). Its share is
-   *     therefore an authoring fact, not a composer choice: 62 of the authored
-   *     boards carry one before the generator opens its mouth.
+   * Two numbers, because the families are not interchangeable — see
+   * `LETTER_FAMILY_BOARD_SHARE` for the full argument. In short: AAA 2.9
+   * [BEAT] puts a hard floor of two tiles-solvable categories on every board
+   * and the round-13 cap allows at most one letter puzzle below tier 3, so the
+   * second slot is a compound frame on most boards it can be. Driving the
+   * compound share down would mean lowering a [BEAT] floor or putting the
+   * second letter puzzle back, and the second letter puzzle is the thing
+   * REVIEW_AA §5.8 was actually complaining about.
    *
-   * Measured over the shipped shelf, round 14 against round 13:
-   *   compound 62% (was 65%), contains 60% (was 65%), rhyme 54% (was 53%),
-   *   silent 21%, letter-swap 14%, hidden 14%, letter-shape 10%,
-   *   homophone 6%, anagram 4%.
-   * `FAMILY_BOARD_SHARE` was swept: at 0.45 the top three fall to 58/55/53 and
-   * the shelf falls to 148 boards (floor 150, tests/content.test.ts) with 38 at
-   * tier 3 (floor 45, tests/puzzles/anchors.test.ts); at 0.50, 149 and 42. The
-   * thin families ARE the ceiling — silent, hidden, anagram, homophone and
-   * letter-shape between them supply about 165 hands under `BANK_REUSE_CAP`,
-   * and the shelf needs ~330 wordplay slots. Getting every family under 40%
-   * needs roughly forty more authored pools in those five families, which is an
-   * AUTHORING task the generator cannot do for itself. Until then the number
-   * below is a real enforced ceiling — it fails the build, it does not warn —
-   * and the sweep above is the record of why it is not 0.40 yet.
+   * Measured over the shipped shelf, round 13 against round 12:
+   *   compound 65% (was 62%), rhyme 51% (was 54%), contains 44% (was 60%),
+   *   silent 23%, letter-shape 20% (was 10%), letter-swap 15%, hidden 14%,
+   *   homophone 11% (was 6%), anagram 8% (was 4%).
+   * The five thin families are where the round's authoring went and it shows;
+   * `contains` fell sixteen points because the per-board cap stopped the trap
+   * planter reaching for it on every board it touched.
+   *
+   * `LETTER_FAMILY_BOARD_SHARE` was swept at the end of the round, with the
+   * composed batch in place: at 0.45 the shelf falls to 137 boards (floor 150,
+   * tests/content.test.ts); at 0.50, 148 boards and 42 at tier 3 (floor 45,
+   * tests/puzzles/anchors.test.ts); at 0.58, 158 boards and 55/54/49. The
+   * binding resource is subtle-category SUPPLY — every subtle theme is capped
+   * at four boards and tier 3 owes two of them per board — so tightening this
+   * further is another authoring round in anagram, homophone and letter-shape,
+   * not a knob.
    */
-  maxFamilyShare: 0.65,
-  /** The gimme must read as a gimme on a clear majority of boards (2.12). */
-  minPlainYellowShare: 0.60,
+  maxFamilyShare: 0.70,
+  /** …and the letter mechanics, which are what a checklist is made of. */
+  maxLetterFamilyShare: 0.55,
+  /**
+   * The gimme must read as a gimme (2.12). Raised from 0.60: with the way-in
+   * floor enforced per board and the colours assigned from the measurement,
+   * yellow is a plain-English category on 94% of the shelf rather than 69%,
+   * and the remainder are the pop-out sorts (`Contains "ANT"` over four words
+   * that all end in ANT), which read as gimmes for a different reason.
+   */
+  minPlainYellowShare: 0.85,
 } as const;
 
 /** The 2.7–2.9 validator — the build fails on any violating board. */
@@ -2916,10 +3663,13 @@ function validate(puzzles: OutBoard[]): void {
   // ROUND 14 (AAA 2.9) — the anti-wallpaper cap, keyed on the MECHANIC.
   for (const [family, n] of census.families) {
     const share = n / Math.max(1, puzzles.length);
-    if (share > ARCHITECTURE_BUDGET.maxFamilyShare) {
+    const budget = LETTER_MECHANIC_FAMILY.includes(family)
+      ? ARCHITECTURE_BUDGET.maxLetterFamilyShare
+      : ARCHITECTURE_BUDGET.maxFamilyShare;
+    if (share > budget) {
       problems.push(
         `pool: "${family}" is the trick on ${n} of ${puzzles.length} boards ` +
-        `(${(share * 100).toFixed(0)}%, budget ${(ARCHITECTURE_BUDGET.maxFamilyShare * 100).toFixed(0)}%) — wallpaper`,
+        `(${(share * 100).toFixed(0)}%, budget ${(budget * 100).toFixed(0)}%) — wallpaper`,
       );
     }
   }
@@ -2964,6 +3714,45 @@ function validate(puzzles: OutBoard[]): void {
     const subtle = p.groups.filter((g) => isSubtleTheme(g.theme)).length;
     if (subtle < spec.minSubtle) {
       problems.push(`${p.id}: ${subtle} subtle categories (tier ${p.tier} needs ${spec.minSubtle})`);
+    }
+
+    /**
+     * ROUND 13 (REVIEW_AA §5.8) — THE PER-BOARD LETTER-MECHANIC CAP.
+     *
+     * *"My first live board carried two 'Contains' groups (OWN and RAM) at
+     * different difficulty bands."* — and 78.7% of the shelf ran two or more
+     * letter mechanics of some flavour. Hard fail, both halves: the count, and
+     * the rule that the tier-3 pair must be two different deductions.
+     */
+    const letters = p.groups.filter((g) => isLetterMechanicTheme(g.theme));
+    if (letters.length > spec.maxLetterMechanics) {
+      problems.push(
+        `${p.id}: ${letters.length} letter mechanics at tier ${p.tier} (cap ${spec.maxLetterMechanics}) — `
+        + letters.map((g) => `"${g.theme}"`).join(', '),
+      );
+    }
+    const letterFamilies = letters.map((g) => familyOf(g.theme));
+    if (new Set(letterFamilies).size !== letterFamilies.length) {
+      problems.push(
+        `${p.id}: two ${letterFamilies.find((f, i) => letterFamilies.indexOf(f) !== i)} groups on one board — `
+        + letters.map((g) => `"${g.theme}"`).join(', '),
+      );
+    }
+
+    /**
+     * ROUND 13 (REVIEW_AA §5.8) — THE DIFFICULTY COLOURS ARE NOT DECORATIVE.
+     *
+     * `ladderProblems` re-derives every group's lateral distance from the
+     * shipped board and asks three questions of the four colours: is each one
+     * inside the band its colour promises, do they run in order, and does the
+     * board actually climb. On the round-12 shelf this failed on 140 of 156
+     * boards — 196 outright inversions, where a group wearing purple was
+     * measurably easier than the one wearing green. It is a hard fail now;
+     * `chooseColours` is what makes it pass, and it passes by construction, so
+     * this block exists to catch the day somebody edits the JSON by hand.
+     */
+    for (const lp of ladderProblems(p)) {
+      problems.push(`${p.id}: colour ladder — ${lp.detail}`);
     }
 
     /**
@@ -3112,10 +3901,12 @@ assertBankIsClean();
 indexThemeMembers([
   ...boards.flatMap((b) => b.groups),
   ...WORDPLAY_BANK.flatMap((b) => bankDraws(b)),
+  ...SEMANTIC_BANK.flatMap((b) => bankDraws(b)),
 ]);
 indexCorpusSets([
   ...boards.flatMap((b) => b.groups.map((g) => g.words)),
   ...WORDPLAY_BANK.flatMap(bankDraws).map((b) => b.words),
+  ...SEMANTIC_BANK.flatMap(bankDraws).map((b) => b.words),
 ]);
 /**
  * ROUND 14 — run only as the process ENTRY POINT, and export the predicates

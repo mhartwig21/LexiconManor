@@ -195,6 +195,9 @@ describe('word web bundle', () => {
       'Hidden Vegetables': ['PEA', 'CORN', 'BEET', 'KALE', 'LEEK', 'CHARD', 'BEAN', 'CHIVE', 'YAM', 'OKRA', 'ONION', 'TURNIP', 'CRESS'],
       'Hidden Insects': ['ANT', 'BEE', 'MOTH', 'WASP', 'GNAT', 'TICK', 'MIDGE', 'FLEA', 'APHID'],
       'Hidden Weather': ['RAIN', 'SNOW', 'HAIL', 'MIST', 'FOG', 'GALE', 'SUN', 'ICE', 'DEW', 'WIND', 'STORM', 'SLEET', 'FROST'],
+      // ROUND 13 — two more things to conceal, added with the variety batch.
+      'Hidden Drinks': ['ALE', 'TEA', 'GIN', 'RUM', 'PORT', 'WINE', 'MEAD', 'COLA', 'CIDER', 'STOUT', 'MOCHA'],
+      'Hidden Tools': ['AWL', 'FILE', 'PLANE', 'RASP', 'AXE', 'VICE', 'SAW', 'DRILL', 'CHISEL', 'MALLET', 'LATHE'],
     };
     // Plural/participle only — derivational endings are honest carriers
     // (MOTHER is not a moth, HAWKER is not a hawk), and CROW → CROWD is a word

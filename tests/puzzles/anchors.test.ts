@@ -28,6 +28,7 @@ import {
 import { hiveWordPoints } from '../../src/engine/scoring';
 import { bandOf, loadDictionary } from '../../content/lib/dictionary';
 import { typeset } from '../../content/lib/typography';
+import { familyOfTheme } from '../../content/lib/wordweb-ladder';
 import { anArticle, herringLine } from '../../src/ui/rooms/anchor/herring-line';
 
 /**
@@ -861,18 +862,40 @@ describe('shipped content — Library boards (AAA 2.6–2.11)', () => {
    */
   describe('the architecture budget: 163 boards, not one board 163 times', () => {
     const TIER_ORDER = ['yellow', 'green', 'blue', 'purple'] as const;
-    const signatureOf = (p: WordWebPuzzleEx) => TIER_ORDER
-      .map((slot) => p.groups.find((g) => g.tier === slot)?.type?.[0] ?? '?')
-      .join('');
 
-    it('no single group-type signature owns more than 35% of the shelf', () => {
+    /**
+     * ROUND 13 (REVIEW_AA §5.8) — THIS TEST CHANGED WHAT IT MEASURES, AND THE
+     * REASON IS THE POINT OF THE WHOLE ROUND.
+     *
+     * It used to read the four group TYPES off in colour order (`swww`) and
+     * cap the top one at 35%. That was the right measurement for a shelf whose
+     * colours came out of the authored JSON and were then shuffled for
+     * novelty. It stopped being a measurement the moment `chooseColours`
+     * started assigning colours from measured lateral distance: "plain English
+     * first, transformation last" is now the PROMISE the colour ladder makes
+     * to the player, so of course every board says it — `swww` went to 56% on
+     * the first ladder-assigned build — and a 35% cap on it is a cap on the
+     * fix. Keeping the old assertion would have meant deliberately mis-colouring
+     * one board in three to satisfy a proxy for variety.
+     *
+     * What should still vary night to night is WHICH FOUR TRICKS she meets,
+     * and that is the family signature. It is the stricter test of the two: the
+     * old one had three symbols to play with, this one has eleven families and
+     * therefore hundreds of legal shapes, and the pool has to spread across
+     * them. Measured after the round: 65 distinct signatures, top one 13%.
+     */
+    const familySignatureOf = (p: WordWebPuzzleEx) =>
+      p.groups.map((g) => familyOfTheme(g.theme)).sort().join('+');
+
+    it('no single family signature owns more than 20% of the shelf', () => {
       const tally = new Map<string, number>();
       for (const p of WORD_WEB_POOL) {
-        const s = signatureOf(p);
+        const s = familySignatureOf(p);
         tally.set(s, (tally.get(s) ?? 0) + 1);
       }
       const [top, n] = [...tally].sort((a, b) => b[1] - a[1])[0]!;
-      expect(n / WORD_WEB_POOL.length, `"${top}" is the dominant shape`).toBeLessThanOrEqual(0.35);
+      expect(tally.size, 'distinct board architectures').toBeGreaterThanOrEqual(40);
+      expect(n / WORD_WEB_POOL.length, `"${top}" is the dominant shape`).toBeLessThanOrEqual(0.20);
     });
 
     it('the planted trap does not always live in the same colour slot', () => {
@@ -1017,7 +1040,15 @@ describe('shipped content — Study pool (AAA 3.7)', () => {
 function isSubtleTheme(theme: string): boolean {
   if (['Palindromes', 'Semordnilaps', 'Heteronyms', 'Contronyms',
     'Contronyms (Own Opposite)', 'Onomatopoeia', 'Portmanteau Words',
-    'Contains Roman Numerals'].includes(theme)) return true;
+    'Contains Roman Numerals',
+    // ROUND 13 (REVIEW_AA §5.8) — six mechanics that are not one of the
+    // eleven templates at all, added so `letter-shape` could stop being the
+    // trick on one board in eight. Subtle in exactly the sense tier 3 means:
+    // provable on the tile, invisible on a first read.
+    'Words with All Five Vowels', 'Letters in Alphabetical Order',
+    'Spelled Without a Vowel', 'Three Vowels in a Row',
+    'The Same Letter Three Times', 'Made of a Repeated Syllable',
+  ].includes(theme)) return true;
   return /^(Anagrams of|Rhymes with|Hidden |Silent |Two Pairs|Starts and Ends|Homophones|Add an? |Drop )/
     .test(theme);
 }
