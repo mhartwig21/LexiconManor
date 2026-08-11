@@ -85,9 +85,31 @@ export interface TwistlePuzzle {
   size?: number;
   /** Row-major size×size grid of uppercase letters. */
   grid: string[]; // size² single letters (25 by default)
-  /** Words guaranteed findable — verified by the generator's solver. */
+  /**
+   * THE WORKS — the room's ask, and the only class that opens the door. Every
+   * one is guaranteed traceable by the generator's solver, clears `minLength`,
+   * turns at least `minTurns` corners, and crosses the marked tile when
+   * `rules.centerRequired`.
+   */
   targetWords: string[];
-  /** How many words the player must find to win. */
+  /**
+   * THE STUDIES (round 28, BENCHMARKS §8) — real words she can trace on this
+   * grid under every rule the room STATES (length, centre tile, cozy gate,
+   * frequency band) but which turn too few corners to be part of the ask.
+   * They are ACCEPTED, kept and scored; they do not open the room. Optional
+   * only so pre-round-28 fixtures still typecheck — every shipped board
+   * carries the field, and `tests/puzzles/twistle-boards.test.ts` insists.
+   */
+  extraWords?: string[];
+  /**
+   * The corner floor the ASK is drawn against — 1 / 2 / 4 by tier. It is NOT a
+   * rule of acceptance (that was round 17's defect: it refused a median 26
+   * known words a tier-3 player could trace), so it deliberately does not live
+   * in `rules`, which is what `findPath` enforces. It ships because the header
+   * prints it: a room may not hold a constraint it does not state.
+   */
+  minTurns?: number;
+  /** How many WORKS she must find to win. */
   targetCount: number;
   /** Twist constraints applied to this puzzle. */
   rules: TwistleRules;

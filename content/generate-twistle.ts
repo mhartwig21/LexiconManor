@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { loadDictionary, bandOf, type Dictionary, type Band } from './lib/dictionary';
 import { gateOk } from './generate-gate';
 import { createRng, pick, randInt, shuffle, type Rng } from '../src/engine/rng';
-import { findPath, centerIndex, gridSize, maxFindableFor, MIN_ASK_SHARE } from '../src/engine/twistle';
+import { findPath, centerIndex, gridSize, maxFindableFor, MIN_ASK_SHARE, straightestTurns } from '../src/engine/twistle';
 import { tierLabel } from '../src/engine/rooms/adapters/tier-select';
 import type { TwistlePuzzle, Tier } from '../src/engine/types';
 
@@ -13,11 +13,14 @@ import type { TwistlePuzzle, Tier } from '../src/engine/types';
  *  1. Seed words are placed on the board via backtracking (king-move
  *     adjacency, no tile reuse within a word, crossings allowed).
  *  2. Empty tiles are filled with letters weighted by English frequency.
- *  3. A trie-based solver enumerates EVERY findable dictionary word, so
- *     targetWords is the complete honest answer set — a player's valid find
- *     is never rejected, and targetCount is provably achievable.
- *  4. Every target word passes the cozy gate (generate-gate.ts): the Gallery
- *     prints its targets as found-chips and end-of-room silhouettes.
+ *  3. A trie-based solver enumerates EVERY findable dictionary word, and the
+ *     board ships TWO lists off it (round 28): `targetWords` — the WORKS, the
+ *     ask — and `extraWords` — the STUDIES, everything else she can trace under
+ *     the rules the room states. Between them they are the complete honest
+ *     accept-list, so a player's valid find is never rejected; `targetCount` is
+ *     provably achievable out of the works alone.
+ *  4. Every word in BOTH lists passes the cozy gate (generate-gate.ts): the
+ *     Gallery prints works and studies alike as chips on the deck.
  *
  * ---------------------------------------------------------------------------
  * THREE TIERS, MAPPED TO MANOR ROWS (owner directive, round 4: "bigger grids,
@@ -113,6 +116,29 @@ import type { TwistlePuzzle, Tier } from '../src/engine/types';
  * the ask; `targetCount` rises only far enough to bring the share into line
  * with tier 3's. `ROOM_EFFORT.twistle` was re-derived in the same commit — a
  * room is paid for the work it asks for, and this changed the work.
+ *
+ * ---------------------------------------------------------------------------
+ * ROUND 28 — AND THE SAME KNOBS REFUSED WORDS SHE COULD SEE (BENCHMARKS §8)
+ * ---------------------------------------------------------------------------
+ * Every one of those knobs narrowed what the room ACCEPTS, and nothing measured
+ * what that did to what she can physically TRACE. At tier 3 the four-corner
+ * floor **refused 1,610 known, traceable, printable words across the seventy
+ * boards — a median 23 a board, against 22 accepted (only 11 of them words she
+ * plausibly knows).** More known words refused than accepted, for a rule the
+ * header never stated, answered with "isn't in the lexicon", which was false.
+ *
+ * The corner floor is not deleted — it is what makes the ask a puzzle, and
+ * round 26 is not being unwound. It is DEMOTED from a rule of acceptance to a
+ * rule of the ASK. The filter below now runs in two passes: `accepted` applies
+ * every rule the board states (length, centre, cozy gate, frequency band) and
+ * the corner floor then SORTS that list into `targets` (works) and `studies`
+ * (`extraWords`). Studies are accepted, kept and scored, and they do not open
+ * the room, so the one-word-in-five ask share above is measured on the works
+ * exactly as it was and nothing about the economy moves.
+ *
+ * Measured on the pool this file now ships: known traceable printable words
+ * refused goes **1,610 / 51 / 3 → 0 / 0 / 0** at tiers 3 / 2 / 1, and what a
+ * tier-3 board accepts of the words she knows goes from a median 11 to 35.
  */
 
 const TARGET_PER_TIER = 70; // 3 tiers => 210 total
@@ -197,56 +223,14 @@ const SPECS: Record<Tier, TierSpec> = {
 
 // --- path tortuosity --------------------------------------------------------
 
-/**
- * The straightest trace this word has on the grid, in turns — or null if the
- * word cannot be traced under the rules at all. A word is only as easy as its
- * easiest reading, so we gate on the LEAST twisted path available: a word with
- * any straight reading counts as straight. That keeps the tier-3 promise
- * honest.
- *
- * Branch-and-bound rather than "enumerate every trace and take the min": on a
- * 6×6 board a common word can have hundreds of readings and this runs for every
- * candidate of every attempt, which is what made the naive version too slow to
- * generate the tier-3 pool at all. Pruning at `turns >= best` (and bailing the
- * moment a 0-turn reading is found) collapses it.
+/*
+ * ROUND 28 — `straightestTurns` MOVED TO `src/engine/twistle.ts`.
+ * The Gallery's ladder scores a work at `letters + 2 × corners` off the same
+ * straightest trace this generator gates on, so the function had to be somewhere
+ * the engine can import. It could never move the other way: this file runs
+ * `main()` on import. Two copies of it is exactly how a ladder starts
+ * disagreeing with the pool it ranks.
  */
-function straightestTurns(grid: string[], word: string, rules: TwistlePuzzle['rules']): number | null {
-  const target = word.toUpperCase();
-  if (target.length < rules.minLength) return null;
-  const n = gridSize(grid);
-  const centre = centerIndex(n);
-  const used = new Array<boolean>(grid.length).fill(false);
-  let best = Infinity;
-
-  const walk = (pos: number, depth: number, prevStep: number, turns: number, hitCentre: boolean) => {
-    if (depth === target.length) {
-      if (rules.centerRequired && !hitCentre) return;
-      best = turns;
-      return;
-    }
-    for (const nb of neighbors(pos, n)) {
-      if (used[nb]) continue;
-      if (grid[nb] !== target[depth]) continue;
-      // Direction as a small integer: (dr+1)*3 + (dc+1).
-      const step = (Math.floor(nb / n) - Math.floor(pos / n) + 1) * 3 + ((nb % n) - (pos % n) + 1);
-      const t = prevStep >= 0 && step !== prevStep ? turns + 1 : turns;
-      if (t >= best) continue;
-      used[nb] = true;
-      walk(nb, depth + 1, step, t, hitCentre || nb === centre);
-      used[nb] = false;
-      if (best === 0) return;
-    }
-  };
-
-  for (let i = 0; i < grid.length; i++) {
-    if (grid[i] !== target[0]) continue;
-    used[i] = true;
-    walk(i, 1, -1, 0, i === centre);
-    used[i] = false;
-    if (best === 0) break;
-  }
-  return best === Infinity ? null : best;
-}
 
 // --- placement ------------------------------------------------------------
 
@@ -345,7 +329,11 @@ function solveGrid(grid: string[], trie: TrieNode, n: number): Set<string> {
  * Shipped shape. `tier` is authoritative and `size` is explicit on every board
  * so the view never has to infer a 6×6 from a tile count.
  */
-type GeneratedTwistlePuzzle = TwistlePuzzle & { tier: Tier; size: number };
+type GeneratedTwistlePuzzle = TwistlePuzzle & {
+  tier: Tier; size: number;
+  /** Round 28: both classes ship on every board, never optionally. */
+  extraWords: string[]; minTurns: number;
+};
 
 /**
  * The turn count of the `targetCount`-th easiest target: the twist the player
@@ -402,24 +390,29 @@ function generatePuzzle(
   const filled = grid.map((c) => c ?? FILL_LETTERS[randInt(rng, FILL_LETTERS.length)]!);
   const upper = filled.map((c) => c.toUpperCase());
 
-  // Enumerate everything findable, then keep only fair target words.
+  // Enumerate everything findable, then split it into the two classes the room
+  // ships (round 28, BENCHMARKS §8). ACCEPTED is every word she can trace under
+  // the rules the board STATES; the corner floor sorts the accepted words into
+  // WORKS (the ask) and STUDIES (accepted, scored, never refused) — it no
+  // longer decides whether a real word is a word.
   const findable = solveGrid(filled, trie, n);
   const rules = { minLength: spec.minLength, centerRequired: spec.centerRequired };
   const turnsByWord = new Map<string, number>();
-  const targets = [...findable].filter((w) => {
+  const accepted = [...findable].filter((w) => {
     if (w.length < spec.minLength) return false;
     if (!spec.targetBands.includes(bandOf(dict.rankOf(w)))) return false;
-    // The Gallery prints its targets — the cozy gate applies (task 2).
+    // The Gallery prints everything it accepts — the cozy gate applies (task 2).
     if (!gateOk(w)) return false;
     // Under centerRequired / minLength the trie solver over-counts; the
     // tortuosity pass re-verifies each word against the real rules and
     // records the straightest trace the player could draw.
     const turns = straightestTurns(upper, w.toUpperCase(), rules);
     if (turns === null) return false;
-    if (turns < spec.minTurns) return false;
     turnsByWord.set(w, turns);
     return true;
   });
+  const targets = accepted.filter((w) => turnsByWord.get(w)! >= spec.minTurns);
+  const studies = accepted.filter((w) => turnsByWord.get(w)! < spec.minTurns);
   if (targets.length < Math.max(spec.minFindable, spec.targetCount + 4)) return null;
   // ROUND 26 — the ask may never be thinner than one word in five of the board
   // it is asked on (`MIN_ASK_SHARE`). This rejects the haystacks: a 5×5 whose
@@ -438,6 +431,13 @@ function generatePuzzle(
     size: n,
     grid: upper,
     targetWords: targets.map((w) => w.toUpperCase()).sort(),
+    // ROUND 28 — what the board ACCEPTS beyond what it asks for. Every one of
+    // these is a word round 17's corner floor refused with "isn't in the
+    // lexicon", which was false: they clear the length floor, they cross the
+    // marked tile, they pass the cozy gate and they sit in the tier's own
+    // frequency band. They are hung as studies now.
+    extraWords: studies.map((w) => w.toUpperCase()).sort(),
+    minTurns: spec.minTurns,
     targetCount: spec.targetCount,
     rules,
   };
@@ -495,6 +495,19 @@ function validate(puzzles: GeneratedTwistlePuzzle[], dict: Dictionary) {
       problems.push(`${p.id}: ${p.targetCount} of ${p.targetWords.length} findable is an ask of ${(p.targetCount / p.targetWords.length).toFixed(3)}, under the ${MIN_ASK_SHARE.toFixed(3)} floor`);
     }
     if (p.targetCount !== spec.targetCount) problems.push(`${p.id}: targetCount ${p.targetCount} != tier ${p.tier} ask ${spec.targetCount}`);
+    // ROUND 28 — the accept-list. A study must be a word she could really have
+    // traced (or the room is accepting nonsense), must not also be a work, and
+    // must genuinely fall short of the corner floor (or it belonged in the ask).
+    if (p.minTurns !== spec.minTurns) problems.push(`${p.id}: minTurns ${p.minTurns} != tier ${p.tier} corner floor ${spec.minTurns}`);
+    const works = new Set(p.targetWords);
+    for (const w of p.extraWords) {
+      if (works.has(w)) problems.push(`${p.id}: ${w} ships as both a work and a study`);
+      if (w.length < p.rules.minLength) problems.push(`${p.id}: study ${w} is under the stated minimum`);
+      if (findPath(p.grid, w, p.rules) === null) problems.push(`${p.id}: study ${w} has no valid trace`);
+      if (!gateOk(w.toLowerCase())) problems.push(`${p.id}: study ${w} fails the cozy gate`);
+      const t = straightestTurns(p.grid, w, p.rules);
+      if (t !== null && t >= spec.minTurns) problems.push(`${p.id}: study ${w} turns ${t} — it is a work`);
+    }
     if (p.rules.minLength !== spec.minLength) problems.push(`${p.id}: minLength ${p.rules.minLength} != tier ${p.tier} floor ${spec.minLength}`);
     if (p.rules.centerRequired !== spec.centerRequired) problems.push(`${p.id}: centerRequired != tier ${p.tier} rule`);
     const turns: number[] = [];

@@ -4,8 +4,12 @@
  * Wraps the existing pure engine (`startTwistle`/`submitTwistleWord`).
  * Mistake semantics (AAA 3.2 + R.1's principle — a traced word is a probe,
  * not a claim; the Gallery's pressure is its targetCount, not step taxes):
- *   - not-a-word (real path, not a target) → weight 0, remembered in
- *     `missedWords` so she never re-derives a miss (memory prosthetic 3.3)
+ *   - STUDY (round 28: a real word she traced that the room did not ask for)
+ *     → not a mistake at all. No `mistake` event, no weight, no strike: it
+ *     hangs on the wall and it scores. See BENCHMARKS §8.
+ *   - not-a-word (traceable, but the curator's list does not carry it — the
+ *     corpus-obscure and the cozy gate's own refusals) → weight 0, remembered
+ *     in `missedWords` so she never re-derives a miss (memory prosthetic 3.3)
  *   - breaks-rule (path exists but skips the marked center tile — a rule the
  *     board visibly pre-warns) → weight 1
  *   - everything malformed (too short, impossible path, already found) → weight 0
@@ -18,12 +22,14 @@ import { getPools, lazyContent } from '../../../app/pools';
 import { selectByTier } from './tier-select';
 
 /**
- * Round 4: the generator stamps a `tier` on every grid and the tiers differ
- * structurally — tier 1 offers five near-straight everyday traces at
- * minLength 4; tier 2 requires every target to turn at least twice; tier 3
- * raises minLength to 5, sets `centerRequired`, and ships only targets whose
- * straightest trace already corkscrews three times. The board's own `rules`
- * carry the escalation into the engine, so no runtime branch is needed.
+ * The generator stamps a `tier` on every grid and the tiers differ structurally.
+ * As of rounds 26 and 28: `minLength` is 5 everywhere and `centerRequired` from
+ * tier 2 up (both carried in the board's own `rules`, so `findPath` needs no
+ * runtime branch), while the corner floor climbs 1 → 2 → 4 and rides on
+ * `minTurns` — which is deliberately NOT in `rules`, because it sorts the
+ * board's accepted words into works and studies rather than deciding whether a
+ * real word is a word. Round 17 enforced it as an acceptance rule and the room
+ * refused a median 23 known words a board at tier 3 for it.
  */
 /** @deprecated `tier` is now REQUIRED on TwistlePuzzle in engine/types.ts;
  *  this alias is kept so existing imports keep resolving. */
@@ -35,13 +41,20 @@ export const TWISTLE_POOL = lazyContent<TwistlePuzzleEx[]>(
 
 export type TwistleFeedback =
   | { kind: 'valid'; word: string; found: number; target: number; won: boolean }
+  /** ROUND 28 — a real word she traced that the room did not ask for. */
+  | { kind: 'study'; word: string; points: number }
   | { kind: 'invalid'; reason: 'too-short' | 'not-on-grid' | 'breaks-rule' | 'not-a-word' | 'already-found'; word: string; costed: boolean };
 
 export interface TwistleRoomState {
   twistle: TwistleState;
   costedMistakes: number;
   attempts: number;
-  /** Real paths that weren't targets — shown struck-through, never retried. */
+  /**
+   * Real paths the CURATOR'S LIST does not carry — shown struck-through, never
+   * retried. Round 28 emptied most of this out: a traced word she plausibly
+   * knows is a study now, and only what the board genuinely does not accept
+   * (obscure corpus words, and the cozy gate's own refusals) lands here.
+   */
   missedWords: string[];
   lastFeedback: TwistleFeedback | null;
 }
@@ -60,7 +73,13 @@ export const twistleAdapter: RoomPuzzleAdapter<TwistlePuzzleEx, TwistleRoomState
 
   // §5.3 — traced words and the struck-through misses are plain JSON data.
   find: (id) => TWISTLE_POOL.find((p) => p.id === id),
-  stateVersion: 1,
+  /**
+   * 2 (round 28) — `TwistleState` grew `foundStudies`, and every board in the
+   * pool was regenerated with it, so a snapshot written under version 1 names
+   * an id whose grid has changed. Bumping discards those rather than restoring
+   * a session onto a different board.
+   */
+  stateVersion: 2,
 
   start(_puzzle: TwistlePuzzleEx, _ctx: RoomContext): TwistleRoomState {
     return {
@@ -96,6 +115,16 @@ export const twistleAdapter: RoomPuzzleAdapter<TwistlePuzzleEx, TwistleRoomState
         events,
         outcome: { status: result.won ? 'solved' : 'active', perfect: isPerfect(next) },
       };
+    }
+
+    // ROUND 28 — a STUDY is not a mistake and never was. It costs nothing, it
+    // emits no `mistake` event, and it goes up on the wall beside the works.
+    // (`stageFractionOf` returns null for this kind, so a new progress detail
+    // cannot move a step payout — the Gallery is under `LADDER_MINUTES`.)
+    if (result.kind === 'study') {
+      next = { ...next, lastFeedback: { kind: 'study', word: result.word, points: result.points } };
+      events.push({ type: 'progress', detail: `study-found:${(twistle.foundStudies ?? []).length}` });
+      return { state: next, events, outcome: { status: 'active', perfect: isPerfect(next) } };
     }
 
     if (result.reason !== 'finished') {

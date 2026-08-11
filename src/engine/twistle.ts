@@ -87,19 +87,325 @@ export function maxFindableFor(targetCount: number): number {
   return Math.floor(targetCount / MIN_ASK_SHARE);
 }
 
+/**
+ * ═══ ROUND 28 — A TRACED REAL WORD IS NEVER REFUSED (BENCHMARKS §8) ════════
+ *
+ * Round 17 hardened the Gallery with three knobs — a 5-letter floor, a corner
+ * floor on every target, the centre rule down to tier 2 — and every one of them
+ * narrowed what the room ACCEPTS without narrowing what the player can
+ * physically TRACE. Measured by independent trie enumeration over the pool that
+ * shipped, **tier 3's four-corner floor refused a median 26 words per board that
+ * a player plausibly knows (Norvig rank ≤ 20,000) while accepting 22** — more
+ * known words refused than accepted, for a rule the room never stated.
+ *
+ * Re-measured here against the vendored corpus, setting aside the cozy gate's
+ * own refusals (which are an editorial choice, not a rule of play): **1,610
+ * known, traceable, printable words refused across the seventy tier-3 boards, a
+ * median of 23 a board** — against 22 words accepted, of which only 11 are ones
+ * she plausibly knows. Tiers 1 and 2 refused 3 and 51 in total and were clean.
+ *
+ * A word search's single worst feeling is tracing a word you can SEE and being
+ * told it is not a word. Strands designs that feeling out of existence
+ * (BENCHMARKS §8): a theme word counts, **any other real word is accepted and
+ * worth something**, and only a non-word gets the shake. Two classes of
+ * accepted word; no class of refused real word.
+ *
+ * So the Gallery ships two lists now, and the fix is on the ACCEPT-LIST rather
+ * than on the player:
+ *
+ *   WORKS  (`targetWords`)  the ask. Constrained exactly as round 17 left it —
+ *                           `minLength` letters, `minTurns` corners, through the
+ *                           marked tile where the board says so. `targetCount`
+ *                           of these and only these open the room, so round 26's
+ *                           one-word-in-five ask share is untouched and the board
+ *                           still cannot be cleared out of reflex.
+ *   STUDIES (`extraWords`)  everything else on the grid she can trace and
+ *                           plausibly knows: same length floor, same centre rule,
+ *                           same cozy gate, same frequency bands — only the
+ *                           corner floor missing. Accepted, kept, scored. They do
+ *                           NOT open the room.
+ *
+ * Measured on the pool this ships, by the same enumeration: **0 known traceable
+ * printable words refused, on all 210 boards, at every tier** — 1,610 → 0 at
+ * tier 3, 51 → 0 at tier 2, 3 → 0 at tier 1. What a tier-3 board accepts of the
+ * words she knows goes from a median 11 to 35. The only refusals left in the
+ * house are the cozy gate's 175 (TRANS, NUDES, ANGER, PENIS, COCAINE…), which
+ * are a deliberate editorial choice and not a rule she could obey if she saw it.
+ */
+
+/**
+ * ═══ THE LADDER (BENCHMARKS §1, §8) ═══════════════════════════════════════
+ *
+ * `foundWords.length >= targetCount` was a binary win: no score, no rank, no
+ * "seven to Genius". BENCHMARKS §1 calls the Bee's ladder *the retention
+ * machine*; §8 records that Strands has no ladder at all, and why the Gallery
+ * cannot copy that — Strands is a once-a-day ritual with a theme reveal for a
+ * payoff, and this is a room she meets forty times in a campaign.
+ *
+ * A word search has better material to rank on than a Bee does, because a
+ * traced word carries a SHAPE as well as a length. So:
+ *
+ *     a letter is a point, and a corner is two.
+ *
+ * A work scores `letters + 2 × corners`, counted off its STRAIGHTEST trace — a
+ * word is only as twisty as its easiest reading, the same rule the generator
+ * gates on, so the score can never disagree with the pool. A study scores 1,
+ * exactly as the Bee pays 1 for a four-letter word: it counts, it is never
+ * nothing, and it cannot be farmed into a rank.
+ *
+ * WHY THE DOOR IS STILL A COUNT AND NOT A SCORE. If the room opened on points, a
+ * tier-3 board's forty-odd studies would open it without a single work found,
+ * and round 26's defect walks back in wearing a ladder. The door stays on the
+ * constrained class (BENCHMARKS §8: *keep the door on the constrained class*);
+ * the ladder ranks everything. What that buys is a real decision the room did
+ * not have — **the exhibition opens the moment the last work is hung, so
+ * anything else you want, you find first.**
+ *
+ * Measured over the 210 boards this ships, on both extremes of how a solve can
+ * be taken: the CHEAPEST solve (the `targetCount` commonest works) scores a
+ * median 21 / 28 / 24% of the board's maximum, and the LOWEST-SCORING solve that
+ * can open a board scores a median 16 / 23 / 22% and never less than 13%. So a
+ * player who merely solves lands on **rung 2 at worst and rung 4 at best on
+ * every board at every tier** — never on the floor, and never with nothing left
+ * above her. `Curator's Eye` is this room's Queen Bee: every work and every
+ * study on the board, and it is not meant to be reached.
+ */
+
+/**
+ * ═══ THE ROOM STATES ITS OWN RULES, AND THEY ARE TRUE (round 28) ══════════
+ *
+ * Round 17's header read `{targetCount} words · {minLength}+ letters`, and at
+ * tier 3 that was **false**: the four-corner floor meant nothing under six
+ * letters counted anywhere in the tier (measured on the pool it shipped —
+ * 0 works of exactly five letters across all seventy tier-3 boards), so the one
+ * line on the glass that states the rules of play misstated them on the hardest
+ * boards in the house. Round 17 noticed and left it.
+ *
+ * It is fixed by making the sentence true rather than by deleting a clause,
+ * because the two-class board finally lets it be true: `5+ letters` is now the
+ * ACCEPTANCE floor and it really is reachable — a five-letter trace on a tier-3
+ * board is a study, and a study is accepted, kept and scored. The corner floor
+ * is stated separately, where it belongs, on the ask.
+ *
+ * These live in the engine rather than in TwistleView because a sentence the
+ * room is CONTRACTUALLY required to keep true is a testable object.
+ * `tests/puzzles/twistle-boards.test.ts` reads them back against the shipped
+ * JSON, clause by clause.
+ */
+export interface TwistleRuleLines {
+  /** What makes a trace legal at all — the ACCEPTANCE rule. */
+  trace: string;
+  /** What the room is asking for — the CONSTRAINED class, corner floor and all. */
+  ask: string;
+  /** The two above, in the one line the room prints. Never hidden. */
+  line: string;
+  /** The gesture and the second class — decorative reserve, may be dropped. */
+  studies: string;
+}
+
+/**
+ * ONE LINE, TWO CLAUSES, AND THE REASON IT IS ONE LINE. Measured live in Edge:
+ * at 375×667 a tier-3 Gallery has 551px of stage for an 82px header, a 330px
+ * 6×6 board and a 161px deck, and it fit round 17's header with three pixels to
+ * spare. Two paragraphs plus a ladder row measured 592px — a scrollbar, which
+ * the owner does not accept. So the clauses are composed into one wrapped line
+ * (36px at every tier rather than 54px) and the ladder rides the toast slot the
+ * room already reserves. Nothing true was dropped to buy it.
+ */
+export function twistleRuleLines(puzzle: TwistlePuzzle): TwistleRuleLines {
+  const corners = puzzle.minTurns ?? 0;
+  const trace = `${puzzle.rules.minLength}+ letters`
+    + (puzzle.rules.centerRequired ? ', through the marked tile' : '');
+  const ask = corners > 1
+    ? `${puzzle.targetCount} works, ${corners}+ corners each`
+    : corners === 1
+      ? `${puzzle.targetCount} works, a corner each`
+      : `${puzzle.targetCount} works`;
+  return {
+    trace,
+    ask,
+    line: `${trace} · ${ask}`,
+    studies: 'Trace through touching tiles. Any other word you find hangs as a study.',
+  };
+}
+
+/** What a STUDY is worth — the Bee's four-letter word, one point. */
+export const STUDY_POINTS = 1;
+/** A corner is worth two letters. Shape is what makes this room a puzzle. */
+export const CORNER_POINTS = 2;
+
+/** What one WORK is worth: a letter a point, a corner two. */
+export function workPoints(word: string, corners: number): number {
+  return word.length + CORNER_POINTS * corners;
+}
+
+/** A rung, as a fraction of the board's own maximum (BENCHMARKS §1's curve). */
+export interface TwistleRung {
+  name: string;
+  /** Fraction of `twistleMaxScore` at which this rung is reached. */
+  at: number;
+}
+
+/**
+ * Placed against the shipped pool rather than chosen for the sound of it: rung
+ * 2 sits at 0.12 because the LOWEST-scoring set of works that can open any board
+ * in the house scores 0.13 of that board's maximum, so a player who merely
+ * solves always arrives there and never above it.
+ * `tests/puzzles/twistle-boards.test.ts` re-derives both facts off the JSON.
+ */
+export const TWISTLE_RANKS: readonly TwistleRung[] = [
+  { name: 'Bare Wall', at: 0 },
+  { name: 'First Nail', at: 0.06 },
+  { name: 'Small Hang', at: 0.12 },
+  { name: 'Full Wall', at: 0.30 },
+  { name: 'Salon Hang', at: 0.55 },
+  { name: 'Curator’s Eye', at: 1 },
+];
+
+/**
+ * Every word this board accepts, and what it is worth. Memoised per puzzle
+ * object: a work's corner count is a branch-and-bound walk of the grid, and the
+ * view asks for the board's maximum on every render.
+ */
+const POINTS_CACHE = new WeakMap<TwistlePuzzle, Map<string, number>>();
+
+export function twistlePoints(puzzle: TwistlePuzzle): Map<string, number> {
+  const hit = POINTS_CACHE.get(puzzle);
+  if (hit) return hit;
+  const points = new Map<string, number>();
+  for (const w of puzzle.targetWords) {
+    const corners = straightestTurns(puzzle.grid, w, puzzle.rules);
+    points.set(w.toUpperCase(), workPoints(w, corners ?? 0));
+  }
+  for (const w of puzzle.extraWords ?? []) {
+    // Works win any collision: a word the room asks for is never a study.
+    if (!points.has(w.toUpperCase())) points.set(w.toUpperCase(), STUDY_POINTS);
+  }
+  POINTS_CACHE.set(puzzle, points);
+  return points;
+}
+
+/** Everything on the board, hung — the top rung, and not meant to be reached. */
+export function twistleMaxScore(puzzle: TwistlePuzzle): number {
+  let total = 0;
+  for (const v of twistlePoints(puzzle).values()) total += v;
+  return total;
+}
+
+/** What she has hung so far. */
+export function twistleScore(puzzle: TwistlePuzzle, state: TwistleState): number {
+  const points = twistlePoints(puzzle);
+  let total = 0;
+  for (const w of state.foundWords) total += points.get(w) ?? 0;
+  for (const w of state.foundStudies ?? []) total += points.get(w) ?? 0;
+  return total;
+}
+
+export interface TwistleStanding {
+  score: number;
+  max: number;
+  /** Index into `TWISTLE_RANKS`. */
+  rung: number;
+  name: string;
+  /** The next rung and the points still owed to it — the "7 to Genius" hook. */
+  next: { name: string; points: number } | null;
+}
+
+/** Her standing on the wall, right now. */
+export function twistleStanding(puzzle: TwistlePuzzle, state: TwistleState): TwistleStanding {
+  const max = twistleMaxScore(puzzle);
+  const score = twistleScore(puzzle, state);
+  const fraction = max > 0 ? score / max : 0;
+  let rung = 0;
+  for (let i = 0; i < TWISTLE_RANKS.length; i++) {
+    if (fraction + 1e-9 >= TWISTLE_RANKS[i]!.at) rung = i;
+  }
+  const up = TWISTLE_RANKS[rung + 1];
+  return {
+    score,
+    max,
+    rung,
+    name: TWISTLE_RANKS[rung]!.name,
+    next: up ? { name: up.name, points: Math.max(1, Math.ceil(up.at * max) - score) } : null,
+  };
+}
+
+/**
+ * The straightest trace this word has on the grid, in CORNERS — or null if the
+ * word cannot be traced under the rules at all. A word is only as easy as its
+ * easiest reading, so this minimises over every legal trace: a word with any
+ * straight reading counts as straight.
+ *
+ * It lived in `content/generate-twistle.ts` until round 28, when the score
+ * started reading it too. That file runs `main()` on import, so the engine could
+ * never have imported it the other way round — and two copies of this function
+ * is exactly how a ladder starts disagreeing with the pool it ranks.
+ *
+ * Branch-and-bound rather than "enumerate every trace and take the min": on a
+ * 6×6 board a common word can have hundreds of readings, and this runs for every
+ * candidate of every generator attempt. Pruning at `corners >= best` (and
+ * bailing the moment a straight reading is found) collapses it.
+ */
+export function straightestTurns(grid: string[], word: string, rules: TwistleRules): number | null {
+  const target = word.toUpperCase();
+  if (target.length < rules.minLength) return null;
+  const n = gridSize(grid);
+  const centre = centerIndex(n);
+  const used = new Array<boolean>(grid.length).fill(false);
+  let best = Infinity;
+
+  const walk = (pos: number, depth: number, prevStep: number, turns: number, hitCentre: boolean) => {
+    if (depth === target.length) {
+      if (rules.centerRequired && !hitCentre) return;
+      best = turns;
+      return;
+    }
+    for (const nb of neighbors(pos, n)) {
+      if (used[nb]) continue;
+      if (grid[nb] !== target[depth]) continue;
+      // Direction as a small integer: (dr+1)*3 + (dc+1).
+      const step = (Math.floor(nb / n) - Math.floor(pos / n) + 1) * 3 + ((nb % n) - (pos % n) + 1);
+      const t = prevStep >= 0 && step !== prevStep ? turns + 1 : turns;
+      if (t >= best) continue;
+      used[nb] = true;
+      walk(nb, depth + 1, step, t, hitCentre || nb === centre);
+      used[nb] = false;
+      if (best === 0) return;
+    }
+  };
+
+  for (let i = 0; i < grid.length; i++) {
+    if (grid[i] !== target[0]) continue;
+    used[i] = true;
+    walk(i, 1, -1, 0, i === centre);
+    used[i] = false;
+    if (best === 0) break;
+  }
+  return best === Infinity ? null : best;
+}
+
 export interface TwistleState {
   puzzleId: string;
+  /** WORKS — the constrained class. These, and only these, open the room. */
   foundWords: string[];
+  /**
+   * STUDIES — real words she traced that the room did not ask for. Optional on
+   * the type because a snapshot written before round 28 has no such field;
+   * every read here goes through `?? []` rather than trusting the shape.
+   */
+  foundStudies?: string[];
   wrongAttempts: number;
   status: 'playing' | 'won';
 }
 
 export type TwistleSubmit =
   | { kind: 'valid'; word: string; won: boolean }
+  /** Accepted, kept, scored — and it does not open the room (BENCHMARKS §8). */
+  | { kind: 'study'; word: string; points: number }
   | { kind: 'invalid'; reason: 'too-short' | 'not-on-grid' | 'breaks-rule' | 'not-a-word' | 'already-found' | 'finished' };
 
 export function startTwistle(puzzle: TwistlePuzzle): TwistleState {
-  return { puzzleId: puzzle.id, foundWords: [], wrongAttempts: 0, status: 'playing' };
+  return { puzzleId: puzzle.id, foundWords: [], foundStudies: [], wrongAttempts: 0, status: 'playing' };
 }
 
 /** King-move neighbours of `index` on an n×n board. */
@@ -165,7 +471,8 @@ export function submitTwistleWord(
   if (word.length < puzzle.rules.minLength) {
     return { state, result: { kind: 'invalid', reason: 'too-short' } };
   }
-  if (state.foundWords.includes(word)) {
+  const studies = state.foundStudies ?? [];
+  if (state.foundWords.includes(word) || studies.includes(word)) {
     return { state, result: { kind: 'invalid', reason: 'already-found' } };
   }
   const path = findPath(puzzle.grid, word, puzzle.rules);
@@ -176,6 +483,15 @@ export function submitTwistleWord(
     return { state: { ...state, wrongAttempts: state.wrongAttempts + 1 }, result: { kind: 'invalid', reason } };
   }
   if (!puzzle.targetWords.includes(word)) {
+    // ROUND 28 — before it is a refusal, ask whether the board ACCEPTS it. A
+    // study is a real word she traced under every rule the room states; the
+    // only thing it lacks is the corner floor of the ask, and it costs nothing.
+    if ((puzzle.extraWords ?? []).includes(word)) {
+      return {
+        state: { ...state, foundStudies: [...studies, word] },
+        result: { kind: 'study', word, points: twistlePoints(puzzle).get(word) ?? STUDY_POINTS },
+      };
+    }
     return { state: { ...state, wrongAttempts: state.wrongAttempts + 1 }, result: { kind: 'invalid', reason: 'not-a-word' } };
   }
 

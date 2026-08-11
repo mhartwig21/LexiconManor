@@ -23,12 +23,15 @@ import type { CSSProperties } from 'react';
 import type { RoomViewProps } from '../registry';
 import type { TwistlePuzzle } from '../../../engine/types';
 import type { TwistleAction, TwistleRoomState } from '../../../engine/rooms/adapters/twistle';
-import { centerIndex, findPath, puzzleSize } from '../../../engine/twistle';
+import { centerIndex, findPath, puzzleSize, twistleRuleLines, twistleStanding } from '../../../engine/twistle';
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
 import './anchor.css';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
+
+/** How many study chips the sticky deck will carry before it starts counting. */
+const STUDY_CHIPS = 6;
 
 /** King adjacency on an n×n board (n comes from the puzzle, not a constant). */
 function areNeighbors(a: number, b: number, n: number): boolean {
@@ -60,6 +63,23 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
 
   const won = state.twistle.status === 'won';
   const stepCost = tier === 3 ? 3 : 2;
+  const studies = state.twistle.foundStudies ?? [];
+  /**
+   * ROUND 28 — THE LADDER ON THE GLASS (BENCHMARKS §1's "points to next rank"
+   * is called *the strongest one-more-word hook in the game*; this room had no
+   * hook at all). Recomputed from the two found lists, never stored: the board
+   * maximum is memoised inside the engine, so this costs one Map walk a render.
+   */
+  const standing = useMemo(
+    () => twistleStanding(puzzle, state.twistle),
+    [puzzle, state.twistle],
+  );
+  /**
+   * THE RULE, IN THE ROOM'S OWN WORDS. Composed in the engine (`twistleRuleLines`)
+   * and pinned there against the shipped pool clause by clause, because round 17
+   * shipped a header that was false at tier 3 and no test could see it.
+   */
+  const rules = useMemo(() => twistleRuleLines(puzzle), [puzzle]);
   const word = useMemo(() => path.map((i) => puzzle.grid[i]).join(''), [path, puzzle]);
 
   // ---- The hung sheet: every claimed word traced back onto the board.
@@ -130,15 +150,25 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
 
     if (fb.kind === 'valid') {
       sfx.correct();
-      setToast({ kind: 'good', text: `${fb.word} — ${fb.found} of ${fb.target} gathered` });
+      setToast({ kind: 'good', text: `${fb.word} — ${fb.found} of ${fb.target} works hung` });
       if (fb.won) later(() => sfx.victory(), 300);
+      later(() => setToast(null), 1400);
+    } else if (fb.kind === 'study') {
+      // ROUND 28 — the sound and the colour of a GOOD thing. This word used to
+      // be told it "isn't in the lexicon", which was false: it clears every
+      // rule the board states and only misses the ask's corner floor.
+      sfx.correct();
+      setToast({ kind: 'good', text: `${fb.word} — a study · +${fb.points}` });
       later(() => setToast(null), 1400);
     } else {
       const messages: Record<typeof fb.reason, string> = {
         'too-short': `Words need ${puzzle.rules.minLength}+ letters`,
         'not-on-grid': "The tiles won’t connect so",
         'breaks-rule': `It must cross the marked tile · −${stepCost} steps`,
-        'not-a-word': `${fb.word} isn’t in the lexicon`,
+        // Not "isn't a word" — the room cannot know that, and for the words
+        // that land here (corpus-obscure, or refused by the cozy gate) it would
+        // be a lie. It is a curator's list, and it says so.
+        'not-a-word': `${fb.word} isn’t on the curator’s list`,
         'already-found': 'Already gathered',
       };
       if (fb.costed) sfx.wrong();
@@ -234,7 +264,7 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
         {/* 3.2/7.2: the mechanical clause is NEVER the thing a short screen
             drops — at tier 3 the marked-tile rule is what a −3-step mistake
             hangs on, and this line is its only statement in words. */}
-        <p className="anch__flavour">Trace words through touching tiles.</p>
+        <p className="anch__rule">{rules.line}</p>
         {/* ROUND 24 (COMPREHENSION, fix 6): the minimum length is a RULE OF
             PLAY and it was nowhere on the glass. Its only statement was a
             toast — `Words need N+ letters` — behind a Claim button disabled
@@ -242,10 +272,14 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
             stated here at rest now, and the button below has been un-disabled
             so the toast can fire as well. Read from the puzzle, never a
             literal: a tier-3 Gallery may raise it. */}
-        <p className="anch__rule">
-          {puzzle.targetCount} words · {puzzle.rules.minLength}+ letters
-          {puzzle.rules.centerRequired && ' · every word crosses the marked tile'}
-        </p>
+        {/* ROUND 28 (BENCHMARKS §8) — THE SECOND CLASS, STATED AT REST. Strands
+            never refuses a real word, and neither does this room any more. It is
+            FLAVOUR rather than RULE by the anchor.css taxonomy — a permissive
+            rule can only surprise her pleasantly, so it is the line a 667px
+            screen is allowed to give up (where the toast and the `studies:`
+            caption still teach it). The mechanical clauses, which gate a −3-step
+            mistake, are in the line above and are never hidden. */}
+        <p className="anch__flavour">{rules.studies}</p>
       </header>
 
       {won ? (
@@ -267,9 +301,19 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
             <i className="tw-frame__seg tw-frame__seg--l" />
           </div>
           <div className="anch-done__title">The gallery is hung.</div>
+          {/* ROUND 28 — the rung she reached, and the number the board was
+              worth, in the line the room already had. BENCHMARKS §1: the ladder
+              is the retention machine, and a room that ends on a rung with a
+              bigger number beside it is a room she has a reason to open again.
+              It rides IN this paragraph rather than in one of its own because a
+              tier-3 hung sheet is 19px from the bottom of a 667px screen and the
+              owner does not accept a scrollbar to buy a line of copy. */}
           <p className="anch-done__line">
-            {state.twistle.foundWords.length} works on display
-            {state.costedMistakes === 0 ? ' — hung without a single crooked frame' : ''}.
+            <strong className="anch-done__rank">{standing.name}</strong>
+            {' · '}{standing.score} of {standing.max}
+            {' · '}{state.twistle.foundWords.length} works
+            {studies.length > 0 ? ` and ${studies.length} stud${studies.length === 1 ? 'y' : 'ies'}` : ''}
+            {state.costedMistakes === 0 ? ', not a crooked frame among them' : ''}.
           </p>
 
           {/* The finished sheet. The grid is inert here (divs, no gesture
@@ -368,8 +412,29 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
               {word || <span className="tw-word__hint">trace or tap a word…</span>}
             </div>
 
-            <div className="anch-toastslot" aria-live="polite">
-              {toast && <span className={`anch-toast anch-toast--${toast.kind}`}>{toast.text}</span>}
+            {/* THE LADDER (BENCHMARKS §1) SHARES THE TOAST'S RESERVED SLOT.
+                Rank, score and the points owed to the next rung are the room's
+                only "one more word" hook, and they must be on the glass at rest
+                — but a row of its own measured a scrollbar into a tier-3
+                Gallery at 375×667. The slot was already reserved for zero
+                layout shift (AAA 1.5), so the two stack in one grid cell: the
+                standing at rest, the toast on top of it for its 1.4s. */}
+            <div className="tw-slot">
+              <div className={`tw-standing${toast ? ' tw-standing--hushed' : ''}`} aria-hidden={!!toast}>
+                <span className="tw-standing__count tabular-nums">
+                  {state.twistle.foundWords.length} of {puzzle.targetCount} works
+                </span>
+                <span className="tw-standing__rank">{standing.name}</span>
+                <span className="tw-standing__score tabular-nums">{standing.score}</span>
+                {standing.next && (
+                  <span className="tw-standing__next tabular-nums">
+                    {standing.next.points} to {standing.next.name}
+                  </span>
+                )}
+              </div>
+              <div className="anch-toastslot" aria-live="polite">
+                {toast && <span className={`anch-toast anch-toast--${toast.kind}`}>{toast.text}</span>}
+              </div>
             </div>
 
             <div className="anch-row">
@@ -404,8 +469,21 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
                   the adapter — the ONLY reason a word lands here), which is the
                   same vocabulary the toast uses. Inline, so it costs no line
                   when nothing has been struck. */}
+              {/* ROUND 28 — the studies. These used to arrive struck through
+                  under "not in his lexicon", which was false. They are hung. */}
+              {studies.length > 0 && <span className="tw-lists__cap">studies:</span>}
+              {/* BOUNDED ON PURPOSE. A tier-3 board carries up to 77 studies and
+                  the deck is sticky: an unbounded strip walks the board off the
+                  bottom of a 667px screen. The most recent six are shown and the
+                  rest are counted, so nothing she found is ever silently gone. */}
+              {studies.slice(-STUDY_CHIPS).map((w) => (
+                <span key={w} className="anch-chip anch-chip--study">{w}</span>
+              ))}
+              {studies.length > STUDY_CHIPS && (
+                <span className="tw-lists__cap tabular-nums">+{studies.length - STUDY_CHIPS} more</span>
+              )}
               {state.missedWords.length > 0 && (
-                <span className="tw-lists__cap">not in his lexicon:</span>
+                <span className="tw-lists__cap">not on the curator’s list:</span>
               )}
               {state.missedWords.map((w) => (
                 <span key={w} className="anch-chip anch-chip--muted">{w}</span>

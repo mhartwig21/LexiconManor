@@ -4,8 +4,10 @@ import twistleData from '../../content/generated/twistle.json';
 import type { TwistlePuzzle } from '../../src/engine/types';
 import {
   centerIndex, findPath, gridSize, maxFindableFor, MIN_ASK_SHARE, puzzleSize,
-  startTwistle, submitTwistleWord,
+  startTwistle, straightestTurns, submitTwistleWord, twistleMaxScore, twistlePoints,
+  twistleRuleLines, twistleStanding, TWISTLE_RANKS, STUDY_POINTS, workPoints,
 } from '../../src/engine/twistle';
+import { gateOk } from '../../content/generate-gate';
 import { twistleAdapter } from '../../src/engine/rooms/adapters/twistle';
 
 /**
@@ -345,4 +347,289 @@ describe('twistle is a puzzle, not a lookup (round 26)', () => {
       }
     }
   }, POOL_WALK_MS);
+});
+
+/**
+ * ═══ ROUND 28 — THE ACCEPT-LIST, THE COPY, AND THE LADDER ═════════════════
+ *
+ * Round 17 fixed this room's difficulty with three knobs and broke something
+ * else doing it. Every knob narrowed what the Gallery ACCEPTS without narrowing
+ * what the player can physically TRACE, and at tier 3 the four-corner floor
+ * **refused a median 23 words per board that a player plausibly knows (Norvig
+ * rank ≤ 20,000) while accepting 11** — more known words refused than accepted,
+ * for a rule the room never stated. Tracing a word you can see and being told it
+ * is not a word is the worst feeling a word search can give.
+ *
+ * Every gate below reads the shipped JSON, and every one of them FAILS on the
+ * pool this repo shipped yesterday; the number each one condemns is recorded in
+ * its own comment, measured rather than asserted.
+ */
+
+/** The four-to-eight letter window the generator's trie enumerates. */
+const MIN_ENUM = 4;
+const MAX_ENUM = 8;
+
+/**
+ * Every corpus word a player PLAUSIBLY KNOWS — the same rank ≤ 20,000 line the
+ * `everyday` band is drawn at, and the line the independent critic measured this
+ * room's refusals against.
+ */
+const KNOWN: string[] = [...RANKS.entries()]
+  .filter(([w, r]) => r <= 20_000 && w.length >= MIN_ENUM && w.length <= MAX_ENUM)
+  .map(([w]) => w.toUpperCase());
+
+interface Node { kids: Map<string, Node>; word: string | null }
+function trieOf(words: string[]): Node {
+  const root: Node = { kids: new Map(), word: null };
+  for (const w of words) {
+    let n = root;
+    for (const c of w) {
+      let k = n.kids.get(c);
+      if (!k) { k = { kids: new Map(), word: null }; n.kids.set(c, k); }
+      n = k;
+    }
+    n.word = w;
+  }
+  return root;
+}
+const KNOWN_TRIE = trieOf(KNOWN);
+
+/**
+ * Every KNOWN word this grid can really be made to spell, INDEPENDENTLY of what
+ * the board claims to accept: a depth-first walk of the grid against a trie of
+ * the corpus, honouring exactly the rules the room states on the glass (length
+ * floor, king adjacency, no tile reused, the marked tile when it is marked).
+ * This is the player's hand, not the generator's list — which is the only way a
+ * gate on *what the room refuses* can ever fail.
+ */
+function traceableKnownWords(p: TwistlePuzzle): Set<string> {
+  const n = puzzleSize(p);
+  const centre = centerIndex(n);
+  const out = new Set<string>();
+  const used = new Array<boolean>(p.grid.length).fill(false);
+  const walk = (pos: number, node: Node, depth: number, hitCentre: boolean) => {
+    const next = node.kids.get(p.grid[pos]!);
+    if (!next) return;
+    used[pos] = true;
+    const centred = hitCentre || pos === centre;
+    if (next.word && depth + 1 >= p.rules.minLength && (!p.rules.centerRequired || centred)) {
+      out.add(next.word);
+    }
+    const r = Math.floor(pos / n), c = pos % n;
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const nr = r + dr, nc = c + dc;
+        if (nr < 0 || nc < 0 || nr >= n || nc >= n) continue;
+        const idx = nr * n + nc;
+        if (!used[idx]) walk(idx, next, depth + 1, centred);
+      }
+    }
+    used[pos] = false;
+  };
+  for (let i = 0; i < p.grid.length; i++) walk(i, KNOWN_TRIE, 0, false);
+  return out;
+}
+
+/** Yield the event loop between tiers — STATUS' own lesson about worker timeouts. */
+const breathe = () => new Promise<void>((resolve) => { setImmediate(resolve); });
+
+describe('twistle accepts what it lets you trace (round 28, BENCHMARKS §8)', () => {
+  it('ships both classes on every board', () => {
+    const minTurnsByTier: Record<number, number> = { 1: 1, 2: 2, 3: 4 };
+    for (const p of POOL) {
+      expect(Array.isArray(p.extraWords), `${p.id} ships no study list`).toBe(true);
+      expect(p.minTurns, p.id).toBe(minTurnsByTier[p.tier]!);
+      const works = new Set(p.targetWords);
+      for (const w of p.extraWords!) {
+        // A study is shown as a chip and scored, so a broken one is a visible lie.
+        expect(works.has(w), `${p.id}: ${w} is both a work and a study`).toBe(false);
+        expect(w.length, `${p.id}: study ${w} under the stated minimum`)
+          .toBeGreaterThanOrEqual(p.rules.minLength);
+        expect(findPath(p.grid, w, p.rules), `${p.id}: study ${w} cannot be traced`).not.toBeNull();
+        expect(gateOk(w.toLowerCase()), `${p.id}: study ${w} fails the cozy gate`).toBe(true);
+        // …and it genuinely falls short of the ask, or it belonged in the ask.
+        expect(straightestTurns(p.grid, w, p.rules)!, `${p.id}: study ${w} is a work`)
+          .toBeLessThan(p.minTurns!);
+      }
+    }
+  }, POOL_WALK_MS);
+
+  /**
+   * THE GATE THIS ROUND EXISTS FOR, and it cannot pass by construction: it never
+   * reads `targetWords` to decide what ought to be findable. It walks the GRID
+   * against the corpus and then asks the board what it does with each word.
+   *
+   * Replayed against the pool shipped at round 17 it fails on 1,610 words across
+   * the seventy tier-3 boards — a median of 23 a board, against a median 11
+   * known words accepted — plus 51 at tier 2 and 3 at tier 1.
+   * On this pool the only known word any board still refuses is one the COZY
+   * GATE refuses: 175 in the house, every one a word the manor will not print
+   * (TRANS, NUDES, ANGER, PENIS, COCAINE…). That is an editorial refusal, not a
+   * rule of play she can see on the board and obey, and it is the whole residue.
+   */
+  it('refuses no word she can trace and plausibly knows — except what the manor will not print', async () => {
+    for (const tier of [1, 2, 3]) {
+      const offenders: string[] = [];
+      for (const p of byTier(tier)) {
+        const accepted = new Set([...p.targetWords, ...(p.extraWords ?? [])]);
+        for (const w of traceableKnownWords(p)) {
+          if (accepted.has(w)) continue;
+          if (!gateOk(w.toLowerCase())) continue; // the cozy gate's own call
+          offenders.push(`${p.id}: ${w} (rank ${rankOf(w)})`);
+        }
+      }
+      expect(offenders.slice(0, 12), `tier ${tier} refuses ${offenders.length} known traceable words`)
+        .toEqual([]);
+      await breathe();
+    }
+  }, POOL_WALK_MS);
+
+  /**
+   * The other half of the same promise: acceptance has to be worth having. A
+   * tier-3 board with an empty second class has not been fixed, it has been
+   * relabelled — round 17's tier-3 boards accepted a median 11 known words and
+   * this pool accepts 35.
+   */
+  it('tier 3 really has a second class, and the lower tiers never needed one', () => {
+    const studies = byTier(3).map((p) => p.extraWords!.length);
+    expect(median(studies), 'tier 3 median studies').toBeGreaterThanOrEqual(20);
+    expect(Math.min(...studies), 'the thinnest tier-3 board').toBeGreaterThan(0);
+    // Tiers 1–2 measured a median 0 refusals before this round: the defect was
+    // never theirs, and this is the pin that says so rather than a claim.
+    for (const tier of [1, 2]) {
+      expect(median(byTier(tier).map((p) => p.extraWords!.length)), `tier ${tier}`).toBe(0);
+    }
+  });
+
+  it('a study is accepted, is not a mistake, and does not open the room', () => {
+    const p = byTier(3).find((b) => b.extraWords!.length > 0)!;
+    const study = p.extraWords![0]!;
+    const r = submitTwistleWord(p, startTwistle(p), study);
+    expect(r.result.kind, `${p.id}: ${study}`).toBe('study');
+    expect(r.state.foundStudies, p.id).toEqual([study]);
+    expect(r.state.status, p.id).toBe('playing');
+    expect(r.state.wrongAttempts, 'a study is not a mistake').toBe(0);
+    // Every study on the board, and the door is still shut.
+    let s = startTwistle(p);
+    for (const w of p.extraWords!) s = submitTwistleWord(p, s, w).state;
+    expect(s.status, `${p.id}: studies alone opened the room`).toBe('playing');
+    expect(s.foundWords.length, p.id).toBe(0);
+  });
+});
+
+describe('twistle states its own rules, and they are true (round 28)', () => {
+  /**
+   * ROUND 17'S HEADER WAS FALSE AT TIER 3. It read `{targetCount} words ·
+   * {minLength}+ letters`, and the four-corner floor meant nothing under six
+   * letters counted anywhere in the tier — measured on that pool, **0 works of
+   * exactly five letters across all seventy tier-3 boards**, so this gate fails
+   * on it. It passes here because the stated floor is the ACCEPTANCE floor and a
+   * five-letter tier-3 trace is a study (a median 29 of them per board).
+   */
+  it('every board can really be played at the length its header states', () => {
+    for (const p of POOL) {
+      const accepted = [...p.targetWords, ...(p.extraWords ?? [])];
+      expect(accepted.some((w) => w.length === p.rules.minLength),
+        `${p.id} says ${p.rules.minLength}+ letters and accepts nothing that short`).toBe(true);
+    }
+  });
+
+  it('every clause of the header is true of the class it describes', () => {
+    for (const p of POOL) {
+      const lines = twistleRuleLines(p);
+      expect(lines.trace).toContain(`${p.rules.minLength}+ letters`);
+      expect(lines.trace.includes('marked tile'), p.id).toBe(p.rules.centerRequired);
+      expect(lines.ask).toContain(`${p.targetCount} works`);
+      // The corner floor is stated on the ASK, where it is true — never on the
+      // acceptance rule, where round 17 left it silent and enforced it anyway.
+      if (p.minTurns! > 1) expect(lines.ask).toContain(`${p.minTurns}+ corners`);
+      else expect(lines.ask).toContain('a corner');
+      expect(lines.trace).not.toContain('corner');
+      for (const w of p.targetWords) {
+        expect(straightestTurns(p.grid, w, p.rules)!, `${p.id}: work ${w} misses the stated corner floor`)
+          .toBeGreaterThanOrEqual(p.minTurns!);
+      }
+    }
+  }, POOL_WALK_MS);
+});
+
+describe('twistle has a ladder, and it is placed against the boards (round 28)', () => {
+  /** The `targetCount` COMMONEST works — the reflex solve. */
+  const cheapestSolve = (p: TwistlePuzzle) =>
+    [...p.targetWords].sort((a, b) => rankOf(a) - rankOf(b)).slice(0, p.targetCount);
+  /** The `targetCount` lowest-SCORING works — the floor of what a solve can pay. */
+  const leanestSolve = (p: TwistlePuzzle) => {
+    const pts = twistlePoints(p);
+    return [...p.targetWords].sort((a, b) => pts.get(a)! - pts.get(b)!).slice(0, p.targetCount);
+  };
+  const standingOf = (p: TwistlePuzzle, words: string[]) =>
+    twistleStanding(p, { ...startTwistle(p), foundWords: words });
+
+  it('scores a letter a point and a corner two, off the straightest trace', () => {
+    for (const p of POOL.slice(0, 40)) {
+      const pts = twistlePoints(p);
+      for (const w of p.targetWords) {
+        expect(pts.get(w), `${p.id}: ${w}`).toBe(workPoints(w, straightestTurns(p.grid, w, p.rules)!));
+      }
+      for (const w of p.extraWords!) expect(pts.get(w), `${p.id}: study ${w}`).toBe(STUDY_POINTS);
+      // The top rung is every accepted word and nothing more.
+      expect(twistleMaxScore(p), p.id).toBe([...pts.values()].reduce((a, b) => a + b, 0));
+    }
+  }, POOL_WALK_MS);
+
+  /**
+   * THE PLACEMENT GATE. A ladder whose rungs were picked for the sound of them
+   * is not a ladder — the numbers have to answer to the boards. Measured on this
+   * pool: the cheapest solve scores a median 21 / 28 / 24% of the board maximum
+   * and the leanest 16 / 23 / 22%, never below 13%. So rung 2 sits at 12%, one
+   * point of margin under the leanest solve in the house, and a player who
+   * merely solves always arrives at rung 2–4 with something still above her.
+   * Move a rung and this fails; regenerate fatter boards and this fails.
+   */
+  it('a player who merely solves lands mid-ladder — never on the floor, never at the top', () => {
+    for (const p of POOL) {
+      for (const [what, words] of [['cheapest', cheapestSolve(p)], ['leanest', leanestSolve(p)]] as const) {
+        const st = standingOf(p, [...words]);
+        expect(st.rung, `${p.id} ${what} solve → ${st.name} (${st.score}/${st.max})`)
+          .toBeGreaterThanOrEqual(2);
+        expect(st.rung, `${p.id} ${what} solve → ${st.name}`)
+          .toBeLessThanOrEqual(TWISTLE_RANKS.length - 2);
+        expect(st.next, `${p.id} ${what} solve has nothing left to chase`).not.toBeNull();
+        expect(st.next!.points, p.id).toBeGreaterThan(0);
+      }
+    }
+  }, POOL_WALK_MS);
+
+  it('the top rung is every word on the board, and only a full board reaches it', () => {
+    for (const p of POOL.slice(0, 30)) {
+      const worksOnly = standingOf(p, [...p.targetWords]);
+      const everything = twistleStanding(p, {
+        ...startTwistle(p), foundWords: [...p.targetWords], foundStudies: [...p.extraWords!],
+      });
+      expect(everything.rung, p.id).toBe(TWISTLE_RANKS.length - 1);
+      expect(everything.next, p.id).toBeNull();
+      expect(everything.score, p.id).toBe(twistleMaxScore(p));
+      // Every WORK but no study is short of the summit wherever studies exist.
+      if (p.extraWords!.length > 0) expect(worksOnly.rung, p.id).toBeLessThan(TWISTLE_RANKS.length - 1);
+    }
+  });
+
+  /**
+   * THE ANTI-FARM GATE, and the reason the door is a COUNT and not a score
+   * (round 26's defect must not walk back in wearing a ladder): a tier-3 board
+   * carries up to 77 studies, so if points opened the room, they would open it.
+   * They cannot — and they must also not out-rank the ask, or the room teaches
+   * her to hunt chaff. Measured: every study on a board together is worth a
+   * median 11% of that board's maximum and at most 20%, against a solve's 22–24%.
+   */
+  it('cannot be climbed on studies alone', () => {
+    for (const p of POOL) {
+      const studiesOnly = twistleStanding(p, { ...startTwistle(p), foundStudies: [...p.extraWords!] });
+      const solve = standingOf(p, leanestSolve(p));
+      expect(studiesOnly.score, `${p.id}: the whole margin out-scores the exhibition`)
+        .toBeLessThan(solve.score);
+      expect(studiesOnly.rung, p.id).toBeLessThanOrEqual(solve.rung);
+    }
+  });
 });

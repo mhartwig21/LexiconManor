@@ -56,7 +56,11 @@ function walk(node: Json, path: string, visit: (s: string, path: string) => void
 /** JSON paths whose leaves are DISPLAY WORDS rather than prose, per file. */
 const DISPLAY_KEYS: Record<string, RegExp> = {
   'generated/hive.json': /\.(validWords|pangrams)\[/,
-  'generated/twistle.json': /\.(targetWords)\[/,
+  // ROUND 28 — `extraWords` (the Gallery's STUDIES) is a display surface too:
+  // every one of them can be traced, accepted, and printed as a chip on the
+  // deck. It is ~2,000 new printed words at tier 3, and it must be held to the
+  // same gate as the ask — this repo has shipped a slur in these pools once.
+  'generated/twistle.json': /\.(targetWords|extraWords)\[/,
   'generated/word-web.json': /\.(words|layout|ambiguousWords)\[/,
   'generated/crossword.json': /\.answer$/,
   'generated/forgotten-word.json': /\.word$/,

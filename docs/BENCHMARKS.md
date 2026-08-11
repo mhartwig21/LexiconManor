@@ -380,7 +380,66 @@ the ground floor and call it tier 1.
 
 ---
 
-## 8. Reference numbers cheat-sheet (for tuning conversations)
+## 8. NYT Strands → benchmark for the Gallery (Twistle)
+
+*Two rounds running, a Gallery was judged against a teardown that was not in this file. It is
+here now. Strands is the only mainstream word game whose input gesture is ours — trace a path
+through touching tiles — so it is the benchmark, and the one thing it does better than anything
+else is what it does with a word you traced that it did not want.*
+
+### Geometry & input
+- **6 wide × 8 tall = 48 tiles.** Not a square. Trace through king-adjacent tiles (diagonals
+  count), no tile reused inside one word; release to claim. Tap-to-build is offered as well.
+- **Every tile belongs to an answer.** The board is exactly tiled by the theme words plus the
+  spangram — there is no filler on a Strands board at all. The letters you have not used yet
+  are therefore a live, honest clue about what is left.
+- One **spangram**: the answer that names the theme and touches two opposite edges of the
+  board. Found spangram is gold, found theme words are blue.
+- A short **clue in words** sits over the board ("Get in shape"), and the theme is oblique
+  rather than technical. The puzzle is a category puzzle wearing a word search's clothes.
+
+### The rule this room exists to steal: A TRACED REAL WORD IS NEVER "WRONG"
+This is the whole teardown in one line, and it is the exact defect the round-17 Gallery had.
+- A theme word → counts, highlights, permanent.
+- **Any other real word of 4+ letters → NOT rejected.** It is acknowledged, counted, and
+  **three of them buy a hint**, which lights up the tiles of one unfound theme word (you still
+  have to trace it). The counter toward the next hint is on screen at all times.
+- Only a non-word gets the shake.
+
+So Strands has **two classes of accepted word and no class of refused real word.** The player
+who traces LEAN off a board about footwear is told "that is not the theme, and it is worth
+something" — never "LEAN is not a word", which is a lie, and never a silent bounce, which
+reads as a bug. A word search's single worst feeling is tracing a word you can see and being
+told no; Strands designs that feeling out of existence rather than tuning it down.
+
+### What Strands does NOT have, and why it matters to us
+- **No score. No rank. No ladder.** Completion is binary — all theme words plus the spangram —
+  and the share card is a row of 🔵/🟡 with 💡 per hint used. Nothing accrues, nothing ranks.
+- That is survivable for Strands because the *theme reveal* is the payoff and because it is a
+  once-a-day ritual with a fixed, knowable end. It is **not** survivable for a roguelike room
+  she meets forty times in a campaign, which is why the Gallery cannot copy Strands whole.
+- So the Gallery is a **hybrid by design**: Strands' acceptance model (§8) bolted to the Bee's
+  rank ladder (§1) — the ladder is the retention machine, and a word search has better material
+  to rank on than a Bee does, because a traced word carries a *shape* as well as a length.
+
+### Difficulty, where Strands actually puts it
+Not in length and not in count (7–9 answers most days). It is in **the theme's obliqueness** and
+in **the board's interference**: because every tile is spoken for, the letters of one answer sit
+directly across the path of another, so the eye keeps assembling near-misses. Hard days are hard
+because the grid is dense with plausible wrong traces, not because the words are rare.
+
+### Steal / Fix for the Gallery
+**Steal:** the two-class accept model, exactly — a real, traceable word she plausibly knows is
+never refused; it lands somewhere and it is worth something. And Strands' honesty about which
+rule is doing the work: the room states its own constraint over the board.
+**Fix/beat:** give it the ladder Strands refuses to have (§1's curve, re-based on this room's
+own material — letters AND corners, since a word search ranks on shape), and keep the *door*
+on the constrained class so the ladder can never be climbed into a solve on easy words. Where
+Strands ends flat, the Gallery should end on a rung with rungs visible above it.
+
+---
+
+## 9. Reference numbers cheat-sheet (for tuning conversations)
 
 | Thing | Benchmark value | Our starting value |
 |---|---|---|
@@ -400,3 +459,7 @@ the ground floor and call it tier 1.
 | Sudoku tier 2 | NYT Hard: ~26 givens, subsets, NO wing/fish | same — `ROOM_EFFORT.sudoku[1]` |
 | Sudoku tier 3 | above NYT's published ladder: wing/fish/colouring | same — `ROOM_EFFORT.sudoku[2]` |
 | Unfinished sudoku | NYT: the board is still there tomorrow | the open ledger (engine/rooms/room-bank.ts) |
+| Word-search grid | Strands: 6×8 = 48 tiles, every tile in an answer | 5×5 (tiers 1–2) / 6×6 (tier 3), filler allowed |
+| Traced real word, not wanted | Strands: accepted, 3 of them = 1 hint | accepted as a *study* — 1 point, never refused |
+| Word-search answer count | Strands: 7–9 theme words + spangram | 5 / 6 / 6 *works* (`ROOM_EFFORT.twistle`) |
+| Word-search ladder | Strands: none at all | Bee's curve on letters + 2×corners (`TWISTLE_RANKS`) |

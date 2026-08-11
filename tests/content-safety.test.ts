@@ -382,6 +382,22 @@ const INJECTIONS: { file: string; label: string; bad: unknown; clean: unknown }[
     clean: [{ id: 'x', targetWords: ['ORCHARD', 'THIMBLE'] }],
   },
   {
+    // ROUND 28 — the Gallery's SECOND display surface. A study is traced,
+    // accepted and printed as a chip exactly like a work, and there are ~2,000
+    // of them at tier 3; if `extraWords` were not classified as display words
+    // it would be scanned at the weaker prose standard.
+    file: 'generated/twistle.json',
+    label: 'Gallery STUDY word (round 28, the new display surface)',
+    // TITS rather than a slur ON PURPOSE. A slur is caught by the absolute
+    // prose standard wherever it appears, so it would pass this fixture even if
+    // `extraWords` were misclassified — the gate would not have been proven.
+    // TITS passes `proseOk` and fails `gateOk`, so this fixture goes RED unless
+    // the study list is really classified as a DISPLAY surface. (Verified:
+    // reverting the `extraWords` term in DISPLAY_KEYS fails this case.)
+    bad: [{ id: 'x', targetWords: ['ORCHARD'], extraWords: ['THIMBLE', 'TITS'] }],
+    clean: [{ id: 'x', targetWords: ['ORCHARD'], extraWords: ['THIMBLE', 'LANTERN'] }],
+  },
+  {
     file: 'generated/word-web.json',
     label: 'Library tile (where MIDGET shipped)',
     bad: [{ id: 'x', groups: [{ theme: 'Hidden Insects', words: ['MIDGET', 'BRAMBLE'] }] }],

@@ -280,6 +280,28 @@ Ordered most value first.
   Three published spreads fell with it (4.10h: 20.00× → 16.00×, 12.00× → 9.60×,
   4.89× → 3.91×) and the fourth — the one filtered to rooms of two minutes or more — did not
   move, because the room became a puzzle without becoming long.
+- **~~The Gallery, again~~ — DONE, round 28.** *(Left here with the finding.)* Round 26's fix
+  narrowed what the room ACCEPTS without narrowing what the player can TRACE, and nothing
+  measured it. At tier 3 the four-corner floor **refused 1,610 known, traceable, printable
+  words across the seventy boards — a median 23 a board, against 22 accepted, of which only 11
+  are words she plausibly knows.** More known words refused than accepted, for a rule the
+  header never stated; the room answered them with *"isn't in the lexicon"*, which was false.
+  The header was false too: it read *5+ letters* while **0 works of exactly five letters
+  existed anywhere at tier 3**.
+  BENCHMARKS **§8 is the missing teardown** (NYT Strands — the only mainstream word game whose
+  input gesture is ours, and the game whose whole design answers this exact question). Its
+  rule, stolen whole: *a traced real word is never wrong.* The board now ships two classes —
+  **works** (the ask; unchanged, so round 26's one-in-five share and the whole economy are
+  untouched) and **studies** (accepted, kept, scored, and they do not open the door). Refusals
+  of known traceable words: **1,610 / 51 / 3 → 0 / 0 / 0** at tiers 3 / 2 / 1. The only
+  refusals left in the house are the cozy gate's 175, which is an editorial choice.
+  And the room got the **ladder** it never had (BENCHMARKS §1 calls the Bee's *the retention
+  machine*; this room's win was `foundWords.length >= targetCount` and nothing else): *a
+  letter is a point, a corner is two*, a study is one, five rungs from Bare Wall to Curator's
+  Eye. Measured on the shipped pool, a player who merely solves lands on **rung 2–4 of 5 on
+  every board at every tier**, always with something above her. **No minute of the evening
+  moved** — the door is still the same count of the same words, `ROOM_EFFORT.twistle` is
+  untouched, and no room had to be shortened to pay for it.
 - **~~The Counting House~~ — DONE, round 27.** *(Left here with the finding.)* It was a
   27-minute tier-2 board inside a 10–15-minute evening, and the deeper defect was that
   **there was no sudoku benchmark in this repo at all** — the ladder's three tiers were the

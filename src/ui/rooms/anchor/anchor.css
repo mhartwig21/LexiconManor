@@ -204,6 +204,9 @@
    itself is legible. */
 .anch-chip--accent { border-color: var(--room-accent); color: var(--ink); font-weight: 600; }
 .anch-chip--muted  { color: var(--ink-faint); text-decoration: line-through; }
+/* ROUND 28 — a STUDY. Accepted, kept, worth a point: it must read as a smaller
+   sibling of the accent chip, never as the struck one it used to be printed as. */
+.anch-chip--study  { border-style: dashed; color: var(--ink-soft); }
 
 .anch-card {
   background: var(--paper-raised);
@@ -983,6 +986,46 @@
 }
 .tw-word__hint { font-size: 1rem; font-weight: 400; color: var(--ink-faint); letter-spacing: normal; text-transform: none; }
 .tw-lists { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center; min-height: 1.8rem; }
+
+/* --------------------------------------------------------------------------
+   ROUND 28 — THE STANDING LINE (BENCHMARKS §1's rank ladder, §8's teardown)
+   One row, one line, no wrap: rank name, running score, and the points owed to
+   the next rung. It sits INSIDE the sticky deck, above the traced word, so it
+   never leaves the thumb zone and never pushes the board off a 375×667 screen —
+   the whole line is 1.05rem of height and the deck's own gap absorbs it.
+   -------------------------------------------------------------------------- */
+/* One grid cell, two occupants: the standing at rest, the toast over it. */
+.tw-slot { display: grid; }
+.tw-slot > * { grid-area: 1 / 1; }
+.tw-standing--hushed { opacity: 0; }
+.tw-standing {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.5rem;
+  font-size: var(--text-small, 0.85rem);
+  line-height: 1.25;
+  color: var(--ink-soft);
+}
+.tw-standing__rank {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--ink);
+}
+.tw-standing__score {
+  font-weight: 700;
+  color: var(--ink);
+}
+.tw-standing__next { font-style: italic; }
+.tw-standing__count { white-space: nowrap; }
+
+.anch-done__rank {
+  margin: 0.1rem 0 0.3rem;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+.anch-done__rank strong { font-family: var(--font-display); font-weight: 400; color: var(--ink); font-size: 1.05rem; }
 /* The struck strip's header (round 24). It rides IN the chip flow rather than
    above it, so a Gallery where nothing has been struck pays nothing for it. */
 .tw-lists__cap {
