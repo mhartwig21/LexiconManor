@@ -207,7 +207,9 @@ export const hiveAdapter: RoomPuzzleAdapter<HivePuzzleEx, HiveRoomState, HiveAct
         costedMistakes: costed ? next.costedMistakes + 1 : next.costedMistakes,
         lastFeedback: { kind: 'invalid', reason, costed },
       };
-      events.push({ type: 'mistake', weight: costed ? 'structural' : 0 });
+      // `reason` here is the SAME key HiveView keys its toast off, so the
+      // candle's float and the room's own line are one decision (round 28).
+      events.push({ type: 'mistake', weight: costed ? 'structural' : 0, detail: reason });
     }
 
     return { state: next, events, outcome: { status: 'active', perfect: isPerfect(next) } };

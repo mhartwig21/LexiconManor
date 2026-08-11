@@ -107,7 +107,7 @@ export const twistleAdapter: RoomPuzzleAdapter<TwistlePuzzleEx, TwistleRoomState
         missedWords: missed ? [...state.missedWords, word] : state.missedWords,
         lastFeedback: { kind: 'invalid', reason: result.reason, word, costed },
       };
-      events.push({ type: 'mistake', weight: costed ? 1 : 0 });
+      events.push({ type: 'mistake', weight: costed ? 1 : 0, detail: result.reason });
     }
 
     return { state: next, events, outcome: { status: 'active', perfect: isPerfect(next) } };

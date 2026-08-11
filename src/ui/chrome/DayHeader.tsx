@@ -20,6 +20,21 @@ import { useOverlayOpen } from './overlay-watch';
  */
 const KEY_IN_MS = 1400;
 const KEY_MS = 8000;
+/**
+ * ROUND 28 — ONE MORNING WAS NOT A KEY, IT WAS A GLIMPSE.
+ *
+ * Round 26 hung the three nouns under the cluster on day 1 and retired them
+ * for ever on her first touch — which, measured, is inside three seconds of a
+ * dawn that also has step floats, a morning card and Mrs. Bramble in it. From
+ * day 2 a sighted stranger was back to three unlabelled trinkets, with the
+ * words living only in `.chr-sr` (1px, clipped) where only a screen reader
+ * goes. The key now opens the first three mornings — once each, still retiring
+ * on her first touch, still costing the bar no width — which is the span over
+ * which the campaign's own comprehension test says the machine is being
+ * learned. After that the float carries it: every change names its unit ("+1
+ * key"), and by then she has spent one.
+ */
+const KEY_DAYS = 3;
 
 const PHASE_LABEL: Record<string, string> = {
   morning: 'morning',
@@ -84,8 +99,12 @@ export default function DayHeader() {
    * eats a tap aimed at something else is the defect, not the fix).
    */
   const [armed, setArmed] = useState(false);
-  /** Has the first-run currency key had its turn? (See `firstRun` below.) */
-  const [keyShown, setKeyShown] = useState(false);
+  /**
+   * The last day on which the currency key has had its turn — 0 until it has
+   * had one at all. A DAY, not a boolean, so the key can open each of the
+   * first `KEY_DAYS` mornings once and never twice (round 28).
+   */
+  const [keyShownDay, setKeyShownDay] = useState(0);
   // An overlay opening mid-arm must not leave a live confirm tap waiting in
   // the band above it — the second tap ends the day with no further warning.
   useEffect(() => {
@@ -131,21 +150,22 @@ export default function DayHeader() {
    * A word beside each glyph is not available: measured live, the bar's
    * content ends exactly on its right padding at 390x844 AND at 375x667 —
    * there is not one spare pixel, and an overflowing label is a worse defect
-   * than the unlabelled glyph. So this is the other half of 11.7's remedy: a
-   * one-time first-run key, hung under the cluster it names, in the chips'
-   * own left-to-right order, out of the bar's width entirely.
+   * than the unlabelled glyph. So this is the other half of 11.7's remedy: an
+   * early-days key, hung under the cluster it names, in the chips' own
+   * left-to-right order, out of the bar's width entirely.
    *
-   * It is inert (`pointer-events: none`), it never returns after the first
-   * morning, and the player's first touch anywhere puts it away — the same
-   * grammar as the retire confirm above. It waits out the dawn's step floats
+   * It is inert (`pointer-events: none`), it opens once on each of the first
+   * `KEY_DAYS` mornings and never again, and the player's first touch anywhere
+   * puts it away for that day — the same grammar as the retire confirm above. It waits out the dawn's step floats
    * before it fades in (CSS delay) so the two labels are never on the glass at
    * once. Everything it says is a NOUN, not a rule: this is a key to three
    * glyphs, not a tutorial.
    */
-  const firstRun = day?.day === 1 && day.phase === 'exploring' && !overlayOpen && !keyShown;
+  const firstRun = day !== null && day.day <= KEY_DAYS && day.phase === 'exploring'
+    && !overlayOpen && keyShownDay < day.day;
   useEffect(() => {
     if (!firstRun) return;
-    const done = () => setKeyShown(true);
+    const done = () => setKeyShownDay(day?.day ?? 0);
     // The listener is armed only once the key is actually ON the glass: an
     // eager first tap must not retire a label she never got to see.
     const arm = setTimeout(() => document.addEventListener('pointerdown', done, true), KEY_IN_MS);

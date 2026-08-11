@@ -163,6 +163,10 @@
 }
 .bp-tierpips path { fill: var(--ink-faint); }
 
+/* The margin's key (round 28): the same diamond the pip column draws, and the
+   same numeral ink as the rate card, so the sample IS the mark it explains. */
+.bp-key__pip { fill: var(--ink-faint); }
+
 /* THE WINGS (round 20, REVIEW_AA §5.7). The plot's own boundaries, in survey
    ink — quieter than a wall, louder than the graph crosses, so the eye reads
    three parts of a house rather than five identical columns. The plate above

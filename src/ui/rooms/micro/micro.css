@@ -38,7 +38,6 @@
   font-weight: 400;
   letter-spacing: 0.02em;
 }
-.mic__sub { margin: 0.15rem 0 0; font-size: var(--text-sm); color: var(--ink-soft); }
 .mic__meta { text-align: center; font-size: var(--text-sm); color: var(--ink-soft); }
 
 .mic-row { display: flex; gap: 0.6rem; justify-content: center; align-items: center; flex-wrap: wrap; }
@@ -442,12 +441,14 @@
    ROUND 5: the threshold moves 700 → 900. The trim was never firing at 844
    (a 12/13/14-class iPhone), which is exactly where shots 32 and 33 showed the
    final rank of cells sliced by the deck: `.mic-toastslot` alone reserves
-   3.4rem that is empty most of the session, and `.mic__sub` costs another
+   3.4rem that is empty most of the session, and the sub-line cost another
    ~40px. Both are chrome; the print is the game.
+   ROUND 28: `.mic__sub` is retired outright. Hidden at 900 means hidden at 844
+   and at 667 — i.e. drawn on no phone that exists — and the room's rule has
+   lived in the reserved line above the keys since round 24 anyway.
    -------------------------------------------------------------------------- */
 @media (max-height: 900px) {
   .mic { gap: 0.45rem; padding-top: 0.4rem; }
-  .mic__sub { display: none; }
   .mic-toastslot { min-height: 2.2rem; }
   .mic-keys { gap: 5px; }
   .dk-sheet { padding: 0.5rem 0.4rem; --dk-word-gap: 0.55rem; --dk-rank-gap: 0.4rem; }

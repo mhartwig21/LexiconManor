@@ -49,8 +49,9 @@
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCard, Tier } from '../types';
 import type { RoomPuzzleKind } from '../rooms/room-puzzle';
 import {
+  atSanctumDoor,
   cellKey, doorsConnect, neighbor, opensOntoSanctum, opposite, resolveDoors,
-  roomAt, rowTier, sameCell, sealsItself, SANCTUM_DOOR_CELL,
+  roomAt, rowTier, sealsItself,
 } from '../manor/grid';
 import { isDoorLocked, KEY_COST, type LockView } from '../manor/locks';
 import { rollCards, type DraftRollCtx } from '../manor/drafting';
@@ -333,11 +334,21 @@ export function shapesOf(
   return cards.map((c) => shapeOf(c, door.dir, manor, door.cell));
 }
 
-/** Is she at the Sanctum door — the live gate, asked of a real manor. */
-export function standsAtSanctumDoor(manor: ManorState): boolean {
-  return sameCell(manor.playerCell, SANCTUM_DOOR_CELL)
-    && doorsConnect(manor, manor.playerCell, 'N');
-}
+/**
+ * Is she at the Sanctum door — THE live gate, asked of a real manor.
+ *
+ * ROUND 28: this was a second implementation of `atSanctumDoor`
+ * (manor/grid.ts), copied line for line into a module that already imports
+ * from that file, and every ACCESS band the simulator publishes rests on it.
+ * Two copies of one rule is a lie waiting for the day someone edits one of
+ * them: the round-13 lesson in grid.ts's own comment is that this predicate
+ * has a THIRD meaning (on the landing, but the drafted room drew no north
+ * door), and a copy is exactly how a house ends up shut in one place and open
+ * in another. The name stays — `simulate.ts` binds a local `atSanctumDoor`
+ * for the latched day and would shadow the import — but there is now one
+ * function, and the simulator asks the game's own question.
+ */
+export const standsAtSanctumDoor: (manor: ManorState) => boolean = atSanctumDoor;
 
 /** Keys a door asks for (0 when it is open today). */
 export function keyCostOf(door: FrontierDoor): number {

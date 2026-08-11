@@ -193,6 +193,12 @@ export const createRoomSlice =
               delta: STEP_TABLE.mistake(ev.weight, tier),
               at: now,
               roomKey: cellKey,
+              // The room's own key for what it just refused, carried so the
+              // candle's float can say what the room's toast said (round 28,
+              // StepEntry.detail). Hints carry none — 'hint' is the whole
+              // story — and the spread keeps the field off the entry entirely
+              // rather than writing `undefined` into every saved ledger.
+              ...(ev.type === 'mistake' && ev.detail ? { detail: ev.detail } : {}),
             });
             break;
           }

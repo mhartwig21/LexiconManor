@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   campaignProfileForDay, climbStepCost, deckMixAt, keyLuckFor, landingDraft, measuredKeyRate,
@@ -120,6 +122,29 @@ const campaigns = simulateCampaigns(PROFILE_SKILLED, CAMPAIGNS, CAMPAIGN_LENGTH,
 const reachDays = campaigns.map((c) => c.firstSanctumReachDay);
 const winDays = campaigns.map((c) => c.volumeWinDay);
 const NEVER = CAMPAIGN_LENGTH + 1;
+
+/**
+ * ═══ ROUND 28 — THE BANDS, IN ONE PLACE, WHERE THE DOC CAN BE HELD TO THEM ═══
+ *
+ * Round 24 moved four of these here and left AAA 4.10's published copies where
+ * they were, so the criterion promised a median win of 18–28 while this file
+ * asserted 24–32, ">80% inside 45 evenings (measured 100%)" against a measured
+ * 89%, and "0% never inside 45 days" against one campaign in ten. A published
+ * band that contradicts the enforced one is the only number a critic reads.
+ *
+ * So every campaign band lives HERE, the assertions below read it, and the last
+ * test in this file greps docs/AAA_BAR.md for each one in the exact form the doc
+ * prints it ("enforced 14–22"). Move a band and the doc goes red with it. That
+ * is not a tautology: the two sides are different artifacts, and it is precisely
+ * the drift that has escaped twice.
+ */
+const BANDS = {
+  skilledDoor: [14, 22],
+  skilledWin: [12, 20],
+  decentDoor: [22, 30],
+  decentDeduce: [14, 24],
+  decentWin: [24, 32],
+} as const;
 const reachOrNever = reachDays.map((d) => d ?? NEVER);
 const winOrNever = winDays.map((d) => d ?? NEVER);
 
@@ -453,8 +478,8 @@ describe('4.10d — the SKILLED player first reaches the Sanctum DOOR on day 14�
     // the finding this round exists to hand the next one: the deck's door
     // layouts, not the step table, are what price the top of the house.
     const m = medianOf(reachOrNever);
-    expect(m, `median first door day ${m}`).toBeGreaterThanOrEqual(14);
-    expect(m).toBeLessThanOrEqual(22);
+    expect(m, `median first door day ${m}`).toBeGreaterThanOrEqual(BANDS.skilledDoor[0]);
+    expect(m).toBeLessThanOrEqual(BANDS.skilledDoor[1]);
     // …and the storey under it is still reached in the old band's window, so
     // the two milestones can never be confused again.
     const landing = medianOf(campaigns.map((c) => c.firstLandingDay ?? NEVER));
@@ -485,8 +510,8 @@ describe('4.10d — the SKILLED player first reaches the Sanctum DOOR on day 14�
       const runs = simulateCampaigns(PROFILE_SKILLED, 200, CAMPAIGN_LENGTH, seed);
       const m = medianOf(runs.map((c) => c.firstSanctumReachDay ?? NEVER));
       // Round 24: measured 18 on every one of the four seeds.
-      expect(m, `seed ${seed}: first door ${m}`).toBeGreaterThanOrEqual(14);
-      expect(m).toBeLessThanOrEqual(22);
+      expect(m, `seed ${seed}: first door ${m}`).toBeGreaterThanOrEqual(BANDS.skilledDoor[0]);
+      expect(m).toBeLessThanOrEqual(BANDS.skilledDoor[1]);
     }
   }, HEAVY_MS);
 
@@ -580,8 +605,8 @@ describe('4.10e — the SKILLED player wins the VOLUME in 12–20 days', () => {
   it('puts the median win inside the published band', () => {
     // Measured 15 on every one of the four campaign seeds (p10 13, p90 18).
     const m = medianOf(winOrNever);
-    expect(m, `median win day ${m}`).toBeGreaterThanOrEqual(12);
-    expect(m).toBeLessThanOrEqual(20);
+    expect(m, `median win day ${m}`).toBeGreaterThanOrEqual(BANDS.skilledWin[0]);
+    expect(m).toBeLessThanOrEqual(BANDS.skilledWin[1]);
   });
 
   it('needs BOTH gates: knowing the word and reaching the door', () => {
@@ -702,8 +727,8 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
     // handed the landing CELL with a north door on it. Her climb did not get
     // harder; the instrument stopped assuming the last step.
     const m = medianOf(decentReach);
-    expect(m, `median first door day ${m}`).toBeGreaterThanOrEqual(22);
-    expect(m).toBeLessThanOrEqual(30);
+    expect(m, `median first door day ${m}`).toBeGreaterThanOrEqual(BANDS.decentDoor[0]);
+    expect(m).toBeLessThanOrEqual(BANDS.decentDoor[1]);
     expect(share(decentReach, (d) => d === NEVER)).toBeLessThan(0.18);
     // …and she is slower than the skilled player, which is the whole reason
     // the two bands exist. If this ever inverts, one of the profiles has
@@ -734,8 +759,8 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
     // she knows the word and waits a median 8 more evenings to be handed a
     // landing plan that opens north.
     const m = medianOf(decentWin);
-    expect(m, `median win day ${m}`).toBeGreaterThanOrEqual(24);
-    expect(m).toBeLessThanOrEqual(32);
+    expect(m, `median win day ${m}`).toBeGreaterThanOrEqual(BANDS.decentWin[0]);
+    expect(m).toBeLessThanOrEqual(BANDS.decentWin[1]);
     // Never a first-week walkover for her either (measured: still exactly 0).
     expect(share(decentWin, (d) => d <= 7)).toBeLessThan(0.02);
   });
@@ -780,8 +805,8 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
     // floor moved 15 → 25 with the volume's page count and her reading rate
     // did not, so the curve slid right by about four evenings. Measured 18.
     const m = medianOf(decentDeduce);
-    expect(m, `median deduction day ${m}`).toBeGreaterThanOrEqual(14);
-    expect(m).toBeLessThanOrEqual(24);
+    expect(m, `median deduction day ${m}`).toBeGreaterThanOrEqual(BANDS.decentDeduce[0]);
+    expect(m).toBeLessThanOrEqual(BANDS.decentDeduce[1]);
     expect(m).toBeGreaterThan(medianOf(campaigns.map((c) => c.deductionDay ?? NEVER)));
   });
 
@@ -1809,5 +1834,34 @@ describe('4.11 — something the player buys today pays out tomorrow', () => {
     // It buys CLIMB, which is what a prepared ascent is supposed to buy.
     expect(median(withInvestment, (r) => r.maxRow))
       .toBeGreaterThanOrEqual(median(decent, (r) => r.maxRow));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND 28 — THE DOC IS HELD TO THE GATE
+// ---------------------------------------------------------------------------
+
+describe('AAA 4.10 publishes the bands this file enforces', () => {
+  const bar = readFileSync(resolve(__dirname, '..', 'docs', 'AAA_BAR.md'), 'utf8');
+
+  it('prints every campaign band, in the form the criterion prints it', () => {
+    // The doc writes each band as "(enforced 14–22)" beside the measured
+    // figure, with an EN DASH — the house's own typography, and the one the
+    // typography lint keeps. Move a band above and this fails until 4.10 is
+    // rewritten to match, which is the whole point: the numbers escaped twice
+    // by moving on one side only.
+    for (const [name, [lo, hi]] of Object.entries(BANDS)) {
+      expect(bar, `AAA 4.10 does not publish the ${name} band (enforced ${lo}–${hi})`)
+        .toContain(`enforced ${lo}–${hi}`);
+    }
+  });
+
+  it('no longer prints the three figures the round-16 verifiers caught', () => {
+    // Each of these was a published claim this file's own assertions contradict:
+    // an 18–28 win band against 24–32, a finish rate of "100%" against ~89%, and
+    // "0% never inside 45 days" against a measured one-in-ten tail.
+    expect(bar).not.toContain('the volume won at median day **18–28**');
+    expect(bar).not.toContain('(measured 100%)');
+    expect(bar).not.toContain('0% never inside 45 days');
   });
 });

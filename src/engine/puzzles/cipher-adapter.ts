@@ -137,7 +137,7 @@ export const cipherAdapter: RoomPuzzleAdapter<CipherPuzzleEx, CipherRoomState, C
         // A full mapping is a claim (weight 1) — but the SAME mapping is the
         // same claim, and answering it twice yields nothing new, so it is
         // free (AAA 3.2; the Linen Closet's re-check rule).
-        events.push({ type: 'mistake', weight: result.charged ? 1 : 0 });
+        events.push({ type: 'mistake', weight: result.charged ? 1 : 0, detail: 'murky' });
         return { state: next, events, outcome: outcomeOf(next) };
       }
     }

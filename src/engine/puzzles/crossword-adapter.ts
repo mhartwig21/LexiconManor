@@ -122,7 +122,7 @@ function evaluate(
     events.push({ type: 'solved', perfect: isPerfect(next) });
     return next;
   }
-  events.push({ type: 'mistake', weight: result.charged ? 1 : 0 });
+  events.push({ type: 'mistake', weight: result.charged ? 1 : 0, detail: 'checked-wrong' });
   return {
     ...state,
     cw,

@@ -196,11 +196,11 @@ describe('cipher adapter', () => {
       s = cipherAdapter.reduce(cipherFixture, s, { type: 'pencil', cipherLetter: c, plain: p }).state as CipherRoomState;
     }
     const first = cipherAdapter.reduce(cipherFixture, s, { type: 'develop' });
-    expect(ofType(first.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
+    expect(ofType(first.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1, detail: 'murky' }]);
     expect((first.state as CipherRoomState).costedMistakes).toBe(1);
 
     const again = cipherAdapter.reduce(cipherFixture, first.state, { type: 'develop' });
-    expect(ofType(again.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+    expect(ofType(again.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0, detail: 'murky' }]);
     expect((again.state as CipherRoomState).costedMistakes).toBe(1);
     expect((again.state as CipherRoomState).lastFeedback)
       .toMatchObject({ kind: 'murky', correct: 5, total: 6, charged: false });
@@ -212,7 +212,7 @@ describe('cipher adapter', () => {
       s = cipherAdapter.reduce(cipherFixture, s, { type: 'pencil', cipherLetter: c, plain: p }).state as CipherRoomState;
     }
     const { state, events, outcome } = cipherAdapter.reduce(cipherFixture, s, { type: 'develop' });
-    expect(ofType(events, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
+    expect(ofType(events, 'mistake')).toEqual([{ type: 'mistake', weight: 1, detail: 'murky' }]);
     expect((state as CipherRoomState).lastFeedback).toMatchObject({ kind: 'murky', correct: 5, total: 6 });
     expect(outcome).toMatchObject({ status: 'active', perfect: false });
   });

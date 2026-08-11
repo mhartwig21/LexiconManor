@@ -190,7 +190,7 @@ export const forgottenWordAdapter: RoomPuzzleAdapter<ForgottenWordPuzzleEx, Forg
           costedMistakes: next.costedMistakes + 1,
           closeness: [...next.closeness, { guess, shared, exact }],
         };
-        events.push({ type: 'mistake', weight: 1 });
+        events.push({ type: 'mistake', weight: 1, detail: 'wrong' });
         if (result.lost) {
           // Auto-abandon, never a fail (AAA 3.7): reveal for closure.
           next = { ...next, lastFeedback: { kind: 'slipped', word: puzzle.word } };

@@ -24,24 +24,72 @@ import { CLIMB_KEY_SEP } from '../../engine/economy/steps';
 import type { StepEntry } from '../../engine/types';
 
 /**
- * A costed mistake, in the room's own vocabulary. The reason is a single
- * `'mistake'` for all seven rooms, but the entry carries the cell it was made
- * in and the manor knows what stands there — so "−2" becomes "−2 wrong fill"
- * in the Linen Closet and "−1 dead letter" in the Darkroom, which is the
- * difference between a price and a mystery. Unknown or absent room → "wrong",
- * which is still true and still names the thing being charged for.
+ * ═══ ROUND 28 — A ROOM CHARGES FOR MORE THAN ONE THING ═══════════════════
  *
- * Keyed by `RoomPuzzleKind`; the test walks `ROOM_PUZZLE_KINDS` so a new room
- * cannot ship with a mistake nobody can name.
+ * The table below used to be keyed by ROOM, and that was the bug the price
+ * tag was invented to prevent. The Conservatory prices two different slips —
+ * a letter that is not in the hive, and a word that IS all hive letters but
+ * skips the centre — and the missing centre is tested first
+ * (engine/hive.ts), so `HONEY` on a hive without H floated "−1 not in the
+ * hive" beside a toast that said "Missing E". Same for the Counting House,
+ * where the commonest charged weighing is one where every figure is TRUE and
+ * the float said "wrong number" anyway.
+ *
+ * So the word is chosen by the room's OWN key for the mistake — the same key
+ * its view keys the toast off, carried on the ledger entry (StepEntry.detail).
+ * One decision, two surfaces, and `tests/step-reasons.test.ts` drives the real
+ * adapters over the real pools to prove the pair agrees for every costed
+ * mistake the manor can actually deal.
+ *
+ * The room's toast, as shipped, is quoted beside each word. That quote is not
+ * decoration: the gate greps the view for it, so a toast cannot be rewritten
+ * without this line coming up red.
+ */
+export const MISTAKE_WORD_BY_DETAIL: Record<string, string> = {
+  // "Not quite — 3 threads loose." (CrosswordView) — the CHECK is priced, not
+  // the letter; the tester who believed each wrong letter cost 2 read this.
+  'crossword:checked-wrong': 'wrong fill',
+  // "Still murky — 3/16 letters ring true" (CipherView). Was 'dead letter',
+  // which named a LETTER for a charge the Darkroom lays on the whole develop
+  // — the same false rule in a different room.
+  'cipher:murky': 'still murky',
+  // "One away…" (WordWebView) — the room says how close, so the candle does.
+  'word-web:one-away': 'one away',
+  // "No two of these share a thread." (WordWebView)
+  'word-web:wrong': 'wrong group',
+  // "Bad letters" (HiveView) — a letter the hive does not hold.
+  'hive:bad-letters': 'not in the hive',
+  // "Missing E" (HiveView). The word IS in the hive; it skipped the centre.
+  'hive:missing-center': 'missing centre',
+  // "It must cross the marked tile" (TwistleView).
+  'twistle:breaks-rule': 'missed the tile',
+  // The Study answers on its card, not in a toast: a wrong guess, priced once.
+  'forgotten-word:wrong': 'wrong guess',
+  // "2 of your 9 figures are astray" (SudokuView).
+  'sudoku:balanced-astray': 'figures astray',
+  // "The books balance — all 9 of your figures sit true" (SudokuView): the
+  // clerk is paid for the ANSWER. Nothing here was wrong, and the float that
+  // said so was the room's own contradiction.
+  'sudoku:balanced-true': 'the weighing',
+};
+
+/**
+ * The fallback word, by room — for a ledger entry saved before `detail`
+ * existed, and for a room whose costed mistake is a single thing. Never a
+ * word that could be false of one of the room's OTHER charges: the
+ * Conservatory and the Counting House both name the charge, not the verdict.
+ *
+ * Unknown or absent room → "wrong", which is still true and still names the
+ * thing being charged for.
  */
 export const MISTAKE_WORD: Record<string, string> = {
   crossword: 'wrong fill',
-  cipher: 'dead letter',
+  cipher: 'still murky',
   'word-web': 'wrong group',
-  hive: 'not in the hive',
-  twistle: 'wrong claim',
+  hive: 'not a hive word',
+  twistle: 'missed the tile',
   'forgotten-word': 'wrong guess',
-  sudoku: 'wrong number',
+  sudoku: 'the weighing',
 };
 
 /**
@@ -58,7 +106,11 @@ export function reasonWord(entry: StepEntry, roomKind?: string): string {
     // (steps.ts `climbKey`); a plain "col,row" is a walk across her own floor.
     // Climbing IS the expense in this economy and the meter should say so.
     case 'move': return entry.roomKey?.includes(CLIMB_KEY_SEP) ? 'climb' : 'walk';
-    case 'mistake': return (roomKind && MISTAKE_WORD[roomKind]) || 'wrong';
+    case 'mistake': return (
+      (roomKind && entry.detail && MISTAKE_WORD_BY_DETAIL[`${roomKind}:${entry.detail}`])
+      || (roomKind && MISTAKE_WORD[roomKind])
+      || 'wrong'
+    );
     case 'hint': return 'hint';
     case 'solve': return 'solved';
     // Named for the rule that earns it, not for the grade: the bonus arrives

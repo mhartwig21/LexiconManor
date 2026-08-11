@@ -825,7 +825,7 @@ describe('adapter economy mapping (AAA §0.3)', () => {
       expect(undone.state.engine.balancedSignatures).toEqual(weighed);
       const redone = sudokuAdapter.reduce(fixture, undone.state, { type: 'ink', cell: blank, digit: legalWrong });
       const again = sudokuAdapter.reduce(fixture, redone.state, { type: 'balance' });
-      expect(ofType(again.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+      expect(ofType(again.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0, detail: 'balanced-astray' }]);
       expect(again.state.costedMistakes).toBe(1);
     });
 
@@ -873,12 +873,12 @@ describe('adapter economy mapping (AAA §0.3)', () => {
     let s = start();
     // Nothing set yet: zero information, therefore zero cost.
     const empty = sudokuAdapter.reduce(fixture, s, { type: 'balance' });
-    expect(ofType(empty.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+    expect(ofType(empty.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0, detail: 'balanced-true' }]);
     expect(empty.outcome.perfect).toBe(true);
 
     s = sudokuAdapter.reduce(fixture, s, { type: 'ink', cell: blank, digit: legalWrong }).state;
     const first = sudokuAdapter.reduce(fixture, s, { type: 'balance' });
-    expect(ofType(first.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
+    expect(ofType(first.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1, detail: 'balanced-astray' }]);
     expect(first.state.lastFeedback).toEqual({
       kind: 'balanced', astray: 1, settled: 1, charged: true,
     });
@@ -887,7 +887,7 @@ describe('adapter economy mapping (AAA §0.3)', () => {
 
     // The identical leaf is the identical claim: free the second time.
     const again = sudokuAdapter.reduce(fixture, first.state, { type: 'balance' });
-    expect(ofType(again.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+    expect(ofType(again.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0, detail: 'balanced-astray' }]);
     expect(again.state.costedMistakes).toBe(1);
   });
 

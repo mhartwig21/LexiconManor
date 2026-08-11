@@ -187,9 +187,21 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
        of squares, and a pool that one day pairs a 4x4 with tier 2 must still
        get the right answer. */
     <div className={`m2 m2--linen${puzzle.size <= 4 ? ' m2--linen-sm' : ''}`}>
+      {/* ROUND 28 — A LINE THAT IS 0.0 x 0.0 ON EVERY PHONE THE GAME SHIPS ON.
+          `.m2__sub` said "Small words, neatly folded. Fill every square." and
+          `display: none` under `@media (max-height: 900px)` (a5micro.css,
+          round 8's fit pass) — which is BOTH shipped sizes, 844 and 667. It
+          was authored, reviewed, committed and unreadable. The nameplate goes
+          the same way at the same threshold and that is fine: the room is
+          named on the blueprint she walked in from.
+          What was NOT fine is that the closet's one priced moment was
+          unannounced anywhere she could read it. A blind tester finished
+          believing each wrong letter cost 2 steps; letters are free probes and
+          the auto-check on a full grid is the charge. That fact now sits in
+          the reserved verdict line below, which survives every glass, and it
+          retires the moment she types — see `.m2-toastslot`. */}
       <header className="m2__head">
         <h2 className="m2__title">The Linen Closet</h2>
-        <p className="m2__sub">Small words, neatly folded. Fill every square.</p>
       </header>
 
       <div
@@ -248,8 +260,23 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
               21px (390×844) / 44px (375×667) past its stage — the slot opened
               at 364.9–400.1 against a deck starting at 393.1, so the room's
               answer printed underneath the keyboard. It rides the deck now. */}
-          <div className="m2-toastslot" aria-live="polite">
-            {toast && <span className={`m2-toast m2-toast--${toast.kind}`}>{toast.text}</span>}
+          {/* ROUND 28 — THE PRICE, WHERE IT IS ACTUALLY VISIBLE (COMPREHENSION
+              fix 1's other half). This reserved line is the only chrome in the
+              room that survives every glass, and it stands empty until the
+              closet has something to say. So it opens by naming the one thing
+              the room charges for — a SELF-RETIRING label, not a tutorial: the
+              moment she types a letter she has demonstrated the probe is free,
+              and the line goes back to being the verdict slot it has always
+              been. The at-rest line sits OUTSIDE the live region; a screen
+              reader should hear verdicts, not a standing notice re-read on
+              every keystroke. */}
+          <div className="m2-toastslot">
+            {!toast && Object.keys(state.cw.letters).length === 0 && (
+              <span className="m2-toast m2-toast--info">Letters are free — the check is what costs.</span>
+            )}
+            <span className="m2-toast-live" aria-live="polite">
+              {toast && <span className={`m2-toast m2-toast--${toast.kind}`}>{toast.text}</span>}
+            </span>
           </div>
 
           <div className="lc-clues m2-card">

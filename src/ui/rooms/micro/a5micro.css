@@ -37,7 +37,6 @@
   font-weight: 400;
   letter-spacing: 0.02em;
 }
-.m2__sub { margin: 0.15rem 0 0; font-size: var(--text-sm); color: var(--ink-soft); }
 
 .m2-card {
   background: var(--paper-raised);
@@ -88,6 +87,7 @@
   justify-content: center;
   text-align: center;
 }
+.m2-toast-live { display: block; max-width: 100%; }
 .m2-toast { font-size: var(--text-sm); animation: m2-rise 220ms var(--ease-settle); }
 .m2-toast--good { color: var(--moss); }
 /* Round 7: wax as READING ink (tokens --wax-ink). */
@@ -406,7 +406,10 @@
    grid, whole at rest on both 390x844 and 375x667. */
 @media (max-height: 900px) {
   .m2 { gap: 0.4rem; padding-top: 0.45rem; }
-  .m2__sub { display: none; }
+  /* ROUND 28: `.m2__sub` used to be hidden here too, which meant the line was
+     drawn on no phone the game ships to — it is retired, and what it should
+     have said (letters are free; the check is the charge) is in the verdict
+     slot, which survives every glass. */
   /* Round 8: the nameplate goes at 900 rather than 700. It is the last chrome
      in the room and it is worth 40px — which is most of what takes the square
      from 40.4 to 44 (AAA 6.19). The room is named on the blueprint she walked

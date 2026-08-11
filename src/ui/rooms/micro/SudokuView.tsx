@@ -284,6 +284,14 @@ export default function SudokuView({
   const peers = useMemo(() => (sel === null ? new Set<number>() : new Set(PEERS[sel]!)), [sel]);
   const cursorFigure = sel === null ? 0 : engine.values[sel]!;
   const left = blanksRemaining(engine);
+  /**
+   * Nothing of hers on the leaf yet — no figure inked, no mark pencilled, and
+   * not a board carried over from an earlier day. The condition the room's one
+   * standing rule retires on (round 28).
+   */
+  const virgin = !resumed
+    && engine.pencil.every((m) => m === 0)
+    && engine.values.every((v, i) => v === 0 || puzzle.givens[i] !== '.');
   const peak = peakTechnique(puzzle.techniques);
 
   const selectCell = (cell: number) => {
@@ -347,26 +355,18 @@ export default function SudokuView({
     <div className="ch">
       <header className="ch__head">
         <h2 className="ch__title">The Counting House</h2>
-        {/* ROUND 27 — THE EXCEPTION ANNOUNCES ITSELF ON THE WAY BACK IN.
-            The manor is wiped nightly and says so everywhere; this is the one
-            leaf that is not, so the room states the rule at the moment it
-            applies rather than letting her discover it (COMPREHENSION 3/8).
-            It replaces the standing line rather than adding a second one —
-            the head is a fixed two lines at 375px and the leaf needs the rest
-            of the glass (counting-house.css). */}
-        <p className="ch__sub">
-          {resumed ? (
-            <>
-              The leaf you left open on day {resumed.day}. The house was put away that night; this
-              was not. {left} {left === 1 ? 'figure' : 'figures'} still to settle.
-            </>
-          ) : (
-            <>
-              Every row, column, and quarter carries all nine figures once. Ink freely — the ledger
-              only answers when you ask it to balance.
-            </>
-          )}
-        </p>
+        {/* ROUND 28 — `.ch__sub` IS GONE, BECAUSE IT WAS NEVER ON A PHONE.
+            Round 27's own comment above this line said the truth out loud —
+            "it is DISPLAY:NONE below 760px of viewport" — and then wrote two
+            paragraphs into it anyway. Re-measured: `display: none` under
+            `@media (max-height: 900px)` (counting-house.css) is 0.0 x 0.0 at
+            390x844 AND at 375x667, so BOTH branches were unreadable on every
+            device the game ships to. The carry-over branch was already routed
+            through the two surfaces the deck reserves at every size (the
+            opening toast and the meta line) by that same round; the standing
+            branch is now routed the same way — the shape of the leaf goes in
+            the reserved line until she inks her first figure, and the price of
+            a weighing is on the verb button that charges it. */}
       </header>
 
       <div
@@ -483,7 +483,16 @@ export default function SudokuView({
               decides how big the ledger leaf can be (counting-house.css). */}
           <div className="room-deck">
             <div className="ch-toastslot">
-              {!toast && (
+              {/* ROUND 28 — THE SHAPE OF THE LEAF, ON GLASS THAT EXISTS.
+                  A SELF-RETIRING label on a leaf she has not touched: the one
+                  rule of the room, in the one line the deck reserves at every
+                  height. It goes the instant she inks a figure, because a
+                  player who has inked one has demonstrably got it, and the
+                  line returns to the count it has always been. */}
+              {!toast && virgin && (
+                <span className="ch__meta">Every row, column and quarter holds all nine.</span>
+              )}
+              {!toast && !virgin && (
                 <span className="ch__meta tabular-nums">
                   {/* Round 27: on a carry-over leaf the newsworthy half of this
                       line is WHERE THE BOARD CAME FROM, not its grade — and

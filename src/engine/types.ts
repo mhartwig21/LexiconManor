@@ -341,6 +341,20 @@ export interface StepEntry {
   delta: number;
   at: number;                                    // epoch ms, caller-supplied
   roomKey?: string;
+  /**
+   * WHICH mistake, in the room's own vocabulary — the key the room used to
+   * pick the toast it just showed ('missing-center', 'murky', 'one-away'…).
+   *
+   * ROUND 28. The float used to name the mistake by ROOM, and a room can
+   * charge for more than one thing: the Conservatory prices a bad letter AND
+   * a word that skips the centre, so a word made only of hive letters floated
+   * "−1 not in the hive" while the Conservatory's own toast said "Missing E".
+   * A price tag added to stop the house teaching false rules taught one. The
+   * ledger now carries the room's key so the two surfaces cannot disagree.
+   * Optional: only costed mistakes set it, and a ledger saved before this
+   * round has none (the chrome falls back to the room word).
+   */
+  detail?: string;
 }
 
 /** Pure, replayable, journal-friendly ledger. Steps never render negative. */

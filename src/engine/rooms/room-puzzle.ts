@@ -35,7 +35,12 @@ export type RoomEvent =                    // consumed by slices, never by adapt
   // weight 0 = free feedback moment (shake/toast, no step cost) — e.g. Conservatory
   // invalid dictionary words per AAA R.1. weight 1|2 = costed, mapped via STEP_TABLE.
   // weight 'structural' = pre-warned structural slip (AAA R.1): flat −1, all tiers.
-  | { type: 'mistake'; weight: 0 | 1 | 2 | 'structural' }
+  // `detail` is the room's OWN key for the mistake it just refused — the same
+  // key its view keys the toast off ('missing-center', 'murky', 'one-away').
+  // It rides the ledger entry so the step float can name the mistake the room
+  // named, instead of naming the ROOM (round 28; see StepEntry.detail). Only
+  // meaningful on a costed weight; a weight-0 slip never reaches the ledger.
+  | { type: 'mistake'; weight: 0 | 1 | 2 | 'structural'; detail?: string }
   // A3 REVISION (special authority, documented in A3's report): a step-priced
   // hint/clue purchase — the Study's clue unseals and the Library's intruder
   // nudges (AAA 2.10) are bought with steps, the single currency. Maps through

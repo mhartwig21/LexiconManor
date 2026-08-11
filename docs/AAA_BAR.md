@@ -661,26 +661,52 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     in 17–20% of campaigns, against the <8% of 4.10d that is itself the
     owner-playtest blocker. So **both bands are published and both are
     measured**:
-    - **the skilled player** (4.10d's): first landing day 6–10, volume won at
-      median **12–20** (round 21; was 8–16, and 14–28 before that), 100% by
-      day 28. *(Round 23 re-measurement, after 4.10i priced the ground floor:
-      landing 9–10, win 16, 100% by day 28.)*
-    - **the median player** (`PROFILE_DECENT`, 4.10b's): first landing at median
-      day **12–20** (round 23: measured 19, was 16–18; 0% never inside 45 days),
-      the word deducible at median day **14–24** (round 21, was 10–20; measured
-      19), the volume won at median day **18–28** (round 21, was 14–24; round 23:
-      measured 22–23 across the four campaign seeds, was 21–22; p10 18, p90 30),
-      <2% inside the first week (measured **0.0%**; *round 25 — this read "measured
-      0.5%", which is the ≤14-DAY share off `metrics:review`, not the first week's.
-      Her ≤7-day share is 0.0% and has been through every campaign seed since round 24;
-      `tests/economy-simulation.test.ts` already asserted it as "measured: still exactly
-      0" while this line printed the fortnight's number*), **>80% inside 45 evenings**
-      (measured 100%), and her evening stays inside 10–15 minutes start to
-      finish (4.10f). *(Round 23 moved both of her numbers by a day or two and
-      nothing else: the ground floor now costs two steps a room and Bramble's
-      pot waits on the landing — 4.10i — so the evening she banks the climb out
-      of is leaner. Both remain inside the published bands, which is the reason
-      the bands are ranges.)*
+    ***ROUND 28 — THIS BLOCK WAS FIVE NUMBERS OUT OF DATE AND THE TESTS SAID SO.***
+    *Round 24 rebuilt the instrument on the real 5×7 grid and moved four bands in
+    `tests/economy-simulation.test.ts`; the bands published HERE were left at their
+    round-21/23 values, so the doc promised 18–28 where the gate asserts 24–32,
+    "measured 100%" where the model measures 89%, and "0% never" where one campaign
+    in ten does not finish inside the window. A published band that contradicts the
+    enforced one is worse than no band: it is the only number a critic reads. Every
+    figure below is re-measured at HEAD over the four campaign seeds the test itself
+    runs (`0x1234/0x9911/0x2f2f/0xabc1`, 200 skilled / 250 median-player campaigns
+    each, 45-evening window), printed per seed as a range, and set beside the band
+    the test enforces. Where a band moved, the move is published with its cause.*
+    **AND TWO MILESTONES, NEVER ONE.** `firstLandingDay` is the day she stands on
+    the landing CELL; `firstSanctumReachDay` is the day she stands at a landing that
+    actually opened north — the live `atSanctumDoor` gate. The old bullets printed
+    one number and called it "first landing" while the test asserted the other, which
+    is how a doc drifts eight evenings from its own gate. Both are published now.
+    - **the skilled player** (4.10d's): the landing CELL at median day **10–11**;
+      the DOOR — the gate — at median **17–18** (enforced 14–22; 0–1% never inside
+      45 evenings), the word deducible at median **13**, and the volume won at
+      median **18–19** (enforced 12–20; p10 14, p90 28–30), **87.5–91.5% inside 28
+      evenings** and 94–97% inside 35 (enforced >85% and >95%), 0% inside the first
+      week. His evening runs **17.0–17.5 minutes early, 18.0–18.4 late**, p90
+      24.7–24.9 (4.10f's band, 14–20 and p90 ≤26).
+      *The move: "first landing 6–10, 100% by day 28" was a pre-round-24 number
+      measured on a scalar row, where arriving on the storey WAS arriving at the
+      door. On the real grid the last step is a draft — the landing plan has to draw
+      a north door — so the storey is still reached on day 10 and the gate lands
+      about eight evenings later. Nothing about the climb got dearer; the instrument
+      stopped assuming the door.*
+    - **the median player** (`PROFILE_DECENT`, 4.10b's): the landing CELL at median
+      day **17–18**; the DOOR at median **23–26** (enforced 22–30; **6.8–12% never
+      inside 45 evenings**, enforced <18%), the word deducible at median **17**
+      (enforced 14–24), the volume won at median **25–28** (enforced 24–32; p10
+      18–19, p90 44–46), **0.0% inside the first week**, **86.4–91.6% inside 45
+      evenings** (enforced >80%), 74.8–78.4% inside 35 and 55.2–61.6% inside 28 —
+      so **8.4–13.6% of her campaigns are still unfinished after six weeks**, which
+      is a real tail and is published as one. Her evening runs **14.7–14.9 minutes
+      early, 15.7–16.0 late**, p90 20.0–20.2 (4.10f's band for her, 13–18 and
+      p90 ≤22).
+      *The moves, and their causes: her win band 18–28 → 24–32 is round 24's door
+      geometry (she knows the word at 17 and waits for a landing plan that opens
+      north — her DEDUCTION did not move at all). "Inside 10–15 minutes" → 13–18 is
+      round 24 lifting `sessionMinutes`, which had been clipping the evening at 18
+      and making the old figure true by construction rather than by design. And
+      "0% never / measured 100%" was never hers: it was the round-23 reading of a
+      45-day window on the pre-grid instrument.*
     *Round 21 — BOTH KNOWLEDGE BANDS MOVED AGAIN, AND THIS TIME THE CONTENT
     MOVED THEM. Her two ACCESS bands are untouched for the third round running:
     the climb did not change, the volume did. Volume 1 authors 28 pages against
@@ -740,8 +766,11 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     requires the measured **p90 to sit at least two minutes clear of the cap**, so a
     clipped distribution cannot wear a passing test.
     With the clip gone the inflation is visible, and it is now the published thing: the
-    skilled evening runs **16.9 minutes over his first ten and 18.2 over days 20–30**
-    (band 14–20, p90 ≤ 26) and the median player's **14.5 → 15.6** (band 13–18, p90 ≤ 22).
+    skilled evening runs **17.0–17.5 minutes over his first ten and 18.0–18.4 over days
+    20–30** (band 14–20, p90 ≤ 26) and the median player's **14.7–14.9 → 15.7–16.0**
+    (band 13–18, p90 ≤ 22). *(Round 28 re-measurement over the four campaign seeds the
+    test runs; round 24 published the single-seed figures 16.9 → 18.2 and 14.5 → 15.6.
+    Both profiles sit where they sat — this is the spread, not a move.)*
     What is GATED is the SHAPE: the late evening may not exceed **×1.2** the early one,
     or the tea arc is buying an evening the owner did not ask for. Retirement is now rare
     (0.04–2.1% of evenings) and the evening's honest second ending is the one the grid
@@ -1096,7 +1125,9 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
 - 4.18 Volume solvable-in-principle from day 1 (answer fixed at volume start; no
   fragment mechanically required). **This criterion owns solvable-in-principle
   ONLY.** The solve horizon belongs to 4.10e (12–20 days median for the skilled
-  player since round 21, 18–28 for the median player, <3% inside week one) — the pre-overhaul "median playtest solve lands in 2–4 evenings"
+  player since round 21, 24–32 for the median player since round 24 — *this line
+  said 18–28 until round 28, which was her pre-grid band and is now four evenings
+  under the one the tests enforce* — <3% inside week one) — the pre-overhaul "median playtest solve lands in 2–4 evenings"
   clause was deleted in round 6: it contradicted 4.10e outright, so no critic
   could pass or fail the mystery's pacing and the economy and mystery owners
   were optimising against opposite targets. The shipped fragment drip is built

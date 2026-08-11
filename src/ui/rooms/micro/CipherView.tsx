@@ -232,9 +232,18 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
           every device the game is played on. That is this repo's signature
           failure and it very nearly happened again. The rule lives in the
           reserved line above the keys instead; see `.mic-toastslot` below. */}
+      {/* ROUND 28 — AND THEN THE SUB-LINE ITSELF WENT. Round 24 wrote the
+          paragraph above, put the RULE where it can be read, and left the
+          `.mic__sub` line standing: "A phrase sits in the tray, its letters
+          swapped. Pencil freely — develop when sure." Measured this round at
+          390x844 and 375x667, that line is 0.0 x 0.0 on both. Every fact in
+          it is already on the glass where she is looking — the swap is stated
+          by the reserved line below, "pencil freely" is what the incomplete
+          develop says in words, and the develop button carries its own price
+          — so the line is not moved, it is retired. A room does not get to
+          keep copy nobody can see. */}
       <header className="mic__head">
         <h2 className="mic__title">The Darkroom</h2>
-        <p className="mic__sub">A phrase sits in the tray, its letters swapped. Pencil freely — develop when sure.</p>
       </header>
 
       {won ? (

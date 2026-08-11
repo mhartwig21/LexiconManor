@@ -513,6 +513,31 @@ export default function BlueprintSheet({
           <rect x={(3 * CELL) / 4} y={0} width={CELL / 4} height={3} className="bp-scale__seg" />
           <text className="bp-scale__label" x={CELL + 8} y={3.4}>ONE ROOM</text>
         </g>
+        {/* ═══ ROUND 28 — THE MARGIN GETS ITS KEY (COMPREHENSION 15) ═══════
+            The left margin has carried two columns of marks since round 20 —
+            one/two/three diamonds by band, and a −N per row — and named
+            NEITHER. A surveyor's sheet that draws a symbol draws its key; this
+            one drew the symbols and left the reader to infer that diamonds
+            mean rank and that the number beside them is what a move on that
+            storey costs. Both facts are in the game elsewhere (the footer says
+            "tier III" for the room she is in, and every walk target speaks its
+            own price), which is exactly why the marks looked like decoration.
+            It sits in the bottom margin beside the scale mark — the surveyor's
+            own furniture — and is `aria-hidden` on purpose: a screen reader
+            already gets the price in words on every target it can reach
+            (`walkLabel`), and a key it cannot see would be a second telling. */}
+        <g className="bp-key" transform={`translate(${VIEW_W - 12} ${VIEW_H - 12})`} aria-hidden="true">
+          {/* Laid out leftwards from the plot's right border, not rightwards:
+              measured live, the first cut of this key ran 5px past the sheet's
+              own box at BOTH 390x844 and 375x667 and an SVG root clips, so
+              "A MOVE" lost its last glyph on every phone. The display face
+              carries 0.22em of tracking — six caps are ~49px, not 36 — and the
+              numbers below are the measured widths, not estimated ones. */}
+          <path className="bp-key__pip" d={`M${-138} ${-3.4}l3.4 3.4-3.4 3.4-3.4-3.4Z`} />
+          <text className="bp-scale__label" x={-130} y={3.4}>RANK</text>
+          <text className="bp-rowprice__n" x={-76} y={3.4} textAnchor="start">&minus;N</text>
+          <text className="bp-scale__label" x={-56} y={3.4}>A MOVE</text>
+        </g>
       </g>
 
       {/* rank pressure: the higher floors are visibly graver (MANOR_DESIGN §3) */}

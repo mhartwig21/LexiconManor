@@ -86,7 +86,6 @@
   line-height: 1.15;
   letter-spacing: 0.02em;
 }
-.ch__sub { margin: 0.05rem 0 0; font-size: var(--text-sm); line-height: 1.25; color: var(--ink-soft); }
 .ch__meta {
   display: flex;
   justify-content: center;
@@ -493,18 +492,19 @@
    Threshold 760 (not 700): an iPhone SE is 667 tall, but so is any 12-class
    phone in a compact standalone frame, and the ledger is the one board in the
    game that must be whole at rest. */
-/* Tall glass, but not a desk: the subtitle goes at 900px rather than 760, the
-   same threshold the Darkroom and the Linen Closet trim at, and the column's
-   gap comes in with it. Both are chrome; the ledger is the game, and this is
-   what pays for the 42px cell above (round 8). */
+/* Tall glass, but not a desk: round 8 dropped the subtitle here rather than at
+   760, the same threshold the Darkroom and the Linen Closet trimmed at, and
+   took the column's gap with it — which is what pays for the 42px cell above.
+   ROUND 28: the subtitle itself is gone. A line that is display:none at 900 is
+   a line no shipped phone has ever drawn (844 and 667 are both under it), so
+   the room's standing rule moved to the reserved verdict line in the deck and
+   the rule that hid it is not needed. Only the gap trim remains. */
 @media (max-height: 900px) {
   .ch { gap: 0.35rem; }
-  .ch__sub { display: none; }
 }
 
 @media (max-height: 760px) {
   .ch { gap: 0.35rem; padding-top: 0.35rem; }
-  .ch__sub { display: none; }
   .ch-key { min-height: 46px; font-size: 1.3rem; }
   .ch-key--verb { font-size: var(--text-sm); }
   /* Height is the binding constraint here, so the cell is ~33px and the nine

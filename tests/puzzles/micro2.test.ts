@@ -271,14 +271,14 @@ describe('crossword adapter economy', () => {
       s = r.state;
       charged.push(...r.events);
     }
-    expect(eventsOfType(charged, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
+    expect(eventsOfType(charged, 'mistake')).toEqual([{ type: 'mistake', weight: 1, detail: 'checked-wrong' }]);
     expect(s.cw.wrongCells).toEqual([lastCell]);
 
     // Clear and retype the same wrong letter: same claim, no second charge.
     let r = crosswordAdapter.reduce(cwPuzzle, s, { type: 'set-cell', index: lastCell, letter: null });
     s = r.state;
     r = crosswordAdapter.reduce(cwPuzzle, s, { type: 'set-cell', index: lastCell, letter: 'Z' });
-    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0, detail: 'checked-wrong' }]);
 
     // Fixing the letter solves it — but the costed check forfeited perfect.
     r = crosswordAdapter.reduce(cwPuzzle, r.state, { type: 'set-cell', index: lastCell, letter: sol.get(lastCell)! });

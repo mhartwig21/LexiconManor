@@ -233,7 +233,17 @@ export const sudokuAdapter: RoomPuzzleAdapter<SudokuPuzzle, SudokuRoomState, Sud
       };
       // Nothing to weigh, or the identical leaf weighed twice: zero new
       // information, therefore zero cost (AAA 3.2).
-      events.push({ type: 'mistake', weight: report.charged ? 1 : 0 });
+      // TWO priced weighings, not one (round 28). A charged balance whose
+      // figures are all TRUE is the commonest one in the pool — the clerk is
+      // paid for the answer, not for an error — and a float reading "wrong
+      // number" over a leaf the room just called true is a false rule of
+      // exactly the kind the price tag exists to kill. The room's two lines
+      // get the room's two keys.
+      events.push({
+        type: 'mistake',
+        weight: report.charged ? 1 : 0,
+        detail: report.astray > 0 ? 'balanced-astray' : 'balanced-true',
+      });
       return { state: next, events, outcome: outcomeOf(next) };
     }
 

@@ -333,7 +333,7 @@ export const wordWebAdapter: RoomPuzzleAdapter<WordWebPuzzleEx, WordWebRoomState
           lastWrongSelection: action.selection.map((w) => w.toUpperCase()),
           lastFeedback: { kind: 'one-away' },
         };
-        events.push({ type: 'mistake', weight: 1 });
+        events.push({ type: 'mistake', weight: 1, detail: 'one-away' });
         break;
       }
       case 'wrong': {
@@ -348,7 +348,7 @@ export const wordWebAdapter: RoomPuzzleAdapter<WordWebPuzzleEx, WordWebRoomState
             together: (Math.min(2, Math.max(1, togetherCount(puzzle, sel))) as 1 | 2),
           },
         };
-        events.push({ type: 'mistake', weight: 1 });
+        events.push({ type: 'mistake', weight: 1, detail: 'wrong' });
         break;
       }
       case 'invalid': {

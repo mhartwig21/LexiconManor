@@ -272,7 +272,7 @@ describe('word-web adapter', () => {
     const wrong = ['WAFFLE', 'PANCAKE', 'TOAST', 'DUNK'];
     const r = wordWebAdapter.reduce(webPuzzle, s, { type: 'submit', selection: wrong });
     s = r.state;
-    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
+    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1, detail: 'one-away' }]);
     expect(s.lastFeedback).toEqual({ kind: 'one-away' });
     expect(s.lastWrongSelection).toEqual(wrong);
     expect(r.outcome).toEqual({ status: 'active', perfect: false });
@@ -415,7 +415,7 @@ describe('hive adapter', () => {
       ['TEA', 'too-short'],
     ] as const) {
       const r = submit(s, word);
-      expect(eventsOfType(r.events, 'mistake'), word).toEqual([{ type: 'mistake', weight: 0 }]);
+      expect(eventsOfType(r.events, 'mistake'), word).toEqual([{ type: 'mistake', weight: 0, detail: reason }]);
       expect(r.state.costedMistakes, word).toBe(0);
       expect(r.state.lastFeedback, word).toMatchObject({ kind: 'invalid', reason, costed: false });
     }
@@ -426,7 +426,7 @@ describe('hive adapter', () => {
     s = submit(s, 'STARE').state;
     const r = submit(s, 'STARE');
     expect(r.state.hive.score).toBe(5);
-    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0, detail: 'already-found' }]);
     expect(r.state.lastFeedback).toMatchObject({ kind: 'invalid', reason: 'already-found' });
   });
 
@@ -439,7 +439,7 @@ describe('hive adapter', () => {
       const r = submit(s, word);
       // Never the −2/−3 deduction row: weight 'structural' maps to a flat −1
       // at every tier in STEP_TABLE.
-      expect(eventsOfType(r.events, 'mistake'), word).toEqual([{ type: 'mistake', weight: 'structural' }]);
+      expect(eventsOfType(r.events, 'mistake'), word).toEqual([{ type: 'mistake', weight: 'structural', detail: reason }]);
       expect(r.state.lastFeedback, word).toMatchObject({ kind: 'invalid', reason, costed: true });
       expect(r.outcome.perfect, word).toBe(false);
     }
@@ -573,7 +573,7 @@ describe('twistle adapter', () => {
   it('a real path that is not a target is a free probe, remembered forever (3.3)', () => {
     const s = start(twistlePuzzle);
     const r = submit(twistlePuzzle, s, 'RATS');
-    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0 }]);
+    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 0, detail: 'not-a-word' }]);
     expect(r.state.missedWords).toEqual(['RATS']);
     expect(r.state.costedMistakes).toBe(0);
     // Submitting the same miss again does not duplicate the memory.
@@ -584,16 +584,16 @@ describe('twistle adapter', () => {
   it('breaking the pre-warned center rule costs weight 1', () => {
     const s = start(twistleCenterPuzzle);
     const r = submit(twistleCenterPuzzle, s, 'STONE'); // valid path, skips center X
-    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
+    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1, detail: 'breaks-rule' }]);
     expect(r.state.lastFeedback).toMatchObject({ kind: 'invalid', reason: 'breaks-rule', costed: true });
     expect(r.outcome.perfect).toBe(false);
   });
 
   it('malformed input is free', () => {
     const s = start(twistlePuzzle);
-    for (const word of ['PLA', 'ZZZZ']) {
+    for (const [word, detail] of [['PLA', 'too-short'], ['ZZZZ', 'not-on-grid']] as const) {
       const r = submit(twistlePuzzle, s, word);
-      expect(eventsOfType(r.events, 'mistake'), word).toEqual([{ type: 'mistake', weight: 0 }]);
+      expect(eventsOfType(r.events, 'mistake'), word).toEqual([{ type: 'mistake', weight: 0, detail }]);
     }
   });
 });
@@ -630,7 +630,7 @@ describe('forgotten-word adapter', () => {
 
   it('a wrong guess (of an announced-plausible length) is a deliberate claim: weight 1', () => {
     const r = guess(start(1), 'RAINSTORM'); // 9 letters, same as PETRICHOR
-    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1 }]);
+    expect(eventsOfType(r.events, 'mistake')).toEqual([{ type: 'mistake', weight: 1, detail: 'wrong' }]);
     expect(r.state.lastFeedback).toMatchObject({ kind: 'wrong', guess: 'RAINSTORM', guessesLeft: 5 });
   });
 
