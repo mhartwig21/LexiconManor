@@ -236,8 +236,33 @@
 .anch-chip--accent { border-color: var(--room-accent); color: var(--ink); font-weight: 600; }
 .anch-chip--muted  { color: var(--ink-faint); text-decoration: line-through; }
 /* ROUND 28 — a STUDY. Accepted, kept, worth a point: it must read as a smaller
-   sibling of the accent chip, never as the struck one it used to be printed as. */
-.anch-chip--study  { border-style: dashed; color: var(--ink-soft); }
+   sibling of the accent chip, never as the struck one it used to be printed as.
+   ROUND 34 — AND IT DID NOT. Measured against the struck chip on the same
+   strip, both shipped phones: identical background, identical border colour
+   (#CDBFA4), identical weight and size; the differences were dashed-versus-
+   solid and #55452F-versus-#695C49. Two cold readers took the whole strip for
+   one rejected pile. The word takes BODY INK now (it is a real word she really
+   found — the faded ink was doing the struck chip's job for it) and the chip
+   carries its point, which is a mark no one reads as a refusal. */
+.anch-chip--study  {
+  border-style: dashed;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+/* NOT the room accent. The Gallery's accent is --gilt, which round 7's contrast
+   audit measured at 3.57:1 as TEXT on parchment at 15px/600 — and this mark is
+   smaller than that. It takes --moss, the house's "this counted" ink, which is
+   the same colour the study's own arrival toast is painted in (`anch-toast--good`,
+   dispatched by the `study` branch in TwistleView): the chip and the toast that
+   announced it now agree, so the strip is a record of the moment rather than a
+   second, differently-coloured opinion about it. */
+.anch-chip__pts {
+  font-size: 0.78em;
+  font-weight: 700;
+  color: var(--moss);
+}
 
 .anch-card {
   background: var(--paper-raised);
@@ -824,9 +849,18 @@
   font-size: 0.95rem;
 }
 .ww-name__ask {
-  margin: 0.15rem 0 0.55rem;
+  margin: 0.15rem 0 0.2rem;
   font-family: var(--font-display);
   font-style: italic;
+  color: var(--ink-soft);
+}
+/* ROUND 34 — the STAKE of the naming act, in the body face so it reads as a
+   rule of play rather than as more of the question above it. The 0.35rem it
+   costs comes out of `.ww-name__ask`'s own bottom margin (0.55 → 0.2), so the
+   card is the same height it was and the 375x667 Library does not move. */
+.ww-name__stake {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 .ww-name__options { display: flex; flex-direction: column; gap: 0.45rem; align-items: stretch; }
@@ -854,7 +888,16 @@
      81px below the fold. Never binds at 390×844, where the column's own
      430px max-width is the tighter term. */
   width: 100%;
-  max-width: min(100%, calc(var(--stage-h, 100vh) - var(--tw-reserve, 17.5rem)));
+  /* ROUND 34 — `--tw-chrome` is the header + deck as MEASURED this frame
+     (TwistleView sets it from a ResizeObserver; the reasoning is in the block
+     there). `--tw-reserve` stays as the fallback for the first paint, for a
+     browser without ResizeObserver, and for the hung sheet — it is a fine
+     estimate of an EMPTY deck, which is the only state it was ever right for.
+     `max()` is the floor: past it the board stops yielding and the strip must
+     wrap again instead, because a 6x6 below ~35px a tile stops being a board. */
+  max-width: min(100%, max(13.2rem, calc(
+    var(--stage-h, 100vh) - var(--tw-chrome, var(--tw-reserve, 17.5rem)) - var(--tw-guard, 4px)
+  )));
   margin-inline: auto;
 }
 .tw-cell {
@@ -1067,6 +1110,27 @@
   color: var(--ink-soft);
   white-space: nowrap;
 }
+/* ROUND 34 — A CAPTION HEADS ITS OWN PILE, FOR NOTHING. The strip is one
+   wrapping flex row, so "also hung, 1 point each: SCONE ONSET not on the
+   curator's list: SLOAT" put a KEPT word shoulder-to-shoulder with a STRUCK one
+   under whichever caption happened to land nearest — and both cold readers took
+   the lot for one rejected pile.
+   The first attempt at this gave the caption `flex-basis: 100%`, which works
+   and costs A WHOLE ROW PER PILE: the caption gets a line to itself and its
+   chips start the next one. Measured on `twistle-t3-1` at 375x667 that was
+   ~44px in a room whose stage had none to give (see `--tw-reserve` in the
+   short-screen block, and the 54px overflow recorded there).
+   `.tw-lists__break` is a zero-height flex item at 100% basis: it forces the
+   line to wrap and occupies nothing, so the caption begins a row and ITS OWN
+   CHIPS FOLLOW IT ON THAT ROW. Same guarantee — no kept word is ever printed
+   beside a struck one, and every caption heads exactly the pile under it — at
+   the cost of a wrap that a full strip was going to make anyway. */
+.tw-lists__break {
+  flex-basis: 100%;
+  height: 0;
+  margin: 0;
+}
+.tw-lists__cap--head { font-style: italic; }
 
 /* --------------------------------------------------------------------------
    The Study (Forgotten Word) — AAA §3.7
@@ -1428,6 +1492,40 @@
      "grow into the slack" behaviour does not. */
   .ww-tile { min-height: 56px; }
   .ww-grid { grid-auto-rows: minmax(56px, 1fr); max-height: 296px; }
+
+  /* ═══ ROUND 34 — THE LIBRARY'S LAST SCREEN, MEASURED ═══════════════════
+     The naming act (AAA 2.11) is the one screen in this room nothing has ever
+     put a tape to: the glass gate walks in on a fresh board and every driver
+     before this one stopped at the sixteen tiles. Driven to it with real taps
+     on `web-2` at 375x667 — four groups, four Weaves — the column measured
+     608px of content in a 551px stage. It was already 33px over BEFORE this
+     round added the stake line; the itemised budget was
+
+         nameplate 25 · rule 18 · three banners 241 · the card 303
+
+     The banners are the biggest term and the least load-bearing HERE: this is
+     the verdict state, the tiles are gone, and the three solved threads are a
+     record being read rather than a board being played. They keep every word
+     and every rank dot; what they give up is leading. The nameplate goes the
+     way the Study's already goes at this height, and for the same reason —
+     the room is named on the blueprint she walked in from, and on this screen
+     it is also named at the top of the journal entry she is about to earn.
+     Measured after: it fits, with slack, and the stake line is paid for.
+     `--verdict` scopes all of it: nothing about PLAY moves.
+
+     AND IT IS NOT SHAVED TO ZERO. The first pass of this block landed the
+     column on exactly 551px in a 551px stage and reported "fits". This repo
+     has already shipped one such report — round 33's, true only on the machine
+     that made it, because `line-height: normal` resolves differently elsewhere.
+     The card's own parchment and the banners' pay for real slack instead;
+     nothing here is type, a tap target or a word. */
+  .anch--library.anch--verdict .anch__title { display: none; }
+  .anch--library.anch--verdict .ww-banners { gap: 0.28rem; }
+  .anch--library.anch--verdict .ww-banner { padding: 0.2rem 0.7rem; }
+  .anch--library.anch--verdict .ww-banner__theme { font-size: 1rem; line-height: 1.2; }
+  .anch--library.anch--verdict .anch-card { padding: 0.5rem 0.8rem; }
+  .anch--library .ww-name__words { margin-top: 0.3rem; }
+  .anch--library .ww-name__options { gap: 0.35rem; }
 }
 
 /* iOS keyboard open: the Study's whisper row is the only thing that matters

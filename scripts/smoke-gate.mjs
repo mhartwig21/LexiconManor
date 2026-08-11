@@ -190,6 +190,24 @@ const COPY = [
     scene: 'room:linen-closet', sel: '.lc-clue:not(.lc-clue--hem) .lc-clue__text', expect: 'visible',
     why: 'the clue list IS the puzzle; three of them once sat behind the keyboard',
   },
+  /**
+   * ROUND 34 (COMPREHENSION, cold read 11 Aug). Two rules of play that the
+   * rooms knew and never said, now said — and registered HERE, because the way
+   * this house loses a sentence is not by deleting it. `.mic__sub`, the
+   * Gallery's studies line and the Linen Closet's nameplate were all authored,
+   * all committed, and all `display: none` on the phones the game ships on. A
+   * new sentence that is not in this table is a sentence one breakpoint away
+   * from never being read again.
+   *
+   * The Gallery's corner clause is asserted at BOTH sizes deliberately: it
+   * lives in the trace tray precisely so that the `max-height: 700px` band —
+   * which retires `.anch__flavour` — cannot reach it.
+   */
+  {
+    scene: 'room:gallery', sel: '.tw-word__hint',
+    says: 'trace or tap a word — a corner is a turn', expect: 'visible',
+    why: 'the ask prices "a corner each" and neither cold reader could tell what a corner was',
+  },
 ];
 
 /**

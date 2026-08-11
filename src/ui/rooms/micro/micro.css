@@ -245,6 +245,38 @@
    exactly as round 20 measured them — and it is a VALUE difference, not a hue,
    so it survives the grayscale pass (AAA 6.3). Pointer-transparent, and behind
    the cells, so it cannot take a tap meant for a letter. */
+/* ═══ ROUND 34 — THE SLIP SHIPPED AND IT MEASURED 1.03:1 ═══════════════════
+   Round 24's slip is above this comment and it is real: it is in the bundle,
+   it paints, and the block above describes it accurately. It is also, on the
+   glass, very close to nothing. Re-measured in Edge on `cipher-t3-40`, both
+   shipped phones, reading the computed paint rather than the source:
+
+       sheet   #F6EFE2   relative luminance 0.868
+       slip    #EBE2D0   relative luminance 0.838   →  1.034 : 1
+       inter-WORD gutter, painted   6.0px   (375x667 AND 390x844)
+       inter-LETTER gutter          6.0px
+
+   So the whole distinction between "these two letters are in one word" and
+   "these two letters are in different words" was six pixels of parchment at a
+   contrast ratio of 1.03 — below any threshold in AAA 6.2/6.3 and below the
+   threshold at which two adjacent fills are separable at all. The blind tester
+   who read A SCONE as AS?ONE and spent three hints on it was reporting this
+   number. Round 24 authored the right idea and left it invisible; this is the
+   half that did not ship.
+
+   The fix is a SHAPE, not more colour, for the reason the block below already
+   gives about locked cells: a slip that got its distinctness from a stronger
+   fill would march on the locked chip's tone, which is the one thing in this
+   room that means "verified true". A hairline edge is a different channel
+   entirely, it survives the grayscale pass (6.3), it is the same hairline the
+   house draws every sheet with (--paper-edge, `--rule`), and — because the
+   slip is still an absolutely positioned underlay — it costs NOTHING in
+   layout: the letter gutters, the rank gutters, the slot sizes and the
+   `.dk-cell::after` hit tiling that round 20 measured are all untouched, and
+   the print occupies exactly the ranks it occupied before.
+   `tests/round34-word-shape-live.mjs` reads the PAINTED PIXELS across a rank
+   and fails unless an inter-word gutter is a stronger discontinuity than every
+   inter-letter gutter on that rank; it goes red on the round-24 slip. */
 .dk-word::before {
   content: '';
   position: absolute;
@@ -255,6 +287,7 @@
      this room that means "verified true" (AAA 3.3). Half-strength keeps the
      three tones — sheet, slip, locked chip — apart in grayscale. */
   background: color-mix(in srgb, var(--paper-shade) 55%, var(--paper-raised));
+  border: 1px solid var(--paper-edge);
   pointer-events: none;
   z-index: 0;
 }

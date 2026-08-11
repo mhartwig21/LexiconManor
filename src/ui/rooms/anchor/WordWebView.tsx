@@ -39,6 +39,7 @@ import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
 import { typeset } from '../../../../content/lib/typography';
 import { herringLine } from './herring-line';
+import { endCopy } from './web-grade';
 import './anchor.css';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string; bit?: string } | null;
@@ -74,19 +75,6 @@ const TIER_RANK: Record<string, number> = { yellow: 0, green: 1, blue: 2, purple
 const HOLD_MS = 950;      // hop (600) + 350ms suspense hold → verdict
 const MERGE_MS = 700;     // tiles travel into the banner (2.3: 600ms–1s)
 const RELEASE_MS = 620;   // input unlocks; total ceremony stays under ~1.6s
-
-/** Warm, never shame-adjacent (AAA 2.14). */
-function endCopy(mistakes: number): string {
-  // ROUND 16 (AAA 2.14): this used to read 'Perfect! Every thread true.' and
-  // sat directly under the title 'Perfect!', so the perfect solve — and ONLY
-  // the perfect solve — printed the grade twice, stacked. It read as a copy
-  // bug rather than a grade. The title carries the word; the line carries the
-  // reason, exactly like the other three.
-  if (mistakes === 0) return 'Every thread true, first time.';
-  if (mistakes === 1) return 'Splendid weaving.';
-  if (mistakes === 2) return 'Well pieced-together.';
-  return 'Got there — the web holds.';
-}
 
 const reducedMotion = () =>
   typeof window !== 'undefined' &&
@@ -334,6 +322,16 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
           <div className="ww-name__eyebrow">The last four fall together</div>
           <div className="ww-name__words">{naming.words.join(' · ')}</div>
           <p className="ww-name__ask">What thread binds them?</p>
+          {/* ROUND 34 (COMPREHENSION, item 14) — THE STAKE, WHERE SHE CHOOSES.
+              The naming act is not free-form flavour: the adapter gates
+              `perfect` on it (`isPerfect` reads `namedCorrectly`), and getting
+              it wrong is the one way a spotless board loses the perfect grade.
+              Nothing on the glass said so, so a cold reader could only read the
+              three buttons as a quiz with no answer sheet — the grader's whole
+              point. The clause sits directly above the options, which is where
+              her eyes are while she picks, rather than in a toast afterwards.
+              No number: views never price anything (see slices/room.ts). */}
+          <p className="ww-name__stake">Name it true and the weave is perfect.</p>
           <div className="ww-name__options">
             {naming.options.map((theme) => (
               <button
@@ -350,7 +348,9 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
       ) : won ? (
         <div className="anch-done">
           <div className="anch-done__title">{perfect ? 'Perfect!' : 'Woven.'}</div>
-          <p className="anch-done__line">{endCopy(state.costedMistakes + state.hintsBought)}</p>
+          <p className="anch-done__line">
+            {endCopy(state.costedMistakes + state.hintsBought, state.namedCorrectly !== false)}
+          </p>
           {state.namedCorrectly === false && state.lastFeedback?.kind === 'group-solved' && (
             // Warm, never shame-adjacent (2.14): a missed name is just told true.
             <p className="anch-done__line">It called itself “{typeset(state.lastFeedback.theme)}”.</p>

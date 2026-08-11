@@ -23,7 +23,7 @@ import type { CSSProperties } from 'react';
 import type { RoomViewProps } from '../registry';
 import type { TwistlePuzzle } from '../../../engine/types';
 import type { TwistleAction, TwistleRoomState } from '../../../engine/rooms/adapters/twistle';
-import { centerIndex, findPath, puzzleSize, twistleRuleLines, twistleStanding } from '../../../engine/twistle';
+import { centerIndex, findPath, puzzleSize, STUDY_POINTS, twistleRuleLines, twistleStanding } from '../../../engine/twistle';
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
 import './anchor.css';
@@ -32,6 +32,8 @@ type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
 
 /** How many study chips the sticky deck will carry before it starts counting. */
 const STUDY_CHIPS = 6;
+/** The same, for the struck pile — which had no bound at all until round 34. */
+const MISS_CHIPS = 4;
 
 /** King adjacency on an n×n board (n comes from the puzzle, not a constant). */
 function areNeighbors(a: number, b: number, n: number): boolean {
@@ -135,6 +137,69 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
   }, [won, size]);
   /** Cells that carry at least one claimed word — the sheet's own ink. */
   const hungCells = useMemo(() => new Set(hungTraces.flatMap((t) => t.path)), [hungTraces]);
+
+  /**
+   * ═══ ROUND 34 — THE BOARD PAYS FOR THE RECORD, INSTEAD OF HIDING UNDER IT ══
+   *
+   * `--tw-reserve` is a CONSTANT guess at how much of the stage the header and
+   * the sticky deck will want (17.5rem, 13.8rem on a short glass), and the
+   * board's cap is `--stage-h` minus that guess. The guess is right for an
+   * EMPTY deck and for no other state, because the deck's last row is the chip
+   * strip and the chip strip is the room's memory prosthetic: it grows with
+   * every word she finds.
+   *
+   * Measured on `twistle-t3-1`, driving real traces with real taps until the
+   * strip carried its studies and a few strikes:
+   *
+   *     375x667   the stage held 616px of content in 551px  → scrolled 65px
+   *     390x844   the stage held 767px of content in 721px  → scrolled 46px
+   *
+   * and before the strip's own bounds were tightened, the bottom rank of the
+   * tier-3 6x6 sat UNDER the sticky deck: six tiles that no longer answered a
+   * tap at their own centre. The room the owner's steer points at hardest — the
+   * word game — got harder to play the better you played it, and no gate saw it
+   * because every gate walks in on an empty board.
+   *
+   * The reserve is measured now rather than guessed. The board's cap is the
+   * stage minus what the header and the deck ACTUALLY occupy this frame, so the
+   * board yields to the record instead of sliding under it, and the room cannot
+   * scroll however long her list gets. There is no feedback loop: the deck's
+   * height is a function of the column's WIDTH (how the chips wrap), which the
+   * board does not affect. The floor keeps a 6x6 tile at 35px even in the worst
+   * case, which is the Counting-House ruling this house already runs on for a
+   * control that spends nothing; below it the board would rather the strip
+   * wrapped again than shrink further.
+   */
+  const roomEl = useRef<HTMLDivElement | null>(null);
+  const headEl = useRef<HTMLElement | null>(null);
+  const deckEl = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    const root = roomEl.current;
+    if (!root) return;
+    // The hung sheet has no deck at all, and a measurement left over from play
+    // would shrink the celebration board by the height of a deck that is no
+    // longer on the glass. Hand it back to `--tw-reserve`.
+    if (won) { root.style.removeProperty('--tw-chrome'); return; }
+    const apply = () => {
+      const head = headEl.current?.offsetHeight ?? 0;
+      const deck = deckEl.current?.offsetHeight ?? 0;
+      if (head + deck === 0) return;
+      // The column's OWN padding and its two gutters are chrome too, and they
+      // differ by glass (0.7rem/0.7rem tall, 0.4rem/0.3rem short). A hand-set
+      // guard for them was 19px short at 390x844 — which is exactly the 19px
+      // that room then scrolled by. Read them instead.
+      const cs = getComputedStyle(root);
+      const gaps = 2 * (parseFloat(cs.rowGap) || 0);
+      const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+      root.style.setProperty('--tw-chrome', `${head + deck + gaps + pad}px`);
+    };
+    apply();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(apply);
+    if (headEl.current) ro.observe(headEl.current);
+    if (deckEl.current) ro.observe(deckEl.current);
+    return () => ro.disconnect();
+  }, [won]);
 
   const submit = (w: string) => {
     if (won || !w) return;
@@ -258,8 +323,8 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
   };
 
   return (
-    <div className={`anch anch--gallery${won ? ' anch--verdict' : ''}`}>
-      <header className="anch__head">
+    <div ref={roomEl} className={`anch anch--gallery${won ? ' anch--verdict' : ''}`}>
+      <header className="anch__head" ref={headEl}>
         <h2 className="anch__title">The Gallery</h2>
         {/* 3.2/7.2: the mechanical clause is NEVER the thing a short screen
             drops — at tier 3 the marked-tile rule is what a −3-step mistake
@@ -407,9 +472,24 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
               Claim was not on the glass at all. They ride the shell's sticky
               deck now (ui/rooms/room-host.css), so the board scrolls behind
               them and the verbs never leave the thumb zone. */}
-          <div className="room-deck room-deck--anch">
+          <div className="room-deck room-deck--anch" ref={deckEl}>
+            {/* ROUND 34 (COMPREHENSION, item 9) — WHAT A CORNER IS, UNDER THE
+                TRACE TRAY. The ask line says "{n} works, a corner each" and
+                re-measured at HEAD the word "corner" appears in this room
+                EXACTLY ONCE, in that clause, at both shipped sizes: nothing
+                defines it, nothing counts it, nothing points at one. Both cold
+                readers read the clause and neither could tell whether their
+                words had corners — one checked all five and gave up. It is not
+                a flourish, either: the corner floor is what sorts a traced word
+                into a WORK (which opens the room) rather than a STUDY, and it
+                is worth two points a corner on the ladder.
+                The definition rides the tray's own at-rest line, so it costs
+                ZERO height — the line was already there, already this size,
+                already saying something less useful — and it is exactly where
+                she looks between traces. It steps aside for the word she is
+                tracing, which is the only moment it would be in the way. */}
             <div className="tw-word">
-              {word || <span className="tw-word__hint">trace or tap a word…</span>}
+              {word || <span className="tw-word__hint">trace or tap a word — a corner is a turn</span>}
             </div>
 
             {/* THE LADDER (BENCHMARKS §1) SHARES THE TOAST'S RESERVED SLOT.
@@ -471,23 +551,82 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
                   when nothing has been struck. */}
               {/* ROUND 28 — the studies. These used to arrive struck through
                   under "not in his lexicon", which was false. They are hung. */}
-              {studies.length > 0 && <span className="tw-lists__cap">studies:</span>}
+              {/* ═══ ROUND 34 (COMPREHENSION, item 9) — THE TWO VERDICTS ═════
+                  Round 28 split this board into WORKS and STUDIES and it was a
+                  whole round's work. It surfaced for NEITHER cold reader: both
+                  finished the room believing that only the five named words
+                  count and that a real word on a legal path scores zero —
+                  precisely the belief round 28 was built to kill.
+                  Re-measured at HEAD, both shipped phones, the reason is on
+                  the glass and it is not the copy. A study chip and a struck
+                  chip differ by: a DASHED versus a SOLID hairline in the same
+                  token (#CDBFA4 both), and 20 units of ink darkness (#55452F
+                  against #695C49). Same background, same weight, same size,
+                  same row. The only strong signal in the strip is the STRIKE —
+                  and a strike is a negative one, so a strip that carries one
+                  positive-but-unmarked class and one struck class reads, at a
+                  glance, as one rejected pile with a caption in the middle. She
+                  never gets a mark that says KEPT.
+                  Two changes, and the second is the one that matters:
+                    · the study chip now carries what it EARNED (+1), in the
+                      same idiom as the toast that announced it ("a study · +1")
+                      and the score in the standing line. A number in the plus
+                      direction cannot be read as a refusal.
+                    · the captions start their own row (`--head`), so a kept
+                      word is never printed shoulder-to-shoulder with a struck
+                      one, and each caption heads the pile it describes instead
+                      of floating between two of them.
+                  The caption also stops being the word "studies:", which is
+                  this room's private jargon, and says what the class is worth. */}
+              {studies.length > 0 && (
+                <>
+                  <span className="tw-lists__break" aria-hidden />
+                  <span className="tw-lists__cap tw-lists__cap--head">
+                    also hung, {STUDY_POINTS} point each:
+                  </span>
+                </>
+              )}
               {/* BOUNDED ON PURPOSE. A tier-3 board carries up to 77 studies and
                   the deck is sticky: an unbounded strip walks the board off the
                   bottom of a 667px screen. The most recent six are shown and the
                   rest are counted, so nothing she found is ever silently gone. */}
               {studies.slice(-STUDY_CHIPS).map((w) => (
-                <span key={w} className="anch-chip anch-chip--study">{w}</span>
+                <span key={w} className="anch-chip anch-chip--study">
+                  {w}
+                  <span className="anch-chip__pts tabular-nums">+{STUDY_POINTS}</span>
+                </span>
               ))}
               {studies.length > STUDY_CHIPS && (
                 <span className="tw-lists__cap tabular-nums">+{studies.length - STUDY_CHIPS} more</span>
               )}
               {state.missedWords.length > 0 && (
-                <span className="tw-lists__cap">not on the curator’s list:</span>
+                <>
+                  <span className="tw-lists__break" aria-hidden />
+                  <span className="tw-lists__cap tw-lists__cap--head">not on the curator’s list:</span>
+                </>
               )}
-              {state.missedWords.map((w) => (
+              {/* ROUND 34 — BOUNDED, LIKE THE STUDIES BESIDE IT. This strip was
+                  the one unbounded thing on a sticky deck sitting over a board:
+                  `missedWords` grows with every refused trace and every chip
+                  pushed the deck further up the glass, so the player who
+                  experimented most lost the most of the board she was
+                  experimenting on. Measured on `twistle-t3-1` at 375x667, a
+                  strip carrying its studies and a handful of strikes put the
+                  room 54px into a scroll and the bottom rank of a tier-3 6x6
+                  under the deck — six tiles that no longer answered a tap at
+                  their own centre. The cap is the same idiom the studies have
+                  used since round 28, and it keeps the same promise: the most
+                  recent are shown, the rest are counted, nothing is silently
+                  gone. `tests/round34-rooms-live.mjs` (GALLERY/FIT) fills the
+                  strip with real traced words and holds the room to it. */}
+              {state.missedWords.slice(-MISS_CHIPS).map((w) => (
                 <span key={w} className="anch-chip anch-chip--muted">{w}</span>
               ))}
+              {state.missedWords.length > MISS_CHIPS && (
+                <span className="tw-lists__cap tabular-nums">
+                  +{state.missedWords.length - MISS_CHIPS} more
+                </span>
+              )}
             </div>
           </div>
         </>

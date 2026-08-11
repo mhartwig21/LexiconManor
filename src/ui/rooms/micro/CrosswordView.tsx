@@ -172,7 +172,22 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
       const other = owners.find((e) => e.id !== active.entryId);
       if (other) { setActive({ cell: index, entryId: other.id }); return; }
     }
-    const preferred = owners.find((e) => e.id === active.entryId) ?? owners[0]!;
+    /**
+     * ROUND 34 (COMPREHENSION, item 11) — MOVING SIDEWAYS SHOULD NOT TURN YOU
+     * ROUND. This kept the entry only when the tapped square belonged to the
+     * SAME entry, and otherwise fell to `owners[0]` — which is puzzle order,
+     * and the pool lists the downs first. So filling 3-Across, tapping a
+     * square one column over that also carries a down, silently span the
+     * cursor to that down and the next letter went the other way. Keep the
+     * DIRECTION she is already typing in wherever the square supports it, then
+     * prefer across, which is the convention every crossword opens on.
+     */
+    const dir = active.entryId.slice(-1);
+    const preferred =
+      owners.find((e) => e.id === active.entryId)
+      ?? owners.find((e) => e.id.endsWith(dir))
+      ?? owners.find((e) => e.id.endsWith('A'))
+      ?? owners[0]!;
     setActive({ cell: index, entryId: preferred.id });
   };
 
@@ -239,6 +254,19 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
     entryCells(puzzle, e).every((c) => state.cw.letters[c] !== undefined);
 
   const activeCells = new Set(entryCells(puzzle, activeEntry));
+  /**
+   * ROUND 34 (COMPREHENSION, item 11) — THE ROOM KNEW WHICH WAY IT WAS ABOUT
+   * TO TYPE AND NEVER SAID. Measured live at HEAD on `crossword-t3-19`, both
+   * shipped phones: not one glyph, word or arrow anywhere in the room named a
+   * direction (the clue ids carry `1D`/`3A`, which is the crossword's own
+   * shorthand and means nothing to someone meeting it cold), and a real
+   * pointer tap on the top-left numbered square followed by a real key press
+   * moved the cursor five squares — one whole rank, straight down. The cold
+   * reader placed every letter of the board by hand rather than trust it.
+   * The caret is drawn ON the square the next letter lands in, pointing the
+   * way the cursor will run, so the answer is where the question is.
+   */
+  const runsDown = activeEntry.id.endsWith('D');
 
   return (
     /* The class carries the BOARD SIZE, not the tier: the clue panel's budget
@@ -273,7 +301,10 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
           // square inside the answer she is filling in, and for a player who
           // cannot separate the two tints.
           if (markedCells.has(i)) classes.push('lc-cell--mark');
-          if (i === active.cell && !won) classes.push('lc-cell--active');
+          if (i === active.cell && !won) {
+            classes.push('lc-cell--active');
+            classes.push(runsDown ? 'lc-cell--down' : 'lc-cell--across');
+          }
           if (state.cw.wrongCells.includes(i)) classes.push('lc-cell--wrong');
           if (state.cw.revealedCells.includes(i)) classes.push('lc-cell--given');
           if (popCell === i) classes.push('lc-cell--pop');
@@ -285,7 +316,10 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
               ref={i === active.cell ? activeCellRef : undefined}
               className={classes.join(' ')}
               onPointerDown={(ev) => { ev.preventDefault(); selectCell(i); }}
-              aria-label={`Square ${i}${markedCells.has(i) ? ', marked for the hem' : ''}`}
+              aria-label={
+                `Square ${i}${markedCells.has(i) ? ', marked for the hem' : ''}`
+                + (i === active.cell && !won ? `, typing ${runsDown ? 'down' : 'across'}` : '')
+              }
             >
               {numberAt.has(i) && <span className="lc-cell__num">{numberAt.get(i)}</span>}
               <span className="lc-cell__ch" style={wonDelay}>{state.cw.letters[i] ?? ''}</span>
@@ -326,8 +360,28 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
               live region; a screen reader should hear verdicts, not a standing
               notice re-read on every keystroke. */}
           <div className="m2-toastslot">
+            {/* ROUND 34 (COMPREHENSION, item 11) — THE HEM IS THE ROOM'S WHOLE
+                NEW MECHANIC AND IT INTRODUCED ITSELF AFTER THE SOLVE.
+                Measured at HEAD on `crossword-t3-19`, both shipped phones: the
+                string "hem" appeared EXACTLY ONCE anywhere in the room — in
+                the id column of a fifth clue row that has no numbered squares
+                and no explanation — and the only other statement of it was the
+                `The hem reads X` toast, which fires at the moment the hem is
+                already solved. A cold reader met a clue with no squares and
+                read it as a bug. The marked squares, the mirrored column down
+                the clue list and the fold on the grid are all already drawn;
+                one clause joins them up, and it is the second occupant of a
+                slot that was measured EMPTY at rest from the first keystroke
+                on (the price notice below retires the moment she types). It
+                retires in its turn the moment the hem spells, because at that
+                point the room has said it in a toast and shown it in gilt. */}
             {!toast && Object.keys(state.cw.letters).length === 0 && (
               <span className="m2-toast m2-toast--info">Letters are free — ✎ and the check cost steps.</span>
+            )}
+            {!toast && spine && !hemSpelled && Object.keys(state.cw.letters).length > 0 && (
+              <span className="m2-toast m2-toast--info m2-toast--hem">
+                The marked squares fill the hem — one more word, free.
+              </span>
             )}
             <span className="m2-toast-live" aria-live="polite">
               {toast && <span className={`m2-toast m2-toast--${toast.kind}`}>{toast.text}</span>}

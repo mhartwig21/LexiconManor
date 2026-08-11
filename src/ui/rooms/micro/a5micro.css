@@ -226,7 +226,60 @@
   border-bottom-right-radius: var(--radius-card);
   pointer-events: none;
 }
-.lc-cell--active { outline: 2px solid var(--room-accent); outline-offset: -2px; }
+/* ═══ ROUND 34 — THE SQUARE THE NEXT LETTER LANDS IN ═══════════════════════
+   Re-measured at HEAD on `crossword-t3-19`, 375x667 and 390x844, comparing the
+   active square against a NON-active square of the same answer (the first pass
+   of this measurement compared it against itself, which is the class of
+   mistake this repo has a standing rule about, and it reported a false clean):
+
+       plain square            background #F6EFE2
+       square of this answer   background 12% room accent
+       marked square (hem)     background 26% room accent
+       the ACTIVE square       background whatever it already had
+                               + a 2px inset outline in the room accent
+
+   So the cursor's only mark was a hairline in the SAME HUE as the tint already
+   covering the whole answer, and on a marked square it sat on a 26% field of
+   that hue. It is a real mark and it is the weakest one in the room; the NYT
+   Mini, which this room's typing borrows wholesale, gives the cursor a fill
+   that is a different colour from the word entirely.
+   The active square now takes the strongest fill in the ladder — plain < this
+   answer < marked < ACTIVE — so the ladder still ascends and the marked
+   square's fold (`--mark::after`) is still the only corner fold on the board.
+   AND it carries a caret pointing the way the cursor will run: direction was
+   NOWHERE on the glass, in any glyph or word, at either size. */
+.lc-cell--active {
+  outline: 2px solid var(--room-accent);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--room-accent) 40%, var(--paper-raised));
+}
+/* The caret. Drawn as a border triangle so it is a SHAPE, not a glyph: it does
+   not depend on a font shipping ▸/▾, it takes no line box, and it survives the
+   grayscale pass. It rides the edge the cursor is travelling towards, inside
+   the square's own padding, so it never touches the letter and never grows the
+   cell. `aria-hidden` is unnecessary — it is a pseudo-element; the direction is
+   spoken in the square's own aria-label instead (CrosswordView). */
+.lc-cell--active::before {
+  content: '';
+  position: absolute;
+  border-style: solid;
+  border-color: transparent;
+  pointer-events: none;
+}
+.lc-cell--across::before {
+  right: 2px;
+  top: 50%;
+  margin-top: -0.22rem;
+  border-width: 0.22rem 0 0.22rem 0.26rem;
+  border-left-color: var(--room-accent);
+}
+.lc-cell--down::before {
+  bottom: 2px;
+  left: 50%;
+  margin-left: -0.22rem;
+  border-width: 0.26rem 0.22rem 0 0.22rem;
+  border-top-color: var(--room-accent);
+}
 .lc-cell--wrong  { color: var(--wax-ink); border-color: var(--wax); }
 .lc-cell--given  { color: var(--gilt); }
 .lc-cell--pop .lc-cell__ch { display: inline-block; animation: m2-pop 200ms var(--ease-settle); }

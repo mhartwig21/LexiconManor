@@ -38,6 +38,7 @@
     "test:ledger": "node tests/step-ledger-live.mjs && node tests/step-ledger-live.mjs --prove",
     "test:key-and-letter": "node tests/round32-key-and-letter-live.mjs && node tests/round32-key-and-letter-live.mjs --prove",
     "test:purse-and-map": "node tests/round33-purse-and-map-live.mjs && node tests/round33-purse-and-map-live.mjs --prove",
+    "test:rooms-say-it": "node tests/round34-rooms-live.mjs && node tests/round34-rooms-live.mjs --prove",
     "metrics:review": "tsx scripts/review-metrics.ts",
     "content:all": "npm run content:dictionary && npm run content:hive && npm run content:twistle && npm run content:cipher && npm run content:crossword && npm run content:wordweb && npm run content:forgotten-word && npm run content:sudoku && npm run content:verify",
     "build:pages": "tsx scripts/build.ts --pages",

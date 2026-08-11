@@ -30,6 +30,7 @@ import { bandOf, loadDictionary } from '../../content/lib/dictionary';
 import { typeset } from '../../content/lib/typography';
 import { familyOfTheme } from '../../content/lib/wordweb-ladder';
 import { anArticle, herringLine } from '../../src/ui/rooms/anchor/herring-line';
+import { endCopy } from '../../src/ui/rooms/anchor/web-grade';
 
 /**
  * A3 — the four anchor rooms behind the RoomPuzzle contract.
@@ -1539,5 +1540,76 @@ describe('the acknowledged herring names a thread she could have followed', () =
       words: ['A', 'B', 'C', 'D'], relation: 'rhyme', matched: ['A', 'B', 'C', 'D'],
     });
     expect(line).toBe('All four of these do rhyme. But no.');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND 34 (COMPREHENSION, cold read 11 Aug, item 14) — THE LIBRARY'S GRADE
+// MUST NOT CONTRADICT THE VERDICT PRINTED UNDER IT.
+//
+// The room asks two questions and graded on one. `endCopy` took only
+// `costedMistakes + hintsBought`, so a spotless board whose final thread was
+// MISNAMED printed "Every thread true, first time." directly above "It called
+// itself “X”." — the grade congratulating her on the exact thing the next line
+// corrects. Two cold readers concluded from that stack that the naming act has
+// no consequence; it has always had one (the adapter's `isPerfect` reads
+// `namedCorrectly`), and it now has one she can read.
+//
+// These assertions are about the SENTENCE, which is why the sentence lives in
+// its own module. The economy half is asserted separately, over the adapter,
+// so neither claim can be satisfied by the other's fix.
+// ---------------------------------------------------------------------------
+
+describe('the Library grades the name it asked for (AAA 2.11 / 2.14)', () => {
+  const CLEAN = 'Every thread true, first time.';
+
+  it('a clean board that was named TRUE still gets the clean line', () => {
+    expect(endCopy(0, true)).toBe(CLEAN);
+  });
+
+  it('a clean board that was MISNAMED never claims every thread was true', () => {
+    const line = endCopy(0, false);
+    expect(line).not.toBe(CLEAN);
+    // It must not merely drop the claim — it must say what went by.
+    expect(line.toLowerCase()).toContain('name');
+    // …and never at the cost of the thing she DID do (AAA 2.14: warm, never
+    // shame-adjacent). The weaving was clean and the line says so.
+    expect(line.toLowerCase()).toContain('true');
+  });
+
+  it('a misnamed board with mistakes is graded once, not twice', () => {
+    for (const m of [1, 2, 3, 7]) {
+      const line = endCopy(m, false);
+      expect(line, `${m} mistakes`).not.toBe(endCopy(m, true));
+      expect(line.toLowerCase(), `${m} mistakes`).toContain('name');
+    }
+  });
+
+  it('a board with no naming act at all is graded exactly as it was', () => {
+    // `namedCorrectly` is null until the act happens; the view passes
+    // `!== false`, so a board that never asked must grade identically to the
+    // pre-round-34 line. This is the regression half of the change.
+    expect(endCopy(0, true)).toBe(CLEAN);
+    expect(endCopy(1, true)).toBe('Splendid weaving.');
+    expect(endCopy(2, true)).toBe('Well pieced-together.');
+    expect(endCopy(3, true)).toBe('Got there — the web holds.');
+  });
+
+  it('the ECONOMY half is independent: a wrong name forfeits perfect', () => {
+    // Measured through the adapter rather than through the copy, so the
+    // sentence above cannot be what makes this pass.
+    const started = wordWebAdapter.start(webPuzzle, ctx(2));
+    let s: WordWebRoomState = started;
+    for (const g of webPuzzle.groups.slice(0, 3)) {
+      s = wordWebAdapter.reduce(webPuzzle, s, { type: 'submit', selection: g.words }).state;
+    }
+    const last = webPuzzle.groups[3]!;
+    s = wordWebAdapter.reduce(webPuzzle, s, { type: 'submit', selection: last.words }).state;
+    expect(s.pendingNaming, 'the last four must raise the naming act').not.toBeNull();
+    const wrong = s.pendingNaming!.options.find((o) => o !== s.pendingNaming!.theme)!;
+    const out = wordWebAdapter.reduce(webPuzzle, s, { type: 'name-theme', theme: wrong });
+    expect(out.state.namedCorrectly).toBe(false);
+    expect(out.outcome.status).toBe('solved');
+    expect(out.outcome.perfect, 'a misnamed thread must not be perfect').toBe(false);
   });
 });
