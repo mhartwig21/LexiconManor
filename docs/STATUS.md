@@ -36,7 +36,7 @@ people, and the bookmarks.
 | The Study | Forgotten Word (poetic definitions) | 113 |
 | The Counting House | Sudoku, expert baseline | 120 |
 | The Darkroom | Substitution cipher | 121 |
-| The Linen Closet | Mini crossword | 90 |
+| The Linen Closet | Sparse clue puzzle with a hem (NYT Acrostic, §10) | 76 |
 
 *(1,083 was the count this file printed for two rounds; round 23 regenerated the Darkroom
 from 94 prints to 121 when it cut the stock proverbs, and nobody moved the total.)*
@@ -148,7 +148,9 @@ room saying nothing, which is exactly the class of defect that bar exists for.
 | §5.9 Most-repeated crossword answer / clue | SUN ×12 · "Parchment guide" ×8 | ×4 · **never twice** |
 | §5.11 Night-line variants (the last thing she reads) | **3**, keyed by end cause alone | **30** authored beats, 27 keyed to the day |
 | §5.11 Distinct goodnights across consecutive nights, driven live | **2 in 6** | **8 in 8** |
-| 6.19c Linen Closet clue rows visible at 375×667 | 1 of 5, with a row's own centre over the QWERTY | 2 of 5 (3 on a 4×4), every row whole |
+| 6.19c Linen Closet clue rows visible at 375×667 | 1 of 5, with a row's own centre over the QWERTY | 2 of 5 (3 on a 4×4) *(round 20)* → **all of them, at both sizes** *(round 29)* |
+| Linen Closet entries with ≤1 checked letter | **190 of 360 (52.8%)** | **0 of 288** — the hem, BENCHMARKS §10 |
+| Linen Closet letters under outside check | **39.9%** (566 of 1,417) | **62.3%** (730 of 1,172) |
 | The night digest at 375×667 | **667 / 751 — 84px past the glass**, hidden by `overflow-y` | fits, no scroll |
 
 Bramble's tea also stopped landing on the floor it was never about: `TEA_POUR` pours a cup
@@ -350,6 +352,38 @@ Ordered most value first.
   / `KEY ___`, and cost five boards), or the wordplay bank needs enough new subtle supply
   that the planter stops being the pool's scarcest resource. That is an authoring round.
 - **§5.11 remainder.** Per-room palettes still borrow from other products.
+
+### The Linen Closet: EXECUTED (round 29) — it is not a crossword, and it has a hem
+
+The section below is kept as the record of how the decision was reached; what follows is what
+was done with it. The owner's ruling (docs/LINEN_CLOSET.md) chose neither of the two options
+round 25 measured: **keep the sparse grid, stop calling it a crossword, and give the
+disambiguation job to the shaded squares.** That is built.
+
+- **The missing spec exists.** `docs/BENCHMARKS.md` had no Mini and no crossword teardown at
+  all — the room drifted for twenty-odd rounds against a spec that was not in the house's own
+  spec document. §10 is now a teardown of the **NYT Acrostic**, the one mainstream NYT word
+  puzzle whose letters are checked without crossings, and it strikes the Mini explicitly with
+  the round-17 measurement so no later round re-derives it from an empty page.
+- **The hem.** One marked square per entry; read down the clue list they spell a further answer,
+  which is clued on a row of its own and mirrored into a column down the right edge of the clue
+  panel. Free to read (it is derived from letters already placed, exactly as a crossing is),
+  it refuses to spell when an answer is wrong, and read the other way it hands one letter to
+  every entry.
+- **The number the old metric hid.** 25.0% checked squares was the Mini's measure. The real
+  defect: **190 of 360 entries (52.8%) had at most ONE letter anything on the board could
+  contradict.** Now 0 of 288, and letters under outside check go 39.9% → 62.3%.
+- **A free correctness oracle was found and removed.** `.lc-clue--done` dimmed a clue the
+  moment its entry matched the SOLUTION — unlimited, unpriced, per-entry right/wrong in a room
+  whose one costed moment is the full-grid check. It means FILLED now.
+- **The clue panel stopped hiding the puzzle.** Three of five rows failed the hit test at
+  375×667 at centre and all four inset corners, behind the QWERTY. Nothing scrolls at either
+  size now, on any board in the pool, driven in system Edge.
+- **The clock was not spent.** The generator caps each tier's running mean board size at the
+  mean the old pool shipped; tier 3 traded its fifth entry for the hem and asks for 2.2 fewer
+  letters. `ROOM_EFFORT.crossword` is untouched. The bill was paid in VARIETY: **76 boards,
+  from 90** (tier 1: 16, from 30), because a layout is discarded unless a bank word can be
+  spelled out of its uncrossed letters.
 
 ### The Linen Closet: measured, decided, NOT executed
 

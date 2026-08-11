@@ -463,3 +463,154 @@ Strands ends flat, the Gallery should end on a rung with rungs visible above it.
 | Traced real word, not wanted | Strands: accepted, 3 of them = 1 hint | accepted as a *study* — 1 point, never refused |
 | Word-search answer count | Strands: 7–9 theme words + spangram | 5 / 6 / 6 *works* (`ROOM_EFFORT.twistle`) |
 | Word-search ladder | Strands: none at all | Bee's curve on letters + 2×corners (`TWISTLE_RANKS`) |
+| Linen Closet benchmark | **NYT Acrostic (§10)**, not the Mini — the Mini is struck, with the measurement | one marked square per entry spelling a clued answer |
+| Closet board | Mini: 5×5, ~10 entries, 100% checked | 4×4/3 entries (t1), 5×5/4 (t2, t3) + a hem row |
+| Closet letters under outside check | Mini 100%; Acrostic ~100% by transfer | 39.9% → **62.3%**; entries with ≤1 checked letter 52.8% → **0%** |
+| Closet squares to fill (mean) | — | 8.38 / 13.30 / 13.93 (was 8.40 / 13.30 / 16.10) |
+
+## 10. NYT Acrostic → benchmark for the Linen Closet (the Hem)
+
+*Three rounds running, a room was judged against a teardown that was not in this file: the Mini,
+then Sudoku, then the Mini again. The Linen Closet's case is the worst of the three, because the
+spec it was silently judged against for twenty-odd rounds is one it **structurally cannot meet**,
+and nobody wrote the spec down long enough to notice. That is fixed here, in two parts: why the
+Mini is NOT this room's benchmark, and what is.*
+
+### Part 1 — why the NYT Mini is not, and never was, the benchmark
+
+The Mini's numbers, for the record, because they are the ones the room was being failed against:
+
+- **5×5, 25 squares, ~10 entries**, every square in exactly one across and one down entry.
+- **100% checked squares.** There is no unchecked letter on a Mini, ever.
+- Solve time is 20–60 seconds for a practised solver; the room's budget (`ROOM_EFFORT.crossword`
+  = 1.25 / 1.5 / 2.0 min) is the right order of magnitude, so *time* was never the mismatch.
+
+Round 17 measured what closing the 100%-checked gap would actually cost this room and found the
+premise wrong three separate ways (recorded in full in `LINEN_CLOSET.md`):
+
+- **Not a layout problem.** All 251 fully-checked connected masks that exist at sizes 3–5 were
+  enumerated; **zero** are fillable from the room's own 174-word clue bank across 2,008 seeded
+  attempts.
+- **A rebuild destroys the asset.** Only **57 of the 362** answers a fully-checked grid needs
+  clear the hand-picked manor bank. It orphans two thirds of the bank and needs 564–915 new clues.
+- **And it degrades the writing.** Connective fill drives plural/verb S-endings from 2.3% of the
+  bank to 13.4% of what full checking requires.
+
+> The clues are good BECAUSE the grid is sparse. A skeleton lets an author choose every word
+> (OWL from "Night's librarian"). Full checking removes that choice and pays in connective fill.
+> **The room's one asset and the crossword's defining mechanic are permanently opposed.**
+
+So the Mini is struck as this room's benchmark. It is kept above only so that a later round
+cannot re-derive it from an empty page. **The Linen Closet is not a crossword and is not scored
+as one.**
+
+### Part 2 — the benchmark: the NYT Acrostic
+
+The Acrostic is the one mainstream NYT word puzzle whose letters are **not** checked by
+crossings, and it is not thereby a lesser puzzle — it runs in the same lineup, at a harder
+average difficulty than the Mini, and has done for decades. That is the precedent this room
+needs, and it is why the answer to "sparse grid" is not "make it dense" but "check the letters a
+different way".
+
+**Shape (approximate where marked ~; the Acrostic's dimensions vary by quotation):**
+
+- Published **~twice a month** in the NYT lineup; long associated with constructors Emily Cox
+  and Henry Rathvon.
+- **Two halves on one page.** Left: a list of **~20–30 clues lettered A, B, C…**, each with a row
+  of numbered blanks. Right: a rectangle of **~150–200 numbered squares** with black squares,
+  word-spaced.
+- Every blank in the clue list carries a **number**, and that number names a square in the grid.
+  Filling an answer transfers its letters into the grid. Filling the grid spells a **quotation**.
+- **The first letters of the answers, read down the clue list A→Z, spell the author and the title
+  of the work.** That is the acrostic proper, and it is the device this room is taking.
+
+**The three checks an Acrostic has, in place of crossings:**
+
+1. **Transfer.** A letter you are sure of in one place appears immediately in the other. This is
+   the workhorse, and it is a *crossing by another name* — the grid is a second context for the
+   same letter.
+2. **English.** The quotation is a sentence, so partial fills are disproved by grammar and idiom,
+   not by geometry.
+3. **The spine.** The initial letters accumulate into a name. A doubtful answer whose initial
+   breaks the emerging name is refuted **without paying anything** — you did not have to submit,
+   and the puzzle did not have to tell you.
+
+Check 3 is the cheapest of the three to build and the only one that survives at micro scale.
+Checks 1 and 2 both need a quotation grid, which is a 20–40 minute puzzle; this room has 90
+seconds.
+
+**What the Acrostic is honest about, and we must copy:** it *tells you what the spine will say*
+("the author and the title") before you start. It is not a hidden Easter egg you may or may not
+notice — it is a stated, usable constraint, and it is the reason a solver reaches for it.
+
+### Steal / Fix for the Linen Closet
+
+**Steal:** the spine, exactly, and its honesty. One marked square per entry; the marked letters,
+read in clue order, spell a further answer; **that answer gets a clue of its own, printed in the
+list with the rest.** A wrong entry is refuted the moment its marked letter refuses to fit the
+spine — free, silent, and without a costed check. That is the job crossings were doing, given to
+something a sparse grid can actually carry.
+
+**Fix/beat, and where we deliberately differ:**
+
+- **The spine is marked, not initial.** NYT takes the *first* letter of every answer. On a 174-word
+  bank with 3–5 entries per board, initials-only is infeasible — measured: of the 90 shipped
+  boards, **1** admits a spine under an initials rule. Any-position marking is the standard
+  crossword-meta form (shaded squares), it costs nothing in legibility once the squares are
+  shaded, and the author still picks every marked letter because the author picks every word.
+- **A marked square must earn its keep.** Marking a square that is already an intersection buys
+  nothing — it is checked twice and unchecked letters stay unchecked. The generator prefers
+  unchecked squares and the pool is gated on it (`MIN_FRESH_SPINE_RATIO`).
+- **No quotation grid.** Checks 1 and 2 are not affordable at 90 seconds and are not attempted.
+  Said out loud so a later round does not read the omission as an oversight.
+- **The spine is the tier knob's second hand.** The entries harden by word and by clue register
+  (§ the room's own `wry` pool); the spine hardens with them.
+
+### The number this room is scored on, and what it replaces
+
+"Checked squares" was the Mini's metric and it condemned the room at a median 25.0%. The
+replacement is stated here so it cannot drift:
+
+| Metric | NYT Mini | NYT Acrostic | Linen Closet, before | after |
+|---|---|---|---|---|
+| Squares checked by a crossing | 100% | 0% — transfer does it | 25.0% median | 23.1% median, by design |
+| **Entries with ≤ 1 checked letter** | 0% | 0% | **52.8%** (190 of 360) | **0.0%** (0 of 288) |
+| Share of an answer's letters something else can disprove | 100% | ~100% | **39.9%** (566 of 1,417) | **62.3%** (730 of 1,172) |
+| Free refutation of a wrong answer | the crossing | the spine + transfer | **none** | the hem |
+
+The second row is the one the old metric hid, and it is the reason this room
+needed rebuilding rather than renaming. "25% checked squares" sounds like a
+puzzle that is three-quarters unfair; the truth was worse and more specific —
+**on 190 of 360 entries there was at most ONE letter in the whole answer that
+anything on the board could contradict**, so a wrong word usually sat there
+looking exactly as right as a right one until she paid for a check. One marked
+square per entry, placed on a letter no crossing already covers, takes that to
+zero. The same 76 boards with their hems removed still measure 49.7%, which is
+what makes the number a measurement rather than a property of the layout.
+
+### What it cost, in the only currency the evening has
+
+The hem adds a sentence to read, so the board was not allowed to add squares to
+fill. Measured against the pool it replaces, per board:
+
+| | squares to fill, before | after | rows printed, before | after |
+|---|---|---|---|---|
+| tier 1 | mean 8.40 (7–10) | **8.38** (7–9) | 3 | 4 |
+| tier 2 | mean 13.30 (11–16) | **13.30** (12–15) | 4 | 5 |
+| tier 3 | mean 16.10 (13–18) | **13.93** (12–16) | 5 | **5** |
+
+Tier 3 paid for the other two: it gave up its fifth entry, so it prints the
+same five rows and asks for 2.2 fewer letters. Tiers 1 and 2 are flat on
+squares and gain one row each, and that row is READ, not typed. The generator
+caps the running mean per tier and `tests/puzzles/micro2.test.ts` replays the
+check on what shipped, so a later content edit cannot lengthen the room
+quietly.
+
+The variety bill is real and is recorded rather than hidden: **the pool is 76
+boards where it was 90**, because a board is now thrown away unless a bank word
+can be spelled out of its uncrossed letters (32,979 layouts were). Tier 1 falls
+hardest — 16 boards, from 30 — since a 4×4 with three entries and 8 squares has
+very few uncrossed letters to choose from. Ten per tier is the shipped floor
+and tier 1 clears it by six.
+
+---

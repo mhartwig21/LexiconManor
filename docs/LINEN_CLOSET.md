@@ -77,3 +77,82 @@ round will fill with an assumption.
   PIE are not Study headwords in any register; measured incompatible. Cutting also reds 14
   published campaign bands across 4 files and removes the only micro card carrying a dead-end
   layout, leaving every micro offer as the Darkroom.
+
+---
+
+# What was built (round 29)
+
+The owner's ruling above was carried out as written: the grid stayed sparse, the room stopped
+being called a crossword, and the disambiguation job was given to **the shaded squares**, which
+the ruling proposed first. It is called **the hem**.
+
+## The mechanic, in the room's own words
+
+One square in every answer is marked. Read down the clue list, the marked letters spell a
+further answer — and that answer is **clued in the list with the rest**, on a row that names
+itself `Hem`. The marked letters are mirrored into a column down the right edge of the clue
+panel, so the column reads as a word without the player having to hunt the board for them.
+
+It does the three things the doc asked for:
+
+1. **A reason a wrong answer is wrong.** A wrong entry puts a wrong letter in the column and
+   the hem refuses to spell. It costs nothing to see, because it is derived from letters
+   already on the board — exactly as reading a crossing is. `tests/puzzles/micro2.test.ts`
+   pins that: spelling the hem emits no event, charges nothing, and cannot end the room.
+2. **A second, better solve.** The first solve is three or four clues; the real one is the word
+   they hide, and reading the hem's clue first hands one letter to every answer.
+3. **A join.** The closet names its hem on the way out — *"The hem reads SNOW."* That is the
+   room paying through solving. It is the small version of the join: the hidden word is not yet
+   wired to a Volume fragment, and that is left undone deliberately rather than half-done.
+
+**The benchmark that was missing now exists.** `docs/BENCHMARKS.md` §10 is a teardown of the
+**NYT Acrostic** — the one mainstream NYT word puzzle whose letters are checked without
+crossings, by transfer and by an initial-letter spine. It also strikes the Mini explicitly, with
+the round-17 measurement, so no later round can re-derive the Mini from an empty page. Where we
+differ from the Acrostic is written down: any-position marking instead of initials (of the 90
+boards shipped at HEAD, **1** admits an initials-only spine), and no quotation grid, because
+checks 1 and 2 need twenty minutes and this room has ninety seconds.
+
+## The number that was actually wrong
+
+"25% checked squares" was the Mini's metric and it hid the real defect. Measured on the pool at
+HEAD: **190 of 360 entries (52.8%) had at most ONE letter in the whole answer that anything on
+the board could contradict.** A wrong word sat there looking exactly as right as a right one
+until she paid for a check. With one marked square per entry, placed on a letter no crossing
+already covers, that is **0 of 288**, and the share of an answer's letters under outside check
+goes **39.9% → 62.3%**.
+
+The gate is `MIN_FRESH_SPINE_RATIO`, and it is not true by construction: the first build of the
+generator took the first bank word a layout could spell, fell back to marking crossings rather
+than discarding the layout, and shipped 90 valid boards at **0.679** with 50 entries still
+single-checked — green on every other gate in the file. The generator now throws a layout away
+instead (32,979 of them), and both the generator and the suite re-measure it.
+
+## Two things found on the way that were not in the brief
+
+- **The room had a free correctness oracle.** `.lc-clue--done` dimmed a clue the moment its
+  entry matched the *solution* — an unlimited, unpriced, per-entry right/wrong answer, in a room
+  whose entire economy rests on the full-grid check being the one costed claim. The brief said
+  "nothing disambiguates a wrong answer"; the truth was worse, because something did, for free,
+  and it made the charge unreachable for anyone who noticed it. The dim now means FILLED.
+- **Three of five clues were not merely scrolling, and the fix was not a scrollbar.** Five 44px
+  clue rows over a five-rank board want 132px that a 375×667 stage does not have. It was paid
+  by: the clue rows giving up being *controls* (they commit nothing, so AAA 6.19 does not reach
+  them, and 5 × 28px fits where 5 × 44 cannot — selection moved to the numbered squares plus a
+  cursor that auto-advances to the next unfilled answer); the room's verb becoming a wide
+  keyboard key, sized past 44×44pt because 6.19 exempts nothing costed; and tier 3 trading its
+  fifth entry for the hem. Measured live in system Edge at both sizes: nothing scrolls, all five
+  rows hit-test as themselves, and the bank's longest sentence still fits one line.
+
+## What it cost
+
+- **The pool is 76 boards, from 90** — tier 1 hardest hit at 16, from 30 — because a layout is
+  discarded unless a bank word can be spelled out of its *uncrossed* letters. The shipped floor
+  is ten per tier.
+- **Nothing else.** The room was not allowed to buy the hem with squares: the generator caps the
+  running mean per tier at the mean the old pool shipped (8.40 / 13.30, and 14 at tier 3 against
+  its old 16.10), because the hem's freshness rule pulls the search toward sparser layouts and,
+  unconstrained, took tiers 1 and 2 to 9.00 and 14.50. `ROOM_EFFORT.crossword` is untouched.
+- **The 696 clues survived.** One was shortened — "Posy saves the crimson for letters that
+  matter" (46 chars) rendered 40.7px in a 28px row at 375×667 — and the bank is now gated at 42
+  characters, which is the longest sentence measured to fit on one line.

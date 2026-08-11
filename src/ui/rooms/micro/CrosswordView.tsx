@@ -1,18 +1,57 @@
 /**
- * The Linen Closet — mini crossword view. OWNER: A5.
+ * The Linen Closet — the sparse clue room with a hem. OWNER: A5.
  *
- * 390px-first: 56px cells, all 3–5 clues visible at once (memory prosthetic
- * — nothing hidden behind a picker), in-view QWERTY keys in the thumb zone
- * (no iOS keyboard, no focus-zoom, no viewport dance). Letters are free;
- * the grid auto-checks when full — wrong cells keep a wax mark until
- * edited. Reveal ("smooth a crease") prices through the hint event.
- * Reduced motion strips all juice; states stay legible (AAA U.3).
+ * NOT A CROSSWORD (docs/LINEN_CLOSET.md, the owner's ruling; docs/BENCHMARKS.md
+ * §10, the NYT Acrostic teardown written to replace the Mini's). The board is a
+ * skeleton, the clues are the content, and the letters are checked by a SPINE.
+ *
+ * ─── ROUND 29, AND THE THREE THINGS THIS FILE HAD WRONG ────────────────────
+ *
+ * 1. THREE OF FIVE CLUES WERE OFF THE GLASS. Measured at HEAD on
+ *    `crossword-t3-19` at 375x667: `.lc-clues` was 88px of scrollport over
+ *    220px of rows, and 3D, 4A and 5A failed the hit test at their centre AND
+ *    at all four inset corners — they were behind the QWERTY. If the clues are
+ *    the puzzle, three of five hidden is not a presentation bug. The arithmetic
+ *    is unforgiving and is written down where the numbers live (a5micro.css):
+ *    five 44px clue rows over a five-rank board wanted 132px this stage does
+ *    not have. Three things paid it, none of them the board:
+ *      · the clue rows STOPPED BEING CONTROLS. They are the page now, not a
+ *        picker — selection lives on the numbered squares, where a crossword
+ *        has always put it, plus the auto-advance below. A row that commits
+ *        nothing is not under AAA 6.19, and 5 x 28px fits where 5 x 44 cannot.
+ *      · the room's verb moved into the keyboard as a wide key (>=44x44pt, so
+ *        6.19's "every COSTED control, no exception" still holds) and its own
+ *        44px row went away.
+ *      · tier 3 went from five entries to four (+ the hem), which is a
+ *        shortening, declared: 5 clues printed before, 5 printed now, ~17
+ *        letters to type before, ~14 now.
+ *
+ * 2. THE ROOM HAD A FREE CORRECTNESS ORACLE AND HAS NOT GOT ONE NOW. Until
+ *    this round `.lc-clue--done` dimmed a clue the moment its entry matched the
+ *    SOLUTION — a free, unlimited, per-entry right/wrong answer, in a room
+ *    whose whole economy rests on the full-grid check being the one costed
+ *    claim. The doc that sent this round said "nothing disambiguates a wrong
+ *    answer"; the truth was worse — something did, for free, and it made the
+ *    charge unreachable for anyone who noticed. The dim now means FILLED (every
+ *    square has a letter in it), which is a fact about her, not about the
+ *    answer, and the honest partial check is the hem.
+ *
+ * 3. THE HEM. One marked square per entry, mirrored down the right edge of the
+ *    clue list so the column reads as a word, with the hem's own clue on the
+ *    last row. It is derived from letters already placed, so it is free, like a
+ *    crossing; it refuses to spell when an entry is wrong; and read the other
+ *    way it hands one letter to every entry.
+ *
+ * 390px-first: all clues visible at once (memory prosthetic — nothing hidden
+ * behind a picker), in-view QWERTY in the thumb zone (no iOS keyboard, no
+ * focus-zoom, no viewport dance). Reduced motion strips all juice; states stay
+ * legible (AAA U.3).
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { RoomViewProps } from '../registry';
 import {
-  entryCells, openCells, solutionLetters,
+  entryCells, hemLetters, isHemSpelled, openCells,
   type CrosswordEntry, type CrosswordPuzzle,
 } from '../../../engine/puzzles/crossword';
 import type { CrosswordAction, CrosswordRoomState } from '../../../engine/puzzles/crossword-adapter';
@@ -25,7 +64,9 @@ const KEY_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
 
 export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomViewProps<CrosswordPuzzle, CrosswordRoomState, CrosswordAction>) {
   const cells = useMemo(() => openCells(puzzle), [puzzle]);
-  const solution = useMemo(() => solutionLetters(puzzle), [puzzle]);
+  const spine = puzzle.spine;
+  /** The squares the hem reads, for the grid's shading. */
+  const markedCells = useMemo(() => new Set(spine?.cells ?? []), [spine]);
   const cellEntries = useMemo(() => {
     const map = new Map<number, CrosswordEntry[]>();
     for (const e of puzzle.entries) {
@@ -57,12 +98,8 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
   const [popCell, setPopCell] = useState<number | null>(null);
 
   const handledAttempt = useRef(0);
+  const hemAnnounced = useRef(false);
   const timers = useRef<number[]>([]);
-  // Round 5: the clue panel is no longer height-capped — all 3–5 clues are on
-  // the paper at once, which is what "memory prosthetic" means (AAA 3.3). The
-  // walk-into-view below is now only the safety net for the 40dvh backstop
-  // (a5micro.css) and is a no-op whenever the whole list is visible.
-  const activeClueRef = useRef<HTMLButtonElement | null>(null);
   const activeCellRef = useRef<HTMLButtonElement | null>(null);
   const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)); };
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -71,22 +108,33 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
   const stepCost = tier === 3 ? 3 : 2;
   const activeEntry = puzzle.entries.find((e) => e.id === active.entryId) ?? firstEntry;
 
-  // Keep the clue she is answering inside the clue box. `nearest` scrolls the
-  // box only, never the page (the shell has no page scroll at all), and only
-  // when the clue is actually out of view.
-  useEffect(() => {
-    activeClueRef.current?.scrollIntoView({ block: 'nearest' });
-  }, [active.entryId]);
+  const hem = hemLetters(puzzle, state.cw);
+  const hemSpelled = isHemSpelled(puzzle, state.cw);
 
-  // Same guarantee for the square she is typing into. On a 375x667 screen the
-  // grid, the clue, a full keyboard and two verbs cannot all fit at once
-  // without dropping tap targets under the 44pt bar (AAA 6.19) — so the grid
-  // is what scrolls, and the active square is always walked back onto the
-  // glass. `nearest` is a no-op whenever it is already visible, so nothing
-  // jitters on a tall phone where the whole grid fits.
+  // The square she is typing into is walked back onto the glass if anything
+  // ever pushes it off. `nearest` is a no-op whenever it is already visible, so
+  // nothing jitters on a board that fits — which, since the deck stopped
+  // over-claiming the stage, is every board in the pool at both sizes.
   useEffect(() => {
     activeCellRef.current?.scrollIntoView({ block: 'nearest' });
   }, [active.cell]);
+
+  /**
+   * THE HEM'S ONE ANNOUNCEMENT, and it is free. When the marked letters first
+   * read the spine's answer the room says so — that is the moment the second
+   * solve lands, and it costs nothing because it is derived from letters
+   * already on the board, exactly as reading a crossing is. It fires once.
+   */
+  useEffect(() => {
+    if (!spine || won) return;
+    if (hemSpelled && !hemAnnounced.current) {
+      hemAnnounced.current = true;
+      sfx.glyph();
+      setToast({ kind: 'good', text: `The hem reads ${spine.answer}.` });
+      later(() => setToast(null), 1600);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hemSpelled, won]);
 
   // Feedback choreography (keyed off adapter attempts).
   useEffect(() => {
@@ -128,20 +176,27 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
     setActive({ cell: index, entryId: preferred.id });
   };
 
-  const selectEntry = (e: CrosswordEntry) => {
-    if (won) return;
-    sfx.tap();
-    const eCells = entryCells(puzzle, e);
-    const firstEmpty = eCells.find((c) => state.cw.letters[c] === undefined);
-    setActive({ cell: firstEmpty ?? eCells[0]!, entryId: e.id });
-  };
-
-  const advanceWithin = (entry: CrosswordEntry, from: number) => {
+  /**
+   * Where the cursor goes after a letter lands. The clue rows stopped being
+   * taps this round, so this is not a nicety — it is the replacement for the
+   * picker, and it is what the NYT Mini does anyway: the next empty square of
+   * this answer, else the first empty square of the next answer that still has
+   * one, wrapping. It only stops moving when the board is full.
+   */
+  const advanceFrom = (entry: CrosswordEntry, from: number, letters: Record<number, string>) => {
     const eCells = entryCells(puzzle, entry);
-    const idx = eCells.indexOf(from);
-    if (idx >= 0 && idx + 1 < eCells.length) {
-      setActive({ cell: eCells[idx + 1]!, entryId: entry.id });
+    const here = eCells.indexOf(from);
+    for (let i = here + 1; i < eCells.length; i++) {
+      if (letters[eCells[i]!] === undefined) { setActive({ cell: eCells[i]!, entryId: entry.id }); return; }
     }
+    const order = puzzle.entries;
+    const at = order.findIndex((e) => e.id === entry.id);
+    for (let k = 1; k <= order.length; k++) {
+      const next = order[(at + k) % order.length]!;
+      const empty = entryCells(puzzle, next).find((c) => letters[c] === undefined);
+      if (empty !== undefined) { setActive({ cell: empty, entryId: next.id }); return; }
+    }
+    if (here >= 0 && here + 1 < eCells.length) setActive({ cell: eCells[here + 1]!, entryId: entry.id });
   };
 
   const typeLetter = (letter: string) => {
@@ -149,7 +204,7 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
     setPopCell(active.cell);
     later(() => setPopCell(null), 220);
     dispatch({ type: 'set-cell', index: active.cell, letter });
-    advanceWithin(activeEntry, active.cell);
+    advanceFrom(activeEntry, active.cell, { ...state.cw.letters, [active.cell]: letter });
   };
 
   const backspace = () => {
@@ -172,34 +227,32 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
     dispatch({ type: 'reveal-cell', index: active.cell });
   };
 
-  const entryDone = (e: CrosswordEntry) =>
-    entryCells(puzzle, e).every((c) => state.cw.letters[c] === solution.get(c));
+  /**
+   * ROUND 29: this used to be `entryDone` and compared against the SOLUTION,
+   * which dimmed a clue exactly when its answer was right — a free, unlimited
+   * correctness oracle in a room whose one costed moment is the full-grid
+   * check. It now means what it looks like it means: every square of this
+   * answer has a letter in it. Whether they are the RIGHT letters is what the
+   * hem hints at and what the check settles.
+   */
+  const entryFilled = (e: CrosswordEntry) =>
+    entryCells(puzzle, e).every((c) => state.cw.letters[c] !== undefined);
 
   const activeCells = new Set(entryCells(puzzle, activeEntry));
 
   return (
-    /* ROUND 20: a tier-1 closet is a 4x4 and a tier-2/3 closet is a 5x5, and
-       at 375x667 that one missing rank is 41.3px — almost exactly one clue row.
-       The clue panel's cap is a whole number of rows measured against the worst
-       case, so on the small board it can afford one more, and a tier-1 closet
-       then shows all three of its clues at rest with nothing to scroll. The
-       class carries the BOARD SIZE, not the tier: the arithmetic is about ranks
-       of squares, and a pool that one day pairs a 4x4 with tier 2 must still
-       get the right answer. */
+    /* The class carries the BOARD SIZE, not the tier: the clue panel's budget
+       is arithmetic about ranks of squares (a5micro.css), and a pool that one
+       day pairs a 4x4 with tier 2 must still get the right answer. */
     <div className={`m2 m2--linen${puzzle.size <= 4 ? ' m2--linen-sm' : ''}`}>
-      {/* ROUND 28 — A LINE THAT IS 0.0 x 0.0 ON EVERY PHONE THE GAME SHIPS ON.
+      {/* ROUND 28 — A LINE THAT WAS 0.0 x 0.0 ON EVERY PHONE THE GAME SHIPS ON.
           `.m2__sub` said "Small words, neatly folded. Fill every square." and
-          `display: none` under `@media (max-height: 900px)` (a5micro.css,
-          round 8's fit pass) — which is BOTH shipped sizes, 844 and 667. It
-          was authored, reviewed, committed and unreadable. The nameplate goes
-          the same way at the same threshold and that is fine: the room is
-          named on the blueprint she walked in from.
-          What was NOT fine is that the closet's one priced moment was
-          unannounced anywhere she could read it. A blind tester finished
-          believing each wrong letter cost 2 steps; letters are free probes and
-          the auto-check on a full grid is the charge. That fact now sits in
-          the reserved verdict line below, which survives every glass, and it
-          retires the moment she types — see `.m2-toastslot`. */}
+          `display: none` under `@media (max-height: 900px)`, which is BOTH
+          shipped sizes. It is retired. The nameplate goes the same way at the
+          same threshold and that is fine: the room is named on the blueprint
+          she walked in from. What was NOT fine is that the closet's priced
+          moments were unannounced anywhere she could read them; they are in
+          the reserved verdict line below, which survives every glass. */}
       <header className="m2__head">
         <h2 className="m2__title">The Linen Closet</h2>
       </header>
@@ -215,6 +268,11 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
           if (!open) return <div key={i} className="lc-cell lc-cell--void" aria-hidden />;
           const classes = ['lc-cell'];
           if (activeCells.has(i)) classes.push('lc-cell--word');
+          // The mark is painted AFTER the active-word tint and carries a corner
+          // fold as well as a colour, so a marked square is still a marked
+          // square inside the answer she is filling in, and for a player who
+          // cannot separate the two tints.
+          if (markedCells.has(i)) classes.push('lc-cell--mark');
           if (i === active.cell && !won) classes.push('lc-cell--active');
           if (state.cw.wrongCells.includes(i)) classes.push('lc-cell--wrong');
           if (state.cw.revealedCells.includes(i)) classes.push('lc-cell--given');
@@ -227,7 +285,7 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
               ref={i === active.cell ? activeCellRef : undefined}
               className={classes.join(' ')}
               onPointerDown={(ev) => { ev.preventDefault(); selectCell(i); }}
-              aria-label={`Square ${i}`}
+              aria-label={`Square ${i}${markedCells.has(i) ? ', marked for the hem' : ''}`}
             >
               {numberAt.has(i) && <span className="lc-cell__num">{numberAt.get(i)}</span>}
               <span className="lc-cell__ch" style={wonDelay}>{state.cw.letters[i] ?? ''}</span>
@@ -243,69 +301,98 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
           </div>
           <div className="m2-done__title">Neat as new linen.</div>
           <p className="m2-done__line">
-            Every word in its place{state.cw.costedChecks === 0 && state.cw.hintsUsed === 0 ? ' — folded right the first time' : ''}.
+            {spine ? <>The hem reads <strong>{spine.answer}</strong></> : <>Every word in its place</>}
+            {state.cw.costedChecks === 0 && state.cw.hintsUsed === 0 ? ' — folded right the first time' : ''}.
           </p>
         </div>
       ) : (
         <>
-          {/* The deck: clues + keyboard + the room's verb stay pinned to the
-              bottom of the scrolling stage, so they sit in the thumb zone on
-              every iPhone instead of being pushed off the glass by the grid
-              (round-4 owner report; see ui/rooms/room-host.css). The clue
-              rides WITH the keyboard — a clue you cannot see while typing is
-              not a memory prosthetic, it is a memory test. */}
+          {/* The deck: clues + keyboard stay pinned to the bottom of the stage,
+              so they sit in the thumb zone on every iPhone instead of being
+              pushed off the glass by the grid (round-4 owner report; see
+              ui/rooms/room-host.css). The clues ride WITH the keyboard — a clue
+              you cannot see while typing is not a memory prosthetic, it is a
+              memory test, and until this round three of five were behind it. */}
           <div className="room-deck">
           {/* ROUND 7 (AAA 11.11): the verdict slot used to sit above this deck
               in the scrolling flow, and with real iPhone insets the column ran
-              21px (390×844) / 44px (375×667) past its stage — the slot opened
-              at 364.9–400.1 against a deck starting at 393.1, so the room's
-              answer printed underneath the keyboard. It rides the deck now. */}
-          {/* ROUND 28 — THE PRICE, WHERE IT IS ACTUALLY VISIBLE (COMPREHENSION
-              fix 1's other half). This reserved line is the only chrome in the
-              room that survives every glass, and it stands empty until the
-              closet has something to say. So it opens by naming the one thing
-              the room charges for — a SELF-RETIRING label, not a tutorial: the
-              moment she types a letter she has demonstrated the probe is free,
-              and the line goes back to being the verdict slot it has always
-              been. The at-rest line sits OUTSIDE the live region; a screen
-              reader should hear verdicts, not a standing notice re-read on
-              every keystroke. */}
+              21px (390×844) / 44px (375×667) past its stage — the room's answer
+              printed underneath the keyboard. It rides the deck now.
+              ROUND 28/29 — THE PRICES, WHERE THEY ARE ACTUALLY VISIBLE. This
+              reserved line is the only chrome in the room that survives every
+              glass, so it opens by naming the two things the room charges for
+              and then retires: the moment she types a letter she has
+              demonstrated the probe is free. The at-rest line sits OUTSIDE the
+              live region; a screen reader should hear verdicts, not a standing
+              notice re-read on every keystroke. */}
           <div className="m2-toastslot">
             {!toast && Object.keys(state.cw.letters).length === 0 && (
-              <span className="m2-toast m2-toast--info">Letters are free — the check is what costs.</span>
+              <span className="m2-toast m2-toast--info">Letters are free — ✎ and the check cost steps.</span>
             )}
             <span className="m2-toast-live" aria-live="polite">
               {toast && <span className={`m2-toast m2-toast--${toast.kind}`}>{toast.text}</span>}
             </span>
           </div>
 
-          <div className="lc-clues m2-card">
-            {puzzle.entries.map((e) => (
-              <button
+          {/* THE CLUE LIST, WHICH IS THE PUZZLE. Rows are <li>, not buttons:
+              they commit nothing, they are read, and being read is the whole
+              job. The right-hand column is the hem — each row shows its own
+              marked letter, so the column reads downward as a word, and the
+              last row clues that word. */}
+          <ol className="lc-clues m2-card">
+            {puzzle.entries.map((e, i) => (
+              <li
                 key={e.id}
-                ref={e.id === active.entryId ? activeClueRef : undefined}
-                className={`lc-clue${e.id === active.entryId ? ' lc-clue--active' : ''}${entryDone(e) ? ' lc-clue--done' : ''}`}
-                onPointerDown={(ev) => { ev.preventDefault(); selectEntry(e); }}
+                className={`lc-clue${e.id === active.entryId ? ' lc-clue--active' : ''}${entryFilled(e) ? ' lc-clue--filled' : ''}`}
               >
                 <span className="lc-clue__id">{e.id}</span>
                 <span className="lc-clue__text">{e.clue}</span>
-              </button>
+                {spine && (
+                  <span className={`lc-mark${hem[i] ? ' lc-mark--set' : ''}${hemSpelled ? ' lc-mark--spelled' : ''}`}>
+                    {hem[i] ?? ''}
+                  </span>
+                )}
+              </li>
             ))}
-          </div>
+            {spine && (
+              <li className={`lc-clue lc-clue--hem${hemSpelled ? ' lc-clue--filled' : ''}`}>
+                {/* The row names itself in the ID column rather than inline.
+                    Inline cost it ~7 characters of clue and, measured live at
+                    375x667, wrapped the hem's own row to two lines inside a
+                    28px box — the panel overflowed by 5px and the sentence was
+                    clipped. The column was already there and was already the
+                    place a clue list says which clue this is. */}
+                <span className="lc-clue__id lc-clue__id--hem">Hem</span>
+                <span className="lc-clue__text">{spine.clue}</span>
+                <span className={`lc-mark lc-mark--seal${hemSpelled ? ' lc-mark--spelled' : ''}`} aria-hidden>
+                  {hemSpelled ? '✓' : ''}
+                </span>
+              </li>
+            )}
+          </ol>
 
           {/* Keys commit on RELEASE (`onClick`), never on pointerdown — the
-              house rule, and the same round-6 fix the Darkroom took: the deck
-              is `position: sticky` over a scrolling stage, so the gesture that
-              scrolls the grid begins on a key, and a press that lands wrong
-              must be abortable by sliding off. Selecting a square or a clue
-              still answers on pointerdown: selection commits nothing and is
-              free to redo. Press feedback is `.is-pressed` from the capture
-              delegate in app/platform/boot.ts, so U.1 is unaffected, and
-              `touch-action: manipulation` (a5micro.css) already does the job
-              the old `preventDefault()` was doing. */}
+              house rule, and the same round-6 fix the Darkroom took: a press
+              that lands wrong must be abortable by sliding off. Selecting a
+              square still answers on pointerdown: selection commits nothing.
+              Press feedback is `.is-pressed` from the capture delegate in
+              app/platform/boot.ts, so U.1 is unaffected.
+              ROUND 29: the room's verb is the last key on the bottom row. It
+              is a COSTED control, which AAA 6.19 exempts nothing from, so it is
+              sized past 44x44pt by `.lc-key--verb` rather than by the 32x48
+              keyboard ruling in 6.19(b) — measured live at both sizes. */}
           <div className="lc-keys">
             {KEY_ROWS.map((row, ri) => (
               <div key={row} className="lc-keys__row">
+                {ri === 2 && (
+                  <button
+                    className="lc-key lc-key--wide"
+                    onClick={backspace}
+                    aria-label="Delete"
+                  >
+                    ⌫
+                  </button>
+                )}
                 {[...row].map((k) => (
                   <button
                     key={k}
@@ -317,21 +404,17 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
                 ))}
                 {ri === 2 && (
                   <button
-                    className="lc-key lc-key--wide"
-                    onClick={backspace}
-                    aria-label="Delete"
+                    className="lc-key lc-key--verb"
+                    onClick={reveal}
+                    disabled={state.cw.revealedCells.includes(active.cell)}
+                    aria-label={`Smooth a crease — reveals this square, costs ${stepCost} steps`}
                   >
-                    ⌫
+                    <span className="lc-key__glyph" aria-hidden>✎</span>
+                    <span className="lc-key__price" aria-hidden>−{stepCost}</span>
                   </button>
                 )}
               </div>
             ))}
-          </div>
-
-          <div className="m2-row">
-            <button className="m2-btn" onClick={reveal} disabled={state.cw.revealedCells.includes(active.cell)}>
-              Smooth a crease · −{stepCost} steps
-            </button>
           </div>
           </div>
         </>

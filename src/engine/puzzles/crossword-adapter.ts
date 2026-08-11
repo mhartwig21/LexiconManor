@@ -1,9 +1,13 @@
 /**
- * The Linen Closet — mini crossword behind the RoomPuzzle contract.
- * OWNER: A5. Pure TS; wraps engine/puzzles/crossword.ts.
+ * The Linen Closet behind the RoomPuzzle contract. OWNER: A5.
+ * Pure TS; wraps engine/puzzles/crossword.ts.
  *
  * Economy mapping (AAA §0.3, 3.2/3.3):
  *   - placing/erasing letters is FREE — letters are probes;
+ *   - READING THE HEM is free too, and deliberately so: it is derived from
+ *     letters already on the board, exactly as reading a crossing is, so it
+ *     emits no event and cannot end the room (tests/puzzles/micro2.test.ts,
+ *     "reading the hem is never a claim");
  *   - the auto-check when the grid fills is the claim: a wrong full grid
  *     costs one weight-1 mistake — but an IDENTICAL fill re-checked is
  *     weight 0 (never double-charge the same claim);
@@ -23,11 +27,14 @@ import { selectByTier } from '../rooms/adapters/tier-select';
 /**
  * Round 4: the generator stamps a `tier` on every puzzle and the closet itself
  * grows with the row — tier 1 is a 4×4 with three easy, plainly-clued entries;
- * tier 2 the full 5×5 with four; tier 3 a 5×5 with five entries, the hard and
- * expert words in play, and at least two clues written in the bank's `wry`
- * style (misdirection and double meaning rather than a dictionary gloss).
- * The grid size travels in `puzzle.size`, which the engine and view already
- * read, so nothing outside the content needed to change.
+ * tier 2 the full 5×5 with four. ROUND 29: tier 3 is a 5×5 with FOUR entries
+ * (down from five), the hard and expert words in play, and at least two clues
+ * written in the bank's `wry` style. Every tier also carries a HEM — one
+ * marked square per entry spelling a further clued answer — so the printed
+ * clue count is unchanged at the top of the ladder while the typing load
+ * falls. The grid size travels in `puzzle.size` and the hem in `puzzle.spine`,
+ * both of which the engine and view read, so nothing outside the content
+ * needed to change.
  */
 export type CrosswordPuzzleEx = CrosswordPuzzle & { tier?: Tier };
 
@@ -71,7 +78,14 @@ export const crosswordAdapter: RoomPuzzleAdapter<CrosswordPuzzleEx, CrosswordRoo
   // plain JSON data. (`letters` is a Record<number,string>; JSON stringifies
   // the keys, and JS reads them back the same either way.)
   find: (id) => CROSSWORD_POOL.find((p) => p.id === id),
-  stateVersion: 1,
+  /**
+   * ROUND 29: 1 -> 2. Tier 3 went from five entries to four and every board
+   * grew a hem, so a session saved against the old pool holds letters for
+   * squares that are no longer on the board. Bumping it opens those rooms
+   * fresh (room-session.ts `isUsableSnapshot`) rather than restoring a board
+   * that half exists.
+   */
+  stateVersion: 2,
 
   start(puzzle, ctx): CrosswordRoomState {
     return { cw: startCrossword(puzzle), tier: ctx.tier, attempts: 0, lastFeedback: null };

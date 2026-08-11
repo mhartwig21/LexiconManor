@@ -1,15 +1,30 @@
 /**
- * Mini Crossword — The Linen Closet's 30–90s micro game. OWNER: A5.
+ * The Linen Closet — a sparse clue puzzle with a spine. OWNER: A5.
  *
- * Pure engine: no React, no DOM, no audio. A criss-cross of 3–5 clued words
- * in a grid of at most 5×5. Letters are probes and cost nothing to place or
- * erase (AAA 3.2/3.3). The single costed moment is a full-grid claim: when
- * every cell is filled the grid auto-checks — a miss shakes the wrong cells
- * and costs one weight-1 mistake. Re-checking an *identical* fill is free
- * (the game never double-charges the same claim), and wrong-cell marks
+ * NOT A CROSSWORD, and no longer scored as one (docs/LINEN_CLOSET.md is the
+ * owner's ruling; docs/BENCHMARKS.md §10 is the benchmark that replaced the
+ * Mini). A criss-cross of 3–4 clued words in a grid of at most 5×5, whose
+ * letters are checked the way an NYT ACROSTIC's are — by a spine — rather
+ * than by crossings, which a 174-word hand-authored bank provably cannot
+ * supply (251 fully-checked masks enumerated, zero fillable).
+ *
+ * THE HEM. Every entry owns exactly ONE marked square. Read in clue order the
+ * marked letters spell a further answer, and that answer carries a clue of its
+ * own, printed in the list with the rest. It does the job crossings used to:
+ * a wrong entry whose marked letter refuses the spine is refuted for free, and
+ * a solver who reads the spine's clue first gets one letter in every entry.
+ * Before the hem, 190 of 360 shipped entries had at most ONE letter anything
+ * could contradict; the generator's freshness rule takes that to zero.
+ *
+ * Pure engine: no React, no DOM, no audio. Letters are probes and cost nothing
+ * to place or erase (AAA 3.2/3.3). The single costed moment is a full-grid
+ * claim: when every cell is filled the grid auto-checks — a miss shakes the
+ * wrong cells and costs one weight-1 mistake. Re-checking an *identical* fill
+ * is free (the game never double-charges the same claim), and wrong-cell marks
  * persist until the player edits them (memory prosthetic, AAA 3.3).
  * Revealing a cell is a step-priced hint; hints and costed checks forfeit
- * "perfect".
+ * "perfect". THE HEM IS NEVER COSTED — it is derived from letters already on
+ * the board, exactly as a crossing is.
  */
 
 export type CrosswordDir = 'across' | 'down';
@@ -23,10 +38,34 @@ export interface CrosswordEntry {
   clue: string;
 }
 
+/**
+ * The hem: one marked square per entry, read in the order the clue list
+ * prints (= `entries` order, which the generator writes in reading order).
+ *
+ * `cells[i]` is a cell of `entries[i]`, the cells are distinct, and the
+ * solution letter at `cells[i]` is `answer[i]` — all four facts are enforced
+ * by validateCrosswordPuzzle, so the view can render the strip without
+ * re-deriving anything.
+ */
+export interface CrosswordSpine {
+  /** The word the marked squares spell. Never one of the entries' answers. */
+  answer: string;
+  /** Its clue, from the same bank and in the same voice as the entries'. */
+  clue: string;
+  /** One marked cell index per entry, in entry order. */
+  cells: number[];
+}
+
 export interface CrosswordPuzzle {
   id: string;
   size: number;            // grid is size×size; cells outside entries are linen
-  entries: CrosswordEntry[]; // 3–5, solver-verified by the generator
+  entries: CrosswordEntry[]; // 3–4, solver-verified by the generator
+  /**
+   * Optional only so that a bundle predating the hem still loads rather than
+   * crashing. Every puzzle the generator ships carries one, and the pool gate
+   * in tests/puzzles/micro2.test.ts fails the build if one does not.
+   */
+  spine?: CrosswordSpine;
 }
 
 export interface CrosswordEngineState {
@@ -78,6 +117,58 @@ export function solutionLetters(puzzle: CrosswordPuzzle): Map<number, string> {
     for (let i = 0; i < cells.length; i++) sol.set(cells[i]!, e.answer[i]!);
   }
   return sol;
+}
+
+/** Cells with more than one entry through them — the room's few crossings. */
+export function crossedCells(puzzle: CrosswordPuzzle): Set<number> {
+  const seen = new Set<number>();
+  const twice = new Set<number>();
+  for (const e of puzzle.entries) {
+    for (const c of entryCells(puzzle, e)) {
+      if (seen.has(c)) twice.add(c);
+      seen.add(c);
+    }
+  }
+  return twice;
+}
+
+/**
+ * Every cell some OTHER entry (or the hem) can contradict. This is the
+ * room's fairness number, and it is what BENCHMARKS §10 scores: before the
+ * hem it was the crossings alone, and 52.8% of entries had at most one such
+ * letter in the whole answer.
+ */
+export function checkedCells(puzzle: CrosswordPuzzle): Set<number> {
+  const set = crossedCells(puzzle);
+  for (const c of puzzle.spine?.cells ?? []) set.add(c);
+  return set;
+}
+
+// ---------------------------------------------------------------------------
+// The hem
+// ---------------------------------------------------------------------------
+
+/**
+ * What the marked squares currently spell, one slot per entry, `null` where
+ * the square is still empty. Derived from letters already on the board — this
+ * is never a claim and is never charged.
+ */
+export function hemLetters(
+  puzzle: CrosswordPuzzle,
+  state: Pick<CrosswordEngineState, 'letters'>,
+): (string | null)[] {
+  return (puzzle.spine?.cells ?? []).map((c) => state.letters[c] ?? null);
+}
+
+/** Does the hem read the spine's answer right now? */
+export function isHemSpelled(
+  puzzle: CrosswordPuzzle,
+  state: Pick<CrosswordEngineState, 'letters'>,
+): boolean {
+  const spine = puzzle.spine;
+  if (!spine) return false;
+  const got = hemLetters(puzzle, state);
+  return got.length === spine.answer.length && got.every((ch, i) => ch === spine.answer[i]);
 }
 
 // ---------------------------------------------------------------------------
@@ -192,7 +283,7 @@ export function validateCrosswordPuzzle(puzzle: CrosswordPuzzle): string[] {
   const problems: string[] = [];
   const { size, entries } = puzzle;
   if (size < 3 || size > 5) problems.push(`size ${size} out of range 3–5`);
-  if (entries.length < 3 || entries.length > 5) problems.push(`${entries.length} entries (want 3–5)`);
+  if (entries.length < 3 || entries.length > 4) problems.push(`${entries.length} entries (want 3–4)`);
 
   const ids = new Set<string>();
   const answers = new Set<string>();
@@ -266,6 +357,33 @@ export function validateCrosswordPuzzle(puzzle: CrosswordPuzzle): string[] {
       }
     }
     if (joined.size !== entries.length) problems.push('entries are not connected');
+  }
+
+  // The hem. Four facts, so the view never re-derives any of them: one marked
+  // cell per entry, in entry order; the cells are distinct; each belongs to
+  // its own entry; and the solution letter there is the spine's letter.
+  const spine = puzzle.spine;
+  if (spine) {
+    if (!/^[A-Z]{3,5}$/.test(spine.answer)) problems.push(`spine: bad answer "${spine.answer}"`);
+    if (!spine.clue || spine.clue.trim().length === 0) problems.push('spine: empty clue');
+    if (entries.some((e) => e.answer === spine.answer)) {
+      problems.push(`spine: ${spine.answer} is also an entry`);
+    }
+    if (spine.cells.length !== entries.length) {
+      problems.push(`spine: ${spine.cells.length} marked cells for ${entries.length} entries`);
+    } else if (spine.answer.length !== entries.length) {
+      problems.push(`spine: ${spine.answer} is ${spine.answer.length} letters for ${entries.length} entries`);
+    } else {
+      if (new Set(spine.cells).size !== spine.cells.length) problems.push('spine: two entries share a marked cell');
+      for (let i = 0; i < spine.cells.length; i++) {
+        const cell = spine.cells[i]!;
+        if (!entryCells(puzzle, entries[i]!).includes(cell)) {
+          problems.push(`spine: cell ${cell} is not in ${entries[i]!.id}`);
+        } else if (sol.get(cell) !== spine.answer[i]) {
+          problems.push(`spine: cell ${cell} reads ${sol.get(cell)}, spine wants ${spine.answer[i]}`);
+        }
+      }
+    }
   }
 
   return problems;
