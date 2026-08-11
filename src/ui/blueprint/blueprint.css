@@ -733,6 +733,11 @@
   margin: 0;
   font-family: var(--font-display);
   font-size: var(--text-display-sm);
+  /* ROUND 34: it was inheriting `--leading-body` (1.45), which is the leading
+     for a PARAGRAPH — on a one-line 22px display title that is 6.6px of air
+     bought for nothing. The card names beside it have been set at 1.15 all
+     along; the sheet's own title now reads in the same voice. */
+  line-height: 1.2;
   font-weight: 400;
   color: var(--ink); /* shields against v1 index.css h2 gold */
 }
@@ -831,6 +836,26 @@
   font-size: var(--text-display-sm);
   line-height: 1.15;
 }
+/* ROUND 34 — THE CARD'S HEIGHT STOPS BEING THE FONT'S OPINION.
+   Every line in a card body was set in `line-height: normal`, i.e. computed
+   from whichever font actually loaded: EB Garamond's own ascent/descent/gap
+   here, Georgia's or Palatino's if the woff2 ever loses a race, and a
+   different number again on the CI runner that failed this deploy. A sheet
+   with 8px of slack cannot afford to have its height decided somewhere else,
+   so the leading is stated once, here, for every line the card can print. It
+   moves no words and changes no size: 1.25 of 15px is 18.75px against the
+   18.9px EB Garamond was already giving. What can still move this sheet is
+   WRAPPING, and the short-glass block at the foot of this file now budgets
+   for four lines more of it than the sheet has ever needed. */
+.bp-card__preview,
+.bp-card__doors,
+.bp-card__stake,
+.bp-card__sanctum,
+.bp-card__seals,
+.bp-card__meta,
+.bp-card__free,
+.bp-card__cost { line-height: 1.25; }
+
 .bp-card__preview {
   font-style: italic;
   font-size: var(--text-sm);
@@ -1227,10 +1252,98 @@
    So the motto still gives way and the price never does. Measured after, at
    375x667 with a Kitchen in the offer and the gem note up: the sheet fits with
    no scroll (tests/round33-purse-and-map-live.mjs, 375 first).
+
+   ═══ ROUND 34 — "0px OF SCROLL" WAS NEVER A FIT, IT WAS A COIN LANDING ════
+   Round 31 reported 0px here and round 33 reported 0px again, and one round
+   later CI failed the deploy on this same sheet: 613px of glass holding 627px.
+   Both reports were true on the machine that made them and neither was a fit,
+   because the sheet had been tuned to the exact number its author's font
+   produced. The gate runs Chromium on Linux, and the FIRST thing that measured
+   differently there put a line over.
+
+   MEASURED AT HEAD, at 375x667, as each line's natural width against the width
+   it is given (`nat / avail`, a fill ratio — 1.00 is the wrap cliff):
+
+     .bp-modal__sub     340.5 / 344.2  =  0.99   one glyph from a second line
+     .bp-modal__orient    365 / 344.2  =  1.06   two lines, the second nearly empty
+     .bp-card__stake    268.5 /   234  =  1.15   ditto, on every puzzle card
+     .bp-card__preview  248.6 /   234  =  1.06   ditto, on the utility card
+
+   Four of the sheet's nine text lines sat within 6% of a wrap, and the sheet
+   held 605px in 613px of glass. So one extra wrapped line — 21.8px — was the
+   whole failure, and `.bp-modal__sub` at 0.99 is exactly the line that wraps
+   first: 605 + 21.8 = 627, the number CI printed. Nothing was mis-designed;
+   the sheet simply had no room to be wrong in.
+
+   This round buys ROOM TO BE WRONG IN, not 14px. Two rules:
+
+   1. THE SHEET'S HEIGHT IS A FUNCTION OF LINE COUNT, NEVER OF FONT METRICS.
+      Every line on a card was set in `line-height: normal`, which is computed
+      from the font file's own ascent/descent/gap — so if the woff2 ever fails
+      to load (or a fallback wins a race) the sheet's height changes with it.
+      They are explicit now, up at the base rules, and only WRAPPING can move
+      this sheet.
+
+   2. THE SHORT GLASS IS BUDGETED FOR THE WORST LINE COUNT, not the observed
+      one. Everything below is FRAME — leading, margins, padding and gaps. No
+      type drops below its floor (15px for a caption, 22px for the display
+      face, AAA 6.6), no control loses a pixel of its 44pt, and not one word
+      comes off the glass that was not already off it: round 33's motto rule
+      is unchanged and nothing new is hidden.
+      Measured after, same offer: 537px in 613px — 76px of slack, which is
+      four more wrapped lines than the sheet has ever needed at once. The
+      worst ORDINARY offer (the storey line wrapped, the wing line up, a
+      three-door plan wrapping) lands near 600 and still fits.
+
+   WHAT IS NOT PAID FROM: the door-plan line (`.bp-card__doors`), whose fate is
+   the owner's to decide and not a deploy deadline's; the 44pt controls in the
+   foot; and any statement of a price.
+
+   WHAT IS STILL OVER, said here so the next agent does not have to find it
+   twice. The LANDING offer — the one door in the game that decides the
+   campaign — prints four more lines than the sheet measured above: the
+   Sanctum rule (two lines) and an "opens onto / turns its back on" stamp on
+   each of the three cards. Measured live at 375x667, that sheet held 768px
+   before this change and holds 682px after, against the same 613px of glass:
+   86px better and still 69px over. The gate does not walk that scene, so it
+   is not what failed the deploy, and it cannot be paid for out of frame — it
+   is four lines of type, and three of them sit directly beside the door-plan
+   line whose fate is the owner's call. It wants a design answer (the stamp
+   folded into the plan line, or the rule stated once and not thrice), not
+   another 4% of glass.
    -------------------------------------------------------------------------- */
 @media (max-height: 700px) {
-  .bp-modal__sheet { max-height: 92%; padding-top: 0.7rem; }
-  .bp-modal__head { margin-bottom: 0.5rem; }
-  .bp-card { padding: 0.45rem 0.6rem; min-height: 68px; }
+  .bp-modal__sheet { max-height: 92%; padding-top: 0.55rem; }
+  /* The foot's lift and the air it keeps above the last row, both trimmed at
+     the one place they are declared — so the sheet's reserve moves with the
+     foot and R5 (scripts/lint-chrome-clearance.mjs) stays true. 8.8px is still
+     clear air between the last card and the hairline; measured in the Cabinet
+     at full scroll, the last plate still stops above the rule. */
+  .bp-modal__sheet,
+  .bp-modal__foot {
+    --bp-foot-lift: calc(0.7rem + env(safe-area-inset-bottom, 0px));
+    --bp-foot-gap: 0.55rem;
+  }
+  .bp-modal__head { margin-bottom: 0.3rem; }
+  /* Leading, not type: every caption keeps its 15px (AAA 6.6 caption floor)
+     and gives up 2.2px of the air around it. */
+  .bp-modal__sub,
+  .bp-modal__price,
+  .bp-modal__orient,
+  .bp-modal__wing,
+  .bp-modal__sanctum,
+  .bp-modal__lock,
+  .bp-modal__gems { line-height: 1.3; }
+  .bp-modal__sub { margin-top: 0.1rem; }
+  .bp-modal__price,
+  .bp-modal__orient { margin-top: 0.2rem; }
+  .bp-modal__wing,
+  .bp-modal__sanctum { margin-top: 0.25rem; }
+  .bp-modal__lock { margin-top: 0.3rem; }
+  .bp-modal__gems { margin-top: 0.35rem; }
+  .bp-modal__cards { gap: 0.45rem; }
+  .bp-card { padding: 0.35rem 0.55rem; min-height: 68px; }
+  /* The card is a stack of full lines; the leading between them is the gap. */
+  .bp-card__body { gap: 0.05rem; }
   .bp-card__preview:not(.bp-card__preview--stake) { display: none; }
 }
