@@ -105,6 +105,44 @@ tooltip.
 
 ## 3. What the last three rounds changed, with their numbers
 
+### Round 31 — the card says which way is on, and the Study fits at tier 3
+
+COMPREHENSION wrong beliefs **7** and **8** were the only two on that list with no fix number, so
+no round ever assigned them — and two critics in a row named the first as the #1 reason a player
+quits on day 4. The NYT-games player's answer to *"what did you never figure out at all"* was
+*"How to get upstairs. That's the whole game and I never cracked it."*
+
+| | Was (HEAD, round 30) | Now |
+|---|---|---|
+| Where a draft card states its onward doors | a 32×32px diagram, `aria-label` only | **a line of type on the card face, a step darker and heavier than the stake line** |
+| Beside it, the loudest line on the card | `anchor · five minutes or so · +7 steps` (the WRONG attribute) | unchanged — but no longer the loudest |
+| The sealing stamp | `Seals itself · +1 gem` | **`Seals itself · no way on from here · +1 gem`** |
+| Wall she came through, per offer | named 3× (once per icon, AT only) | **named once, above the three cards, on the glass** |
+| Rate card / tier pips, to assistive tech | `aria-hidden="true"` / no text at all | **one image + one sentence each, derived from `moveAt`** |
+| The pip column's key word | `RANK` (the engine's name), in the bottom margin only | **`TIER` — the word every card uses — headed over its own column** |
+| Draft sheet scroll at 375×667 | 29px (the third card's bottom hit-tested as the sticky foot) | **0px — all three cards and both prices on the glass** |
+| Draft sheet scroll at 390×844 | 0px | **0px** |
+| Study, tier 3, at rest — entries that fit, 375×667 | **9 of 43** (typical overrun 11px, worst 65px) | **37 of 43** (worst 50px) |
+| Study, tier 3, at rest — entries that fit, 390×844 | **33 of 43** (typical 7px, worst 32px) | **43 of 43** |
+| Tests | 1334 | **1360** |
+
+**The gates, and what they go red on.** `states the ways on, in words, for every card in the deck
+at every heading` walks the manor's room map with its own compass tables — never `onwardDoors`,
+`sealsItself` or `doorPlanWords` — over 112 offers, and demands the card's own visible text agree.
+Proved red on the pool it condemns: with the card face built from bare geometry (doors minus the
+entry wall, the obvious wrong implementation) it lies on **11 of the 112**, first miss
+`long-gallery` entered from the west, claiming three ways on where there are two.
+`speaks its margin` finds each mark's group in the rendered sheet and refuses an `aria-hidden`;
+proved red by restoring the old markup.
+
+**What the Study fix did NOT touch.** The room is protected and at NYT standard, so every number
+moved is chrome: the column's gutters and padding, the entry card's padding, one crib-slot box
+height, the deck's gutter, and one column gap that should never have existed (the crib caption is
+the crib row's caption and was a sibling flex child). No word, no font size, no line-height and no
+tap target changed. **What is left:** 6 of 43 tier-3 entries still overrun at 375×667 (1–50px),
+and an UNSEALED clue — bought reading matter — still overruns at both sizes. Closing those needs
+the riddle itself to get shorter or a tap target to go, and both are content.
+
 ### Round 30 — the Library composes from its contested tiles, and the house is what contests them
 
 | | Was (HEAD, round 17) | Now |

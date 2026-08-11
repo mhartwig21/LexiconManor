@@ -459,6 +459,41 @@ export function resolveDoors(
 }
 
 /**
+ * ═══ THE WAYS ON (round 31, COMPREHENSION wrong-belief 7) ═════════════════
+ *
+ * The doors of this placement she could still build onward THROUGH: every door
+ * but the one she walked in by, less the ones that open on the outer wall or on
+ * a neighbour's blank plaster.
+ *
+ * THE DEFECT THIS EXISTS FOR: the blind-play test found the manor's single
+ * biggest comprehension failure here — *"'anchor' rooms are the ones you can
+ * keep building upward from; micro rooms dead-end you"*, held confidently, and
+ * false. Onward growth is decided by the DOOR PLAN and nothing else; micro and
+ * anchor are puzzle length and payout. The plan was on the card, but only as a
+ * 32px diagram and an aria-label — beside a loud line of type that named the
+ * wrong attribute — so the NYT player chose on `anchor` for two straight days,
+ * dead-ended both climbs, and named it as the one thing she never cracked:
+ * *"How to get upstairs. That's the whole game."*
+ *
+ * So the count is a function now rather than a shape to be read off ink, and
+ * `sealsItself` is defined as its zero. One computation: the words the card
+ * prints, the gilt stamp the sealing bounty pays on, and the placement the
+ * slice makes can no longer disagree about whether a plan keeps the path alive.
+ */
+export function onwardDoors(
+  doors: readonly Dir[], entryDir: Dir, manor: ManorState, cell: Cell,
+): Dir[] {
+  const came = opposite(entryDir);
+  return doors.filter((dir) => {
+    if (dir === came) return false;
+    const n = neighbor(cell, dir);
+    if (!n) return false;                                  // outer wall: dead
+    const there = roomAt(manor, n);
+    return !there || there.doors.includes(opposite(dir));   // empty = tomorrow's draft
+  });
+}
+
+/**
  * Would this placement seal itself? True when the room's only door is the one
  * she walked in by — every other door lands on the outer wall or on a
  * neighbour's blank plaster. The deliberate consequence of the rigid turn
@@ -467,14 +502,7 @@ export function resolveDoors(
 export function sealsItself(
   doors: readonly Dir[], entryDir: Dir, manor: ManorState, cell: Cell,
 ): boolean {
-  const came = opposite(entryDir);
-  return !doors.some((dir) => {
-    if (dir === came) return false;
-    const n = neighbor(cell, dir);
-    if (!n) return false;                                  // outer wall: dead
-    const there = roomAt(manor, n);
-    return !there || there.doors.includes(opposite(dir));   // empty = tomorrow's draft
-  });
+  return onwardDoors(doors, entryDir, manor, cell).length === 0;
 }
 
 // ---------------------------------------------------------------------------

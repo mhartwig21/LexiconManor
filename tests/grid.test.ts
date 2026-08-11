@@ -22,7 +22,7 @@ import {
   sanctumDraftStamp, stampsDraftPrice, stampsPrice, walkLabel,
   LANDING_REFUSAL_LINES, LANDING_SEALED_LABEL,
 } from '../src/ui/blueprint/pricing';
-import { DOOR_LOCKS, moveAt } from '../src/engine/economy/steps';
+import { DOOR_LOCKS, moveAt, rowName } from '../src/engine/economy/steps';
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCard } from '../src/engine/types';
 import { ENTRANCE_CELL, MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../src/engine/types';
 import DraftModal from '../src/ui/blueprint/DraftModal';
@@ -623,6 +623,45 @@ function diagramsIn(html: string): { doors: Dir[]; entry: Dir | null; label: str
   });
 }
 
+/**
+ * The growth line each card PRINTS — the round-29 answer to COMPREHENSION
+ * wrong-belief 7. One per card, in card order: either the door-plan sentence or
+ * the sealing stamp, whichever the card chose to show.
+ */
+function growthLinesIn(html: string): string[] {
+  return [...html.matchAll(/class="bp-card__(?:doors|seals)">([^<]*)</g)].map((m) => m[1]!);
+}
+
+/**
+ * THE WAYS ON, COMPUTED INDEPENDENTLY OF THE PRODUCTION CODE.
+ *
+ * Deliberately NOT `onwardDoors` — the whole point of the gate is that the
+ * words on the card are checked against a second opinion. Walks the manor's own
+ * room map by hand, with its own compass tables, so a wrong turn, a wrong
+ * `opposite`, or a card face built from bare geometry instead of the live
+ * neighbours all show up as a failure rather than as agreement with itself.
+ */
+function waysOnIndependently(
+  doors: readonly Dir[], atDoor: Dir, manor: ManorState, cell: Cell,
+): Dir[] {
+  const OPP: Record<Dir, Dir> = { N: 'S', S: 'N', E: 'W', W: 'E' };
+  const STEP: Record<Dir, [number, number]> = {
+    N: [0, 1], E: [1, 0], S: [0, -1], W: [-1, 0],
+  };
+  const cameInThrough = OPP[atDoor];
+  return doors.filter((dir) => {
+    if (dir === cameInThrough) return false;
+    const [dc, dr] = STEP[dir];
+    const col = cell.col + dc, row = cell.row + dr;
+    if (col < 0 || col >= MANOR_COLS || row < 0 || row >= MANOR_ROWS) return false;
+    const there = manor.rooms[`${col},${row}`];
+    return !there || there.doors.includes(OPP[dir]);
+  });
+}
+
+const DIR_WORD: Record<Dir, string> = { N: 'north', E: 'east', S: 'south', W: 'west' };
+const WAYS_WORD = ['', 'One way on', 'Two ways on', 'Three ways on'];
+
 describe('the draft card draws the room it will actually place', () => {
   const from: Cell = { col: 2, row: 3 };
 
@@ -660,8 +699,12 @@ describe('the draft card draws the room it will actually place', () => {
         expect(drawn[i]!.doors).toEqual(resolveDoors(card, atDoor, manor, target));
         // …and the door at her feet is the one picked out in gilt.
         expect(drawn[i]!.entry).toBe(opposite(atDoor));
-        expect(drawn[i]!.label).toContain('you enter from the');
       });
+      // The wall she came through is named ONCE, above the three cards, since
+      // round 31 — it is the same wall on all three, and each card's own line
+      // is now spent on the thing that differs (where it lets her go next).
+      expect(modalFor(manor, atDoor, cards))
+        .toContain(`at your feet — the ${DIR_WORD[opposite(atDoor)]} wall`);
     }
   });
 
@@ -674,11 +717,82 @@ describe('the draft card draws the room it will actually place', () => {
     };
     const deadEnd = BASE_DECK.find((c) => c.id === 'larder')!;      // ['N'] only
     const cross = BASE_DECK.find((c) => c.id === 'long-gallery')!;  // all four
-    const drawn = diagramsIn(modalFor(manor, 'N', [deadEnd, cross]));
+    const html = modalFor(manor, 'N', [deadEnd, cross]);
+    const drawn = diagramsIn(html);
+    const said = growthLinesIn(html);
     expect(drawn[0]!.doors).toEqual(['S']);
-    expect(drawn[0]!.label).toContain('seals itself');
+    expect(said[0]).toContain('Seals itself');
     expect(drawn[1]!.doors).toEqual(['N', 'E', 'S', 'W']);
-    expect(drawn[1]!.label).toContain('opens north and east and west');
+    expect(said[1]).toBe('Three ways on — north, east and west');
+  });
+
+  /**
+   * ═══ ROUND 31 GATE — THE CARD SAYS, IN WORDS, WHETHER THE CLIMB SURVIVES ══
+   *
+   * COMPREHENSION wrong-belief 7 is the most expensive miss in the blind-play
+   * test and the one nobody had ever been given a number for: the NYT player
+   * chose on "anchor" for two consecutive days, dead-ended both climbs, and
+   * named it as the single thing she never cracked. The plan WAS on the card —
+   * as 32px of ink and an `aria-label`, beside a loud bold line naming the
+   * wrong attribute.
+   *
+   * THIS GATE CANNOT PASS BY CONSTRUCTION (standing rule 1). It never calls
+   * `onwardDoors`, `sealsItself` or `doorPlanWords`; it walks the manor's room
+   * map with its own compass tables and its own count words, and it condemns
+   * the pool the old card face was drawn from — bare geometry, doors minus the
+   * entry wall, which is right only where every neighbour happens to be open.
+   * Proved red before it was allowed to go green: with the card face built from
+   * `doorsOf(card).filter(d => d !== entryWall)` it lies on 11 of the 112
+   * offers below — every one of them a plan with a door onto the outer wall or
+   * onto the blank plaster of the neighbour placed at (1,4) — and the run stops
+   * at the first, `long-gallery` entered from the west, which claims three ways
+   * on where there are two.
+   */
+  it('states the ways on, in words, for every card in the deck at every heading', () => {
+    const base = createManor(31337);
+    const manor: ManorState = {
+      ...base,
+      rooms: {
+        ...base.rooms,
+        [cellKey(from)]: room(from, ['N', 'E', 'S', 'W']),
+        // A neighbour with a blank wall facing us: the case bare geometry gets
+        // wrong. Its only door faces east, so the target's west door is dead.
+        [cellKey({ col: 1, row: 4 })]: room({ col: 1, row: 4 }, ['E']),
+      },
+      playerCell: { ...from },
+    };
+    let deadEnds = 0, ways = 0;
+    for (const atDoor of DIRS) {
+      const target = neighbor(from, atDoor)!;
+      for (const card of BASE_DECK) {
+        const html = modalFor(manor, atDoor, [card]);
+        const said = growthLinesIn(html);
+        expect(said, `${card.id} @${atDoor}`).toHaveLength(1);
+        const line = said[0]!;
+        const truth = waysOnIndependently(
+          resolveDoors(card, atDoor, manor, target), atDoor, manor, target,
+        );
+        if (truth.length === 0) {
+          deadEnds++;
+          // A dead end is never left as flavour: it says it is one AND what
+          // the manor pays for it (wrong-belief 8).
+          expect(line, `${card.id} @${atDoor}`).toContain('no way on from here');
+          expect(line, `${card.id} @${atDoor}`).toContain('+1 gem');
+        } else {
+          ways++;
+          expect(line, `${card.id} @${atDoor}`).toContain(WAYS_WORD[truth.length]!);
+          for (const dir of DIRS) {
+            const named = line.includes(DIR_WORD[dir]);
+            expect(named, `${card.id} @${atDoor} names ${DIR_WORD[dir]}`)
+              .toBe(truth.includes(dir));
+          }
+        }
+      }
+    }
+    // Both arms of the gate were actually exercised — a run that met no dead
+    // end would have proved only half of it.
+    expect(deadEnds).toBeGreaterThan(0);
+    expect(ways).toBeGreaterThan(0);
   });
 });
 
@@ -903,6 +1017,61 @@ describe('the blueprint names its prices (AAA 4.6 / 4.9 / 4.10)', () => {
     // …and the numbers on the sheet ARE the ledger's numbers.
     expect(priceStamp(0)).toBe(`−${-moveAt(0)}`);
     expect(priceStamp(6)).toBe(`−${-moveAt(6)}`);
+  });
+
+  /**
+   * ═══ ROUND 31 GATE — THE MARGIN IS NOT MUTE (COMPREHENSION 15) ═══════════
+   *
+   * A critic captured every word of visible text on the blueprint and came back
+   * with the wing names, "ONE ROOM", the title block, and a BARE UNHEADED
+   * COLUMN reading −2 −2 −2 −2 −7 −9 −9. Both the rate card and the tier pips
+   * carried `aria-hidden="true"`, so not even a screen reader could ask what
+   * they were; the pips were bare `path`s with no text at all.
+   *
+   * The condemned pool is exactly that markup, and this goes red on it: it
+   * finds each mark's group in the rendered sheet and demands a spoken name,
+   * not an `aria-hidden`. The rate card's name must quote EVERY price `moveAt`
+   * charges (so a hand-typed sentence drifting from the table fails), and each
+   * pip band must say its own numeral.
+   */
+  it('speaks its margin: the rate card and the tier pips both name themselves', () => {
+    const html = sheetFor(2, 2);
+    const groupOf = (cls: string) =>
+      [...html.matchAll(new RegExp(`<g class="${cls}"[^>]*>`, 'g'))].map((m) => m[0]);
+
+    const rate = groupOf('bp-rowprice');
+    expect(rate).toHaveLength(1);
+    expect(rate[0]).not.toContain('aria-hidden');
+    const rateName = /aria-label="([^"]*)"/.exec(rate[0]!)?.[1] ?? '';
+    // The column speaks as the price BANDS it actually is, so the runs are
+    // re-derived here from `moveAt` — a second opinion, not the same call.
+    const bands: { from: number; to: number; cost: number }[] = [];
+    for (let row = 0; row < MANOR_ROWS; row++) {
+      const cost = -moveAt(row);
+      const last = bands[bands.length - 1];
+      if (last && last.cost === cost) last.to = row;
+      else bands.push({ from: row, to: row, cost });
+    }
+    for (const band of bands) {
+      expect(rateName, `band at row ${band.from}`).toContain(`${band.cost} steps`);
+      expect(rateName, `band at row ${band.from}`).toContain(rowName(band.from));
+      expect(rateName, `band at row ${band.to}`).toContain(rowName(band.to));
+    }
+    // …and it says nothing MORE than the bands: one price clause per band.
+    expect(rateName.match(/ steps/g) ?? []).toHaveLength(bands.length);
+
+    const pips = groupOf('bp-tierpips');
+    expect(pips).toHaveLength(3);
+    ['I', 'II', 'III'].forEach((numeral, i) => {
+      expect(pips[i]).not.toContain('aria-hidden');
+      const name = /aria-label="([^"]*)"/.exec(pips[i]!)?.[1] ?? '';
+      expect(name).toContain(`tier ${numeral} puzzles`);
+      expect(name).toContain(`${i + 1} diamond`);
+    });
+
+    // …and the column is headed on the glass too, in the word every card uses.
+    expect(html).toContain('class="bp-margin__head"');
+    expect(html).toMatch(/class="bp-margin__head"[^>]*>TIER</);
   });
 
   it('gives every walk target a spoken price, never a grid coordinate', () => {

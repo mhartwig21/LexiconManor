@@ -241,6 +241,22 @@ These are worse than confusion. A confused player knows to ask; this one does no
 
 *Files:* `content/authored/dialogue/bramble.json`, `src/ui/chrome/DayTransitions.tsx`
 
+**16. [EXECUTED, round 31] Put the door plan in WORDS on the draft card, beside the diagram.** Wrong belief 7 is the most expensive miss in this file and was the only one on the list with no fix number, so no round ever picked it up. The plan was on the card — as a 32×32px diagram whose only statement was an `aria-label`, beside the loud bold line that named the wrong attribute. Each card now prints its onward doors in type a step darker and heavier than that line ("Two ways on — east and west", "One way on — north"), derived from `onwardDoors` in engine/manor/grid.ts, which `sealsItself` is now defined as the zero of. The wall she came in through is named once above the three cards instead of three times inside their icons.
+
+*Closes:* Wrong belief 7 — "'anchor' rooms are the ones you can keep building upward from" — and the NYT player's *"How to get upstairs. That's the whole game and I never cracked it."*
+
+*Gate:* `tests/grid.test.ts` — "states the ways on, in words, for every card in the deck at every heading" walks the manor with its own compass tables, never the production function, over 112 offers. Proved red on the pool it condemns (bare geometry lies on 11 of the 112).
+
+*Files:* `src/ui/blueprint/doorplan.ts` (new), `src/ui/blueprint/DraftModal.tsx`, `src/engine/manor/grid.ts`
+
+**17. [EXECUTED, round 31] Make "seals itself" read as the priced trade it is, and un-mute the margin.** The stamp said `Seals itself · +1 gem` and was read as atmosphere; it now says `Seals itself · no way on from here · +1 gem`, in the same words as the door-plan line above it, so the card states the charge as well as the payout. In the margin, the rate card and the tier pips both carried `aria-hidden="true"` and the pips had no text at all — both are announced now, one image and one sentence each, off `moveAt`; and the pip column is headed on the glass with the one word every card already uses, TIER (the key's own word was RANK, the engine's name for the band).
+
+*Closes:* Wrong belief 8, and blind spots 15/141 (the unreadable left margin).
+
+*Gate:* `tests/grid.test.ts` — "speaks its margin", red on the old markup.
+
+*Files:* `src/engine/manor/deck.ts`, `src/ui/blueprint/BlueprintSheet.tsx`, `src/ui/blueprint/pricing.ts`
+
 **15. [small] Label the header currency chips and the blueprint's left-margin tier pips. A word beside each glyph, and a one-word key on the pip column in the title block the margin already draws.**
 
 *Closes:* Three unlabelled trinkets in the corner and an unreadable margin — every player noticed both, none could read either.

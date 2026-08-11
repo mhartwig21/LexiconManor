@@ -21,8 +21,8 @@
 import type { PointerEvent } from 'react';
 import type { Dir, DraftOffer, ManorState, RoomCard } from '../../engine/types';
 import {
-  layoutFor, neighbor, opensOntoSanctum, opposite, orientLayout, resolveDoors, rowTier, sameCell,
-  sealsItself, SANCTUM_DOOR_CELL,
+  layoutFor, neighbor, onwardDoors, opensOntoSanctum, opposite, orientLayout, resolveDoors,
+  rowTier, sameCell, sealsItself, SANCTUM_DOOR_CELL,
 } from '../../engine/manor/grid';
 import { rememberedWings, wingOf, WING_CHARACTER_WORDS, WING_NAMES } from '../../engine/manor/wings';
 import { SEALED_ROOM_BOUNTY } from '../../engine/manor/deck';
@@ -32,6 +32,7 @@ import { CARD_PREVIEWS } from '../../engine/manor/deck';
 import { draftCardStake } from '../../engine/economy/preview';
 import { useManorStore } from '../../app/store';
 import { RoomGlyph } from './CategoryGlyph';
+import { DIR_WORDS, dirList, doorPlanWords } from './doorplan';
 import { draftPriceWords, priceWords, sanctumDraftStamp } from './pricing';
 
 const ROMAN = ['', 'I', 'II', 'III'];
@@ -40,10 +41,6 @@ function press(e: PointerEvent<Element>) { e.currentTarget.setAttribute('data-pr
 function release(e: PointerEvent<Element>) { e.currentTarget.removeAttribute('data-pressed'); }
 const pressProps = {
   onPointerDown: press, onPointerUp: release, onPointerLeave: release, onPointerCancel: release,
-};
-
-const DIR_WORDS: Record<Dir, string> = {
-  N: 'north', E: 'east', S: 'south', W: 'west',
 };
 
 /**
@@ -65,8 +62,8 @@ const DIR_WORDS: Record<Dir, string> = {
  * vocabulary, so the same gilt tick means the same thing on both surfaces.
  */
 export function DoorDiagram({
-  doors, entry: entryProp, size = 26,
-}: { doors: readonly Dir[]; entry?: Dir; size?: number }) {
+  doors, entry: entryProp, size = 26, silent = false,
+}: { doors: readonly Dir[]; entry?: Dir; size?: number; silent?: boolean }) {
   const tick: Record<Dir, string> = {
     N: 'M12 1v5', S: 'M12 23v-5', W: 'M1 12h5', E: 'M23 12h-5',
   };
@@ -75,13 +72,20 @@ export function DoorDiagram({
   const label = entry
     ? `Doors: you enter from the ${DIR_WORDS[entry]}` +
       (onward.length > 0
-        ? `, and it opens ${onward.map((d) => DIR_WORDS[d]).join(' and ')}`
+        ? `, and it opens ${dirList(onward)}`
         : ' — no other door: this room seals itself')
-    : `Doors: ${doors.map((d) => DIR_WORDS[d]).join(', ') || 'none'}`;
+    : `Doors: ${dirList(doors) || 'none'}`;
   return (
     <svg
       viewBox="0 0 24 24" width={size} height={size} className="bp-doorsdiag"
-      role="img" aria-label={label}
+      /* `silent` is for the DRAFT CARD, which since round 31 prints the plan in
+         words on the card face beside this diagram. The button's accessible
+         name is composed from its text, so leaving the label on would make a
+         screen reader hear the plan twice, in two different vocabularies. The
+         Cabinet, which prints no such line, keeps the label. */
+      {...(silent
+        ? { 'aria-hidden': true as const }
+        : { role: 'img', 'aria-label': label })}
     >
       <rect x={6.5} y={6.5} width={11} height={11} rx={1.5} />
       {doors.map((d) => (
@@ -172,6 +176,19 @@ export default function DraftModal({
   const seals = (card: RoomCard): boolean =>
     Boolean(manor && target && sealsItself(doorsOf(card), offer.atDoor, manor, target));
 
+  // ── THE PLAN, IN WORDS (round 31, COMPREHENSION wrong-belief 7). ────────
+  // The diagram has been honest since round 9 and unread ever since: 32px of
+  // ink whose only statement was an aria-label, beside a bold line naming the
+  // wrong attribute. This is the same answer in type — off `onwardDoors`, which
+  // `sealsItself` is now the zero of, so the sentence and the gilt stamp below
+  // it cannot contradict each other. Off the live store (a bare render) it
+  // falls back to the geometry, which is all a manorless card can honestly say.
+  const onward = (card: RoomCard): Dir[] => (
+    manor && target
+      ? onwardDoors(doorsOf(card), offer.atDoor, manor, target)
+      : doorsOf(card).filter((d) => d !== entryWall)
+  );
+
   return (
     <div className="bp-modal" role="dialog" aria-modal="true" aria-label="Draft a room">
       <div className="bp-modal__sheet">
@@ -205,8 +222,14 @@ export default function DraftModal({
           )}
           {/* The one sentence that makes the diagrams readable: they are drawn
               as they will be LAID, not as the card was printed. */}
+          {/* ROUND 31: the wall she came through used to be named three times,
+              once inside each card's door diagram, where only a screen reader
+              could hear it. It is the same wall on all three cards, so it is
+              said once — here — and each card is left to say the thing that
+              actually differs between them: where it lets her go next. */}
           <p className="bp-modal__orient">
-            Each plan is turned to the gilt door — the one at your feet
+            Each plan is turned to the gilt door at your feet — the{' '}
+            {DIR_WORDS[entryWall]} wall
           </p>
           {/* The rule nothing in the game had ever stated (round 13): standing
               on the landing is not reaching the Sanctum — the room you lay here
@@ -253,13 +276,20 @@ export default function DraftModal({
                 <span className="bp-card__body">
                   <span className="bp-card__name">{card.name}</span>
                   <span className="bp-card__preview">{CARD_PREVIEWS[card.id] ?? ''}</span>
+                  {/* THE DECISION, IN WORDS — printed ABOVE the length/payout
+                      line it was being confused with, in the same size and a
+                      step darker, so the attribute that decides the climb is
+                      never the quieter of the two. A sealing plan says it once:
+                      the gilt stamp carries both the dead end and its price. */}
+                  {seals(card) ? (
+                    <span className="bp-card__seals">{SEALED_ROOM_BOUNTY.stamp}</span>
+                  ) : (
+                    <span className="bp-card__doors">{doorPlanWords(onward(card))}</span>
+                  )}
                   {(() => {
                     const stake = draftCardStake(card, tier);
                     return stake ? <span className="bp-card__stake">{stake.label}</span> : null;
                   })()}
-                  {seals(card) && (
-                    <span className="bp-card__seals">{SEALED_ROOM_BOUNTY.stamp}</span>
-                  )}
                   {/* THE SANCTUM STAMP (round 13). Double-encoded per AAA 6.3:
                       the words carry it, the modifier class only tints them,
                       and BOTH answers are printed — a card that says nothing
@@ -286,7 +316,7 @@ export default function DraftModal({
                   </span>
                 </span>
                 <span className="bp-card__side">
-                  <DoorDiagram doors={doorsOf(card)} entry={entryWall} size={32} />
+                  <DoorDiagram doors={doorsOf(card)} entry={entryWall} size={32} silent />
                   {card.gemCost > 0 ? (
                     <span className={`bp-card__cost${affordable ? '' : ' bp-card__cost--short'}`}>
                       <svg viewBox="0 0 12 12" width={11} height={11} aria-hidden="true">

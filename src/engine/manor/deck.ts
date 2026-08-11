@@ -406,12 +406,27 @@ export function payoutNoticeFor(cardId: string): { title: string; toast: string 
  * (ui/blueprint/DraftModal.tsx), so taking a sealing plan for the gem is a
  * decision with a stated price, which is the whole of §5.7.
  */
+/**
+ * ═══ ROUND 31 — THE STAMP SAYS WHAT IT COSTS (COMPREHENSION wrong-belief 8)
+ *
+ * The stamp read "Seals itself · +1 gem", and the blind-play test found it
+ * being read as ATMOSPHERE — *"a cosy room that shuts its own door"* — with the
+ * gem taken for a garnish. One tester took a sealing plan twice in two days and
+ * ended his upward progress both times without knowing he had done it.
+ *
+ * "Seals itself" is a house phrase; it is not a rule of play, and a priced
+ * trade whose price is unnamed is not a trade. So the stamp now states the
+ * charge in the middle, between what it does and what it pays: the room costs
+ * her a way on, and the gem is what the manor pays for it. Same words as the
+ * card's door-plan line ("A dead end — no way on from here"), so the two
+ * surfaces read as one sentence rather than two claims.
+ */
 export const SEALED_ROOM_BOUNTY = {
   gems: 1,
   /** The card-face stamp, said before she spends. */
-  stamp: 'Seals itself · +1 gem',
+  stamp: 'Seals itself · no way on from here · +1 gem',
   eyebrow: 'A room with one door',
-  toast: 'Nothing has been through here in years. +1 gem',
+  toast: 'Nothing has been through here in years, and now nothing will. +1 gem',
 } as const;
 
 /** The notice the rail shows when a drafted plan turns out to seal itself. */

@@ -163,6 +163,18 @@
 }
 .bp-tierpips path { fill: var(--ink-faint); }
 
+/* The head of the pip column (round 31, COMPREHENSION 15). Set at the wing
+   plate's size and tracking, because it is the same kind of mark: a word the
+   surveyor writes over a column so the column stops being a rumour. Centred
+   on the pips, in the margin's own faint ink — reference, never interactable. */
+.bp-margin__head {
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+  text-anchor: middle;
+  fill: var(--ink-faint);
+}
+
 /* The margin's key (round 28): the same diamond the pip column draws, and the
    same numeral ink as the rate card, so the sample IS the mark it explains. */
 .bp-key__pip { fill: var(--ink-faint); }
@@ -803,6 +815,19 @@
   font-size: var(--text-sm);
   color: var(--ink-soft);
 }
+/* THE PLAN, IN WORDS (round 31, COMPREHENSION wrong-belief 7). The one line on
+   the card that decides whether her climb survives the room — so it is set a
+   full step of ink DARKER and heavier than the stake line beneath it, which is
+   the line she was reading instead ("anchor · five minutes or so"). Not gilt:
+   gilt on this sheet means "this is the way through", and it is already spoken
+   for by the sealing stamp and the Sanctum's opening plan, both of which are
+   payouts. This is a fact about the shape, stated plainly. */
+.bp-card__doors {
+  font-size: var(--text-sm);
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
 .bp-card__stake {
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
@@ -1122,4 +1147,29 @@
      it simply appears at once (AAA U.3 — state changes stay legible). */
   .bp-refusal { opacity: 1; }
   .bp-ghost__handle { opacity: 0.9; }
+}
+
+/* --------------------------------------------------------------------------
+   ROUND 31 — THE OFFER SHEET ON A SHORT GLASS.
+   The draft card grew a line this round: the DOOR PLAN, in words, which is the
+   attribute that decides whether her climb survives the room (COMPREHENSION
+   wrong-belief 7). Measured at 375x667 before that line existed, the sheet
+   already scrolled 29px — the third card's bottom edge hit-tested as the
+   sticky foot — and the new line took it to 113px, which would have hidden a
+   third of the offer behind a scroll on the exact screen the owner's wife
+   plays on. Paid for here, on short glass only, in the same order this house
+   always pays: the DECORATIVE reserve first, never the rule.
+     · the motto line is the bookplate's flavour (BENCHMARKS §6) and the one
+       thing on the card that decides nothing; it gives way, exactly as
+       `.anch__flavour` does in the rooms at this breakpoint;
+     · the card's own padding tightens, which moves no words at all;
+     · and the sheet takes 4% more of the glass it was already allowed.
+   Measured after: 0px of scroll at 375x667 — the whole offer, three cards and
+   both prices, on the glass at once for the first time.
+   -------------------------------------------------------------------------- */
+@media (max-height: 700px) {
+  .bp-modal__sheet { max-height: 92%; padding-top: 0.7rem; }
+  .bp-modal__head { margin-bottom: 0.5rem; }
+  .bp-card { padding: 0.45rem 0.6rem; min-height: 68px; }
+  .bp-card__preview { display: none; }
 }

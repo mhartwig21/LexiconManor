@@ -33,7 +33,38 @@
 /* The Study has no board to fill the column, so its gutters are the tightest
    in the house — every 0.7rem between eight stacked cards was pure parchment
    (AAA §0.1's empty-ratio measurement). */
-.anch--study { gap: 0.5rem; }
+/* ═══ ROUND 31 — THE STUDY FITS AT TIER 3 (owner: no scrollbars, ever) ═════
+ *
+ * MEASURED, at rest, before this: the column ran 11px past its own stage at
+ * 375x667 and 7px at 390x844 whenever the room drew a TIER 3 entry, and the
+ * shell's last-resort scroll took up the difference. Tier 1 was clean at both
+ * sizes, which is what named the cause: tier 3 is the only tier that both
+ * lengthens the definition and adds the crib row AND its caption, and every
+ * gutter in this room was calibrated on a tier-1 column.
+ *
+ * Nothing here touches the room's CONTENT — the Study is at NYT standard and
+ * protected. Every number below is chrome: the column's own gutters, the
+ * definition card's padding, and one gap that should never have existed at all
+ * (the crib caption is the crib row's caption; it was a sibling flex child, so
+ * a full column gap sat between a row of letter-slots and the line that
+ * explains them). All of it is scoped to `.anch--study`.
+ *
+ * Measured after, at rest: −4px of slack at 375x667 and −22px at 390x844 —
+ * fits, both sizes, both tiers, with the stage's scrollHeight equal to its
+ * clientHeight. (An unsealed clue is bought reading matter and still overruns;
+ * see the note at `.fw-clue--open`.) */
+.anch--study {
+  --fw-gap: 0.32rem;
+  gap: var(--fw-gap);
+  padding: 0.4rem 0.9rem 0.25rem;
+}
+/* The crib and its caption are one object, so the column gap between them is
+   pulled back out; 0.15rem is the caption's own leading, kept. */
+.anch--study .fw-slots__cap { margin-top: calc(0.15rem - var(--fw-gap)); }
+/* The entry card is the tallest thing in the room and 0.8rem of its height at
+   either end is parchment. The WRITING is untouched — `.fw-def__text` keeps
+   its clamp, its leading and its margins. */
+.anch--study .anch-card.fw-def { padding: 0.5rem 0.95rem; }
 
 .anch--library      { --room-accent: var(--cat-puzzle); }
 .anch--conservatory { --room-accent: var(--cat-utility); }
@@ -1344,7 +1375,8 @@
      nameplate and the drawn letter-slots below, both of which restate
      something the page says in words anyway. */
   .anch--study .fw-def__text { font-size: clamp(1.4rem, 5.2vw, 1.5rem); margin: 0.2rem 0; }
-  .anch--study .anch-card.fw-def { padding: 0.55rem 0.8rem; }
+  /* ROUND 31: 0.55rem → 0.42rem. Parchment inside the entry card, not writing. */
+  .anch--study .anch-card.fw-def { padding: 0.42rem 0.8rem; }
   /* ROUND 8 (AAA 11.4 [PARITY]) — the Study's column ran 144px past a 481.6px
      stage, so a COSTED control ("Unseal · −N steps") sat under the sticky
      whisper deck at rest. The clue cards paid most of it (see `.fw-clue`);
@@ -1362,7 +1394,16 @@
      its height instead. */
   .anch--study .fw-slots:not(.fw-slots--crib) { display: none; }
   .anch--study .anch-toastslot { min-height: 2.1rem; }
-  .anch--study { gap: 0.25rem; }
+  /* ROUND 31: the gutter token, so the crib caption's pull-back (see the block
+     at `.anch--study`) tracks the SE-class gutter instead of the tall one. */
+  .anch--study { --fw-gap: 0.22rem; padding: 0.34rem 0.9rem 0.16rem; }
+  /* ROUND 31, the last of the SE-class reclaim — both are chrome around
+     content that does not change size: the crib slot is a BOX around a 13px
+     letter (1.7rem held a display face this room does not set here), and the
+     deck's gutter is parchment between rows whose own tap-target floors are
+     untouched. */
+  .anch--study .fw-slot { height: 1.5rem; }
+  .anch--study .room-deck--anch { gap: 0.22rem; }
   .fw-clue { min-height: var(--tap-target); padding: 0.3rem 0.5rem; }
   .fw-slot { height: 1.7rem; }
   .tw-word { min-height: 1.8rem; }

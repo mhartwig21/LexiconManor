@@ -51,7 +51,8 @@ import { ROOM_KIND_GLYPH_PATHS } from './CategoryGlyph';
 import {
   draftLabel, draftStamp, landingRefusalAnnouncement, landingRefusalLine,
   lockedDraftLabel, lockedRefusalAnnouncement, lockedRefusalLine,
-  priceStamp, stampsDraftPrice, stampsPrice, walkLabel, LANDING_SEALED_LABEL,
+  priceStamp, rateCardLabel, stampsDraftPrice, stampsPrice, tierPipLabel, walkLabel,
+  LANDING_SEALED_LABEL,
 } from './pricing';
 import {
   colsOfWing, rememberedWings, wingCharacterOf, wingOf, WING_CHARACTER_TAGS,
@@ -65,6 +66,7 @@ const WING_LABEL_Y = 39;// the three wing names, under the title (round 20)
 const MB = 22;          // bottom margin: plot border + scale mark
 const VIEW_W = MX + MANOR_COLS * CELL + 12;
 const VIEW_H = MT + MANOR_ROWS * CELL + MB;
+const ROMAN = ['', 'I', 'II', 'III'];   // the tier numeral the cards already use
 const INSET = 3;        // room wall inset inside its cell
 const GAP = 20;         // door gap width
 const JAMB = 3;         // door jamb tick length
@@ -526,6 +528,11 @@ export default function BlueprintSheet({
             own furniture — and is `aria-hidden` on purpose: a screen reader
             already gets the price in words on every target it can reach
             (`walkLabel`), and a key it cannot see would be a second telling. */}
+        {/* ROUND 31 (COMPREHENSION 15, wrong-belief 7's neighbour): the key's
+            word was RANK, which is the ENGINE's name for the band. Every
+            player-facing surface in the game — the draft card, the modal's
+            storey heading, the room footer — says TIER. One word, and it is
+            the one already printed on the thing the pips predict. */}
         <g className="bp-key" transform={`translate(${VIEW_W - 12} ${VIEW_H - 12})`} aria-hidden="true">
           {/* Laid out leftwards from the plot's right border, not rightwards:
               measured live, the first cut of this key ran 5px past the sheet's
@@ -534,10 +541,18 @@ export default function BlueprintSheet({
               carries 0.22em of tracking — six caps are ~49px, not 36 — and the
               numbers below are the measured widths, not estimated ones. */}
           <path className="bp-key__pip" d={`M${-138} ${-3.4}l3.4 3.4-3.4 3.4-3.4-3.4Z`} />
-          <text className="bp-scale__label" x={-130} y={3.4}>RANK</text>
+          <text className="bp-scale__label" x={-130} y={3.4}>TIER</text>
           <text className="bp-rowprice__n" x={-76} y={3.4} textAnchor="start">&minus;N</text>
           <text className="bp-scale__label" x={-56} y={3.4}>A MOVE</text>
         </g>
+        {/* …and the same word AT THE HEAD OF ITS OWN COLUMN. The key in the
+            bottom margin is a legend, twenty rows away from the marks it
+            explains; a surveyor also heads the column. It sits in the top
+            margin above the pips, at the wing plate's size — the only width
+            the left margin has (36px between the plot border and the grid, so
+            "A MOVE" at 49px could never have gone here, which is why the rate
+            card's half of the key stays in the bottom margin). */}
+        <text className="bp-margin__head" x={MX - 15} y={MT - 6}>TIER</text>
       </g>
 
       {/* rank pressure: the higher floors are visibly graver (MANOR_DESIGN §3) */}
@@ -548,11 +563,16 @@ export default function BlueprintSheet({
       <rect className="bp-band--hatch bp-band--hatch-t3" fill="url(#bp-hatch)" x={MX - 3} y={py(6)} width={MANOR_COLS * CELL + 6} height={2 * CELL} />
       <path className="bp-graph" d={graphCrosses()} />
 
-      {/* tier pips in the left margin: one, two, three diamonds by band */}
+      {/* tier pips in the left margin: one, two, three diamonds by band.
+          ROUND 31: these were silent to assistive tech — bare `path`s with no
+          text and no label, inside a `g` that named nothing — so the one
+          reader who most needs the margin explained got a column of nothing
+          at all. Each band is one image with one sentence now, saying what the
+          diamonds COUNT and what the count decides. */}
       {[{ rows: [0, 2], n: 1 }, { rows: [3, 4], n: 2 }, { rows: [5, 6], n: 3 }].map(({ rows, n }) => {
         const cy = (py(rows[1]!) + py(rows[0]!) + CELL) / 2;
         return (
-          <g key={n} className="bp-tierpips">
+          <g key={n} className="bp-tierpips" role="img" aria-label={tierPipLabel(n, ROMAN[n]!)}>
             {Array.from({ length: n }, (_, i) => {
               const dy = cy + (i - (n - 1) / 2) * 11;
               return <path key={i} d={`M${MX - 12} ${dy - 3.4}l3.4 3.4-3.4 3.4-3.4-3.4Z`} />;
@@ -565,7 +585,7 @@ export default function BlueprintSheet({
           these say what graver COSTS. One −N per row, read straight from
           `moveAt(row)` so the margin and the ledger cannot drift apart — the
           surveyor's rate card, in the surveyor's margin. */}
-      <g className="bp-rowprice" aria-hidden="true">
+      <g className="bp-rowprice" role="img" aria-label={rateCardLabel(MANOR_ROWS)}>
         {Array.from({ length: MANOR_ROWS }, (_, row) => (
           <text key={row} className="bp-rowprice__n" x={MX - 22} y={py(row) + CELL / 2 + 3.4}>
             {priceStamp(row)}

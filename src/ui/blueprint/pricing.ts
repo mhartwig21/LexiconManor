@@ -68,6 +68,47 @@ export function walkLabel(row: number): string {
 }
 
 /**
+ * ═══ ROUND 31 — THE MARGIN STOPS BEING A COLUMN OF UNHEADED NUMBERS ═══════
+ *
+ * A critic captured every word of visible text on the blueprint and came away
+ * with four wing names, "ONE ROOM", the title block — and a BARE UNHEADED
+ * COLUMN reading −2 −2 −2 −2 −7 −9 −9. Both the rate card and the tier pips
+ * carried `aria-hidden="true"`, so not even a screen reader could ask.
+ *
+ * The old reasoning for hiding them (round 28) was that every walk target
+ * already speaks its own price in `walkLabel`, so a key would be a second
+ * telling. That is true of a target she can REACH and false of the sheet: the
+ * rate card's whole job is to price the storeys she has NOT reached yet — the
+ * climb she is deciding whether to start — and none of those has a target to
+ * speak. So both marks are announced now, once each, as a single image apiece
+ * rather than as loose numerals, and every number is read from `moveAt`.
+ *
+ * Rows of equal price are collapsed into one clause, so the seven-row column
+ * speaks as the three bands it actually is.
+ */
+export function rateCardLabel(rows: number): string {
+  const bands: { from: number; to: number; cost: number }[] = [];
+  for (let row = 0; row < rows; row++) {
+    const cost = -moveAt(row);
+    const last = bands[bands.length - 1];
+    if (last && last.cost === cost) last.to = row;
+    else bands.push({ from: row, to: row, cost });
+  }
+  const clauses = bands.map(({ from, to, cost }) => (
+    from === to
+      ? `${rowName(from)}, ${cost} steps`
+      : `${rowName(from)} up to ${rowName(to)}, ${cost} steps`
+  ));
+  return `Rate card — what one move costs on each storey: ${clauses.join('; ')}.`;
+}
+
+/** The pip column's key, spoken: one diamond a tier, and what a tier decides. */
+export function tierPipLabel(tier: number, roman: string): string {
+  return `${tier} ${tier === 1 ? 'diamond' : 'diamonds'} — this storey draws `
+    + `tier ${roman} puzzles`;
+}
+
+/**
  * The accessible name for a draft (ghost) target.
  *
  * Two prices, because there are two moments (AAA 4.6): opening the door is a
