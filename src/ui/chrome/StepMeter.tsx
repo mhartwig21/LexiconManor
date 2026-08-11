@@ -11,6 +11,17 @@
  * ROUND 26: every float now says WHY (COMPREHENSION.md fix 1 — the reason word
  * lives in ui/chrome/step-reasons.ts, which is where the argument is written
  * down and where the copy is unit-tested).
+ *
+ * ROUND 32: AND THE CANDLE OPENS. The reason words shipped, were verified in
+ * the code, and moved NEITHER of the next round's blind testers — both
+ * reported their counter moving for reasons they could not see, one of them
+ * three separate times, all three marked "resolved: never". A 1150ms float in
+ * the top-right corner is the wrong surface for a price when her eyes are on a
+ * puzzle board in the middle of the screen, and lengthening it would only make
+ * a longer distraction. So the candle is now a CONTROL: tap it and the day's
+ * account unrolls beneath it, with the same reason words and a total that adds
+ * up (StepLedgerSheet + ledger-lines.ts). The float stays exactly as it was —
+ * it is the notification; the sheet is the record.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -18,6 +29,7 @@ import { useManorStore } from '../../app/store';
 import { dayStartTotal, stepsRemaining } from '../../engine/economy/steps';
 import type { StepReason } from '../../engine/types';
 import { reasonWord } from './step-reasons';
+import StepLedgerSheet from './StepLedgerSheet';
 
 interface Float {
   id: number;
@@ -60,6 +72,16 @@ export default function StepMeter() {
     steps <= Math.max(6, startTotal * 0.15) ? 'guttering'
     : ratio <= 0.5 ? 'waning'
     : 'bright';
+
+  /** Is the day's account open? (StepLedgerSheet; the candle is its handle.) */
+  const [ledgerOpen, setLedgerOpen] = useState(false);
+  // The day ending under an open account would leave last night's arithmetic
+  // on the glass over this morning's blueprint. Dusk closes the book.
+  const phase = useManorStore((s) => s.day?.phase);
+  useEffect(() => {
+    if (phase === 'exploring' || phase === 'morning') return;
+    setLedgerOpen(false);
+  }, [phase]);
 
   // A floating ±N for each new ledger entry (max 3 per batch to stay calm).
   const [floats, setFloats] = useState<Float[]>([]);
@@ -126,33 +148,45 @@ export default function StepMeter() {
 
   return (
     <div className={`chr-steps chr-steps--${band}`} aria-live="polite">
-      <svg
-        className="chr-steps__candle"
-        width="20"
-        height="34"
-        viewBox="0 0 20 34"
-        role="img"
-        aria-label={`${steps} steps left of ${startTotal}`}
+      {/* THE CANDLE IS THE CONTROL (round 32). The whole readout — flame,
+          numeral and word — is one 44pt target, because the thing she reaches
+          for when she wants to know what the day cost is the number itself.
+          The float layer stays OUTSIDE the button: a float is a notification,
+          not a label on a control, and putting it inside would fold its text
+          into the button's accessible name every time one fired. */}
+      <button
+        className="chr-steps__open"
+        onClick={() => setLedgerOpen(true)}
+        aria-label={`${steps} steps left of ${startTotal} — open the day’s account`}
       >
-        {/* flame sits on the wick, above the current wax line */}
-        <ellipse className="chr-steps__flame" cx="10" cy={waxY - 4.5} rx="2.6" ry="4.2" />
-        <line x1="10" y1={waxY} x2="10" y2={waxY - 2.5} stroke="var(--ink-soft)" strokeWidth="1" />
-        <rect className="chr-steps__wax" x="5" y={waxY} width="10" height={waxH} rx="1.5" />
-        {/* the candle dish */}
-        <line x1="2" y1="31" x2="18" y2="31" stroke="var(--ink-faint)" strokeWidth="1.5" />
-      </svg>
-      {/* ROUND 8: this wrapper carries a class and `white-space: nowrap` (see
-          chrome.css). Unclassed, it was free to reflow "12 steps" onto two
-          lines the moment the flex row was squeezed — which is exactly what
-          happened at 375x667, making .chr-steps 53.3px, the bar 59.3px, and
-          --chrome-h a lie on every surface that clears itself by it. */}
-      <div className="chr-steps__read">
-        {/* key retriggers the tick pulse on every change */}
-        <span key={steps} className="chr-steps__count chr-steps__count--tick tabular-nums">
-          {steps}
-        </span>
-        <span className="chr-steps__label"> steps</span>
-      </div>
+        <svg
+          className="chr-steps__candle"
+          width="20"
+          height="34"
+          viewBox="0 0 20 34"
+          aria-hidden="true"
+        >
+          {/* flame sits on the wick, above the current wax line */}
+          <ellipse className="chr-steps__flame" cx="10" cy={waxY - 4.5} rx="2.6" ry="4.2" />
+          <line x1="10" y1={waxY} x2="10" y2={waxY - 2.5} stroke="var(--ink-soft)" strokeWidth="1" />
+          <rect className="chr-steps__wax" x="5" y={waxY} width="10" height={waxH} rx="1.5" />
+          {/* the candle dish */}
+          <line x1="2" y1="31" x2="18" y2="31" stroke="var(--ink-faint)" strokeWidth="1.5" />
+        </svg>
+        {/* ROUND 8: this wrapper carries a class and `white-space: nowrap` (see
+            chrome.css). Unclassed, it was free to reflow "12 steps" onto two
+            lines the moment the flex row was squeezed — which is exactly what
+            happened at 375x667, making .chr-steps 53.3px, the bar 59.3px, and
+            --chrome-h a lie on every surface that clears itself by it. */}
+        <div className="chr-steps__read">
+          {/* key retriggers the tick pulse on every change */}
+          <span key={steps} className="chr-steps__count chr-steps__count--tick tabular-nums">
+            {steps}
+          </span>
+          <span className="chr-steps__label"> steps</span>
+        </div>
+      </button>
+      {ledgerOpen ? <StepLedgerSheet onClose={() => setLedgerOpen(false)} /> : null}
       {floats.map((f) => (
         <span
           key={f.id}

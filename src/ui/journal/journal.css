@@ -641,4 +641,30 @@
    touches the cards' own borders, deckle or dashed edges. */
 .jrn-sheet > * {
   background-color: var(--paper-raised);
+  /* ══ ROUND 32 — THE SHEET WAS EATING THE LETTER, NOT HIDING IT ═══════════
+     THE DEFECT, MEASURED AT 375x667 ON HEAD
+     (tests/round32-key-and-letter-live.mjs).
+     `.jrn-sheet` is a flex COLUMN (see its block above) and a flex item's
+     default is `flex-shrink: 1`. So the moment a tab's cards wanted more than
+     the sheet's 484px, every card was squeezed BELOW its own content height —
+     and `.jrn-letter` carries `overflow: hidden` (it owns the rounded corner),
+     which meant the squeezed part was clipped away silently.
+
+     The consequence is not "below the fold". Posy's welcome letter measured
+     `.jrn-letter__body` 496px tall inside a `.jrn-letter` box of 328px, and
+     the sheet reported `scrollHeight 484 === clientHeight 484` — NOTHING TO
+     SCROLL TO. The last 250px of the game's tutorial document were not merely
+     off-screen, they were unreachable by any gesture. The blind tester whose
+     copy of the letter stopped at "…spoken once a day, and" — one clause
+     before the sentence that names the speaking tube, the game's core verb —
+     was not failing to scroll. There was no scroll. The tester who DID read
+     the tube sentence spoke a word down it on day 1; the tester who got the
+     clip never learned the tube exists. Same build, same letter, opposite
+     sessions, and this declaration is the whole difference.
+
+     `flex: none` restores each card's content height, so the column overflows
+     honestly and `.jrn-sheet`'s own `overflow-y: auto` does the job it has
+     always claimed to do. The empty plate keeps its stretch: `.jrn-sheet >
+     .jrn-void` is two classes to this rule's one, so it still wins. */
+  flex: none;
 }

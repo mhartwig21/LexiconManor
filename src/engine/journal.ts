@@ -776,8 +776,31 @@ export function journalNudge(
    * MORE of them, and more the higher you go. Same two words the rail and the
    * moment card use for the act — "finish a room", never "solve a room".
    */
+  /**
+   * ROUND 32 (COMPREHENSION, the rate) — THE FIX THAT TRADED ONE FALSE RULE
+   * FOR A SMALLER ONE.
+   *
+   * Round 24's rewrite landed word for word — a blind tester quoted it back —
+   * and then finished a day having solved FOUR rooms with ONE page filed,
+   * expected four, and rebuilt the violet-room theory this line exists to
+   * kill, to explain the shortfall. The sentence named the CHANNEL and omitted
+   * the RATE, and a player who cannot predict a faucet invents a rule for it.
+   *
+   * The rate, exactly (app/slices/journal.ts `collectFragmentForSolve` →
+   * engine/volume.ts `solveChannelFiledToday`): one page per SOLVE CHANNEL per
+   * day, and there are two channels — `LINTEL_CHANNEL`, which every ordinary
+   * word game pays into, and `STUDY_CHANNEL`, which only the Study pays into
+   * (`solveChannelFor`). So four hives in one day file one page; a hive and
+   * the Study file two.
+   *
+   * "One a day" ALONE would have been a wrong label, which this campaign holds
+   * to be worse than no label — it is false on exactly the day she draws the
+   * Study. Hence the second clause. Violet keeps its real job and is left
+   * untouched: entering a mystery room pushes a sealed page (events.ts), which
+   * is a different faucet and is not valved by the day.
+   */
   if (found === 0) {
-    return 'Finish a room, dear — any room, any puzzle — and a page files itself in here. The violet rooms keep more of them, and the higher you go the more they keep.';
+    return 'Finish a room, dear — any room, any puzzle — and a page files itself in here. One a day from the word games, however many you finish; the Study keeps its own count. The violet rooms keep more of them, and the higher you go the more they keep.';
   }
   // The backlog outranks every other pointer: a page she cannot read yet is
   // the most useful thing anyone could point at, and the answer to it is a

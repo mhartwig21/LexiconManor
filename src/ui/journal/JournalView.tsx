@@ -52,6 +52,25 @@ export default function JournalView() {
   // the daily valve; mounted only when selection actually has a letter node
   // (cooldown throttles it to one aside per day; re-reads stay quiet).
   const [letterAside, setLetterAside] = useState(false);
+  /**
+   * ══ ROUND 32 — SHE STOOD IN FRONT OF THE LETTER SHE WAS TALKING ABOUT ════
+   *
+   * `DialogueScene` is a FULL-SCREEN fixed overlay. Breaking a seal used to
+   * mount it in the same tick that expanded the letter body, so the first
+   * thing the player saw after opening the game's tutorial document was Posy
+   * covering it — measured at 375x667: `elementsFromPoint` at the centre of
+   * `.jrn-letter__body` returned `.dlg` (375x667, from the top-left corner
+   * down) on top of the letter it had just opened. BOTH blind testers flagged
+   * the portrait covering the letter, independently.
+   *
+   * The aside is not cut — it is Posy's one reaction to the post and it is
+   * good. It is HELD: the seal breaks, the letter opens and stays open, and
+   * she says her piece the moment the letter is put away (the effect below).
+   * If the player never closes it, the aside simply does not play, which is
+   * the correct trade — this is a flavour beat, and the thing it was covering
+   * is the only place the game explains the speaking tube.
+   */
+  const [pendingAside, setPendingAside] = useState(false);
 
   const volume = useManorStore((s) => s.volume);
   const day = useManorStore((s) => s.day?.day ?? s.volume.day);
@@ -162,7 +181,38 @@ export default function JournalView() {
   const switchTab = (t: Tab) => {
     if (t !== tab) sfx.tap();
     setTab(t);
+    // Leaving the Letters tab IS putting the letter down; the held aside (see
+    // `pendingAside`) is released by the same act as collapsing the card.
+    if (t !== 'letters') setOpenLetterId(null);
   };
+
+  /* Posy waits for the letter to be put away — see `pendingAside` above. */
+  useEffect(() => {
+    if (!pendingAside || openLetterId !== null) return;
+    setPendingAside(false);
+    setLetterAside(true);
+  }, [pendingAside, openLetterId]);
+
+  /**
+   * ROUND 32 — THE OPENED LETTER TAKES THE TOP OF THE SHEET.
+   * Posy's welcome letter is the longest document the journal holds and it is
+   * the one that has to be read whole (it names the speaking tube). Trimmed to
+   * fit, it clears 375x667 with room to spare — but only from the TOP of the
+   * scroll box, and on day 2+ there are letters stacked above it. Pinning the
+   * card she just opened to the top of `.jrn-sheet` is what makes "it fits" a
+   * property of the letter rather than of where she happened to be scrolled.
+   */
+  const sheetRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!openLetterId) return;
+    const sheet = sheetRef.current;
+    const card = sheet?.querySelector<HTMLElement>('[data-letter-open="true"]');
+    if (!sheet || !card) return;
+    const id = requestAnimationFrame(() => {
+      sheet.scrollTop += card.getBoundingClientRect().top - sheet.getBoundingClientRect().top;
+    });
+    return () => cancelAnimationFrame(id);
+  }, [openLetterId, tab]);
 
   return (
     <div className="jrn-page">
@@ -191,7 +241,7 @@ export default function JournalView() {
           <TabButton label="Letters" noun="letters" nounSingular="letter" active={tab === 'letters'} unread={unread.letters.length} sealed={0} onClick={() => switchTab('letters')} />
         </nav>
 
-        <div className="jrn-sheet">
+        <div className="jrn-sheet" ref={sheetRef}>
           {tab === 'word' && <WordTab />}
           {tab === 'engravings' && (
             engravings.length === 0 ? (
@@ -262,7 +312,10 @@ export default function JournalView() {
                         getDialogueFile('posy'),
                         buildDialogueQuery('posy', 'letter'),
                       );
-                      if (node && node.trigger === 'letter') setLetterAside(true);
+                      // HELD, not shown — see `pendingAside`. Mounting it here
+                      // put a full-screen overlay on top of the letter the
+                      // same gesture had just opened.
+                      if (node && node.trigger === 'letter') setPendingAside(true);
                     } else {
                       setOpenLetterId(openLetterId === l.id ? null : l.id);
                     }
@@ -798,7 +851,7 @@ function LetterCard({
 }) {
   const showBody = opened && expanded;
   return (
-    <div className="jrn-letter">
+    <div className="jrn-letter" data-letter-open={showBody ? 'true' : undefined}>
       <button className="jrn-letter__head" onClick={onToggle}>
         <span className={`jrn-seal${opened ? ' jrn-seal--broken' : ''}`} aria-label={opened ? 'seal broken' : 'sealed'} />
         <span>

@@ -122,7 +122,26 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
    diamond, the key and the ribbon in that order.
    Inert by construction — this is a caption, not a control, and the blueprint
    under it must keep every tap (the round-15 lesson). It fades in after the
-   dawn floats have gone, and retires on her first touch (DayHeader). */
+   dawn floats have gone, and retires on her first touch (DayHeader).
+
+   ROUND 32 — THE LABEL SHIPPED TWICE AND WAS NEVER ONCE READ.
+   Rounds 26 and 28 both spent effort on this caption. A blind tester on the
+   live build then reported it "rendering directly on top of 'LEXICON MANOR —
+   GROUNDS', both strings overlapping into illegible mush", and named it as the
+   ONLY on-screen statement of the carry-over rule. Measured at 375x667 before
+   this change: `.chr-key__row--note` occupied x 174–363 / y 69–86 and
+   `.bp-sheet__title` x 52–323 / y 72–88 — the same pixels, two runs of type,
+   no ground between them. The caption had no background at all, so it was
+   transparent over whatever the page happened to draw underneath.
+
+   The remedy is a GROUND, not a move: the note is pinned to the bar it
+   annotates, and a note needs paper. `--paper-raised` is the same stock the
+   header itself is cut from, with the header's own hairline rule and a soft
+   drop so it reads as a slip tucked under the bar rather than as text that
+   escaped it. Still `pointer-events: none` — an opaque slip that ate a tap
+   aimed at the blueprint would be the round-15 defect wearing a fix's clothes,
+   and the hit-test rows in tests/round32-key-and-letter-live.mjs prove it does
+   not. */
 .chr-key {
   position: absolute;
   top: calc(100% + 4px);
@@ -133,6 +152,17 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   gap: 1px;
   pointer-events: none;
   text-align: right;
+  /* The paper the caption is written on. Without it the two rows printed
+     straight onto the page beneath (see the note above). */
+  background: var(--paper-raised);
+  border: var(--rule);
+  border-radius: var(--radius-card);
+  box-shadow: 0 2px 6px rgba(43, 33, 24, 0.10);
+  padding: 5px 8px 6px;
+  /* The slip may not out-grow the glass it is pinned to: at 375 the bar's own
+     right padding is 12px, so 24px of gutter keeps both rows off both edges
+     however long the copy gets. */
+  max-width: calc(100vw - 24px);
   animation: chrKeyIn 320ms var(--ease-settle) 1400ms both;
 }
 
@@ -199,9 +229,50 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 2px 10px;
+  /* HORIZONTAL ONLY, since round 32. The readout used to carry 2px top and
+     bottom around a 34px candle, which was invisible while the tallest thing
+     in the bar was the retire moon's 44pt target. The moment the readout
+     itself became a 44pt control (`.chr-steps__open` below), those 2px pushed
+     the bar's content box to 48 and the whole bar from 52 to 56 — 4px past
+     --chrome-h, which is the exact AAA 11.4 drift the token exists to prevent,
+     and every page's top band slides under it. Caught by
+     tests/modal-hit-test.mjs, which measures the bar against the token at both
+     viewport heights. */
+  padding: 0 10px;
   min-width: 96px;
   justify-content: center;
+}
+
+/* --- The candle is the handle on the day's account (round 32) -------------
+   The readout was a `div` for thirty-one rounds and the price of that is
+   written in StepMeter's docstring: two blind testers watched their counter
+   move for reasons they could not see and had nowhere to look. It is a button
+   now, and the WHOLE readout is the target — flame, numeral and word — because
+   what she reaches for is the number.
+
+   It must cost the bar nothing: the geometry below is the old `.chr-steps`
+   flex row moved inside, with no border, no background and no padding of its
+   own, so `--chrome-h` is untouched (tests/modal-hit-test.mjs measures the bar
+   against the token at both viewport heights and would say otherwise).
+   `min-height` is the 44pt floor from AAA 6.19; the bar's content box is 44,
+   so this fills it exactly rather than growing it. */
+.chr-steps__open {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap-target);
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.chr-steps__open:active { transform: translateY(1px); }
+@media (prefers-reduced-motion: reduce) {
+  .chr-steps__open:active { transform: none; }
 }
 
 .chr-steps__candle { display: block; overflow: visible; flex: none; }
@@ -338,6 +409,183 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   0%   { opacity: 0; transform: translate(-50%, 10px); }
   15%  { opacity: 1; }
   100% { opacity: 0; transform: translate(-50%, -22px); }
+}
+
+/* --- THE DAY'S ACCOUNT (round 32 — COMPREHENSION fix 2) -------------------
+   The place to look. The argument is in ui/chrome/ledger-lines.ts; the
+   layering contract is in ui/chrome/layers.ts and is the reason this sits at
+   --z-overlay and NOT above the chrome: the candle it was opened from stays
+   lit above its own account (the bar is z 50), which is what makes tapping the
+   bar again read as closing it. The bar is inert while this is up (the
+   `:has([data-overlay])` block at the top of this file), so that tap falls
+   through to the scrim and does exactly that. */
+.chr-ledger {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay, 40);
+  /* The gutter the sheet keeps on every side, as ONE number. It is also why
+     the max-height below carries no px literal beside its env() — that shape
+     is chrome clearance written by hand and scripts/lint-chrome-clearance.mjs
+     rejects it on sight (AAA 11.4), correctly: it is how a bar height gets
+     copied into a page and then drifts. */
+  --chr-ledger-gutter: 12px;
+  font-family: var(--font-body);
+  color: var(--ink);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chr-ledger__scrim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+  background: color-mix(in srgb, var(--paper-shade) 55%, transparent);
+  cursor: pointer;
+  animation: chrLedgerIn 160ms var(--ease-settle);
+}
+
+.chr-ledger__sheet {
+  position: absolute;
+  /* Clears the bar by the SAME token every other surface clears itself by, so
+     the candle can never be covered by its own ledger however the bar is
+     retuned (AAA 11.4 — the drift that produced the round-5 nav bug). */
+  top: calc(var(--chrome-h) + env(safe-area-inset-top, 0px) + var(--chr-ledger-gutter));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - var(--chr-ledger-gutter) * 2);
+  max-width: 380px;
+  /* The floor of the glass, minus the bar and both gutters. The list below
+     takes what is left; nothing here may push the page into a scroll. */
+  max-height: calc(100% - var(--chrome-h) - env(safe-area-inset-top, 0px)
+    - env(safe-area-inset-bottom, 0px) - var(--chr-ledger-gutter) * 2);
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-raised);
+  border: var(--rule);
+  border-radius: var(--radius-sheet);
+  box-shadow: var(--shadow-lift);
+  padding: 0.7rem 0.9rem calc(0.8rem + env(safe-area-inset-bottom, 0px));
+  animation: chrLedgerSheetIn 200ms var(--ease-settle);
+}
+
+.chr-ledger__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex: none;
+}
+
+.chr-ledger__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.chr-ledger__sub {
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  letter-spacing: 0.05em;
+  margin-top: 1px;
+}
+
+.chr-ledger__close {
+  flex: none;
+  min-height: var(--tap-target);
+  padding: 0 0.7rem;
+  border: var(--rule);
+  border-radius: var(--radius-card);
+  background: var(--paper-shade);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.chr-ledger__close:active { transform: translateY(1px); }
+
+.chr-ledger__list {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  /* The safety valve, not the plan: the rows are FOLDED by reason word
+     (ledger-lines.ts), and tests/step-ledger-live.mjs measures a real driven
+     day at 375x667 and asserts `scrollHeight === clientHeight`. A day with
+     more distinct charges than the glass can hold still degrades to a scroll
+     rather than to a clipped column — which is the round-32 lesson from the
+     journal sheet, where a flex shrink ate a quarter of Posy's letter and
+     reported nothing to scroll to. */
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.chr-ledger__list::-webkit-scrollbar { display: none; }
+
+.chr-ledger__row,
+.chr-ledger__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 3px 0;
+  font-size: var(--text-body);
+  line-height: 1.25;
+}
+
+.chr-ledger__why { color: var(--ink-soft); }
+.chr-ledger__times { color: var(--ink-faint); font-size: var(--text-sm); }
+
+.chr-ledger__n {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+.chr-ledger__n--gain { color: var(--moss); }
+/* Wax as reading ink — the same token the mistake float uses, so a charge she
+   saw float wax-red is wax-red in the record too (AAA 6.15). */
+.chr-ledger__n--mistake { color: var(--wax-ink); }
+
+.chr-ledger__total {
+  flex: none;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: var(--rule);
+  font-family: var(--font-display);
+  font-size: var(--text-display-sm);
+}
+.chr-ledger__total .chr-ledger__why {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--ink);
+}
+.chr-ledger__total .chr-ledger__n { color: var(--ink); }
+
+.chr-ledger__note {
+  flex: none;
+  margin: 0.5rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+@keyframes chrLedgerIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes chrLedgerSheetIn {
+  from { opacity: 0; transform: translate(-50%, -6px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chr-ledger__scrim,
+  .chr-ledger__sheet { animation: none; }
+  .chr-ledger__close:active { transform: none; }
+  .chr-ledger__sheet { transform: translateX(-50%); }
 }
 
 /* --- The notice rail (AAA 11.11 / 11.14 / 11.18) -------------------------- */
