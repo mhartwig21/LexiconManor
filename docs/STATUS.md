@@ -105,6 +105,81 @@ tooltip.
 
 ## 3. What the last three rounds changed, with their numbers
 
+### Round 30 — the Library composes from its contested tiles, and the house is what contests them
+
+| | Was (HEAD, round 17) | Now |
+|---|---|---|
+| Contested tiles per board — mean | 1.34 | **1.41** |
+| — median | **1** | **1** — NOT WON, see below |
+| — distribution | 1:103 2:46 3:3 over 152 boards | **1:100 2:61 3:3 over 164** |
+| Boards inside Connections' 2–4 band (BENCHMARKS §2) | 32% | **39%** |
+| Boards whose supply CAN contest ≥2 tiles | 69 of 218 candidates (the shelf's own number was never printed) | **74 of 164 shipped** |
+| What the board composer optimises | `roughTraps`, a letters-only proxy blind to rhyme, to completeness and to WHICH tile | **`contestedCapacity(findTraps(...))` — the shipping detector** |
+| House categories shipped | 5 groups of 608 | **22 groups of 656, on 17 boards** |
+| House groups whose own tile is the contested one | 0 | **8** |
+| Shelf size | 152 | **164** (floor 150) |
+
+**The proxy was the supply.** Two thirds of the shelf is composed by `synthesiseBoards`, and it
+chose which four categories to put together with `roughTraps` — a stand-in written in round 13
+because the phonetic dictionary is declared further down the file than the composer was. That
+was a fact about the ORDER OF THE DECLARATIONS, not about the code. The shelf is now composed at
+the bottom of `content/generate-wordweb.ts` and the composer asks `findTraps` directly. The proxy
+counted collisions; the format is graded on TILES, and ten collisions about one word are one
+contested tile.
+
+**Three more free levers, all of them choices the pipeline was already making blind.**
+`redealHands` re-picks which four words each bank category puts on the FINISHED board (the hand
+was chosen mid-composition, against a board that then moved underneath it) and now reaches
+authored groups whose four words are all members of a bank pool of the same category. The
+variant loop, which compares four admissible compositions of every board, weighs contested tiles
+at 3 — below the way-in floor at 8 and the finish floor at 4, and no higher, because at 6 it held
+on to a compound frame every time one was offered and drove the compound family to 114 of 162
+boards against a 70% wallpaper budget that `validate` correctly failed. And `shippedHerrings`
+tops the budget up from the looser band when the tight threads FILL it but contest too little —
+the round-17 rule only topped up when the tight threads ran out, so a tier-3 board with four
+tight threads about one word shipped four sentences about one word.
+
+**§5.9 — the manor in the threads — is answered structurally, and the answer is an authoring
+rule with a gate on it.** Round 26/17 proved the tension: a house-voiced category is written for
+its subject, so it is semantically isolated, so it contests nothing, so the trap planter swapped
+37 of 42 of them back out; four knobs were tried and all four cost the shelf boards. A house pool
+is now written in two registers at once — some members make the category true, and at least three
+are ordinary English words the rest of the bank is built out of. GAMEKEEPER is staff AND a word
+with AME in it; CARRIAGE is in the coach house AND carries CAR and AGE; HANDBILL was behind the
+bookcase AND doubles an L. `assertManorCollides()` fails the build unless every hand `bankDraws`
+can deal from a house pool carries such a member — the colliders sit at pool indices 1, 2 and 5,
+a hitting set of the twelve draw patterns. **It goes red on the pools it was written to condemn:
+run against the round-17 house bank it reports 53 problems, 9 of 14 pools below the collider
+floor and 44 dealable hands with nothing in them, `What a Lexicographer Collects` accounting for
+13.** Four new house pools were authored collider-first (the coach house, under the stairs, the
+post tray, what the gardener brings in). With that guarantee in place, `pickBankGroup` may now
+prefer a house hand among the hands that have already tied on contested tiles — the trade round 17
+measured at −7 and −10 boards no longer exists, because the house hand is one of the winners.
+
+**The same rule, applied to the other family that cannot argue.** `Letters in Alphabetical
+Order`, `Three Vowels in a Row` and `Made of a Repeated Syllable` fell off the shelf the moment
+the composer started choosing by contested tiles — `tests/puzzles/wordweb-ladder.test.ts` caught
+all three by name — because a pool nothing can argue with loses every tie. Two were fixed by
+re-choosing their members (HILLY, FLOOR, BEEFY, TARTAR, GEEGEE, the `-OUS` words). The third,
+`Spelled Without a Vowel`, cannot be fixed that way and the reason is definitional: a shape
+mechanic has no token in it, so there is nothing for a fifth word to take hold of. The
+`letter-shape` family is therefore exempt from the contested-tile FILTER — it rejoins the draw
+rather than being struck out of it, competing on the same seeded pick — and all six shape
+mechanics ship again.
+
+**What did NOT land: the median.** The round's number was the median contested tile count, 1 → 2,
+and it is still 1: 100 of 164 boards contest exactly one tile. The instrument now says exactly
+where the wall is, on the SHELF rather than on the candidate list (the old "tiles AVAILABLE"
+census counted the sixty-odd boards that then left, which is standing rule 2 again). **90 of the
+164 shipped boards cannot contest a second tile at any budget** — their sixteen words simply do
+not offer a second word that is a fifth member of anything. Of the 74 that can, 61 do; 6 of the
+remaining 13 are cut by the colour ladder, which is a rule and should win. So the median needs
+~25 more boards to GAIN supply, and every free lever in the pipeline has now been spent. The next
+one is not free: it is either authored supply (the house pools are the proof that authoring for
+collisions works, and the wordplay bank has ~110 pools that were not written that way) or the
+trap planter buying tiles with a whole bank theme, which round 17 measured at −13 boards and
+which this round did not re-run.
+
 ### Round 27 — the word games' round: the Counting House is graded, and it has a tomorrow
 
 | | Was | Now |
@@ -340,7 +415,15 @@ Ordered most value first.
   Conservatory carry no authored prose field at all, so neither can speak until its room shell
   grows a surface to speak from; the Study's 113-entry pool is still the thinnest per tier in
   the game.
-- **The manor in the Library's threads is STILL the open one, and round 26 tried.** Fourteen
+- **The manor in the Library's threads: ANSWERED in round 30** — see the round entry above. The
+  tension was real and structural, and the resolution was an authoring rule with a build gate
+  (`assertManorCollides`) rather than another knob: a house category is written so that some of
+  its members are words the ordinary bank is built out of, which makes the house the thing that
+  contests a tile instead of the thing the planter evicts. 5 house groups on the shelf → 22, on 17
+  boards, 8 of them contesting the tile the room argues about. The record of the four failed knobs
+  is kept below because it is why the answer had to be authoring.
+
+- **(The round-26 record.)** Fourteen
   manor categories were authored into the bank (`MANOR_BANK`) — the staff, the dictionary
   entry, what a lexicographer collects, the sounds in an empty corridor. All fourteen are
   drawn three times each by the composer, and **five survive onto the shelf**: the trap

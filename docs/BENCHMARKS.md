@@ -135,6 +135,24 @@ acknowledged herrings — "they *do* all rhyme, don't they? But no."); require a
 naming for the final group; cap trivia categories at 1/board (always the easiest tier);
 steps-not-lives (already in the design).
 
+### The number the Library is graded on, and the rule that supplies it (round 30)
+
+The mechanics above are met. The one that is not is a COUNT: a Connections board argues about
+**2–4 tiles**, and this room's median was 1 — three of its four threads uncontested, so the
+evening is a sort rather than a puzzle. Contested tiles (`ambiguousWords`, deduped intruders,
+NOT the named-thread count, which is a different and larger number) is therefore the Library's
+headline figure, and 2 is the floor the format wants.
+
+Round 30's finding, recorded here because it is a fact about generated word puzzles rather than
+about our code: **a board is cheapest to contest before it exists.** Budgets, planters and
+ceilings can only redistribute what the sixteen words already offer, and four hand-written
+categories nearly collide about once. So a category earns its place partly by what it can be
+ARGUED WITH — and a category with no token in it (a house category written for its subject; a
+shape mechanic like `Spelled Without a Vowel`) can be argued with by nothing at all. The
+authoring rule that follows: write a pool in two registers, so that some members make the
+category true and at least three are ordinary English words the rest of the bank is built out
+of. That is what stops "in the house's voice" and "the board pulls against you" being opposed.
+
 ---
 
 ## 3. Wordle → benchmark for reveal juice, error states, daily ritual (all rooms)
