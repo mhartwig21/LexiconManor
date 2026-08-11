@@ -14,7 +14,8 @@ import { useLocation } from 'wouter';
 import { useManorStore } from '../app/store';
 import { deweyAnswer, deweyPettedToday, ensureManor } from '../app/slices/manor';
 import { cardById } from '../engine/manor/deck';
-import { cellKey, deweyCell, neighbor, roomAt, rowTier, sameCell } from '../engine/manor/grid';
+import { cellKey, deweyCell, neighbor, roomAt, sameCell } from '../engine/manor/grid';
+import { rowName } from '../engine/economy/steps';
 import { isDoorLocked, KEY_COST } from '../engine/manor/locks';
 import { parlorHostFor } from '../engine/manor/parlor';
 import type { CharacterId } from '../engine/types';
@@ -31,7 +32,6 @@ import { useJournalUnread } from '../ui/journal/useJournalUnread';
 import '../ui/blueprint/blueprint.css';
 import './front-step.css';
 
-const ROMAN = ['', 'I', 'II', 'III'];
 
 /* ROUND 6 — `useFragmentNote` lived here and is deleted.
  *
@@ -390,30 +390,61 @@ export default function ManorPage() {
       </main>
 
       <footer className="bp-foot">
+        {/* ═══ ROUND 33 — THE PLATE NAMES THE STOREY (COMPREHENSION 33, fix 7)
+            This chip read `tier I`. Both blind testers named the tier
+            vocabulary, unprompted, under *what I never figured out*, and
+            neither could say what a tier gates; meanwhile both had to INDUCE
+            that the map's rows are floors, one of them only near the end of his
+            first day, because no surface in the game named the storey he was
+            standing on. The blueprint's margin has priced that storey since
+            round 5 and its own key now says the number is a move's price
+            (`bp-key__line`) — what was missing is the NAME beside it, at the
+            place she actually stands. `rowName` is the same vocabulary the
+            draft modal's heading, every walk target and the night digest
+            already use, so this adds a surface, not a word. */}
         <div className="bp-foot__where">
           <span className="bp-foot__room">{playerCard?.name ?? 'The Grounds'}</span>
           {manor && (
-            <span className="bp-foot__tier">tier {ROMAN[rowTier(manor.playerCell.row)]}</span>
+            <span className="bp-foot__tier">{rowName(manor.playerCell.row)}</span>
           )}
         </div>
+        {/* ═══ ROUND 33 — THE DEEDS LEAVE THE INDEX (COMPREHENSION 33, fix 12)
+            These three buttons — Enter, Call on…, Pet Dewey — are CONTEXTUAL:
+            they appear and vanish as she walks. They used to share one wrapping
+            flex row with the three INDEX TABS, which are the same three doors
+            on every screen of the game, and the tabs are `flex: 1 1 auto`, so
+            every arrival and departure of a contextual button re-laid the tabs
+            out under the player's thumb. Measured at 375x667 the three tabs
+            occupy x 10/117/246 with no deed present and already fill the row
+            (346px of 356), so a fourth control does not squeeze them — it wraps
+            them onto a second line and moves all three. A blind tester aiming
+            at Cabinet mis-tapped into a Sudoku.
+            One row each now. The deeds row is only rendered when there is a
+            deed, so it costs nothing on the common screen, and the index is
+            always the last row of the plate at the same three positions —
+            which is what an index is for. */}
+        {exploring && (isPuzzleHere || (parlorHost && !visiting) || (atDewey && !petted)) && (
+          <div className="bp-foot__deeds">
+            {isPuzzleHere && (
+              <button
+                className="bp-btn bp-btn--seal"
+                onClick={() => manor && enterRoom(cellKey(manor.playerCell))}
+              >
+                Enter
+              </button>
+            )}
+            {parlorHost && !visiting && (
+              <button className="bp-btn" onClick={() => setVisiting(parlorHost)}>
+                Call on {parlorHost === 'bramble' ? 'Mrs. Bramble'
+                  : parlorHost.charAt(0).toUpperCase() + parlorHost.slice(1)}
+              </button>
+            )}
+            {atDewey && !petted && (
+              <button className="bp-btn" onClick={onPetDewey}>Pet Dewey · 1 step</button>
+            )}
+          </div>
+        )}
         <div className="bp-foot__actions">
-          {isPuzzleHere && exploring && (
-            <button
-              className="bp-btn bp-btn--seal"
-              onClick={() => manor && enterRoom(cellKey(manor.playerCell))}
-            >
-              Enter
-            </button>
-          )}
-          {parlorHost && exploring && !visiting && (
-            <button className="bp-btn" onClick={() => setVisiting(parlorHost)}>
-              Call on {parlorHost === 'bramble' ? 'Mrs. Bramble'
-                : parlorHost.charAt(0).toUpperCase() + parlorHost.slice(1)}
-            </button>
-          )}
-          {atDewey && exploring && !petted && (
-            <button className="bp-btn" onClick={onPetDewey}>Pet Dewey · 1 step</button>
-          )}
           {/* ROUND 6 — the unread chain used to BREAK right here (AAA 11.19).
               Every marker in the game lived inside the journal: tab dots, card
               markers, letter seals. These buttons — the only doors to all of

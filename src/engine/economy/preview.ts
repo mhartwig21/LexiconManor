@@ -16,9 +16,15 @@ import { solveKeys, STEP_TABLE } from './steps';
 
 /** What the ui needs to say about a card's payback, already stringified. */
 export interface DraftCardStake {
-  /** 'micro' | 'anchor' for puzzle rooms; null when size is not the story. */
+  /**
+   * 'micro' | 'anchor' for puzzle rooms; null when size is not the story.
+   *
+   * ROUND 33: this is still the engine's honest classification and still
+   * decides the payout — it is simply no longer PRINTED. See the size-word
+   * note on `draftCardStake` below.
+   */
   size: 'micro' | 'anchor' | null;
-  /** The meta-row line, e.g. "anchor · +7 steps on solve" or "+1 fragment". */
+  /** The meta-row line, e.g. "five minutes or so · +6 steps on solve". */
   label: string;
 }
 
@@ -64,9 +70,19 @@ export function draftCardStake(
     // a cozy game and every room is leavable (AAA 4.13).
     const parts = [`+${payout} steps`];
     if (keys > 0) parts.push(`+${keys} key${keys === 1 ? '' : 's'}`);
+    // ═══ ROUND 33 — THE SIZE WORD COMES OFF (COMPREHENSION 33, fix 5) ═══════
+    // Two blind testers, unprompted, named "anchor · micro · standard · common
+    // · unusual · tiers I–III" under *what I never figured out*, and the 10 Aug
+    // tester before them chose a room ON the size word believing it meant
+    // something about the climb. It never did: `size` is the payout band's own
+    // name, and the clause immediately beside it — `effortLabel` — already says
+    // the thing the player was trying to read off it, in minutes, in English.
+    // So the word goes and the minutes stay. Nothing is hidden here: `size`
+    // still decides `STEP_TABLE.solve`, and the number that comes out of it is
+    // printed two clauses along.
     return {
       size,
-      label: `${size} · ${effortLabel(card.puzzleKind, tier)} · ${parts.join(' · ')} on solve`,
+      label: `${effortLabel(card.puzzleKind, tier)} · ${parts.join(' · ')} on solve`,
     };
   }
   return null;

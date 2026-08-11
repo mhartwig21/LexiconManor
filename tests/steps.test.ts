@@ -11,6 +11,7 @@ import {
   SANCTUM_ARC, SANCTUM_GUESS_COST, STEP_TABLE, TEA_ARC, TEA_BY_POINTS,
 } from '../src/engine/economy/steps';
 import { draftCardStake } from '../src/engine/economy/preview';
+import { effortLabel } from '../src/engine/economy/effort';
 import { REFILL_PAYOUTS } from '../src/engine/economy/simulate';
 import { UTILITY_EFFECTS } from '../src/engine/manor/deck';
 import { rowTier, SANCTUM_DOOR_CELL } from '../src/engine/manor/grid';
@@ -284,7 +285,7 @@ describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () =
   it('states micro payouts in numbers, from STEP_TABLE not hand-copy', () => {
     const stake = draftCardStake({ category: 'puzzle', puzzleKind: 'cipher' }, 1);
     expect(stake).toEqual({
-      size: 'micro', label: 'micro · a few minutes · +4 steps · +1 key on solve',
+      size: 'micro', label: 'a few minutes · +4 steps · +1 key on solve',
     });
     expect(stake!.label).toContain(String(STEP_TABLE.solve('micro', 1, 'cipher')));
   });
@@ -300,16 +301,16 @@ describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () =
    */
   it('states each room’s own payout and its own expected length', () => {
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'hive' }, 1)!.label)
-      .toBe('anchor · a long sit · +12 steps · +1 key on solve');
+      .toBe('a long sit · +12 steps · +1 key on solve');
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 1)!.label)
-      .toBe('anchor · a minute or two · +4 steps on solve');
+      .toBe('a minute or two · +4 steps on solve');
     // ROUND 10: the card face names the KEY too, because from tier 2 up the
     // solve is what buys the padlocked door above it — and the price of the
     // climb is exactly the thing a draft decision is made on (AAA 1.17/4.6).
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 2)!.label)
-      .toBe('anchor · a minute or two · +4 steps · +1 key on solve');
+      .toBe('a minute or two · +4 steps · +1 key on solve');
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'word-web' }, 3)!.label)
-      .toBe('anchor · five minutes or so · +6 steps · +1 key on solve');
+      .toBe('five minutes or so · +6 steps · +1 key on solve');
     // The long room and the short one can no longer wear the same face.
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'sudoku' }, 1)!.label)
       .not.toBe(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 1)!.label);
@@ -318,6 +319,35 @@ describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () =
     for (const tier of [1, 2, 3] as const) {
       const label = draftCardStake({ category: 'puzzle', puzzleKind: 'hive' }, tier)!.label;
       expect(label.includes('key')).toBe(solveKeys(tier, 'hive') > 0);
+    }
+  });
+
+  /**
+   * ═══ ROUND 33 — THE SIZE WORD IS OFF THE CARD (COMPREHENSION 33, fix 5) ═══
+   *
+   * `size` is the name of the PAYOUT BAND. It was printed as the first clause
+   * of the line, which made it the first thing read, and it is the one attribute
+   * on the card that a player cannot act on: two blind testers named it,
+   * unprompted, under *what I never figured out*, and the tester before them
+   * chose a room ON it believing it said something about the climb. The clause
+   * immediately after it — `effortLabel` — already says the thing they were
+   * trying to read off it, in minutes and in English.
+   *
+   * NOT GREEN BY CONSTRUCTION: every label this replaces began with the word
+   * this asserts is absent, so the whole family fails on the round-22 copy.
+   * `size` itself stays on the object and still decides `STEP_TABLE.solve` —
+   * the assertion is about the GLASS, not about the engine forgetting.
+   */
+  it('never prints the payout band’s own name (anchor / micro)', () => {
+    for (const kind of ['cipher', 'crossword', 'sudoku', 'hive', 'twistle', 'word-web'] as const) {
+      for (const tier of [1, 2, 3] as const) {
+        const stake = draftCardStake({ category: 'puzzle', puzzleKind: kind }, tier)!;
+        expect(stake.size, `${kind} lost its payout band`).not.toBeNull();
+        expect(stake.label, `${kind} @ ${tier} still leads with its band`)
+          .not.toContain(stake.size!);
+        // The minutes it was crowding out are still there, and still first.
+        expect(stake.label.startsWith(effortLabel(kind, tier))).toBe(true);
+      }
     }
   });
 

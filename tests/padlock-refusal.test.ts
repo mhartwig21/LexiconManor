@@ -44,6 +44,40 @@ describe('the refusal has words (AAA 4.16 — never silence at a gate)', () => {
     }
   });
 
+  /**
+   * ═══ ROUND 33 — NAMING THE REMEDY IS NOT NAMING THE SOURCE ════════════════
+   *
+   * The assertion above has been green since round 6 and the blind spot it was
+   * written for has survived two cold reads and five testers: "what keys are
+   * for / how they arrive" was still [major] and OPEN on 11 Aug, by which time
+   * keys actually arrive — one tester collected FOUR and lost all four unused,
+   * the other earned one and lost it, and both saw the padlock drawn on the map
+   * without ever connecting it to the chip in the bar. "It wants a key" passes
+   * the test above and tells a player with no key nowhere to go.
+   *
+   * So the line must also say where a key comes from, and the answer has to be
+   * the one the game actually pays: a SOLVE. This is not a second vocabulary —
+   * `draftCardStake` prints "+1 key on solve" on a card's face if and only if
+   * `solveKeys(tier, kind) > 0` (pinned in tests/steps.test.ts), so the refusal
+   * points at a card and the card keeps the promise.
+   *
+   * NOT GREEN BY CONSTRUCTION (standing rule 1). Measured against the copy this
+   * replaces: all three of round 6's lines — "Shut fast. It wants a key.",
+   * "Still shut — a key first, then the door.", "The brass holds. Bring a key
+   * and it won’t argue." — fail it, and so does any future line that names the
+   * price without naming where the price is earned.
+   */
+  it('every line also names WHERE a key comes from, not only that one is wanted', () => {
+    for (const line of LOCKED_REFUSAL_LINES) {
+      expect(
+        /solve[sd]?\b/i.test(line),
+        `"${line}" names the remedy but not its source`,
+      ).toBe(true);
+    }
+    // And the spoken form ties it to the surface that keeps the promise.
+    expect(lockedRefusalAnnouncement(0, 5, 1).toLowerCase()).toContain('solved room pays');
+  });
+
   it('uses no defeat language (AAA 4.12 string lint)', () => {
     const copy = [
       ...LOCKED_REFUSAL_LINES,

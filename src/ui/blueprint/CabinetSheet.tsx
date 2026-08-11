@@ -56,7 +56,21 @@ function CabinetCard({ card }: { card: RoomCard }) {
       </span>
       <span className="bp-card__body">
         <span className="bp-card__name">{card.name}</span>
-        <span className="bp-card__preview">{CARD_PREVIEWS[card.id] ?? ''}</span>
+        {/* ROUND 33: the same class the draft card wears, for the same reason —
+            on a utility plate this line IS the card's numbers, and the short-
+            glass rule in blueprint.css retires the motto and never the price.
+            The Cabinet keeps its rarity/tier row below, unlike the draft card:
+            this is a browsable catalogue of the whole deck, where "how often
+            does this come up" and "which storeys can offer it" are what a
+            reference sheet is FOR. On the draft card they were six words of
+            jargon on a decision she had three seconds to make. */}
+        <span
+          className={`bp-card__preview${
+            card.category === 'utility' ? ' bp-card__preview--stake' : ''
+          }`}
+        >
+          {CARD_PREVIEWS[card.id] ?? ''}
+        </span>
         <span className="bp-card__meta">
           <span className="bp-card__rarity">{card.rarity}</span>
           <span aria-hidden="true"> · </span>

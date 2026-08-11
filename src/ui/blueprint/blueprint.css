@@ -153,14 +153,6 @@
 .bp-band--hatch { pointer-events: none; }
 .bp-band--hatch-t2 { opacity: 0.035; }
 .bp-band--hatch-t3 { opacity: 0.06; }
-.bp-scale__seg { fill: none; stroke: var(--ink-faint); stroke-width: 0.7; opacity: 0.7; }
-.bp-scale__seg--fill { fill: var(--ink-faint); stroke: none; opacity: 0.7; }
-.bp-scale__label {
-  font-family: var(--font-display);
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  fill: var(--ink-faint);
-}
 .bp-tierpips path { fill: var(--ink-faint); }
 
 /* The head of the pip column (round 31, COMPREHENSION 15). Set at the wing
@@ -175,9 +167,22 @@
   fill: var(--ink-faint);
 }
 
-/* The margin's key (round 28): the same diamond the pip column draws, and the
-   same numeral ink as the rate card, so the sample IS the mark it explains. */
-.bp-key__pip { fill: var(--ink-faint); }
+/* THE MARGIN'S KEY, IN SENTENCES (round 33 — COMPREHENSION 33, fix 7).
+   Rounds 28 and 31 wrote this legend in the DISPLAY face at 10px with 0.22em of
+   tracking, which is the register of the marks it was explaining: two blind
+   testers read the result, "ONE ROOM ◆ TIER −N A MOVE", as one unparseable
+   string. A legend is prose, so it is set in the body serif at its own size,
+   with normal tracking, and a step out of the faintest ink the margin uses —
+   it is load-bearing now (it carries the sentence that says north is up), not
+   reference furniture. Two lines, 13 units apart, inside the bottom margin
+   MB widened to hold them. */
+.bp-key__line {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  text-anchor: middle;
+  fill: var(--ink-soft);
+}
 
 /* THE WINGS (round 20, REVIEW_AA §5.7). The plot's own boundaries, in survey
    ink — quieter than a wall, louder than the graph crosses, so the eye reads
@@ -548,13 +553,28 @@
    chip still reads a step quieter than its neighbours because tracking and ink
    do that job. (Sibling: .bp-cabinet__title, which IS a heading and so was
    raised to the 22px floor instead of re-faced.) */
+/* ROUND 33: this chip carried `tier I` and now carries the storey's NAME
+   (`rowName`, ManorPage). The caps-and-tracking treatment was right for a
+   three-character code and wrong for a phrase — "THE SANCTUM LANDING" at
+   0.18em is 179px against 346px of plate that also has to hold the room's
+   name. Same face, same quiet ink, sentence spacing. */
 .bp-foot__tier {
   font-family: var(--font-body);
   font-size: var(--text-sm);
   color: var(--ink-soft);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
+
+/* ROUND 33 — the contextual deeds (Enter / Call on… / Pet Dewey) on their own
+   row, above the index. See ManorPage for the measurement that moved them. */
+.bp-foot__deeds {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+.bp-foot__deeds .bp-btn { flex: 0 0 auto; }
 
 .bp-foot__actions {
   display: flex;
@@ -593,7 +613,8 @@
   transform: none;              /* a tab does not press down; it darkens */
   filter: brightness(0.95);
 }
-/* The seal (Enter, Call on…) keeps its own idiom and does not join the ribbon. */
+/* The seal (Enter, Call on…) keeps its own idiom and does not join the ribbon —
+   since round 33 it does not share the row either (.bp-foot__deeds above). */
 .bp-foot__actions .bp-btn:not(.bp-btn--quiet) { flex: 0 0 auto; }
 
 .bp-foot__dewey {
@@ -815,6 +836,15 @@
   font-size: var(--text-sm);
   color: var(--ink-soft);
 }
+/* ROUND 33. A utility card has no stake line (`draftCardStake` returns null for
+   it, on purpose — its effect is not "+N on solve"), so its preview line is the
+   only place its numbers are ever printed. Set it in the STAKE register, not
+   the flavour one, so it can be priced against the cards beside it. */
+.bp-card__preview--stake {
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
 /* THE PLAN, IN WORDS (round 31, COMPREHENSION wrong-belief 7). The one line on
    the card that decides whether her climb survives the room — so it is set a
    full step of ink DARKER and heavier than the stake line beneath it, which is
@@ -875,6 +905,17 @@
   color: var(--ink-soft);
 }
 .bp-modal__sanctum strong { color: var(--gilt); font-weight: 600; }
+
+/* ROUND 33 — the gem's source, said where the gem is refused. It sits in the
+   normal flow directly above the sticky foot, so it reads as a caption on the
+   greyed Reroll button rather than as a fourth card. Quiet ink: it is a fact
+   about the purse, not an offer, and nothing here has gone wrong. */
+.bp-modal__gems {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
 
 .bp-card__meta {
   font-size: var(--text-sm);
@@ -1166,10 +1207,30 @@
      · and the sheet takes 4% more of the glass it was already allowed.
    Measured after: 0px of scroll at 375x667 — the whole offer, three cards and
    both prices, on the glass at once for the first time.
+
+   ═══ ROUND 33 — THE RULE WAS RIGHT AND THE SELECTOR WAS TOO WIDE ══════════
+   `.bp-card__preview { display: none }` stood here, and the reasoning above it
+   is sound: on a PUZZLE card the preview is the bookplate's motto and decides
+   nothing, so it is the correct thing to spend first on a short glass.
+
+   On a UTILITY card it is the price. `draftCardStake` returns null for utility
+   by design — its effect is not "+N on solve" — so `CARD_PREVIEWS` is the only
+   place a utility card's numbers are ever printed, and this rule deleted "+6
+   steps · +2 per green room drafted after" from the Kitchen on the 667px phone
+   and nowhere else. Measured on HEAD before this change, in a live offer:
+   at 375x667 every `.bp-card__preview` box was 0x0; at 390x844 all three
+   rendered. A blind tester on a 375 phone then reported "the Kitchen card
+   listed no step reward at all — I couldn't price it against its rivals", and
+   the cold read scored it as a comprehension miss. It was not one. He was
+   describing his screen, exactly.
+
+   So the motto still gives way and the price never does. Measured after, at
+   375x667 with a Kitchen in the offer and the gem note up: the sheet fits with
+   no scroll (tests/round33-purse-and-map-live.mjs, 375 first).
    -------------------------------------------------------------------------- */
 @media (max-height: 700px) {
   .bp-modal__sheet { max-height: 92%; padding-top: 0.7rem; }
   .bp-modal__head { margin-bottom: 0.5rem; }
   .bp-card { padding: 0.45rem 0.6rem; min-height: 68px; }
-  .bp-card__preview { display: none; }
+  .bp-card__preview:not(.bp-card__preview--stake) { display: none; }
 }

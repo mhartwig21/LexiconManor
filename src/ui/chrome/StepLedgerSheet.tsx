@@ -110,7 +110,26 @@ export default function StepLedgerSheet({ onClose }: { onClose: () => void }) {
             ledgered (economy/steps.ts), so a rejected hive word, a short word,
             a duplicate and a wrong crossword letter are all absent from this
             column BECAUSE they cost nothing. */}
-        <p className="chr-ledger__note">Only what is written here was charged.</p>
+        {/* ═══ ROUND 33 — AND WHAT HAPPENS WHEN IT REACHES NOTHING (fix 8) ═══
+            "What happens at zero steps" is the single blind spot that is
+            identical across BOTH cold reads, both years and all five testers,
+            and it has never once been on a screen. One tester played
+            conservatively for an hour because of it; another finished two days
+            with more steps than he started and reported never feeling the
+            resource at all. It is a PRICE, not a mystery, so the house's
+            no-lecture rule does not protect it — and this is the one surface in
+            the game that exists to be looked at when she wonders what a number
+            means, sitting directly under the number itself.
+            It is said in full on day 1 in Bramble's voice as well
+            (content/authored/dialogue/bramble.json, bramble.meet.1), because a
+            player who never taps the candle should still have been told.
+            TRUE BY CONSTRUCTION, and worth the care: `endDay`'s cause changes
+            the night's flavour copy and NOTHING else (app/slices/day.ts), so
+            running out and retiring early leave exactly the same day behind. */}
+        <p className="chr-ledger__note">
+          Only what is written here was charged. At nothing left the day simply
+          closes, no worse than putting it down yourself.
+        </p>
       </div>
     </div>,
     document.body,

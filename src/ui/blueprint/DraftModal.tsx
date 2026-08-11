@@ -275,7 +275,23 @@ export default function DraftModal({
                 </span>
                 <span className="bp-card__body">
                   <span className="bp-card__name">{card.name}</span>
-                  <span className="bp-card__preview">{CARD_PREVIEWS[card.id] ?? ''}</span>
+                  {/* ROUND 33. On a puzzle or mystery card this line is
+                      flavour and the stake line below carries the numbers. On a
+                      UTILITY card `draftCardStake` returns null by design, so
+                      this line IS the payout — "+6 steps · +2 per green room
+                      drafted after" — and it was being set in the flavour
+                      register beside three rivals whose payouts were set in the
+                      stake register. A tester priced the Kitchen against the
+                      Library and reported that the Kitchen "listed no step
+                      reward at all". So where it is the price, it looks like
+                      the price. */}
+                  <span
+                    className={`bp-card__preview${
+                      card.category === 'utility' ? ' bp-card__preview--stake' : ''
+                    }`}
+                  >
+                    {CARD_PREVIEWS[card.id] ?? ''}
+                  </span>
                   {/* THE DECISION, IN WORDS — printed ABOVE the length/payout
                       line it was being confused with, in the same size and a
                       step darker, so the attribute that decides the climb is
@@ -305,15 +321,22 @@ export default function DraftModal({
                       </span>
                     );
                   })()}
-                  <span className="bp-card__meta">
-                    <span className="bp-card__rarity">{card.rarity}</span>
-                    <span aria-hidden="true"> · </span>
-                    <span className="bp-card__tiers">
-                      {card.tierRange[0] === card.tierRange[1]
-                        ? `tier ${ROMAN[card.tierRange[0]]}`
-                        : `tiers ${ROMAN[card.tierRange[0]]}–${ROMAN[card.tierRange[1]]}`}
-                    </span>
-                  </span>
+                  {/* ═══ ROUND 33 — THE JARGON ROW IS GONE ═══════════════
+                      What stood here was `standard · tiers I–III`: the card's
+                      RARITY (how often the deck deals it) and its ELIGIBILITY
+                      RANGE (which storeys may ever offer it). Neither is a fact
+                      about the room she is being offered, and neither has ever
+                      been legible — both blind testers named this row, without
+                      being asked, as something they never worked out, and it
+                      was the loudest unexplained thing on a card whose most
+                      important line (the door plan) had finally started
+                      landing. The tier she is actually drafting at is already
+                      stated once, at the top, in the storey heading; rarity is
+                      still double-encoded in the card's own border (unusual
+                      takes a ring, rare takes a gilt one, blueprint.css). And
+                      the two lines it made room for are the two that were being
+                      pushed off a 667px phone: this card's preview and, on a
+                      utility card, the ONLY statement of what it pays. */}
                 </span>
                 <span className="bp-card__side">
                   <DoorDiagram doors={doorsOf(card)} entry={entryWall} size={32} silent />
@@ -333,6 +356,30 @@ export default function DraftModal({
           })}
         </div>
 
+        {/* ═══ ROUND 33 — WHAT A GEM IS, WHERE IT BITES (fix 6) ═══════════════
+            "What gems are for / where they come from" is a [major] blind spot
+            unchanged across two cold reads and five testers. One of them ended
+            his run at a door where all three cards sealed, with 0 gems, and
+            read it as arbitrary — it was a mistake he had made three drafts
+            earlier, and nothing on any screen had told him so. The greyed
+            `Reroll · 1 gem` is the exact moment a gem would have saved the run,
+            and it was disabled and silent.
+            Said only when it bites: not while she holds a gem (the button
+            speaks for itself), not after a reroll is spent (the offer is
+            settled and a price she cannot pay twice is noise). The source is
+            the one the deck actually pays on demand — a plan that seals itself
+            carries `SEALED_ROOM_BOUNTY.stamp`, "+1 gem", on its own face, so
+            the note points at a card in this very offer rather than at a
+            system. Round 20 built that trade; nothing had ever named it as the
+            way to buy your way out of a bad one.
+            ONE LINE at 375x667, deliberately: what a gem BUYS is already on the
+            button it sits above ("Reroll · 1 gem"), so the note only has to
+            carry the half that was nowhere. */}
+        {!offer.rerolled && gems < 1 && (
+          <p className="bp-modal__gems">
+            No gems yet — a plan that seals itself pays one.
+          </p>
+        )}
         <footer className="bp-modal__foot">
           <button
             className="bp-btn"

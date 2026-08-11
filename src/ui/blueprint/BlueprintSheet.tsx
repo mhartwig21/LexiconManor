@@ -63,7 +63,15 @@ const CELL = 64;
 const MX = 40;          // left margin: the per-row step price + rank-pressure pips
 const MT = 46;          // top margin: plot border, title block, wing plate
 const WING_LABEL_Y = 39;// the three wing names, under the title (round 20)
-const MB = 22;          // bottom margin: plot border + scale mark
+/**
+ * Bottom margin. ROUND 33 (COMPREHENSION 33, fix 7): 22 → 40, to buy the key
+ * two legible lines instead of one row of abbreviations. The whole sheet is one
+ * `preserveAspectRatio="xMidYMid meet"` viewBox, so this is the only cost: at
+ * 375x667 the drawing scales by VIEW_H's inverse, measured at ~3%, and every
+ * cell stays far above the 44px tap floor. Measured both phones in
+ * tests/round33-purse-and-map-live.mjs.
+ */
+const MB = 40;          // bottom margin: plot border + the key, in sentences
 const VIEW_W = MX + MANOR_COLS * CELL + 12;
 const VIEW_H = MT + MANOR_ROWS * CELL + MB;
 const ROMAN = ['', 'I', 'II', 'III'];   // the tier numeral the cards already use
@@ -507,44 +515,51 @@ export default function BlueprintSheet({
             </g>
           );
         })}
-        {/* scale mark: one bar = one room */}
-        <g className="bp-scale" transform={`translate(${MX} ${VIEW_H - 12})`}>
-          <rect x={0} y={0} width={CELL / 4} height={3} className="bp-scale__seg bp-scale__seg--fill" />
-          <rect x={CELL / 4} y={0} width={CELL / 4} height={3} className="bp-scale__seg" />
-          <rect x={CELL / 2} y={0} width={CELL / 4} height={3} className="bp-scale__seg bp-scale__seg--fill" />
-          <rect x={(3 * CELL) / 4} y={0} width={CELL / 4} height={3} className="bp-scale__seg" />
-          <text className="bp-scale__label" x={CELL + 8} y={3.4}>ONE ROOM</text>
-        </g>
-        {/* ═══ ROUND 28 — THE MARGIN GETS ITS KEY (COMPREHENSION 15) ═══════
-            The left margin has carried two columns of marks since round 20 —
-            one/two/three diamonds by band, and a −N per row — and named
-            NEITHER. A surveyor's sheet that draws a symbol draws its key; this
-            one drew the symbols and left the reader to infer that diamonds
-            mean rank and that the number beside them is what a move on that
-            storey costs. Both facts are in the game elsewhere (the footer says
-            "tier III" for the room she is in, and every walk target speaks its
-            own price), which is exactly why the marks looked like decoration.
-            It sits in the bottom margin beside the scale mark — the surveyor's
-            own furniture — and is `aria-hidden` on purpose: a screen reader
-            already gets the price in words on every target it can reach
-            (`walkLabel`), and a key it cannot see would be a second telling. */}
-        {/* ROUND 31 (COMPREHENSION 15, wrong-belief 7's neighbour): the key's
-            word was RANK, which is the ENGINE's name for the band. Every
-            player-facing surface in the game — the draft card, the modal's
-            storey heading, the room footer — says TIER. One word, and it is
-            the one already printed on the thing the pips predict. */}
-        <g className="bp-key" transform={`translate(${VIEW_W - 12} ${VIEW_H - 12})`} aria-hidden="true">
-          {/* Laid out leftwards from the plot's right border, not rightwards:
-              measured live, the first cut of this key ran 5px past the sheet's
-              own box at BOTH 390x844 and 375x667 and an SVG root clips, so
-              "A MOVE" lost its last glyph on every phone. The display face
-              carries 0.22em of tracking — six caps are ~49px, not 36 — and the
-              numbers below are the measured widths, not estimated ones. */}
-          <path className="bp-key__pip" d={`M${-138} ${-3.4}l3.4 3.4-3.4 3.4-3.4-3.4Z`} />
-          <text className="bp-scale__label" x={-130} y={3.4}>TIER</text>
-          <text className="bp-rowprice__n" x={-76} y={3.4} textAnchor="start">&minus;N</text>
-          <text className="bp-scale__label" x={-56} y={3.4}>A MOVE</text>
-        </g>
+        {/* THE SCALE MARK IS GONE (round 33). It was a four-segment bar
+            captioned ONE ROOM, and a scale bar's job is to convert a drawn
+            length into a real one — on a grid of identical squares where every
+            target already speaks its own name, it converted nothing. Its
+            caption was also the first half of the one string both blind testers
+            named, independently and in nearly the same words, as unparseable:
+            "ONE ROOM ◆ TIER −N A MOVE". The bottom margin is the only strip of
+            this sheet that is not the drawing, and it is spent on words now. */}
+        {/* ═══ ROUND 33 — THE KEY BECOMES TWO SENTENCES (fix 7) ═══════════════
+            Round 28 gave the margin's two mark-columns a key. Round 31 fixed
+            the one word in it that was the engine's rather than the player's
+            (RANK → TIER). And two blind testers on the shipped build named what
+            came out — "ONE ROOM ◆ TIER −N A MOVE" — independently, unprompted,
+            in nearly the same words, as the thing on the sheet they could not
+            parse. Which is fair: it is five abbreviations and a symbol in a
+            row, and a legend written in the register of the marks it explains
+            explains nothing.
+
+            What the cold read says is actually missing is bigger than a key,
+            and this is where it goes. BOTH testers worked out that the rows are
+            floors — one of them "only near the end of day 1" — and both worked
+            it out by INDUCTION off the price column, because nothing in the
+            game had ever said it. Meanwhile the draft card's most important
+            line, the one fix that demonstrably changed how a stranger played,
+            reads "One way on — north", and nothing anywhere connects north to
+            up. So line one is that sentence, and it is the first fact on the
+            sheet, not the last.
+
+            Line two is the old key, in prose, defining both marginal columns in
+            the order the eye meets them. Still `aria-hidden`: every reachable
+            target already speaks its price in words (`walkLabel`) and both mark
+            columns already carry `role="img"` names of their own
+            (`rateCardLabel`, `tierPipLabel`), so a screen reader hearing this
+            too would hear the margin three times.
+
+            Set in the BODY serif, not the display caps the old key used. The
+            display face here carries 0.22em of tracking — the measured reason
+            "A MOVE" ran 49px and had to be laid out leftwards from the border —
+            and tracking that wide is what turns a phrase into a row of marks. */}
+        <text className="bp-key__line" x={VIEW_W / 2} y={VIEW_H - 24}>
+          Each row is a storey &mdash; north is up the sheet, and up the house.
+        </text>
+        <text className="bp-key__line" x={VIEW_W / 2} y={VIEW_H - 9}>
+          Diamonds mark its tier; &minus;N is what one move costs there.
+        </text>
         {/* …and the same word AT THE HEAD OF ITS OWN COLUMN. The key in the
             bottom margin is a legend, twenty rows away from the marks it
             explains; a surveyor also heads the column. It sits in the top

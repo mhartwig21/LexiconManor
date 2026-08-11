@@ -195,11 +195,30 @@ export function stampsPrice(fromRow: number, toRow: number): boolean {
  *
  * Each line names the remedy — a key — because the refusal's whole job is to
  * point at the Key Cabinet, the Boot Room and Fern's dawn key.
+ *
+ * ═══ ROUND 33 — AND NOW EACH LINE NAMES THE SOURCE (COMPREHENSION 33, fix 6)
+ * "What keys are for / how they arrive" has been a [major] blind spot for two
+ * cold reads running, and this round it got WORSE, because keys now actually
+ * arrive: one tester collected FOUR and lost all four unused, the other earned
+ * one and lost it, and both saw the padlock drawn on the map without ever
+ * connecting it to the chip in the bar. Naming the remedy was never enough —
+ * "it wants a key" tells a player who has one nothing, and a player who has
+ * none nowhere to go.
+ *
+ * So the line says where keys come from, and it says the true thing: a solved
+ * room pays them (`solveKeys` — by storey from tier 2 up, and at any tier for
+ * a room that asks for real work). That is not a second vocabulary invented
+ * for this note: it is the exact promise already stamped on the draft card's
+ * own stake line, "+1 key on solve", printed by `draftCardStake` if and only
+ * if `solveKeys > 0`. The refusal points at the card, the card keeps the
+ * promise, and `tests/steps.test.ts` already pins the card to the table.
+ *
+ * Same 48-character budget, still pinned by tests/padlock-refusal.test.ts.
  */
 export const LOCKED_REFUSAL_LINES: readonly string[] = [
-  'Shut fast. It wants a key.',
-  'Still shut — a key first, then the door.',
-  'The brass holds. Bring a key and it won’t argue.',
+  'Shut fast. Keys come off rooms you solve.',
+  'Still shut. A solved room hands a key over.',
+  'The brass holds. Keys are what a solve pays.',
 ];
 
 /** The refusal line for the `attempt`-th consecutive tap (0-based). */
@@ -216,7 +235,8 @@ export function lockedRefusalLine(attempt: number): string {
 export function lockedRefusalAnnouncement(attempt: number, toRow: number, keyCost: number): string {
   const key = `${keyCost} key${keyCost === 1 ? '' : 's'}`;
   return `${lockedRefusalLine(attempt)} The door onto ${rowName(toRow)} stays padlocked — ` +
-    `it opens with ${key}. Nothing was spent.`;
+    `it opens with ${key}, and a key is what a solved room pays — any draft card ` +
+    'whose face promises a key on solve is one. Nothing was spent.';
 }
 
 /**

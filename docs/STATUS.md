@@ -604,6 +604,19 @@ the only document in here written by people who did not already know the answers
 
 ## 6. Lessons worth keeping
 
+- **A BREAKPOINT CAN MAKE A HONEST WITNESS LOOK WRONG.** *(Round 33.)* The 11 Aug cold read
+  scored a blind tester's "the Kitchen card listed no step reward at all — I couldn't price
+  it against its rivals" as a WRONG BELIEF, with the correction "it does: utility cards state
+  their numbers in the PREVIEW line". Both halves were true and the tester was still right:
+  `blueprint.css @media (max-height: 700px)` carried `.bp-card__preview { display: none }`,
+  and on a utility card that line is the only place its numbers are ever printed. Measured
+  live before the fix, in a real offer: at 375x667 every preview box was 0x0; at 390x844 all
+  three rendered. A comprehension finding that reads like a misunderstanding may be a
+  rendering defect wearing one — and the way to tell is to reproduce the tester's viewport,
+  not to re-read the source. **When a report contradicts the code, measure the glass at the
+  size he held.** The general form: a media query written to spend "the decorative reserve
+  first" is only as honest as its SELECTOR. `.bp-card__preview` was flavour on two card
+  categories and the price on the third, and the rule could not tell them apart.
 - **A GATE THAT CANNOT COME OUT WRONG IS NOT A GATE.** *(Round 25 adds this one, and adds it
   because round 23 stated it and broke it in the same round.)* Round 23 correctly killed the
   vacuous "unspent budget at day end 0.0%" gate — `simulateDay`'s only exit was an empty
