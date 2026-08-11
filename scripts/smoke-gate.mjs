@@ -51,6 +51,36 @@
  *                authored to read. Copy the house deliberately hides on a
  *                given glass is declared as hidden, so un-hiding it is also a
  *                change the gate notices.
+ *   7. ACCOUNT   the day's account, opened by a real tap on the candle, prints
+ *                a column that ADDS UP TO ITS OWN TOTAL, summed off the
+ *                rendered text — and that total is the number the ledger really
+ *                holds. (Round 35.)
+ *   8. LETTER    the opened letter is readable WHOLE inside the scrollport it
+ *                was pinned to the top of, down to its sign-off, with the
+ *                clause naming the speaking tube among the paragraphs that made
+ *                it. (Round 35.)
+ *   9. LANDING   the landing draft — the one door whose choice decides whether
+ *                a 22-step climb reaches anything — is walked, and its known
+ *                overflow is bounded by the lines the landing itself prints.
+ *                (Round 35; see judgeLanding for why it is debt and not a bug.)
+ *  10. CLIP      SVG text is judged in the coordinate system the clipping
+ *                happens in — `getBBox()` against `viewBox` — because a clipped
+ *                glyph's bounding rect reports that it fits. (Round 35.)
+ *
+ * ROUND 35 — WHY 7 THROUGH 10 EXIST. A live verifier broke three surfaces and
+ * watched this file stay green on all three: the day's account capped to hold
+ * 191px of rows in 60 AND its closing sentence deleted; the Journal's Letters
+ * tab, which the walk reached on the one tab that fits and never opened a
+ * letter on; and the landing offer, a scene the walk did not visit at all.
+ * Those were not gaps in judgement — every verdict above was working. They were
+ * gaps in the WALK, which is the failure mode a verdict list cannot show you.
+ * A filter over an empty list is green, so each of the three now carries a
+ * coverage floor of its own (COVERAGE_FLOORS) and cannot fail silently again.
+ *
+ * The same round folded in what was left of three live drivers CI has never
+ * once run — `test:ledger`, `test:key-and-letter`, `test:purse-and-map`, zero
+ * hits in .github/workflows/deploy.yml — and deleted the files. Sixty-two
+ * rotting drivers is what this gate was built to end, not to add three to.
  *
  * IT IS NOT A GATE THAT PASSES BY CONSTRUCTION. Two mechanisms, both cheap:
  *
@@ -61,9 +91,11 @@
  *       watched fail is a gate nobody knows works.
  *
  *   `node scripts/smoke-gate.mjs --prove`
- *       Re-introduces six of those defects INTO THE RUNNING APP, one at a
+ *       Re-introduces eleven of those defects INTO THE RUNNING APP, one at a
  *       time, and fails unless the gate goes red on the expected class. This
- *       is the falsification pass; see PROOFS below for what each injects.
+ *       is the falsification pass; see PROOFS below for what each injects. The
+ *       last five are round 35's: the verifier's own sabotages, re-run against
+ *       the gate that could not see them.
  *
  * HARNESS RULES (local, and they are local rules):
  *   · System Edge — `chromium.launch({ channel: 'msedge' })`. NEVER download a
@@ -139,6 +171,26 @@ const DECLARED_SCROLLERS = [
     why: 'the Floorplan Cabinet is the WHOLE live deck, browsable — the one sheet in the'
       + ' house that is a list by design (and whose sticky foot lint R5 already polices)',
   },
+  {
+    scene: 'journal:letter',
+    match: 'jrn-sheet',
+    why: 'the journal is a growing record — engravings, testimony and letters accumulate for'
+      + ' the length of a volume — and round 32 fixed it by making it overflow HONESTLY'
+      + ' (`.jrn-sheet > * { flex: none }`), because the shipped defect was a sheet that'
+      + ' squeezed each card below its own content and reported nothing to scroll to',
+    ownedBy: 'LETTER',
+  },
+  {
+    scene: 'landing-offer',
+    match: 'bp-modal__sheet',
+    why: 'DEBT, NOT A DECISION. The landing offer prints four lines no other offer prints —'
+      + ' the Sanctum rule and an opens-onto stamp on each of three cards — and round 19'
+      + ' already cut this sheet 768 -> 682 against 613px of glass. The owner has ruled the'
+      + ' door-plan line untouchable and three of those four lines sit beside it, so the'
+      + ' remaining answer is a different LAYOUT for this one draft, which is a design'
+      + ' decision and not a tuning. Until it is taken, judgeLanding owns the number',
+    ownedBy: 'LANDING',
+  },
 ];
 const MARGINAL_OVERFLOW_PX = 64;
 /** Sub-pixel layout noise. Anything at or under this is not a scrollbar. */
@@ -208,6 +260,55 @@ const COPY = [
     says: 'trace or tap a word — a corner is a turn', expect: 'visible',
     why: 'the ask prices "a corner each" and neither cold reader could tell what a corner was',
   },
+  /**
+   * ROUND 35 — THE THREE SURFACES THE GATE COULD NOT SEE.
+   *
+   * All three were found by a verifier BREAKING them and watching this file
+   * stay green. The day's account is the flagship of round 19 and the answer
+   * to the single worst negative finding of the cold read (three unexplained
+   * counter movements); the letter is the game's tutorial document; the
+   * landing offer is the most expensive tap in the campaign. Nothing guarded
+   * any of them.
+   */
+  {
+    scene: 'ledger', sel: '.chr-ledger__note',
+    says: 'Only what is written here was charged', expect: 'visible',
+    why: 'the sentence that closes three surviving wrong beliefs at once — the verifier'
+      + ' DELETED it and this gate passed',
+  },
+  {
+    scene: 'ledger', sel: '.chr-ledger__title', says: 'The day’s account', expect: 'visible',
+  },
+  {
+    scene: 'landing-offer', sel: '.bp-modal__sanctum',
+    says: 'reaches the sealed door', expect: 'visible',
+    why: 'the round-13 blocker: the modal named door DIRECTIONS and never once named the'
+      + ' Sanctum, so the most expensive tap in the campaign was made blind',
+  },
+  /**
+   * ROUND 32/33's LIVE DRIVERS, FOLDED IN. `test:ledger`, `test:key-and-letter`
+   * and `test:purse-and-map` were three more scripts CI never ran (grep the
+   * workflow: zero hits). Everything they claimed that is expressible as "this
+   * authored line is on this glass" is claimed here instead, where it runs on
+   * every push, and the three files are deleted — sixty-two rotting drivers is
+   * what this gate was built to end, not to add three more to.
+   */
+  {
+    scene: 'blueprint', sel: '.chr-key',
+    says: 'only the bookmarks keep overnight', expect: 'visible', inert: true,
+    why: 'round 19\'s currency key — both cold readers believed keys and gems carried over',
+  },
+  {
+    scene: 'blueprint', sel: '.bp-foot__tier', expect: 'visible',
+    why: 'round 33: the footer plate names the storey she is standing on, in the one'
+      + ' vocabulary rowName owns — the sheet used to say "ground floors" over a half landing',
+  },
+  {
+    scene: 'draft-offer', sel: '.bp-card__meta', expect: 'hidden',
+    why: 'round 33 retired the jargon row (`standard · tiers I–III`): rarity is the deck\'s'
+      + ' business and the tier is already stated once, at the top. Both blind testers named'
+      + ' this row unprompted as something they never worked out',
+  },
 ];
 
 /**
@@ -246,6 +347,14 @@ export function judgeScroll(rows, scrollers = DECLARED_SCROLLERS) {
       });
       continue;
     }
+    /**
+     * A declaration that hands its number to a NAMED verdict is not an
+     * exemption — it is a referral, and the marginal floor would only
+     * double-report what that verdict already owns (and, worse, would go red
+     * on a day the panel happened to overflow by 40px instead of 70). The
+     * field is `ownedBy` and it must name a klass that really exists.
+     */
+    if (declared.ownedBy) continue;
     if (dy > SCROLL_TOLERANCE_PX && dy <= MARGINAL_OVERFLOW_PX) {
       out.push({
         klass: 'SCROLL', scene: row.scene, what: row.sel,
@@ -297,7 +406,21 @@ export function judgeCopy(findings) {
       });
       continue;
     }
-    if (!f.unoccluded) {
+    /**
+     * DECLARED-INERT COPY CANNOT BE ASKED THIS QUESTION, AND SAYING SO IS
+     * BETTER THAN GUESSING.
+     *
+     * `.chr-key` is `pointer-events: none` on purpose — an opaque slip that ate
+     * a tap aimed at the blueprint would be the round-15 defect wearing a fix's
+     * clothes. So `elementFromPoint` at its centre returns the drawing beneath
+     * it, always, on a perfectly healthy page, and the occlusion probe is
+     * simply the wrong instrument. Presence, size and text are still asserted
+     * here; the inertness itself is asserted by `judgeInert`, which makes the
+     * fall-through a CLAIM rather than an excuse for skipping this one.
+     */
+    if (!f.unoccluded && f.inert) {
+      // nothing: the probe cannot speak for a layer that declines every tap
+    } else if (!f.unoccluded) {
       out.push({
         klass: 'COPY', scene: f.scene, what: f.sel,
         message: `is covered at its own centre by ${f.occludedBy} — it is on the glass and unreadable`,
@@ -312,6 +435,213 @@ export function judgeCopy(findings) {
     }
   }
   return out;
+}
+
+/* ═══════════════════════════ ROUND 35's VERDICTS ═══════════════════════════
+   Three surfaces the gate walked past, and one clip rule an SVG makes invisible.
+   Each of these is a claim about the EXPERIENCE — can she read it, does it add
+   up, is the number the day really charged — not about the artifact. That
+   distinction is this campaign's whole scar tissue.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/** Parse "−7" / "+18" / "12" off the glass. Unicode minus, as rendered. */
+export function glassNum(text) {
+  const s = String(text ?? '').trim().replace(/[−–—]/g, '-').replace(/[^0-9+-]/g, '');
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+/**
+ * THE DAY'S ACCOUNT MUST ADD UP ON THE GLASS.
+ *
+ * The cold read's worst negative finding was three counter movements neither
+ * stranger could explain, and round 19's answer was this sheet. A sheet that
+ * prints a column which does not sum to its own total is worse than no sheet:
+ * it converts "I don't know why" into "the game is lying to me".
+ *
+ * The sum is taken from the RENDERED TEXT, never recomputed from the store —
+ * recomputing would be the fold read back to itself, which is exactly the
+ * self-referential measurement that shipped twice in this campaign. The store
+ * is consulted for ONE thing the glass cannot check about itself: that the
+ * printed total is the number the ledger actually holds.
+ */
+export function judgeAccount(sheet) {
+  if (!sheet) {
+    return [{ klass: 'ACCOUNT', scene: 'ledger', what: '.chr-ledger__sheet',
+      message: 'a real tap on the candle did not put the day\'s account on the glass' }];
+  }
+  const out = [];
+  const printed = sheet.rows.reduce((sum, r) => sum + glassNum(r.n), 0);
+  const total = glassNum(sheet.total);
+  if (printed !== total) {
+    out.push({ klass: 'ACCOUNT', scene: 'ledger', what: '.chr-ledger__total',
+      message: `the rows printed on the glass sum to ${printed} and the printed total says ${total}`
+        + ' — the one surface in the game whose whole job is to add up does not' });
+  }
+  if (total !== sheet.storeSteps) {
+    out.push({ klass: 'ACCOUNT', scene: 'ledger', what: '.chr-ledger__total',
+      message: `the sheet prints ${total} steps left and the ledger holds ${sheet.storeSteps}`
+        + ' — the account is not an account of THIS day' });
+  }
+  const allowance = sheet.rows[0];
+  if (!allowance || !/allowance/.test(allowance.why) || glassNum(allowance.n) !== sheet.storeBudget) {
+    out.push({ klass: 'ACCOUNT', scene: 'ledger', what: '.chr-ledger__list',
+      message: `the first row must be the morning's allowance at the ledger's budget (${sheet.storeBudget});`
+        + ` it reads ${JSON.stringify(allowance ?? null)} — without it the column cannot add up` });
+  }
+  if (sheet.retireMounted) {
+    out.push({ klass: 'ACCOUNT', scene: 'ledger', what: '.chr-retire',
+      message: 'the destructive retire control is live behind the open account (AAA 11.5)'
+        + ' — opening the day\'s account has become a second way to end the day' });
+  }
+  return out;
+}
+
+/**
+ * THE TUTORIAL DOCUMENT MUST BE READABLE WHOLE.
+ *
+ * Round 32's defect, verbatim: `.jrn-sheet` is a flex column, a flex item
+ * shrinks by default, `.jrn-letter` carries `overflow: hidden` — so Posy's
+ * welcome letter measured 496px of body inside a 328px card while the sheet
+ * reported `scrollHeight === clientHeight`. NOTHING TO SCROLL TO. One tester's
+ * copy stopped one clause before the sentence naming the speaking tube, the
+ * game's core verb, and he never learned the tube exists; the tester who read
+ * that sentence spoke a word down it on day one. Same build, opposite games.
+ *
+ * The sheet is a DECLARED scroller (the journal grows all volume), so the
+ * scroll verdict cannot make this claim — this one can, and it is the claim
+ * that matters: every paragraph of the opened letter is inside the scrollport
+ * it was pinned to the top of, the tube sentence among them, down to the
+ * sign-off, with nothing painted over it.
+ */
+export function judgeLetter(letter) {
+  if (!letter) {
+    return [{ klass: 'LETTER', scene: 'journal:letter', what: '.jrn-letter[data-letter-open]',
+      message: 'a real tap on the Letters tab and on the letter did not open it' }];
+  }
+  const out = [];
+  const off = letter.paras.filter((p) => !p.onGlass);
+  if (off.length) {
+    out.push({ klass: 'LETTER', scene: 'journal:letter', what: '.jrn-letter__body p',
+      message: `${off.length} of ${letter.paras.length} paragraphs are outside the scrollport the`
+        + ` letter was pinned to the top of, starting ${JSON.stringify(off[0].txt.slice(0, 52))}` });
+  }
+  for (const [what, needle] of [['the speaking tube', LETTER_TUBE], ['the sign-off', LETTER_SIGNOFF]]) {
+    const para = letter.paras.find((p) => p.txt.includes(needle));
+    if (!para) {
+      out.push({ klass: 'LETTER', scene: 'journal:letter', what,
+        message: `no paragraph of the letter contains ${JSON.stringify(needle)} — either the copy`
+          + ' drifted from the gate or the letter is not the one the gate was written about' });
+    } else if (!para.onGlass) {
+      out.push({ klass: 'LETTER', scene: 'journal:letter', what,
+        message: `${JSON.stringify(needle)} is in the document and off the scrollport — this is the`
+          + ' exact clause one blind tester never reached, and he never learned the tube exists' });
+    }
+  }
+  if (letter.cardClips) {
+    out.push({ klass: 'LETTER', scene: 'journal:letter', what: '.jrn-letter',
+      message: `the card is clipping its own body — ${letter.cardScrollH}px of letter in a`
+        + ` ${letter.cardClientH}px box, under \`overflow: hidden\`, with no gesture that reaches it` });
+  }
+  if (letter.coveredBy.length) {
+    out.push({ klass: 'LETTER', scene: 'journal:letter', what: '.jrn-letter__body',
+      message: `something is painted over the letter: ${letter.coveredBy.join(', ')}` });
+  }
+  return out;
+}
+
+const LETTER_TUBE = 'brass speaking tube';
+const LETTER_SIGNOFF = '— Posy, Post Room';
+
+/**
+ * THE LANDING OFFER — WALKED, MEASURED, AND ITS DEBT BOUNDED.
+ *
+ * This sheet does not fit. Measured on HEAD, in a real landing draft: 682px of
+ * content in 613px of glass at 375x667, and 821 in 742 at 390x844 (the second
+ * number is new — the last round believed this was a 375-only defect). Round 19
+ * had already cut it 768 -> 682 and said, correctly, that what is left needs a
+ * design answer rather than another 4% of glass. The owner has since ruled the
+ * door-plan line untouchable and three of the four offending lines sit beside
+ * it, so the remaining move is a different LAYOUT for this one draft — a
+ * decision, not a tuning, and not one to invent blind.
+ *
+ * SO THE GATE DOES THE HONEST THING INSTEAD OF THE COMFORTABLE ONE. It walks
+ * the scene, it prints the number on every run, and it bounds the debt with a
+ * claim that can fail: THE OVERFLOW MUST BE NO MORE THAN THE LINES THE LANDING
+ * ITSELF PRINTS. The budget is measured off the glass — the Sanctum rule's own
+ * box plus the three per-card stamps — so the assertion is "this sheet
+ * overflows by the Sanctum copy AND BY NOTHING ELSE". Add a fifth line, let a
+ * card name wrap, grow the header, and the overflow passes the budget and this
+ * goes red. Take the design decision and the overflow goes to zero, at which
+ * point the declaration in DECLARED_SCROLLERS should be deleted with it.
+ *
+ * A ceiling written as a magic number would have been the other option, and it
+ * would have been a number nobody could argue with and nobody would look at.
+ */
+export function judgeLanding(m) {
+  if (!m) {
+    return [{ klass: 'LANDING', scene: 'landing-offer', what: 'the Sanctum landing draft',
+      message: 'no landing offer could be opened — the most expensive draft in the campaign'
+        + ' went unwalked, which is the state this verdict exists to end' }];
+  }
+  const out = [];
+  if (m.stamps.length !== m.cards) {
+    out.push({ klass: 'LANDING', scene: 'landing-offer', what: '.bp-card__sanctum',
+      message: `${m.stamps.length} of ${m.cards} cards say whether they reach the Sanctum — round 13`
+        + ' prints BOTH answers on purpose, because a card that says nothing beside two that do'
+        + ' reads as a rendering gap rather than as a plan that seals the door' });
+  }
+  for (const s of m.stamps) {
+    if (s.h === 0) {
+      out.push({ klass: 'LANDING', scene: 'landing-offer', what: '.bp-card__sanctum',
+        message: `a stamp reading ${JSON.stringify(s.text)} is mounted and measures 0px — the way this`
+          + ' house loses a sentence is not by deleting it' });
+    }
+  }
+  if (m.overflow > m.budget) {
+    out.push({ klass: 'LANDING', scene: 'landing-offer', what: '.bp-modal__sheet',
+      message: `overflows ${m.overflow}px, and the lines the landing itself adds account for only`
+        + ` ${m.budget}px of that (the Sanctum rule at ${m.ruleH}px plus ${m.stamps.length} stamps)`
+        + ' — something OTHER than the Sanctum copy has grown this sheet, and the known debt was'
+        + ' bounded precisely so that this would be visible' });
+  }
+  return out;
+}
+
+/**
+ * AN SVG ROOT CLIPS AT ITS viewBox, AND A CLIPPED GLYPH STILL MEASURES FINE.
+ *
+ * `getBoundingClientRect()` on an SVG child reports its TRANSFORMED GEOMETRY,
+ * not what survived the root's clip — which is how round 28's first cut of the
+ * blueprint's margin key lost the last glyph of "A MOVE" on both shipped phones
+ * while every box in every measurement looked comfortable. The verdict is
+ * therefore taken in the coordinate system the clipping actually happens in:
+ * `getBBox()` against `viewBox`. `test:purse-and-map` is the only thing that
+ * has ever checked this, and CI has never run it.
+ */
+export function judgeClip(lines) {
+  return lines.filter((l) => !l.inside).map((l) => ({
+    klass: 'CLIP', scene: l.scene, what: l.sel,
+    message: `${JSON.stringify(l.text)} is laid at user units x ${Math.round(l.bbox.x)}–${Math.round(l.bbox.right)}`
+      + ` / y ${Math.round(l.bbox.y)}–${Math.round(l.bbox.bottom)} in a ${Math.round(l.viewBox.w)}x${Math.round(l.viewBox.h)}`
+      + ' viewBox — the root clips there, so the part outside it is drawn on no phone,'
+      + ' and its bounding rect will go on reporting that it fits',
+  }));
+}
+
+/**
+ * AND THE MIRROR OF judgeHits: some things must NOT own their own surface.
+ *
+ * The currency key is a caption laid over the blueprint. Round 15's defect was
+ * a layer that ate a tap aimed at something else — so "is it on the glass" is
+ * only half the claim, and the other half is "and it takes nothing".
+ */
+export function judgeInert(probes) {
+  return probes.filter((p) => p.swallows).map((p) => ({
+    klass: 'HITS', scene: p.scene, what: p.sel,
+    message: 'is declared inert and answers at its own centre — it is swallowing taps meant for'
+      + ' the page underneath it (the round-15 defect)',
+  }));
 }
 
 export function judgeConsole(entries, allow = CONSOLE_ALLOW) {
@@ -415,11 +745,22 @@ export function judgeCoverage(counts, floors = COVERAGE_FLOORS) {
  * every run; these sit far under them on purpose.
  */
 export const COVERAGE_FLOORS = {
-  scenes: 10,        // front-step, chronicles, blueprint, offer, cabinet, 7 rooms, journal, sanctum
+  scenes: 13,        // front-step, chronicles, blueprint, 2 offers, cabinet, 7 rooms, ledger, journal x2, sanctum
   probes: 400,       // controls x 5 points, across the whole walk
   scrollRows: 10,    // documentElement alone contributes one per scene
   copyAssertions: 8, // COPY entries applicable to this glass
   driven: 5,         // the taps made with real pointer input
+  /**
+   * ROUND 35. Each of the three surfaces the verifier broke gets a floor of
+   * its own, because "the walk silently failed to reach it" and "the walk
+   * reached it and it was fine" are the two states this gate exists to tell
+   * apart — and a `null` measurement flowing into a verdict that filters an
+   * empty list is precisely how it stayed green while all three were broken.
+   */
+  accountRows: 3,    // the allowance + the day's charges, on the glass
+  letterParas: 3,    // Posy's welcome letter is four paragraphs
+  landingStamps: 3,  // one Sanctum answer per card, both answers printed
+  clipLines: 2,      // the blueprint margin's key is two sentences
 };
 
 /* ─────────────────────────────── SELF-TEST ───────────────────────────────
@@ -461,6 +802,24 @@ export function selfTest() {
   check('sideways counts too',
     judgeScroll([{ scene: 'room:gallery', sel: 'div.tw-grid', clientH: 300, scrollH: 300, clientW: 343, scrollW: 420 }]),
     ['SCROLL']);
+  /**
+   * ROUND 35. The verifier's first sabotage, verbatim: cap the day's account
+   * to 60px so it holds 191px of rows. The list is not declared anywhere, so
+   * it is an ordinary scroll finding — the point of the fixture is that the
+   * measurement now REACHES this scene at all.
+   */
+  check("the day's account capped so it holds 191px of rows in 60",
+    judgeScroll([{ scene: 'ledger', sel: 'ul.chr-ledger__list', clientH: 60, scrollH: 191, clientW: 311, scrollW: 311 }]),
+    ['SCROLL']);
+  check('the same account at its real size',
+    judgeScroll([{ scene: 'ledger', sel: 'ul.chr-ledger__list', clientH: 191, scrollH: 191, clientW: 311, scrollW: 311 }]),
+    []);
+  check('a declaration that hands its number to a named verdict is not marginal-flagged',
+    judgeScroll([{ scene: 'landing-offer', sel: 'div.bp-modal__sheet', clientH: 613, scrollH: 682, clientW: 343, scrollW: 343 }]),
+    []);
+  check('...and it is still declared per SCENE — an ordinary offer that scrolls is a defect',
+    judgeScroll([{ scene: 'draft-offer', sel: 'div.bp-modal__sheet', clientH: 613, scrollH: 682, clientW: 343, scrollW: 343 }]),
+    ['SCROLL']);
 
   // --- HITS ---------------------------------------------------------------
   check('the clue row whose centre answered as the keyboard',
@@ -495,6 +854,15 @@ export function selfTest() {
   check('a nameplate this glass is declared to retire',
     judgeCopy([{ scene: 'room:linen-closet', sel: '.m2__head', expect: 'hidden', found: true, w: 0, h: 0 }]),
     []);
+  check('a declared-inert caption, which every healthy page reports as "covered"',
+    judgeCopy([{ scene: 'blueprint', sel: '.chr-key', expect: 'visible', inert: true, found: true, w: 189, h: 34, unoccluded: false, occludedBy: 'svg', text: 'gems · keys · bookmarks only the bookmarks keep overnight', says: 'only the bookmarks keep overnight' }]),
+    []);
+  check('...and inert does not excuse the words drifting',
+    judgeCopy([{ scene: 'blueprint', sel: '.chr-key', expect: 'visible', inert: true, found: true, w: 189, h: 34, unoccluded: false, occludedBy: 'svg', text: 'gems · keys · bookmarks', says: 'only the bookmarks keep overnight' }]),
+    ['COPY']);
+  check('...nor the slip never being drawn at all',
+    judgeCopy([{ scene: 'blueprint', sel: '.chr-key', expect: 'visible', inert: true, found: true, w: 0, h: 0, unoccluded: false }]),
+    ['COPY']);
   check('...and the same nameplate drawn anyway, eating the budget',
     judgeCopy([{ scene: 'room:linen-closet', sel: '.m2__head', expect: 'hidden', found: true, w: 343, h: 40 }]),
     ['COPY']);
@@ -525,18 +893,131 @@ export function selfTest() {
     judgeRooms([], oneRoom),
     ['ROOMS']);
 
+  // --- ACCOUNT (round 35, hole 1) ------------------------------------------
+  const goodAccount = {
+    rows: [{ why: 'the morning’s allowance', n: '+18' }, { why: 'walk ×2', n: '−4' }],
+    total: '14', storeSteps: 14, storeBudget: 18, retireMounted: false,
+  };
+  check('the day’s account, adding up',
+    judgeAccount(goodAccount),
+    []);
+  check('a candle that opened nothing',
+    judgeAccount(null),
+    ['ACCOUNT']);
+  check('a column that does not sum to its own total',
+    judgeAccount({ ...goodAccount, rows: [{ why: 'the morning’s allowance', n: '+18' }, { why: 'walk ×2', n: '−9' }] }),
+    ['ACCOUNT']);
+  check('an account of somebody else’s day',
+    judgeAccount({ ...goodAccount, total: '14', storeSteps: 9 }),
+    ['ACCOUNT']);
+  check('the allowance row dropped, so nothing adds up',
+    judgeAccount({ ...goodAccount, rows: [{ why: 'walk ×2', n: '−4' }], total: '-4', storeSteps: -4 }),
+    ['ACCOUNT']);
+  check('the retire control left live under the open account (AAA 11.5)',
+    judgeAccount({ ...goodAccount, retireMounted: true }),
+    ['ACCOUNT']);
+
+  // --- LETTER (round 35, hole 2) -------------------------------------------
+  const wholeLetter = {
+    paras: [
+      { txt: 'Dear newcomer,', onGlass: true },
+      { txt: 'there is a brass speaking tube in the entrance hall', onGlass: true },
+      { txt: '— Posy, Post Room', onGlass: true },
+    ],
+    cardClips: false, cardScrollH: 436, cardClientH: 436, coveredBy: [],
+  };
+  check('the whole letter, readable to its sign-off',
+    judgeLetter(wholeLetter),
+    []);
+  check('a Letters tab that never opened',
+    judgeLetter(null),
+    ['LETTER']);
+  check('THE SHIPPED ROUND-32 DEFECT: the card clipping its own body with nothing to scroll to',
+    judgeLetter({ ...wholeLetter, cardClips: true, cardScrollH: 496, cardClientH: 328 }),
+    ['LETTER']);
+  check('...and the clause naming the tube pushed off the scrollport with it',
+    judgeLetter({
+      ...wholeLetter,
+      paras: wholeLetter.paras.map((p, i) => (i > 0 ? { ...p, onGlass: false } : p)),
+    }),
+    ['LETTER', 'LETTER', 'LETTER']);
+  check('copy that drifted out from under the gate',
+    judgeLetter({ ...wholeLetter, paras: [{ txt: 'Dear newcomer,', onGlass: true }] }),
+    ['LETTER', 'LETTER']);
+  check('Posy standing in front of her own letter',
+    judgeLetter({ ...wholeLetter, coveredBy: ['dlg__sheet'] }),
+    ['LETTER']);
+
+  // --- LANDING (round 35, hole 3) ------------------------------------------
+  const stamp = { text: 'Turns its back on the Sanctum', h: 19 };
+  const landingToday = {
+    cards: 3, stamps: [stamp, stamp, stamp], ruleH: 43, budget: 100, overflow: 69,
+  };
+  check('the landing offer overflowing by exactly the Sanctum copy — the known, bounded debt',
+    judgeLanding(landingToday),
+    []);
+  check('a landing draft the walk could not open',
+    judgeLanding(null),
+    ['LANDING']);
+  check('the debt growing past the lines it was attributed to',
+    judgeLanding({ ...landingToday, overflow: 132 }),
+    ['LANDING']);
+  check('a card that says nothing where two say something (round 13)',
+    judgeLanding({ ...landingToday, stamps: [stamp, stamp] }),
+    ['LANDING']);
+  check('a stamp authored, mounted, and drawn at nothing',
+    judgeLanding({ ...landingToday, stamps: [stamp, stamp, { ...stamp, h: 0 }] }),
+    ['LANDING']);
+
+  // --- CLIP / INERT --------------------------------------------------------
+  const vb = { w: 300, h: 420 };
+  check('round 28’s lost glyph: a key line laid past the viewBox that clips it',
+    judgeClip([{ scene: 'blueprint', sel: '.bp-key__line', text: 'A MOVE', inside: false, bbox: { x: 8, right: 312, y: 400, bottom: 412 }, viewBox: vb }]),
+    ['CLIP']);
+  check('a key line inside the drawing',
+    judgeClip([{ scene: 'blueprint', sel: '.bp-key__line', text: 'A MOVE', inside: true, bbox: { x: 8, right: 280, y: 400, bottom: 412 }, viewBox: vb }]),
+    []);
+  check('round 15: a caption swallowing the tap aimed under it',
+    judgeInert([{ scene: 'blueprint', sel: '.chr-key', swallows: true }]),
+    ['HITS']);
+  check('a caption that lets the tap through',
+    judgeInert([{ scene: 'blueprint', sel: '.chr-key', swallows: false }]),
+    []);
+
   // --- BLIND (the anti-construction guard) ---------------------------------
+  const fullWalk = {
+    scenes: 17, probes: 1600, scrollRows: 260, copyAssertions: 12, driven: 6,
+    accountRows: 7, letterParas: 4, landingStamps: 3, clipLines: 2,
+  };
   check('a probe selector that stopped matching anything',
-    judgeCoverage({ scenes: 12, probes: 0, scrollRows: 40, copyAssertions: 9, driven: 6 }),
+    judgeCoverage({ ...fullWalk, probes: 0 }),
     ['BLIND']);
   check('a scene that painted no controls at all',
-    judgeCoverage({ scenes: 12, probes: 900, scrollRows: 40, copyAssertions: 9, driven: 6, perScene: { 'room:study': 0 } }),
+    judgeCoverage({ ...fullWalk, perScene: { 'room:study': 0 } }),
     ['BLIND']);
   check('a copy manifest that quietly stopped applying',
-    judgeCoverage({ scenes: 12, probes: 900, scrollRows: 40, copyAssertions: 0, driven: 6 }),
+    judgeCoverage({ ...fullWalk, copyAssertions: 0 }),
+    ['BLIND']);
+  /**
+   * THE THREE HOLES, AS COVERAGE. Every one of the round-35 verdicts filters a
+   * list, and a filter over an empty list is green — so the walk failing to
+   * reach the account, the letter or the landing must be a finding in its own
+   * right, and not a silent zero.
+   */
+  check('a walk that never reached the day’s account',
+    judgeCoverage({ ...fullWalk, accountRows: 0 }),
+    ['BLIND']);
+  check('a walk that never opened the letter',
+    judgeCoverage({ ...fullWalk, letterParas: 0 }),
+    ['BLIND']);
+  check('a walk that never opened a landing draft',
+    judgeCoverage({ ...fullWalk, landingStamps: 0 }),
+    ['BLIND']);
+  check('a walk that stopped seeing the margin’s key',
+    judgeCoverage({ ...fullWalk, clipLines: 0 }),
     ['BLIND']);
   check('a full walk',
-    judgeCoverage({ scenes: 12, probes: 900, scrollRows: 40, copyAssertions: 9, driven: 6, perScene: { 'room:study': 14 } }),
+    judgeCoverage({ ...fullWalk, perScene: { 'room:study': 14 } }),
     []);
 
   // --- EDITION ------------------------------------------------------------
@@ -623,6 +1104,74 @@ export const PROOFS = [
     klass: 'CONSOLE',
     why: 'a page that complains on the way past, which today nothing does',
     init: () => { setTimeout(() => console.error('[proof] the manor tripped over the rug'), 400); },
+  },
+
+  /* ═══ ROUND 35 — THE THREE HOLES, RE-BROKEN ════════════════════════════════
+     Each of these is a defect a live verifier really introduced and this gate
+     really failed to notice. They are here so that the next agent to widen a
+     selector or rename a class finds out from the gate rather than from a
+     stranger on a phone. */
+  {
+    id: 'ledger-capped',
+    klass: 'SCROLL',
+    /**
+     * THE VERIFIER'S OWN SABOTAGE, VERBATIM: cap the day's account so it holds
+     * 191px of rows in 60px of glass. The gate passed. It passed because it had
+     * never once tapped the candle.
+     */
+    why: 'the day’s account capped to a third of its rows — round 19’s flagship surface, unguarded',
+    css: '.chr-ledger__list { max-height: 60px !important; height: 60px !important; overflow-y: auto !important; }',
+  },
+  {
+    id: 'ledger-lies',
+    klass: 'ACCOUNT',
+    why: 'a column that does not add up to its own printed total — worse than no account at all,'
+      + ' because it turns "I don’t know why" into "the game is lying to me"',
+    init: () => {
+      const patch = () => {
+        const n = document.querySelector('.chr-ledger__row .chr-ledger__n');
+        if (n && n.textContent !== '+999') n.textContent = '+999';
+      };
+      new MutationObserver(patch).observe(document, { childList: true, subtree: true });
+    },
+  },
+  {
+    id: 'letter-clipped',
+    klass: 'LETTER',
+    /**
+     * ROUND 32's DEFECT, RESTORED BY DELETING ITS FIX. `.jrn-sheet > * { flex:
+     * none }` is the whole of that fix; without it a flex item's default shrink
+     * squeezes the card below its content height, `.jrn-letter`'s `overflow:
+     * hidden` clips the rest, and 250px of the game's tutorial document become
+     * unreachable by any gesture — with `scrollHeight === clientHeight` on the
+     * sheet, so nothing anywhere reports a problem.
+     */
+    why: 'the sheet eating the letter instead of scrolling it — the clause naming the speaking tube,'
+      + ' unreachable, which is the difference between two testers’ entire games',
+    css: '.jrn-sheet > * { flex: 1 1 auto !important; }',
+  },
+  {
+    id: 'sanctum-rule-retired',
+    klass: 'COPY',
+    /**
+     * The way this house loses a sentence is never by deleting it: `.mic__sub`,
+     * the Gallery's studies line and the Linen Closet's nameplate were all
+     * authored, all committed, and all `display: none` on the phones the game
+     * ships on. The landing rule is one breakpoint from the same fate.
+     */
+    why: 'the round-13 rule taken off the phone by a media query, on the most expensive draft in the campaign',
+    css: '.bp-modal__sanctum { display: none !important; }',
+  },
+  {
+    id: 'landing-debt-grows',
+    klass: 'LANDING',
+    /**
+     * The known debt is bounded by the lines the landing itself prints. This
+     * adds 90px that the landing does NOT print — the shape of every future
+     * "just one more line on the card" — and the budget must refuse it.
+     */
+    why: 'the landing offer growing by something other than the Sanctum copy its debt is attributed to',
+    css: '.bp-modal__cards { padding-bottom: 90px !important; }',
   },
 ];
 
@@ -772,6 +1321,19 @@ function probeHits() {
   const layer =
     document.querySelector('.mom')
     || document.querySelector('.dlg')
+    /**
+     * ROUND 35. The day's account is an overlay with a FULL-SCREEN SCRIM
+     * BUTTON under it (`.chr-ledger__scrim`, "Close the day's account"), which
+     * is the correct design — a tap anywhere outside puts the account away, and
+     * the bar above it goes `pointer-events: none` so tapping the candle that
+     * opened it closes it again. Probing the body while it is up reported 94
+     * failures on the first run: every control on the blueprint beneath
+     * answering as the scrim, which is not a defect but the whole point of a
+     * scrim, plus the scrim's own centre answering as the sheet on top of it.
+     * The topmost interactive layer here is the SHEET, so that is what is
+     * probed — the same rule the `.mom` / `.dlg` / `.bp-modal` entries follow.
+     */
+    || document.querySelector('.chr-ledger__sheet')
     || document.querySelector('.bp-modal')
     || document.body;
   const ident = (e) => {
@@ -831,9 +1393,44 @@ function probeHits() {
       ['left edge', box.l + inset, cy],
       ['right edge', box.r - inset, cy],
     ];
+    /**
+     * A STICKY FOOT OVER A PANEL THAT IS GENUINELY SCROLLED IS A SCROLL AWAY,
+     * NOT A BURIED CONTROL — the same rule `visibleBox` already applies to a
+     * control below its own scrollport, stated for the partial case.
+     *
+     * `.bp-modal__foot` is `position: sticky` at the bottom of the sheet's own
+     * scrollport, and it holds the modal's only labelled exit — that is round
+     * 20's fix for a Cabinet whose "Close" opened at top 3282 in an 844px
+     * glass. On a sheet that overflows, the last card's bottom edge is under it
+     * at rest and clear of it after a scroll, exactly as the sheet's bottom
+     * padding is written to guarantee. The Cabinet has had this property since
+     * round 20 and this probe never fired on it by luck of where its rows fall;
+     * the landing offer made it fire. Calling that "a tap goes somewhere else"
+     * would be the gate getting switched off in a week.
+     *
+     * IT IS NARROW ON PURPOSE. It applies only when the answering element is
+     * really `position: sticky`, and only when a shared ancestor is really
+     * overflowing RIGHT NOW. A control buried under a fixed bar on a panel that
+     * does not scroll is still, correctly, a defect.
+     */
+    const scrolledAway = (hit) => {
+      let sticky = null;
+      for (let n = hit; n && n !== document.body; n = n.parentElement) {
+        if (getComputedStyle(n).position === 'sticky') { sticky = n; break; }
+      }
+      if (!sticky) return false;
+      for (let n = el.parentElement; n; n = n.parentElement) {
+        if (!n.contains(sticky)) continue;
+        const cs = getComputedStyle(n);
+        const scrolls = cs.overflowY === 'auto' || cs.overflowY === 'scroll';
+        if (scrolls && n.scrollHeight > n.clientHeight + 1) return true;
+      }
+      return false;
+    };
     for (const [point, x, y] of points) {
       const hit = document.elementFromPoint(x, y);
       const owned = !!hit && (hit === el || el.contains(hit));
+      if (!owned && hit && scrolledAway(hit)) { clipped++; continue; }
       out.push({
         what: ident(el), point, x: Math.round(x), y: Math.round(y),
         owned, answered: owned ? 'itself' : ident(hit),
@@ -885,6 +1482,121 @@ function measureCopy(entries) {
       }
     }
     return { ...e, found: true, w, h, unoccluded, occludedBy, text: (el.textContent || '').trim() };
+  });
+}
+
+/**
+ * THE DAY'S ACCOUNT, read back off the glass.
+ *
+ * The rows and the total are TEXT, deliberately: the claim is that the column
+ * a player can see adds up, so re-deriving it from the store would be the fold
+ * read back to itself. `storeSteps` / `storeBudget` are the two numbers the
+ * glass genuinely cannot check about itself.
+ */
+function measureAccount() {
+  const sheet = document.querySelector('.chr-ledger__sheet');
+  if (!sheet) return null;
+  const s = window.__manorStore.getState();
+  return {
+    rows: [...sheet.querySelectorAll('.chr-ledger__row')].map((r) => ({
+      why: r.querySelector('.chr-ledger__why')?.textContent?.trim() ?? '',
+      n: r.querySelector('.chr-ledger__n')?.textContent?.trim() ?? '',
+    })),
+    total: sheet.querySelector('.chr-ledger__total .chr-ledger__n')?.textContent?.trim() ?? '',
+    storeSteps: s.stepsRemaining(),
+    storeBudget: s.ledger.budget,
+    // AAA 11.5: `data-overlay` makes DayHeader stop rendering the destructive
+    // control entirely, so its absence is the contract, not a side effect.
+    retireMounted: !!document.querySelector('.chr-retire'),
+  };
+}
+
+/** The opened letter, against the scrollport it was pinned to the top of. */
+function measureLetter() {
+  const sheet = document.querySelector('.jrn-sheet');
+  const card = document.querySelector('.jrn-letter[data-letter-open="true"]');
+  const body = card?.querySelector('.jrn-letter__body');
+  if (!sheet || !card || !body) return null;
+  const sr = sheet.getBoundingClientRect();
+  const br = body.getBoundingClientRect();
+  /* `elementsFromPoint` returns topmost first, so everything BEFORE the body
+     (or one of its own children) is standing in front of it. The letter's own
+     <p> is the first hit on a healthy page and must not count as a coverer —
+     that is the difference between this and a naive `[0]`. */
+  const stack = document.elementsFromPoint(
+    br.x + br.width / 2, Math.min(br.y + 20, window.innerHeight - 4),
+  );
+  const coveredBy = [];
+  for (const el of stack) {
+    if (el === body || body.contains(el)) break;
+    coveredBy.push(typeof el.className === 'string' && el.className ? el.className : el.tagName);
+  }
+  if (document.querySelector('.dlg')) coveredBy.push('.dlg');
+  return {
+    paras: [...body.querySelectorAll('p')].map((p) => {
+      const r = p.getBoundingClientRect();
+      return { txt: p.textContent, onGlass: r.top >= sr.top - 1 && r.bottom <= sr.bottom + 1 };
+    }),
+    cardClips: card.scrollHeight > card.clientHeight + 1,
+    cardScrollH: card.scrollHeight,
+    cardClientH: card.clientHeight,
+    coveredBy,
+  };
+}
+
+/** The landing offer's overflow, and the lines the landing itself accounts for. */
+function measureLanding() {
+  const sheet = document.querySelector('.bp-modal__sheet');
+  const rule = document.querySelector('.bp-modal__sanctum');
+  if (!sheet || !rule) return null;
+  const boxOf = (el) => {
+    const r = el.getBoundingClientRect();
+    const mt = parseFloat(getComputedStyle(el).marginTop) || 0;
+    return Math.round(r.height + mt);
+  };
+  const stamps = [...document.querySelectorAll('.bp-card__sanctum')].map((el) => ({
+    text: el.textContent.trim(), h: boxOf(el),
+  }));
+  const ruleH = boxOf(rule);
+  return {
+    cards: document.querySelectorAll('.bp-card').length,
+    stamps,
+    ruleH,
+    budget: ruleH + stamps.reduce((n, s) => n + s.h, 0),
+    overflow: sheet.scrollHeight - sheet.clientHeight,
+  };
+}
+
+/**
+ * The blueprint's margin key, judged where the clipping happens: `getBBox()`
+ * in user units against the root's `viewBox`, never the transformed rect.
+ */
+function measureClipLines() {
+  const svg = document.querySelector('svg.bp-sheet');
+  if (!svg) return [];
+  const vb = svg.viewBox.baseVal;
+  return [...document.querySelectorAll('.bp-key__line')].map((t) => {
+    const bb = t.getBBox();
+    return {
+      sel: '.bp-key__line',
+      text: t.textContent.replace(/\s+/g, ' ').trim(),
+      bbox: { x: bb.x, y: bb.y, right: bb.x + bb.width, bottom: bb.y + bb.height },
+      viewBox: { w: vb.width, h: vb.height },
+      inside: bb.x >= vb.x - 0.5 && bb.x + bb.width <= vb.x + vb.width + 0.5
+        && bb.y >= vb.y - 0.5 && bb.y + bb.height <= vb.y + vb.height + 0.5,
+    };
+  });
+}
+
+/** Layers declared inert: on the glass, and taking nothing. */
+function measureInert(sels) {
+  return sels.flatMap((sel) => {
+    const el = document.querySelector(sel);
+    if (!el) return [];
+    const r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) return [];
+    const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    return [{ sel, swallows: !!(hit && el.contains(hit)) }];
   });
 }
 
@@ -1076,11 +1788,14 @@ async function drivenChecks(page, scene, card) {
 
 /* --- one full pass over one glass ------------------------------------------ */
 
-async function walkOneViewport(browser, base, vp, inject) {
+async function walkOneViewport(browser, base, vp, inject, quiet) {
   const findings = [];
   const consoleErrors = [];
   const roomsSeen = [];
-  const counts = { scenes: 0, probes: 0, scrollRows: 0, copyAssertions: 0, driven: 0, perScene: {} };
+  const counts = {
+    scenes: 0, probes: 0, scrollRows: 0, copyAssertions: 0, driven: 0, perScene: {},
+    accountRows: 0, letterParas: 0, landingStamps: 0, clipLines: 0,
+  };
   let appSource = null;
   let scene = 'boot';
 
@@ -1144,7 +1859,44 @@ async function walkOneViewport(browser, base, vp, inject) {
       return { findings, consoleErrors, roomsSeen, appSource, counts };
     }
     await clearMoments(page);
+    /**
+     * THE CURRENCY KEY IS A TIMED, ONE-TIME SLIP, AND THE GATE HAD TO LEARN IT.
+     *
+     * The first run of this assertion reported `.chr-key` "authored and mounted
+     * but measures 0 x 0" at both sizes — which was the gate being right about
+     * the wrong instant. `chrome.css` fades it in on a 1400ms delay with
+     * `animation-fill-mode: both`, so for the first 1.4 seconds of `exploring`
+     * it is genuinely at zero opacity, and `stable()` settles long before that.
+     *
+     * It is worth writing down rather than working around: this line lives on a
+     * timer, and a timer is exactly what standing rule 4 is about — the
+     * step-reason words were correct, routed correctly, and moved neither cold
+     * reader because they lived 1150ms in a corner. The gate waits for the
+     * instant the player would see, and if that instant never comes, judgeCopy
+     * says so.
+     */
+    await page.waitForFunction(() => {
+      const el = document.querySelector('.chr-key');
+      return !!el && Number(getComputedStyle(el).opacity) > 0.9;
+    }, null, { timeout: 6000 }).catch(() => { /* judged by COPY below, not thrown */ });
     await audit('blueprint');
+
+    /**
+     * ROUND 35 — TWO CLAIMS THE BLUEPRINT CARRIES THAT NO BOX CAN MAKE.
+     * The margin's key is SVG <text>: it clips at the root's viewBox and its
+     * bounding rect will report a clipped glyph as comfortably inside. The
+     * currency key is a caption over the drawing: being ON the glass is only
+     * half of it, and the other half is that it takes no tap meant for the
+     * page beneath. Both come from `test:purse-and-map` / `test:key-and-letter`
+     * — two of the three drivers CI has never once run.
+     */
+    {
+      const lines = await stable(page, () => page.evaluate(measureClipLines));
+      counts.clipLines += lines.length;
+      findings.push(...judgeClip(lines.map((l) => ({ ...l, scene: 'blueprint' }))));
+      const inert = await stable(page, () => page.evaluate(measureInert, ['.chr-key']));
+      findings.push(...judgeInert(inert.map((p) => ({ ...p, scene: 'blueprint' }))));
+    }
 
     // The draft offer sheet — the overlay that shipped scrolling 29px.
     scene = 'draft-offer';
@@ -1161,6 +1913,53 @@ async function walkOneViewport(browser, base, vp, inject) {
       await audit('draft-offer');
       await page.evaluate(() => window.__manorStore.setState({ draftOffer: null }));
       await page.waitForSelector('.bp-modal', { state: 'detached', timeout: 8000 }).catch(() => {});
+    }
+
+    /**
+     * ═══ THE LANDING DRAFT (round 35, hole 3) ═══════════════════════════════
+     * The one door in the game whose choice decides whether a 22-step climb
+     * reaches anything. It has never been walked, and it does not fit: 682px in
+     * 613px of glass at 375x667, and — new this round, and contrary to what the
+     * last two rounds believed — 821 in 742 at 390x844 as well.
+     *
+     * SETUP ONLY, and the line is worth stating: the store stands her on (2,4)
+     * with the landing above her empty and a key in her purse, and then the
+     * REAL `openDraft` rolls the REAL offer through the real deck. Nothing here
+     * skips a control the gate is about to make a claim about. The key matters:
+     * a row-5 door padlocks at 55%, so without one the walk would silently
+     * measure a shorter sheet on the days the lock fell — the worst case is the
+     * only honest one to hold a debt ceiling against.
+     */
+    scene = 'landing-offer';
+    const onLanding = await page.evaluate(() => {
+      const store = window.__manorStore;
+      const s = store.getState();
+      const rooms = { ...s.manor.rooms };
+      const cell = { col: 2, row: 4 };
+      delete rooms['2,5'];
+      rooms['2,4'] = {
+        cardId: 'library', cell, doors: ['N', 'S', 'E', 'W'], solved: false, kind: 'word-web',
+      };
+      store.setState({ manor: { ...s.manor, rooms, playerCell: cell } });
+      const s2 = store.getState();
+      store.setState({ draftOffer: null, currencies: { ...s2.currencies, keys: 3 } });
+      store.getState().openDraft('N');
+      return !!store.getState().draftOffer;
+    });
+    if (onLanding) {
+      await page.waitForSelector('.bp-modal', { timeout: 10000 }).catch(() => {});
+      await audit('landing-offer');
+      const landing = await stable(page, () => page.evaluate(measureLanding));
+      counts.landingStamps += landing?.stamps.length ?? 0;
+      findings.push(...judgeLanding(landing));
+      if (landing && !quiet) {
+        log(`  landing offer: overflows ${landing.overflow}px against a ${landing.budget}px`
+          + ` budget of Sanctum copy — KNOWN DEBT, bounded, needs a layout decision`);
+      }
+      await page.evaluate(() => window.__manorStore.setState({ draftOffer: null }));
+      await page.waitForSelector('.bp-modal', { state: 'detached', timeout: 8000 }).catch(() => {});
+    } else {
+      findings.push(...judgeLanding(null));
     }
 
     // The Cabinet — opened with a real tap on a real button.
@@ -1198,6 +1997,62 @@ async function walkOneViewport(browser, base, vp, inject) {
       await leaveRoom(page);
     }
 
+    /**
+     * ═══ THE DAY'S ACCOUNT (round 35, hole 1) ═══════════════════════════════
+     * Round 19's flagship, and the answer to the single worst negative finding
+     * of the cold read: three counter movements neither stranger could explain.
+     * A verifier capped `.chr-ledger__list` to 60px so it held 191px of rows
+     * AND deleted the closing sentence, and this gate passed both.
+     *
+     * The charges go in through `applyStepEntry` — the audited path, the same
+     * one a move takes — because a column of one entry proves nothing about a
+     * column. THE CANDLE IS THEN TAPPED WITH REAL MOUSE INPUT: the game commits
+     * on pointerdown/pointerup, and "the sheet opens" is the claim.
+     */
+    scene = 'ledger';
+    await page.goto(base, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => !!window.__manorStore, null, { timeout: 40000 });
+    await ensureExploring(page);
+    await clearMoments(page);
+    await page.evaluate(() => {
+      const s = () => window.__manorStore.getState();
+      const at = Date.now();
+      s().applyStepEntry({ reason: 'move', delta: -2, at, roomKey: '1,0' });
+      s().applyStepEntry({ reason: 'move', delta: -2, at, roomKey: '2,0' });
+      s().applyStepEntry({ reason: 'move', delta: -7, at, roomKey: '1,3>1,4' });
+      s().applyStepEntry({ reason: 'solve', delta: 4, at });
+      s().applyStepEntry({ reason: 'hint', delta: -2, at });
+      s().applyStepEntry({ reason: 'gift', delta: -1, at });
+    });
+    await clearMoments(page);
+    const candle = await page.evaluate(() => {
+      const el = document.querySelector('.chr-steps__open');
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    });
+    if (!candle) {
+      findings.push({ klass: 'ACCOUNT', scene: 'ledger', what: '.chr-steps__open',
+        message: 'there is no candle to tap — the day\'s account has no way in' });
+    } else {
+      await page.mouse.move(candle.x, candle.y);
+      await page.mouse.down();
+      await page.waitForTimeout(60);
+      await page.mouse.up();
+      await page.waitForSelector('.chr-ledger__sheet', { timeout: 8000 }).catch(() => {});
+      await audit('ledger');
+      const account = await stable(page, () => page.evaluate(measureAccount));
+      counts.accountRows += account?.rows.length ?? 0;
+      findings.push(...judgeAccount(account));
+      counts.driven += 1;
+      findings.push(...judgeDriven([{
+        scene: 'ledger', what: 'the candle', ok: !!account,
+        message: account ? 'unrolled the day\'s account beneath it' : 'a real tap on it opened nothing',
+      }]));
+      await page.keyboard.press('Escape').catch(() => {});
+      await page.waitForSelector('.chr-ledger', { state: 'detached', timeout: 8000 }).catch(() => {});
+    }
+
     // The standing pages.
     for (const [hash, label] of [['#/journal', 'page:journal'], ['#/sanctum', 'page:sanctum']]) {
       scene = label;
@@ -1205,6 +2060,49 @@ async function walkOneViewport(browser, base, vp, inject) {
       await page.waitForSelector('.page, .jrn-page, .snc', { timeout: 15000 }).catch(() => {});
       await clearMoments(page);
       await audit(label);
+
+      /**
+       * ═══ THE LETTER (round 35, hole 2) ══════════════════════════════════
+       * The gate walked the Journal on the tab it happens to open on — the one
+       * tab that fits — and never touched the Letters tab, where round 32's
+       * defect lived: 496px of Posy's welcome letter inside a 328px card under
+       * `overflow: hidden`, with the sheet reporting nothing to scroll to. The
+       * clause that names the speaking tube was simply unreachable, and the
+       * tester who got that build never learned the game's core verb exists.
+       *
+       * Reached the way she reaches it: a real tap on the tab, a real tap on
+       * the seal. Measured at 375x667 on HEAD, the sheet holds 592px in 484 —
+       * so it IS scrolling, honestly, and it is declared (the journal grows all
+       * volume). What is asserted is the thing a declaration cannot dodge: the
+       * letter it pinned to the top is readable whole, to its sign-off.
+       */
+      if (label !== 'page:journal') continue;
+      scene = 'journal:letter';
+      const tab = await page.evaluate(() => {
+        const t = [...document.querySelectorAll('.jrn-tab')].find((x) => /Letters/.test(x.textContent));
+        if (!t) return null;
+        const r = t.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      });
+      if (tab) {
+        await page.mouse.click(tab.x, tab.y);
+        await page.waitForTimeout(320);
+        const head = await page.evaluate(() => {
+          const h = document.querySelector('.jrn-letter__head');
+          if (!h) return null;
+          const r = h.getBoundingClientRect();
+          return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+        });
+        if (head) {
+          await page.mouse.click(head.x, head.y);
+          await page.waitForSelector('.jrn-letter[data-letter-open="true"]', { timeout: 8000 }).catch(() => {});
+          await page.waitForTimeout(420);
+        }
+      }
+      await audit('journal:letter');
+      const letter = await stable(page, () => page.evaluate(measureLetter));
+      counts.letterParas += letter?.paras.length ?? 0;
+      findings.push(...judgeLetter(letter));
     }
   } finally {
     await ctx.close();
@@ -1235,7 +2133,7 @@ async function runGate({ viewports, inject, quiet }) {
 
     for (const vp of viewports) {
       if (!quiet) log(`${RULE}\n[glass] ${vp.tag}`);
-      const pass = await walkOneViewport(browser, base, vp, inject);
+      const pass = await walkOneViewport(browser, base, vp, inject, quiet);
       const tagged = (f) => ({ ...f, vp: vp.tag });
       findings.push(...pass.findings.map(tagged));
       findings.push(...judgeConsole(pass.consoleErrors).map(tagged));
@@ -1247,7 +2145,10 @@ async function runGate({ viewports, inject, quiet }) {
         const c = pass.counts;
         log(`${vp.tag}: ${pass.roomsSeen.filter((r) => r.rendered).length}/7 rooms rendered`
           + ` · ${c.scenes} scenes · ${c.probes} hit probes · ${c.scrollRows} scrollports`
-          + ` · ${c.copyAssertions} copy lines · ${c.driven} driven taps · ${mine.length} finding(s)`);
+          + ` · ${c.copyAssertions} copy lines · ${c.driven} driven taps`
+          + ` · ${c.accountRows} account rows · ${c.letterParas} letter paragraphs`
+          + ` · ${c.landingStamps} Sanctum stamps · ${c.clipLines} key lines`
+          + ` · ${mine.length} finding(s)`);
       }
     }
   } finally {
@@ -1264,6 +2165,8 @@ function report(findings) {
   if (!findings.length) {
     console.log('[glass] PASS — the built app boots, seven rooms render, nothing scrolls that could fit,');
     console.log('[glass]        every control owns its own surface, the walk is silent, and the copy is on the glass.');
+    console.log('[glass]        The day’s account adds up on the glass, Posy’s letter is readable to its');
+    console.log('[glass]        sign-off, and the landing offer’s overflow is still only the Sanctum copy.');
     return 0;
   }
   for (const f of findings) {
