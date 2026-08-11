@@ -70,8 +70,61 @@ jobs:
         with:
           path: dist
 
+  # ══ THE GLASS GATE ═══════════════════════════════════════════════════════
+  # scripts/smoke-gate.mjs — its OWN job, deliberately.
+  #
+  # WHY IT IS NOT A STEP IN `build`. A browser pass is minutes, not seconds,
+  # and the fast unit suite's whole value is that it comes back before you have
+  # switched windows. Bolting a Playwright walk onto it would make 1,358 tests
+  # feel like a browser pass, and the first thing a slow gate loses is the
+  # habit of running it. So the two run side by side and `deploy` waits on
+  # both — a red glass gate does not deploy.
+  #
+  # WHY THE BROWSER IS DIFFERENT HERE. The local rule in this repo is "system
+  # Edge, channel msedge, NEVER download a playwright browser", because the
+  # download silently fails on the owner's machine. That is a LOCAL rule about
+  # ONE machine. The runner is a different machine with no Edge and a working
+  # network, so it installs playwright's own pinned chromium — which is also
+  # the more reproducible choice for CI, since the version is pinned by
+  # package-lock rather than by whatever Windows Update shipped that week. The
+  # gate takes the browser from MANOR_GATE_CHANNEL and defaults to msedge, so
+  # nothing about the local rule changes.
+  glass:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Instant, and it fails before a browser is ever downloaded: if the
+      # gate's own verdicts have stopped detecting the defects they were
+      # written for, nothing measured afterwards would mean anything.
+      - name: Gate self-test (the gate's own judgement)
+        run: npm run gate:glass:self-test
+
+      - name: Install chromium for playwright
+        run: npx playwright install --with-deps chromium
+
+      # The gate serves dist/ through `vite preview`, which refuses to start on
+      # a dist that does not match this checkout — so the build must be real.
+      - name: Build (clean · typechecked · stamped)
+        run: npm run build
+        env:
+          MANOR_GIT_SHA: ${{ github.sha }}
+
+      - name: Glass gate — 375x667 then 390x844
+        run: npm run gate:glass
+        env:
+          MANOR_GATE_CHANNEL: chromium
+
   deploy:
-    needs: build
+    needs: [build, glass]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
