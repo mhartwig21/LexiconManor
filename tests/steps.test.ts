@@ -336,6 +336,43 @@ describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () =
   });
 });
 
+/**
+ * ═══ ROUND 18 SWEEP — WHAT THIS FAMILY OF GATES DOES AND DOES NOT COVER ════
+ *
+ * Said out loud rather than deleted, because the campaign has now shipped
+ * three gates that passed by construction and this is the largest family in
+ * the suite with the same SHAPE: twenty-six assertions of the form
+ * `expect(accessor(x)).toBe(TABLE[x])` — `teaBonus` against `TEA_BY_POINTS`,
+ * `solveKeys` against `KEY_SUPPLY.solveKeysByTier`, `fernMorningKeys`,
+ * `teaArcPoints` against `TEA_ARC`.
+ *
+ * THEY ARE NOT THE DEFECT, and the distinction is the one worth writing down.
+ * The three that were retired asserted a table against itself while CLAIMING
+ * to gate the table's CONTENT — that a step reason names the right mistake,
+ * that a sudoku sits in the right difficulty band, that the Gallery had become
+ * a puzzle. These claim only the WIRING: that the accessor indexes by points
+ * and not by rank, that it clamps at both ends, that nobody re-derived the
+ * curve in a caller. All of that can come out wrong, and one of these gates
+ * exists BECAUSE it once did (see 'UNITS — the affinity tables are indexed by
+ * POINTS, never by rank' below, which is the whole reason this file separates
+ * the two).
+ *
+ * WHAT THE ACCESSOR GATES DO NOT NAME is whether the NUMBERS in
+ * `TEA_BY_POINTS`, `KEY_SUPPLY` and `TEA_ARC` are the right numbers. The
+ * external fact for a step table is the shape of an evening, and it is gated
+ * where it can be measured — `economy-simulation.test.ts` (the 4.10b/d/e/g
+ * campaign bands, over seeded days) and `economy-pressure.test.ts`.
+ *
+ * MEASURED RATHER THAN ASSUMED, because the first draft of this note said the
+ * accessor gates were the only ones here and that this file would not notice.
+ * Doubling the curve to `[0, 9, 12, 15, 18, 21, 24]` reds **14 of 91** in
+ * `economy-simulation.test.ts` — and **2 of 66 here**, neither of them an
+ * accessor gate: "is worth a serious fraction of a day once earned" bounds the
+ * top of the curve against `BASE_DAY_BUDGET`, and the UNITS gate below catches
+ * it as a side effect. All twenty-six accessor assertions stay green, which is
+ * the point: they are wiring gates and they are honest ones, but the value
+ * question is answered two files away and by two gates here, not by them.
+ */
 describe("Bramble's tea (the campaign's economic arc)", () => {
   it('is a plain kind cup before the friendship warms', () => {
     expect(teaBonus(0)).toBe(0);

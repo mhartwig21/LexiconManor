@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   effortLabel, effortMinutes, paysInStages, stageFractionOf,
   HIVE_SOLVE_PCT, HIVE_STAGE_PCT, LADDER_MINUTES, ROOM_EFFORT,
@@ -339,6 +341,58 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
     expect(twoMinutePlus.length).toBe(7);
   });
 
+  /**
+   * ═══ ROUND 18 — THE DOC IS HELD TO THE TABLE, NOT TO A READING OF IT ══════
+   *
+   * 4.10h published `45.00× → 20.00× → 16.00×` and `12.00× → 9.60×` as the
+   * current spreads. Measured off the shipped tables they are **9.07×** and
+   * **4.62×** — a drift of a factor of two, in the clause whose own subject is
+   * that a published number must be re-derived rather than defended, shipped
+   * by the round whose stated subject was doc/gate drift.
+   *
+   * The cause is structural and this closes it. Round 27 moved the ASSERTIONS
+   * above (≤10.0 and ≤5) and left the PROSE beside them, and nothing could
+   * see the gap: `economy-simulation.test.ts` greps AAA_BAR for the campaign
+   * BANDS and for three retired figures, and 4.10h's four spreads were in
+   * neither list. A bound and a sentence that are meant to be the same number
+   * have to be compared to each other by something that runs.
+   *
+   * So this reads the doc and re-derives all four from `ROOM_EFFORT` ×
+   * `solvePayout`. It is not a spelling check: it takes the LAST figure in
+   * each published chain — the arrows are a lineage and old values belong in
+   * them — and requires it to be what the tables actually measure. It goes RED
+   * on the doc as it stood at round-17 HEAD, on both of the first two
+   * populations, which is the pool it was written to condemn.
+   */
+  it('publishes in AAA 4.10h the four spreads this file measures', () => {
+    const bar = readFileSync(resolve(__dirname, '..', 'docs', 'AAA_BAR.md'), 'utf8')
+      .replace(/\s+/g, ' ');
+    const tier12 = everyRoom.filter(([, t]) => t <= 2);
+    const populations: [string, number][] = [
+      ['every room × every tier', spreadOf(wageOf)],
+      ['every tier-1/2 room, unfiltered', spreadOf(wageOf, tier12)],
+      ['tier-1/2 minus the Counting House',
+        spreadOf(wageOf, tier12.filter(([k, t]) => !(k === 'sudoku' && t === 2)))],
+      ['tier-1/2 of two minutes or more, minus the Counting House',
+        spreadOf(wageOf, everyRoom.filter(([k, t]) =>
+          t <= 2 && effortMinutes(k, t) >= 2 && !(k === 'sudoku' && t === 2)))],
+    ];
+    for (const [label, measured] of populations) {
+      // Named exactly once, so the clause this reads cannot be the wrong one.
+      expect(bar.split(label).length - 1, `AAA 4.10h names "${label}" more than once`)
+        .toBe(1);
+      const at = bar.indexOf(label);
+      // Each population is one bold run, so its figures end at the closing `**`.
+      const segment = bar.slice(at + label.length).split('**')[0]!;
+      const figures = [...segment.matchAll(/(\d+\.\d\d)×/g)].map((m) => m[1]!);
+      expect(figures.length, `AAA 4.10h prints no ×-figure for "${label}"`)
+        .toBeGreaterThan(0);
+      expect(figures.at(-1), `AAA 4.10h publishes ${figures.at(-1)}× for "${label}"; `
+        + `the shipped tables measure ${measured.toFixed(2)}×`)
+        .toBe(measured.toFixed(2));
+    }
+  });
+
   it('names the rooms that still miss, so nobody has to rediscover them', () => {
     // A gate that only passes tells you nothing. These ARE the residual spread,
     // and if any of them is ever fixed this assertion fails and the bounds
@@ -379,8 +433,16 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
     // whose whole purpose was to hold the bounds above open until the content
     // commission REVIEW_AA §6 asked for (bank the grid across days, grade the
     // ladder) actually landed. It has landed — `ROOM_EFFORT.sudoku` is
-    // [7.0, 11.0, 17.0] over a regraded pool and the Counting House keeps an
+    // [11.0, 13.0, 17.0] over a regraded pool and the Counting House keeps an
     // open ledger — so the pin is REMOVED rather than relaxed, and the bounds
+    //
+    // ROUND 18 — THAT ROW READ [7.0, 11.0, 17.0] AND NO SUCH ROW EVER SHIPPED.
+    // It is round 27's own REJECTED draft, cited in the note that justifies
+    // spending the pin: the argument for removing a gate was written against
+    // numbers the round did not land. Nothing downstream was wrong — the
+    // assertion under this note reads `SUDOKU_TIER_GRADE` and never the
+    // literal — but a justification that cites a row nobody shipped is how the
+    // next round inherits a wrong premise, so it cites what shipped.
     // it was holding open are retightened in the same commit (16.5 → 10.0
     // overall, 10 → 5 across tier 1/2). What replaces it is not another
     // minutes assertion standing in for a quality claim (round 26's lesson):

@@ -887,11 +887,29 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     Same defect as the retired "79.2% real choice" headline (4.10j), committed in the
     round that was told about that one. All four populations are published and gated now
     (`tests/economy-effort.test.ts`), and none is called "an evening":
-    **every room × every tier 45.00× → 20.00× → 16.00× (round 26)**; **every tier-1/2
-    room, unfiltered 12.00× → 9.60×**; **tier-1/2 minus the Counting House 4.89× →
-    3.91×**; **tier-1/2 of two minutes or more, minus the Counting House, 1.75×,
-    unchanged**. The Counting House at tier 2 is one whole end of the band and is a
-    CONTENT commission REVIEW_AA §6 already asks for;
+    **every room × every tier 45.00× → 20.00× → 16.00× → 9.07× (round 27)**; **every
+    tier-1/2 room, unfiltered 12.00× → 9.60× → 4.62×**; **tier-1/2 minus the Counting
+    House 4.89× → 3.91×**; **tier-1/2 of two minutes or more, minus the Counting House,
+    1.75×, unchanged**.
+    ***ROUND 18 — THE FIRST TWO COLUMNS WERE STALE, AND THEY WENT STALE IN THE ROUND
+    WHOSE SUBJECT WAS DOC DRIFT.*** This clause published `45.00× → 20.00× → 16.00×` and
+    `12.00× → 9.60×` as the current figures; measured off the shipped tables
+    (`ROOM_EFFORT` × `solvePayout`, the same arithmetic `tests/economy-effort.test.ts`
+    runs) they are **9.07×** and **4.62×**. The cause is named because it is the same
+    one twice: round 27 re-clocked the Counting House, which was one whole END of both
+    populations — sudoku t3 went +6 for 30 min (0.200 steps a minute) to +6 for 17 min
+    (0.353), and sudoku t2 went +9 for 27.0 (0.333) to +9 for 13.0 (0.692) — and it
+    updated the ASSERTIONS (which read ≤10.0 and ≤5 at HEAD, and are green) without
+    updating the prose beside them. Both ends of both numbers, at HEAD:
+    overall `crossword t1 3.200 / sudoku t3 0.353`; tier-1/2 `crossword t1 3.200 /
+    sudoku t2 0.692`. The RATCHET is unmoved and unloosened — every column still only
+    falls — and the two figures are now smaller than the ones this file was claiming,
+    so the drift was in the pessimistic direction and cost nothing but the truth.
+    The Counting House at tier 2 was one whole end of the band and a
+    CONTENT commission REVIEW_AA §6 asked for; **round 27 landed it** (the boards are
+    graded per tier and the room keeps an open ledger), which is why taking that room
+    out no longer narrows the tier-1/2 spread at all — 3.91× against 4.62×, the two
+    numbers now within 1.0 of each other, asserted as such;
     *Round 26 — THE GALLERY'S END OF THE RATCHET LANDED.* The first three fell because
     the Gallery was one whole END of each of them, at 4.000 steps a minute; it now pays
     3.200 and ties the Linen Closet at the top rather than owning it, and both are there
@@ -912,8 +930,14 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     What still misses, named so nobody has to rediscover it: **the top of the wage table
     is now the COZY FLOOR itself** — the Gallery and the Linen Closet, the two shortest
     rooms in the house, both paid +4 over 1.25 minutes — and the bottom is still the
-    tier-2/3 Counting House, which should bank partial grids across days. The test names
-    all three, so lengthening any of them FAILS 4.10h and forces the bound to tighten.
+    tier-3 Counting House, at 0.353 steps a minute. The test names all three, so
+    lengthening any of them FAILS 4.10h and forces the bound to tighten.
+    *Round 18 corrected the second half of that sentence too: it read "the tier-2/3
+    Counting House, which should bank partial grids across days", and round 27 BANKED
+    THEM — the room keeps an open ledger (`engine/rooms/room-bank.ts`) and its boards
+    are graded per tier. Tier 2 is no longer at the bottom or anywhere near it (0.692,
+    inside the band rather than an end of it), which is the whole reason the third
+    population above stopped narrowing when you take that room out.*
     *Round 26 also retired a pin that would have stayed green through its own fix.* It
     read `effortMinutes('twistle', 1) < 2` under the message "the Gallery became a
     puzzle" — a MINUTES assertion standing in for a PUZZLE-QUALITY claim. The Gallery

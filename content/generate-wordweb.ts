@@ -3868,7 +3868,30 @@ function shippedHerrings(
 
   const ship: string[] = [];
   const named: OutHerring[] = [];
+  /**
+   * ROUND 18 — DEDUPE ON WHAT THE PLAYER READS, NOT ON WHAT THE PICKER COUNTS.
+   *
+   * `chooseTraps` refuses to pick the same `trap.key` twice, and round 12's
+   * note above calls that "one trap, one sentence". It is not: the key is the
+   * PATTERN the solver found (`contains:LAND`, `suffix:LAND`), and two
+   * different keys can flatten into one identical `OutHerring` — same
+   * relation, same detail, same word list — because the emitted thread throws
+   * the pattern away and keeps only what the herring line says out loud.
+   * Five shipped boards did exactly this: web-39 named
+   * `hidden-string/MAN :: COMMAND DEMAND MAN ROMANCE WOMAN` TWICE, word for
+   * word, and the room charged for two threads while saying one sentence
+   * twice. Deduping on the emitted identity is the only place that can see it.
+   *
+   * A repeated RELATION is deliberately still allowed: web-32's two `rhyme`
+   * threads are ALTHOUGH/DOUGH/THOUGH and FLEA/ME/TEA, which are two different
+   * sounds and two different sentences. Only a thread identical in relation,
+   * detail AND words is one trap wearing two coats.
+   */
+  const saidAlready = new Set<string>();
   for (const { trap, intruder } of picks) {
+    const said = `${trap.relation}|${trap.detail ?? ''}|${[...trap.words].sort().join(',')}`;
+    if (saidAlready.has(said)) continue;
+    saidAlready.add(said);
     if (!ship.includes(intruder)) ship.push(intruder);
     if (commit) {
       homeTally.set(slotOf.get(intruder)!, (homeTally.get(slotOf.get(intruder)!) ?? 0) + 1);

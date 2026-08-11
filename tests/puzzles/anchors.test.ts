@@ -1151,15 +1151,73 @@ describe('tier escalation — The Library (herring budget + category subtlety)',
    * wearing three coats. The pool-wide relation budget below (≤40% of named
    * threads) cannot see this: variety BETWEEN boards is not variety within the
    * evening, and the evening is what she plays.
+   *
+   * ═══ ROUND 18 — THIS GATE WAS GREEN ON THE POOL IT WAS WRITTEN TO CONDEMN ══
+   *
+   * It read `mono / multi <= 0.10`, where `mono` is "every named thread on this
+   * board carries the SAME relation". Measured on round 16's shipped pool — the
+   * pool the paragraph above is a complaint about — that is **4/75 = 5.3%**.
+   * The gate passed there, it passed at round 17's HEAD, and it would have gone
+   * on passing through any pool anyone is likely to ship. Worse, it was not
+   * even a ratchet: round 17's own shelf measured 6/108 = 5.6%, WORSE than the
+   * pool it condemned, and the bound never noticed.
+   *
+   * Two separate defects, and they have to be fixed together:
+   *
+   *   1. THE NAME DID NOT MATCH WHAT IT COMPUTED (standing rule 2). The title
+   *      says "one thing three times"; the metric is "every thread is one
+   *      relation", which on a two-thread board is one thing TWICE. And the
+   *      literal claim in the title was never true of anything: **no board in
+   *      round 16's pool, round 17's, or this one has ever named one relation
+   *      three times** — 0/75, 0/101, 0/108. The gate condemned a shape that
+   *      does not occur, which is why no threshold could give it teeth.
+   *
+   *   2. A REPEATED RELATION IS NOT THE DEFECT. web-32 names `rhyme` twice and
+   *      is right to: ALTHOUGH/DOUGH/THOUGH and FLEA/ME/TEA are two different
+   *      sounds and two different sentences. Charging a board for that is what
+   *      made the metric un-tightenable — the honest end of it was already 0.
+   *
+   * WHAT IS ACTUALLY WRONG is narrower and much sharper, and it is on the
+   * shelf: a board naming a thread that is identical in relation, detail AND
+   * words to one it has already named. web-39 shipped
+   * `hidden-string/MAN :: COMMAND DEMAND MAN ROMANCE WOMAN` **twice, word for
+   * word**, and the room paid the tier's thread budget for two threads while
+   * saying one sentence twice. `chooseTraps` could not see it: it dedupes on
+   * `trap.key`, the PATTERN the solver matched, and `contains:MAN` and
+   * `suffix:MAN` are two keys that flatten to one identical herring line once
+   * the pattern is thrown away. `content/generate-wordweb.ts` now dedupes on
+   * the emitted identity — what the player actually reads.
+   *
+   * So the bound is ZERO, not a percentage: there is no honest number of
+   * boards that may say the same sentence twice.
+   *
+   * ═══ AND IT GOES RED ON THE POOL IT CONDEMNS ═══════════════════════════════
+   *
+   * Re-derived off the pools rather than chosen, and counted the way the
+   * assertion below counts — relation AND detail AND words, so web-32's two
+   * different rhymes are not in it. Replaying this exact predicate:
+   *
+   *   round 16 shelf (`git show 2bc55ff^:content/generated/word-web.json`)
+   *     RED, 4 boards — web-52, web-55, web-b24, web-e01
+   *   round 17 HEAD (the pool this round inherited)
+   *     RED, 5 boards — web-13, web-39, web-55, web-b24, web-s21
+   *   this round     GREEN
+   *
+   * The old bound could not have made either call at any threshold it could
+   * honestly have been given: on its own metric those two pools measure 5.3%
+   * and 5.6%, both under 0.10, and the newer of the two is the worse one.
    */
-  it('a board with several threads rarely says one thing three times', () => {
+  it('no board names the same thread twice (2.10)', () => {
     const multi = WORD_WEB_POOL.filter((p) => (p.herrings ?? []).length >= 2);
     expect(multi.length, 'boards with 2+ named threads').toBeGreaterThan(40);
-    const mono = multi.filter(
-      (p) => new Set((p.herrings ?? []).map((h) => h.relation)).size === 1,
-    );
-    expect(mono.length / multi.length, `${mono.length}/${multi.length} all-one-relation`)
-      .toBeLessThanOrEqual(0.10);
+    // A thread is what the herring line SAYS: its relation, its detail and the
+    // set it points at. Two threads sharing only a relation are two sentences.
+    const said = (h: { relation: string; detail?: string; words: string[] }) =>
+      `${h.relation}|${h.detail ?? ''}|${[...h.words].sort().join(',')}`;
+    const twiceTold = multi
+      .filter((p) => new Set(p.herrings!.map(said)).size < p.herrings!.length)
+      .map((p) => `${p.id}: ${p.herrings!.map((h) => `${h.relation}/${h.detail ?? '-'}`).join(' + ')}`);
+    expect(twiceTold, twiceTold.join(' ; ')).toEqual([]);
   });
 
   /**

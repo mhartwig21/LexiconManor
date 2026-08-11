@@ -34,6 +34,50 @@ import {
  */
 
 describe('typeset() — straight marks become handed marks', () => {
+  /**
+   * ═══ ROUND 18 — THE WHOLE FILE WAS ASSERTED AGAINST ITSELF ════════════════
+   *
+   * Every assertion below — and every assertion in `content/lint-typography.ts`
+   * — is written in terms of `OPEN_DOUBLE` / `CLOSE_DOUBLE` / `OPEN_SINGLE` /
+   * `CLOSE_SINGLE`, and NOTHING anywhere named the four code points. So the
+   * suite says "typeset turns a straight quote into OPEN_DOUBLE" and never
+   * "OPEN_DOUBLE is a left double quotation mark".
+   *
+   * HONEST ABOUT THE SIZE OF THE HOLE, because the two loudest failures are
+   * already covered. Setting `OPEN_DOUBLE = '"'` reds three existing gates,
+   * and swapping open for close reds two: this file does pin that the marks
+   * are non-straight and that they differ from each other. What NOTHING pinned
+   * is WHICH handed marks they are. Measured, by editing the constants and
+   * running this file:
+   *
+   *   OPEN_DOUBLE  = '«'  (U+00AB guillemet)
+   *   CLOSE_SINGLE = 'ʼ'  (U+02BC MODIFIER LETTER APOSTROPHE — a LETTER, so it
+   *                        changes word boundaries and line breaking, and the
+   *                        serif faces draw it differently)
+   *
+   * → 18 of 19 tests GREEN, only this one red. Both are handed, both are
+   * non-straight, both differ from their partners, so every existing defence
+   * passes them straight through and the game ships French quotes in a cozy
+   * English manor.
+   *
+   * The external fact is Unicode, so the assertion is against Unicode, and the
+   * code points are spelled as numbers rather than as glyphs — a glyph on the
+   * right-hand side would move with the constant under a file-encoding
+   * accident and put us back where we started.
+   */
+  it('pins the four marks to their code points, not to each other', () => {
+    expect(OPEN_DOUBLE.codePointAt(0), 'OPEN_DOUBLE is not U+201C').toBe(0x201C);
+    expect(CLOSE_DOUBLE.codePointAt(0), 'CLOSE_DOUBLE is not U+201D').toBe(0x201D);
+    expect(OPEN_SINGLE.codePointAt(0), 'OPEN_SINGLE is not U+2018').toBe(0x2018);
+    expect(CLOSE_SINGLE.codePointAt(0), 'CLOSE_SINGLE is not U+2019').toBe(0x2019);
+    // …and each is ONE mark, so a template that interpolates them cannot be
+    // silently padded, and none of them is a straight typewriter mark.
+    for (const m of [OPEN_DOUBLE, CLOSE_DOUBLE, OPEN_SINGLE, CLOSE_SINGLE]) {
+      expect([...m], `${m} is not a single mark`).toHaveLength(1);
+      expect('"\''.includes(m), `${m} is a typewriter mark`).toBe(false);
+    }
+  });
+
   it('hands a double-quoted fragment correctly (the Library showcase bug)', () => {
     expect(typeset('Anagrams of "LISTEN"')).toBe(`Anagrams of ${OPEN_DOUBLE}LISTEN${CLOSE_DOUBLE}`);
     expect(typeset('Contains "OUT"')).toBe(`Contains ${OPEN_DOUBLE}OUT${CLOSE_DOUBLE}`);
