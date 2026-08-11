@@ -26,11 +26,11 @@ word struck from every dictionary — is assembled across days from clues you fi
 decipher. The floorplan is demolished every night; what persists is the case file, the
 people, and the bookmarks.
 
-**Seven rooms, 1,107 shipped puzzles.**
+**Seven rooms, 1,106 shipped puzzles.**
 
 | Room | Game | Puzzles |
 |---|---|---|
-| The Library | Word Web (Connections-style) | 153 |
+| The Library | Word Web (Connections-style) | 152 |
 | The Conservatory | Hive Builder (Spelling Bee-style) | 300 |
 | The Gallery | Twistle (grid word search) | 210 |
 | The Study | Forgotten Word (poetic definitions) | 113 |
@@ -271,10 +271,21 @@ Ordered most value first.
   persistence, earns the campaign" holds for the skilled player (20,213 solve keys against
   17,342 deck) and **fails for the owner's own profile** (13,882 against 15,700). Recorded,
   not tuned — round 24 was an instrument round and could not touch `deck.ts`.
-- **§5.9 remainder.** The Darkroom and the Linen Closet are done. The Library's 612 threads
-  still hold two about the manor; the Gallery and the Conservatory carry no authored prose
-  field at all, so neither can speak until its room shell grows a surface to speak from; the
-  Study's 113-entry pool is still the thinnest per tier in the game.
+- **§5.9 remainder.** The Darkroom and the Linen Closet are done. The Gallery and the
+  Conservatory carry no authored prose field at all, so neither can speak until its room shell
+  grows a surface to speak from; the Study's 113-entry pool is still the thinnest per tier in
+  the game.
+- **The manor in the Library's threads is STILL the open one, and round 26 tried.** Fourteen
+  manor categories were authored into the bank (`MANOR_BANK`) — the staff, the dictionary
+  entry, what a lexicographer collects, the sounds in an empty corridor. All fourteen are
+  drawn three times each by the composer, and **five survive onto the shelf**: the trap
+  planter swaps thirty-seven of the forty-two out for a category that buys the board a
+  thread, and every attempt to stop it cost the pool more boards than it saved (planter
+  quality above the trap counts: 155 → 151 boards; as a tie-break below them: 155 → 149;
+  manor-first composition: 155 → 148). The fix is not a knob. Either the manor categories
+  have to be `QUALITY_PROTECTED` compound frames (three were tried, `HOUSE ___` / `BOOK ___`
+  / `KEY ___`, and cost five boards), or the wordplay bank needs enough new subtle supply
+  that the planter stops being the pool's scarcest resource. That is an authoring round.
 - **§5.11 remainder.** Per-room palettes still borrow from other products.
 
 ### The Linen Closet: measured, decided, NOT executed

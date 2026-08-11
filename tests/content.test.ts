@@ -283,6 +283,55 @@ describe('word web bundle', () => {
   });
 
   /**
+   * ROUND 17 (AAA 2.11 [BEAT]) — A DECOY MAY NOT BE SPOTTABLE BY SHAPE.
+   *
+   * Plausibility was the round-14 bar and it is not sufficient: `Weather
+   * Phenomena` beside `Contains "URR"` and `Contains "BLIZZ"` is a one-way
+   * choice printed three times, because the label that reads like a sentence
+   * is the answer and the labels that read like a regex are not. Measured on
+   * the round-16 shelf: of 1,224 decoys, 19 were plain English; of the 194
+   * plain-English GROUPS, six were offered a single plain-English alternative
+   * and 188 were offered two string templates apiece.
+   *
+   * The floor is a share of the plain-English groups rather than all of them,
+   * because the supply is authored (`SENSE_BANK`) and a group whose four words
+   * no sense field half-describes must still be given something checkable. The
+   * measurement is made HERE, off the shipped pool, with a template list this
+   * file owns — so it cannot be satisfied by the generator agreeing with
+   * itself.
+   */
+  it('a plain-English category is offered plain-English decoys', () => {
+    const TEMPLATE = [
+      /^Contains "/, /^Rhymes with "/, /^Anagrams of "/, /^Hidden /, /^Silent /,
+      /^Homophones/, /^Add an? "/, /^Drop /, /^Can (Be|Follow|Precede) /, /___/,
+      /^Two Pairs/, /^Starts and Ends/, /^Palindromes$/, /^Semordnilaps$/,
+      /^Heteronyms$/, /^Contronyms/, /^Onomatopoeia$/, /^Portmanteau Words$/,
+      /^Contains Roman Numerals$/, /^Words with All Five Vowels$/,
+      /^Letters in Alphabetical Order$/, /^Spelled Without a Vowel$/,
+      /^Three Vowels in a Row$/, /^The Same Letter Three Times$/,
+      /^Made of a Repeated Syllable$/,
+    ];
+    const templated = (t: string) => TEMPLATE.some((r) => r.test(canon(t)));
+    const plainGroups = wordWeb.flatMap((p) => p.groups).filter((g) => !templated(g.theme));
+    expect(plainGroups.length, 'plain-English groups on the shelf').toBeGreaterThan(120);
+    const answered = plainGroups.filter(
+      (g) => (g.decoys ?? []).some((d: string) => !templated(d)),
+    ).length;
+    // Round 16 measured 6/194 — 3.1%.
+    expect(
+      answered / plainGroups.length,
+      `${answered}/${plainGroups.length} plain groups offered a plain decoy`,
+    ).toBeGreaterThan(0.25);
+    // …and pool-wide, a decoy of the same KIND as the truth it competes with.
+    const all = wordWeb.flatMap((p) => p.groups.flatMap(
+      (g) => (g.decoys ?? []).map((d: string) => templated(d) === templated(g.theme)),
+    ));
+    const matched = all.filter(Boolean).length;
+    // Round 16 measured 67.7%.
+    expect(matched / all.length, `${matched}/${all.length} type-matched`).toBeGreaterThan(0.72);
+  });
+
+  /**
    * AAA 2.12 — the easiest group is found first on 70%+ of boards. 43 of
    * the 162 round-13 boards put a bare visible letter-pattern in PURPLE,
    * and 8 were pure prefix sorts (web-22: CARGO / CARTON / CARPET /

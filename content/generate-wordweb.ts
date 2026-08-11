@@ -14,6 +14,7 @@ import {
   isWayIn,
   ladderProblems,
   lateralOf,
+  type CensusBoard,
 } from './lib/wordweb-ladder';
 import { gateOk, toneOk } from './generate-gate';
 import { typesetDeep } from './lib/typography';
@@ -387,6 +388,21 @@ function qualityOf(rawTheme: string): number {
   const theme = canon(rawTheme);
   if (familyOf(theme) === 'compound') return QUALITY_PROTECTED;
   if (/^Things (That|You) /.test(theme)) return 2;
+  /**
+   * ROUND 17 — A CATEGORY ABOUT THIS BUILDING IS WORTH AS MUCH AS A PROPERTY
+   * CATEGORY, AND THIS LINE IS WHY THE FIRST MANOR BATCH VANISHED.
+   *
+   * `The Manor Staff` and `Things a Housekeeper Counts` are plain taxonomies
+   * by shape, so they scored 1 — LOOSE, the composer's first-choice victim,
+   * "the kind of category the bank can genuinely improve on". They were drawn
+   * three times each like every other pool and then eaten to meet a wordplay
+   * floor, and five of fourteen survived onto a hundred and fifty-five boards.
+   * The bank cannot improve on them: what they carry is not taxonomic quality
+   * but the only thing sixteen words on a page cannot otherwise have, which is
+   * a reason to be THESE sixteen words. They are still evictable — they are
+   * not `QUALITY_PROTECTED` — the composer simply reaches past them first.
+   */
+  if (MANOR_THEMES.has(theme)) return 2;
   return 1;
 }
 
@@ -525,6 +541,33 @@ const WORDPLAY_BANK: BankGroup[] = [
   { theme: 'Add a "C" for a New Word', words: ['HARM', 'RUST', 'LOVER', 'RATE', 'LAMP', 'RAFT', 'OVER', 'HEST'] },
   { theme: 'Add a "W" for a New Word', words: ['HEAT', 'RING', 'RITE', 'HALE', 'RECK', 'RAP', 'ITCH', 'AGES'] },
   { theme: 'Add a "P" for a New Word', words: ['LANE', 'RIDE', 'LUMP', 'EACH', 'LATE', 'RIME', 'ANTS', 'LOUGH'] },
+  /**
+   * ROUND 17 — three more rhyme families, from the same pool-count argument as
+   * the six letters below. Every member is verified against the vendored CMU
+   * pronouncing dictionary, so the categories are true by SOUND and
+   * deliberately not by spelling (BRAIN with PLANE, CROWN with NOUN).
+   */
+  { theme: 'Rhymes with "CHAIN"', words: ['BRAIN', 'TRAIN', 'PLAIN', 'CRANE', 'LANE', 'GAIN', 'MAIN', 'CANE'] },
+  { theme: 'Rhymes with "CROWN"', words: ['TOWN', 'BROWN', 'CLOWN', 'GOWN', 'NOUN', 'DOWN', 'FROWN', 'RENOWN'] },
+  { theme: 'Rhymes with "WHEEL"', words: ['SEAL', 'MEAL', 'PEEL', 'HEEL', 'REEL', 'DEAL', 'EEL', 'ZEAL'] },
+  /**
+   * ROUND 17 — SIX MORE LETTERS, AND THE REASON IS A POOL COUNT.
+   *
+   * The shelf's binding resource is not category quality, it is bank SUPPLY:
+   * `BANK_REUSE_CAP` lets each theme onto three boards, so a pool of N themes
+   * can furnish 3N of them, and seventy-four boards left the round-16 shelf
+   * with "no replacement for over-cap theme". Sixteen of those name an
+   * add-a-letter theme. Every base word below is a familiar, cozy-gated word
+   * that becomes another word when the letter is inserted somewhere — checked
+   * against the shipped dictionary, which is the same check `labelSatisfiedBy`
+   * makes of them at build time.
+   */
+  { theme: 'Add an "F" for a New Word', words: ['USED', 'RIGHT', 'LIGHT', 'EAST', 'ABLE', 'EVER', 'ACTION', 'LOWER'] },
+  { theme: 'Add an "I" for a New Word', words: ['MOST', 'WATER', 'RATE', 'POST', 'MORE', 'PLACE'] },
+  { theme: 'Add a "K" for a New Word', words: ['MONEY', 'NIGHT', 'PLAN', 'STAR', 'THAN', 'SPAR'] },
+  { theme: 'Add an "N" for a New Word', words: ['HAVE', 'LIKE', 'PRICE', 'YEAR', 'LINE', 'TAKE', 'AREA', 'THIS'] },
+  { theme: 'Add a "U" for a New Word', words: ['SITE', 'STATE', 'CASE', 'FORM', 'SAVE', 'ACTION', 'BOND'] },
+  { theme: 'Add a "Y" for a New Word', words: ['HOME', 'NEWS', 'PRICE', 'HEALTH', 'READ', 'NEED', 'PART', 'FULL'] },
   { theme: 'Drop the First Letter for a New Word', words: ['BRAIN', 'CHAIR', 'STONE', 'PLACE', 'SPARK', 'CLOVE', 'TRAIL', 'BREED'] },
   { theme: 'Drop the Last Letter for a New Word', words: ['HEARTH', 'PLANET', 'STARE', 'CLOVER', 'CARTON', 'BRANDY', 'SHEEP', 'GRAPES'] },
   /**
@@ -781,6 +824,62 @@ const WORDPLAY_BANK: BankGroup[] = [
  *     a lexicographer's house and a puzzle. (§5.9 is a separate item and this
  *     does not discharge it; it is the part of it that was free.)
  */
+/**
+ * ROUND 17 — THE HOUSE IS IN THE THREADS, OR THE LIBRARY BELONGS TO NO GAME.
+ *
+ * The owner's steer for this round was that the word puzzles are too small a
+ * part of Lexicon Manor and that the mechanics are not built around them.
+ * The Library's version of that charge is measurable and was measured:
+ * scanning all 612 shipped threads for the house, its staff, its
+ * lexicographer or his dictionary returned SIX hits, five of which are
+ * incidental (`___ HOUSE`, `Things in a Lighthouse`). One thread in the
+ * whole shelf was written for this building — web-s64's
+ * `Sounds a House Makes at Night` — and it is the best proof available that
+ * the good version exists, because it is an ordinary Connections category
+ * that could only have come from here.
+ *
+ * Every group below is that template again. None of them is a manor-flavoured
+ * gimmick: each is a category any word game could print, whose four words a
+ * stranger can solve with no knowledge of this house at all (AAA 2.9's
+ * fairness promise is untouched). What they buy is the thing sixteen words on
+ * a page cannot otherwise have — a reason to be THESE sixteen words. A player
+ * who has met Fern, the cat and the lexicographer's foul papers gets a second
+ * reading of `What a Lexicographer Collects` for free; a player who has not
+ * gets a perfectly ordinary category about slips and citations.
+ *
+ * They are plain semantic supply and pay every rule the rest of the bank
+ * pays: the theme cap, the family budget, the uniqueness solver, the tone
+ * gate. Kept as their OWN list rather than merged into `SEMANTIC_BANK` for
+ * one reason: `synthesiseBoards` composes two thirds of the shelf out of the
+ * banks, and until it was told to reach for the house first it drew five of
+ * these fourteen across a hundred and fifty boards. A shelf is not about the
+ * manor because a manor category exists in a pool; it is about the manor
+ * because the composer spends one.
+ */
+const MANOR_BANK: BankGroup[] = [
+  { theme: 'The Manor Staff', words: ['BUTLER', 'FOOTMAN', 'VALET', 'GOVERNESS', 'COACHMAN', 'HOUSEKEEPER', 'GARDENER', 'STEWARD'] },
+  { theme: 'Parts of a Dictionary Entry', words: ['HEADWORD', 'ETYMOLOGY', 'DEFINITION', 'VARIANT', 'PLURAL', 'SENSE', 'SPELLING', 'USAGE'] },
+  { theme: 'What a Lexicographer Collects', words: ['CITATIONS', 'SLIPS', 'VARIANTS', 'PROVERBS', 'MISPRINTS', 'EPITHETS', 'IDIOMS', 'ODDITIES'] },
+  { theme: "Things on a Lexicographer's Desk", words: ['BLOTTER', 'INKWELL', 'PAPERWEIGHT', 'MAGNIFIER', 'LEDGER', 'PENKNIFE', 'ALMANAC', 'QUILL'] },
+  { theme: 'Rooms of a Great House', words: ['BALLROOM', 'LIBRARY', 'CONSERVATORY', 'STUDY', 'GALLERY', 'PARLOUR', 'NURSERY', 'SNUG'] },
+  { theme: 'Things a Housekeeper Counts', words: ['LINEN', 'SILVER', 'CANDLES', 'KEYS', 'SHEETS', 'GUESTS', 'SPOONS', 'TOWELS'] },
+  { theme: 'Things the House Came With', words: ['DEEDS', 'DEBTS', 'PORTRAITS', 'SERVANTS', 'DRAUGHTS', 'RUMOURS', 'DAMP', 'GHOST'] },
+  { theme: 'Things a House Guest Leaves Behind', words: ['GLOVE', 'UMBRELLA', 'SCARF', 'IMPRESSION', 'FINGERPRINT', 'APOLOGY', 'HAIRPIN', 'POSTCARD'] },
+  // MURMUR is deliberately absent: it is one of eight members of the wordplay
+  // bank's `Made of a Repeated Syllable`, one of the thinnest pools on the
+  // shelf, and a word spent here is a hand that pool cannot deal.
+  { theme: 'Sounds in an Empty Corridor', words: ['ECHO', 'FOOTFALL', 'RUSTLE', 'WHISPER', 'PATTER', 'CLATTER', 'SHUFFLE', 'SCUFF'] },
+  { theme: 'Things Found Behind a Bookcase', words: ['DUST', 'DRAUGHT', 'PANEL', 'HINGE', 'SAFE', 'SPIDER', 'COBWEB', 'KEYHOLE'] },
+  { theme: 'Things a Detective Notices', words: ['FOOTPRINT', 'ALIBI', 'TREMOR', 'PAUSE', 'SOOT', 'SCRATCH', 'LIMP', 'HESITATION'] },
+  // Dewey again, from the other side of the desk.
+  { theme: 'Things a Cat Knocks Off a Desk', words: ['PENCIL', 'SPECTACLES', 'TEACUP', 'ERASER', 'COASTER', 'STAPLER', 'NOTEBOOK', 'TEASPOON'] },
+  { theme: 'Parts of a Word', words: ['ROOT', 'STEM', 'PREFIX', 'SUFFIX', 'SYLLABLE', 'ENDING', 'ACCENT', 'STRESS'] },
+  { theme: 'Things That Are Catalogued', words: ['VOLUMES', 'SPECIMENS', 'ARTEFACTS', 'CURIOSITIES', 'STARS', 'SINS', 'MOTHS', 'FINDINGS'] },
+];
+
+/** The themes that are about this building — see `qualityOf`. */
+const MANOR_THEMES: ReadonlySet<string> = new Set(MANOR_BANK.map((g) => canon(g.theme)));
+
 const SEMANTIC_BANK: BankGroup[] = [
   { theme: 'Words for Rain', words: ['DRIZZLE', 'DOWNPOUR', 'SQUALL', 'DELUGE', 'TORRENT', 'CLOUDBURST', 'SPRINKLE', 'SHOWER'] },
   { theme: 'Kitchen Utensils', words: ['WHISK', 'LADLE', 'SPATULA', 'COLANDER', 'GRATER', 'SIEVE', 'TONGS', 'PEELER'] },
@@ -854,6 +953,8 @@ const SEMANTIC_BANK: BankGroup[] = [
   { theme: 'Things Written in Margins', words: ['GLOSS', 'QUERY', 'CORRECTION', 'DOODLE', 'INITIALS', 'OBJECTION', 'REMINDER', 'ASIDE'] },
   { theme: 'Kinds of Nail', words: ['TACK', 'BRAD', 'RIVET', 'SPIKE', 'CLOUT', 'DOWEL', 'SPRIG', 'BOLT'] },
   { theme: 'Kinds of Poem', words: ['SONNET', 'HAIKU', 'ELEGY', 'LIMERICK', 'BALLAD', 'VILLANELLE', 'EPIGRAM', 'SESTINA'] },
+
+  ...MANOR_BANK,
 ];
 
 /**
@@ -1254,6 +1355,13 @@ interface RoomTierSpec {
 
 /** Solver score at which a trap counts as a real pull, not a coincidence. */
 const HERRING_TIGHT = 2;
+/**
+ * …and the score at which it is still a pull a player can actually follow:
+ * three words across two groups sharing something visible, so the odd one out
+ * reads as belonging with the pair. Only the SURPLUS above a tier's floor may
+ * be bought at this price — see `shippedHerrings`.
+ */
+const HERRING_LOOSE = 1;
 
 const TIER_SPECS: Record<Tier, RoomTierSpec> = {
   // Round 7: tier 1's floor was 0, so 22 of 55 shipped boards carried an empty
@@ -1267,9 +1375,27 @@ const TIER_SPECS: Record<Tier, RoomTierSpec> = {
   // is Koster's fourth complaint verbatim ("the hardest group solves itself").
   // Measured on the round-12 shelf, 11 boards had no group scoring ≥5 at all;
   // every one of them was a tier-1 board with `minSubtle: 0`.
-  1: { maxTrivia: 1, minWordplay: 2, minSubtle: 1, minPlain: 2, maxLetterMechanics: 1, minHerrings: 1, maxHerrings: 1, minHerringScore: 1 },
-  2: { maxTrivia: 1, minWordplay: 2, minSubtle: 1, minPlain: 1, maxLetterMechanics: 2, minHerrings: 1, maxHerrings: 2, minHerringScore: HERRING_TIGHT },
-  3: { maxTrivia: 0, minWordplay: 2, minSubtle: 2, minPlain: 1, maxLetterMechanics: 3, minHerrings: 2, maxHerrings: 3, minHerringScore: HERRING_TIGHT },
+  //
+  // ROUND 17 (BENCHMARKS §2) — THE CEILINGS, AND WHY THEY ALL MOVED UP ONE.
+  //
+  // Measured on the round-16 shelf of 153 boards: `ambiguousWords` averaged
+  // 1.12 per board, median 1, and only 18 boards (12%) carried the 2–4
+  // CONTESTED TILES that BENCHMARKS §2 records as Connections' working range.
+  // A contested tile is not a garnish on the format, it IS the format: with
+  // one of them, three of the four threads are uncontested and the evening is
+  // a sort. Wyna Liu's own authoring note — "red herrings are first-class
+  // content" — is a statement about how many, not about whether.
+  //
+  // The FLOORS are untouched. A floor that cannot be met drops the board
+  // (`shipsHere`), and the round-13/14 pool is already lean; raising them
+  // would have bought contested tiles by shrinking the shelf, which is the
+  // trade this project has refused twice. The ceilings cost nothing they
+  // cannot afford, because the budget is spent only where the board's own
+  // supply of tight threads reaches — and where the colour ladder can still
+  // describe the result honestly, which is what `fitHerrings` checks.
+  1: { maxTrivia: 1, minWordplay: 2, minSubtle: 1, minPlain: 2, maxLetterMechanics: 1, minHerrings: 1, maxHerrings: 2, minHerringScore: 1 },
+  2: { maxTrivia: 1, minWordplay: 2, minSubtle: 1, minPlain: 1, maxLetterMechanics: 2, minHerrings: 1, maxHerrings: 3, minHerringScore: HERRING_TIGHT },
+  3: { maxTrivia: 0, minWordplay: 2, minSubtle: 2, minPlain: 1, maxLetterMechanics: 3, minHerrings: 2, maxHerrings: 4, minHerringScore: HERRING_TIGHT },
 };
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -1386,13 +1512,39 @@ function synthesiseBoards(target: number, rng: () => number): RawBoard[] {
    * talk about; pass 2 then demotes it to tier 1 anyway if that is where its
    * measured traps put it, which is the correct way round.
    */
-  const DIFFICULTIES: AuthoredDifficulty[] = ['medium', 'medium', 'hard'];
+  /**
+   * ROUND 17 — 'easy' rejoins the rotation, and the round-13 objection above
+   * has been answered by a different change. Tier 1 keeps `minPlain: 2`, so on
+   * a two-plain board the trap PLANTER has nothing it is allowed to swap —
+   * which was fatal while planting was the only way a board could get a
+   * thread. It is not any more: `pickBankGroup` now chooses, among the hands
+   * the board was taking anyway, the four words that leave a fifth member on
+   * the board, so a tier-1 composed board can arrive with a contested tile
+   * already in it. Pass 2 still demotes or drops it if it cannot.
+   */
+  const DIFFICULTIES: AuthoredDifficulty[] = ['medium', 'easy', 'medium', 'hard', 'easy'];
 
   for (let i = 0; out.length < target && i < target * 12; i += 1) {
     const fam = families[i % families.length]!;
     const sub = (subtleByFamily.get(fam) ?? []).filter(affordable);
     if (sub.length === 0) continue;
-    const s = pick(createRngFrom(rng), sub);
+    /**
+     * ROUND 17 — ROUND-ROBIN INSIDE THE FAMILY, NOT JUST ACROSS FAMILIES.
+     *
+     * The rotation above spreads the composed batch across the mechanic
+     * FAMILIES, and then took a hand from that family at random — so
+     * `letter-shape`, which is fifteen different themes wearing one family
+     * name, was a fifteen-sided die rolled a few dozen times. Three of the six
+     * shape mechanics round 13 authored (`Words with All Five Vowels`,
+     * `Three Vowels in a Row`, `Made of a Repeated Syllable`) came up short
+     * often enough that their few boards all died at a later gate and they
+     * stopped shipping at all, which
+     * `tests/puzzles/wordweb-ladder.test.ts` catches by name. Least-spent
+     * theme first, seeded pick among the equals: the die is now fair.
+     */
+    const thinnest = Math.min(...sub.map((g) => spentThemes.get(canon(g.theme)) ?? 0));
+    const freshest = sub.filter((g) => (spentThemes.get(canon(g.theme)) ?? 0) === thinnest);
+    const s = pick(createRngFrom(rng), freshest);
     const used = new Set(s.words);
     const fits = (g: BankGroup) => affordable(g) && g.words.every((w) => !used.has(w));
 
@@ -1409,6 +1561,29 @@ function synthesiseBoards(target: number, rng: () => number): RawBoard[] {
     const c = trappiest(cOptions, [s]);
     for (const w of c.words) used.add(w);
 
+    /**
+     * ROUND 17 — THE COMPOSER SPENDS ITS FIRST PLAIN SLOT ON THE HOUSE.
+     *
+     * `MANOR_BANK` existed for one build before this line and was drawn five
+     * times across a hundred and fifty-five boards, because `plain` is forty
+     * pools wide and nothing preferred one over another. A shelf is not about
+     * the manor because a manor category exists in a pool.
+     *
+     * NOT DONE HERE, and the two measurements that say why. Composed as
+     * `manor.filter(fits)` outright the shelf fell from 155 boards to 148
+     * (floor 150), and as a thumb on `trappiest`'s scale it fell to 145 while
+     * the manor count went DOWN: this slot is also where a composed board buys
+     * the near-collisions that become its contested tiles, and fourteen pools
+     * cannot supply what forty-seven can.
+     *
+     * The manor pools were being drawn here all along — three boards each,
+     * like every other pool. They were being EATEN afterwards, by
+     * `replaceGroups`, whose victim order takes the lowest-`qualityOf`
+     * category first and scored `Things a Housekeeper Counts` at 1 (a plain
+     * taxonomy) exactly as it scores `Vegetables`. The fix belongs there, and
+     * it is one line: a category that is about this building is worth as much
+     * as a property category, so the composer eats something else.
+     */
     const p1Options = plain.filter(fits);
     if (p1Options.length === 0) continue;
     const p1 = trappiest(p1Options, [s, c]);
@@ -1460,7 +1635,18 @@ function synthesiseBoards(target: number, rng: () => number): RawBoard[] {
 /** The shelf size tests/content.test.ts holds the pool to. */
 const POOL_FLOOR = 150;
 
-const COMPOSED_TARGET = 180;
+/**
+ * ROUND 17 — 180 → 260. This is the number of composed CANDIDATES, not of
+ * shipped boards: every one of them still goes through the same tier
+ * composition, herring solver, colour ladder and `shipsHere` as an authored
+ * board, and roughly half of them leave. It was raised because this round
+ * spends supply — the trap budget contests more tiles, and a board that
+ * cannot describe its own difficulty at any budget leaves rather than lying
+ * — and `POOL_FLOOR` is a promise to a player who visits the Library nightly.
+ * The synthesiser stops early when the banks are spent, so the only cost of a
+ * larger target is build time.
+ */
+const COMPOSED_TARGET = 260;
 const boards: RawBoard[] = [
   ...authoredBoards,
   ...synthesiseBoards(COMPOSED_TARGET, createRng(SEED + 991)),
@@ -1640,7 +1826,50 @@ function replaceGroups(
     if (usable.length === 0) return null;
     const best = Math.min(...usable.map((b) => familyLoad(b.theme)));
     const leanest = usable.filter((b) => familyLoad(b.theme) === best);
-    return pick(createRngFrom(rng), leanest);
+    /**
+     * ROUND 17 (BENCHMARKS §2) — THE FREE HALF OF THE CONTESTED-TILE FIX.
+     *
+     * Every swap that reaches this line is already spending a bank theme, and
+     * until now it spent it blind: among the hands from the least-used family
+     * it took one at random. A bank group is a POOL of six to eight verified
+     * members and each use draws a distinct FOUR from it (round 11), so which
+     * four is a free choice — and the four decide whether any word on this
+     * board is a fifth member of the incoming category, which is what a
+     * contested tile IS. Measured: the shelf goes from 147 boards contesting
+     * 1.29 tiles to 155 contesting 1.38, at no cost in either direction.
+     *
+     * The trap planter can also buy contested tiles, but it buys them with a
+     * whole extra theme out of a bank the pool has already nearly spent —
+     * aiming the planter at two contested tiles took the shelf from 141 boards
+     * to 128. Choosing better among hands the board was taking anyway costs
+     * nothing at all.
+     *
+     * IT DOES RE-WEIGHT THE SHELF'S CATEGORIES, and the answer to that is
+     * supply rather than a thumb on this scale. A `Contains "X"` pool collides
+     * with more boards than `Three Vowels in a Row` does, so ranking on
+     * collisions pushed the eleven label templates up to exactly the 65%
+     * ceiling `tests/puzzles/wordweb-ladder.test.ts` holds and squeezed three
+     * of the six round-13 shape mechanics off the shelf entirely. Guarding it
+     * here — preferring an un-templated theme first, or as a tie-break among
+     * equally colliding hands — costs the shelf six or seven boards and takes
+     * it under the 150 floor. The three thin pools were widened instead (see
+     * `WORDPLAY_BANK`), which fixes the cause: a pool that can only deal one
+     * hand cannot survive a shelf that wants three.
+     */
+    const contested = leanest.map((b) => contestedCapacity(
+      findTraps(groups.map((g) => (
+        g === victim ? { theme: b.theme, tier: g.tier, words: b.words } : g))),
+      // Measured at the tier's OWN tightness. Measured at the loose band
+      // instead — the band the surplus is allowed to be bought in — the shelf
+      // fell from 155 boards to 150 and the share of boards inside the 2–4
+      // band fell with it: a hand chosen for a loose collision is a hand not
+      // chosen for a tight one, and the tight ones are what the tier's floor
+      // is met from.
+      spec.minHerringScore,
+    ));
+    const most = Math.min(CONTESTED_TARGET, Math.max(...contested));
+    const trappiest = leanest.filter((_, i) => contested[i]! >= most);
+    return pick(createRngFrom(rng), trappiest);
   };
 
   /** Themes this attempt drew from the bank (already counted by `swapIn`). */
@@ -1866,18 +2095,52 @@ function replaceGroups(
    * allowed ONE further swap whose only purpose is to give the room a second
    * kind of sentence to say — and only if it keeps every trap the board
    * already had, its composition, and its zero unintended groupings.
+   *
+   * ROUND 17 — AND "A SECOND KIND" IS NOW ASKED AS A COUNT, NOT AS A PRICE.
+   *
+   * The round-11 trigger was `relationCost > RELATION_PRESSURE`: reach for a
+   * second thread when the cheapest thread you have is an expensive one. That
+   * is a question about the pool's diet, and it answers "no" for a board whose
+   * single thread happens to be a cheap relation — which is exactly the board
+   * with one thread. `relationSpread` asks the question the player feels: can
+   * this board pull two different ways at all? Both triggers stay, because
+   * they catch different boards, and the plant is still refused unless it
+   * keeps every trap, the composition and the zero unintended groupings.
    */
   const RELATION_PRESSURE = BASE_RELATION_LOAD['doubled-letter'];
+  const relTotalNow = Math.max(1, [...relTally.values()].reduce((a, b) => a + b, 0));
   let plants = 0;
   for (;;) {
-    const have = tightTrapCount(groups, spec.minHerringScore);
+    const boardTraps = findTraps(groups);
+    const have = trapCapacity(boardTraps, spec.minHerringScore);
+    const spread = relationSpread(groups, spec.minHerringScore);
+    /**
+     * ROUND 17 — CONTESTED TILES ARE A TIE-BREAK HERE AND A DECISION IN
+     * `pickBankGroup`, AND THE ASYMMETRY IS THE MEASUREMENT.
+     *
+     * A board's traps overwhelmingly point at ONE outside word (the fifth
+     * member of whichever group happens to share a pattern), so "one thread"
+     * and "three threads" were routinely the same single contested tile: 118
+     * of 141 boards contested exactly one tile against a ceiling of two to
+     * four. But making the planter *reach* for a second contested tile spends
+     * a whole extra bank theme, and the bank is the scarce resource — that
+     * version of this change took the shelf from 141 boards to 128, and a
+     * board that leaves contests no tiles at all. So the reaching is done for
+     * free, one level up, by choosing WHICH FOUR WORDS a swap the board was
+     * having anyway deals in; down here the count only decides which of
+     * several equally legal plants to make.
+     */
     const needTraps = have < spec.minHerrings;
     const needRelation = !needTraps && plants === 0
-      && relationCost(groups, spec.minHerringScore) > RELATION_PRESSURE;
+      && (spread < RELATION_SPREAD_MIN
+        || relationCost(groups, spec.minHerringScore) > RELATION_PRESSURE);
     if ((!needTraps && !needRelation) || plants++ >= 4) break;
     const words = boardWords();
     const themes = boardThemes();
-    let best: { victim: RawGroup; bank: BankGroup; traps: number; slot: number; rel: number } | null = null;
+    let best: {
+      victim: RawGroup; bank: BankGroup; traps: number; tiles: number;
+      slot: number; rel: number; spread: number;
+    } | null = null;
     for (const victim of groups) {
       for (const bank of WORDPLAY_BANK.flatMap(bankDraws)) {
         if ((bankUse.get(canon(bank.theme)) ?? 0) >= BANK_REUSE_CAP) continue;
@@ -1894,7 +2157,23 @@ function replaceGroups(
           g === victim ? { theme: bank.theme, tier: g.tier, words: [...bank.words] } : g);
         if (!compositionOk(next)) continue;
         if (boardFailures(next).length > 0) continue;
-        const traps = tightTrapCount(next, spec.minHerringScore);
+        // ROUND 17 — one `findTraps` per candidate, read four ways. It used to
+        // be three (`tightTrapCount`, `relationCost` and `relationSpread` each
+        // ran their own) and the planter is the hot loop of the whole build.
+        const nextTraps = findTraps(next);
+        const nextPicks = chooseTraps(
+          nextTraps,
+          scoresOf(nextTraps).filter((h) => h.score >= spec.minHerringScore),
+          Number.POSITIVE_INFINITY,
+          () => 0,
+        );
+        const traps = nextPicks.length;
+        const tiles = Math.min(
+          new Set(nextPicks.map((p) => p.intruder)).size, CONTESTED_TARGET,
+        );
+        const relations = new Set(
+          nextTraps.filter((t) => t.score >= spec.minHerringScore).map((t) => t.relation),
+        );
         // Round 11: among plants that buy the same number of traps, prefer the
         // one that lands on the slot this board's preference order names first
         // — the planter used to be a second, invisible source of the ssww
@@ -1905,7 +2184,13 @@ function replaceGroups(
         // shared-affix trap, which is most of why 68% of the shelf's
         // acknowledged herrings said the same thing.
         const slot = slotPref.indexOf(victim.tier);
-        const rel = relationCost(next, spec.minHerringScore);
+        const rel = relations.size === 0 ? 1 : Math.min(...[...relations].map(
+          (r) => (relTally.get(r) ?? 0) / relTotalNow + BASE_RELATION_LOAD[r],
+        ));
+        // ROUND 17 — and how many DIFFERENT threads the board could then name,
+        // saturated at the two the evening needs (a third kind buys the player
+        // nothing the second did not already buy).
+        const spreadNext = Math.min(relations.size, RELATION_SPREAD_MIN);
         // Traps BEYOND the tier's floor buy nothing (the budget caps what
         // ships), so the comparison saturates there and relation variety wins
         // from that point on. Without the saturation the planter always chose
@@ -1913,23 +2198,34 @@ function replaceGroups(
         // the whole shelf ended up saying the same sentence on a wrong guess.
         const reach = Math.min(traps, spec.minHerrings);
         const bestReach = Math.min(best?.traps ?? -1, spec.minHerrings);
-        if (!best || reach > bestReach
-          || (reach === bestReach && rel < best.rel - 1e-9)
-          || (reach === bestReach && Math.abs(rel - best.rel) <= 1e-9 && traps > best.traps)
-          || (reach === bestReach && Math.abs(rel - best.rel) <= 1e-9 && traps === best.traps
-              && slot < best.slot)
-          || (reach === bestReach && Math.abs(rel - best.rel) <= 1e-9 && traps === best.traps
-              && slot === best.slot && bank.theme < best.bank.theme)) {
-          best = { victim, bank, traps, slot, rel };
+        const bestTiles: number = best?.tiles ?? -1;
+        const bestSpread: number = best?.spread ?? -1;
+        // Priority: meet the tier's thread floor, then contest a second tile,
+        // then be able to say a second KIND of thing, then say the least tired
+        // thing, then depth, then the slot this board's victim order names.
+        const rank = [reach, tiles, spreadNext, -rel, traps, -slot];
+        const bestRank = [bestReach, bestTiles, bestSpread, -(best?.rel ?? 1),
+          best?.traps ?? -1, -(best?.slot ?? 99)];
+        let better = !best;
+        for (let i = 0; !better && best && i < rank.length; i += 1) {
+          if (rank[i]! > bestRank[i]! + 1e-9) better = true;
+          else if (rank[i]! < bestRank[i]! - 1e-9) break;
+        }
+        if (!better && best
+          && rank.every((v, i) => Math.abs(v - bestRank[i]!) <= 1e-9)
+          && bank.theme < best.bank.theme) better = true;
+        if (better) {
+          best = { victim, bank, traps, tiles, slot, rel, spread: spreadNext };
         }
       }
     }
     if (!best) break;
     if (needTraps && best.traps <= have) break;
     // A relation plant must not cost the board a trap, and must actually buy
-    // the thread it was run for.
+    // the thread it was run for — a wider spread of threads, or a cheaper one.
     if (needRelation && (best.traps < have
-      || best.rel >= relationCost(groups, spec.minHerringScore) - 1e-9)) break;
+      || (best.spread <= Math.min(spread, RELATION_SPREAD_MIN)
+        && best.rel >= relationCost(groups, spec.minHerringScore) - 1e-9))) break;
     swapIn(best.victim, best.bank);
   }
 
@@ -2322,11 +2618,38 @@ const EMPTY: ReadonlySet<string> = new Set();
  * unchanged: a word is a candidate intruder when its aggregate herring score
  * clears the tier's `minHerringScore`.
  */
+/**
+ * ROUND 17 — THE SECOND THREAD IS CHOSEN KNOWING WHAT THE FIRST ONE WAS.
+ *
+ * Selection used to rank the whole trap list ONCE, against a cost that could
+ * only see the pool-wide tallies, and then walk it. That is the right shape
+ * while a board ships one thread and the wrong one the moment it ships three:
+ * a board holding four rhyme traps and one doubled-letter trap took the three
+ * cheapest, which were three rhymes, and the evening said the same sentence
+ * three times. Pool-wide the relations looked healthy (no relation over 30% of
+ * named threads) because the variety lived BETWEEN boards; what the player
+ * meets is one board at a time.
+ *
+ * So the walk is greedy and the cost is re-asked at every step with the picks
+ * so far — which is what lets `shippedHerrings` charge a board for repeating
+ * itself. `trapCapacity` passes a constant cost and is unaffected: with a
+ * constant cost this is the same deterministic order it always was (score,
+ * then key).
+ */
 function chooseTraps(
   traps: readonly Trap[],
   eligible: readonly ScoredHerring[],
   max: number,
-  cost: (trap: Trap, intruder: string) => number,
+  cost: (
+    trap: Trap, intruder: string, picked: readonly { trap: Trap; intruder: string }[],
+  ) => number,
+  /**
+   * ROUND 17 — threads this board has already committed to, so a second call
+   * at a looser tightness tops the budget up rather than starting again. See
+   * `shippedHerrings`: the tier's FLOOR is met at the tier's own tightness and
+   * only the surplus may come from the looser band.
+   */
+  already: readonly { trap: Trap; intruder: string }[] = [],
 ): { trap: Trap; intruder: string }[] {
   const score = new Map(eligible.map((h) => [h.word, h.score] as const));
   // A set of fewer than 3 words can never satisfy the room's ≥3-of-4 match
@@ -2339,28 +2662,36 @@ function chooseTraps(
       .filter((w) => score.has(w) && !taken.has(w))
       .sort((a, b) => score.get(b)! - score.get(a)! || (a < b ? -1 : 1))[0] ?? null;
 
-  const none = EMPTY;
-  const ranked = [...usable].sort((a, b) =>
-    cost(a, bestIntruder(a, none)!) - cost(b, bestIntruder(b, none)!)
-    || b.score - a.score || (a.key < b.key ? -1 : 1));
-
-  const out: { trap: Trap; intruder: string }[] = [];
-  const keys = new Set<string>();
-  const taken = new Set<string>();
-  for (const t of ranked) {
-    if (out.length >= max) break;
-    if (keys.has(t.key)) continue;
-    // Prefer a word no other shipped thread has claimed — the intruder list
-    // is what the opening layout clusters on and what the priced intruder hint
-    // draws from, so spreading it is worth something. But two threads MAY name
-    // the same word: HAMMER caught by `contains:HAM` and by `suffix:MER` is two
-    // different sentences about two different sets, and refusing the second one
-    // cost the top shelf fifteen boards for no gain the player can feel.
-    const intruder = bestIntruder(t, taken) ?? bestIntruder(t, EMPTY);
-    if (!intruder) continue;
-    keys.add(t.key);
-    taken.add(intruder);
-    out.push({ trap: t, intruder });
+  const out: { trap: Trap; intruder: string }[] = [...already];
+  const keys = new Set<string>(already.map((p) => p.trap.key));
+  const taken = new Set<string>(already.map((p) => p.intruder));
+  while (out.length < max) {
+    const picked = out;
+    let best: { trap: Trap; intruder: string; cost: number } | null = null;
+    for (const t of usable) {
+      if (keys.has(t.key)) continue;
+      // Prefer a word no other shipped thread has claimed — the intruder list
+      // is what the opening layout clusters on and what the priced intruder
+      // hint draws from, so spreading it is worth something. But two threads
+      // MAY name the same word: HAMMER caught by `contains:HAM` and by
+      // `suffix:MER` is two different sentences about two different sets, and
+      // refusing the second one cost the top shelf fifteen boards for no gain
+      // the player can feel.
+      const intruder = bestIntruder(t, taken) ?? bestIntruder(t, EMPTY);
+      if (!intruder) continue;
+      const c = cost(t, intruder, picked);
+      if (best === null
+        || c < best.cost - 1e-9
+        || (Math.abs(c - best.cost) <= 1e-9
+          && (t.score > best.trap.score
+            || (t.score === best.trap.score && t.key < best.trap.key)))) {
+        best = { trap: t, intruder, cost: c };
+      }
+    }
+    if (!best) break;
+    keys.add(best.trap.key);
+    taken.add(best.intruder);
+    out.push({ trap: best.trap, intruder: best.intruder });
   }
   return out;
 }
@@ -2375,6 +2706,45 @@ function trapCapacity(traps: readonly Trap[], minScore: number): number {
 function tightTrapCount(groups: readonly RawGroup[], minScore: number): number {
   return trapCapacity(findTraps(groups), minScore);
 }
+
+/**
+ * ROUND 17 (BENCHMARKS §2) — HOW MANY DIFFERENT TILES THIS BOARD CONTESTS.
+ *
+ * Not the same number as `trapCapacity`, and the gap between them is the whole
+ * finding. `ambiguousWords` is the deduped INTRUDER list, so two threads about
+ * the same word are two named threads and one contested tile; the round-16
+ * shelf shipped 1.12 contested tiles on a mean of 1.6 threads. A board that
+ * contests one tile is a board where three of the four categories are
+ * uncontested, whatever the trap census says.
+ */
+function contestedCapacity(traps: readonly Trap[], minScore: number): number {
+  const eligible = scoresOf(traps).filter((h) => h.score >= minScore);
+  const picks = chooseTraps(traps, eligible, Number.POSITIVE_INFINITY, () => 0);
+  return new Set(picks.map((p) => p.intruder)).size;
+}
+
+/** How many contested tiles the format wants on a board (BENCHMARKS §2: 2–4). */
+const CONTESTED_TARGET = 2;
+
+/**
+ * ROUND 17 — HOW MANY DIFFERENT KINDS OF THREAD THIS BOARD COULD NAME.
+ *
+ * `relationCost` answers "is this board's cheapest thread an over-used one",
+ * which is a question about the POOL. This one is the question about the
+ * EVENING: can the board say two different sentences, or only one sentence
+ * twice? Measured on the round-16 shelf with a detector that reads the tiles
+ * and ignores the generator's own bookkeeping, 119 of 153 boards carried a
+ * cross-group pull and 38 of those (32%) could only ever pull one way — by
+ * rhyme. That is the "find the rhyme that isn't the rhyme group" meta.
+ */
+function relationSpread(groups: readonly RawGroup[], minScore: number): number {
+  return new Set(
+    findTraps(groups).filter((t) => t.score >= minScore).map((t) => t.relation),
+  ).size;
+}
+
+/** The board should be able to pull at least two different ways. */
+const RELATION_SPREAD_MIN = 2;
 
 /**
  * ROUND 11 — how tired the relations this board's tight traps can be named
@@ -2400,12 +2770,24 @@ function relationCost(groups: readonly RawGroup[], minScore: number): number {
  * `Contains "X"` group generates one and the trap scores 3, the highest there
  * is — and `semantic` is the scarcity. Small enough (≤0.06) that a live tally
  * still outvotes it once pass 2 is running.
+ *
+ * ROUND 17 — RHYME WAS PRICED AS A SCARCITY AND IT IS THE OTHER GLUT.
+ *
+ * It sat at 0.02, equal to `doubled-letter` and equal to `RELATION_PRESSURE`
+ * itself, which had a consequence nobody wrote down: `needRelation` requires
+ * `relationCost > RELATION_PRESSURE`, so a board whose ONLY tight thread was a
+ * rhyme priced out at exactly 0.02 and the diversity plant never fired on it.
+ * The one board shape that most needed a second kind of thread was the one
+ * shape structurally exempt from being given one. Measured: `rhyme` is the
+ * largest single pull kind on the shelf (68 boards of 153) and the sole pull
+ * on 38 — dead level with `hidden-string`, which was priced at three times as
+ * much. It is priced as what it is.
  */
 const BASE_RELATION_LOAD: Record<HerringRelation, number> = {
   'hidden-string': 0.06,
+  rhyme: 0.06,
   'shared-affix': 0.04,
   'doubled-letter': 0.02,
-  rhyme: 0.02,
   semantic: 0,
 };
 
@@ -2505,6 +2887,62 @@ function indexThemeMembers(groups: readonly { theme: string; words: readonly str
     for (const w of g.words) set.add(w);
   }
 }
+
+/**
+ * ROUND 17 (AAA 2.11 [BEAT]) — THE SENSE SHELF: PLAIN-ENGLISH DECOYS.
+ *
+ * THE FINDING. Of 1,224 shipped decoy labels, 19 were plain English and 1,205
+ * were string templates — `Contains "X"` ×357, `Add an "X" for a New Word`
+ * ×285, `Rhymes with "X"` ×92. Six of the 194 plain-English groups on the
+ * shelf were offered a single plain-English alternative; the other 188 were
+ * offered `Weather Phenomena` against `Contains "URR"` and `Contains "BLIZZ"`.
+ * The naming act is the Library's one invention over Connections and its wrong
+ * answers were giving themselves away BY SHAPE: whatever the label says, the
+ * one that looks like a sentence is the answer.
+ *
+ * WHY THE CORPUS COULD NOT SUPPLY THEM. `labelSatisfiedBy` proves a semantic
+ * label by membership: "two of these four really are things in a cinema" is a
+ * fact about the authored file. But the uniqueness solver spends the whole
+ * build making sure no four words of a board sit together in another category,
+ * and the natural consequence is that hardly any TWO do either. The corpus is
+ * six hundred categories wide and each word is in one or two of them.
+ *
+ * WHAT THIS IS. Broad sense fields — the kind of thing a category could be
+ * about, rather than a category — indexed exactly like a corpus theme, so a
+ * label drawn from here is checkable on the tiles by the same rule as every
+ * other label. They are DECOY SUPPLY ONLY: nothing here is ever a board's
+ * answer, so `assertBankIsClean` does not police them and no board can ship
+ * one as a theme. What a player sees is three plausible sentences, one of
+ * which is true of all four tiles and two of which are true of two or three.
+ */
+const SENSE_BANK: readonly { theme: string; words: readonly string[] }[] = [
+  { theme: 'Things Found in a Kitchen', words: ['WHISK', 'GRATER', 'PEELER', 'TONGS', 'MUG', 'POT', 'LOAF', 'BREAD', 'SALT', 'SUGAR', 'JAM', 'NAPKIN', 'TUREEN', 'DECANTER', 'CROCK', 'THERMOS', 'FAUCET', 'TEASPOON', 'TEACUP', 'BEAKER', 'BASKET', 'BUCKET', 'CASK', 'TROUGH', 'FUNNEL', 'RULER', 'MATCHA', 'OOLONG', 'ROOIBOS', 'COFFEE', 'SUGAR', 'BUTTER', 'CRACKERS', 'OATCAKES', 'PRESERVES', 'CHUTNEY'] },
+  { theme: 'Things You Can Eat', words: ['BREAD', 'LOAF', 'CAKE', 'COOKIE', 'SCONE', 'PIE', 'TART', 'TARTLET', 'PANCAKE', 'MUFFIN', 'DONUT', 'CROISSANT', 'ECLAIR', 'MACARON', 'BROWNIE', 'STOLLEN', 'POPCORN', 'PEANUT', 'PISTACHIO', 'COCONUT', 'APPLE', 'CHERRY', 'GRAPES', 'STRAWBERRY', 'RASPBERRY', 'BLUEBERRY', 'GOOSEBERRY', 'QUINCE', 'SLOE', 'CARROT', 'RADISH', 'CUCUMBER', 'LETTUCE', 'TOMATO', 'CORN', 'EGG', 'BEEF', 'CHICKEN', 'SALAD', 'SANDWICH', 'PIZZA', 'TACO', 'TORTILLA', 'LASAGNA', 'SPAGHETTI', 'MACARONI', 'RAVIOLI', 'CHEDDAR', 'BRIE', 'GOUDA', 'FETA', 'HALLOUMI', 'MASCARPONE', 'ROQUEFORT', 'WENSLEYDALE', 'BROTH', 'CHOWDER', 'BISQUE', 'MINESTRONE', 'GAZPACHO', 'BOUILLON', 'JAM', 'HONEY', 'SUGAR', 'CHOUX', 'FILO', 'SHORTCRUST', 'VANILLA', 'CAYENNE', 'OREGANO', 'PARSLEY', 'BASIL', 'THYME', 'CHAMOMILE'] },
+  { theme: 'Things That Are Sweet', words: ['CAKE', 'COOKIE', 'SCONE', 'PIE', 'TART', 'TARTLET', 'PANCAKE', 'MUFFIN', 'DONUT', 'ECLAIR', 'MACARON', 'BROWNIE', 'STOLLEN', 'JAM', 'SUGAR', 'HONEY', 'VANILLA', 'PRESERVES', 'CHERRY', 'APPLE', 'GRAPES', 'STRAWBERRY', 'RASPBERRY', 'BLUEBERRY', 'GOOSEBERRY', 'BLOSSOM', 'NECTAR', 'PROPOLIS', 'SMILE', 'PRAISE', 'SENTIMENT'] },
+  { theme: 'Things Found in a Garden', words: ['ANEMONE', 'BUTTERCUP', 'CLOVER', 'THISTLE', 'NETTLE', 'BRAMBLE', 'HAWTHORN', 'MOSS', 'SEDUM', 'JASMINE', 'SAPLING', 'SEEDLING', 'TWIG', 'PETAL', 'STAMEN', 'SEPAL', 'COMPOST', 'TROWEL', 'SECATEURS', 'PITCHFORK', 'GRAVEL', 'BOULDER', 'STONE', 'HIVE', 'WEB', 'COBWEB', 'BIRD', 'SKYLARK', 'GULL', 'EARWIG', 'APHID', 'WEEVIL', 'SLUG', 'FROG', 'BUTTERFLY', 'FIREFLY', 'BLOSSOM', 'FLOWER', 'FLOWERS', 'PLANT', 'ROOTS', 'WINDFALL', 'BARN', 'GATEPOST', 'BENCH', 'SHELTER', 'WREATH', 'BOUQUET'] },
+  { theme: 'Things That Grow', words: ['SAPLING', 'SEEDLING', 'TWIG', 'ROOTS', 'MOSS', 'CLOVER', 'THISTLE', 'NETTLE', 'BRAMBLE', 'HAWTHORN', 'JASMINE', 'BLOSSOM', 'FLOWER', 'FLOWERS', 'PLANT', 'HAIR', 'CHILD', 'CRYSTAL', 'STALACTITE', 'DEPTH', 'TROUBLE', 'BUSINESS', 'MEMORY', 'CROWD', 'RANKS', 'CHARGES'] },
+  { theme: 'Things You See in the Sky', words: ['CLOUD', 'CIRRUS', 'CUMULUS', 'STRATUS', 'NIMBUS', 'MOON', 'SUN', 'COMET', 'AURORA', 'THUNDER', 'GALE', 'BREEZE', 'TRADEWIND', 'KITE', 'BALLOON', 'DRONE', 'BIRD', 'GULL', 'SKYLARK', 'PELICAN', 'PUFFIN', 'TERN', 'BUTTERFLY', 'FIREFLY', 'FLIGHT', 'SIGNAL', 'SPIRE', 'TURRET'] },
+  { theme: 'Things Made of Metal', words: ['ANCHOR', 'BOLT', 'BUCKLE', 'CHAIN', 'CHISEL', 'COIN', 'COMPASS', 'CUTTER', 'FILE', 'GRATER', 'HAMMER', 'HINGE', 'KEYS', 'LATCH', 'NEEDLE', 'PIN', 'PLIERS', 'POKER', 'RULER', 'SPRIG', 'TACK', 'BRAD', 'THIMBLE', 'TONGS', 'TROWEL', 'WHISK', 'ZIPPER', 'STIRRUP', 'HELMET', 'BELL', 'HANDBELL', 'DOORBELL', 'CHIME', 'HORN', 'CORNET', 'TUBA', 'TROMBONE', 'SAXOPHONE', 'EUPHONIUM', 'TIMPANI', 'RACKET', 'SECATEURS', 'PITCHFORK', 'FAUCET', 'TOGGLE', 'SWITCH', 'FUSE', 'FILAMENT', 'BALLAST'] },
+  { theme: 'Things Made of Cloth', words: ['BLANKET', 'CURTAINS', 'NAPKIN', 'TOWEL', 'LINEN', 'VELVET', 'DENIM', 'TWEED', 'LACE', 'RIBBON', 'VEIL', 'SCARF', 'JACKET', 'COAT', 'CARDIGAN', 'GLOVES', 'BOOTS', 'CAP', 'BERET', 'TRILBY', 'BOWLER', 'FEDORA', 'TURBAN', 'CLOCHE', 'LEOTARD', 'RAGLAN', 'GARTER', 'HEM', 'PLAIT', 'SKEIN', 'THREAD', 'WOOL', 'BUNTING', 'CANOPY', 'TENT', 'BAG', 'BAGS', 'CLOTHES', 'SUIT', 'SHADE', 'SASH'] },
+  { theme: 'Things You Wear', words: ['JACKET', 'COAT', 'CARDIGAN', 'GLOVES', 'BOOTS', 'CAP', 'BERET', 'TRILBY', 'BOWLER', 'FEDORA', 'TURBAN', 'CLOCHE', 'LEOTARD', 'RAGLAN', 'GARTER', 'SCARF', 'VEIL', 'HELMET', 'VISOR', 'ANKLET', 'BRACELET', 'BROOCH', 'EARRING', 'LOCKET', 'NECKLACE', 'PENDANT', 'CROWN', 'RING', 'BEADS', 'SPECTACLES', 'UMBRELLA', 'SUIT', 'CLOTHES', 'SUNSCREEN', 'GRIN', 'SMILE', 'HAIR'] },
+  { theme: 'Things That Hold Water', words: ['BUCKET', 'BEAKER', 'MUG', 'POT', 'TUREEN', 'DECANTER', 'CASK', 'CROCK', 'THERMOS', 'TROUGH', 'FUNNEL', 'PIPETTE', 'MOAT', 'CANAL', 'BATH', 'SPONGE', 'KELP', 'CLOUD', 'WELL', 'TEACUP', 'BASKET', 'CANOE', 'KAYAK', 'FERRY'] },
+  { theme: 'Things That Make a Noise', words: ['BELL', 'HANDBELL', 'DOORBELL', 'CHIME', 'ALARM', 'SIREN', 'WHISTLE', 'RATTLE', 'HORN', 'CORNET', 'TUBA', 'TROMBONE', 'SAXOPHONE', 'EUPHONIUM', 'TIMPANI', 'CELLO', 'ORGAN', 'TAMBOURINE', 'CLOCK', 'CRICKET', 'CREAK', 'DRIP', 'GURGLE', 'SIGH', 'GROAN', 'CLATTER', 'PATTER', 'RUSTLE', 'WHISPER', 'ECHO', 'LAUGH', 'VOICE', 'THUNDER', 'EXPLOSION', 'PUNCH', 'NOISE', 'CONCERT', 'SYMPHONY', 'PARROT', 'GULL', 'DOG', 'COW', 'PIG', 'SHEEP'] },
+  { theme: 'Things in a Toolshed', words: ['CHISEL', 'FILE', 'HAMMER', 'PLANE', 'PLIERS', 'TROWEL', 'SECATEURS', 'PITCHFORK', 'BROOM', 'LADDER', 'BUCKET', 'TACK', 'BRAD', 'BOLT', 'ROPE', 'TWINE', 'STRING', 'GLUE', 'COMPOST', 'PLOW', 'TRACTOR', 'CRATE', 'SHARPENER', 'CUTTER', 'RULER', 'LEVEL', 'CLAMP'] },
+  { theme: 'Things Found on a Desk', words: ['BLOTTER', 'INKWELL', 'QUILL', 'ERASER', 'STAPLER', 'COASTER', 'NOTEBOOK', 'PAPER', 'PAGE', 'INDEX', 'MARGIN', 'GLOSSARY', 'CHAPTER', 'SPINE', 'ENDPAPER', 'SCROLL', 'LETTER', 'NOTICE', 'MAP', 'ATLAS', 'CATALOG', 'RECEIPTS', 'CITATIONS', 'SLIPS', 'PROVERBS', 'RULER', 'SHARPENER', 'LAMP', 'CLOCK', 'MUG', 'FILE', 'PIN', 'RECORD', 'TIMETABLE', 'PLACECARD', 'SPECTACLES', 'TEACUP'] },
+  { theme: 'Things in a Church', words: ['ALTAR', 'PEW', 'BISHOP', 'ANGEL', 'CROSS', 'BELL', 'CANDLE', 'CANDLES', 'CANDELABRA', 'ORGAN', 'SPIRE', 'VESTIBULE', 'PORCH', 'ARCH', 'LANCET', 'SCROLL', 'VOWS', 'PRAYER', 'PRAISE', 'WREATH', 'VEIL', 'HYMN'] },
+  { theme: 'Things at a Circus', words: ['ACROBAT', 'CLOWN', 'JUGGLER', 'RINGMASTER', 'BALLERINA', 'TENT', 'STALL', 'RAFFLE', 'TOMBOLA', 'PARTY', 'CROWD', 'BALLOON', 'POPCORN', 'BUNTING', 'CANOPY', 'LEOTARD', 'RATTLE', 'WHIP', 'CAMEL', 'HORSE', 'PARROT', 'TRAPEZE'] },
+  { theme: 'Living Creatures', words: ['CAMEL', 'HORSE', 'COW', 'PIG', 'SHEEP', 'DOG', 'CAT', 'BEAGLE', 'BULLDOG', 'POODLE', 'DALMATIAN', 'HAMSTER', 'MEERKAT', 'FENNEC', 'TURTLE', 'OCTOPUS', 'SEAHORSE', 'STARFISH', 'URCHIN', 'LIMPET', 'SCALLOP', 'MINNOW', 'FROG', 'SLUG', 'EARWIG', 'APHID', 'WEEVIL', 'CRICKET', 'BUTTERFLY', 'FIREFLY', 'SCORPION', 'BIRD', 'GULL', 'TERN', 'ROOK', 'PUFFIN', 'PELICAN', 'SKYLARK', 'PARROT', 'JELLYFISH', 'CHICKEN', 'GOOSE'] },
+  { theme: 'Things That Float', words: ['BALLOON', 'KITE', 'BUBBLE', 'CANOE', 'KAYAK', 'FERRY', 'SCHOONER', 'FRIGATE', 'SLOOP', 'YACHT', 'SHIP', 'RAFT', 'CORKS', 'LILYPAD', 'KELP', 'MOSS', 'FEATHER', 'CLOUD', 'MOON', 'IDEA', 'RUMOUR', 'DRONE', 'SPONGE'] },
+  { theme: 'Things That Are Round', words: ['BALL', 'BALLOON', 'BUBBLE', 'COIN', 'RING', 'WREATH', 'MOON', 'SUN', 'EARTH', 'PLATE', 'REEL', 'SPOOL', 'BUTTON', 'HIVE', 'DONUT', 'MACARON', 'PANCAKE', 'SCONE', 'CLOCK', 'COMPASS', 'MONITOR', 'RACKET', 'DRUM', 'TAMBOURINE', 'BASKETBALL', 'SOCCER', 'TOMATO'] },
+  { theme: 'Things at a Party', words: ['BALLOON', 'BUNTING', 'CANDLE', 'CANDLES', 'CAKE', 'POPCORN', 'CRACKERS', 'RAFFLE', 'TOMBOLA', 'GIFT', 'RIBBON', 'CROWD', 'GUESTS', 'PLACECARD', 'TOAST', 'CHAMPAGNE', 'JOKE', 'JOKER', 'MUSIC', 'CONCERT', 'RECEPTION', 'INVITATION'] },
+  { theme: 'Things That Open and Close', words: ['DOOR', 'GATEWAY', 'PORTAL', 'HATCH', 'CASEMENT', 'DORMER', 'SASH', 'SKYLIGHT', 'FANLIGHT', 'LANCET', 'ORIEL', 'DRAWBRIDGE', 'LATCH', 'HINGE', 'BUCKLE', 'ZIPPER', 'TOGGLE', 'BOOK', 'UMBRELLA', 'SHELL', 'EYE', 'LIPS', 'CURTAINS', 'VENT', 'FLUE', 'DAMPER', 'TRAP'] },
+  { theme: 'Things in a Music Room', words: ['CELLO', 'ORGAN', 'TUBA', 'TROMBONE', 'SAXOPHONE', 'CORNET', 'EUPHONIUM', 'TIMPANI', 'TAMBOURINE', 'HORN', 'CHINREST', 'PEGBOX', 'FRET', 'REEDS', 'ROSIN', 'TUNER', 'BATON', 'CONDUCTOR', 'SYMPHONY', 'CONCERT', 'ADAGIO', 'STACCATO', 'PIANISSIMO', 'VIVACE', 'JAZZ', 'BLUES', 'REGGAE', 'FOLK', 'RECORD', 'CHIME'] },
+  { theme: 'Things Found at the Seaside', words: ['ANCHOR', 'MAST', 'SCHOONER', 'FRIGATE', 'SLOOP', 'YACHT', 'FERRY', 'CANOE', 'KAYAK', 'SANDCASTLE', 'BUCKET', 'SHELL', 'SCALLOP', 'LIMPET', 'URCHIN', 'STARFISH', 'SEAHORSE', 'OCTOPUS', 'JELLYFISH', 'KELP', 'GULL', 'TERN', 'PUFFIN', 'PELICAN', 'BREEZE', 'GALE', 'TIDE', 'BAY', 'ROPE', 'BOWLINE', 'HITCH', 'REEF', 'SHEEPSHANK', 'BIGHT', 'LASHING', 'SUNSCREEN'] },
+  { theme: 'Things That Are Soft', words: ['BLANKET', 'CUSHION', 'FEATHER', 'MOSS', 'WOOL', 'VELVET', 'LACE', 'SPONGE', 'DOUGH', 'BUTTER', 'PETAL', 'BLOSSOM', 'HAIR', 'SKIN', 'LIPS', 'WHISPER', 'SIGH', 'SMILE', 'SHADE', 'LAUNDRY', 'TOWEL', 'CURTAINS'] },
+  { theme: 'Parts of a Building', words: ['HALL', 'LANDING', 'STAIRCASE', 'BANISTER', 'BALUSTER', 'NEWEL', 'RISER', 'TREAD', 'NOSING', 'STRINGER', 'RAFTER', 'HAYLOFT', 'PANTRY', 'NURSERY', 'GALLERY', 'BALLROOM', 'CONSERVATORY', 'PORCH', 'VESTIBULE', 'ALCOVE', 'PORTAL', 'GATEWAY', 'CASEMENT', 'DORMER', 'ORIEL', 'SASH', 'SKYLIGHT', 'FANLIGHT', 'LANCET', 'JAMB', 'MANTEL', 'HEARTH', 'FLUE', 'PLINTH', 'SPIRE', 'TURRET', 'WALLS', 'SHELF', 'DOOR', 'ROOST', 'MOAT', 'KEEP'] },
+  { theme: 'Things That Are Cold', words: ['ICE', 'SNOW', 'FROST', 'GALE', 'BREEZE', 'MARBLE', 'GRANITE', 'BASALT', 'SHALE', 'STONE', 'CRYSTAL', 'STALACTITE', 'MOON', 'SILENCE', 'SHOULDER', 'FEET', 'COMFORT', 'THERMOS', 'CELLAR', 'DRAUGHT'] },
+  { theme: 'Things You Can Hold in One Hand', words: ['COIN', 'KEYS', 'MUG', 'PIN', 'THIMBLE', 'NEEDLE', 'REEL', 'BUTTON', 'BUCKLE', 'BRACELET', 'LOCKET', 'PENDANT', 'BROOCH', 'EARRING', 'QUILL', 'ERASER', 'STAPLER', 'RULER', 'SHARPENER', 'TROWEL', 'CHISEL', 'FILE', 'HAMMER', 'PLIERS', 'TONGS', 'WHISK', 'PEELER', 'GRATER', 'TEACUP', 'TEASPOON', 'SCONE', 'MACARON', 'APPLE', 'CHERRY', 'MAP', 'LETTER', 'BAG'] },
+];
 
 const sortedLetters = (w: string): string => [...w].sort().join('');
 
@@ -2710,6 +3148,8 @@ function assignDecoys(finals: { id: string; groups: OutGroup[]; herrings: OutHer
   const labelPool = new Map<string, string>();
   for (const b of finals) for (const g of b.groups) labelPool.set(canon(g.theme), g.theme);
   for (const b of WORDPLAY_BANK) labelPool.set(canon(b.theme), b.theme);
+  // ROUND 17 — the sense shelf, which exists only to be offered here.
+  for (const s of SENSE_BANK) labelPool.set(canon(s.theme), s.theme);
 
   for (const board of finals) {
     const rng = createRng([...board.id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, SEED));
@@ -2750,11 +3190,43 @@ function assignDecoys(finals: { id: string; groups: OutGroup[]; herrings: OutHer
         decoys.push(label);
       };
 
+      /**
+       * ROUND 17 (AAA 2.11 [BEAT]) — A DECOY MUST NOT BE SPOTTABLE BY SHAPE.
+       *
+       * `Weather Phenomena` beside `Contains "URR"` and `Contains "BLIZZ"` is
+       * not a three-way choice, it is a one-way choice printed three times:
+       * the label that reads like a sentence is the answer and the labels that
+       * read like a regex are not, and a player learns that in one evening.
+       * Measured on the round-16 shelf: 1,205 of 1,224 decoys were string
+       * templates, and 188 of the 194 plain-English groups were given two
+       * mechanical decoys apiece.
+       *
+       * The rule is that a decoy should be of the SAME KIND as the truth. For
+       * a plain-English category that means another plain-English category
+       * (the sense shelf is what makes that supply exist); for a wordplay
+       * category it means another label of the same MECHANIC FAMILY — a rhyme
+       * group is offered another rhyme, a compound frame another compound —
+       * because `Rhymes with "MOON"` beside `Add an "S" for a New Word` gives
+       * the shape away exactly as badly in the other direction.
+       *
+       * Nothing here relaxes the round-14 bar: every label offered still has
+       * to be satisfied by 2–3 of the group's own four words, and the old
+       * order runs underneath as the fallback for a group its own kind cannot
+       * supply.
+       */
+      const wantsPlain = typeOfTheme(g.theme) !== 'wordplay';
+      const ownFamily = familyOf(g.theme);
+      const kindOf = (label: string): 'plain' | Family =>
+        (typeOfTheme(label) !== 'wordplay' ? 'plain' : familyOf(label));
+      const matches = (label: string): boolean =>
+        (wantsPlain ? kindOf(label) === 'plain' : kindOf(label) === ownFamily);
+
       /** Corpus labels this group's own tiles satisfy `min`..`max` times. */
-      const fromCorpus = (min: number, max: number): void => {
+      const fromCorpus = (min: number, max: number, sameKindOnly = false): void => {
         const scored: { label: string; n: number; herring: boolean }[] = [];
         for (const [key, label] of labelPool) {
           if (own.has(key)) continue;
+          if (sameKindOnly && !matches(label)) continue;
           const n = satisfactionOf(label, g.words);
           if (n < min || n > max) continue;
           const herring = [...herringWords].some(
@@ -2798,6 +3270,10 @@ function assignDecoys(finals: { id: string; groups: OutGroup[]; herrings: OutHer
         }
       };
 
+      // Its own kind first, at the round-14 bar…
+      fromCorpus(DECOY_MIN_SATISFIED, DECOY_MAX_SATISFIED, true);
+      if (ownFamily === 'rhyme') fromRhyme();
+      // …then any kind, which is the round-14 order unchanged.
       fromCorpus(DECOY_MIN_SATISFIED, DECOY_MAX_SATISFIED);
       fromRhyme();
       // A letter string exactly two or three of her tiles carry. Longest first,
@@ -2914,6 +3390,19 @@ function shippedHerrings(
   herrings: ScoredHerring[],
   traps: readonly Trap[],
   tier: Tier,
+  /**
+   * ROUND 17 — how many threads this board is being ASKED for, which is the
+   * tier's ceiling on the first attempt and less on the retries. See
+   * `fitHerrings`: a board ships as many contested tiles as its own colour
+   * ladder can carry while still describing itself honestly.
+   */
+  budget: number = TIER_SPECS[tier].maxHerrings,
+  /**
+   * The pool-wide spread tallies are a LEDGER, and a speculative attempt must
+   * not write to it. `fitHerrings` calls this repeatedly to find the widest
+   * budget that fits and commits exactly once.
+   */
+  commit = true,
 ): { ship: string[]; named: OutHerring[] } {
   const spec = TIER_SPECS[tier];
   const scored = herrings.filter((h) => h.score >= spec.minHerringScore);
@@ -2953,29 +3442,93 @@ function shippedHerrings(
    * AAA 2.10's channel dead — and a board that cannot talk is worse than a
    * board with a hard yellow. It takes the trap, and the ladder check then
    * decides whether the result still describes itself honestly.
+   *
+   * ROUND 17 — AND THAT LAST SENTENCE IS NOW THE WHOLE RULE.
+   *
+   * The round-13 rule was written as an absolute FILTER with a fallback, and
+   * the filter is what capped the format's headline number. Measured with the
+   * ceilings raised and hand selection contesting what it could: 75 boards had
+   * a second contestable tile available and only 38 shipped one, and the debug
+   * dump gave one reason on nearly every board — the second tile lived in the
+   * group that would wear yellow, so it was struck out before the budget was
+   * ever consulted. (web-a03's two candidates were DRAIN in the blue group and
+   * HEEL in the yellow one; web-b01's were CUMULUS in yellow and SHOE in
+   * green.)
+   *
+   * The claim behind the rule was never "yellow may not be contested", it was
+   * "a contested yellow stops being a way in" — and that is a MEASURABLE
+   * claim, not a structural one. `lateralOf` charges a trapped group its trap,
+   * `LATERAL_BANDS` puts yellow's ceiling at 3, and `MIN_LADDER_RISE` requires
+   * the climb; a plain taxonomy scores 1 and can carry a trap and still be the
+   * easiest thing on the board, while a compound frame scores 4 and cannot.
+   * The round-13 code could not tell those two apart because the colours were
+   * not assigned yet at this point in the pipeline. `fitHerrings` can: it
+   * fits the budget and the colours together and steps the budget down until
+   * the ladder is honest.
+   *
+   * So the gimme is priced rather than fenced. `WAY_IN` sits above the spread
+   * shares and below `ANOTHER_SENTENCE_ABOUT_THE_SAME_TILE`, which is the
+   * ordering the format wants: contest a tile outside the gimme first;
+   * failing that, contest one inside the gimme (the ladder gets a veto);
+   * only then say a second thing about a tile she has already been warned of.
    */
-  const clean = scored.filter((h) => slotOf.get(h.word) !== 'yellow');
-  const eligible = trapCapacity(traps, spec.minHerringScore) > 0
-    && chooseTraps(traps, clean, spec.maxHerrings, () => 0).length >= spec.minHerrings
-    ? clean
-    : scored;
+  const eligible = scored;
 
   // Shares, not raw counts: there are four colour slots and five relations but
   // they fill at wildly different rates, and summing the raw tallies let the
   // bigger number decide every tie on its own.
   const homeTotal = Math.max(1, [...homeTally.values()].reduce((a, b) => a + b, 0));
   const relTotal = Math.max(1, [...relTally.values()].reduce((a, b) => a + b, 0));
-  const cost = (trap: Trap, word: string): number => {
+  const cost = (
+    trap: Trap, word: string, picked: readonly { trap: Trap; intruder: string }[],
+  ): number => {
     // ROUND 14: an anchor trap is the label naming a tile it does not own. It
     // is the one herring a board may not ship silently (AAA 2.8), so it always
     // wins the budget.
     if (trap.key.startsWith(ANCHOR_TRAP_PREFIX)) return -1000;
     const home = (homeTally.get(slotOf.get(word)!) ?? 0) / homeTotal;
     const rel = (relTally.get(trap.relation) ?? 0) / relTotal;
+    /**
+     * ROUND 17 — THE BOARD MAY NOT SAY THE SAME SENTENCE TWICE IF IT HAS
+     * ANOTHER ONE TO SAY.
+     *
+     * `home` and `rel` are pool-wide shares and both are bounded above by 1,
+     * so `SAME_THREAD` at 10 is not a weight in a blend, it is an ordering: a
+     * thread of a kind this board has already named loses to ANY thread of a
+     * kind it has not, and only ties with another repeat. When the board has
+     * nothing else to offer, every candidate carries the same penalty and the
+     * shares decide as before — the rule costs such a board nothing.
+     */
+    const SAME_THREAD = 10;
+    const repeats = picked.filter((p) => p.trap.relation === trap.relation).length;
+    /**
+     * ROUND 17, AND THIS IS THE ONE THAT MOVED THE HEADLINE NUMBER.
+     *
+     * `ambiguousWords` is derived from the picks BY DEDUPING THEM, so two
+     * threads naming the same tile ship as two named threads and ONE contested
+     * tile. Measured with the ceilings already raised: 118 of 141 boards
+     * shipped exactly one contested tile, and the debug dump said why —
+     * `scoresOf` returned a single eligible intruder on almost every board,
+     * and the budget was being spent on second and third sentences about that
+     * same word. The board was contested in one place and talked about it
+     * three times.
+     *
+     * A second sentence about a tile she has already been warned about is
+     * worth strictly less than a first sentence about a tile she has not, so
+     * it is priced above even a repeated relation. It is still a preference,
+     * not a ban: a board with one contested tile and three things to say about
+     * it says all three rather than going quiet.
+     */
+    const ANOTHER_SENTENCE_ABOUT_THE_SAME_TILE = 40;
+    const saidBefore = picked.filter((p) => p.intruder === word).length;
+    /** …and the gimme is contested last of the tiles, never first (2.12). */
+    const WAY_IN = 20;
+    const gimme = slotOf.get(word) === 'yellow' ? WAY_IN : 0;
     // The relation is weighted heavier because it is the thing the room SAYS
     // out loud on a wrong guess (AAA 2.10); a shelf whose every acknowledged
     // herring says "they do all share those letters" is one learnable trap.
-    return home + rel * 4;
+    return home + rel * 4 + gimme + repeats * SAME_THREAD
+      + saidBefore * ANOTHER_SENTENCE_ABOUT_THE_SAME_TILE;
   };
 
   // ROUND 12: one pick per THREAD (see `chooseTraps`) — a distinct pattern key
@@ -2984,14 +3537,48 @@ function shippedHerrings(
   // happened to fall in, which is how two words inside one `suffix:GHT` shipped
   // as "two traps" and spoke once. `ambiguousWords` is derived from the picks
   // and deduped; it is the layout's clustering list, not the budget.
-  const picks = chooseTraps(traps, eligible, spec.maxHerrings, cost);
+  /**
+   * ROUND 17 (BENCHMARKS §2) — THE TIER'S FLOOR IS TIGHT; THE SURPLUS NEED
+   * NOT BE.
+   *
+   * Measured after the ceilings moved: the budget went unspent on 164 of 167
+   * boards for want of TIGHT THREADS and on 3 for want of ladder headroom.
+   * The ceiling was never what was binding — supply was — and the supply of
+   * score-≥2 threads (a fifth member of a complete group, or a word that
+   * literally answers another group's stated rule) is roughly one per board
+   * because that is how often four hand-written categories nearly collide.
+   *
+   * A score-1 thread is the OTHER thing Connections plants: three words across
+   * two groups that share something an eye can see, so the odd one out reads
+   * as belonging with the pair. It is a weaker pull and it is a real one — the
+   * room's ≥3-of-4 rule fires on it, and the sentence it buys on a wrong guess
+   * is as true as any other.
+   *
+   * What the tier promises is unchanged and is still checked: the tier's FLOOR
+   * of threads is met at the tier's own `minHerringScore` before this line
+   * runs, and only the SURPLUS above that floor may come from the looser band.
+   * A tier-3 board still ships two tight threads; it may now also be pulling
+   * in two more directions while she solves it, which is what the format is.
+   */
+  const tight = chooseTraps(traps, eligible, budget, cost);
+  const picks = tight.length >= budget || spec.minHerringScore <= HERRING_LOOSE
+    ? tight
+    : chooseTraps(
+      traps,
+      herrings.filter((h) => h.score >= HERRING_LOOSE),
+      budget,
+      cost,
+      tight.slice(0, Math.max(spec.minHerrings, tight.length)),
+    );
 
   const ship: string[] = [];
   const named: OutHerring[] = [];
   for (const { trap, intruder } of picks) {
     if (!ship.includes(intruder)) ship.push(intruder);
-    homeTally.set(slotOf.get(intruder)!, (homeTally.get(slotOf.get(intruder)!) ?? 0) + 1);
-    relTally.set(trap.relation, (relTally.get(trap.relation) ?? 0) + 1);
+    if (commit) {
+      homeTally.set(slotOf.get(intruder)!, (homeTally.get(slotOf.get(intruder)!) ?? 0) + 1);
+      relTally.set(trap.relation, (relTally.get(trap.relation) ?? 0) + 1);
+    }
     named.push({
       words: [...trap.words].sort(),
       relation: trap.relation,
@@ -2999,6 +3586,68 @@ function shippedHerrings(
     });
   }
   return { ship, named };
+}
+
+/**
+ * ROUND 17 (BENCHMARKS §2) — AS MANY CONTESTED TILES AS THE LADDER CAN CARRY.
+ *
+ * Raising the ceilings is only half the change, and on its own it is the
+ * wrong half. A planted intruder raises the measured difficulty of the group
+ * it belongs to (`lateralOf`'s trap axis), so a board handed four threads can
+ * push a green group past green's band or flatten its own climb — and
+ * `shipsHere` drops a board whose colours no longer describe it, which would
+ * have bought contested tiles by shrinking the shelf.
+ *
+ * The budget is therefore fitted rather than spent: try the tier's ceiling,
+ * and step down one thread at a time until the resulting colours are honest,
+ * never below the tier's floor. A board that can carry four carries four; a
+ * board that can only carry its floor is unchanged from the round-16 shelf.
+ * Nothing here can loosen a rule — the ladder check it answers to is the same
+ * `ladderProblems` that `shipsHere` and `validate` run, and a board that
+ * cannot pass it at its floor still leaves.
+ */
+/** Why the contested-tile budget went unspent, pool-wide. Census only. */
+const fitBlocked = {
+  supply: 0, ladder: 0, shipped: 0, boards: 0, capacity: new Map<number, number>(),
+};
+
+function fitHerrings(
+  board: RawBoard,
+  herrings: ScoredHerring[],
+  traps: readonly Trap[],
+  tier: Tier,
+): { ship: string[]; named: OutHerring[]; colours: Slot[]; budget: number } {
+  const spec = TIER_SPECS[tier];
+  /**
+   * WHY a board ships fewer contested tiles than its tier allows — the census
+   * prints this split, because "raise the ceiling" and "the ceiling was never
+   * what was binding" are different rounds of work and only the measurement
+   * can say which one this is.
+   */
+  const capacity = contestedCapacity(traps, HERRING_LOOSE);
+  fitBlocked.capacity.set(capacity, (fitBlocked.capacity.get(capacity) ?? 0) + 1);
+  if (capacity < spec.maxHerrings) fitBlocked.supply += 1;
+  let fallback: { ship: string[]; named: OutHerring[]; colours: Slot[]; budget: number } | null = null;
+  for (let budget = spec.maxHerrings; budget >= spec.minHerrings; budget -= 1) {
+    const { ship, named } = shippedHerrings(board, herrings, traps, tier, budget, false);
+    const colours = chooseColours(board.groups, new Set(ship));
+    const probe: CensusBoard = {
+      id: board.id,
+      tier,
+      groups: board.groups.map((g, i) => ({ theme: g.theme, tier: colours[i]!, words: g.words })),
+      ambiguousWords: ship,
+    };
+    const ok = ladderProblems(probe).length === 0;
+    if (fallback === null || ok) fallback = { ship, named, colours, budget };
+    if (ok) break;
+  }
+  // Commit the accepted budget to the pool-wide spread ledger, once.
+  const chosen = fallback!;
+  if (capacity >= spec.maxHerrings && chosen.budget < spec.maxHerrings) fitBlocked.ladder += 1;
+  fitBlocked.shipped += chosen.ship.length;
+  fitBlocked.boards += 1;
+  const final = shippedHerrings(board, herrings, traps, tier, chosen.budget, true);
+  return { ...chosen, ship: final.ship, named: final.named };
 }
 
 /**
@@ -3238,8 +3887,6 @@ function main() {
     let tier = wanted;
     while (tier > 1 && !meetsTier(b, traps, tier)) tier = (tier - 1) as Tier;
     if (tier !== wanted) demoted++;
-    const { ship, named } = shippedHerrings(b, herrings, traps, tier);
-    const layout = buildLayout(b, ship, SEED + [...b.id].reduce((h, c) => h + c.charCodeAt(0), 0));
     /**
      * ROUND 13 (REVIEW_AA §5.8) — THE COLOURS ARE ASSIGNED HERE, FROM THE
      * MEASUREMENT, AND NOWHERE ELSE.
@@ -3250,8 +3897,12 @@ function main() {
      * difficulty (it is the board pulling against you while you solve it), so
      * a ladder assigned before `shippedHerrings` would be grading a board that
      * does not exist yet.
+     *
+     * ROUND 17 — which is exactly why the trap budget and the colours are now
+     * decided together (`fitHerrings`) rather than one after the other.
      */
-    const colours = chooseColours(b.groups, new Set(ship));
+    const { ship, named, colours } = fitHerrings(b, herrings, traps, tier);
+    const layout = buildLayout(b, ship, SEED + [...b.id].reduce((h, c) => h + c.charCodeAt(0), 0));
     return {
       id: b.id,
       tier,
@@ -3391,18 +4042,37 @@ function main() {
     // only thread was dropped is no longer a planted herring) and the opening
     // layout is rebuilt, because 2.6 asks the survivors to sit adjacent and a
     // subset of an adjacent run need not be one.
-    b.herrings = b.herrings.slice(0, TIER_SPECS[2].maxHerrings);
-    b.ambiguousWords = b.ambiguousWords.filter(
-      (w) => b.herrings.some((h) => h.words.includes(w)),
-    );
+    /**
+     * ROUND 13 — dropping a trap changes a group's measured difficulty, so the
+     * ladder is re-read rather than left describing the board this one used to
+     * be. (Missing this is exactly how the colours drifted decorative before.)
+     *
+     * ROUND 17 — and it is re-read at EVERY length the trim could stop at, for
+     * the reason `fitHerrings` exists: the demotion re-costs the board, and a
+     * board that was honest carrying four threads at tier 3 need not be honest
+     * carrying the first three of them. It keeps the longest prefix whose
+     * colours still describe it, never fewer than tier 2's floor. `validate`
+     * fails the build if this ever ships a board it did not fix, so the loop
+     * cannot quietly paper over a ladder break.
+     */
+    const full = b.herrings;
+    const shipped = [...b.ambiguousWords];
+    const spec2 = TIER_SPECS[2];
+    for (let n = Math.min(full.length, spec2.maxHerrings); n >= spec2.minHerrings; n -= 1) {
+      b.herrings = full.slice(0, n);
+      // Round 12: the TRAP list is what the budget counts, so it is what gets
+      // trimmed; the intruder list is re-derived from what survives (a word
+      // whose only thread was dropped is no longer a planted herring) and the
+      // opening layout is rebuilt, because 2.6 asks the survivors to sit
+      // adjacent and a subset of an adjacent run need not be one.
+      b.ambiguousWords = shipped.filter((w) => b.herrings.some((h) => h.words.includes(w)));
+      const recoloured = chooseColours(b.groups, new Set(b.ambiguousWords));
+      b.groups.forEach((g, i) => { g.tier = recoloured[i]!; });
+      if (ladderProblems(b).length === 0 || n === spec2.minHerrings) break;
+    }
     b.layout = buildLayout(
       b, b.ambiguousWords, SEED + [...b.id].reduce((h, c) => h + c.charCodeAt(0), 0),
     );
-    // ROUND 13 — dropping a trap changes a group's measured difficulty, so the
-    // ladder is re-read rather than left describing the board this one used to
-    // be. (Missing this is exactly how the colours drifted decorative before.)
-    const recoloured = chooseColours(b.groups, new Set(b.ambiguousWords));
-    b.groups.forEach((g, i) => { g.tier = recoloured[i]!; });
   }
 
   // Pass 3: decoys for the naming act.
@@ -3449,7 +4119,12 @@ function main() {
     `  families: ${familyLine} (budget ${(ARCHITECTURE_BUDGET.maxFamilyShare * 100).toFixed(0)}%);` +
     ` wordplay per board: ${shapeLine};` +
     ` plain yellow ${(sigs.plainYellowShare * 100).toFixed(0)}%;` +
-    ` decoys ${sigs.decoys}, ${(sigs.decoyPlausibleShare * 100).toFixed(0)}% satisfied by ≥2 of their own four`,
+    ` decoys ${sigs.decoys}, ${(sigs.decoyPlausibleShare * 100).toFixed(0)}% satisfied by ≥2 of their own four\n` +
+    `  contested tiles: ${(sigs.contestedMean).toFixed(2)} mean, ${(sigs.contestedInBand * 100).toFixed(0)}%`
+    + ` in Connections' 2–4 band (BENCHMARKS §2); budget unspent for want of tight threads on`
+    + ` ${fitBlocked.supply} boards, for want of ladder headroom on ${fitBlocked.ladder};`
+    + ` threads per board: ${sigs.threadSpread};`
+    + ` tiles AVAILABLE: ${[...fitBlocked.capacity].sort((a, b) => a[0] - b[0]).map(([k, n]) => `${k}:${n}`).join(' ')}`,
   );
 }
 
@@ -3514,7 +4189,24 @@ function architectureCensus(puzzles: readonly OutBoard[]) {
       }
     }
   }
+  /**
+   * ROUND 17 (BENCHMARKS §2) — THE HEADLINE NUMBER OF THE FORMAT.
+   *
+   * A contested tile is a word the board makes look like it belongs somewhere
+   * it does not. Connections runs 2–4 of them; the round-16 shelf ran 1.12,
+   * median 1, which means three of every four threads were uncontested and the
+   * evening was a sort rather than a puzzle.
+   */
+  const contested = puzzles.map((p) => p.ambiguousWords.length);
+  const contestedMean = contested.length === 0
+    ? 0 : contested.reduce((a, b) => a + b, 0) / contested.length;
+  const inBand = contested.filter((n) => n >= 2 && n <= 4).length;
+  const threads = new Map<number, number>();
+  for (const n of contested) threads.set(n, (threads.get(n) ?? 0) + 1);
   return {
+    contestedMean,
+    contestedInBand: contested.length === 0 ? 0 : inBand / contested.length,
+    threadSpread: [...threads].sort((a, b) => a[0] - b[0]).map(([k, n]) => `${k}:${n}`).join(' '),
     decoys,
     decoyPlausibleShare: decoys === 0 ? 0 : decoysPlausible / decoys,
     families,
@@ -3767,7 +4459,16 @@ function validate(puzzles: OutBoard[]): void {
      * against `herrings` (the named threads); the intruder list keeps its own,
      * differently-named assertion below.
      */
-    if (p.herrings.length > Math.min(3, spec.maxHerrings)) {
+    /**
+     * ROUND 17 — the second operand used to be a literal 3, standing for AAA
+     * 2.7's "planted herrings ≤3". BENCHMARKS §2 puts Connections at 2–4
+     * CONTESTED TILES and the round-16 shelf measured 1.12; 2.7's ceiling was
+     * therefore the binding constraint on the one number the format is built
+     * out of, and it has been re-ruled at 4 in AAA_BAR §2.7. The tier's own
+     * ceiling is what the build asserts, which is what the field was always
+     * called.
+     */
+    if (p.herrings.length > spec.maxHerrings) {
       problems.push(`${p.id}: ${p.herrings.length} named traps (tier ${p.tier} budget ${spec.maxHerrings})`);
     }
     if (p.herrings.length < spec.minHerrings) {
@@ -3902,6 +4603,8 @@ indexThemeMembers([
   ...boards.flatMap((b) => b.groups),
   ...WORDPLAY_BANK.flatMap((b) => bankDraws(b)),
   ...SEMANTIC_BANK.flatMap((b) => bankDraws(b)),
+  // ROUND 17 — and the sense shelf, which is decoy supply and nothing else.
+  ...SENSE_BANK.map((s) => ({ theme: s.theme, words: s.words })),
 ]);
 indexCorpusSets([
   ...boards.flatMap((b) => b.groups.map((g) => g.words)),

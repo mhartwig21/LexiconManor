@@ -808,8 +808,9 @@ describe('shipped content — Library boards (AAA 2.6–2.11)', () => {
       expect(p.layout?.length, p.id).toBe(16);
       expect(new Set(p.layout).size, p.id).toBe(16);
       for (const w of p.layout!) expect(words, p.id).toContain(w);
-      // 2.7 herring budget: ≤3, all on the board.
-      expect((p.ambiguousWords ?? []).length, p.id).toBeLessThanOrEqual(3);
+      // 2.7 herring budget: ≤4 (re-ruled in round 17 against BENCHMARKS §2's
+      // 2–4 contested tiles; it was ≤3), all on the board.
+      expect((p.ambiguousWords ?? []).length, p.id).toBeLessThanOrEqual(4);
       for (const w of p.ambiguousWords ?? []) expect(words, p.id).toContain(w);
       // 2.11 decoys for the act of naming. Compared AS SHOWN (round 12): the
       // shelf shipped `Can Follow “TEA”` beside `Can Follow "TEA"` on web-d06,
@@ -1086,12 +1087,12 @@ describe('tier escalation — The Library (herring budget + category subtlety)',
    * asserts. The intruder list keeps its own, separate assertion below: it is
    * derived from the traps and is what the opening layout clusters on.
    */
-  it('the herring budget widens with the row, and never past the AAA 2.7 cap of 3', () => {
-    for (const p of at(1)) expect((p.herrings ?? []).length, p.id).toBeLessThanOrEqual(1);
-    for (const p of at(2)) expect((p.herrings ?? []).length, p.id).toBeLessThanOrEqual(2);
+  it('the herring budget widens with the row, and never past the AAA 2.7 cap of 4', () => {
+    for (const p of at(1)) expect((p.herrings ?? []).length, p.id).toBeLessThanOrEqual(2);
+    for (const p of at(2)) expect((p.herrings ?? []).length, p.id).toBeLessThanOrEqual(3);
     for (const p of at(3)) {
       expect((p.herrings ?? []).length, p.id).toBeGreaterThanOrEqual(2);
-      expect((p.herrings ?? []).length, p.id).toBeLessThanOrEqual(3);
+      expect((p.herrings ?? []).length, p.id).toBeLessThanOrEqual(4);
     }
     for (const p of WORD_WEB_POOL) {
       const intruders = p.ambiguousWords ?? [];
@@ -1099,6 +1100,66 @@ describe('tier escalation — The Library (herring budget + category subtlety)',
       expect(intruders.length, p.id).toBeLessThanOrEqual((p.herrings ?? []).length);
       expect(intruders.length, p.id).toBeGreaterThanOrEqual(1);
     }
+  });
+
+  /**
+   * ROUND 17 (BENCHMARKS §2) — CONTESTED TILES, WHICH IS THE NUMBER THE
+   * FORMAT IS ACTUALLY MADE OF.
+   *
+   * The budget above counts THREADS — how many different sentences the room
+   * can say on a wrong guess — and it has been the only assertion here since
+   * round 12. It is the wrong headline. `ambiguousWords` is the deduped
+   * intruder list, so a board can pass a two-thread check by saying two things
+   * about one tile, and 118 of 141 boards were doing exactly that: mean 1.12
+   * contested tiles, median 1, against the 2–4 BENCHMARKS §2 records for
+   * Connections. With one contested tile, three of a board's four threads are
+   * uncontested and the evening is a sort.
+   *
+   * The bar here is deliberately a POOL-WIDE distribution rather than a
+   * per-board floor. A per-board floor of 2 is not reachable and would be
+   * dishonest if it were: a board only contests a tile when one of its four
+   * categories genuinely has a fifth member somewhere else on the board, and
+   * the uniqueness solver spends the whole build making near-misses rare. What
+   * the shelf can promise is that contesting one tile is no longer what almost
+   * every night looks like.
+   */
+  it('the shelf contests more than one tile a night (BENCHMARKS §2)', () => {
+    const contested = WORD_WEB_POOL.map((p) => (p.ambiguousWords ?? []).length);
+    const mean = contested.reduce((a, b) => a + b, 0) / contested.length;
+    const inBand = contested.filter((n) => n >= 2 && n <= 4).length / contested.length;
+    // Round 16 measured 1.12 and 12%. Both floors sit under what this round
+    // shipped and over what it replaced, so a regression in either direction
+    // of the generator's trap budget fails here.
+    expect(mean, `mean contested tiles ${mean.toFixed(2)}`).toBeGreaterThan(1.25);
+    expect(inBand, `share inside 2–4: ${(inBand * 100).toFixed(0)}%`).toBeGreaterThan(0.25);
+    // …and the top of the house is the trappiest row, which is what the tier
+    // ceilings say and what round 16's flat 1.0/1.5/2.3 threads did not deliver
+    // in tiles at all.
+    const meanAt = (t: 1 | 2 | 3) => {
+      const xs = at(t).map((p) => (p.ambiguousWords ?? []).length);
+      return xs.reduce((a, b) => a + b, 0) / xs.length;
+    };
+    expect(meanAt(3), `t3 ${meanAt(3).toFixed(2)} vs t1 ${meanAt(1).toFixed(2)}`)
+      .toBeGreaterThan(meanAt(1));
+  });
+
+  /**
+   * ROUND 17 (AAA 2.10) — AND THE BOARD DOES NOT SAY THE SAME THING TWICE
+   * WHEN IT HAS SOMETHING ELSE TO SAY.
+   *
+   * A board that ships three threads and names all three `rhyme` has one trap
+   * wearing three coats. The pool-wide relation budget below (≤40% of named
+   * threads) cannot see this: variety BETWEEN boards is not variety within the
+   * evening, and the evening is what she plays.
+   */
+  it('a board with several threads rarely says one thing three times', () => {
+    const multi = WORD_WEB_POOL.filter((p) => (p.herrings ?? []).length >= 2);
+    expect(multi.length, 'boards with 2+ named threads').toBeGreaterThan(40);
+    const mono = multi.filter(
+      (p) => new Set((p.herrings ?? []).map((h) => h.relation)).size === 1,
+    );
+    expect(mono.length / multi.length, `${mono.length}/${multi.length} all-one-relation`)
+      .toBeLessThanOrEqual(0.10);
   });
 
   /**

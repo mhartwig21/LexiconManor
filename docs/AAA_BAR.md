@@ -270,8 +270,23 @@ re-tests their shape:
 ### Fairness (fixing Koster's rap sheet — validator-enforced per board)
 - 2.7 **Red-herring budget rule**: build-time solver counts unintended-but-valid
   4-groupings under all category heuristics (shared affixes, doubled letters, rhymes,
-  semantic clusters). Zero unintended complete groupings ship; planted herrings ≤3, each
+  semantic clusters). Zero unintended complete groupings ship; planted herrings ≤4, each
   a 5th-member or cross-category trap, never a fully-valid fake group. **[BEAT]**
+  - **RULING (round 17, Library — the ceiling was ≤3 and it was the binding
+    constraint on the number the format is made of).** BENCHMARKS §2 records
+    Connections running **2–4 contested tiles**; the round-16 shelf measured a mean
+    of **1.12, median 1**, with only 12% of boards inside that band. A contested
+    tile is not a garnish on the format, it is the format: with one of them three
+    of a board's four threads are uncontested and the evening is a sort. The
+    per-tier ceilings move to **2 / 3 / 4** and this clause's cap moves to 4.
+    Nothing else in 2.7 changes — zero unintended complete groupings is untouched,
+    every planted herring is still a 5th-member or cross-category trap, and the
+    per-tier FLOORS are untouched, because a floor that cannot be met drops the
+    board and the shelf is already lean. The budget is *fitted* rather than spent:
+    `fitHerrings` steps it down one thread at a time until the board's colour
+    ladder still describes it honestly, so a board carries as many contested tiles
+    as it can carry without lying. Enforced in `tests/puzzles/anchors.test.ts`
+    ("the shelf contests more than one tile a night").
 - 2.8 Solver-verified uniqueness: exactly one valid membership assignment per board.
 - 2.9 ≤1 trivia-knowledge category per board (always the easiest tier); ≥2 categories
   solvable purely from letters/wordplay visible on the tiles. **[BEAT]**
