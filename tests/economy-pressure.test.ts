@@ -164,9 +164,27 @@ describe('4.10i — the ground floor is a purse she can run down', () => {
     // REVIEW_AA 5.10, and what may never come back is a positive drain - but it
     // costs about half what the grid-blind model said. Re-published, and
     // recorded as supply pressure for the deck round.
+    // ROUND 27 - THE COUNTING HOUSE WAS PART OF WHAT HELD THIS UP, and it is
+    // worth naming rather than absorbing. Its ground-floor board was a
+    // TWELVE-AND-A-HALF-MINUTE room, which is past the sitting even the
+    // skilled profile will give one room on most evenings, so the manor's
+    // longest tier-1 anchor almost never paid a SOLVE - no key, no perfect
+    // bonus, only the rungs she climbed. Regraded against BENCHMARKS section 7
+    // it is an eleven-minute NYT-Medium board and it is finished more often,
+    // and a finished anchor pays a key and +2 as well as its steps.
+    //
+    // Measured over this same fixture: skilled -0.274 -> -0.231, great
+    // -0.176 -> -0.136, the median player unmoved at -1.23. The ratchet is
+    // LOOSENED here, deliberately and by a sixth, and the finding it is
+    // spent on is that the ground floor gained a finishable anchor. What may
+    // never come back is a POSITIVE drain - the +1.61 the economy critic
+    // measured on row 0 - and every profile is still a cost, which is the
+    // whole of REVIEW_AA 5.10. If a later round wants the sixth back, the
+    // lever is the deck's ground-floor mix or the walk, not the room's clock:
+    // the clock is now derived from the boards (`ROOM_EFFORT.sudoku`).
     expect(drain(PROFILE_DECENT)).toBeLessThanOrEqual(-1);
-    expect(drain(PROFILE_SKILLED)).toBeLessThanOrEqual(-0.25);
-    expect(drain(PROFILE_GREAT)).toBeLessThan(0);
+    expect(drain(PROFILE_SKILLED)).toBeLessThanOrEqual(-0.22);
+    expect(drain(PROFILE_GREAT)).toBeLessThanOrEqual(-0.1);
   });
 
   it('keeps the solve:walk ratio on the ground floor inside 6:1', () => {

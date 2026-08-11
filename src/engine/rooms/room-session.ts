@@ -58,6 +58,7 @@
  */
 
 import type { PlacedRoom, Tier } from '../types';
+import { ledgerFor } from './room-bank';
 import type { RoomContext, RoomPuzzleAdapter, RoomPuzzleKind } from './room-puzzle';
 
 /**
@@ -180,27 +181,54 @@ export function restoreRoomSession(
  * re-solve exploit (§5.4): solve → marked seen → the cell quietly restocks.
  * `select()` remains the last resort, for a save whose pin predates the adapter
  * or names a board the pool no longer ships.
+ *
+ * ROUND 27 — THE OPEN LEDGER JOINS THE CHAIN, SECOND. Order is the whole
+ * design here, so it is written out:
+ *
+ *   1. TODAY'S SESSION on this very cell. A reload mid-puzzle returns to the
+ *      board on the table, always, whatever else is banked.
+ *   2. THE OPEN LEDGER (engine/rooms/room-bank.ts) — a leaf of a BANKABLE kind
+ *      left unfinished on an earlier night. This is the exception to the
+ *      nightly wipe, and it outranks the pin because the pin is a fact about
+ *      tonight's floorplan while the ledger is a fact about her week.
+ *   3. THE PINNED BOARD, then `select()`, exactly as before.
+ *
+ * The caller is told WHICH of the three happened (`source`), because resuming
+ * from the bank has a second half the host must do — the rungs already paid
+ * for that board have to come back onto the PlacedRoom with it, or the manor
+ * buys them twice (`RoomSlice.resumeOpenLedger`).
  */
+export type RoomSessionSource = 'session' | 'bank' | 'fresh';
+
 export function openRoomSession(opts: {
   adapter: RoomPuzzleAdapter | undefined;
   /** `manor.rooms[cellKey].session`. */
   snapshot: unknown;
+  /** `save.openLedger` — the one board that outlived the night. */
+  openLedger?: unknown;
   /** `PlacedRoom.puzzleId` — the board pinned when the card was played. */
   pinnedPuzzleId: string | undefined;
   ctx: RoomContext;
   seenIds: readonly string[];
-}): { session: RoomSession; restored: boolean } | null {
-  const { adapter, snapshot, pinnedPuzzleId, ctx, seenIds } = opts;
+}): { session: RoomSession; restored: boolean; source: RoomSessionSource } | null {
+  const { adapter, snapshot, openLedger, pinnedPuzzleId, ctx, seenIds } = opts;
   if (!adapter) return null;
 
   const restored = restoreRoomSession(adapter, snapshot, ctx);
-  if (restored) return { session: restored, restored: true };
+  if (restored) return { session: restored, restored: true, source: 'session' };
+
+  const banked = ledgerFor(openLedger, adapter);
+  if (banked) {
+    const resumed = restoreRoomSession(adapter, banked.session, ctx);
+    if (resumed) return { session: resumed, restored: true, source: 'bank' };
+  }
 
   const pinned = pinnedPuzzleId ? adapter.find(pinnedPuzzleId) : undefined;
   const puzzle = pinned ?? adapter.select({ tier: ctx.tier, seed: ctx.seed, seenIds: [...seenIds] });
   return {
     session: { puzzle, state: adapter.start(puzzle, ctx), done: false, solvedOnce: false },
     restored: false,
+    source: 'fresh',
   };
 }
 

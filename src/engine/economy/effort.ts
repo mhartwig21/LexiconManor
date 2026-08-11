@@ -50,17 +50,17 @@
  *                              PERFECTLY (highest-scoring first; worst order
  *                              61), at the repo's own instrumented finding rate
  *                              (~20 s/find, decaying as the pool empties).
- *   sudoku (Counting House)    tier 1: 24 givens, 57 empty cells, 78% fall to
- *                              singles/pairs/pointing. Tier 2: 25 givens, 0%
- *                              fall to that ladder, 98% require a wing, a fish
- *                              or colouring — the owner's expert directive,
- *                              priced honestly rather than argued with.
+ *   sudoku (Counting House)    ROUND 27, RE-DERIVED AGAINST A BENCHMARK — see
+ *                              the row itself. The pool it was measured on was
+ *                              regenerated in the same commit: the three tiers
+ *                              are no longer the same board with a different
+ *                              technique on it.
  *
  * ═══ THE LADDER — A ROOM PAYS ON THE WAY UP, NOT ONLY AT THE SUMMIT ═══════
  * REVIEW_AA's "done looks like" for this item is *"every anchor is 2–4 minutes
  * to a payout, or it pays IN STAGES … the hive pays at every ladder rung, not
  * only at Full Bloom"*. `stageFractionOf` reads the progress details the
- * adapters ALREADY emit (`tier-up:Bower`, `inked:36-left`, `group-solved:blue`)
+ * adapters ALREADY emit (`tier-up:Bower`, `inked:36-of-51`, `group-solved:blue`)
  * and answers one question: how much of this room's payout has she earned so
  * far? The room slice pays the difference as she crosses each rung, and the
  * `solved` event pays exactly the remainder. Only rooms longer than
@@ -144,7 +144,79 @@ export const ROOM_EFFORT: Record<RoomPuzzleKind, EffortByTier> = {
   'word-web': [4.5, 5.0, 6.0],
   'hive': [14.0, 11.0, 7.0],
   'forgotten-word': [1.5, 1.5, 1.5],
-  'sudoku': [12.5, 27.0, 30.0],
+  /**
+   * ROUND 27 — THE COUNTING HOUSE, RE-CLOCKED BECAUSE ITS BOARDS WERE REGRADED.
+   *
+   * `[12.5, 27.0, 30.0]` was honest arithmetic over an UNGRADED pool. The three
+   * tiers were the same length (24/25/24 givens, ~57 empty cells at every
+   * storey) and differed only in technique — and `docs/BENCHMARKS.md` §7, the
+   * sudoku teardown this repo did not have until this round, records that the
+   * technique end of it was off the top of the reference ladder as well:
+   * **98% of tier-2 and 100% of tier-3 boards required a wing, a fish or a
+   * colouring chain, and NYT Hard — the hardest board that benchmark publishes
+   * — requires none of the three.** Two of three storeys were above the top of
+   * the ladder and indistinguishable from each other, and the ground floor was
+   * a twelve-and-a-half-minute room offered as often as the Gallery.
+   *
+   * `content/generate-sudoku.ts` now digs each tier to its own given band as
+   * well as rating it by technique ceiling, so the two levers move together
+   * (`SUDOKU_TIER_GRADE`, engine/puzzles/sudoku.ts). Measured on the shipped
+   * pool, and this row is arithmetic over those two facts, not a wish:
+   *
+   * ═══ THE NUMBER THAT WAS ACTUALLY WRONG WAS SECONDS PER PLACEMENT ═══════
+   *
+   * The old row implied **13 s per placement at tier 1 and 28 and 32 at tiers
+   * 2 and 3** — on boards of IDENTICAL length (57 empty cells at every storey).
+   * It was charging two and a half times as long for each figure because one
+   * technique in the solve was harder. That is not what a wing costs. A wing,
+   * a fish or a colouring chain is a SEARCH: one stall, one sweep of the whole
+   * grid, a few minutes once or twice in the board — not a tax on all
+   * fifty-seven cells. Tier 1's own 13 s/cell was the honest rate all along;
+   * the top of the table was the fiction, and it is where the 27- and
+   * 30-minute rooms came from.
+   *
+   * So the row is arithmetic over the regraded pool at a rate that climbs the
+   * way a rate can:
+   *
+   *   tier 1 — 30 givens, **51 empty cells**, locked candidates and NOTHING
+   *            above them (0/40 boards need a subset, a wing, a fish or a
+   *            chain) = NYT MEDIUM. 51 × 13 s = **11.0 min**.
+   *   tier 2 — 26 givens, **55 empty cells**, naked/hidden subsets required and
+   *            0/40 needing anything above them = NYT HARD. A subset is a scan
+   *            of one unit, so a cell costs a second more: 55 × 14 s =
+   *            12.8 → **13.0 min**. This is the headline: the 27-minute board
+   *            in a 10–15-minute evening is a 13-minute board.
+   *   tier 3 — 24 givens, **57 empty cells**, and 40/40 boards require an
+   *            X-wing, an XY-wing, a swordfish, an XYZ-wing or a colouring
+   *            chain — the rung ABOVE anything NYT prints, which is the owner's
+   *            expert directive kept rather than argued with. The hunt is real
+   *            and it is worth four seconds a cell across the board:
+   *            57 × 18 s = 17.1 → **17.0 min**.
+   *
+   * WHAT THE RE-CLOCK COSTS THE ECONOMY, measured, because round 26 wrote down
+   * that the manor has no clock left: **nothing at all in steps.**
+   * `solvePayout` is clamped by tier at +12/+9/+6 and all three tiers were
+   * pinned to their caps before and still are (1.4 × 11.0 = 15 → 12;
+   * 1.4 × 13.0 = 18 → 9; 1.4 × 17.0 = 24 → 6). Not one payout in the manor
+   * moves. What moves is the WAGE — the room stops being the bottom of the
+   * table (sudoku t3 0.200 → 0.353 steps a minute) — and the CLOCK, which is
+   * the thing the owner was complaining about.
+   *
+   * AND THE ONE THING THAT DID MOVE, recorded because it is a regression and
+   * this file's neighbours are ratchets: a shorter room is more often FINISHED,
+   * and a finished anchor pays a key and the perfect bonus as well as its
+   * steps. `tests/economy-pressure.test.ts` measures the skilled player's
+   * ground-floor drain at −0.214 steps a room, from −0.274. It is still a cost
+   * and it is still negative for every profile, which is what 4.10i is about;
+   * the bound moves and the finding is named there.
+   *
+   * AND WHAT IT DOES NOT FIX. Seven minutes is still nearly three times the
+   * median appetite for one room (`PATIENCE_SPREAD`), so the Counting House is
+   * still a room she leaves unfinished — at every tier, by design. That is what
+   * the OPEN LEDGER is for (engine/rooms/room-bank.ts): the grid is still hers
+   * tomorrow, so an unfinished sudoku is a thread rather than an abandonment.
+   */
+  'sudoku': [11.0, 13.0, 17.0],
   // ── micro ────────────────────────────────────────────────────────────────
   'cipher': [3.0, 3.5, 4.0],
   'crossword': [1.25, 1.5, 2.0],
@@ -186,8 +258,9 @@ export function effortLabel(kind: RoomPuzzleKind, tier: Tier): string {
  *     25/70 of the way to a solved room and Garden 50/70. If the ladder or the
  *     gate moves, `tests/economy-effort.test.ts` fails here first.
  *   - the sudoku pays per NINE placements — one box's worth of ink — against
- *     the shipped median of 57 empty cells, which is the granularity the review
- *     asked for ("+2 per nine placements") expressed as a fraction.
+ *     THE BLANK COUNT OF THE LEAF SHE IS SITTING AT, which the adapter's own
+ *     marker carries (round 27), which is the granularity the review asked for
+ *     ("+2 per nine placements") expressed as a fraction.
  *   - the word web pays per group, off its own `group-solved` details.
  *
  * Micro rooms have no ladder: a 75-second Linen Closet has nothing to stage,
@@ -202,8 +275,23 @@ export const HIVE_STAGE_PCT: Readonly<Record<string, number>> = {
 /** The point percentage at which the Conservatory counts as solved. */
 export const HIVE_SOLVE_PCT = 70;
 
-/** Empty cells on a shipped 9×9 (median) — the sudoku ladder's denominator. */
-export const SUDOKU_BLANKS = 57;
+/**
+ * ROUND 27 — WHERE `SUDOKU_BLANKS` WENT, AND WHY IT IS NOT COMING BACK.
+ *
+ * This was `export const SUDOKU_BLANKS = 57`: the median empty-cell count over
+ * the shipped pool, used as the denominator of the sudoku ladder. It was a
+ * POOL AVERAGE standing in for A PROPERTY OF THE BOARD ON THE TABLE, and it
+ * was wrong in two independent ways at once — the regraded pool runs 51/55/57
+ * empty cells by tier, and a row-band tier-1 cell may deal a technique-tier-2
+ * board anyway (`TIER_PREFERENCE`, sudoku-adapter.ts), so no per-tier table
+ * would have fixed it either.
+ *
+ * The fix is not a better constant. The adapter's own progress marker now
+ * carries the leaf's size — `inked:12-of-51` — so `stageFractionOf` divides by
+ * the board it is being paid for, and there is no number here left to drift.
+ */
+
+
 
 /** Placements per sudoku instalment: one box's worth of ink. */
 export const SUDOKU_CELLS_PER_STAGE = 9;
@@ -232,12 +320,22 @@ export function stageFractionOf(
       return pct === undefined ? null : pct / HIVE_SOLVE_PCT;
     }
     case 'sudoku': {
-      const m = /^inked:(\d+)-left$/.exec(detail);
+      // `inked:<left>-of-<blanks on this leaf>` — the board says how big it is
+      // (round 27; see the note where `SUDOKU_BLANKS` used to live).
+      const m = /^inked:(\d+)-of-(\d+)$/.exec(detail);
       if (!m) return null;
-      const left = Number(m[1]);
-      const placed = Math.max(0, SUDOKU_BLANKS - left);
-      const stages = Math.floor(placed / SUDOKU_CELLS_PER_STAGE);
-      const total = Math.floor(SUDOKU_BLANKS / SUDOKU_CELLS_PER_STAGE);
+      const blanks = Number(m[2]);
+      // THE SUMMIT BELONGS TO THE SOLVE, exactly as the hive's does (the
+      // Conservatory's `tier-up:Full Bloom` returns null here for the same
+      // reason). `ceil` gives the leaf a last, short rung, and the climb is
+      // capped one rung below it — so the ladder can never pay the whole room
+      // off the second-to-last figure, which `floor` did on any board whose
+      // blanks are not a multiple of nine (a 51-blank leaf reached 5/5 with
+      // six cells still empty).
+      const total = Math.ceil(blanks / SUDOKU_CELLS_PER_STAGE);
+      if (total <= 0) return null;
+      const placed = Math.max(0, blanks - Number(m[1]));
+      const stages = Math.min(Math.floor(placed / SUDOKU_CELLS_PER_STAGE), total - 1);
       return Math.max(0, Math.min(1, stages / total));
     }
     case 'word-web': {
@@ -272,7 +370,7 @@ export function paysInStages(kind: RoomPuzzleKind, tier: Tier): boolean {
 /** A detail string each staging room really emits — proof it has a ladder. */
 const LADDER_PROBE: Partial<Record<RoomPuzzleKind, string>> = {
   'hive': 'tier-up:Blossom',
-  'sudoku': 'inked:48-left',
+  'sudoku': 'inked:40-of-51',
   'word-web': 'group-solved:green',
 };
 

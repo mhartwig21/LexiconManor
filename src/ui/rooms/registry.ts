@@ -21,6 +21,14 @@ export interface RoomViewProps<P = unknown, S = unknown, A = unknown> {
   state: S;
   tier: Tier;
   dispatch: (action: A) => void;
+  /**
+   * ROUND 27 — set ONLY when this entry resumed a board banked on an earlier
+   * night (engine/rooms/room-bank.ts), carrying the day it was left. Optional
+   * and ignored by every view but the Counting House's: banking is a one-room
+   * exception, and the prop exists so the room can SAY so rather than let the
+   * player rediscover it (docs/COMPREHENSION.md).
+   */
+  resumed?: { day: number };
 }
 
 // <<A3:imports>> anchors — alphabetical: forgotten-word, hive, twistle, word-web

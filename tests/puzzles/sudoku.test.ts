@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { RoomContext, RoomEvent } from '../../src/engine/rooms/room-puzzle';
 import { getRoomAdapter } from '../../src/engine/rooms/registry';
 import {
-  PEERS, TECHNIQUE_LEVEL, UNITS, balanceBooks, blanksRemaining, boxUnitOf, clearPencil,
+  ABOVE_NYT_HARD, LADDER_ORDER, PEERS, SUDOKU_TIER_GRADE, TECHNIQUE_LEVEL, UNITS,
+  balanceBooks, blanksRemaining, boxUnitOf, clearPencil,
   countSolutions, digitCount, erasePencilMark, fillPencil, gridToString, inkCell, isGiven,
   lastPencilMark, nextTechniqueNudge,
   parseGrid, rateSudoku, revealCell, solveOne, solveWithTechniques, startSudoku, togglePencil,
@@ -161,17 +162,62 @@ describe('shipped pool: technique-tier verification', () => {
     }
   });
 
-  it('the tiers escalate in the techniques they demand', () => {
-    const ceilingsFor = (t: SudokuTier) => new Set(
-      POOL.filter((p) => p.tier === t)
-        .flatMap((p) => p.techniques.filter((id) => TECHNIQUE_LEVEL[id] === t)),
-    );
-    // Tier 1 ≈ NYT hard/expert; tier 3 needs the advanced end of the ladder.
-    for (const id of ceilingsFor(1)) expect(TECHNIQUE_LEVEL[id]).toBe(1);
-    expect([...ceilingsFor(3)].length).toBeGreaterThan(0);
-    for (const id of ceilingsFor(3)) {
-      expect(['swordfish', 'xyz-wing', 'simple-colouring']).toContain(id);
+  it('THE GRADE: no tier-2 board is a hunt, and every tier-3 board is', () => {
+    // ROUND 27 - WHAT THIS TEST USED TO BE, AND WHY IT COULD NOT FAIL.
+    // It read "the tiers escalate in the techniques they demand" and checked
+    // that a tier-N board's level-N techniques have level N. That is
+    // `TECHNIQUE_LEVEL` asserted against itself: it catches a board binned into
+    // the wrong tier and it can NEVER catch the table being wrong about what a
+    // technique is worth - which is exactly what was wrong. The old bands put
+    // the XY-wing at level 2 and the naked pair at level 1, so 98% of tier-2
+    // boards needed a wing, a fish or a colouring chain, and BENCHMARKS section
+    // 7 records that NYT HARD - the hardest board that benchmark publishes -
+    // needs none of the three. Two storeys sat above the reference ladder and
+    // this test called that escalation.
+    //
+    // The gate now names an EXTERNAL fact - `ABOVE_NYT_HARD`, the benchmark's
+    // list - and measures the shipped boards against it with the live solver.
+    // Move a technique between bands and this fails; leave the bands alone and
+    // regenerate a pool that drifts, and this fails too.
+    const share = (t: SudokuTier) => {
+      const bin = POOL.filter((p) => p.tier === t);
+      expect(bin.length, `tier ${t} bin`).toBeGreaterThan(10);
+      const hunts = bin.filter((p) =>
+        solveWithTechniques(p.givens, 3).techniques.some((id) => ABOVE_NYT_HARD.includes(id)));
+      return hunts.length / bin.length;
+    };
+    expect(share(1), 'a tier-1 board that needs a wing/fish/chain is not NYT Medium').toBe(0);
+    expect(share(2), 'a tier-2 board that needs a wing/fish/chain is not NYT Hard').toBe(0);
+    expect(share(3), 'tier 3 IS the rung above NYT Hard').toBe(1);
+    // …and the ladder's ORDER still agrees with the bands it is rated by. The
+    // rater applies the lowest technique that makes progress, so a level out of
+    // order would silently over-rate every board that reached it.
+    const levels = LADDER_ORDER.map((id) => TECHNIQUE_LEVEL[id]);
+    for (let i = 1; i < levels.length; i++) {
+      expect(levels[i]!, `${LADDER_ORDER[i]} sits below ${LADDER_ORDER[i - 1]}`)
+        .toBeGreaterThanOrEqual(levels[i - 1]!);
     }
+  });
+
+  it('grades LENGTH as well as technique — the two levers climb together', () => {
+    // The other half of round 27. Every board it shipped before was dug to true
+    // minimality, so all three tiers were 24-25 givens and the only thing that
+    // changed with the storey was the technique: fifty-seven placements on the
+    // ground floor, which is where the twelve-and-a-half-minute tier-1 room
+    // came from. `SUDOKU_TIER_GRADE.givens` is the band each tier is dug to.
+    const medians: number[] = [];
+    for (const t of TIERS) {
+      const bin = POOL.filter((p) => p.tier === t);
+      const band = SUDOKU_TIER_GRADE[t].givens;
+      const gs = bin.map((p) => [...p.givens].filter((c) => c !== '.').length).sort((a, b) => a - b);
+      for (const g of gs) {
+        expect(g, `tier ${t} board outside ${band[0]}-${band[1]}`).toBeGreaterThanOrEqual(band[0]);
+        expect(g).toBeLessThanOrEqual(band[1]);
+      }
+      medians.push(gs[gs.length >> 1]!);
+    }
+    expect(medians[0]!, `t1 ${medians[0]} givens vs t2 ${medians[1]}`).toBeGreaterThan(medians[1]!);
+    expect(medians[1]!, `t2 ${medians[1]} givens vs t3 ${medians[2]}`).toBeGreaterThan(medians[2]!);
   });
 
   it('SOUNDNESS: no technique ever eliminates a true figure', () => {

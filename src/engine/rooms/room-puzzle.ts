@@ -105,4 +105,17 @@ export interface RoomPuzzleAdapter<P = unknown, S = unknown, A = unknown> {
    * (a Set, a Map, a Date), and expect that test to tell you when you do.
    */
   restore?(puzzle: P, raw: unknown, ctx: RoomContext): S;
+
+  /**
+   * ── THE OPEN LEDGER (round 27, engine/rooms/room-bank.ts) ────────────────
+   * Is there REAL WORK on this board — enough that leaving it open overnight
+   * is a thread rather than a stale key?
+   *
+   * Optional, and its absence means "no": banking breaks the nightly reset the
+   * whole manor is built on, so a room kind opts in TWICE — once by appearing
+   * in `BANKABLE_KINDS` and once by being able to say what work on it looks
+   * like. A kind that implements neither behaves exactly as it did before this
+   * existed, which is why nothing else in the house had to change.
+   */
+  hasWork?(puzzle: P, state: S): boolean;
 }

@@ -188,6 +188,15 @@ export const createDaySlice =
         day: { ...day, phase: 'dusk', activeRoom: null },
         // Nightly resets (MANOR_DESIGN §9): manor layout, gems, keys. The
         // journal/volume/affinities/cabinet persist forever, untouched here.
+        //
+        // ROUND 27 — AND `openLedger` IS UNTOUCHED HERE ON PURPOSE. It is the
+        // manor's one deliberate exception to the wipe: an unfinished ledger
+        // leaf is fifty-odd separate deductions and it survives the night with
+        // the rungs already paid for it (engine/rooms/room-bank.ts). Every
+        // OTHER room's in-progress board dies here, because it rides on
+        // `manor.rooms[cellKey].session` and the floorplan is going. The
+        // exception is narrow, it is one board, and the room says so in its
+        // own copy three times over.
         manor: null,
         // Bookmarks persist across nights (gift currency, AAA 5.7).
         currencies: { gems: 0, keys: 0, bookmarks: s.currencies.bookmarks },

@@ -311,7 +311,76 @@ and stranger (Charon precedent); Dewey needs 0 by design.
 
 ---
 
-## 7. Reference numbers cheat-sheet (for tuning conversations)
+## 7. NYT Sudoku → benchmark for the Counting House
+
+*Written in round 27. Until then this document had teardowns of five games and a
+style guide, and the Counting House — the longest room in the manor — was
+measured against nothing. Its tier ladder cited "NYT hard" in three source
+comments and there was no NYT row anywhere to check them against.*
+
+### The published ladder (the whole of it)
+
+The NYT ships **three** sudoku a day and only three: **Easy, Medium, Hard**.
+There is no Expert, no Diabolical, no Evil. That is the first fact and it is the
+one the Counting House kept getting wrong — a room whose EASIEST tier sits above
+the hardest board the benchmark publishes is not "expert baseline", it is
+ungraded.
+
+| NYT tier | Givens (~) | Empty cells (~) | Techniques the board actually requires |
+|---|---|---|---|
+| Easy | 36–40 | 41–45 | naked and hidden singles, nothing else |
+| Medium | 30–34 | 47–51 | + **locked candidates** (pointing / claiming) |
+| Hard | 25–28 | 53–56 | + **naked / hidden pairs and triples** |
+| — (not published) | — | — | X-wing, XY-wing, swordfish, XYZ-wing, colouring |
+
+The bottom row is the important one. **NYT Hard never requires a wing, a fish or
+a colouring chain.** Every NYT puzzle is solvable by pure logic with no guessing
+and no chain longer than a subset — that guarantee is the product. A board that
+turns on an XY-wing is not a harder NYT puzzle; it is a puzzle from a different
+publication.
+
+### Time, and why it is the number that binds
+- Solve times are personal, but the shape is stable across solver reports: for a
+  practised daily solver Easy is ~3–5 min, Medium **~6–9 min**, Hard **~10–14
+  min**. A board demanding wings/fish/colouring runs **~15–20 min** for the same
+  solver, because the exotic step is a *search*, not a scan — the eye has to
+  sweep the whole grid for a pattern that may not be there.
+- Both levers move it, and they are independent: **empty cells set the floor**
+  (every cell is a placement, ~6–9 s each once the technique is known) and
+  **technique demand sets the multiplier** (the stall, the re-scan, the pencil
+  pass). This is why given count alone is a famously bad difficulty proxy and
+  also why it cannot be ignored: a 24-given board that falls to singles is still
+  fifty-seven placements.
+
+### The interface, in one paragraph
+9×9 grid; tap a cell, tap a digit. **Notes/candidate mode** is a first-class
+toggle and **Auto-candidate mode** fills every mark — NYT ships the crutch its
+own Hard tier makes necessary, and does not price it. **Undo is unlimited and
+free.** A wrong digit LANDS: the board lets you be wrong and live with it, and
+"Check puzzle" is the separate, deliberate verb that grades you. There is no
+mistake counter, no fail state, no timer you cannot hide.
+
+### The thing NYT does that the manor could not
+**The board is still there tomorrow.** An unfinished NYT sudoku is saved,
+per-difficulty, and reopening the page returns the exact grid with the exact
+pencil marks. It is the only NYT game with no daily reset on the *board* — you
+do not lose a Hard you were forty cells into because you went to bed. This is
+not a nicety; it is what makes a 14-minute puzzle survivable inside a life.
+
+### Steal / Fix for the Counting House
+**Steal:** the three-rung ladder AS PUBLISHED — Medium, Hard, and one rung above
+anything NYT prints, each with a distinct *technique* requirement rather than a
+distinct label; both difficulty levers moved together (fewer givens AND harder
+technique as the tier climbs); auto-candidates free; wrong digits allowed to
+land; **and the unfinished board that is still yours tomorrow.**
+**Fix/beat:** NYT's Hard is the ceiling of a general-audience newspaper — the
+owner's directive is that the top of our ladder sits above it, which the bottom
+row of the table above defines exactly. What we may not do is put that board on
+the ground floor and call it tier 1.
+
+---
+
+## 8. Reference numbers cheat-sheet (for tuning conversations)
 
 | Thing | Benchmark value | Our starting value |
 |---|---|---|
@@ -327,3 +396,7 @@ and stranger (Charon precedent); Dewey needs 0 by design.
 | Typewriter | Hades feel → 40–60 cps | 40–60 cps, tap-complete/tap-advance |
 | Portrait budget | static, speaker-only, state variants | same; 240×300 SVG hedcut, 2–3 expressions |
 | Animation ceiling | BP's slow anims resented by run 30 | all interactions ≤300ms or tap-skippable |
+| Sudoku tier 1 | NYT Medium: ~30 givens, locked candidates | same — `ROOM_EFFORT.sudoku[0]` |
+| Sudoku tier 2 | NYT Hard: ~26 givens, subsets, NO wing/fish | same — `ROOM_EFFORT.sudoku[1]` |
+| Sudoku tier 3 | above NYT's published ladder: wing/fish/colouring | same — `ROOM_EFFORT.sudoku[2]` |
+| Unfinished sudoku | NYT: the board is still there tomorrow | the open ledger (engine/rooms/room-bank.ts) |

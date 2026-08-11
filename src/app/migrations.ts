@@ -25,6 +25,7 @@ import { createEmptySaveV2, emptySeenPuzzleIds, V1_BACKUP_KEY } from './save';
 import { VIEWED_BACKFILL_FLAG, viewedFragmentFlag } from '../engine/journal';
 import { checkKeepsakes, keepsakeFacts, pruneUnknownKeepsakeIds } from '../engine/achievements';
 import { getRoomAdapter } from '../engine/rooms/registry';
+import { isUsableLedger } from '../engine/rooms/room-bank';
 import { isUsableSnapshot } from '../engine/rooms/room-session';
 import type { PlacedRoom } from '../engine/types';
 import { ROOM_PUZZLE_KINDS, type RoomPuzzleKind } from '../engine/rooms/room-puzzle';
@@ -186,8 +187,32 @@ function migrateRoomSessions(save: SaveV2): SaveV2 {
  * Normalize any raw parsed save (v1, v2, partial, or garbage) into a SaveV2.
  * Every load path — localStorage AND importSaveCode — runs through here.
  */
+/**
+ * THE OPEN LEDGER, pruned on the same rule as a room session (round 27,
+ * engine/rooms/room-bank.ts). A banked board whose adapter has moved on — a
+ * bumped `stateVersion`, a regenerated pool that no longer ships the id, an
+ * envelope from a future build, a kind that has stopped being bankable — is
+ * DROPPED, and the Counting House deals a fresh leaf. Losing a banked grid to
+ * a version bump is a bad evening; restoring a half-parsed one into a reducer
+ * that no longer understands it is a crash on her phone.
+ *
+ * Deliberately shares `isUsableLedger` with the live restore path rather than
+ * re-checking the fields here: one rule, so the loader and the room can never
+ * disagree about what is honourable.
+ */
+function migrateOpenLedger(save: SaveV2): SaveV2 {
+  const ledger = save.openLedger;
+  if (!ledger) return save.openLedger === null ? save : { ...save, openLedger: null };
+  const kind = (ledger as { session?: { kind?: string } }).session?.kind;
+  const adapter = kind && (ROOM_PUZZLE_KINDS as readonly string[]).includes(kind)
+    ? getRoomAdapter(kind as RoomPuzzleKind)
+    : undefined;
+  return isUsableLedger(ledger, adapter) ? save : { ...save, openLedger: null };
+}
+
 export function migrate(raw: unknown): SaveV2 {
-  return migrateRoomSessions(backfillKeepsakes(backfillViewedFragments(migrateShape(raw))));
+  return migrateOpenLedger(
+    migrateRoomSessions(backfillKeepsakes(backfillViewedFragments(migrateShape(raw)))));
 }
 
 function migrateShape(raw: unknown): SaveV2 {

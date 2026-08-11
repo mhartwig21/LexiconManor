@@ -3,61 +3,69 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRng, shuffle, type Rng } from '../src/engine/rng';
 import {
-  TECHNIQUE_LEVEL, countSolutions, digPuzzle, generateSolvedGrid, gridToString, parseGrid,
-  rateSudoku, solveOne, solveWithTechniques,
+  ABOVE_NYT_HARD, SUDOKU_TIER_GRADE, TECHNIQUE_LEVEL, countSolutions, digPuzzle,
+  generateSolvedGrid, gridToString, parseGrid, rateSudoku, solveOne, solveWithTechniques,
   type SudokuPuzzle, type SudokuTier, type TechniqueId, type TechniqueLevel,
 } from '../src/engine/puzzles/sudoku';
 
 /**
  * Sudoku generator for The Counting House.
  *
- * OWNER DIRECTIVE (playtest round): the player is an EXPERT solver, so
- * EXPERT IS THE BASELINE and the pool escalates from there. Difficulty is
- * therefore rated by the SOLVER TECHNIQUES a puzzle actually demands, never
- * by given count (given count is a famously bad proxy — a 30-given board can
- * need an X-wing and a 22-given board can fall to singles):
+ * OWNER DIRECTIVE (playtest round): the player is an EXPERT solver, so the TOP
+ * of the ladder sits above anything a newspaper prints. What round 27 changed
+ * is that the ladder now has a bottom and a middle as well, and all three rungs
+ * are graded against a benchmark instead of against the generator's own output
+ * histogram. `docs/BENCHMARKS.md` section 7 is that benchmark;
+ * `SUDOKU_TIER_GRADE` in engine/puzzles/sudoku.ts is the row it is written into:
  *
- *   tier 1  locked candidates / naked+hidden pairs      ≈ NYT hard  ("Tough")
- *   tier 2  naked+hidden triples / X-wing / XY-wing     ≈ NYT expert ("Expert")
- *   tier 3  swordfish / XYZ-wing / simple colouring     ≈ "Diabolical"
+ *   tier 1  locked candidates only       = NYT MEDIUM   ~30 givens (~51 blanks)
+ *   tier 2  + naked/hidden pairs/triples = NYT HARD     ~26 givens (~55 blanks)
+ *   tier 3  + wing / fish / colouring    ABOVE NYT HARD ~24 givens (~57 blanks)
  *
- * (Round 5 correction: this comment had drifted — it still binned XY-wing at
- * tier 3, while `TECHNIQUE_LEVEL` has had it at 2 since the band boundaries
- * were reset from the measured ceiling distribution. The code was right; the
- * comment was not. The player-facing labels in SudokuView now match this row
- * exactly, so nothing in the room claims a difficulty its boards do not
- * demand.)
+ * WHY THIS FILE GREW A DIG LADDER
+ * Difficulty has two independent levers and this generator only ever pulled
+ * one. Every board it shipped was dug to TRUE MINIMALITY, so all three tiers
+ * came out at 24-25 givens: fifty-seven placements at every storey, and the
+ * only thing that changed with the tier was the technique. That is why the
+ * ground-floor room took twelve and a half minutes.
  *
- * A shipped tier-N board must (a) solve completely with the full technique
- * ladder and (b) STALL when the ladder is capped one level below N — so the
- * tier is an honest requirement, not a label. Boards that fall to singles
- * alone (level 0) are discarded outright: there is no easy bin anywhere in
- * this pool.
+ * So a board is now dug to ITS TIER'S GIVEN BAND (`SUDOKU_TIER_GRADE.givens`)
+ * as well as rated by its technique ceiling. Each solved grid is dug FOUR ways
+ * - three symmetric digs stopped at descending given floors, plus the old
+ * symmetric-then-minimal pass - every result is rated, and a result is only
+ * binned if its given count is inside the band its rating names. A shallow dig
+ * that rates tier 3 is discarded (it is a tier-3 technique on a tier-1-length
+ * board, which is not what the storey promises), and so is a minimal dig that
+ * rates tier 1. Length and technique climb together or the board does not ship.
  *
- * Pipeline, per board: seeded full grid → 180°-symmetric dig (the newspaper
- * aesthetic, and the bulk of the removals) → single-cell finishing pass to
- * TRUE minimality, every removal gated on the backtracking solver still
- * proving a UNIQUE solution → rate → bin. The finishing pass costs perfect
- * symmetry and buys difficulty: symmetric-only digging left a median of 28
- * givens, 72% of which fell to singles alone, and produced ZERO tier-2
- * boards in 600 attempts. Expert baseline wins that trade (owner directive).
+ * The yield cost is real and worth stating: level-2 boards are the scarce bin
+ * (~8% of dug boards before the given-band filter), which is why MAX_ATTEMPTS
+ * is where it is. Boards that fall to singles alone (= NYT Easy) are discarded
+ * outright: there is no easy bin anywhere in this pool.
  *
- * Boards the ladder cannot finish at all (~37% — they need forcing chains or
+ * Boards the ladder cannot finish at all (they need forcing chains or
  * uniqueness arguments) are DISCARDED, not shipped at tier 3: a puzzle the
  * shipped rater cannot verify is a puzzle whose hint could lie.
  *
+ * Pipeline, per board: seeded full grid -> 180-degree-symmetric dig (the
+ * newspaper aesthetic) to a given floor -> optional single-cell finishing pass
+ * to TRUE minimality for the deep end, every removal gated on the backtracking
+ * solver still proving a UNIQUE solution -> rate -> bin if the length agrees.
+ *
  * Every shipped board is re-verified in validate() (uniqueness, solution
- * match, tier requirement), and tests/puzzles/sudoku.test.ts replays that
- * verification against the shipped JSON so a hand-edited file cannot lie.
+ * match, tier requirement, tier-length band, and the round-27 grading gate:
+ * no tier-2 board may require a wing/fish/colouring and every tier-3 board
+ * must), and tests/puzzles/sudoku.test.ts replays that verification against the
+ * shipped JSON so a hand-edited file cannot lie.
  */
 
-const SEED = 20260806;
+const SEED = 20260811;
 
 /** ~120 boards, evenly across the three technique tiers. */
 const TARGET: Record<SudokuTier, number> = { 1: 40, 2: 40, 3: 40 };
 
 /** Safety valve: total boards dug before we give up and report. */
-const MAX_ATTEMPTS = 6000;
+const MAX_ATTEMPTS = 4000;
 
 const TIERS: SudokuTier[] = [1, 2, 3];
 
@@ -68,7 +76,8 @@ function givenCount(givens: string): number {
 /**
  * Symmetric dig, then a shuffled single-cell pass that removes every given
  * whose removal keeps the solution unique. The result is minimal: no further
- * cell can come out.
+ * cell can come out. This is the deep end of the dig ladder - it is what makes
+ * a tier-3 board fifty-seven placements long.
  */
 function digMinimal(rng: Rng, solution: string): string {
   const values = parseGrid(digPuzzle(rng, solution));
@@ -81,35 +90,71 @@ function digMinimal(rng: Rng, solution: string): string {
   return gridToString(values);
 }
 
+/**
+ * THE DIG LADDER (round 27). Symmetric digs stopped at descending given floors,
+ * then the minimal pass. The floors bracket the three tier bands in
+ * `SUDOKU_TIER_GRADE` from above, so the shallow digs are the only source of
+ * tier-1-length boards and the minimal pass is the only source of tier-3-length
+ * ones - a dig depth cannot supply a band it cannot reach.
+ */
+const DIG_FLOORS: readonly number[] = [31, 29, 26];
+
+function digLadder(rng: Rng, solution: string): string[] {
+  return [...DIG_FLOORS.map((floor) => digPuzzle(rng, solution, floor)), digMinimal(rng, solution)];
+}
+
+/** Does this board's LENGTH agree with the tier its technique ceiling names? */
+function lengthAgrees(tier: SudokuTier, givens: string): boolean {
+  const [lo, hi] = SUDOKU_TIER_GRADE[tier].givens;
+  const n = givenCount(givens);
+  return n >= lo && n <= hi;
+}
+
+/** Techniques a board needs that sit above NYT Hard (BENCHMARKS section 7). */
+function huntsFor(techniques: readonly TechniqueId[]): TechniqueId[] {
+  return techniques.filter((id) => ABOVE_NYT_HARD.includes(id));
+}
+
 function main() {
   const rng = createRng(SEED);
   const bins: Record<SudokuTier, SudokuPuzzle[]> = { 1: [], 2: [], 3: [] };
   const seen = new Set<string>();
   const started = Date.now();
   let attempts = 0;
+  let dug = 0;
   let discardedEasy = 0;
   let discardedBeyond = 0;
+  let discardedLength = 0;
 
   while (attempts < MAX_ATTEMPTS && TIERS.some((t) => bins[t].length < TARGET[t])) {
     attempts++;
     const solution = generateSolvedGrid(rng);
-    const givens = digMinimal(rng, solution);
-    if (seen.has(givens)) continue;
-    seen.add(givens);
 
-    const rated = rateSudoku(givens);
-    if (!rated) { discardedBeyond++; continue; }         // beyond the ladder
-    if (rated.tier === 0) { discardedEasy++; continue; } // singles-only: below the bar
-    const tier = rated.tier;
-    if (bins[tier].length >= TARGET[tier]) continue;
+    for (const givens of digLadder(rng, solution)) {
+      dug++;
+      if (seen.has(givens)) continue;
+      seen.add(givens);
 
-    bins[tier].push({
-      id: `sudoku-t${tier}-${String(bins[tier].length + 1).padStart(2, '0')}`,
-      tier,
-      givens,
-      solution,
-      techniques: rated.techniques,
-    });
+      const rated = rateSudoku(givens);
+      if (!rated) { discardedBeyond++; continue; }         // beyond the ladder
+      if (rated.tier === 0) { discardedEasy++; continue; } // = NYT Easy: below the bar
+      const tier = rated.tier;
+      // ROUND 27 - LENGTH AND TECHNIQUE CLIMB TOGETHER OR THE BOARD DOES NOT
+      // SHIP. A tier-3 technique on a thirty-given board is a five-minute room
+      // wearing the top storey's name, and a tier-1 technique on a minimal dig
+      // is the twelve-and-a-half-minute ground floor this round was called to
+      // fix. Both are discarded here rather than argued about downstream.
+      if (!lengthAgrees(tier, givens)) { discardedLength++; continue; }
+      if (bins[tier].length >= TARGET[tier]) continue;
+
+      bins[tier].push({
+        id: `sudoku-t${tier}-${String(bins[tier].length + 1).padStart(2, '0')}`,
+        tier,
+        givens,
+        solution,
+        techniques: rated.techniques,
+      });
+    }
   }
 
   const puzzles = TIERS.flatMap((t) => bins[t]);
@@ -118,14 +163,16 @@ function main() {
   const outPath = join(dirname(fileURLToPath(import.meta.url)), 'generated', 'sudoku.json');
   writeFileSync(outPath, JSON.stringify(puzzles));
 
-  // Report: tier counts, given-count spread, and which advanced techniques the
-  // pool actually exercises (a tier-3 bin with no swordfish is worth knowing).
+  // Report: tier counts, given-count spread, the technique ceiling each bin
+  // actually exercises, and the round-27 grade - the share of each bin that
+  // needs something above NYT Hard, which must be 0% at tier 2 and 100% at 3.
   console.log(`sudoku.json: ${puzzles.length} puzzles in ${((Date.now() - started) / 1000).toFixed(1)}s`
-    + ` (${attempts} boards dug; discarded ${discardedEasy} singles-only, ${discardedBeyond} beyond-ladder)`);
+    + ` (${attempts} grids, ${dug} boards dug; discarded ${discardedEasy} singles-only,`
+    + ` ${discardedBeyond} beyond-ladder, ${discardedLength} wrong-length-for-tier)`);
   for (const t of TIERS) {
     const bin = bins[t];
     if (bin.length === 0) { console.log(`  tier ${t}: NONE`); continue; }
-    const gs = bin.map((p) => givenCount(p.givens));
+    const gs = bin.map((p) => givenCount(p.givens)).sort((a, b) => a - b);
     const counts = new Map<TechniqueId, number>();
     for (const p of bin) {
       for (const id of p.techniques) {
@@ -133,9 +180,11 @@ function main() {
       }
     }
     const spread = [...counts.entries()].sort((a, b) => b[1] - a[1])
-      .map(([id, n]) => `${id}×${n}`).join(', ');
-    console.log(`  tier ${t}: ${bin.length} boards · givens ${Math.min(...gs)}-${Math.max(...gs)}`
-      + ` (median ${gs.sort((a, b) => a - b)[Math.floor(gs.length / 2)]}) · ${spread}`);
+      .map(([id, n]) => `${id} x${n}`).join(', ');
+    const hunts = bin.filter((p) => huntsFor(p.techniques).length > 0).length;
+    console.log(`  tier ${t} (${SUDOKU_TIER_GRADE[t].nyt}): ${bin.length} boards`
+      + ` - givens ${gs[0]}-${gs[gs.length - 1]} (median ${gs[Math.floor(gs.length / 2)]})`
+      + ` - above-NYT-Hard ${((100 * hunts) / bin.length).toFixed(0)}% - ${spread}`);
     if (bin.length < TARGET[t]) console.log(`    (short of the ${TARGET[t]} target)`);
   }
 }
@@ -189,10 +238,26 @@ function validate(puzzles: SudokuPuzzle[]) {
     // Expert baseline: there is no tier 0 in the shipped pool, ever.
     if (!TIERS.includes(p.tier)) problems.push(`${p.id}: tier ${p.tier} is outside the expert band`);
 
-    // Layout/aesthetic floor: 17 is the mathematical minimum; anything above
-    // 34 givens is a filler board regardless of what it "requires".
+    // ROUND 27 - LENGTH IS GRADED TOO. 17 is the mathematical minimum and
+    // anything above 34 givens is a filler board, but the binding check is the
+    // TIER's own band: a board must be as long as its storey claims.
     const g = givenCount(p.givens);
     if (g < 17 || g > 34) problems.push(`${p.id}: ${g} givens outside the 17-34 band`);
+    const band = SUDOKU_TIER_GRADE[p.tier].givens;
+    if (g < band[0] || g > band[1]) {
+      problems.push(`${p.id}: ${g} givens outside tier ${p.tier} band ${band[0]}-${band[1]}`);
+    }
+
+    // THE GRADE (BENCHMARKS section 7): NYT Hard never asks for a wing, a fish
+    // or a colouring chain, so tier 2 may not either - and tier 3 is defined as
+    // the rung that does. Re-derived from the board, not read off the claim.
+    const hunts = huntsFor(solveWithTechniques(p.givens, 3).techniques);
+    if (p.tier <= 2 && hunts.length > 0) {
+      problems.push(`${p.id}: tier ${p.tier} but needs ${hunts.join('/')} (above NYT Hard)`);
+    }
+    if (p.tier === 3 && hunts.length === 0) {
+      problems.push(`${p.id}: tier 3 but needs nothing above NYT Hard`);
+    }
   }
 
   for (const t of TIERS) {

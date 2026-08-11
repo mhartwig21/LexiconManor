@@ -11,6 +11,7 @@ import type { StateCreator } from 'zustand';
 import type { Tier } from '../../engine/types';
 import type { RoomEvent, RoomOutcome } from '../../engine/rooms/room-puzzle';
 import { getRoomAdapter } from '../../engine/rooms/registry';
+import type { RoomPuzzleKind } from '../../engine/rooms/room-puzzle';
 import type { ManorStore } from '../store';
 import type { SaveV2 } from '../save';
 // The single tunable STEP_TABLE (AAA 4.9) — swapped in by A2 for the
@@ -20,6 +21,9 @@ import type { SaveV2 } from '../save';
 import { solveKeys, stageSteps, STEP_TABLE } from '../../engine/economy/steps';
 import { paysInStages, stageFractionOf } from '../../engine/economy/effort';
 import type { RoomSessionSnapshot } from '../../engine/rooms/room-session';
+import {
+  ledgerFor, openLedgerOf, shouldBank, type OpenLedger,
+} from '../../engine/rooms/room-bank';
 
 export interface RoomSlice {
   /** Enter the room at cellKey: sets day.activeRoom (puzzleId pinned at placement). */
@@ -46,11 +50,34 @@ export interface RoomSlice {
    * saved, not "saved on the way out".
    */
   saveRoomSession(cellKey: string, snapshot: RoomSessionSnapshot): void;
+
+  /**
+   * ── THE OPEN LEDGER (round 27, engine/rooms/room-bank.ts) ────────────────
+   * The manor's ONE board that outlives the night. Written by
+   * `saveRoomSession` as a side effect of the same call that already persists
+   * the room, so a leaf is banked at the moment she works it rather than on
+   * the way out — an iOS tab evicted mid-deduction keeps the grid too.
+   */
+  openLedger: OpenLedger | null;
+
+  /**
+   * Adopt the banked leaf into the Counting House at `cellKey`: the board
+   * becomes this room's session AND the rungs already paid for it become this
+   * room's `ladderEarned`, so a night cannot re-open a rung the manor has
+   * already bought. Called by `RoomHost` when `openRoomSession` resumes from
+   * the bank.
+   */
+  resumeOpenLedger(cellKey: string): void;
+
+  /** Close it: she finished the leaf, or the pool no longer ships it. */
+  closeOpenLedger(): void;
 }
 
 export const createRoomSlice =
-  (_initial: SaveV2): StateCreator<ManorStore, [], [], RoomSlice> =>
+  (initial: SaveV2): StateCreator<ManorStore, [], [], RoomSlice> =>
   (set, get) => ({
+    openLedger: initial.openLedger,
+
     enterRoom: (cellKey) => {
       const { manor, day } = get();
       if (!manor || !day) return;
@@ -97,7 +124,54 @@ export const createRoomSlice =
       const manor = get().manor;
       const placed = manor?.rooms[cellKey];
       if (!manor || !placed) return;
-      set({ manor: { ...manor, rooms: { ...manor.rooms, [cellKey]: { ...placed, session: snapshot } } } });
+      const next = { ...placed, session: snapshot };
+      set({ manor: { ...manor, rooms: { ...manor.rooms, [cellKey]: next } } });
+
+      // ── THE OPEN LEDGER RIDES THE SAME WRITE ──────────────────────────
+      // Banking here rather than on the way out is deliberate: `abandonRoom`,
+      // `endDay` and a killed browser tab are three different exits and only
+      // one of them runs code. This one runs on every dispatch.
+      const adapter = getRoomAdapter(snapshot.kind);
+      if (!adapter) return;
+      const puzzle = adapter.find(snapshot.puzzleId);
+      const worked = puzzle !== undefined && (adapter.hasWork?.(puzzle, snapshot.state) ?? false);
+      if (shouldBank(snapshot.kind, snapshot, worked)) {
+        set({
+          openLedger: openLedgerOf(snapshot, next.ladderEarned ?? 0, get().day?.day ?? 0),
+        });
+      } else if (get().openLedger?.session.puzzleId === snapshot.puzzleId) {
+        // She finished it, or rubbed the leaf clean. Either way the exception
+        // is over and tomorrow's Counting House deals a new board.
+        set({ openLedger: null });
+      }
+    },
+
+    resumeOpenLedger: (cellKey) => {
+      const { manor, openLedger } = get();
+      const placed = manor?.rooms[cellKey];
+      if (!manor || !placed || !openLedger) return;
+      const adapter = getRoomAdapter(placed.kind as RoomPuzzleKind);
+      if (!ledgerFor(openLedger, adapter)) return;
+      set({
+        manor: {
+          ...manor,
+          rooms: {
+            ...manor.rooms,
+            [cellKey]: {
+              ...placed,
+              // The board she left, the id it was pinned under, and — the half
+              // that stops the manor paying twice — the rungs already bought.
+              session: openLedger.session,
+              puzzleId: openLedger.session.puzzleId,
+              ladderEarned: openLedger.ladderEarned,
+            },
+          },
+        },
+      });
+    },
+
+    closeOpenLedger: () => {
+      if (get().openLedger) set({ openLedger: null });
     },
 
     applyRoomEvents: (events, outcome) => {

@@ -46,7 +46,7 @@
 import type { Tier } from '../types';
 import { createRng, pick } from '../rng';
 import {
-  balanceBooks, blanksRemaining, clearPencil, erasePencilMark, fillPencil, inkCell,
+  balanceBooks, blanksRemaining, clearPencil, erasePencilMark, fillPencil, inkCell, isGiven,
   nextTechniqueNudge, revealCell, startSudoku, togglePencil, uninkCell,
   type SudokuEngineState, type SudokuPuzzle, type TechniqueId,
 } from './sudoku';
@@ -115,6 +115,11 @@ export type SudokuAction =
  * memory leak out of 81-cell snapshots (AAA 9.4).
  */
 export const UNDO_DEPTH = 64;
+
+/** Blank cells on a leaf when it is dealt — the ladder's own denominator. */
+function blanksOf(puzzle: SudokuPuzzle): number {
+  return 81 - [...puzzle.givens].filter((c) => c !== '.').length;
+}
 
 /**
  * Record the board she is leaving, then move to the new one. Every undoable
@@ -301,7 +306,19 @@ export const sudokuAdapter: RoomPuzzleAdapter<SudokuPuzzle, SudokuRoomState, Sud
       }
       case 'placed': {
         const next = remember(state, engine);
-        events.push({ type: 'progress', detail: `inked:${blanksRemaining(engine)}-left` });
+        // ROUND 27 — THE MARKER NAMES THE WHOLE LEAF, NOT JUST WHAT IS LEFT.
+        // It used to be `inked:N-left`, and the ladder that reads it had to
+        // guess the denominator from a pool median. That was survivable while
+        // every shipped board was the same length; it stopped being survivable
+        // when the tiers were regraded to 51/55/57 blanks — and it was ALREADY
+        // wrong before that, because a row-band tier-1 cell may deal a
+        // technique-tier-2 board (`TIER_PREFERENCE`), so the row's median was
+        // never a fact about the leaf on the table. The board says how big it
+        // is; nothing downstream has to assume.
+        events.push({
+          type: 'progress',
+          detail: `inked:${blanksRemaining(engine)}-of-${blanksOf(puzzle)}`,
+        });
         return { state: next, events, outcome: outcomeOf(next) };
       }
       case 'won': {
@@ -318,4 +335,22 @@ export const sudokuAdapter: RoomPuzzleAdapter<SudokuPuzzle, SudokuRoomState, Sud
   },
 
   puzzleId: (p) => p.id,
+
+  /**
+   * ── THE OPEN LEDGER (round 27) ───────────────────────────────────────────
+   * Real work on this leaf is a figure she inked or a mark she penciled —
+   * either one. PENCIL COUNTS, and that is the point rather than a nicety: a
+   * complete candidate pass over fifty-odd blanks is twenty minutes and no
+   * placements, and it is exactly the state a tier-2 or tier-3 board has to be
+   * in before the deduction that cracks it is even visible. Banking placements
+   * only would have thrown away the half of the solve this room's own play
+   * model calls "thinking" (see the header, and AAA 3.3).
+   *
+   * A figure she BOUGHT is not her work, so a leaf whose only mark is a
+   * consulted cell does not hold the ledger open.
+   */
+  hasWork: (puzzle, state) =>
+    state.engine.pencil.some((mask) => mask !== 0)
+    || state.engine.values.some((v, cell) =>
+      v !== 0 && !isGiven(puzzle, cell) && !state.engine.revealed.includes(cell)),
 };

@@ -7,22 +7,47 @@
  *
  * OWNER DIRECTIVE (playtest round): the player is an EXPERT solver — expert
  * difficulty is the BASELINE. Difficulty is rated by SOLVER TECHNIQUE TIERS,
- * not by given count (given count is a famously bad proxy):
- *   level 0  naked/hidden singles              (below the bar — never shipped)
- *   level 1  locked candidates, naked/hidden pairs   ≈ NYT hard/expert (tier 1)
- *   level 2  naked/hidden triples, X-wing, XY-wing   (tier 2)
- *   level 3  swordfish, XYZ-wing, simple colouring   ≈ diabolical (tier 3)
+ * not by given count alone (given count is a famously bad proxy for TECHNIQUE
+ * — though it is an excellent proxy for LENGTH, and round 27 stopped
+ * pretending those were the same question).
+ *
+ * ═══ ROUND 27 — THE LADDER IS GRADED AGAINST A BENCHMARK NOW ═══════════════
+ *
+ * The bands below used to be set from "the measured ceiling distribution over
+ * ~1500 dug boards" — i.e. from what the generator happened to produce, binned
+ * into thirds. That is a HISTOGRAM, not a grade. Measured against the ladder
+ * it produced: **98% of tier-2 boards and 100% of tier-3 boards required a
+ * wing, a fish or a colouring chain**, and BENCHMARKS §7 (written in the same
+ * round, because there was no sudoku teardown in this repo at all) records that
+ * **NYT Hard — the hardest board that benchmark publishes — never requires any
+ * of the three.** So two of the manor's three storeys sat above the top of the
+ * reference ladder, indistinguishable from each other in the only way a solver
+ * can feel: "do I have to go hunting for a pattern, or can I scan?"
+ *
+ * The bands are now the published ladder plus the one rung the owner asked for:
+ *   level 0  naked/hidden singles                  ≈ NYT EASY  (never shipped)
+ *   level 1  locked candidates (pointing/claiming) ≈ NYT MEDIUM      (tier 1)
+ *   level 2  naked/hidden pairs and triples        ≈ NYT HARD        (tier 2)
+ *   level 3  X-wing, XY-wing, swordfish, XYZ-wing,
+ *            simple colouring                      ABOVE NYT         (tier 3)
+ *
+ * What moved: the pairs fell from level 1 to level 2 (a pair is the defining
+ * NYT-Hard move, not a Medium one), and the wings and the X-wing rose from
+ * level 2 to level 3 (they are not on NYT's ladder at any tier). The result is
+ * the distinction the old ladder could not make and the new one is GATED on:
+ * **no tier-2 board may require a wing, a fish or a colouring chain, and every
+ * tier-3 board must.** That gate can fail; the old "the tiers escalate" one
+ * could not, because it only ever read a level table against itself.
+ *
+ * LENGTH is graded separately and deliberately, because it is the half of
+ * difficulty the technique ladder is blind to: `content/generate-sudoku.ts`
+ * digs each tier to its own given band (~30 / ~26 / ~24, i.e. ~51 / ~55 / ~57
+ * empty cells), so a tier climbs in placements AND in technique at once, the
+ * way BENCHMARKS §7's table does. `ROOM_EFFORT.sudoku` is re-derived from both.
+ *
  * A shipped tier-N puzzle REQUIRES at least one level-N technique (lower
  * ladders stall) and is fully solvable with the ladder — verified offline by
  * content/generate-sudoku.ts and replayed in tests/puzzles/sudoku.test.ts.
- *
- * The band boundaries were set from the measured ceiling distribution over
- * ~1500 dug boards, not from taste: with XY-wing sitting at level 3 the
- * middle band was empty (a board that needs a triple or an X-wing almost
- * always needs an XY-wing too), and with no chain technique on the ladder the
- * top band was ~0.2% (swordfish alone). Colouring pulls genuinely diabolical
- * boards — the ones that stall every subset and wing — into a verifiable
- * tier 3 instead of the discard pile.
  *
  * ═══ PLAY MODEL (round 5 rewrite — economy semantics in sudoku-adapter.ts) ═══
  * The previous model checked every ink against `puzzle.solution` and refused
@@ -71,19 +96,71 @@ export type TechniqueId =
 
 export type TechniqueLevel = 0 | 1 | 2 | 3;
 
+/**
+ * The grade, band by band — BENCHMARKS §7's published ladder plus one rung.
+ * See the file header for what moved in round 27 and why. `LADDER` below is
+ * ordered easiest-first and must stay CONSISTENT with these levels: the rater
+ * applies the lowest technique that makes progress, so a level that is out of
+ * order silently over-rates every board that reaches it.
+ */
 export const TECHNIQUE_LEVEL: Record<TechniqueId, TechniqueLevel> = {
+  // ── level 0 · ≈ NYT Easy — below the manor's bar, never shipped ──────────
   'naked-single': 0,
   'hidden-single': 0,
+  // ── level 1 · ≈ NYT Medium — the scan widens to a unit intersection ──────
   'locked-candidates': 1,
-  'naked-pair': 1,
-  'hidden-pair': 1,
+  // ── level 2 · ≈ NYT Hard — subsets, the defining Hard move ───────────────
+  'naked-pair': 2,
+  'hidden-pair': 2,
   'naked-triple': 2,
   'hidden-triple': 2,
-  'x-wing': 2,
-  'xy-wing': 2,
+  // ── level 3 · above NYT's published ladder — the hunt, not the scan ──────
+  'x-wing': 3,
+  'xy-wing': 3,
   'swordfish': 3,
   'xyz-wing': 3,
   'simple-colouring': 3,
+};
+
+/**
+ * The techniques BENCHMARKS §7 records as sitting ABOVE NYT Hard — the ones
+ * that make a board a hunt rather than a scan. Exported because it is the
+ * subject of the round-27 grading gate (no tier-2 board may need one; every
+ * tier-3 board must), and a gate that re-derives its own subject from
+ * `TECHNIQUE_LEVEL` would be asserting the level table against itself.
+ */
+export const ABOVE_NYT_HARD: readonly TechniqueId[] =
+  ['x-wing', 'xy-wing', 'swordfish', 'xyz-wing', 'simple-colouring'];
+
+/**
+ * THE GRADE, AS NUMBERS — one row per tier, and the single place the generator,
+ * the effort table and the tests all read it from.
+ *
+ * `givens` is the band `content/generate-sudoku.ts` digs to and
+ * `tests/puzzles/sudoku.test.ts` re-checks off the shipped JSON; `minutes` is
+ * the band BENCHMARKS §7 publishes for a practised daily solver, and
+ * `ROOM_EFFORT.sudoku` must land inside it. Neither is derived from the other,
+ * which is the point: the technique gate, the length gate and the clock gate
+ * can each fail on their own.
+ */
+export const SUDOKU_TIER_GRADE: Record<SudokuTier, {
+  nyt: string;
+  /** Inclusive given-count band for a shipped board of this tier. */
+  givens: readonly [number, number];
+  /**
+   * THE MANOR'S OWN minutes band for the tier — what `ROOM_EFFORT.sudoku` must
+   * sit inside. BENCHMARKS §7 publishes 6–9 / 10–14 / 15–20 for a PRACTISED
+   * DAILY SOLVER; tiers 2 and 3 land inside those and tier 1 sits above its
+   * Medium band, and the reason is a mechanism rather than a fudge: the
+   * manor's player is not a daily sudoku solver, so the ordinary scanning
+   * tiers cost her more than they cost the reference, while the exotic step at
+   * the top is one search that costs everybody the same.
+   */
+  minutes: readonly [number, number];
+}> = {
+  1: { nyt: 'NYT Medium', givens: [28, 32], minutes: [9, 13] },
+  2: { nyt: 'NYT Hard', givens: [25, 28], minutes: [11, 15] },
+  3: { nyt: 'above NYT Hard', givens: [21, 25], minutes: [15, 20] },
 };
 
 /** Player-facing names for the journal / room copy (never a bare id). */
@@ -725,7 +802,10 @@ function kCombinations(items: readonly number[], k: number): number[][] {
 }
 
 /** The ladder, strictly ordered easiest-first. Rating applies the LOWEST
- *  technique that makes progress, so `maxLevel` is an honest requirement. */
+ *  technique that makes progress, so `maxLevel` is an honest requirement.
+ *  Its order must be non-decreasing in `TECHNIQUE_LEVEL` — round 27 moved the
+ *  pairs up a band and the wings up a band and this order still holds, but
+ *  `tests/puzzles/sudoku.test.ts` asserts it rather than trusting the reading. */
 const LADDER: readonly { id: TechniqueId; apply: Technique }[] = [
   { id: 'naked-single', apply: nakedSingle },
   { id: 'hidden-single', apply: hiddenSingle },
@@ -740,6 +820,13 @@ const LADDER: readonly { id: TechniqueId; apply: Technique }[] = [
   { id: 'xyz-wing', apply: xyzWing },
   { id: 'simple-colouring', apply: simpleColouring },
 ];
+
+/**
+ * The ladder's technique ids in application order — exported so the ORDER can
+ * be gated against `TECHNIQUE_LEVEL` from outside this file. Derived from
+ * `LADDER` itself, never transcribed, so it cannot fall out of step with it.
+ */
+export const LADDER_ORDER: readonly TechniqueId[] = LADDER.map((t) => t.id);
 
 export interface Rating {
   solved: boolean;

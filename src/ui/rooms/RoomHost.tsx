@@ -24,6 +24,10 @@ import {
   advanceRoomSession, openRoomSession, sessionSnapshotOf, snapshotRoomSession,
   type RoomSession,
 } from '../../engine/rooms/room-session';
+// Round 27 — the manor's one deliberate exception to the nightly wipe. The
+// host's whole job here is (a) offer the banked leaf to `openRoomSession` and
+// (b) when it takes it, tell the store to adopt the rungs that came with it.
+import { isBankable } from '../../engine/rooms/room-bank';
 // Read-only: the room needs to know a campaign seal is on glass so it can get
 // its own celebration out from under it (see --room-moment-clear below).
 import { momentQueue } from '../moment/queue';
@@ -50,6 +54,7 @@ export default function RoomHost() {
   const abandonRoom = useManorStore((s) => s.abandonRoom);
   const leaveRoom = useManorStore((s) => s.leaveRoom);
   const saveRoomSession = useManorStore((s) => s.saveRoomSession);
+  const resumeOpenLedger = useManorStore((s) => s.resumeOpenLedger);
 
   const adapter = activeRoom ? getRoomAdapter(activeRoom.kind) : undefined;
   const View = activeRoom ? getRoomView(activeRoom.kind) : undefined;
@@ -75,6 +80,8 @@ export default function RoomHost() {
    * the room on screen is simply not a session yet.
    */
   const [rawSession, setRawSession] = useState<Session | null>(null);
+  /** The day a leaf on THIS table was left open, when it outlived a night. */
+  const [resumedLeaf, setResumedLeaf] = useState<number | null>(null);
   const [sessionFor, setSessionFor] = useState<string | null>(null);
   const sessionKey = activeRoom ? `${activeRoom.cellKey}|${activeRoom.kind}` : null;
   const session = rawSession && sessionFor === sessionKey ? rawSession : null;
@@ -98,6 +105,7 @@ export default function RoomHost() {
   useEffect(() => {
     if (!activeRoom || !adapter) {
       setSession(null);
+      setResumedLeaf(null);
       return;
     }
     const seed = roomSeed(daySeed, activeRoom.cellKey);
@@ -107,15 +115,37 @@ export default function RoomHost() {
     const opened = openRoomSession({
       adapter,
       snapshot: sessionSnapshotOf(placed),
+      openLedger: useManorStore.getState().openLedger,
       pinnedPuzzleId: activeRoom.puzzleId || undefined,
       ctx: { tier: activeRoom.tier, seed, volumeId },
       seenIds: seenIds ?? [],
     });
     if (!opened) {
       setSession(null);
+      setResumedLeaf(null);
       return;
     }
     setSession(opened.session);
+    // ROUND 27 — THE BANKED LEAF BRINGS ITS RECEIPTS WITH IT. Adopting the
+    // board without `ladderEarned` would let a night re-open every rung the
+    // manor already paid for: fill three quarters tonight for +6, sleep,
+    // resume the same grid on a fresh PlacedRoom whose ladder is back at zero.
+    // `resumeOpenLedger` writes both onto the cell in one set().
+    if (opened.source === 'bank') resumeOpenLedger(activeRoom.cellKey);
+    // ROUND 27 — THE BANNER IS DERIVED, NOT LATCHED, and the live pass is why.
+    // It used to read `opened.source === 'bank'`, which is true exactly once:
+    // resuming writes the leaf onto the cell as an ordinary session, so the
+    // very next mount — a reload, an iOS tab coming back — restores by route 1
+    // and the room stopped saying why it was different. Measured at both
+    // 390×844 and 375×667: the grid came back and the line did not. The
+    // question the copy answers is "is the leaf on this table older than
+    // today", so that is what is asked, of the save, every time the room opens.
+    const bank = useManorStore.getState().openLedger;
+    const today = useManorStore.getState().day?.day ?? 0;
+    const leafId = adapter.puzzleId(opened.session.puzzle);
+    setResumedLeaf(
+      bank && bank.session.puzzleId === leafId && bank.day < today ? bank.day : null,
+    );
     // Park the freshly-opened board immediately: a tab evicted before the first
     // move must come back to THIS puzzle, not to whatever `select()` would pick
     // once the seen-set has moved on.
@@ -261,11 +291,32 @@ export default function RoomHost() {
         ref={stageRef}
         style={{ '--room-moment-clear': `${momentClear}px` } as CSSProperties}
       >
-        <View puzzle={session.puzzle} state={session.state} tier={activeRoom.tier} dispatch={dispatch} />
+        <View
+          puzzle={session.puzzle}
+          state={session.state}
+          tier={activeRoom.tier}
+          dispatch={dispatch}
+          resumed={resumedLeaf !== null ? { day: resumedLeaf } : undefined}
+        />
       </div>
       <div className="room-host__footer">
         {session.done || session.solvedOnce ? (
           <button className="btn btn--primary" onClick={leaveRoom}>Step back out</button>
+        ) : isBankable(activeRoom.kind) ? (
+          /* ROUND 27 (COMPREHENSION 3/8, engine/rooms/room-bank.ts) — THE ONE
+             ROOM THAT DOES HAVE A TOMORROW, SAYING SO.
+             The note below is not flavour. The manor is wiped nightly and the
+             game spends real copy justifying that; a room that quietly behaves
+             differently is a RULE KEPT SECRET, which is the exact failure
+             COMPREHENSION measured at 40% legibility. So the exception names
+             itself, in her language, at the moment she uses it — and it says
+             what is true of this leaf only, never of the house. */
+          <div className="room-host__bank">
+            <p className="room-host__banknote">
+              The house is put away at night. This leaf is not — it will be on the desk tomorrow.
+            </p>
+            <button className="btn" onClick={abandonRoom}>Leave the ledger open</button>
+          </div>
         ) : (
           /* ROUND 24 (COMPREHENSION, fix 8) — A PROMISE THE MANOR BREAKS.
              This read "Leave it for tomorrow", and there is no tomorrow for

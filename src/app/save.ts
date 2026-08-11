@@ -17,6 +17,7 @@ import { ROOM_PUZZLE_KINDS } from '../engine/rooms/room-puzzle';
 import type { RunRecord } from '../engine/types';
 import { VIEWED_BACKFILL_FLAG } from '../engine/journal';
 import { freshVolumeState } from '../engine/volume';
+import type { OpenLedger } from '../engine/rooms/room-bank';
 import { migrate } from './migrations';
 
 export const SAVE_KEY = 'lexicon-loop-save-v2';
@@ -88,6 +89,18 @@ export interface SaveV2 {
    */
   earnedAchievementIds: string[];
   seenPuzzleIds: Record<RoomPuzzleKind, string[]>;
+  /**
+   * THE OPEN LEDGER — the manor's one deliberate exception to the nightly
+   * wipe (engine/rooms/room-bank.ts, REVIEW_AA §6, BENCHMARKS §7).
+   *
+   * It is a TOP-LEVEL field precisely because `manor` is not: in-room progress
+   * lives at `manor.rooms[cellKey].session` so that it dies with the floorplan
+   * and needs no sweeper, and an unfinished ledger leaf is the one board that
+   * must NOT die with it. Exactly one at a time, only for a kind in
+   * `BANKABLE_KINDS`, and `migrations.migrateOpenLedger` drops any record this
+   * build can no longer honour before the app reads one.
+   */
+  openLedger: OpenLedger | null;
   settings: SettingsV2;
 }
 
@@ -129,6 +142,7 @@ export function createEmptySaveV2(profileName: string): SaveV2 {
     chronicles: { dayRecords: [] },
     earnedAchievementIds: [],
     seenPuzzleIds: emptySeenPuzzleIds(),
+    openLedger: null,
     settings: { soundEnabled: true, reducedMotion: false, musicEnabled: true, muteSwitchBypass: false },
   };
 }
@@ -248,6 +262,10 @@ export function newVolumeSave(save: SaveV2, nextVolumeId: string): SaveV2 {
     chronicles: { ...save.chronicles, dayRecords: [...save.chronicles.dayRecords] },
     earnedAchievementIds: [...save.earnedAchievementIds],
     seenPuzzleIds: { ...save.seenPuzzleIds },
+    // The open ledger is RUN state, not household state: it is a half-solved
+    // board in a house that is about to be re-opened around a different
+    // mystery. It goes with the day, the manor and the step ledger.
+    openLedger: null,
     settings: { ...save.settings },
   };
 }

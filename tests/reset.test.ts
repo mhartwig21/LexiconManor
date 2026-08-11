@@ -64,7 +64,7 @@ function installStorage(name: 'localStorage' | 'sessionStorage'): Map<string, st
 const SAVE_SHAPE = [
   'version', 'profileName', 'day', 'manor', 'ledger', 'currencies', 'volume',
   'journal', 'events', 'cabinet', 'chronicles', 'earnedAchievementIds',
-  'seenPuzzleIds', 'settings',
+  'seenPuzzleIds', 'openLedger', 'settings',
 ] as const;
 
 /** What "Start a new volume" must KEEP (MANOR_DESIGN §9 persists-forever). */
@@ -74,7 +74,12 @@ const NEW_VOLUME_KEEPS = [
 ] as const;
 
 /** What "Start a new volume" must CLEAR (endDay's nightly resets + the volume). */
-const NEW_VOLUME_CLEARS = ['day', 'manor', 'ledger', 'volume'] as const;
+// ROUND 27 — `openLedger` (engine/rooms/room-bank.ts) is the one field that
+// survives the NIGHTLY reset and does not survive a NEW VOLUME, so it is
+// stated on this side of the line explicitly. It is a half-solved board in a
+// house about to be re-opened around a different mystery: run state, like the
+// day, the floorplan and the step ledger.
+const NEW_VOLUME_CLEARS = ['day', 'manor', 'ledger', 'volume', 'openLedger'] as const;
 
 /**
  * A save with every field dirtied — one volume solved, another archived, a
@@ -134,6 +139,15 @@ function dirtySave(): SaveV2 {
       legacyPerks: { unlockedPerkIds: ['p1'], activePerkLoadout: ['p1'] },
     },
     earnedAchievementIds: ['first-day', 'first-fragment'],
+    openLedger: {
+      v: 1,
+      session: {
+        v: 1, kind: 'sudoku', puzzleId: 'sudoku-t1-01', tier: 1,
+        stateVersion: 99, state: {}, done: false, solvedOnce: false,
+      },
+      ladderEarned: 0.5,
+      day: 6,
+    } as unknown as SaveV2['openLedger'],
     seenPuzzleIds: { ...emptySeenPuzzleIds(), hive: ['hive-3'], twistle: ['tw-9'] },
     settings: {
       soundEnabled: false, reducedMotion: true, musicEnabled: false, muteSwitchBypass: true,

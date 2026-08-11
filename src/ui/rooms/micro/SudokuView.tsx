@@ -42,15 +42,24 @@ type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
  * Player-facing difficulty names for the three technique tiers.
  *
  * ROUND 5 CORRECTION (AAA §0.1 honesty-over-vibes): tier 1 used to print
- * "Expert". The engine is honest — 39/40 tier-1 boards peak at locked
- * candidates and the rest at a naked/hidden pair — but that ceiling is NYT
- * *Hard*, and an expert who reads "Expert leaf — it turned on a naked pair"
- * stops trusting every other number the room prints. The ladder now says what
- * the boards demand, and still escalates in three distinct in-world words.
+ * "Expert" over boards that peak at locked candidates, and an expert who reads
+ * "Expert leaf — it turned on a naked pair" stops trusting every other number
+ * the room prints.
+ *
+ * ROUND 27 — AND NOW THE LABELS HAVE A PUBLISHED LADDER BEHIND THEM. The
+ * boards were regraded against `docs/BENCHMARKS.md` §7, so each of these three
+ * words means one specific rung of NYT's own three (`SUDOKU_TIER_GRADE`):
+ *   Steady     = NYT MEDIUM      — locked candidates, nothing above them
+ *   Tough      = NYT HARD        — subsets; no wing, fish or chain, ever
+ *   Diabolical = ABOVE NYT HARD  — every board needs one of the five
+ * "Tough" moved DOWN a storey rather than being retired, because it was
+ * always the word for NYT Hard and it was on the wrong tier. Nothing here may
+ * claim a difficulty its boards do not demand; `SUDOKU_TIER_GRADE` is what
+ * they do demand, and the tests re-derive it off the shipped boards.
  */
 const TIER_NAME: Record<1 | 2 | 3, string> = {
-  1: 'Tough',
-  2: 'Expert',
+  1: 'Steady',
+  2: 'Tough',
   3: 'Diabolical',
 };
 
@@ -93,7 +102,7 @@ function peakTechnique(techniques: readonly TechniqueId[]): TechniqueId | null {
 }
 
 export default function SudokuView({
-  puzzle, state, tier, dispatch,
+  puzzle, state, tier, dispatch, resumed,
 }: RoomViewProps<SudokuPuzzle, SudokuRoomState, SudokuAction>) {
   const engine = state.engine;
   const won = engine.status === 'won';
@@ -139,6 +148,35 @@ export default function SudokuView({
     handledAttempt.current = 0;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset keyed to the session only
   }, [puzzle.id]);
+
+  /**
+   * ROUND 27 — THE RESUMED LEAF ANNOUNCES ITSELF WHERE THE ROOM ALWAYS HAS
+   * GLASS, AND THIS IS A LIVE-PASS FIX, NOT A FLOURISH.
+   *
+   * The line in `.ch__sub` is the natural home for it and it is DISPLAY:NONE
+   * below 760px of viewport, and the whole head goes below 700 — round 7 traded
+   * both away so the ledger leaf could be whole on a 667px phone
+   * (counting-house.css). Measured at 375×667: the grid came back from
+   * yesterday and the room said nothing about it. So the fact also goes through
+   * the two surfaces the deck reserves at EVERY size — the toast slot on open,
+   * and the meta line at rest for as long as the leaf is a carry-over — while
+   * the RULE ("the house is put away at night; this leaf is not") is the
+   * footer's, which is on the glass at both sizes.
+   */
+  useEffect(() => {
+    if (!resumed) return;
+    setToast({
+      kind: 'info',
+      // ONE LINE, and short enough to stay one line at 375×667 — the toast slot
+      // is a `min-height`, so a wrapped notice takes its second line off the
+      // ledger leaf (measured: 21px of overflow at the fuller wording). The
+      // RULE this is a consequence of lives in the footer note, which has room
+      // for two lines because it is not competing with the board.
+      text: `Left open on day ${resumed.day} — still yours.`,
+    });
+    later(() => setToast(null), 3200);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per resumed leaf
+  }, [puzzle.id, resumed?.day]);
 
   // Ink landed: a small pop + a rising chime (the reveal chime is handled with
   // the rest of the adapter feedback below, so a consulted figure never
@@ -309,9 +347,25 @@ export default function SudokuView({
     <div className="ch">
       <header className="ch__head">
         <h2 className="ch__title">The Counting House</h2>
+        {/* ROUND 27 — THE EXCEPTION ANNOUNCES ITSELF ON THE WAY BACK IN.
+            The manor is wiped nightly and says so everywhere; this is the one
+            leaf that is not, so the room states the rule at the moment it
+            applies rather than letting her discover it (COMPREHENSION 3/8).
+            It replaces the standing line rather than adding a second one —
+            the head is a fixed two lines at 375px and the leaf needs the rest
+            of the glass (counting-house.css). */}
         <p className="ch__sub">
-          Every row, column, and quarter carries all nine figures once. Ink freely — the ledger only
-          answers when you ask it to balance.
+          {resumed ? (
+            <>
+              The leaf you left open on day {resumed.day}. The house was put away that night; this
+              was not. {left} {left === 1 ? 'figure' : 'figures'} still to settle.
+            </>
+          ) : (
+            <>
+              Every row, column, and quarter carries all nine figures once. Ink freely — the ledger
+              only answers when you ask it to balance.
+            </>
+          )}
         </p>
       </header>
 
@@ -398,6 +452,11 @@ export default function SudokuView({
               {TIER_NAME[puzzle.tier]} leaf — it turned on {article(TECHNIQUE_NAMES[peak])} {TECHNIQUE_NAMES[peak]}.
             </p>
           )}
+          {/* ROUND 27 — AND THE EXCEPTION CLOSES OUT LOUD. If the room only
+              ever said "this leaf stays open", a player would have no way to
+              know the offer had ended and that tomorrow's Counting House deals
+              a new board. Three notices: leaving, returning, and here. */}
+          <p className="ch-done__note">This leaf is closed. The next one will be a fresh sheet.</p>
         </div>
       ) : (
         <>
@@ -426,7 +485,13 @@ export default function SudokuView({
             <div className="ch-toastslot">
               {!toast && (
                 <span className="ch__meta tabular-nums">
-                  <span>{TIER_NAME[puzzle.tier]} leaf</span>
+                  {/* Round 27: on a carry-over leaf the newsworthy half of this
+                      line is WHERE THE BOARD CAME FROM, not its grade — and
+                      this slot is the one piece of chrome the deck reserves at
+                      every viewport height, so it is where the fact can be
+                      trusted to land. The grade is still printed on the
+                      finished card. */}
+                  <span>{resumed ? `Left open day ${resumed.day}` : `${TIER_NAME[puzzle.tier]} leaf`}</span>
                   <span>{left} {left === 1 ? 'figure' : 'figures'} left</span>
                 </span>
               )}

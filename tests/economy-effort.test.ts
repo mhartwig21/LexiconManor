@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   effortLabel, effortMinutes, paysInStages, stageFractionOf,
   HIVE_SOLVE_PCT, HIVE_STAGE_PCT, LADDER_MINUTES, ROOM_EFFORT,
-  SUDOKU_BLANKS, SUDOKU_CELLS_PER_STAGE, WEB_GROUPS,
+  SUDOKU_CELLS_PER_STAGE, WEB_GROUPS,
 } from '../src/engine/economy/effort';
 import {
   solveKeys, solvePayout, stageSteps, BASE_DAY_BUDGET, KEY_SUPPLY, ROOM_SIZE, SOLVE_WAGE,
@@ -12,6 +12,9 @@ import { getRoomAdapter, registeredRoomKinds } from '../src/engine/rooms/registr
 import { maxFindableFor } from '../src/engine/twistle';
 import { ROOM_PUZZLE_KINDS, type RoomPuzzleKind } from '../src/engine/rooms/room-puzzle';
 import { HIVE_LADDER, ladderThreshold } from '../src/engine/rooms/adapters/hive';
+import {
+  ABOVE_NYT_HARD, SUDOKU_TIER_GRADE, solveWithTechniques,
+} from '../src/engine/puzzles/sudoku';
 import type { Tier } from '../src/engine/types';
 import twistlePool from '../content/generated/twistle.json';
 import hivePool from '../content/generated/hive.json';
@@ -48,7 +51,7 @@ const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[xs.length >> 1]!;
 
 interface TwistlePuzzleLike { tier: number; targetCount: number; targetWords: string[] }
 interface HivePuzzleLike { tier: number; validWords: string[]; pangrams: string[]; totalPoints: number }
-interface SudokuPuzzleLike { tier: number; givens: string }
+interface SudokuPuzzleLike { id: string; tier: number; givens: string }
 interface WebPuzzleLike { tier: number; groups: { words: string[] }[] }
 
 const twistles = twistlePool as unknown as TwistlePuzzleLike[];
@@ -250,12 +253,23 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
     // exactly the sort of arithmetic that goes stale in the reassuring
     // direction, so the teeth now live in the ABSOLUTE ratchet — 16.00×, down
     // from 20.00× — and `before` is kept only to show the alternative is worse.
+    //
+    // ROUND 27 — AND IT WENT STALE AGAIN, IN THE DIRECTION ROUND 26 NAMED.
+    // `before` fell 36.00× → 20.40× without a single flat number changing,
+    // because re-clocking the Counting House moved the shared denominator
+    // again (sudoku t3 flat: +8 for 30 min = 0.267, now +8 for 17 min =
+    // 0.471). The bound is re-derived, not relaxed on principle — but the
+    // teeth are still the ABSOLUTE ratchet below, and this line's only job is
+    // to say the alternative is worse, which `after < before` is what proves.
     const before = spreadOf(legacyWageOf);
     const after = spreadOf(wageOf);
-    expect(before, `flat-table spread ${before.toFixed(2)}×`).toBeGreaterThanOrEqual(30);
+    expect(before, `flat-table spread ${before.toFixed(2)}×`).toBeGreaterThanOrEqual(20);
     expect(after, `priced spread ${after.toFixed(2)}× (flat table ${before.toFixed(2)}×)`)
       .toBeLessThan(before);
-    expect(after, `overall spread ${after.toFixed(2)}×`).toBeLessThanOrEqual(16.5);
+    // ROUND 27: 16.00× → 9.07×. The bottom of the table was the Counting House
+    // at tier 3 (+6 for thirty minutes = 0.200 steps a minute); the same room,
+    // regraded and re-clocked to seventeen minutes, pays the same +6 for 0.353.
+    expect(after, `overall spread ${after.toFixed(2)}×`).toBeLessThanOrEqual(10.0);
   });
 
   it('publishes the UNFILTERED tier-1/2 spread — the number the old name hid', () => {
@@ -268,14 +282,26 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
     expect(tier12.length).toBe(14);
     const all = spreadOf(wageOf, tier12);
     // Round 26: 12.00× → 9.60×, because the Gallery stopped being the top of it.
-    expect(all, `tier-1/2 spread ${all.toFixed(2)}×`).toBeLessThanOrEqual(10);
+    // Round 27: 9.60× → 4.62×, because the Counting House stopped being the
+    // bottom of it — sudoku t2 pays +9 for 13.0 minutes (0.692) rather than
+    // +9 for 27.0 (0.333), and the room that was one whole END of this spread
+    // is now inside it.
+    expect(all, `tier-1/2 spread ${all.toFixed(2)}×`).toBeLessThanOrEqual(5);
     // …and the Counting House is one whole end of it. Without that single
     // 27-minute tier-2 board — a CONTENT commission REVIEW_AA §6 already asks
     // for (bank the grid across days) — the same band is 3.91× (was 4.89×).
     const exCountingHouse = spreadOf(wageOf, tier12.filter(([k, t]) => !(k === 'sudoku' && t === 2)));
     expect(exCountingHouse, `tier-1/2 ex-Counting-House ${exCountingHouse.toFixed(2)}×`)
       .toBeLessThanOrEqual(4);
-    expect(exCountingHouse).toBeLessThan(all);
+    // ROUND 27 — AND THIS LINE IS WHY THE SECOND NUMBER IS STILL PUBLISHED.
+    // It used to read `toBeLessThan(all)`: taking the Counting House out
+    // NARROWED the spread, which is the whole reason the room was named. It no
+    // longer does — the two numbers are 3.91× and 4.62×, and the room is no
+    // longer an outlier worth excluding. Asserting equality of the two is the
+    // honest reading, and it fails the moment the Counting House drifts back
+    // out to an end of the table in EITHER direction.
+    expect(Math.abs(exCountingHouse - all), `ex-Counting-House ${exCountingHouse.toFixed(2)}× vs all ${all.toFixed(2)}×`)
+      .toBeLessThan(1.0);
   });
 
   it('holds 2× across tier-1/2 rooms of two minutes or more, minus the Counting House', () => {
@@ -346,8 +372,22 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
       .toBeLessThan(2);
     expect(effortMinutes('crossword', 1), 'the Linen Closet got longer — retighten 4.10h')
       .toBeLessThan(2);
-    expect(effortMinutes('sudoku', 2), 'the Counting House got shorter — retighten 4.10h')
-      .toBeGreaterThan(20);
+    // ═══ ROUND 27 — THE PIN CAME DUE, AND IT IS SPENT HERE ══════════════
+    //
+    // This read `expect(effortMinutes('sudoku', 2)).toBeGreaterThan(20)` under
+    // the message *"the Counting House got shorter — retighten 4.10h"*: a pin
+    // whose whole purpose was to hold the bounds above open until the content
+    // commission REVIEW_AA §6 asked for (bank the grid across days, grade the
+    // ladder) actually landed. It has landed — `ROOM_EFFORT.sudoku` is
+    // [7.0, 11.0, 17.0] over a regraded pool and the Counting House keeps an
+    // open ledger — so the pin is REMOVED rather than relaxed, and the bounds
+    // it was holding open are retightened in the same commit (16.5 → 10.0
+    // overall, 10 → 5 across tier 1/2). What replaces it is not another
+    // minutes assertion standing in for a quality claim (round 26's lesson):
+    // the grade itself is gated, off the shipped boards, in
+    // "the Counting House is graded against BENCHMARKS §7" below.
+    expect(effortMinutes('sudoku', 2), 'the Counting House drifted off its NYT-Hard band')
+      .toBeGreaterThanOrEqual(SUDOKU_TIER_GRADE[2].minutes[0]);
   });
 
   it('pays the padlock arc for WORK, not for the storey alone', () => {
@@ -397,7 +437,7 @@ describe('4.10h — the long rooms pay on the way up, out of the same total', ()
     // whole daily step arithmetic stay where it was.
     const ladders: Record<string, string[]> = {
       'hive': ['tier-up:Leaf', 'tier-up:Blossom', 'tier-up:Bower', 'tier-up:Garden'],
-      'sudoku': ['inked:50-left', 'inked:40-left', 'inked:30-left', 'inked:20-left', 'inked:9-left'],
+      'sudoku': ['inked:42-of-51', 'inked:33-of-51', 'inked:24-of-51', 'inked:15-of-51', 'inked:6-of-51'],
       'word-web': ['group-solved:green', 'group-solved:blue', 'group-solved:yellow'],
     };
     for (const [kind, details] of Object.entries(ladders) as [RoomPuzzleKind, string[]][]) {
@@ -424,8 +464,40 @@ describe('4.10h — the long rooms pay on the way up, out of the same total', ()
     expect(stageFractionOf('hive', undefined, 0)).toBeNull();
     expect(stageFractionOf('hive', 'tier-up:Full Bloom', 0)).toBeNull();  // that IS the solve
     expect(stageFractionOf('crossword', 'closet-folded', 0)).toBeNull();
-    expect(stageFractionOf('sudoku', 'inked:0-left', 0)).toBe(1);
-    expect(stageFractionOf('sudoku', 'inked:99-left', 0)).toBe(0);
+    // The last figure of a leaf is the SOLVE, not a rung — the same ruling the
+    // hive's `tier-up:Full Bloom` gets three lines above, and the reason the
+    // ladder can never pay a room off before the room is finished.
+    expect(stageFractionOf('sudoku', 'inked:0-of-51', 0)).toBeLessThan(1);
+    expect(stageFractionOf('sudoku', 'inked:99-of-51', 0)).toBe(0);
+    expect(stageFractionOf('sudoku', 'inked:12-left', 0), 'the retired marker').toBeNull();
+    expect(stageFractionOf('sudoku', 'inked:0-of-0', 0), 'a leaf with no blanks').toBeNull();
+    // ═══ ROUND 27 — THE LADDER READS THE BOARD ON THE TABLE ══════════════
+    // The marker used to be `inked:N-left` and the denominator was a POOL
+    // MEDIAN (`SUDOKU_BLANKS = 57`). That was a pool average standing in for a
+    // property of the leaf, and it was wrong two ways at once: the regraded
+    // pool runs 51/55/57 blanks by tier, AND a row-band tier-1 cell can deal a
+    // technique-tier-2 board, so no per-tier table would have fixed it either.
+    // Nine figures placed is exactly one rung, on every board there is.
+    for (const blanks of [45, 51, 55, 57, 63]) {
+      const rungs = Math.ceil(blanks / SUDOKU_CELLS_PER_STAGE);
+      expect(stageFractionOf('sudoku', `inked:${blanks - SUDOKU_CELLS_PER_STAGE}-of-${blanks}`, 0),
+        `${blanks}-blank leaf, first rung`).toBeCloseTo(1 / rungs, 10);
+      expect(stageFractionOf('sudoku', `inked:0-of-${blanks}`, 0), `${blanks} last figure`)
+        .toBeLessThan(1);
+      expect(stageFractionOf('sudoku', `inked:${SUDOKU_CELLS_PER_STAGE}-of-${blanks}`, 0),
+        `${blanks} one rung short`).toBeLessThan(1);
+    }
+    // …and every leaf the pool actually ships reaches its summit exactly once,
+    // at its own last figure — the assertion the pool-median version failed.
+    for (const p of sudokus) {
+      const blanks = 81 - p.givens.split('').filter((c) => c !== '.').length;
+      // Never paid off early on ANY shipped leaf — the defect `floor` had.
+      expect(stageFractionOf('sudoku', `inked:0-of-${blanks}`, 0), `${p.id} last figure`)
+        .toBeLessThan(1);
+      // …and every leaf really does climb: nine figures is a rung on all of them.
+      expect(stageFractionOf('sudoku', `inked:${blanks - SUDOKU_CELLS_PER_STAGE}-of-${blanks}`, 0),
+        `${p.id} first rung`).toBeGreaterThan(0);
+    }
     let web = 0;
     for (let i = 0; i < WEB_GROUPS; i++) {
       const next = stageFractionOf('word-web', 'group-solved:blue', web)!;
@@ -530,23 +602,81 @@ describe('4.10h — the durations are pinned to the content they were measured o
     }
   });
 
-  it('the Counting House: 24 givens, 57 empty cells, and no easy bin at any tier', () => {
+  it('the Counting House is graded against BENCHMARKS §7, tier by tier', () => {
+    // ═══ ROUND 27 — WHAT THIS TEST USED TO CERTIFY ═══════════════════════
+    //
+    // It read "24 givens, 57 empty cells, and no easy bin at any tier" and
+    // asserted `54 <= median blanks <= 59` FOR EVERY TIER — i.e. it required
+    // all three storeys to be the same length, which is the defect written
+    // down as a contract. The only difficulty lever it left the pool was
+    // technique, and the technique it left was off the top of the benchmark:
+    // 98% of tier-2 and 100% of tier-3 boards needed a wing, a fish or a
+    // colouring chain, and BENCHMARKS §7 records that NYT HARD — the hardest
+    // board the reference publishes — needs none of the three.
+    //
+    // The grade is now three independent gates, and each can fail alone:
+    //   (a) TECHNIQUE — the wing/fish/colouring share is 0% at tiers 1 and 2
+    //       and 100% at tier 3, re-derived from the boards;
+    //   (b) LENGTH    — each tier's givens sit inside its own band, and the
+    //       bands do not overlap in their medians;
+    //   (c) CLOCK     — `ROOM_EFFORT` sits inside BENCHMARKS §7's minutes band
+    //       for the tier, and a harder tier never implies a FASTER cell.
     const blanks = (p: SudokuPuzzleLike) => 81 - p.givens.split('').filter((c) => c !== '.').length;
+    const medBlanks: number[] = [];
+    const secondsPerCell: number[] = [];
+
     for (const tier of TIERS) {
       const group = sudokus.filter((p) => p.tier === tier);
-      expect(group.length).toBeGreaterThan(10);
+      expect(group.length, `tier ${tier} pool`).toBeGreaterThan(10);
+      const grade = SUDOKU_TIER_GRADE[tier];
+
+      // (a) THE TECHNIQUE GRADE, re-derived by the shipped rater. This is the
+      //     assertion the old "the tiers escalate" gate could not make: that
+      //     one read `TECHNIQUE_LEVEL` against itself, so it caught a MISSING
+      //     entry and never a WRONG one.
+      const hunted = group.filter((p) =>
+        solveWithTechniques(p.givens, 3).techniques.some((id) => ABOVE_NYT_HARD.includes(id)));
+      const share = hunted.length / group.length;
+      if (tier === 3) {
+        expect(share, `tier 3 is the rung ABOVE NYT Hard — ${hunted.length}/${group.length}`).toBe(1);
+      } else {
+        expect(share, `tier ${tier} claims ${grade.nyt} but ${hunted.length}/${group.length}`
+          + ' boards need a wing, a fish or a colouring chain').toBe(0);
+      }
+
+      // (b) THE LENGTH GRADE. Every board inside its tier's band, off the JSON.
+      for (const p of group) {
+        const g = 81 - blanks(p);
+        expect(g, `${p.id} givens`).toBeGreaterThanOrEqual(grade.givens[0]);
+        expect(g, `${p.id} givens`).toBeLessThanOrEqual(grade.givens[1]);
+      }
       const med = median(group.map(blanks));
-      expect(med, `sudoku t${tier} empty cells`).toBeGreaterThanOrEqual(54);
-      expect(med, `sudoku t${tier} empty cells`).toBeLessThanOrEqual(59);
-      // The implied seconds per placement: 13 s at tier 1 (a ladder board), 28
-      // at tier 2 (98% of them need a wing, a fish or colouring).
-      const secondsPerCell = (effortMinutes('sudoku', tier) * 60) / med;
-      expect(secondsPerCell, `sudoku t${tier} implies ${secondsPerCell.toFixed(0)}s/cell`)
-        .toBeGreaterThanOrEqual(10);
-      expect(secondsPerCell).toBeLessThanOrEqual(40);
+      medBlanks.push(med);
+
+      // (c) THE CLOCK. Inside the benchmark's own band for this tier.
+      const minutes = effortMinutes('sudoku', tier);
+      expect(minutes, `sudoku t${tier} is ${minutes} min against ${grade.nyt}'s`
+        + ` ${grade.minutes[0]}-${grade.minutes[1]}`).toBeGreaterThanOrEqual(grade.minutes[0]);
+      expect(minutes).toBeLessThanOrEqual(grade.minutes[1]);
+      secondsPerCell.push((minutes * 60) / med);
     }
-    expect(SUDOKU_BLANKS, 'the ladder denominator drifted from the shipped boards')
-      .toBe(median(sudokus.map(blanks)));
+
+    // The two levers move TOGETHER, which is the thing the old pool did not do:
+    // a higher tier is never a shorter board…
+    expect(medBlanks[1]!, `t2 ${medBlanks[1]} blanks vs t1 ${medBlanks[0]}`)
+      .toBeGreaterThan(medBlanks[0]!);
+    expect(medBlanks[2]!, `t3 ${medBlanks[2]} blanks vs t2 ${medBlanks[1]}`)
+      .toBeGreaterThan(medBlanks[1]!);
+    // …and never a FASTER cell (round 26's twistle lesson, applied here).
+    expect(secondsPerCell[1]!, `t2 ${secondsPerCell[1]!.toFixed(1)}s/cell vs t1`
+      + ` ${secondsPerCell[0]!.toFixed(1)}s`).toBeGreaterThan(secondsPerCell[0]!);
+    expect(secondsPerCell[2]!, `t3 ${secondsPerCell[2]!.toFixed(1)}s/cell vs t2`
+      + ` ${secondsPerCell[1]!.toFixed(1)}s`).toBeGreaterThan(secondsPerCell[1]!);
+    // The repo's own instrumented placement band for a practised solver.
+    for (const s of secondsPerCell) {
+      expect(s, `${s.toFixed(1)}s per placement`).toBeGreaterThanOrEqual(6);
+      expect(s).toBeLessThanOrEqual(24);
+    }
     expect(SUDOKU_CELLS_PER_STAGE).toBe(9);
   });
 

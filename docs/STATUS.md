@@ -105,6 +105,36 @@ tooltip.
 
 ## 3. What the last three rounds changed, with their numbers
 
+### Round 27 — the word games' round: the Counting House is graded, and it has a tomorrow
+
+| | Was | Now |
+|---|---|---|
+| Sudoku teardown in `BENCHMARKS.md` | **none** — three source comments cited "NYT hard" against nothing | §7, with NYT's whole published ladder (Easy/Medium/Hard) |
+| Boards needing a wing / fish / colouring, by tier | 0% / **98%** / **100%** — two storeys above the top of NYT | **0% / 0% / 100%**, gated off the shipped boards |
+| Givens (median) by tier | 24 / 25 / 24 — one length at every storey | **30 / 26 / 24** (51 / 55 / 57 blanks) |
+| `ROOM_EFFORT.sudoku` | 12.5 / **27.0** / 30.0 min | **11.0 / 13.0 / 17.0** |
+| Implied seconds per placement | 13 / **28** / **32** on boards of the same length | **13 / 14 / 18** |
+| Solve payouts | +12 / +9 / +6 | **unchanged** — all three were capped and still are |
+| 4.10h wage spread (all rooms / tier-1–2) | 16.00× / 9.60× | **9.07× / 4.62×** |
+| An unfinished ledger leaf | died with the manor at midnight | **the OPEN LEDGER** — one board, banked with the rungs already paid for it |
+| The sudoku ladder's denominator | `SUDOKU_BLANKS = 57`, a pool median | the leaf's own blank count, carried by the adapter's marker |
+| §5.10 ground-floor drain (skilled / great) | −0.274 / −0.176 | **−0.231 / −0.136** — LOOSENED, see below |
+
+The one ratchet that moved the wrong way, recorded because this file's neighbours are
+ratchets: a shorter room is more often FINISHED, and a finished anchor pays a key and +2 as
+well as its steps. The Counting House was the manor's only tier-1 anchor too long to finish
+in a sitting, and that was quietly holding up 4.10i. Every profile still costs her steps on
+the ground floor, which is what §5.10 is about; the bound is re-derived by a sixth and the
+lever for winning it back is the deck's ground-floor mix or the walk, not the room's clock.
+
+**Banking is a deliberate exception to the nightly wipe, so it is legible as one** — the
+exit reads *"Leave the ledger open"* under the rule (*the house is put away at night; this
+leaf is not*), a resumed leaf opens under *"Left open on day N — still yours"* and keeps
+*"Left open day N"* in the deck's meta line, and the finished card says the leaf is closed
+and the next one is a fresh sheet. The first draft put the notice in `.ch__sub`, which is
+`display:none` below 760px; the live pass at 375×667 caught the grid coming back with the
+room saying nothing, which is exactly the class of defect that bar exists for.
+
 ### Round 23 — the ground floor, the night, and two rooms saying somebody else's sentences
 
 | | Was | Now |
@@ -250,10 +280,21 @@ Ordered most value first.
   Three published spreads fell with it (4.10h: 20.00× → 16.00×, 12.00× → 9.60×,
   4.89× → 3.91×) and the fourth — the one filtered to rooms of two minutes or more — did not
   move, because the room became a puzzle without becoming long.
-- **The Counting House at tier 2** is still a 27-minute expert board that should bank across
-  days. It is now the ONLY end of the wage ratchet that is a mispriced room; the other end is
-  the cozy floor itself (the Gallery and the Linen Closet tie at 3.200 steps a minute because
-  a short room may never be a bad choice). Fixing it FAILS 4.10h on purpose.
+- **~~The Counting House~~ — DONE, round 27.** *(Left here with the finding.)* It was a
+  27-minute tier-2 board inside a 10–15-minute evening, and the deeper defect was that
+  **there was no sudoku benchmark in this repo at all** — the ladder's three tiers were the
+  generator's own output histogram cut into thirds. `BENCHMARKS.md` §7 is now the teardown,
+  and the grade is measured against it: **98% of tier-2 and 100% of tier-3 boards required a
+  wing, a fish or a colouring chain, and NYT Hard requires none of the three**, so two of
+  three storeys sat above the top of the reference ladder and were indistinguishable from
+  each other. Now 0% / 0% / 100% by tier, gated. The pool was regenerated to grade LENGTH
+  too (30 / 26 / 24 givens, 51 / 55 / 57 blanks) because every board had been dug to
+  minimality and all three tiers were the same fifty-seven placements. `ROOM_EFFORT.sudoku`
+  is **[11.0, 13.0, 17.0] minutes**, down from [12.5, 27.0, 30.0] — and the number
+  that was really wrong was seconds per placement: the old row charged **13 s at tier 1 and
+  28 and 32 at tiers 2 and 3, on boards of identical length**. A wing is one search, not a
+  tax on fifty-seven cells. **No payout in the manor moved** (all three tiers were pinned to
+  their caps and still are); the wage spread fell 16.00× → 9.07× and 9.60× → 4.62×.
 - **THE EVENING HAS NO CLOCK LEFT — the commission round 26 hands on.** Fifteen seconds on
   the most-drafted anchor in the deck spent very nearly all of it. Measured before round 26:
   4.10b's decent evening 14.48 min against a ceiling of 15; 4.11's maximal-carry-over evening
@@ -439,6 +480,18 @@ the only document in here written by people who did not already know the answers
   name-versus-computation defect as the two above, one level more subtle, because the number
   it computed was correlated with the thing it meant right up until somebody fixed the room.
   **If a pin is waiting for a content fix, assert the CONTENT FACT.**
+- **A DIFFICULTY LADDER WITH NO EXTERNAL REFERENCE IS A HISTOGRAM.** *(Round 27.)* The
+  sudoku's three tiers were set from "the measured ceiling distribution over ~1500 dug
+  boards" — the generator's own output, cut into thirds — and the test that guarded them read
+  `TECHNIQUE_LEVEL` against itself, so it could catch a board in the wrong bin and never the
+  table being wrong about what a technique is worth. Both were wrong: two of three storeys
+  demanded a wing, a fish or a colouring chain, none of which the benchmark's hardest
+  published board requires. **Write the teardown first, then grade against it.** The repo had
+  benchmark sections for five games and none for the sixth, and that is the whole story.
+- **ONE DIFFICULTY LEVER IS HALF A GRADE.** *(Round 27.)* Given count is a famously bad proxy
+  for TECHNIQUE and an excellent one for LENGTH, and the generator had been told the first
+  half only — so it dug every board to minimality and shipped fifty-seven placements at every
+  storey. The ground floor's twelve and a half minutes were not a technique problem at all.
 - **Measure the thing you are claiming.** The rounds that went well ended with a number
   beside the review's number. The rounds that went badly ended with an assertion. Round 25
   adds the corollary: **and re-measure it, in the tree, before you republish it** — eleven

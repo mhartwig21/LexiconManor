@@ -127,6 +127,29 @@
   box-shadow: 0 -1px 0 var(--paper-edge);
 }
 
+/* ROUND 27 — THE ONE ROOM WITH A TOMORROW (engine/rooms/room-bank.ts).
+   The Counting House's exit says the rule out loud, so the footer carries a
+   line of copy as well as its button. Deliberately ONE short line at the body
+   floor: the footer is subtracted from `--stage-h` by construction (100cqh on
+   a flex:1 stage), so every pixel here comes off the ledger leaf, and at
+   375x667 the leaf has 481.6px of stage to live in. Measured with the note in
+   place at both 390x844 and 375x667; the leaf still fits with the deck. */
+.room-host__bank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.room-host__banknote {
+  margin: 0;
+  max-width: 30rem;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--ink-soft, var(--ink));
+  opacity: 0.8;
+}
+
 .room-host.room-host > .room-host__footer {
   flex: 0 0 auto;
   display: flex;

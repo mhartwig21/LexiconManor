@@ -52,6 +52,7 @@ export function selectSave(s: ManorStore): SaveV2 {
     chronicles: s.chronicles,
     earnedAchievementIds: s.earnedAchievementIds,
     seenPuzzleIds: s.seenPuzzleIds,
+    openLedger: s.openLedger,
     settings: s.settings,
   };
 }
