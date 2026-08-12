@@ -70,6 +70,46 @@ wants shortening, the lever is `TEA_BY_POINTS`, not the move price.
 
 ---
 
+## 1b. A move costs ONE. The owner's correction, 12 Aug — this supersedes the numbers above.
+
+Round 21 shipped a flat cost of **−3 a move against a budget of 22**, and the owner rejected it
+on sight, correctly:
+
+> *"Why isn't it just 1 step is −1. Why do you keep coming up with a convoluted economy. What you
+> should be modifying is the amount of steps you start with and how many more you can earn and
+> the penalties."*
+
+**He is right, and the tell is arithmetic: 22 steps at 3 a move is 7 moves.** The 22 is a fiction
+the player has to divide her way out of. Price a move at 1 and the counter *is* the quantity it
+measures — "I have twelve moves today" — and the whole economy fits in her head, which is what
+cosy asks for.
+
+It also closes the largest unresolved comprehension finding. Both cold testers reported their step
+counter moving for reasons they could not account for — three separate times for one of them. You
+cannot audit a ledger denominated in an arbitrary unit. You can audit one denominated in moves.
+
+**How this went wrong, so it does not recur:** the flat −3 was chosen to keep EVENING LENGTH
+inside its published band. That is tuning a derived quantity through the wrong lever. Evening
+length is an OUTPUT of how many moves she gets and what she earns back; it must never again be
+steered by re-pricing a move.
+
+### The shape, binding
+
+- **A move costs 1.** Not 2, not 3. This is not a tuning parameter.
+- **A day is 10–14 moves** (owner's number, 12 Aug). Build to ~12 and let him tune it from play.
+- **Earnings are moves.** A solve pays back *moves* — small integers she can feel — not +12
+  against a budget of 22. Re-denominate the whole solve wage, keeping the round-22 principle that
+  a room is paid for the work it asks for.
+- **Penalties are moves.** A mistake costs a move; a bad one costs two. Today a −2 mistake against
+  a −3 move is an incoherent ratio — it prices an error at two thirds of a room.
+- **If the evening comes out too short or too long, fix the STARTING COUNT or the PAYOUTS.**
+  Never the move price.
+
+Everything in section 1 above still holds — scarcity comes from distance walked, and doubling
+back is what drains her. This section only fixes the unit it is counted in.
+
+---
+
 ## 2. The landing is three cells, not one
 
 **Today** the manor is 5x7. `SANCTUM_CELL` is `{col: 2, row: 6}` — dead centre, top. The landing
