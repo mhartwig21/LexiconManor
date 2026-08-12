@@ -96,7 +96,20 @@ steered by re-pricing a move.
 ### The shape, binding
 
 - **A move costs 1.** Not 2, not 3. This is not a tuning parameter.
-- **A day is 10–14 moves** (owner's number, 12 Aug). Build to ~12 and let him tune it from play.
+- **A day STARTS at 10–14 moves** (owner's number, 12 Aug) — build to ~12 — **and she earns more
+  as she goes.** This is the loop, not a budget: a room costs a move to enter, solving it pays
+  moves back, so a good session extends itself and a poor one folds early and she dozes off.
+  It also puts the word games at the centre of the economy — solving is not rewarded BESIDE the
+  exploration, it is the exploration's fuel, which is exactly where the owner has been steering
+  since 10 Aug.
+  **The guardrail that needs deriving rather than assuming:** what stops a great day being
+  endless. The honest ceiling is probably geometric — the manor is 5x7 = 35 cells, the frontier
+  closes as it fills, and dead ends cost walks — rather than an arbitrary cap on moves earned.
+  Measure it on the grid-true model before reaching for a cap; if a cap IS needed, prefer
+  diminishing returns per room kind per day over a hard ceiling, because a hard ceiling is
+  another fiction the player has to divide her way out of. Remember the owner's very first
+  economy complaint, before any of this: the game was TOO EASY and he reached the Sanctum on day
+  one. A day that never ends is that failure wearing a new hat.
 - **Earnings are moves.** A solve pays back *moves* — small integers she can feel — not +12
   against a budget of 22. Re-denominate the whole solve wage, keeping the round-22 principle that
   a room is paid for the work it asks for.
