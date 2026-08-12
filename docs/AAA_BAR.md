@@ -189,6 +189,18 @@ re-tests their shape:
    `max(own margin, ceiling + gap)`. Suspect every fixed layer that ships an
    interactive island, and hit-test that island against the surface underneath rather
    than eyeballing the layout.
+   **AND ROUND 39 FOUND THE OTHER HALF OF THIS ONE, FOUR ROUNDS LATER.** The token
+   was published from `.bp-foot__actions` — the index-tab ROW — because that is the
+   row the collision was measured against. Round 33 then put the storey's own title
+   block *above* the tabs, and "And so, to bed" came down on top of "The Grounds" at
+   **both** shipped sizes: skip [595,639] over a plate at [569,657] at 375×667, and
+   [772,816] over [746,834] at 390×844. Nothing saw it for four rounds, because the
+   one automated thing in this project that looks at a screen had never looked at a
+   dusk. → **a band published from one row of a plate clears one row of a plate**:
+   the token is taken from `.bp-foot`, and `gate:glass` now judges the veil's
+   furniture box-against-box with whatever the surface underneath pins at its foot,
+   so a fourth row added to the title block moves the veil instead of being landed
+   on. Measured after: skip [512,556] against a plate at [569,657].
 5. **The scene with one door** (round 11). The morning card and the night digest are
    full-screen scenes the player stands on every day, and their only controls were the
    primary advance and the Chronicles aside. The journal cost **nine** taps from the
@@ -1246,6 +1258,30 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
 - 4.12 0 steps triggers a dusk fade ≤4s with walk-but-no-interact grace. Hitting 0
   mid-puzzle lets the puzzle finish; dusk fires on exit. String-table lint: zero
   occurrences of fail/lose/death/damage/defeat in shipped copy. **[COZY]**
+  **ROUND 39 — THE WINDOW RE-EXAMINED, AND THE NUMBERS THAT MOVED.** The owner
+  played it: *"the fade that occurs when you run out of steps feels disjointed…
+  it should feel really cozy like you're slipping off to peaceful slumber."*
+  The bar was asked what it is actually protecting before anything was retimed,
+  because "the fade wants to be slower" is exactly the shape of argument that
+  quietly extends a ceiling. **It bounds how long the house is UNRESPONSIVE, and
+  the house is not unresponsive**: `moveTo` answers through the whole of dusk
+  (`duskGrace`, slices/day.ts), the veil is `pointer-events: none` so the
+  blueprint underneath stays live, and `.chr-dusk__skip` is on the glass from
+  the first frame. So the fade is taken **TO** the window and not past it —
+  **3200ms → 4000ms** — and the held breath after it comes **down**, 1000ms →
+  700ms (`DUSK_HELD_MS`), which is the part she is waiting through rather than
+  the part she is watching. Dusk to night: **4000ms → 4700ms** measured end to
+  end. Three shape changes went with it and they are the reason it reads
+  differently at all: the curve is decelerating (`--ease-doze`: 12% dark at half
+  a second, 82% at two, then eighteen hundred milliseconds for the last fifth)
+  where it used to be `ease-in`, which is 29% of the way dark at half its time
+  and reads as a switch being thrown; the veil animates **one** property, so
+  perceived darkness is no longer the PRODUCT of an opacity ramp and a
+  background-color ramp; and the vignette CLOSES inward around the candle, which
+  lands at 2000ms and then holds for two full seconds instead of finishing
+  200ms before the dark and being swallowed as it arrives. `gate:glass` now owns
+  every one of those numbers on the real veil (`judgeDusk`), including asking
+  the curve where it has got to at half its time.
 - 4.13 Abandoning a puzzle costs nothing beyond steps already spent, is always offered,
   and is copy-framed as "leaving it for tomorrow," not quitting. **[COZY]**
 

@@ -249,6 +249,24 @@ Two rules from this project's own history apply hard here:
 
 - **The night screen has formatting errors**, and the cause is known: the glass gate walks 17
   scenes and the night, dusk and morning cards are not among them. Add them to the walk.
+  - **BUILT — round 39. The walk is 22 scenes, and it found two.** The three cards are reached
+    by driving a real day to a real dusk on a clean glass — the front step, Mrs. Bramble's
+    morning, rooms drafted until the last step is gone, `applyStepEntry` →
+    `scheduleDuskCheck` → `endDay` — never by mounting a component, because the night is a
+    read-back of what the day contained. Which way the day ended is printed every run (it
+    retires early on the floorplans that box her in, rather than silently measuring nothing).
+    **What it found on its first pass, both sizes:** the dusk veil's skip button drawn
+    straight through the blueprint's title block ("And so, to bed" on top of "The Grounds"),
+    and the morning card's grant amount stranded beside the *first* line of a label that
+    wraps at 375 — "+4 steps" level with "A welcome cup — this first morning" while the word
+    "only" hung alone underneath. Both are published in AAA 4.12 / 11.4 with their causes.
+    Four verdicts came with the walk and each is proved by re-breaking the app: **FIT**
+    (every LINE and control of a lifecycle card, because these scenes hide their scrollbars
+    by house rule, so what is off the glass is simply gone), **MORNING**, **DUSK** and
+    **NIGHT** — which matches every tally row on the glass against the record the engine
+    banked at `endDay`, an instrument that can disagree with the DOM. The tally is walked at
+    its FULLEST (all six rows printing) because that is the only honest case to hold a fit
+    claim against — round 25 published "the fullest night fits" as prose and it was 59px out.
 - **The dusk fade feels disjointed** — it should feel like dozing off. The sound cue is fine and
   must not change. `chr-dusk` currently uses `3200ms ease-in` (an ACCELERATING curve, which reads
   as being switched off rather than drifting off), animates `opacity` and `background-color` in

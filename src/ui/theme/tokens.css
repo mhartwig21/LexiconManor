@@ -111,6 +111,23 @@
   --dur-shuffle: 400ms;
   --ease-settle: cubic-bezier(0.2, 0.8, 0.3, 1);
 
+  /* DOZING OFF (round 39, owner play). `--ease-settle` is a UI motion that
+     LANDS; this is a motion that keeps going and gets quieter, which is a much
+     longer tail. Measured on the shipped 4s fade: 12% dark at half a second,
+     36% at one, 82% at two — and then eighteen hundred milliseconds to cover
+     the last fifth, which is the part that reads as stillness rather than as an
+     ending. The first cut of this curve was far steeper (53% inside the first
+     half-second) and photographed as a JOLT and then a crawl, which is the same
+     disjointedness the owner reported, only inverted. It is the difference
+     between a light being switched off and somebody falling asleep, and the
+     dusk veil is the one place in the house that needs the second one.
+     The clock is published beside it because the veil, its vignette, its
+     candle and its line are one choreography off one number (chrome.css), and
+     the fade is taken TO AAA 4.12's ≤4s walk-but-do-not-interact bar, never
+     past it — see the block above `.chr-dusk` for why the bar allows this. */
+  --ease-doze: cubic-bezier(0.38, 0.26, 0.22, 1);
+  --chr-dusk-ms: 4000ms;
+
   /* --- Shell metrics ------------------------------------------------------ */
   /* Height of the fixed chrome bar (chrome.css owns the real bar; this token
      is what every subordinate surface clears itself by, so the number lives in

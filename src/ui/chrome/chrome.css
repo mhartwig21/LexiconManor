@@ -866,6 +866,12 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 .chr-scene__aside-sub {
   font-size: var(--text-sm);
   color: var(--ink-faint);
+  /* ROUND 39: "sound, motion, the trunk" wraps at 375 and was breaking as
+     "sound, motion, the / trunk" — an orphan under a full line, on a control
+     that sits beside a two-line neighbour. Balanced it breaks after the comma
+     and the two asides read as a pair instead of as a layout that ran out of
+     room. Same rule the other captions on these cards already take. */
+  text-wrap: balance;
 }
 .chr-scene__aside:active { transform: translateY(1px); }
 
@@ -985,9 +991,20 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   margin: 6px 0 2px;
 }
 
+/* ROUND 39 — THE AMOUNT WAS BESIDE THE WRONG LINE OF ITS OWN LABEL.
+   Photographed at 375x667 on the first morning this gate ever walked: "A
+   welcome cup — this first morning only" wraps at 375 (it does not at 390),
+   and "+4 steps" stayed level with the FIRST line while the word "only" hung
+   alone under it — the number and the thing it is the price of on different
+   rows, on the one card whose whole job is to say where her steps came from
+   (AAA 4.9 / 11.16). It reads as a rendering fault, and every longer label the
+   arc can print ("The rest of the pot, left on the second landing") wraps too.
+   `align-items: end` puts the amount against the LAST line of its label, so a
+   wrapped row reads as one row. It costs nothing on the rows that fit. */
 .chr-dawn__list {
   display: grid;
   grid-template-columns: 1fr auto;
+  align-items: end;
   gap: 4px 14px;
   margin: 0;
   font-family: var(--font-body);
@@ -1076,16 +1093,73 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
     calc(28px + env(safe-area-inset-bottom, 0px)),
     calc(var(--page-foot-ceiling, 0px) + 12px)
   );
-  background:
-    radial-gradient(ellipse at 50% 20%, rgba(36, 29, 21, 0.0) 0%, rgba(36, 29, 21, 0.55) 100%),
-    rgba(36, 29, 21, 0.0);
+  /* ═══ ROUND 39 — DOZING OFF, NOT BEING SWITCHED OFF ═══════════════════════
+     The owner played it and said the fade "feels disjointed… it should feel
+     really cozy like you're slipping off to peaceful slumber". Three things
+     were making it read as a power cut, and all three are timing rather than
+     art:
+
+       1. `3200ms EASE-IN`. An accelerating curve sits still and then slams —
+          the opposite of drifting off, which moves early and DECELERATES into
+          stillness. The curve below is the whole fix: 62% of the darkness is
+          laid down in the first third of the fade and the last second covers
+          about a twentieth of it, so the veil is already visibly settling long
+          before it stops. `--ease-doze` is deliberately its own token and not
+          `--ease-settle`: settling is a UI motion that lands, dozing is a
+          motion that keeps going and gets quieter, which is a longer tail.
+
+       2. TWO PROPERTIES RAMPING AT ONCE. The old keyframe took `opacity`
+          0 → 1 AND `background-color` alpha 0 → 0.82 together, so perceived
+          darkness was their PRODUCT — a curve that rushes at the end at ANY
+          duration you pick, because 0.5 × 0.5 is a quarter of the way dark at
+          the halfway point. The ground is painted ONCE, at its final alpha,
+          and exactly one property is animated on it.
+
+       3. A UNIFORM DIM IS NOT WHAT FALLING ASLEEP LOOKS LIKE. What closes is
+          the EDGE of vision, inward, around the last warm thing in it — so the
+          vignette lives on `::before` and CLOSES (scale 1.7 → 1) on the same
+          curve and the same clock as the veil. It is a transform, not a second
+          darkness: the product problem does not come back.
+
+     THE ≤4s BAR, RE-EXAMINED RATHER THAN QUIETLY EXTENDED (AAA 4.12). The bar
+     is the WALK-BUT-DO-NOT-INTERACT grace: `moveTo` still answers through
+     dusk (`duskGrace`, slices/day.ts) and the veil is `pointer-events: none`
+     so the blueprint underneath stays live, and `.chr-dusk__skip` is on the
+     glass from the first frame. It bounds how long the house is unresponsive,
+     and the house is not unresponsive. The fade is therefore taken TO the bar
+     and not past it — 4000ms — and the held breath after it comes down 1000ms
+     → 700ms (DayTransitions.onFallen) so the whole dusk still lands inside
+     five seconds. Slower where she is watching, not slower to get to bed. */
+  background: rgba(36, 29, 21, 0.82);
   opacity: 0;
-  animation: chrDuskFall 3200ms ease-in forwards; /* under the 4s bar */
+  animation: chrDuskFall var(--chr-dusk-ms) var(--ease-doze) forwards;
+}
+
+/* The edge of vision, closing inward around the candle. Same clock, same
+   curve, so the two read as one motion rather than two effects. */
+.chr-dusk::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 44%,
+    rgba(18, 13, 8, 0) 0%,
+    rgba(18, 13, 8, 0) 34%,
+    rgba(18, 13, 8, 0.86) 100%
+  );
+  transform: scale(1.7);
+  animation: chrDuskClose var(--chr-dusk-ms) var(--ease-doze) forwards;
 }
 
 @keyframes chrDuskFall {
   from { opacity: 0; }
-  to   { opacity: 1; background-color: rgba(36, 29, 21, 0.82); }
+  to   { opacity: 1; }
+}
+
+@keyframes chrDuskClose {
+  from { transform: scale(1.7); }
+  to   { transform: scale(1); }
 }
 
 /* Round 8: the veil's 372px featureless band, filled with the image the
@@ -1101,7 +1175,16 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   transform: translate(-50%, -58%);
   color: #e7dcc6;
   opacity: 0;
-  animation: chrDuskCandle 1600ms ease-out 1400ms forwards;
+  /* ROUND 39 — IT USED TO ARRIVE AND BE SWALLOWED. At 1400ms over 1600ms it
+     landed at 3000 against a veil that finished at 3200: the one warm image in
+     the whole transition reached full strength 200ms before the dark did, so
+     it was still brightening while the room went out. It is the thing she is
+     meant to be looking at as she goes under, so it lands EARLY — at half the
+     clock — and then simply holds for two full seconds while the dark gathers
+     around it. Same clock as the veil (`--chr-dusk-ms`), so retiming the fade
+     retimes the choreography instead of desynchronising it. */
+  animation: chrDuskCandle
+    calc(var(--chr-dusk-ms) * 0.28) ease-out calc(var(--chr-dusk-ms) * 0.22) forwards;
 }
 @keyframes chrDuskCandle {
   from { opacity: 0; }
@@ -1119,7 +1202,10 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   font-size: var(--text-display-sm);
   color: #e7dcc6; /* candlelit ink on the darkened veil, both themes */
   opacity: 0;
-  animation: chrDuskLine 1400ms ease-out 1800ms forwards;
+  /* The words come after the picture and still land before the dark settles —
+     640ms of held, finished dusk before the night turns over. */
+  animation: chrDuskLine
+    calc(var(--chr-dusk-ms) * 0.28) ease-out calc(var(--chr-dusk-ms) * 0.56) forwards;
 }
 
 @keyframes chrDuskLine {
@@ -1160,8 +1246,11 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   .chr-dusk__line { animation: chrDuskLineStill 200ms linear 300ms forwards; }
   /* Round 8: the candle is a still image either way — it just arrives at its
      resting opacity instead of fading to it (AAA U.3: the state stays legible,
-     the motion goes). */
+     the motion goes). Round 39: and the vignette is a still image too — the
+     closing edge is the ONE part of the new dusk that is motion rather than
+     state, so it arrives already closed and nothing travels. */
   .chr-dusk__candle { animation: none; opacity: 0.4; }
+  .chr-dusk::before { animation: none; transform: scale(1); }
 }
 
 .chr--reduced .chr-steps__wax { transition: none; }
@@ -1174,6 +1263,7 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 .chr--reduced .chr-dusk { animation: chrDuskStill 200ms linear forwards; }
 .chr--reduced .chr-dusk__line { animation: chrDuskLineStill 200ms linear 300ms forwards; }
 .chr--reduced .chr-dusk__candle { animation: none; opacity: 0.4; }
+.chr--reduced .chr-dusk::before { animation: none; transform: scale(1); }
 
 @keyframes chrKeyStill {
   from { opacity: 0; }
@@ -1187,9 +1277,12 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   100% { opacity: 0; }
 }
 
+/* Round 39: the ground is painted once at its final alpha now, so the still
+   form has nothing to say about colour — it is the same one property, arriving
+   instead of travelling. */
 @keyframes chrDuskStill {
   from { opacity: 0; }
-  to   { opacity: 1; background-color: rgba(36, 29, 21, 0.82); }
+  to   { opacity: 1; }
 }
 
 @keyframes chrDuskLineStill {

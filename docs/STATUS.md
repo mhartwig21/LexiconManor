@@ -105,6 +105,60 @@ tooltip.
 
 ## 3. What the last few rounds changed, with their numbers
 
+### Round 39 — the end of the day, walked at last, and a fade that dozes off
+
+Two notes from the owner playing it, and they turned out to be one note.
+
+*"The night screen has a bunch of formatting errors."* The cause was not in the night's
+code. **The glass gate walked seventeen scenes and the morning card, the dusk veil and the
+night digest were not among them** — the three screens she cannot avoid, one of them twice
+a day, and the only automated thing in this project that looks at a screen had never
+looked at any of them. They are in the walk now, and it is 22 scenes: reached by driving a
+**real day to a real dusk** on a clean glass — the front step, Mrs. Bramble's morning,
+rooms drafted until the last step is gone, `endDay` — because the night is a read-back of
+what the day contained and a mounted component is a screen nobody sees.
+
+**It found two on its first pass, at both sizes.** The dusk veil's skip button was drawn
+straight through the blueprint's title block — "And so, to bed" on top of "The Grounds",
+skip [595,639] over a plate at [569,657] at 375×667. Round 15 fixed exactly this collision
+against the index-tab row and published `--page-foot-ceiling` from that row;
+round 33 then put the storey's title block above the tabs, and a band published from one
+row of a plate clears one row of a plate. It comes off `.bp-foot` now — skip [512,556] —
+and the gate judges the veil's furniture box-against-box against whatever the surface
+underneath pins at its foot, so a fourth row can be added without landing on it. The
+second: on the morning card at 375, "+4 steps" sat level with the *first* line of "A
+welcome cup — this first morning only" while the word "only" hung alone underneath. The
+amount and the thing it is the price of, on different rows, on the card whose whole job is
+to say where her steps came from.
+
+*"The fade when you run out of steps feels disjointed… it should feel really cozy, like
+you're slipping off to peaceful slumber."* The sound cue was already right and was not
+touched. The fade was `3200ms ease-in` — an **accelerating** curve is 29% of the way dark
+at half its time, so it sits still and then slams, which is what being switched off looks
+like rather than dozing off. It also ramped `opacity` and `background-color` in one
+keyframe, so perceived darkness was their PRODUCT and rushed at the end at any duration
+anyone chose. Now: **one** property, a decelerating curve with a long tail (`--ease-doze`
+— 12% dark at half a second, 82% at two, then eighteen hundred milliseconds for the last
+fifth), a vignette that CLOSES inward around the candle instead of a uniform dim, and the
+candle landing at 2000ms and **holding** for two full seconds where it used to finish
+200ms before the veil and be swallowed as it arrived. AAA 4.12's ≤4s window was
+re-examined rather than quietly extended — it bounds how long the house is unresponsive,
+and the house is walkable and skippable throughout — so the fade was taken **to** 4000ms
+and the held breath after it came **down** 1000 → 700ms.
+
+One latent bug came out with it: `onAnimationEnd` bubbles, so the veil had been advancing
+on whichever child animation finished first — the candle's. Harmless at the old timings
+and fatal the moment the candle moved early, which is the whole of round 39's choreography.
+
+**Four new verdicts, each proved by re-breaking the app** (`--prove`): FIT (every LINE and
+control of a lifecycle card — these scenes hide their scrollbars by house rule, so what is
+off the glass is simply gone), MORNING, DUSK (including asking the fade's own curve where
+it has got to at half its time) and NIGHT, which matches every tally row on the glass
+against the record the engine banked at `endDay` — an instrument that can disagree with
+the DOM. The tally is walked at its FULLEST, all six rows printing, because that is the
+only honest case to hold a fit claim against: round 25 published "the fullest night fits"
+as prose and it was 59px out.
+
 ### Round 37 — the landing is three cells, so the ending has three ways in
 
 The owner, from docs/THE_CLIMB §2: *"make the landing a row of cells beneath the Sanctum,

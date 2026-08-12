@@ -14,6 +14,7 @@
  */
 
 import { Fragment, useEffect, useRef, useState } from 'react';
+import type { AnimationEvent } from 'react';
 import { useLocation } from 'wouter';
 import { useManorStore } from '../../app/store';
 import { sfx } from '../../app/sound';
@@ -385,6 +386,15 @@ export function MorningCard() {
   );
 }
 
+/**
+ * The breath of held, finished dusk between the fade landing and the night
+ * turning over. It came down from 1000ms when the fade went 3200 → 4000ms
+ * (chrome.css `--chr-dusk-ms`): the fade is the part she is watching and the
+ * hold is the part she is waiting through, so the extra 800ms was bought from
+ * the waiting and the whole dusk still lands inside five seconds.
+ */
+const DUSK_HELD_MS = 700;
+
 export function DuskVeil() {
   const advance = useManorStore((s) => s.advanceDayPhase);
   const soundOn = useManorStore((s) => s.settings.soundEnabled);
@@ -397,10 +407,27 @@ export function DuskVeil() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once, on the veil falling
   }, []);
 
-  const onFallen = () => {
-    // Fade complete (≤4s bar) — a breath of held dusk, then night.
+  /**
+   * ── THE VEIL WAS ADVANCING ON SOMEBODY ELSE'S ANIMATION (round 39) ────────
+   *
+   * `onAnimationEnd` is a React synthetic handler and animation events BUBBLE,
+   * so every child on this layer — the candle, the line, and now the vignette
+   * on `::before`, whose events are dispatched at the host element itself —
+   * was ending the dusk. Under the old timings the candle finished at 3000ms
+   * against a 3200ms veil and the 1000ms hold covered the difference, so it
+   * was invisible; the moment the candle was moved EARLY (which is the whole
+   * point of round 39's choreography) it would have cut the fade off at 2000ms
+   * and the night would have arrived before the dark did.
+   *
+   * So the veil listens for its own fade by name, and the names are the two
+   * forms that exist: the timed fall, and reduced motion's still arrival.
+   */
+  const onFallen = (e: AnimationEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.animationName !== 'chrDuskFall' && e.animationName !== 'chrDuskStill') return;
+    // Fade complete (AAA 4.12's ≤4s bar) — a breath of held dusk, then night.
     if (holdTimer.current) return;
-    holdTimer.current = setTimeout(advance, 1000);
+    holdTimer.current = setTimeout(advance, DUSK_HELD_MS);
   };
 
   return (

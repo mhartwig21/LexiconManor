@@ -199,8 +199,19 @@ export default function ManorPage() {
    * `usePageNavBand` publishes the journal ribbon's floor at the top, so the
    * veil clears whatever this footer actually is rather than a pixel copy of it
    * living in chrome.css (11.4's real requirement).
+   *
+   * ROUND 39 — AND IT WAS PUBLISHED FROM ONE ROW OF THE PLATE, SO IT CLEARED
+   * ONE ROW OF THE PLATE. Round 15 measured the collision against the index
+   * tabs, named `.bp-foot__actions`, and fixed exactly that; round 33 then put
+   * the storey's own title block ABOVE the tabs, and the skip came down on
+   * that instead. Photographed on the first real dusk this gate ever walked:
+   * "And so, to bed" drawn straight through "The Grounds" at BOTH shipped
+   * sizes. The band a surface pins at the bottom of the glass is the PLATE —
+   * its rule, its name, its storey, its deeds and its tabs are one piece of
+   * furniture — so the token is taken from `.bp-foot`, and a fourth row added
+   * to the title block moves the veil with it instead of being landed on.
    */
-  usePageFootBand('.bp-foot__actions');
+  usePageFootBand('.bp-foot');
 
   /** A character scene on this page: parlor visit or a moment with Dewey. */
   const [visiting, setVisiting] = useState<CharacterId | null>(null);

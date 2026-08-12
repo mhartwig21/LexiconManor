@@ -66,6 +66,25 @@
  *  10. CLIP      SVG text is judged in the coordinate system the clipping
  *                happens in — `getBBox()` against `viewBox` — because a clipped
  *                glyph's bounding rect reports that it fits. (Round 35.)
+ *  11. FIT/MORNING/DUSK/NIGHT
+ *                A REAL DAY IS SPENT DOWN TO A REAL DUSK, and the three screens
+ *                she cannot avoid are walked at last: the morning card, the
+ *                veil, and the night. FIT is per LINE rather than per panel —
+ *                these cards hide their scrollbars by house rule, so what is
+ *                off the glass is simply gone. DUSK holds the veil's furniture
+ *                clear of whatever the surface underneath pins at the foot, and
+ *                asks the fade's own curve where it has got to at half its
+ *                time. NIGHT matches every tally row on the glass against the
+ *                record the engine banked at `endDay`. (Round 39.)
+ *
+ * ROUND 39 — WHY 11 EXISTS. The owner played it and reported "the night screen
+ * has a bunch of formatting errors". The cause was not in the night's code: the
+ * walk visited seventeen scenes and the morning, dusk and night cards were not
+ * among them. The one automated thing in this project that looks at a screen
+ * had never looked at the three screens every single day of the campaign is
+ * made of. First run of the new walk: the skip button drawn straight through
+ * the blueprint's title block at both sizes, and a grant amount stranded beside
+ * the wrong line of its own label at 375.
  *
  * ROUND 35 — WHY 7 THROUGH 10 EXIST. A live verifier broke three surfaces and
  * watched this file stay green on all three: the day's account capped to hold
@@ -327,6 +346,44 @@ const COPY = [
     why: 'round 33 retired the jargon row (`standard · tiers I–III`): rarity is the deck\'s'
       + ' business and the tier is already stated once, at the top. Both blind testers named'
       + ' this row unprompted as something they never worked out',
+  },
+  /**
+   * ═══ ROUND 39 — THE THREE CARDS NOTHING HAD EVER LOOKED AT ═════════════════
+   *
+   * The owner played it and said "the night screen has a bunch of formatting
+   * errors". The cause was not a mystery and it was not in the night's code: it
+   * was in this file. The walk visited seventeen scenes and the MORNING CARD,
+   * the DUSK VEIL and the NIGHT DIGEST were not among them — the three screens
+   * she cannot avoid, one of them twice a day, and the only automated thing in
+   * this project that looks at a screen had never looked at any of them.
+   *
+   * They are walked by driving a real day to a real dusk (see `driveToDusk`),
+   * never by mounting the components: the night is a read-back of what the day
+   * contained, so a synthetic mount would be testing a screen nobody sees.
+   */
+  { scene: 'morning-card', sel: '.chr-scene__title', says: 'Day 1', expect: 'visible' },
+  {
+    scene: 'morning-card', sel: '.chr-dawn__list', expect: 'visible',
+    why: 'the itemised pot (AAA 4.9 / 4.10d / 11.16): the single largest step grant in the'
+      + ' game used to arrive in silence, and this list is where it is finally named',
+  },
+  {
+    scene: 'dusk-veil', sel: '.chr-dusk__line', says: 'Dusk settles over the manor.',
+    expect: 'visible', inert: true,
+    why: 'the only sentence on the veil, and it lives on a pointer-transparent layer — so it'
+      + ' is asked for presence and words here and for its clearance by judgeDusk',
+  },
+  { scene: 'dusk-veil', sel: '.chr-dusk__skip', says: 'And so, to bed', expect: 'visible' },
+  {
+    scene: 'night-digest', sel: '.chr-digest__note',
+    says: 'None of it carries to tomorrow', expect: 'visible',
+    why: 'comprehension fix 10: all three testers read the refund as a payout and went looking'
+      + ' for it in their inventory. This sentence is the answer, on the screen the number is on',
+  },
+  {
+    scene: 'morning-card-2', sel: '.chr-dawn__rung', expect: 'visible',
+    why: 'the tea arc\'s one honest promise, on the ORDINARY morning — day 1 is the scripted'
+      + ' one and every other day of the campaign looks like this',
   },
 ];
 
@@ -729,6 +786,283 @@ export function judgeInert(probes) {
   }));
 }
 
+/* ═══════════════ ROUND 39's VERDICTS — THE DAY'S OWN TURN ═══════════════════
+   Three screens she cannot avoid, and the one thing they have in common: they
+   are the only surfaces in the game that are COMPOSED FROM THE DAY rather than
+   from a fixture. That is why a mounted component proves nothing about them and
+   why every claim below is taken off a real evening.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * IT FITS, AND "IT FITS" IS NOT "IT DOES NOT SCROLL".
+ *
+ * `.chr-scene` is `position: fixed; inset: 0` with `justify-content: safe
+ * center`, `overflow-y: auto` — and `scrollbar-width: none`, because the owner
+ * will not have a scrollbar. So a lifecycle card that outgrows the glass shows
+ * NOTHING: no bar, no cut edge, just a stand-aside that is 59px below the phone
+ * (round 25 measured exactly that on the night digest and the control had
+ * shipped off the screen). The scroll verdict catches the container; this
+ * catches the LINE, which is what she is actually missing.
+ *
+ * Only elements that carry their own text and controls are judged — a
+ * full-bleed container legitimately starts at y 0, under the bar, and saying so
+ * would be noise.
+ */
+export function judgeFit(rows) {
+  const out = [];
+  for (const r of rows ?? []) {
+    if (r.bottom > r.glassH + 0.5) {
+      out.push({ klass: 'FIT', scene: r.scene, what: r.sel,
+        message: `${JSON.stringify(r.text)} is drawn ${Math.round(r.bottom - r.glassH)}px past the`
+          + ` bottom of a ${r.glassH}px glass — this card hides its scrollbar by house rule, so`
+          + ' what is off the screen is simply gone' });
+      continue;
+    }
+    if (r.top < r.barBottom - 0.5) {
+      out.push({ klass: 'FIT', scene: r.scene, what: r.sel,
+        message: `${JSON.stringify(r.text)} is drawn at y ${Math.round(r.top)}, under a fixed day bar`
+          + ` that ends at ${r.barBottom} — a centred column that does not fit spills BOTH ways` });
+      continue;
+    }
+    if (r.left < -0.5 || r.right > r.glassW + 0.5) {
+      out.push({ klass: 'FIT', scene: r.scene, what: r.sel,
+        message: `${JSON.stringify(r.text)} runs x ${Math.round(r.left)}–${Math.round(r.right)}`
+          + ` on a ${r.glassW}px glass` });
+    }
+  }
+  return out;
+}
+
+/**
+ * THE MORNING'S GRANTS: THE AMOUNT MUST SIT BESIDE THE LINE IT IS THE PRICE OF.
+ *
+ * Photographed at 375x667 on the first morning this gate ever walked: "A
+ * welcome cup — this first morning only" wraps to two lines at 375 (it does not
+ * at 390), and `+4 steps` stayed level with the FIRST line while the word
+ * "only" hung alone underneath it. Both halves of one row, on different rows.
+ *
+ * The claim is made against the label's LAST LINE BOX rather than against its
+ * element box, because in a grid row a stretched `<dd>` reports the same bottom
+ * as its `<dt>` whether the number is drawn at the top of that box or the
+ * bottom — the element box is exactly the instrument that cannot see this.
+ */
+export function judgeMorning(m) {
+  if (!m) {
+    return [{ klass: 'MORNING', scene: 'morning-card', what: 'the morning card',
+      message: 'the walk never reached a morning card — the one screen every single day of the'
+        + ' campaign opens on' }];
+  }
+  const out = [];
+  for (const row of m.rows) {
+    if (Math.abs(row.amountBottom - row.labelLastLineBottom) > 3) {
+      out.push({ klass: 'MORNING', scene: m.scene, what: JSON.stringify(row.label),
+        message: `is ${row.labelLines} lines and its amount ${JSON.stringify(row.amount)} is drawn`
+          + ` ${Math.round(row.labelLastLineBottom - row.amountBottom)}px above the label's last line`
+          + ' — the number and the thing it is the price of are on different rows, on the card whose'
+          + ' whole job is to say where her steps came from' });
+    }
+  }
+  return out;
+}
+
+/**
+ * ═══ THE VEIL, AND WHAT IS UNDERNEATH IT ══════════════════════════════════
+ *
+ * ROUND 15 fixed the skip button landing on the blueprint's index tabs by
+ * publishing `--page-foot-ceiling` off `.bp-foot__actions`. Round 33 then put
+ * the storey's own title block ABOVE those tabs, and "And so, to bed" came down
+ * on top of "The Grounds" — at both shipped sizes, in the first screenshot ever
+ * taken of a real dusk. A token published from one row of a plate clears one
+ * row of a plate, and nothing in this project was looking.
+ *
+ * So the claim is not "the skip clears the tabs". It is: THE VEIL'S OWN
+ * FURNITURE DOES NOT INTERSECT THE BAND THE SURFACE UNDERNEATH PINS AT THE
+ * FOOT, whatever that band turns out to be — measured as box against box, so a
+ * fourth row added to the title block fails this without anyone remembering to
+ * come back here.
+ *
+ * ═══ AND THE SHAPE OF THE FADE, WHICH IS THE OTHER HALF OF THE SAME NOTE ═══
+ *
+ * The owner: "the fade that occurs when you run out of steps feels
+ * disjointed… it should feel really cozy like you're slipping off to peaceful
+ * slumber". The shipped curve was `3200ms ease-in` — an ACCELERATING fade,
+ * which lays 29% of its darkness in the first half of its time and then slams,
+ * and reads as being switched off rather than drifting off. That is not a taste
+ * question and it does not need a human to re-check it every round: a curve is
+ * a function, so the gate asks it where it is at half time.
+ */
+export const DUSK = {
+  /** AAA 4.12's walk-but-do-not-interact grace. Taken TO, never past. */
+  fadeCeilingMs: 4000,
+  /**
+   * Half the darkness by half the time, or it is accelerating. `ease-in`
+   * answers 0.29 here; the shipped `--ease-doze` answers ~0.86.
+   */
+  minHalfTimeProgress: 0.55,
+  /**
+   * The one warm image in the transition must land EARLY and hold. It used to
+   * finish 200ms before the veil did, so it was still brightening while the
+   * room went out — swallowed as it arrived.
+   */
+  minCandleLeadMs: 1200,
+  /** Reduced motion still arrives; it just does not travel (AAA U.3). */
+  reducedCeilingMs: 400,
+};
+
+/** Where a CSS timing function has got to at half its time. */
+export function easingAtHalfTime(fn) {
+  const named = {
+    linear: [0, 0, 1, 1], ease: [0.25, 0.1, 0.25, 1], 'ease-in': [0.42, 0, 1, 1],
+    'ease-out': [0, 0, 0.58, 1], 'ease-in-out': [0.42, 0, 0.58, 1],
+  };
+  const s = String(fn ?? '').trim();
+  let p = named[s];
+  if (!p) {
+    const m = s.match(/cubic-bezier\(([^)]+)\)/);
+    if (!m) return NaN;
+    p = m[1].split(',').map(Number);
+  }
+  if (p.length !== 4 || p.some((v) => !Number.isFinite(v))) return NaN;
+  const [x1, y1, x2, y2] = p;
+  const bez = (a, b, t) => 3 * a * (1 - t) ** 2 * t + 3 * b * (1 - t) * t ** 2 + t ** 3;
+  // Solve x(t) = 0.5 for t, then read y(t). Bisection: monotone in t for any
+  // legal easing, and 40 halvings is more precision than a phone can show.
+  let lo = 0; let hi = 1;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (bez(x1, x2, mid) < 0.5) lo = mid; else hi = mid;
+  }
+  return bez(y1, y2, (lo + hi) / 2);
+}
+
+/** Do two boxes share any glass at all? */
+export function boxesOverlap(a, b) {
+  if (!a || !b) return false;
+  return a.left < b.right - 0.5 && a.right > b.left + 0.5
+    && a.top < b.bottom - 0.5 && a.bottom > b.top + 0.5;
+}
+
+export function judgeDusk(m) {
+  if (!m) {
+    return [{ klass: 'DUSK', scene: 'dusk-veil', what: 'the dusk veil',
+      message: 'the walk never reached a dusk — the day never ran out of steps, so the one'
+        + ' transition the player cannot skip past went unwalked' }];
+  }
+  const out = [];
+  const say = (what, message) => out.push({ klass: 'DUSK', scene: 'dusk-veil', what, message });
+
+  if (!m.skip) say('.chr-dusk__skip', 'the veil\'s one way out is not on the glass');
+  for (const part of [['.chr-dusk__skip', m.skip], ['.chr-dusk__line', m.line]]) {
+    const [sel, box] = part;
+    if (!box) continue;
+    for (const band of m.foot) {
+      if (!boxesOverlap(box, band.box)) continue;
+      say(sel, `is drawn at y ${Math.round(box.top)}–${Math.round(box.bottom)}, straight through`
+        + ` ${band.sel} at y ${Math.round(band.box.top)}–${Math.round(band.box.bottom)} — the band the`
+        + ' surface underneath pins at the foot of the glass. `--page-foot-ceiling` exists so this'
+        + ' cannot happen, and it is published from whatever element the surface names');
+    }
+  }
+  if (m.skip && m.line && boxesOverlap(m.skip, m.line)) {
+    say('.chr-dusk__line', 'the veil\'s sentence and the veil\'s button are drawn on top of each other');
+  }
+
+  if (!(m.veilMs > 0)) {
+    say('.chr-dusk', 'the veil has no fade at all — dusk arrives as a cut');
+  } else if (m.veilMs > DUSK.fadeCeilingMs) {
+    say('.chr-dusk', `fades for ${m.veilMs}ms against AAA 4.12's ${DUSK.fadeCeilingMs}ms`
+      + ' walk-but-do-not-interact grace');
+  }
+  const half = easingAtHalfTime(m.veilEase);
+  if (!(half >= DUSK.minHalfTimeProgress)) {
+    say('.chr-dusk', `is ${Number.isFinite(half) ? `${Math.round(half * 100)}%` : 'an unreadable share'}`
+      + ` of the way dark at half its time (${m.veilEase}) — an ACCELERATING fade sits still and then`
+      + ' slams, which reads as the lights being switched off. Dozing off moves early and'
+      + ` decelerates into stillness; the floor is ${Math.round(DUSK.minHalfTimeProgress * 100)}%`);
+  }
+  if (m.propsAnimated > 1) {
+    say('.chr-dusk', `animates ${m.propsAnimated} properties of its own darkness (${m.propsList})`
+      + ' — perceived darkness is then their PRODUCT, which rushes at the end at any duration'
+      + ' and any curve you choose');
+  }
+  const lead = m.veilMs - m.candleEndMs;
+  if (m.candleEndMs > 0 && lead < DUSK.minCandleLeadMs) {
+    say('.chr-dusk__candle', `finishes ${Math.round(lead)}ms before the veil settles — the one warm`
+      + ' image in the transition is still brightening while the room goes out, so it is swallowed'
+      + ` as it arrives. It should land early and HOLD (${DUSK.minCandleLeadMs}ms)`);
+  }
+  if (m.lineEndMs > m.veilMs) {
+    say('.chr-dusk__line', `lands at ${Math.round(m.lineEndMs)}ms, after the dark has finished at`
+      + ` ${Math.round(m.veilMs)}ms`);
+  }
+  if (m.reduced && (m.reduced.name === m.veilName || m.reduced.ms > DUSK.reducedCeilingMs)) {
+    say('.chr--reduced .chr-dusk', `runs ${m.reduced.name} for ${m.reduced.ms}ms under reduced`
+      + ` motion — the state must still arrive, and it must not travel (AAA U.3)`);
+  }
+  return out;
+}
+
+/**
+ * ═══ THE NIGHT IS A READ-BACK OF THE DAY, SO IT IS JUDGED AGAINST THE DAY ══
+ *
+ * Two claims, and the second is the one that needed a real evening:
+ *
+ *  1. THE NIGHT ENDS ON A PERSON. Round 24's finding was six consecutive
+ *     evenings closing on a receipt; the goodnight is the fix, and a night that
+ *     prints its tally and no voice has quietly undone it.
+ *  2. THE TALLY IS THE DAY'S. Every row printed on the glass is matched against
+ *     the record the engine banked at `endDay` — read off the store, which is a
+ *     different instrument than the DOM and can therefore disagree with it —
+ *     and a row printed at ZERO is the round-5 defect ("Rooms solved 0 ·
+ *     Fragments found 0"), which is a scoreboard of noughts on the one screen
+ *     that is supposed to say the day was quiet.
+ */
+export function judgeNight(n) {
+  if (!n) {
+    return [{ klass: 'NIGHT', scene: 'night-digest', what: 'the night digest',
+      message: 'the walk never reached a night — the screen the owner reported formatting errors'
+        + ' on is the screen nothing has ever looked at' }];
+  }
+  const out = [];
+  const say = (what, message) => out.push({ klass: 'NIGHT', scene: 'night-digest', what, message });
+
+  if (!n.goodnight.text) {
+    say('.chr-night', 'there is no goodnight on the glass, authored or backstop — round 24\'s'
+      + ' finding, back: the day ends on a receipt');
+  } else if (n.goodnight.h === 0) {
+    say('.chr-night', `the goodnight ${JSON.stringify(n.goodnight.text.slice(0, 40))} is mounted and`
+      + ' measures 0px high');
+  } else if (n.goodnight.beat && !n.goodnight.who) {
+    say('.chr-night__who', 'a quoted goodnight with no attribution — the quotation marks have no owner');
+  }
+
+  const printed = new Map(n.printed.map((r) => [r.label, glassNum(r.n)]));
+  const banked = new Map(n.banked.map((r) => [r[0], r[1]]));
+  for (const [label, value] of printed) {
+    if (value === 0) {
+      say('.chr-digest', `prints "${label} 0" — a quiet evening says less; it never says you`
+        + ' scored nothing (round-5 audit)');
+    }
+    if (!banked.has(label)) {
+      say('.chr-digest', `prints "${label} ${value}", which the day the engine banked does not have`);
+    } else if (banked.get(label) !== value) {
+      say('.chr-digest', `prints "${label} ${value}" and the record banked at endDay says`
+        + ` ${banked.get(label)} — the night is reading back a day that did not happen`);
+    }
+  }
+  for (const [label, value] of banked) {
+    if (!printed.has(label)) {
+      say('.chr-digest', `does not print "${label} ${value}", which today really did contain —`
+        + ' the tally suppresses zeroes and nothing else');
+    }
+  }
+  if (n.highestRow > 0 && !n.climbOnGlass) {
+    say('.chr-digest__prose', `the day's story is the climb and she reached row ${n.highestRow};`
+      + ' the night prints no climb line at all');
+  }
+  return out;
+}
+
 export function judgeConsole(entries, allow = CONSOLE_ALLOW) {
   return entries
     .filter((e) => !allow.some((rx) => rx.test(e.text)))
@@ -853,6 +1187,16 @@ export const COVERAGE_FLOORS = {
    * in its own right rather than a silent pass.
    */
   landingCells: 3,   // the vow, offered and refused at each landing cell
+  /**
+   * ROUND 39. The morning card, the dusk veil and the night digest. Each of
+   * these verdicts filters a list too, and "the day never ran out of steps" is
+   * exactly the silent zero that would put the three screens the owner reported
+   * back outside the walk — where they have been for thirty-eight rounds.
+   */
+  fitRows: 24,       // the lines and controls of three lifecycle cards
+  dawnRows: 1,       // the morning's grants, itemised
+  duskParts: 3,      // the skip, the sentence, and the band underneath them
+  nightRows: 2,      // the tally the evening really earned
 };
 
 /* ─────────────────────────────── SELF-TEST ───────────────────────────────
@@ -1108,10 +1452,127 @@ export function selfTest() {
     judgeInert([{ scene: 'blueprint', sel: '.chr-key', swallows: false }]),
     []);
 
+  // --- FIT / MORNING / DUSK / NIGHT (round 39 — the day's own turn) --------
+  const glass = { glassH: 667, glassW: 375, barBottom: 52, scene: 'night-digest' };
+  check('round 25’s shipped defect: the stand-aside 59px below the phone',
+    judgeFit([{ ...glass, sel: '.chr-scene__aside', text: 'Journal', top: 583, bottom: 726, left: 24, right: 351 }]),
+    ['FIT']);
+  check('the same control, on the glass',
+    judgeFit([{ ...glass, sel: '.chr-scene__aside', text: 'Journal', top: 520, bottom: 597, left: 24, right: 351 }]),
+    []);
+  check('the other end of the same spill: the title pushed under the fixed bar',
+    judgeFit([{ ...glass, sel: '.chr-scene__title', text: 'Night', top: 18, bottom: 62, left: 24, right: 351 }]),
+    ['FIT']);
+  check('a line running off the side',
+    judgeFit([{ ...glass, sel: '.chr-digest__note', text: 'Today’s tally.', top: 400, bottom: 424, left: 24, right: 402 }]),
+    ['FIT']);
+
+  const cup = {
+    label: 'A welcome cup — this first morning only', amount: '+4 steps',
+    labelLines: 1, labelLastLineBottom: 340, amountBottom: 340,
+  };
+  check('a grant row whose amount is beside its own line',
+    judgeMorning({ scene: 'morning-card', rows: [cup] }),
+    []);
+  check('THE SHIPPED SHAPE AT 375: the label wraps and the amount stays on line one',
+    judgeMorning({ scene: 'morning-card', rows: [{ ...cup, labelLines: 2, labelLastLineBottom: 364 }] }),
+    ['MORNING']);
+  check('a morning card the walk never reached',
+    judgeMorning(null),
+    ['MORNING']);
+
+  const plate = { sel: '.bp-foot', box: { top: 561, bottom: 667, left: 0, right: 375 } };
+  const goodDusk = {
+    skip: { top: 470, bottom: 514, left: 121, right: 254 },
+    line: { top: 400, bottom: 428, left: 0, right: 375 },
+    candle: { top: 240, bottom: 380, left: 140, right: 235 },
+    foot: [plate], glassH: 667,
+    veilName: 'chrDuskFall', veilMs: 4000, veilEase: 'cubic-bezier(0.14, 0.66, 0.16, 1)',
+    candleEndMs: 2000, lineEndMs: 3360, propsAnimated: 1, propsList: 'opacity',
+    reduced: { name: 'chrDuskStill', ms: 200 },
+  };
+  check('the veil as round 39 shipped it',
+    judgeDusk(goodDusk),
+    []);
+  check('a dusk the walk never reached',
+    judgeDusk(null),
+    ['DUSK']);
+  check('THE SHIPPED COLLISION: "And so, to bed" drawn through the title block',
+    judgeDusk({ ...goodDusk, skip: { top: 595, bottom: 639, left: 121, right: 254 } }),
+    ['DUSK']);
+  check('round 15’s own defect, the row below it: the skip on the index tabs',
+    judgeDusk({ ...goodDusk, skip: { top: 611, bottom: 655, left: 109, right: 242 } }),
+    ['DUSK']);
+  check('THE CURVE THE OWNER FELT: 3200ms ease-in, which is 29% dark at half its time',
+    judgeDusk({ ...goodDusk, veilMs: 3200, veilEase: 'ease-in', candleEndMs: 1900, lineEndMs: 3200 }),
+    ['DUSK']);
+  check('…and the two-property keyframe that made it rush at the end at any duration',
+    judgeDusk({ ...goodDusk, propsAnimated: 2, propsList: 'opacity + background-color' }),
+    ['DUSK']);
+  check('the candle finishing 200ms before the veil, swallowed as it arrives',
+    judgeDusk({ ...goodDusk, candleEndMs: 3800 }),
+    ['DUSK']);
+  check('a fade taken past AAA 4.12’s grace window',
+    judgeDusk({ ...goodDusk, veilMs: 6000 }),
+    ['DUSK']);
+  check('reduced motion left running the whole timed fall',
+    judgeDusk({ ...goodDusk, reduced: { name: 'chrDuskFall', ms: 4000 } }),
+    ['DUSK']);
+  check('the veil’s one way out, gone',
+    judgeDusk({ ...goodDusk, skip: null }),
+    ['DUSK']);
+  /**
+   * The solver itself, against curves whose answers are known: `linear` is at
+   * half by half, `ease-in` is the shipped 29%, and the doze curve is most of
+   * the way there. If this arithmetic drifts, every curve claim above is
+   * measuring nothing.
+   */
+  for (const [fn, lo, hi] of [
+    ['linear', 0.49, 0.51], ['ease-in', 0.25, 0.35], ['ease-out', 0.65, 0.75],
+    ['cubic-bezier(0.14, 0.66, 0.16, 1)', 0.80, 0.95],
+  ]) {
+    const got = easingAtHalfTime(fn);
+    if (!(got >= lo && got <= hi)) {
+      fail.push(`easingAtHalfTime(${fn}): expected ${lo}–${hi}, got ${got}`);
+    }
+  }
+
+  const goodNight = {
+    goodnight: { text: '“Bed, pet.”', h: 74, beat: true, who: true },
+    printed: [{ label: 'Rooms drafted', n: '4' }, { label: 'Steps spent', n: '27' }],
+    banked: [['Rooms drafted', 4], ['Steps spent', 27]],
+    highestRow: 1, climbOnGlass: true,
+  };
+  check('the night as it reads back a real evening',
+    judgeNight(goodNight),
+    []);
+  check('a night the walk never reached',
+    judgeNight(null),
+    ['NIGHT']);
+  check('round 24’s finding, back: a day that ends on a receipt',
+    judgeNight({ ...goodNight, goodnight: { text: '', h: 0, beat: false, who: false } }),
+    ['NIGHT']);
+  check('a quoted goodnight with nobody to own the quotation marks',
+    judgeNight({ ...goodNight, goodnight: { ...goodNight.goodnight, who: false } }),
+    ['NIGHT']);
+  check('the round-5 audit: a scoreboard of noughts',
+    judgeNight({ ...goodNight, printed: [...goodNight.printed, { label: 'Fragments found', n: '0' }] }),
+    ['NIGHT', 'NIGHT']);
+  check('a tally that is not this day’s',
+    judgeNight({ ...goodNight, printed: [{ label: 'Rooms drafted', n: '9' }, { label: 'Steps spent', n: '27' }] }),
+    ['NIGHT']);
+  check('a row the day contained and the night dropped',
+    judgeNight({ ...goodNight, printed: [{ label: 'Steps spent', n: '27' }] }),
+    ['NIGHT']);
+  check('a climb the digest does not tell her about',
+    judgeNight({ ...goodNight, climbOnGlass: false }),
+    ['NIGHT']);
+
   // --- BLIND (the anti-construction guard) ---------------------------------
   const fullWalk = {
-    scenes: 18, probes: 1600, scrollRows: 260, copyAssertions: 12, driven: 6,
+    scenes: 22, probes: 1600, scrollRows: 260, copyAssertions: 12, driven: 6,
     accountRows: 7, letterParas: 4, landingStamps: 3, clipLines: 2, landingCells: 3,
+    fitRows: 40, dawnRows: 3, duskParts: 3, nightRows: 6,
   };
   check('a probe selector that stopped matching anything',
     judgeCoverage({ ...fullWalk, probes: 0 }),
@@ -1142,6 +1603,18 @@ export function selfTest() {
     ['BLIND']);
   check('a walk that never stood on a landing cell (round 37)',
     judgeCoverage({ ...fullWalk, landingCells: 0 }),
+    ['BLIND']);
+  check('a walk whose day never ran out of steps, so dusk never fell (round 39)',
+    judgeCoverage({ ...fullWalk, duskParts: 0 }),
+    ['BLIND']);
+  check('a walk that stopped measuring the lifecycle cards line by line',
+    judgeCoverage({ ...fullWalk, fitRows: 0 }),
+    ['BLIND']);
+  check('a night whose tally stopped being read off the glass',
+    judgeCoverage({ ...fullWalk, nightRows: 0 }),
+    ['BLIND']);
+  check('a morning whose grants stopped being itemised',
+    judgeCoverage({ ...fullWalk, dawnRows: 0 }),
     ['BLIND']);
   check('a full walk',
     judgeCoverage({ ...fullWalk, perScene: { 'room:study': 14 } }),
@@ -1316,6 +1789,69 @@ export const PROOFS = [
     why: 'the round-13 rule taken off the phone by a media query, on the most expensive draft in the campaign',
     css: '.bp-modal__sanctum { display: none !important; }',
   },
+  /* ═══ ROUND 39 — THE THREE SCREENS THE WALK HAD NEVER VISITED ══════════════
+     The owner found these by playing. Each injection below is the defect that
+     was really on the glass, or the one the fix was one line away from. */
+  {
+    id: 'dusk-lands-on-the-plate',
+    klass: 'DUSK',
+    /**
+     * THE SHIPPED DEFECT, VERBATIM. Round 15 published `--page-foot-ceiling`
+     * off `.bp-foot__actions`; round 33 put the storey's title block above the
+     * tabs; "And so, to bed" came down on "The Grounds" at both sizes. Staged
+     * by putting the ceiling back on the row it used to be measured from.
+     */
+    why: 'the veil’s skip drawn through the blueprint’s title block — the collision round 15 fixed'
+      + ' one row of, and round 33 re-opened above it',
+    css: ':root { --page-foot-ceiling: 44px !important; }',
+  },
+  {
+    id: 'dusk-switched-off',
+    klass: 'DUSK',
+    /**
+     * The curve the owner felt: "the fade… feels disjointed". An accelerating
+     * fade is 29% of the way dark at half its time — it sits still, then slams.
+     */
+    why: 'the dusk fade put back on an accelerating curve, which reads as the lights being switched'
+      + ' off rather than as dozing off',
+    css: '.chr-dusk { animation-timing-function: ease-in !important; }',
+  },
+  {
+    id: 'goodnight-retired',
+    klass: 'NIGHT',
+    /**
+     * Round 24's finding was six consecutive evenings ending on a receipt. The
+     * goodnight is the fix, and it is one media query from being gone — which
+     * is how this house has lost every sentence it has ever lost.
+     */
+    why: 'Mrs. Bramble’s goodnight taken off the phone, so the day ends on a tally again',
+    css: '.chr-night, .chr-scene[aria-label="Night"] .chr-scene__line { display: none !important; }',
+  },
+  {
+    id: 'morning-amount-adrift',
+    klass: 'MORNING',
+    /**
+     * The shipped 375 defect: the grant label wraps and its amount stays level
+     * with the first line. Staged by putting the row's alignment back.
+     */
+    why: 'the morning’s grant amount left beside the first line of a label that wrapped —'
+      + ' the number and the thing it is the price of on different rows',
+    css: '.chr-dawn__list { align-items: start !important; }'
+      + ' .chr-dawn__list dt { max-width: 12ch !important; }',
+  },
+  {
+    id: 'night-off-the-glass',
+    klass: 'FIT',
+    /**
+     * Round 25 measured the night digest 59px past a 667px glass with the
+     * Journal stand-aside's box bottom at 726.7 — a control written, shipped,
+     * and off the phone. The scene hides its scrollbar by house rule, so
+     * nothing on the screen says so.
+     */
+    why: 'the night digest grown past the glass it hides its own scrollbar on — round 25’s'
+      + ' stand-aside, 59px below the phone',
+    css: '.chr-digest { padding-bottom: 220px !important; }',
+  },
   {
     id: 'landing-debt-grows',
     klass: 'LANDING',
@@ -1489,6 +2025,21 @@ function probeHits() {
      */
     || document.querySelector('.chr-ledger__sheet')
     || document.querySelector('.bp-modal')
+    /**
+     * ROUND 39. The lifecycle scenes are the same shape one rung down: opaque,
+     * `position: fixed; inset: 0`, and modal by design — "the day cannot
+     * proceed around them" (chrome.css). The blueprint's three index tabs are
+     * still mounted underneath the night digest, and probing them reported 30
+     * failures a size on the first walk that ever reached the night: every one
+     * of them correctly answering as the scene on top of them, which is what a
+     * full-glass scene is FOR.
+     *
+     * The dusk veil is deliberately NOT in this list. It is
+     * `pointer-events: none` — the walk-but-do-not-interact grace means the
+     * blueprint underneath must go on answering for itself through the fade,
+     * and that is a claim worth probing rather than an exemption to grant.
+     */
+    || document.querySelector('.chr-scene')
     || document.body;
   const ident = (e) => {
     if (!e) return 'nothing';
@@ -1804,6 +2355,232 @@ function measureInert(sels) {
   });
 }
 
+/* --- round 39: the morning card, the dusk veil, the night digest ----------- */
+
+/**
+ * Every LINE and every CONTROL of a scene, with the glass and the fixed bar it
+ * has to live between. Containers are skipped: a full-bleed box legitimately
+ * starts at y 0.
+ */
+function measureFit(sel) {
+  const root = document.querySelector(sel);
+  if (!root) return [];
+  const glassH = window.innerHeight;
+  const glassW = window.innerWidth;
+  const bar = document.querySelector('.chr-header');
+  const bb = bar ? bar.getBoundingClientRect() : null;
+  const barBottom = bb && bb.height > 0 ? Math.round(bb.bottom) : 0;
+  const ownText = (el) => [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+  const out = [];
+  for (const el of [root, ...root.querySelectorAll('*')]) {
+    if (!ownText(el) && el.tagName !== 'BUTTON') continue;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) continue;
+    const cls = typeof el.className === 'string' && el.className.trim()
+      ? '.' + el.className.trim().split(/\s+/).join('.') : el.tagName.toLowerCase();
+    out.push({
+      sel: cls, text: (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 46),
+      top: r.top, bottom: r.bottom, left: r.left, right: r.right, glassH, glassW, barBottom,
+    });
+  }
+  return out;
+}
+
+/**
+ * The morning's grant rows, measured in LINE BOXES rather than element boxes —
+ * see judgeMorning for why the element box is the instrument that cannot see
+ * this defect. `Range.getClientRects()` returns one rect per rendered line.
+ */
+function measureMorning() {
+  const list = document.querySelector('.chr-dawn__list');
+  if (!list) return { rows: [] };
+  const lineRects = (el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    return [...range.getClientRects()].filter((r) => r.width > 0.5 && r.height > 0.5);
+  };
+  const kids = [...list.children];
+  const rows = [];
+  for (let i = 0; i + 1 < kids.length; i += 2) {
+    const dt = kids[i];
+    const dd = kids[i + 1];
+    if (!dt || !dd || dt.tagName !== 'DT' || dd.tagName !== 'DD') continue;
+    const label = lineRects(dt);
+    const amount = lineRects(dd);
+    if (!label.length || !amount.length) continue;
+    rows.push({
+      label: dt.textContent.replace(/\s+/g, ' ').trim(),
+      amount: dd.textContent.replace(/\s+/g, ' ').trim(),
+      labelLines: label.length,
+      labelLastLineBottom: Math.max(...label.map((r) => r.bottom)),
+      amountBottom: Math.max(...amount.map((r) => r.bottom)),
+    });
+  }
+  return { rows };
+}
+
+/**
+ * THE VEIL'S CLOCK, READ OFF THE SHIPPED STYLESHEET.
+ *
+ * Durations and delays come from the computed style of the real elements; the
+ * PROPERTY COUNT comes from the `@keyframes` rule itself, because "how many
+ * things is this fade animating" is a question only the keyframes can answer,
+ * and animating two of them is what made the old fade rush at the end at every
+ * duration anyone tried.
+ */
+function measureDuskClock() {
+  const veil = document.querySelector('.chr-dusk');
+  if (!veil) return null;
+  const msOf = (t) => {
+    if (!t) return 0;
+    return t.endsWith('ms') ? parseFloat(t) : parseFloat(t) * 1000;
+  };
+  /**
+   * The FIRST value of a comma-separated CSS list — and commas inside
+   * `cubic-bezier(…)` are not separators. The naive split reported the shipped
+   * curve as "cubic-bezier(0.14" and the solver read it as "an unreadable
+   * share", which is a gate lying about a fix rather than measuring it.
+   */
+  const first = (v) => {
+    const s = String(v ?? '');
+    let depth = 0;
+    for (let i = 0; i < s.length; i++) {
+      if (s[i] === '(') depth++;
+      else if (s[i] === ')') depth--;
+      else if (s[i] === ',' && depth === 0) return s.slice(0, i).trim();
+    }
+    return s.trim();
+  };
+  const clock = (el, pseudo) => {
+    const cs = getComputedStyle(el, pseudo);
+    return {
+      name: first(cs.animationName),
+      ms: msOf(first(cs.animationDuration)),
+      delayMs: msOf(first(cs.animationDelay)),
+      ease: first(cs.animationTimingFunction),
+    };
+  };
+  const keyframeProps = (name) => {
+    const props = new Set();
+    for (const sheet of document.styleSheets) {
+      let rules;
+      try { rules = sheet.cssRules; } catch { continue; }
+      for (const rule of rules) {
+        if (rule.type !== 7 /* CSSRule.KEYFRAMES_RULE */ || rule.name !== name) continue;
+        for (const kf of rule.cssRules) for (const p of kf.style) props.add(p);
+      }
+    }
+    return [...props];
+  };
+  const fade = clock(veil, null);
+  const candle = document.querySelector('.chr-dusk__candle');
+  const line = document.querySelector('.chr-dusk__line');
+  const c = candle ? clock(candle, null) : { ms: 0, delayMs: 0 };
+  const l = line ? clock(line, null) : { ms: 0, delayMs: 0 };
+  const props = keyframeProps(fade.name);
+  return {
+    veilName: fade.name,
+    veilMs: fade.ms + fade.delayMs,
+    veilEase: fade.ease,
+    candleEndMs: c.ms ? c.ms + c.delayMs : 0,
+    lineEndMs: l.ms ? l.ms + l.delayMs : 0,
+    propsAnimated: props.length,
+    propsList: props.join(' + '),
+  };
+}
+
+/**
+ * The veil's own furniture against the band the surface underneath pins at the
+ * foot of the glass. The three selectors are the three bands `usePageFootBand`
+ * is called with (ManorPage, JournalPage, RoomPage) — and the whole point of
+ * the verdict is that the skip clears the WHOLE band, not the one row inside it
+ * that a token happens to be published from.
+ */
+function measureDuskBoxes() {
+  const box = (el) => {
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) return null;
+    return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+  };
+  const foot = [];
+  for (const sel of ['.bp-foot', '.jrn-rail', '.room-host__footer']) {
+    const b = box(document.querySelector(sel));
+    if (b) foot.push({ sel, box: b });
+  }
+  return {
+    skip: box(document.querySelector('.chr-dusk__skip')),
+    line: box(document.querySelector('.chr-dusk__line')),
+    candle: box(document.querySelector('.chr-dusk__candle')),
+    foot,
+    glassH: window.innerHeight,
+  };
+}
+
+/**
+ * The night, and the day it is a read-back of. The tally is taken off the
+ * GLASS; the day is taken off the store's banked record, which is a different
+ * instrument and can therefore disagree with it.
+ *
+ * The six labels are named here on purpose: they are `NIGHT_TALLY_LABELS`
+ * (engine/day.ts), and renaming one without telling this file is a change the
+ * gate should notice rather than absorb.
+ */
+function measureNight() {
+  const scene = document.querySelector('.chr-scene[aria-label="Night"]');
+  if (!scene) return null;
+  const beat = document.querySelector('.chr-night');
+  const who = document.querySelector('.chr-night__who');
+  const src = beat ?? document.querySelector('.chr-scene__line');
+  const r = src ? src.getBoundingClientRect() : null;
+  const printed = [];
+  const dl = document.querySelector('.chr-digest');
+  if (dl) {
+    const kids = [...dl.children];
+    for (let i = 0; i + 1 < kids.length; i += 2) {
+      const dt = kids[i];
+      const dd = kids[i + 1];
+      if (dt && dd && dt.tagName === 'DT' && dd.tagName === 'DD') {
+        printed.push({ label: dt.textContent.trim(), n: dd.textContent.trim() });
+      }
+    }
+  }
+  const s = window.__manorStore.getState();
+  const today = s.day?.day ?? 0;
+  const records = s.chronicles?.dayRecords ?? [];
+  let rec = null;
+  for (let i = records.length - 1; i >= 0; i--) {
+    if (records[i] && records[i].day === today) { rec = records[i]; break; }
+  }
+  const letters = (s.recentEvents ?? []).filter(
+    (e) => e.day === today && e.event.type === 'letter-opened',
+  ).length;
+  const banked = rec ? [
+    ['Rooms drafted', rec.roomsDrafted],
+    ['Rooms solved', rec.roomsSolved],
+    ['Steps spent', rec.stepsSpent],
+    ['Steps given back', rec.stepsRefunded ?? 0],
+    ['Fragments found', rec.fragmentsFound],
+    ['Letters read', letters],
+  ].filter(([, n]) => n > 0) : [];
+  const climb = [...document.querySelectorAll('.chr-digest__prose')]
+    .some((p) => /You reached/.test(p.textContent || ''));
+  return {
+    goodnight: {
+      text: src ? src.textContent.replace(/\s+/g, ' ').trim() : '',
+      h: r ? Math.round(r.height) : 0,
+      beat: !!beat,
+      who: !!who,
+    },
+    printed,
+    banked,
+    highestRow: rec?.highestRow ?? 0,
+    climbOnGlass: climb,
+  };
+}
+
 /* --- the walk -------------------------------------------------------------- */
 
 /**
@@ -1889,6 +2666,99 @@ async function leaveRoom(page) {
   await page.evaluate(() => window.__manorStore.getState().leaveRoom());
   await page.waitForSelector('.bp-page', { timeout: 10000 }).catch(() => {});
   await clearMoments(page);
+}
+
+/**
+ * ═══ A REAL EVENING, SPENT DOWN TO NOTHING (round 39) ═══════════════════════
+ *
+ * The night digest is a READ-BACK of the day: the climb line, the tally and
+ * Mrs. Bramble's conditioned goodnight are all functions of what the evening
+ * actually contained. Mounting `<NightDigest />` against a fixture would
+ * therefore be testing a screen nobody ever sees, which is why this drives the
+ * real thing instead — she drafts where there is a door and walks where there
+ * is not, and dusk falls the way it falls in play, out of the last step,
+ * through `applyStepEntry` → `scheduleDuskCheck` → `endDay`.
+ *
+ * ONE THING IS SETUP AND IT IS SAID OUT LOUD: five extra counters go in through
+ * `recordEvent` — the audited path, the same one a solve or an opened letter
+ * takes — so that the tally is walked at its FULLEST (all six rows printing)
+ * rather than at whatever a day-1 walk happens to produce. The fullest night is
+ * the only honest one to hold a fit claim against, and it is the case round 25
+ * found the digest failing by 59px while a prose claim in a commit message said
+ * it fitted. Nothing here skips a control the gate is about to make a claim
+ * about: the record is still built by the real `buildDayRecord` at the real
+ * `endDay`, off the real ledger.
+ *
+ * WHAT THIS DOES NOT COVER, SO THE NEXT AGENT DOES NOT ASSUME IT DOES: the
+ * goodnight is whichever beat the evening deals, so one run is one beat. The
+ * LENGTH CEILING of the authored pool is a different claim and it has its own
+ * instrument — `nightBeatLineBudget` (engine/dialogue/night-fit.ts), enforced
+ * over every authored line by `npm run content:verify`. This gate owns the
+ * COMPOSITION on the real glass; that model owns the pool. Neither is the
+ * other's re-run, which is the only reason having both is worth anything.
+ */
+async function driveToDusk(page) {
+  await page.evaluate(() => {
+    const s = window.__manorStore.getState();
+    s.recordEvent({ type: 'room-solved', cellKey: '1,1', cardId: 'library' });
+    s.recordEvent({ type: 'room-solved', cellKey: '2,1', cardId: 'gallery' });
+    s.recordEvent({ type: 'fragment-found', fragmentId: 'gate-1' });
+    s.recordEvent({ type: 'fragment-found', fragmentId: 'gate-2' });
+    s.recordEvent({ type: 'letter-opened', letterId: 'gate-l1' });
+  });
+  await page.evaluate(async () => {
+    const st = () => window.__manorStore.getState();
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    for (let guard = 0; guard < 140 && st().stepsRemaining() > 0; guard++) {
+      const s = st();
+      if (s.day?.phase !== 'exploring') break;
+      if (s.day.activeRoom) { s.leaveRoom(); await sleep(40); continue; }
+      if (s.draftOffer) {
+        const card = s.draftOffer.cards.find((c) => c.gemCost === 0) ?? s.draftOffer.cards[0];
+        s.chooseDraftCard(card.id);
+        await sleep(40);
+        continue;
+      }
+      let drafted = false;
+      for (const dir of ['N', 'E', 'W', 'S']) {
+        s.openDraft(dir);
+        if (st().draftOffer) { drafted = true; break; }
+      }
+      if (drafted) { await sleep(40); continue; }
+      const p = st().manor.playerCell;
+      const was = `${p.col},${p.row}`;
+      let moved = false;
+      for (const c of [
+        { col: p.col + 1, row: p.row }, { col: p.col - 1, row: p.row },
+        { col: p.col, row: p.row + 1 }, { col: p.col, row: p.row - 1 },
+      ]) {
+        st().moveTo(c);
+        const now = st().manor.playerCell;
+        if (`${now.col},${now.row}` !== was) { moved = true; break; }
+      }
+      if (!moved) break;
+      await sleep(40);
+    }
+  });
+  /**
+   * AND THE EVENING THAT BOXES HER IN. Some floorplans leave her with steps in
+   * hand, no door she can open and no room she can walk back into — the walker
+   * above stops, and on that run no dusk would fall and this whole segment
+   * would report itself missing. That is a flaky gate, which is worse than no
+   * gate. So the day ends the OTHER way the game ends a day: `endDay(
+   * 'retired-early')` is the Retire control's own action, it banks the same
+   * record through the same `buildDayRecord`, and the night reads it back with
+   * its own cause. Which of the two happened is printed by every run rather
+   * than absorbed — a fallback nobody can see is a fallback nobody can audit.
+   */
+  const how = await page.evaluate(() => {
+    const s = window.__manorStore.getState();
+    if (s.day?.phase !== 'exploring') return 'ran out of steps';
+    s.endDay('retired-early');
+    return 'boxed in — retired early';
+  });
+  const fell = await page.waitForSelector('.chr-dusk', { timeout: 15000 }).then(() => true, () => false);
+  return { fell, how };
 }
 
 /* --- driven checks: real pointer input, real consequences ------------------ */
@@ -1999,22 +2869,40 @@ async function walkOneViewport(browser, base, vp, inject, quiet) {
   const counts = {
     scenes: 0, probes: 0, scrollRows: 0, copyAssertions: 0, driven: 0, perScene: {},
     accountRows: 0, letterParas: 0, landingStamps: 0, clipLines: 0, landingCells: 0,
+    fitRows: 0, dawnRows: 0, duskParts: 0, nightRows: 0,
   };
   let appSource = null;
   let scene = 'boot';
 
-  const ctx = await browser.newContext({
-    viewport: { width: vp.w, height: vp.h },
-    deviceScaleFactor: 1,
-    isMobile: true,
-    hasTouch: true,
-  });
-  const page = await ctx.newPage();
-  page.setDefaultTimeout(20000);
-  page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push({ scene, kind: 'console.error', text: m.text() }); });
-  page.on('pageerror', (e) => consoleErrors.push({ scene, kind: 'pageerror', text: String(e.message || e) }));
-
-  if (inject?.init) await page.addInitScript(inject.init);
+  /**
+   * ROUND 39 — WHY THIS IS A FACTORY AND NOT A CONTEXT.
+   *
+   * The manor persists after every mutation (app/store.ts → `persistSave`, plus
+   * the IndexedDB mirror), so two thirds of the way through a walk a reload
+   * comes back mid-afternoon on day 1: no front step, and no morning card
+   * behind it. The first cut of the day's-turn segment cleared the save keys by
+   * hand and the mirror restored them from under it — the walk reported "never
+   * reached a morning card" at both sizes while the scratch reproduction worked
+   * every time, which is the difference between a fresh glass and a doctored
+   * one. So the morning is walked on a NEW PLAYER'S GLASS, which is what it is.
+   */
+  const glasses = [];
+  const newGlass = async () => {
+    const c = await browser.newContext({
+      viewport: { width: vp.w, height: vp.h },
+      deviceScaleFactor: 1,
+      isMobile: true,
+      hasTouch: true,
+    });
+    glasses.push(c);
+    const p = await c.newPage();
+    p.setDefaultTimeout(20000);
+    p.on('console', (m) => { if (m.type() === 'error') consoleErrors.push({ scene, kind: 'console.error', text: m.text() }); });
+    p.on('pageerror', (e) => consoleErrors.push({ scene, kind: 'pageerror', text: String(e.message || e) }));
+    if (inject?.init) await p.addInitScript(inject.init);
+    return p;
+  };
+  let page = await newGlass();
 
   const audit = async (label) => {
     scene = label;
@@ -2033,6 +2921,17 @@ async function walkOneViewport(browser, base, vp, inject, quiet) {
       counts.copyAssertions += got.length;
       findings.push(...judgeCopy(got));
     }
+  };
+
+  /**
+   * ROUND 39 — every LINE of a lifecycle card, against the glass it has to live
+   * on. Separate from `audit` because it is asked of one scene root rather than
+   * of the whole document, and because the veil's root is not a `.chr-scene`.
+   */
+  const fit = async (label, sel) => {
+    const rows = await stable(page, () => page.evaluate(measureFit, sel));
+    counts.fitRows += rows.length;
+    findings.push(...judgeFit(rows.map((r) => ({ ...r, scene: label }))));
   };
 
   try {
@@ -2385,8 +3284,163 @@ async function walkOneViewport(browser, base, vp, inject, quiet) {
       counts.letterParas += letter?.paras.length ?? 0;
       findings.push(...judgeLetter(letter));
     }
+
+    /**
+     * ═══ THE DAY'S OWN TURN (round 39) ══════════════════════════════════════
+     * The morning card, the dusk veil and the night digest — the three screens
+     * she cannot avoid, and the three this walk had never once visited. It goes
+     * LAST because it spends the day: after this the manor is wiped and it is
+     * tomorrow.
+     */
+    scene = 'morning-card';
+    page = await newGlass();          // a new player, on a clean glass
+    await page.goto(base, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => !!window.__manorStore, null, { timeout: 40000 });
+    await page.waitForSelector('.bp-btn--seal', { timeout: 20000 }).catch(() => {});
+    const step = await page.$('.bp-btn--seal');
+    const stepBox = step ? await step.boundingBox() : null;
+    if (stepBox) {
+      await page.mouse.move(stepBox.x + stepBox.width / 2, stepBox.y + stepBox.height / 2);
+      await page.mouse.down();
+      await page.waitForTimeout(60);
+      await page.mouse.up();
+      counts.driven += 1;
+    }
+    const onMorning = await page.waitForSelector('.chr-scene[aria-label^="Morning"]', { timeout: 15000 })
+      .then(() => true, () => false);
+    if (!onMorning) {
+      findings.push(...judgeMorning(null));
+    } else {
+      await clearMoments(page);
+      await audit('morning-card');
+      const morning = await stable(page, () => page.evaluate(measureMorning));
+      counts.dawnRows += morning?.rows.length ?? 0;
+      findings.push(...judgeMorning(morning ? { ...morning, scene: 'morning-card' } : null));
+      await fit('morning-card', '.chr-scene');
+    }
+
+    // …into the day, and then out of steps.
+    scene = 'dusk-veil';
+    const explored = await ensureExploring(page);
+    await clearMoments(page);
+    const evening = explored ? await driveToDusk(page) : { fell: false, how: 'never explored' };
+    if (!quiet) log(`  the day's turn: dusk fell because the day ${evening.how}`);
+    if (!evening.fell) {
+      findings.push(...judgeDusk(null));
+      findings.push(...judgeNight(null));
+    } else {
+      /**
+       * THE CLOCK IS READ FIRST, OFF THE REAL FADE, AND THEN THE SCENE IS
+       * HELD OPEN. A dusk lives 4.7 seconds and a full audit of one scene
+       * (1,800 hit probes, 320 scrollports, the copy manifest) takes longer
+       * than that — so the veil's own timing is measured while it is genuinely
+       * running, and only then is `advanceDayPhase` stubbed so the photograph
+       * can be taken. Nothing the gate is about to claim is skipped: the way
+       * out of the veil is taken afterwards, with a real tap on the real skip.
+       */
+      const clock = await page.evaluate(measureDuskClock);
+      await page.evaluate(() => {
+        const store = window.__manorStore;
+        window.__REAL_ADVANCE__ = store.getState().advanceDayPhase;
+        store.setState({ advanceDayPhase: () => {} });
+      });
+      // Reduced motion, asked of the real element with the real setting on.
+      const reduced = await page.evaluate(async () => {
+        const store = window.__manorStore;
+        const was = store.getState().settings.reducedMotion;
+        store.setState({ settings: { ...store.getState().settings, reducedMotion: true } });
+        await new Promise((r) => setTimeout(r, 220));
+        const cs = getComputedStyle(document.querySelector('.chr-dusk'));
+        const t = String(cs.animationDuration).split(',')[0].trim();
+        const out = {
+          name: String(cs.animationName).split(',')[0].trim(),
+          ms: t.endsWith('ms') ? parseFloat(t) : parseFloat(t) * 1000,
+        };
+        store.setState({ settings: { ...store.getState().settings, reducedMotion: was } });
+        return out;
+      });
+      // The veil restarted with the setting; wait for the instant she sees the
+      // finished dusk — the one sentence on it at full strength.
+      await page.waitForFunction(() => {
+        const el = document.querySelector('.chr-dusk__line');
+        return !!el && Number(getComputedStyle(el).opacity) > 0.9;
+      }, null, { timeout: 8000 }).catch(() => { /* judged by COPY, not thrown */ });
+      await audit('dusk-veil');
+      const boxes = await stable(page, () => page.evaluate(measureDuskBoxes));
+      counts.duskParts += (boxes?.skip ? 1 : 0) + (boxes?.line ? 1 : 0) + (boxes?.foot.length ?? 0);
+      // `null` in, `null` out: a veil that vanished between the wait and the
+      // read is a dusk the gate did not see, and judgeDusk says so rather than
+      // spreading an absent clock into a green verdict.
+      findings.push(...judgeDusk(clock && boxes ? { ...clock, ...boxes, reduced } : null));
+      await fit('dusk-veil', '.chr-dusk');
+
+      // AND SO, TO BED — the one control on the veil, driven for real. Round 15
+      // is the reason: it was on the glass, and it was not hers.
+      await page.evaluate(() => {
+        window.__manorStore.setState({ advanceDayPhase: window.__REAL_ADVANCE__ });
+      });
+      const skipEl = await page.$('.chr-dusk__skip');
+      const skipBox = skipEl ? await skipEl.boundingBox() : null;
+      if (skipBox) {
+        await page.mouse.move(skipBox.x + skipBox.width / 2, skipBox.y + skipBox.height / 2);
+        await page.mouse.down();
+        await page.waitForTimeout(60);
+        await page.mouse.up();
+        counts.driven += 1;
+      }
+
+      scene = 'night-digest';
+      const onNight = await page.waitForSelector('.chr-scene[aria-label="Night"]', { timeout: 15000 })
+        .then(() => true, () => false);
+      findings.push(...judgeDriven([{
+        scene: 'dusk-veil', what: 'the skip — "And so, to bed"', ok: onNight,
+        message: onNight ? 'took her to the night' : 'a real tap on it did not end the dusk',
+      }]));
+      if (!onNight) {
+        findings.push(...judgeNight(null));
+      } else {
+        await clearMoments(page);
+        await audit('night-digest');
+        const night = await stable(page, () => page.evaluate(measureNight));
+        counts.nightRows += night?.printed.length ?? 0;
+        findings.push(...judgeNight(night));
+        await fit('night-digest', '.chr-scene');
+
+        // TO TOMORROW — and the ordinary morning on the other side of it, which
+        // is the card every day of the campaign after the first one opens on.
+        scene = 'morning-card-2';
+        const next = await page.evaluate(() => {
+          const b = [...document.querySelectorAll('.chr-scene__btn')]
+            .find((x) => /tomorrow/i.test(x.textContent || ''));
+          if (!b) return null;
+          const r = b.getBoundingClientRect();
+          return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+        });
+        if (next) {
+          await page.mouse.move(next.x, next.y);
+          await page.mouse.down();
+          await page.waitForTimeout(60);
+          await page.mouse.up();
+          counts.driven += 1;
+          const onNextMorning = await page.waitForSelector('.chr-scene[aria-label^="Morning"]', { timeout: 15000 })
+            .then(() => true, () => false);
+          findings.push(...judgeDriven([{
+            scene: 'night-digest', what: 'the turn to tomorrow', ok: onNextMorning,
+            message: onNextMorning ? 'opened the next morning' : 'a real tap on it did not turn the day',
+          }]));
+          if (onNextMorning) {
+            await clearMoments(page);
+            await audit('morning-card-2');
+            const m2 = await stable(page, () => page.evaluate(measureMorning));
+            counts.dawnRows += m2?.rows.length ?? 0;
+            findings.push(...judgeMorning(m2 ? { ...m2, scene: 'morning-card-2' } : null));
+            await fit('morning-card-2', '.chr-scene');
+          }
+        }
+      }
+    }
   } finally {
-    await ctx.close();
+    for (const c of glasses) await c.close();
   }
   return { findings, consoleErrors, roomsSeen, appSource, counts };
 }
@@ -2430,6 +3484,8 @@ async function runGate({ viewports, inject, quiet }) {
           + ` · ${c.accountRows} account rows · ${c.letterParas} letter paragraphs`
           + ` · ${c.landingStamps} Sanctum stamps · ${c.landingCells} landing cells`
           + ` · ${c.clipLines} key lines`
+          + ` · ${c.fitRows} lifecycle lines · ${c.dawnRows} dawn grants`
+          + ` · ${c.duskParts} dusk parts · ${c.nightRows} tally rows`
           + ` · ${mine.length} finding(s)`);
       }
     }
@@ -2449,6 +3505,9 @@ function report(findings) {
     console.log('[glass]        every control owns its own surface, the walk is silent, and the copy is on the glass.');
     console.log('[glass]        The day’s account adds up on the glass, Posy’s letter is readable to its');
     console.log('[glass]        sign-off, and the landing offer’s overflow is still only the Sanctum copy.');
+    console.log('[glass]        A real day was spent down to a real dusk: the morning card fits, the veil');
+    console.log('[glass]        clears the plate underneath it and decelerates into the dark, and the night');
+    console.log('[glass]        reads back the day the engine actually banked.');
     return 0;
   }
   for (const f of findings) {
