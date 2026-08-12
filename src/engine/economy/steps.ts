@@ -12,18 +12,19 @@
  * across weeks, not minutes (targets in AAA 4.10, verified in
  * tests/economy-simulation.test.ts):
  *
- *   1. CLIMBING IS THE EXPENSE. Movement is priced per row band
- *      (`MOVE_COST_BY_ROW`): −2 on the ground floor, −9 up top. A single
- *      minimum-length ascent to THE SANCTUM LANDING (0-based row 5 — the cell
- *      the word is spoken from, not the sealed Sanctum above it) costs 22
- *      steps of pure walking — more than the entire base budget — and every
- *      walk-back to a frontier door up there is charged at the same top rate.
- *   2. REFUNDS GET LEANER AS YOU CLIMB. anchor +6/+5/+4 by tier (was
- *      +6/+7/+8 — the old curve literally paid you to be high up), micro
- *      +3/+3/+2. A tier-3 solve softens the next mistake; it no longer
- *      bankrolls the next storey.
- *   3. LEAN DAY BUDGET. 40 → 18. A decent day is 5–8 rooms and 10–15 minutes
- *      (AAA 4.10), not 8–12 rooms and twenty-plus.
+ *   1. WALKING IS THE EXPENSE. **ROUND 36 (docs/THE_CLIMB §1): a move costs a
+ *      move, wherever she is** — `MOVE_COST_BY_ROW` is one flat price, and
+ *      scarcity comes from DISTANCE WALKED rather than from altitude. It used
+ *      to read −2 on the ground floor and −9 up top, which charged her for
+ *      doing the thing the game is about; see that constant for the owner's
+ *      words, the measurement and what the deleted invariant was replaced with.
+ *   2. REFUNDS GET LEANER AS YOU CLIMB. Now the ceiling on a solve
+ *      (`SOLVE_WAGE.capByTier`) rather than a per-tier anchor rate: two thirds
+ *      of a day at tier 1, a half at tier 2, a third at tier 3. A tier-3 solve
+ *      softens the next mistake; it no longer bankrolls the next storey.
+ *   3. LEAN DAY BUDGET. 40 → 18 → 22 (round 36, the other end of the same
+ *      lever). A decent day is 7–11 rooms and 10–15 minutes (AAA 4.10), not
+ *      8–12 rooms and twenty-plus.
  *   4. LOCKED DOORS UP TOP. `DOOR_LOCKS`: drafting into 0-based rows 4+ can
  *      demand a key. Deep pushes are PREPARED for (Key Cabinet, Fern's
  *      trades) — you cannot stumble into the Sanctum row.
@@ -128,12 +129,41 @@ import { effortMinutes } from './effort';
 import { FRAGMENTS_TO_DEDUCE } from '../volume';
 
 /**
- * Start-of-day step budget (AAA 4.10). Owner retune: 40 → 18. Read this
- * together with `MOVE_COST_BY_ROW` — the two numbers are one lever. 18 buys a
- * comfortable ramble around the lower floors, or a deliberate, prepared,
- * refill-funded assault on the upper ones. It does not buy both.
+ * Start-of-day step budget (AAA 4.10). Owner retune: 40 → 18 → **22**. Read
+ * this together with `MOVE_COST_BY_ROW` — the two numbers are one lever, and
+ * this file has said so since the overhaul. Round 36 pulled the other end of
+ * it, so this end had to move with it.
+ *
+ * ═══ ROUND 36 — 18 → 22, BECAUSE A MOVE COSTS A MOVE NOW (docs/THE_CLIMB §1)
+ * ═══════════════════════════════════════════════════════════════════════════
+ * The flat −3 below is **1.5× the old ground-floor price**, and rows 0–3 are
+ * where the median player spends the overwhelming majority of her moves. Left
+ * at 18, the same evening bought 7 rooms instead of 10 and ran **9.9–10.1
+ * minutes at the median across four seeds** — under AAA 4.10b's promised 10–15
+ * window, i.e. the owner's own "way too easy" fix undone from the other side.
+ *
+ * 22 is not a round number chosen to be safe: it is the SMALLEST budget at
+ * which every measured EVENING quantity lands back on what the old table
+ * produced — median minutes 12.1–12.7 (was 13.9), rooms 8 (band 7–11), and the
+ * storey a GREAT day reaches back at 1-based 5 (at 18 and at 20 it fell to 4,
+ * i.e. 4.10c's floor). Above 22 the evening starts inflating instead: at 24 the
+ * median player's evening runs 15.6 minutes and the skilled player's 18.5,
+ * against published ceilings of 18 and 20.
+ *
+ * TWO THINGS MOVE WITH IT, both by construction rather than by choice, and both
+ * re-measured rather than argued:
+ *   - `SOLVE_WAGE.capByTier` is defined as thirds of a day, so the ceiling on a
+ *     single solve rises 12/9/6 → 15/11/7. That lifts exactly the two LONG
+ *     rooms round 22 found underpaid (the Conservatory and the Counting House)
+ *     and the published wage spread FALLS, 9.07× → 7.77× — the direction AAA
+ *     4.10h's ratchet allows.
+ *   - the dawn purse (`TEA_POUR.dawnCup`) is 22 + 4 = **26**, not 22. §5.10's
+ *     invariant is that the ground floor does not get RICHER as the campaign
+ *     warms, and it still does not; what changed is the level, and the floor is
+ *     dearer per room than it has ever been (measured net −2.2 a room against
+ *     −1.2 before).
  */
-export const BASE_DAY_BUDGET = 18;
+export const BASE_DAY_BUDGET = 22;
 
 /**
  * Mistake / hint pricing row: a deliberate wrong claim in a deduction room.
@@ -147,10 +177,106 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
 }
 
 /**
- * Per-row movement pricing — the overhaul's core lever, indexed by the
- * 0-based grid row of the cell being STEPPED INTO (engine/types.ts Cell.row).
- * The ground floor is a stroll; the upper storeys are a climb, and every
- * traverse of them is charged, including the walk back to a frontier door.
+ * ═══ ROUND 36 — A MOVE COSTS A MOVE, WHEREVER SHE IS (docs/THE_CLIMB §1) ═══
+ *
+ * OWNER, after playing: *"The steps economy is insane right now… It shouldn't
+ * get more expensive the further you move up. The steps economy is driven by
+ * needing to double back, etc."*
+ *
+ * This table was `[-2, -2, -2, -2, -7, -9, -9]`: an ALTITUDE TOLL. It charged
+ * her for doing the thing the game is about, and it got steeper exactly where
+ * the content is. It is now **one price on every storey**, and scarcity comes
+ * from DISTANCE WALKED — she runs low because she went east, hit a sealed room,
+ * and had to come all the way back.
+ *
+ * ── WHY −3 AND NOT −2 ──────────────────────────────────────────────────────
+ * −2 (the old ground price, kept everywhere) was measured and rejected: it made
+ * the whole campaign a walkover. The skilled player's first door fell to day 14
+ * — the floor of a band whose ceiling is 22 — the median player's volume win to
+ * day 19 against a published 24–32, and his evening ran 20.5 minutes against a
+ * published ceiling of 20. The bare ascent to the landing would have been 10
+ * steps of a 22-step purse. −4 goes the other way and is worse: the evening
+ * collapses to 7.6 minutes and the median player's win runs to day 30.
+ *
+ * −3 is the only integer in between, and `BASE_DAY_BUDGET` (18 → 22) is the
+ * other half of the same lever — see its own note for why 22 and not 20 or 24.
+ *
+ * ── WHAT THIS DELETES, AND WHAT REPLACES IT ────────────────────────────────
+ * THE HEADLINE INVARIANT IS GONE, deliberately, and this is the single most
+ * important sentence in this file: `reserveToTop(1) > BASE_DAY_BUDGET` — "a
+ * bare, perfect ascent costs more than the whole day budget, so the top is
+ * always bought with refunds" — **is an altitude-toll invariant and cannot
+ * survive a distance economy.** A day is a dozen-plus moves and the minimum
+ * ascent is five of them; no flat price can make five moves dearer than twelve
+ * without making the evening shorter than the five. Under the old table the
+ * bare ascent was 22 against an 18-step budget; it is now 15 against 22.
+ *
+ * What replaces it is not an equality re-typed to fit — it is the same claim
+ * measured on an instrument that could disagree, the round-25 grid-true model
+ * that walks real cells, doors, seals and padlocks:
+ *
+ *   - a SKIPPER — a player who solves nothing, and therefore refunds nothing —
+ *     still tops out on the middle floors: median 1-based row 4, and she stands
+ *     at the Sanctum door on **0.03% of evenings** (1 day in 3000). It used to
+ *     be flatly 0, and that 0 was an arithmetic consequence of the toll rather
+ *     than an observation; it is now an observation, and it is published as one
+ *     in AAA 4.10a rather than rounded back down to zero.
+ *   - the skilled player still first stands at that door on **day 16** of a
+ *     14–22 band, essentially never on day 1 (≤0.5%), because the gate is
+ *     geometry and padlocks — which is what round 24 already measured and said
+ *     out loud: *"the deck's door layouts, not the step table, are what price
+ *     the top of the house."*
+ *
+ * The arithmetic clause that IS still true, and that `tests/economy-*` now
+ * gate, is the one about the walk rather than the tariff: **the REALISTIC
+ * ascent costs more than the whole budget** — `reserveToTop(1, PROFILE_SKILLED)`
+ * is 25.8 against 22 — because a climb is walk-backs, not a staircase.
+ *
+ * ── AND THE STOREY STILL COSTS MORE THAN THE ONE BELOW IT ──────────────────
+ * `climbStepCost` rises strictly with the row it starts from, exactly as it did
+ * before, and nothing was tuned to keep it: the walk-back to a frontier door is
+ * longer the higher you are, so the fourth storey is dearer than the second
+ * because of how far you have to go, not because of what the sheet charges.
+ * That sentence is the whole change.
+ *
+ * ── WHAT THIS COSTS, STATED ────────────────────────────────────────────────
+ * The median player's campaign SHORTENS: first door day 27.5 → 20, volume win
+ * day 28 → 22, and the 12% of her campaigns that never finished inside 45
+ * evenings goes to ~0%. The skilled player's barely moves (door 17 → 16, win
+ * 18 → 17). That asymmetry is the finding, not a side effect: the toll was
+ * being paid almost entirely by the player who doubles back, which is the
+ * player the owner was describing. Both bands are re-published in AAA 4.10d/e.
+ *
+ * ── FOR THE NEXT BUILDER IN THIS ROUND (the three-cell landing) ────────────
+ * The Sanctum landing becomes a ROW of cells rather than one (docs/THE_CLIMB
+ * §2), which changes `reserveToTop`, `SANCTUM_DOOR_CELL` and the shape of the
+ * last hop. The two constants this round moved are `MOVE_COST_BY_ROW` (flat −3)
+ * and `BASE_DAY_BUDGET` (22), and they are one lever: the budget is set where
+ * the measured EVENING lands back on the old table's numbers (4.10b median
+ * minutes, rooms per evening, the storey a great day reaches), and the flat
+ * price is set where the CAMPAIGN does. Both were chosen by sweeping the pair
+ * against every AAA 4.10 band on the grid-true model, and the rejected settings
+ * are recorded above so nobody has to re-run them: −2 at any budget is a
+ * walkover, −4 collapses the evening, 18 puts the evening under its floor and
+ * 24 puts it over its ceiling.
+ *
+ * A three-cell landing makes the last hop EASIER, so expect the median player's
+ * door and win days to fall further and 4.10d/e to need re-publishing again.
+ * If they fall far enough to matter, the lever is not this table — it is the
+ * padlock (`DOOR_LOCKS`), which was measured this round and found nearly inert
+ * under a flat price: `keyCost` 2 → 4 → 5 moved her volume win 19 → 20 → 19.
+ *
+ * ── WHAT IT IS INDEXED BY, STILL ───────────────────────────────────────────
+ * The 0-based grid row of the cell being STEPPED INTO (engine/types.ts
+ * Cell.row). The table stays seven long and stays a table: the blueprint, the
+ * ledger and the simulator all read it through `moveAt`, and a future round
+ * that wants a storey to cost differently again has one place to say so.
+ *
+ * ═══ THE HISTORY THIS REPLACES, kept because three rounds were lost to it ═══
+ *
+ * Per-row movement pricing — the 2026-08 overhaul's core lever.
+ * The ground floor was a stroll; the upper storeys were a climb, and every
+ * traverse of them was charged, including the walk back to a frontier door.
  *
  * ═══ ROUND-7 CORRECTION — PRICED FOR THE STOREY SHE ACTUALLY HAS TO BUY ═══
  * The old curve (−1,−1,−2,−3,−4,−5,−5) was verified against the SANCTUM'S OWN
@@ -208,12 +334,27 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
  * tests/economy-simulation.test.ts and the ground floor pinned in
  * tests/economy-pressure.test.ts.
  */
-export const MOVE_COST_BY_ROW: readonly number[] = [-2, -2, -2, -2, -7, -9, -9];
+export const MOVE_COST_BY_ROW: readonly number[] = [-3, -3, -3, -3, -3, -3, -3];
 
 export function moveAt(row: number): number {
   const i = Math.max(0, Math.min(MOVE_COST_BY_ROW.length - 1, Math.floor(row)));
   return MOVE_COST_BY_ROW[i]!;
 }
+
+/**
+ * The bare, perfectly efficient ascent from the entrance (0-based row 0) to the
+ * Sanctum landing (0-based row 5): five moves, at whatever one move costs. 22
+ * under the altitude toll; **15** under a flat −3.
+ *
+ * Derived, never transcribed. Round 7 lost a day to this number drifting in one
+ * of the three files that quote it, and round 23 shipped it wrong again in the
+ * very note that cited round 7's lesson. There is one of it now, and
+ * `tests/economy-pressure.test.ts` holds MANOR_DESIGN §4 to printing THIS and
+ * not a remembered 22.
+ */
+export const BARE_ASCENT_STEPS: number = Array.from(
+  { length: MOVE_COST_BY_ROW.length - 2 }, (_, i) => -moveAt(i + 1),
+).reduce((a, b) => a + b, 0);
 
 /**
  * Player-facing name for one storey's walk: "3 steps", "1 step". The blueprint
@@ -243,6 +384,15 @@ export function moveCostLabel(row: number): string {
  *
  * Descending is never a refund: the differential floors at 0, so walking back
  * downstairs costs only the local door-step.
+ *
+ * ═══ ROUND 36 — THE DIFFERENTIAL IS ZERO NOW, AND THE PATH STAYS ═══════════
+ * With one price on every storey (`MOVE_COST_BY_ROW`) the climb differential is
+ * always 0, so a look and a take cost the same and the second entry is never
+ * written. The machinery is deliberately KEPT rather than deleted: it is the
+ * audited path that stops a call site from inventing a movement delta, it is
+ * what makes "the price is legible before the tap" true of a table that varies,
+ * and the next round changes the shape of the landing. What must not happen is
+ * a caller quietly computing its own climb price because this looked dead.
  */
 export const CLIMB_KEY_SEP = '>';
 
@@ -332,10 +482,10 @@ export const SANCTUM_GUESS_COST = 0;
  * win, never a punishment.
  *
  * THE CEILING is what stops a fifteen-minute room from printing most of a
- * day's budget in one go (`BASE_DAY_BUDGET` is 18), and it is where the old
+ * day's budget in one go (`BASE_DAY_BUDGET` is 22), and it is where the old
  * "leaner as you climb" ruling now lives: the ceiling drops by tier, so a
  * tier-3 solve still softens the next mistake rather than bankrolling the next
- * storey, and it still costs less than the −9 step it takes to walk up there.
+ * storey.
  *
  * WHAT MOVED, and which direction: the two long rooms rose (the Conservatory
  * and the Counting House, +6 → the tier ceiling) and the Gallery fell at
@@ -391,8 +541,14 @@ export const SOLVE_WAGE = {
    * a half at tier 2, a third at tier 3. Two rulings live here at once —
    * no single room may print most of an evening's budget, and payouts still
    * get LEANER AS YOU CLIMB (the 2026-08 owner retune), so a tier-3 solve
-   * softens the next mistake instead of bankrolling the next storey and still
-   * costs less than the −9 step it took to walk up there.
+   * softens the next mistake instead of bankrolling the next storey.
+   *
+   * ROUND 36: the second clause used to read "…and still costs less than the −9
+   * step it took to walk up there", which was an ALTITUDE-TOLL sentence and is
+   * now false by design — a move costs a move, so a solve of course pays more
+   * than one of them. The leanness that survives is the one this table states:
+   * `capByTier[2] < capByTier[1] < capByTier[0]`, gated in
+   * tests/economy-effort.test.ts.
    *
    * The ceiling is also the honest limit of what pricing alone can do: the
    * shipped rooms span 30× in length (75 seconds to half an hour) and no
@@ -736,7 +892,8 @@ export const KEY_SUPPLY = {
  *
  * WHY THIS SHAPE AND NOT A CHEAPER ONE:
  *   - it is EARNED, not clocked: the counter only moves on an evening she
- *     actually paid the 22+ step climb, so it cannot ramp on the calendar the
+ *     actually paid the climb (`BARE_ASCENT_STEPS` before a single walk-back),
+ *     so it cannot ramp on the calendar the
  *     way `teaArcFloor` deliberately can;
  *   - it is STRICTLY PROGRESSIVE and it cannot touch the early campaign at
  *     all — `landingEvenings` is 0 until her first landing, which the same
@@ -765,8 +922,8 @@ export const SANCTUM_ARC = {
    * stands on that landing about one evening in twelve, so full warmth would
    * have been a three-month player and the late campaign would have stayed the
    * nightly coin flip the finding measured. The storey below is a real climb
-   * (−7 a step, padlocked at 0.9) that she reaches often enough for the arc to
-   * be an arc, and still one she cannot reach on day 1.
+   * (four storeys of walking, padlocked at 0.9) that she reaches often enough
+   * for the arc to be an arc, and still one she cannot reach on day 1.
    */
   surveyRow0: 4,
   /**
@@ -1042,18 +1199,19 @@ export function teaBonus(bramblePoints: number): number {
  * grows on the same schedule (`TEA_ARC`); what changed is WHERE she puts it
  * down. She pours a cup at the door — `dawnCup`, the same **4** steps the
  * scripted first morning is worth (`FIRST_MORNING_POT`, which this same round
- * moved 3 → 4), so **the ground floor runs on 22 steps on day 1 and on day 30
- * alike** — and carries the rest of the pot up to the second landing, which is
- * where the climb the arc exists to fund actually begins.
+ * moved 3 → 4), so **the ground floor runs on the same purse on day 1 and on
+ * day 30 alike** — `BASE_DAY_BUDGET + dawnCup`, 22 when this shipped and 26
+ * since round 36 moved the budget — and carries the rest of the pot up to the
+ * second landing, which is where the climb the arc exists to fund begins.
  *
  * Why the SECOND landing (0-based row 3) and not higher or lower:
  *   - it is the first storey ABOVE the tier-1 band (`rowTier`), i.e. exactly
  *     the boundary §5.10 is drawn at ("below row 4");
  *   - it is the storey BELOW the first padlock (`DOOR_LOCKS.chanceByRow[4]`),
  *     so the pot is in her hand when the gate she has to prepare for appears;
- *   - it costs 2+2+2 = 6 steps to reach from the entrance out of a 22-step
- *     purse, so a timid evening can always go and get it. It is a pour she
- *     walks to, never a pour she can be denied.
+ *   - it costs three moves to reach from the entrance — 9 steps of a 26-step
+ *     purse, when it was 6 of 22 — so a timid evening can always go and get
+ *     it. It is a pour she walks to, never a pour she can be denied.
  *
  * *(Round 25 correction. This block shipped quoting the table it REPLACED: "the
  * same 3 steps" (`dawnCup` is 4), "21 steps on day 1 and on day 30" (it is 22,
@@ -1074,10 +1232,13 @@ export function teaBonus(bramblePoints: number): number {
 export const TEA_POUR = {
   /**
    * The cup at the door. Deliberately `FIRST_MORNING_POT`-sized: with it, the
-   * dawn purse is `BASE_DAY_BUDGET + 4 = 22` on every evening of the campaign,
-   * which is the exact purse day 1 has always had. The ground floor stops
-   * getting easier — that invariant is the §5.10 gate
-   * (tests/economy-pressure.test.ts).
+   * dawn purse is `BASE_DAY_BUDGET + 4` on every evening of the campaign,
+   * which is the exact purse day 1 has always had (22 when this shipped; 26
+   * since round 36 moved the budget with the move price). The ground floor
+   * stops getting easier — that invariant is the §5.10 gate
+   * (tests/economy-pressure.test.ts), and it is stated as an EQUALITY between
+   * day 1 and day 30 rather than as a level, so moving the budget cannot
+   * quietly satisfy it.
    */
   dawnCup: 4,
   /**
@@ -1188,8 +1349,11 @@ export function teaArcFloor(day: number): number {
  * (AAA 4.5), a one-off welcome that is ledgered through the audited path as a
  * 'tea' entry and renders as a floating +N like everything else.
  *
- * Deliberately NOT a bigger `BASE_DAY_BUDGET`: 20 would equal the bare ascent
- * cost and break the headline invariant `reserveToTop(1) > BASE_DAY_BUDGET`.
+ * Deliberately NOT a bigger `BASE_DAY_BUDGET`: this is a ONE-OFF welcome, and
+ * folding it into the budget would hand it to day 30 as well. (The old reason
+ * given here — "20 would equal the bare ascent cost and break the headline
+ * invariant `reserveToTop(1) > BASE_DAY_BUDGET`" — died with that invariant in
+ * round 36; see `MOVE_COST_BY_ROW` for what replaced it.)
  */
 export const FIRST_MORNING_POT = 4;
 

@@ -452,6 +452,51 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   > | §8 unspent budget at day end | median 0.0% p90 0.0% *(vacuous)* | median 0.0% **p90 33.3%**, 14.4% of evenings shut in |
   > | §5.7 "offers with a real choice" | 79.2% | **RETIRED — see 4.10j** |
   >
+  > ### ROUND 36 — A MOVE COSTS A MOVE, AND WHAT THAT MOVED
+  >
+  > `MOVE_COST_BY_ROW` went `[-2,-2,-2,-2,-7,-9,-9]` → **`-3` on every storey**, and
+  > `BASE_DAY_BUDGET` 18 → **22** with it, because the two are one lever
+  > (docs/THE_CLIMB §1; the owner, after playing: *"It shouldn't get more expensive the
+  > further you move up… the steps economy is driven by needing to double back"*).
+  > Nothing else in `steps.ts` was retuned — the padlock, the key supply, the tea arc,
+  > the wage and the deck are untouched — so every figure below is a CONSEQUENCE of the
+  > two constants, measured on the round-25 grid-true model.
+  >
+  > | band | before (altitude toll) | after (a move costs a move) |
+  > |---|---|---|
+  > | 4.10a skipper stands at the DOOR | 0% *(by construction — the staircase cost more than the budget)* | **0.03%**, measured; gated <0.1% |
+  > | 4.10b median / p90 minutes | band 10–15 / ≤23, measured 14.6 / 18.9 | band unmoved, measured **12.2 / 17.5** |
+  > | 4.10b rooms per evening | 7–11 (measured 9) | band unmoved, measured **8** |
+  > | 4.10c great day, max row | 5–6 (measured 5) | unmoved (measured **5**); landing 3.7% → **6.1%** |
+  > | 4.10d skilled first DOOR | 14–22 (measured 17–18) | **band unmoved**, measured **16** on all four seeds |
+  > | 4.10e skilled volume win | 12–20 (measured 18–19) | **band unmoved**, measured **16.5–17** |
+  > | 4.10d/e median player first DOOR | 22–30 (measured 23–26) | **17–25** (measured **20–21**) |
+  > | 4.10d/e median player volume win | 24–32 (measured 25–28) | **18–26** (measured **21–22**) |
+  > | 4.10d/e median player never inside 45 | 8.4–13.6% | **0–1%** |
+  > | 4.10d/e median player deduction | 14–24 (measured 17) | **band unmoved** (measured 17–18) |
+  > | 4.10f skilled evening early → late | 17.0 → 18.0, inflation 1.05 | **14.8 → 18.6**, inflation **1.26**; ratio gate ×1.2 → ×1.3, p90 ≤26 → ≤27 |
+  > | 4.10f median-player evening | 13–18 (14.7 → 15.7), inflation 1.07 | **12–18** (12.7 → 15.5), inflation **1.23** |
+  > | 4.10g sealed overnight, skilled | 25–60% (55.1%) | **25–75%** (67.6%) |
+  > | 4.10g sealed overnight, median player | 10–35% (29.3%) | **10–45%** (36.5%) |
+  > | 4.10h wage spread, every room × tier | 9.07× | **7.77×** *(the ceiling is thirds of a day and the day grew)* |
+  > | 4.10i ground-floor drain per room, median player | −1.22 | **−2.24** |
+  > | bare ascent to the landing | 22 against an 18-step budget | **15 against 22** — see 4.10d, the invariant is deleted |
+  >
+  > **THE ASYMMETRY IS THE FINDING.** The skilled player's two published bands did not
+  > need touching; the median player's moved by five or six evenings and her
+  > never-finished tail went to nothing. She is modelled at `walkbackPerRow` 0.58 against
+  > his 0.36, and the old table charged −7 and −9 for exactly the storeys she re-walks —
+  > so the altitude toll was, measurably, a tax on doubling back that only the player who
+  > doubles back paid. That is the owner's own diagnosis arriving as a number.
+  >
+  > **AND THE COST, STATED PLAINLY.** Three things got worse and are published rather
+  > than absorbed: the late-campaign evening inflates harder (4.10f — climbing IS
+  > drafting rooms now, so the tea arc buys minutes), the seal's overnight backlog rose
+  > for both profiles (4.10g — more of every evening happens on the storeys where violet
+  > is dense, while solving stays clock-bound), and a refund-less evening can now reach
+  > the door on 3 days in 10,000 where the old arithmetic forbade it outright. **The game
+  > did not get longer for anyone; it got about six evenings shorter for her.**
+  >
   > **THE KEY INVERSION IS A FINDING, NOT A TUNING NOTE.** The old model handed a green
   > card its key only when the player was SHORT of one (`needsKeySoon && keys < 2 &&
   > roll < keyLuck`, else a flat 20%). The live game does no such thing:
@@ -470,16 +515,34 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   > `drafting.ts` or any content file was edited: an instrument round that also tunes the
   > thing it measures is worthless.
   - **4.10a — the no-refund day.** Skipping every puzzle tops out on the middle floors
-    (median row 3–5, never the Sanctum row) and is over in **2–5 minutes**. Refunds are
-    what buy a real day.
+    (median 1-based row 4) and is over in **2–5 minutes**. Refunds are what buy a real
+    day.
+    *ROUND 36 — "NEVER THE SANCTUM ROW" IS NOW "0.03% OF EVENINGS", AND THE OLD ZERO
+    WAS ARITHMETIC RATHER THAN AN OBSERVATION.* Under the altitude toll a refund-less
+    evening could not reach the landing because the bare staircase cost more than the
+    whole budget; the 0 fell out of the table, not out of play. With one flat price
+    (docs/THE_CLIMB §1) a freak evening can walk a clean line up the stair column with
+    both padlocks open and draw a north-opening plan at the top — **1 evening in 3,000**,
+    measured, and she wins nothing when she gets there because she has solved nothing and
+    has no word to say. It is published at 0.03% rather than rounded back to zero,
+    because "never" and "three hundredths of one per cent" are different claims.
+    `tests/economy-simulation.test.ts` gates it at <0.1%.
   - **4.10b — the decent day is 10–15 MINUTES at the median, p90 ≤ 23.** Not 20 (the
-    pre-overhaul measurement) and not 29 at p90. **Measured at round-26 HEAD: median
-    14.63, p90 18.92** (3,000 seeded days, `PROFILE_DECENT`, seed `0xbeef`; 14.36–14.63
-    and 18.70–19.02 across the four independent seeds the test also runs; it was 14.48 /
-    18.78 at round 25, and the fifteen seconds is the Gallery's re-clock — see 4.10h,
-    which also records that this band has 0.37 min of headroom left at the median). That is
-    **7–11 rooms** (measured 9) with a median 2 puzzles actually solved — the post-cull
+    pre-overhaul measurement) and not 29 at p90. **Measured at round-36 HEAD: median
+    12.21, p90 17.45** (3,000 seeded days, `PROFILE_DECENT`, seed `0xbeef`; 12.07–12.67
+    and 17.41–17.66 across the four independent seeds the test also runs). That is
+    **7–11 rooms** (measured 8) with a median 2 puzzles actually solved — the post-cull
     deck is anchor-heavy, so fewer rooms *is* the same amount of game.
+    *ROUND 36 — the band did not move and the measurement inside it did: 14.63 → 12.21,
+    i.e. from 0.37 min under the ceiling to 2.2 min over the floor. Cause: the move price
+    flattened at −3 (docs/THE_CLIMB §1), which is 1.5× the old ground-floor rate on the
+    storeys where nearly every move happens, and `BASE_DAY_BUDGET` moved 18 → 22 to meet
+    it. 22 is where this number lands back inside the window with room on both sides —
+    at 18 it measured **9.88–10.11 across the four seeds, i.e. UNDER the promised floor**,
+    which is what set the budget rather than any wish to hand her more steps.
+    A second consequence is worth recording because round 22 had quietly retired it: the
+    scripted first-morning pot is load-bearing again. Day 1 WITHOUT it measures **9.92
+    minutes**, under the floor, exactly as the round-5 audit originally found.*
     *Round 25 — THIS PARAGRAPH WAS THE STALEST PROSE IN THE FILE, and it disagreed with
     round 24's own table 40 lines above it. It read "measured median ~11.6, p90 ~21.5"
     and "5–8 rooms", both of which were round-5 figures: the median has since gone
@@ -497,8 +560,11 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     Counting House counts as anchor-weight and a future deck edit breaks the test
     rather than the owner's evening).
   - **4.10c — a great single day flirts with the top, it does not own it.** A sharply
-    played day reaches row 5–6; the **Sanctum landing** is reached on **<25%** of even
-    great days. Standing at that door is a campaign event, not a Tuesday.
+    played day reaches row 5–6 (measured **5** at round-36 HEAD); the **Sanctum landing**
+    is reached on **<25%** of even great days (measured **6.1%**, against 3.7% before —
+    a flat move price makes the top reachable more often on a single sharp evening, and
+    the band is where round 24 set it). Standing at that door is a campaign event, not a
+    Tuesday.
     **Round 6 correction:** these clauses said "the Sanctum row", and the simulation
     measured row 7 — a row the player never stands on, because row 6 (0-based row 5)
     is the *landing* where the sealed door is, and row 7 is the Sanctum behind it.
@@ -510,18 +576,33 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   - **4.10d — a skilled player FIRST STANDS AT THE SANCTUM DOOR on day 14–22**
     (median; **6–10 before round 24 made the instrument grid-true** — see the round-24
     block above; the LANDING STOREY under it is still reached at median day 12),
-    **<8% on day 1** (measured 0.0%), and >65% of campaigns get there by day 21, >85% by
-    day 28. A bare, perfectly
-    efficient ascent must cost **more than the entire base day budget**
-    (`reserveToTop(1) > BASE_DAY_BUDGET`, measured **to the landing**: **22 > 18**, i.e.
-    `1+2+3+7+9`), so the top is always bought with refunds. *Round 7 (verifier) — that
-    number read 21 in this clause and in `steps.ts`'s own file header, stale since round
-    10 moved `MOVE_COST_BY_ROW[4]` from −6 to −7 and updated only one of the three places
-    quoting the sum. The test asserted `> BASE_DAY_BUDGET` and `>= BASE_DAY_BUDGET + 2`,
-    both of which stay true through the drift — which is exactly how the round-6
-    "verified against a storey nobody enters" defect survived in the docs.
-    `tests/economy-simulation.test.ts` now pins the **exact** value, so any movement
-    retune has to update this line consciously instead of silently outdating it.*
+    **<8% on day 1** (measured 0.0–0.5%), and >65% of campaigns get there by day 21
+    (measured 90–91%), >85% by day 28.
+    ***ROUND 36 — THE HEADLINE INVARIANT OF THIS CLAUSE IS DELETED, ON PURPOSE.*** It
+    read: *a bare, perfectly efficient ascent must cost more than the entire base day
+    budget (`reserveToTop(1) > BASE_DAY_BUDGET`, measured to the landing: 22 > 18, i.e.
+    `1+2+3+7+9`), so the top is always bought with refunds.* **That is an altitude-toll
+    inequality and it cannot survive a distance economy** (docs/THE_CLIMB §1): an evening
+    is a dozen-plus moves and the minimum ascent is five of them, so no honest flat price
+    makes the staircase dearer than the day. `BARE_ASCENT_STEPS` is **15** against a
+    budget of **22**, and re-typing the constant until the inequality came back would
+    have been this project's own recurring failure committed on purpose.
+    What replaces it is two things, and neither is arithmetic that agrees with itself by
+    construction: (i) the clause that is still TRUE about the walk — a REALISTIC ascent,
+    with the walk-backs a climb is actually made of, costs **25.8 against 22**
+    (`reserveToTop(1, PROFILE_SKILLED)`); and (ii) the day-1 gate MEASURED on the
+    grid-true model, which is an instrument that could disagree — **0.0–0.5% of skilled
+    campaigns stand at the door on day 1**, and 4.10a's refund-less player gets there on
+    0.03% of evenings. Round 24 had already found the reason and written it down: *"the
+    deck's door layouts, not the step table, are what price the top of the house."*
+    *Round 7 (verifier) — the old number read 21 in this clause and in `steps.ts`'s own
+    file header, stale since round 10 moved `MOVE_COST_BY_ROW[4]` from −6 to −7 and
+    updated only one of the three places quoting the sum. The test asserted
+    `> BASE_DAY_BUDGET` and `>= BASE_DAY_BUDGET + 2`, both of which stayed true through
+    the drift — which is exactly how the round-6 "verified against a storey nobody
+    enters" defect survived in the docs. There is now ONE of that number
+    (`BARE_ASCENT_STEPS`), quoted by MANOR_DESIGN §4 and gated in
+    tests/economy-pressure.test.ts, so a movement retune moves all three at once.*
     **Round 11 correction — the gate is META *and* EARNED, and there are three arcs.**
     This clause used to read "the gate must be **meta, not skill**" and named exactly
     two levers: Bramble's tea and Fern/Key-Cabinet access. Round 10 then made SOLVED
@@ -677,36 +758,56 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     actually opened north — the live `atSanctumDoor` gate. The old bullets printed
     one number and called it "first landing" while the test asserted the other, which
     is how a doc drifts eight evenings from its own gate. Both are published now.
-    - **the skilled player** (4.10d's): the landing CELL at median day **10–11**;
-      the DOOR — the gate — at median **17–18** (enforced 14–22; 0–1% never inside
-      45 evenings), the word deducible at median **13**, and the volume won at
-      median **18–19** (enforced 12–20; p10 14, p90 28–30), **87.5–91.5% inside 28
-      evenings** and 94–97% inside 35 (enforced >85% and >95%), 0% inside the first
-      week. His evening runs **17.0–17.5 minutes early, 18.0–18.4 late**, p90
-      24.7–24.9 (4.10f's band, 14–20 and p90 ≤26).
+    - **the skilled player** (4.10d's): the DOOR — the gate — at median day **16**
+      on every one of the four seeds (enforced 14–22; 0% never inside 45 evenings),
+      the volume won at median **16.5–17** (enforced 12–20), **98–100% inside 28
+      evenings** (enforced >85%), 0% inside the first week, and he stands at the
+      door on day 1 in **0–0.5%** of campaigns (enforced <8%). His evening runs
+      **14.8 minutes early, 18.6 late**, p90 22.8/26.3 (4.10f's band, 14–20 and
+      p90 ≤27).
+      *Round 36 — HIS BANDS DID NOT MOVE, and that is the measurement. The
+      altitude toll came off (docs/THE_CLIMB §1) and his door slid 17 → 16 and his
+      win 18 → 17, inside bands set two rounds ago. What DID move for him is the
+      evening's SHAPE: 17.0 → 14.8 early and 18.0 → 18.6 late, i.e. an inflation
+      of 1.26 against 1.05. See 4.10f below — with a flat move price the tea arc
+      buys rooms, because climbing IS drafting rooms.*
+      *(Superseded, kept as lineage: before round 36 this read "landing CELL at
+      median day 10–11, DOOR at 17–18, volume won at 18–19, 87.5–91.5% inside 28,
+      evening 17.0–17.5 early / 18.0–18.4 late, p90 24.7–24.9".)*
       *The move: "first landing 6–10, 100% by day 28" was a pre-round-24 number
       measured on a scalar row, where arriving on the storey WAS arriving at the
       door. On the real grid the last step is a draft — the landing plan has to draw
       a north door — so the storey is still reached on day 10 and the gate lands
       about eight evenings later. Nothing about the climb got dearer; the instrument
       stopped assuming the door.*
-    - **the median player** (`PROFILE_DECENT`, 4.10b's): the landing CELL at median
-      day **17–18**; the DOOR at median **23–26** (enforced 22–30; **6.8–12% never
-      inside 45 evenings**, enforced <18%), the word deducible at median **17**
-      (enforced 14–24), the volume won at median **25–28** (enforced 24–32; p10
-      18–19, p90 44–46), **0.0% inside the first week**, **86.4–91.6% inside 45
-      evenings** (enforced >80%), 74.8–78.4% inside 35 and 55.2–61.6% inside 28 —
-      so **8.4–13.6% of her campaigns are still unfinished after six weeks**, which
-      is a real tail and is published as one. Her evening runs **14.7–14.9 minutes
-      early, 15.7–16.0 late**, p90 20.0–20.2 (4.10f's band for her, 13–18 and
+    - **the median player** (`PROFILE_DECENT`, 4.10b's): the DOOR at median day
+      **20–21** (enforced 17–25; **0–1% never inside 45 evenings**), the word
+      deducible at median **17–18** (enforced 14–24), the volume won at median
+      **21–22** (enforced 18–26), **99–100% inside 45 evenings** (enforced
+      >80%), **0.0% inside the first week**. Her evening runs **12.7 minutes
+      early, 15.5 late**, p90 17.6/20.3 (4.10f's band for her, 12–18 and
       p90 ≤22).
-      *The moves, and their causes: her win band 18–28 → 24–32 is round 24's door
-      geometry (she knows the word at 17 and waits for a landing plan that opens
-      north — her DEDUCTION did not move at all). "Inside 10–15 minutes" → 13–18 is
-      round 24 lifting `sessionMinutes`, which had been clipping the evening at 18
-      and making the old figure true by construction rather than by design. And
-      "0% never / measured 100%" was never hers: it was the round-23 reading of a
-      45-day window on the pre-grid instrument.*
+      *ROUND 36 — THESE TWO BANDS MOVED FURTHER THAN ANY OTHER NUMBER IN 4.10,
+      AND ONLY HERS DID.* **Her door 23–26 → 20–21 and her win 25–28 → 21–22**,
+      with the never-finished tail **8.4–13.6% → 0–1%**, because the altitude toll
+      was being paid almost entirely by the player who doubles back. She is
+      modelled at `walkbackPerRow` 0.58 against his 0.36, and the old table charged
+      −7 and −9 for exactly the storeys she re-walks; a flat −3 hands her back
+      about six evenings and hands him one. That asymmetry is the owner's own
+      diagnosis — *"the steps economy is driven by needing to double back"* —
+      showing up as a measured number. **Her evening band 13–18 → 12–18**: 12.7
+      early against 14.0 before and 15.5 late against 14.9, i.e. shorter at the
+      start of the campaign and longer at the end of it, both from the same cause
+      (see 4.10f). **The campaign got SHORTER for her and did not get longer for
+      anyone** — which is the constraint this round was given, and the direction it
+      moved in is stated rather than absorbed.
+      *The earlier moves, and their causes: her win band 18–28 → 24–32 was round
+      24's door geometry (she knows the word at 17 and waits for a landing plan that
+      opens north — her DEDUCTION did not move at all). "Inside 10–15 minutes" →
+      13–18 was round 24 lifting `sessionMinutes`, which had been clipping the
+      evening at 18 and making the old figure true by construction rather than by
+      design. And "0% never / measured 100%" was never hers: it was the round-23
+      reading of a 45-day window on the pre-grid instrument.*
     *Round 21 — BOTH KNOWLEDGE BANDS MOVED AGAIN, AND THIS TIME THE CONTENT
     MOVED THEM. Her two ACCESS bands are untouched for the third round running:
     the climb did not change, the volume did. Volume 1 authors 28 pages against
@@ -766,13 +867,28 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     requires the measured **p90 to sit at least two minutes clear of the cap**, so a
     clipped distribution cannot wear a passing test.
     With the clip gone the inflation is visible, and it is now the published thing: the
-    skilled evening runs **17.0–17.5 minutes over his first ten and 18.0–18.4 over days
-    20–30** (band 14–20, p90 ≤ 26) and the median player's **14.7–14.9 → 15.7–16.0**
-    (band 13–18, p90 ≤ 22). *(Round 28 re-measurement over the four campaign seeds the
-    test runs; round 24 published the single-seed figures 16.9 → 18.2 and 14.5 → 15.6.
-    Both profiles sit where they sat — this is the spread, not a move.)*
-    What is GATED is the SHAPE: the late evening may not exceed **×1.2** the early one,
-    or the tea arc is buying an evening the owner did not ask for. Retirement is now rare
+    skilled evening runs **14.8 minutes over his first ten and 18.6 over days 20–30**
+    (band 14–20, p90 ≤ 27) and the median player's **12.7 → 15.5** (band 12–18, p90 ≤ 22).
+    *(Round 36 re-measurement; round 28 published 17.0–17.5 → 18.0–18.4 and 14.7–14.9 →
+    15.7–16.0 over the four campaign seeds, and round 24 the single-seed 16.9 → 18.2 and
+    14.5 → 15.6.)*
+    ***ROUND 36 — THE SHAPE CLAUSE LOST ITS SUBJECT, AND ITS BOUND IS RE-DERIVED.*** The
+    clause was *"the tea arc's extra budget goes into the CLIMB (cheap in minutes), never
+    into more puzzles per evening"*, gated at late/early **×1.2**. It rested entirely on
+    climbing being expensive in STEPS and cheap in MINUTES — which was true only because
+    the top storeys were tolled at −7 and −9. With one flat price (docs/THE_CLIMB §1)
+    **climbing IS drafting rooms**: there is no purchase the arc can make that does not
+    also add minutes, and the ratio no longer separates the two things it was named for.
+    **Measured, and stated as a cost rather than absorbed: his inflation 1.05 → 1.26 and
+    hers 1.07 → 1.23.** So the ratio bound is re-derived to **×1.3** — still bounded, so
+    it cannot creep unwatched — and the gate that carries the clause's real content is
+    the ABSOLUTE window, which did not move: 14–20 for him (his late evening measures
+    18.6, so 1.4 minutes of headroom) and 12–18 for her (15.5, 2.5 minutes). **If the
+    owner wants the late-campaign evening shorter, the lever is the tea arc
+    (`TEA_BY_POINTS`), not the move price.**
+    What is GATED is therefore the WINDOW first and the shape second: the late evening
+    may not exceed ×1.3 the early one, or the tea arc is buying an evening the owner did
+    not ask for. Retirement is now rare
     (0.04–2.1% of evenings) and the evening's honest second ending is the one the grid
     supplies for free — **stranded**, the house shut with steps still in hand.
   - **4.10g — the seal has to BITE** (the owner's *"solving needs to matter"*). Entering
@@ -887,10 +1003,20 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     Same defect as the retired "79.2% real choice" headline (4.10j), committed in the
     round that was told about that one. All four populations are published and gated now
     (`tests/economy-effort.test.ts`), and none is called "an evening":
-    **every room × every tier 45.00× → 20.00× → 16.00× → 9.07× (round 27)**; **every
-    tier-1/2 room, unfiltered 12.00× → 9.60× → 4.62×**; **tier-1/2 minus the Counting
-    House 4.89× → 3.91×**; **tier-1/2 of two minutes or more, minus the Counting House,
-    1.75×, unchanged**.
+    **every room × every tier 45.00× → 20.00× → 16.00× → 9.07× (round 27) → 7.77×
+    (round 36)**; **every tier-1/2 room, unfiltered 12.00× → 9.60× → 4.62× → 3.78×**;
+    **tier-1/2 minus the Counting House 4.89× → 3.91× → 3.20×**; **tier-1/2 of two
+    minutes or more, minus the Counting House, 1.75× → 1.43×**.
+    ***ROUND 36 — ALL FOUR FELL, AND NOT ONE OF THEM WAS AIMED AT.*** The step economy
+    flattened (docs/THE_CLIMB §1) and `BASE_DAY_BUDGET` moved 18 → 22 with it, which is
+    the same lever; the ceiling in clause (c) is DEFINED as thirds of a day, so it rose
+    12/9/6 → 15/11/7 on its own. What that ceiling was clipping was exactly the two rooms
+    round 22 found underpaid — the Conservatory and the Counting House at tier 1 both went
+    +12 → +15, sudoku t2 +9 → +11, and the Word Web's tier 3 stopped being clipped at all
+    (+6 → +7). Every column moved DOWN, which is the only direction this ratchet allows,
+    and it moved because a derived ceiling followed its definition rather than because
+    anybody re-typed a figure. The ends, at HEAD: overall `twistle t1 3.200 / sudoku t3
+    0.412`; tier-1/2 `twistle t1 3.200 / sudoku t2 0.846`.
     ***ROUND 18 — THE FIRST TWO COLUMNS WERE STALE, AND THEY WENT STALE IN THE ROUND
     WHOSE SUBJECT WAS DOC DRIFT.*** This clause published `45.00× → 20.00× → 16.00×` and
     `12.00× → 9.60×` as the current figures; measured off the shipped tables
@@ -930,7 +1056,9 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     What still misses, named so nobody has to rediscover it: **the top of the wage table
     is now the COZY FLOOR itself** — the Gallery and the Linen Closet, the two shortest
     rooms in the house, both paid +4 over 1.25 minutes — and the bottom is still the
-    tier-3 Counting House, at 0.353 steps a minute. The test names all three, so
+    tier-3 Counting House, at **0.412** steps a minute (0.353 before round 36 lifted the
+    ceiling with the day budget; the bottom of the table rose, which is why all four
+    spreads fell). The test names all three, so
     lengthening any of them FAILS 4.10h and forces the bound to tighten.
     *Round 18 corrected the second half of that sentence too: it read "the tier-2/3
     Counting House, which should bank partial grids across days", and round 27 BANKED
@@ -982,7 +1110,7 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     23). *"If a resource is never scarce it is not a resource."* Nothing in 4.10a–h
     constrained the storeys the median player spends 62% of her evening on, and measured
     over 300 campaigns × 45 days the tier-1 band (0-based rows 0–2) was a formality: her
-    purse while walking it ran a **median 28 steps (skilled 30) against an 18-step
+    purse while walking it ran a **median 28 steps (skilled 30) against the then-18-step
     budget**, p10 20 / 26; **net −0.84 / −0.36 steps per room entered** — a wash, not a
     cost; **0.2% / 0.0%** of evenings ever contained a moment down there with fewer than
     four steps in hand; and she arrived at the first PADLOCKED storey holding 15 / 21,
@@ -1025,10 +1153,12 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     the number (measured: **spent out 94.5% · early night 5.5%**, and the early nights
     keep back a median 55.6%), which is a measurement where the bare 0.0% was not.
   - **Levers, in the order they were pulled** (all in `engine/economy/steps.ts`, the one
-    tunable file): per-row movement pricing (`MOVE_COST_BY_ROW`, −2 ground floor → −9 up
-    top — *climbing is the expense*); leaner-as-you-climb refunds (anchor +6/+5/+4, micro
-    +3/+3/+2 — a tier-3 solve no longer funds the storey that reached it); a lean base
-    budget (18); locked upper-row doors (`DOOR_LOCKS`, **rows 4–5 carry the gate at
+    tunable file): flat movement pricing (`MOVE_COST_BY_ROW`, **−3 on every storey since
+    round 36** — *walking is the expense*; it was −2 on the ground floor rising to −9 up
+    top, and docs/THE_CLIMB §1 is the owner's ruling against that); leaner-as-you-climb
+    refunds (the ceiling `SOLVE_WAGE.capByTier`, ⅔/½/⅓ of a day — a tier-3 solve no
+    longer funds the storey that reached it); a lean base budget (**22**, moved from 18
+    with the move price because the two are one lever); locked upper-row doors (`DOOR_LOCKS`, **rows 4–5 carry the gate at
     0.9 / 0.95, and a padlock costs 2 keys** since round 10 — so the live ascent crosses
     **≈1.85 padlocks ≈ 3.7 keys**, bought mostly with solves. Row 6 is the sealed Sanctum
     and is never drafted, so both the older published "≈1.7 padlocks per ascent" and the

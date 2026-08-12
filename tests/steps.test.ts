@@ -7,15 +7,15 @@ import {
   moveAt, moveRowOf, priceEntry, rowName, solveKeys, stepsRefunded, stepsRemaining, stepsSpent,
   sanctumMercyArmed, sanctumPlanWarmth, sanctumPlanWeightMultiplier, surveyEveningsIn,
   teaArcFloor, teaArcPoints, teaBonus,
-  BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, FIRST_MORNING_POT, KEY_SUPPLY, MOVE_COST_BY_ROW,
-  SANCTUM_ARC, SANCTUM_GUESS_COST, STEP_TABLE, TEA_ARC, TEA_BY_POINTS,
+  BARE_ASCENT_STEPS, BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, FIRST_MORNING_POT, KEY_SUPPLY,
+  MOVE_COST_BY_ROW, SANCTUM_ARC, SANCTUM_GUESS_COST, STEP_TABLE, TEA_ARC, TEA_BY_POINTS,
 } from '../src/engine/economy/steps';
 import { draftCardStake } from '../src/engine/economy/preview';
 import { effortLabel } from '../src/engine/economy/effort';
-import { REFILL_PAYOUTS } from '../src/engine/economy/simulate';
+import { reserveToTop, PROFILE_SKILLED, REFILL_PAYOUTS } from '../src/engine/economy/simulate';
 import { UTILITY_EFFECTS } from '../src/engine/manor/deck';
 import { rowTier, SANCTUM_DOOR_CELL } from '../src/engine/manor/grid';
-import { SANCTUM_CELL } from '../src/engine/types';
+import { MANOR_ROWS, SANCTUM_CELL } from '../src/engine/types';
 import { rankFor, AFFINITY_RANK_THRESHOLDS } from '../src/engine/dialogue/affinity';
 import type { StepEntry, StepLedger, Tier } from '../src/engine/types';
 
@@ -35,38 +35,58 @@ const entry = (reason: StepEntry['reason'], delta: number): StepEntry => ({
 });
 
 describe('STEP_TABLE (the one tunable const)', () => {
-  it('starts the day at a lean 18 steps (owner retune: was 40)', () => {
-    expect(STEP_TABLE.dayStart).toBe(18);
-    expect(BASE_DAY_BUDGET).toBe(18);
+  it('starts the day at a lean 22 steps (40 → 18 → 22)', () => {
+    // ROUND 36 — 18 → 22, and it is the SAME LEVER as the flat move price
+    // (docs/THE_CLIMB §1). A flat −3 is 1.5× the old ground-floor rate on the
+    // storeys where nearly every move happens, so left at 18 the evening ran
+    // 9.9–10.1 minutes across four seeds — under AAA 4.10b's own 10–15 floor.
+    // 22 is the smallest budget at which the measured evening lands back where
+    // the altitude table put it; see `BASE_DAY_BUDGET` for what 20 and 24 did.
+    expect(STEP_TABLE.dayStart).toBe(22);
+    expect(BASE_DAY_BUDGET).toBe(22);
   });
 
-  it('prices movement per row — climbing IS the expense', () => {
+  it('prices ONE move at ONE price, on every storey (round 36)', () => {
     // ROUND 23 (REVIEW_AA §5.10): the ground floor stopped being free. Rows
     // 0–2 are 62% of the rooms she enters and they charged ONE step against a
     // solve worth up to twelve — measured, her purse down there ran a median
     // 28 steps against an 18-step budget and 0.2% of her evenings ever
     // contained a moment with fewer than four in hand. The tier-1 band is one
     // price now; the bare ascent is unchanged at 22.
-    expect(moveAt(0)).toBe(-2);                        // the ground floor, priced
-    expect(moveAt(2)).toBe(moveAt(0));                 // …one band, one price
-    expect(moveAt(3)).toBe(-2);
-    // Round 7: the two upper storeys carry the climb, because the ascent the
-    // player must actually pay for ends at the Sanctum LANDING (0-based row
-    // 5), not at the sealed Sanctum above it.
-    expect(moveAt(5)).toBe(-9);                        // the Sanctum landing
-    expect(moveAt(6)).toBe(moveAt(5));                 // the sealed room itself
-    expect(STEP_TABLE.moveAt).toBe(moveAt);
-    // Monotone, and out-of-range rows clamp rather than throw.
+    // ROUND 36 (docs/THE_CLIMB §1) — the owner, after playing: "It shouldn't
+    // get more expensive the further you move up." It doesn't. Every storey,
+    // including the sealed Sanctum's own row, charges the same for one move.
+    expect(moveAt(0)).toBe(-3);                        // the ground floor
     for (let r = 1; r < MOVE_COST_BY_ROW.length; r++) {
-      expect(moveAt(r)).toBeLessThanOrEqual(moveAt(r - 1));
+      expect(moveAt(r), `row ${r}`).toBe(moveAt(0));
     }
+    expect(STEP_TABLE.moveAt).toBe(moveAt);
+    // …and it is still a TABLE, still clamping out-of-range rows rather than
+    // throwing, so a future storey can be priced differently in one place.
+    expect(MOVE_COST_BY_ROW.length).toBe(MANOR_ROWS);
     expect(moveAt(-4)).toBe(moveAt(0));
-    expect(moveAt(99)).toBe(moveAt(6));
+    expect(moveAt(99)).toBe(moveAt(MANOR_ROWS - 1));
+    // The ground floor is not free — REVIEW_AA §5.10's whole finding, and the
+    // one bound the flattening had to clear rather than undo.
+    expect(-moveAt(0)).toBeGreaterThanOrEqual(2);
   });
 
-  it('makes a bare ascent cost more than a whole day of budget', () => {
-    const ascent = [1, 2, 3, 4, 5, 6].reduce((sum, row) => sum - moveAt(row), 0);
-    expect(ascent).toBeGreaterThan(BASE_DAY_BUDGET);
+  it('makes the REALISTIC ascent cost more than a whole day of budget', () => {
+    // ═══ ROUND 36 — WHICH ASCENT THIS CLAUSE IS ABOUT ═══════════════════
+    // It used to be the BARE one: 22 steps of pure staircase against an
+    // 18-step budget, "so the top is always bought with refunds". That is an
+    // ALTITUDE-TOLL inequality — five flat moves cannot outcost a dozen-move
+    // evening — and it died with the toll rather than being re-typed to fit.
+    // `BARE_ASCENT_STEPS` is 15 now, and it is published as a fact about the
+    // staircase, not as a gate.
+    //
+    // The clause that survives is about the WALK, which is what the owner said
+    // the economy should be driven by: a climb is walk-backs, and priced with
+    // them (`reserveToTop(1, PROFILE_SKILLED)`, the skilled player's own
+    // navigation) it costs 25.8 against a 22-step budget. The gate on day 1 is
+    // measured on the grid-true model instead — see economy-simulation.test.ts.
+    expect(BARE_ASCENT_STEPS).toBe([1, 2, 3, 4, 5].reduce((sum, r) => sum - moveAt(r), 0));
+    expect(reserveToTop(1, PROFILE_SKILLED)).toBeGreaterThan(BASE_DAY_BUDGET);
   });
 
   it('keeps the deprecated flat move price equal to the ground floor', () => {
@@ -103,9 +123,15 @@ describe('STEP_TABLE (the one tunable const)', () => {
     expect(STEP_TABLE.solve('anchor', 1)).toBe(6);
     expect(STEP_TABLE.solve('anchor', 2)).toBe(5);
     expect(STEP_TABLE.solve('anchor', 3)).toBe(4);
-    // The whole point of the retune: a tier-3 solve no longer funds the climb
-    // that reached it — it costs more to get up there than the room pays back.
-    expect(STEP_TABLE.solve('anchor', 3)).toBeLessThan(-moveAt(6));
+    // ROUND 36: the last clause here read "a tier-3 solve costs less than the
+    // −9 step it took to get up there". That compared a room's payout to ONE
+    // MOVE, which only ever read as a bound because a move up top cost most of
+    // half a day; with a flat price it is neither true nor a statement about
+    // anything. Leanness is now exactly what the word means — each tier pays
+    // less than the one below — and `SOLVE_WAGE.capByTier` carries it for the
+    // wage-priced path (tests/economy-effort.test.ts).
+    expect(STEP_TABLE.solve('anchor', 3)).toBeLessThan(STEP_TABLE.solve('anchor', 2));
+    expect(STEP_TABLE.solve('anchor', 2)).toBeLessThan(STEP_TABLE.solve('anchor', 1));
   });
 
   it('pays +2 for a perfect solve and keeps refills lean (+2..+6)', () => {
@@ -144,11 +170,17 @@ describe('STEP_TABLE (the one tunable const)', () => {
     expect(table).not.toMatch(/\| Start-of-day budget \| 40/);
     expect(table).toContain(`+${FIRST_MORNING_POT}`);
 
-    // Movement: both extremes of the live curve, and no trace of the old −5.
-    const top = -Math.min(...MOVE_COST_BY_ROW);   // 9
-    const ground = -Math.max(...MOVE_COST_BY_ROW); // 1
-    expect(table).toContain(`−${ground} on the ground floor rising to −${top} up top`);
-    expect(table).toContain(MOVE_COST_BY_ROW.map((n) => `−${-n}`).join(', '));
+    // Movement: ROUND 36 — the curve is flat, so the doc may not still print a
+    // RANGE. It has to name the one price and the bare ascent that follows from
+    // it, and both are read out of the file. (The old form asserted here was
+    // "−1 on the ground floor rising to −9 up top"; a doc that still said that
+    // would now be describing a game we do not ship, which is the exact drift
+    // this test was written for in round 16.)
+    const one = -moveAt(0);
+    expect(new Set(MOVE_COST_BY_ROW).size, 'the table is flat — see MOVE_COST_BY_ROW').toBe(1);
+    expect(table).toContain(`−${one} on every storey`);
+    expect(table).not.toMatch(/rising to −\d+ up top/);
+    expect(table).toContain(`${BARE_ASCENT_STEPS} steps`);
 
     // Anchor solve: the live triple, not the retired range.
     const solves = ([1, 2, 3] as Tier[]).map((t) => STEP_TABLE.solve('anchor', t));
@@ -301,7 +333,7 @@ describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () =
    */
   it('states each room’s own payout and its own expected length', () => {
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'hive' }, 1)!.label)
-      .toBe('a long sit · +12 steps · +1 key on solve');
+      .toBe('a long sit · +15 steps · +1 key on solve');
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 1)!.label)
       .toBe('a minute or two · +4 steps on solve');
     // ROUND 10: the card face names the KEY too, because from tier 2 up the
@@ -310,7 +342,7 @@ describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () =
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 2)!.label)
       .toBe('a minute or two · +4 steps · +1 key on solve');
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'word-web' }, 3)!.label)
-      .toBe('five minutes or so · +6 steps · +1 key on solve');
+      .toBe('five minutes or so · +7 steps · +1 key on solve');
     // The long room and the short one can no longer wear the same face.
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'sudoku' }, 1)!.label)
       .not.toBe(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 1)!.label);
@@ -503,9 +535,9 @@ describe('UNITS — the affinity tables are indexed by POINTS, never by rank', (
 describe('ledger invariants (AAA 4.9)', () => {
   it('creates a fresh ledger at the day budget', () => {
     const l = createLedger();
-    expect(l.budget).toBe(18);
+    expect(l.budget).toBe(BASE_DAY_BUDGET);
     expect(l.entries).toEqual([]);
-    expect(stepsRemaining(l)).toBe(18);
+    expect(stepsRemaining(l)).toBe(BASE_DAY_BUDGET);
   });
 
   it('appendEntry is pure — the original ledger is untouched', () => {
@@ -513,8 +545,8 @@ describe('ledger invariants (AAA 4.9)', () => {
     const b = appendEntry(a, entry('move', -1));
     expect(a.entries).toHaveLength(0);
     expect(b.entries).toHaveLength(1);
-    expect(stepsRemaining(a)).toBe(18);
-    expect(stepsRemaining(b)).toBe(17);
+    expect(stepsRemaining(a)).toBe(BASE_DAY_BUDGET);
+    expect(stepsRemaining(b)).toBe(BASE_DAY_BUDGET - 1);
   });
 
   it('stepsRemaining never renders negative, even in overdraft', () => {
@@ -543,17 +575,17 @@ describe('ledger invariants (AAA 4.9)', () => {
     l = appendEntry(l, entry('pet-dewey', -1));
     expect(stepsSpent(l)).toBe(4);
     expect(stepsRefunded(l)).toBe(13);
-    expect(ledgerTotal(l)).toBe(18 + 13 - 4);
+    expect(ledgerTotal(l)).toBe(BASE_DAY_BUDGET + 13 - 4);
   });
 
   it('dayStartTotal counts budget + tea only (the burn-down reference)', () => {
     let l: StepLedger = createLedger();
-    expect(dayStartTotal(l)).toBe(18);
+    expect(dayStartTotal(l)).toBe(BASE_DAY_BUDGET);
     l = appendEntry(l, entry('tea', 8));
     l = appendEntry(l, entry('snack', 5));   // refill, not part of the morning total
     l = appendEntry(l, entry('solve', 6));
     l = appendEntry(l, entry('move', -1));
-    expect(dayStartTotal(l)).toBe(26);
+    expect(dayStartTotal(l)).toBe(BASE_DAY_BUDGET + 8);
   });
 });
 
@@ -780,17 +812,16 @@ describe('the tea arc has a LIVE source (AAA 4.10d, round-5 audit)', () => {
   it('lifts the FIRST evening without touching the base budget', () => {
     // AAA 4.10b: day 1 starts at 0 affinity, so the very first evening ran on
     // the bare 18 and measured under the 10–15 floor. A scripted welcome pot
-    // fixes it; raising BASE_DAY_BUDGET to 20 would equal the bare ascent cost
-    // and break the headline invariant, so it stays at 18.
+    // fixes it. ROUND 36: the old reason given here — "raising BASE_DAY_BUDGET
+    // to 20 would equal the bare ascent cost and break the headline invariant"
+    // — is gone with that invariant, and the budget moved to 22 in the same
+    // round. The reason the pot is not simply folded into the budget is the
+    // one that was always the real one: it is a WELCOME, once, and a bigger
+    // budget would hand it to day 30 as well.
     expect(firstMorningPot(1)).toBe(FIRST_MORNING_POT);
     expect(firstMorningPot(2)).toBe(0);
     expect(firstMorningPot(30)).toBe(0);
-    expect(BASE_DAY_BUDGET).toBe(18);
-    // The pot is a REFILL, ledgered like tea — the headline invariant is about
-    // the base budget, and the base budget is untouched. A bare, perfectly
-    // efficient ascent (rows 1…6) still costs more than a day's budget.
-    const bareAscent = [1, 2, 3, 4, 5, 6].reduce((sum, row) => sum - moveAt(row), 0);
-    expect(bareAscent).toBeGreaterThan(BASE_DAY_BUDGET);
+    expect(firstMorningPot(1)).toBeGreaterThan(firstMorningPot(2));
     // …and the welcome pot must not, on its own, turn day 1 into a Sanctum run:
     // it lifts the first evening's LENGTH, not its ceiling. (The campaign
     // consequence — under 8% of day 1s reach the top — is pinned in
@@ -837,10 +868,15 @@ describe('SANCTUM_ARC — the access gate finally has an arc and a floor', () =>
     // else's row is exactly how a milestone drifts off the thing it measures).
     expect(SANCTUM_ARC.surveyRow0).toBe(SANCTUM_DOOR_CELL.row - 1);
     expect(SANCTUM_ARC.surveyRow0).toBe(SANCTUM_CELL.row - 2);
-    // It is a real climb: the first storey `DOOR_LOCKS` padlocks, and priced
-    // well above the ground floor — so warmth cannot be farmed downstairs.
+    // It is a real climb: the first storey `DOOR_LOCKS` padlocks, and four
+    // storeys of walking from the door — so warmth cannot be farmed downstairs.
+    // ROUND 36: the second clause used to be `moveAt(surveyRow0) < moveAt(0)*3`
+    // — "priced well above the ground floor" — which is an altitude-toll test
+    // and is now false of a flat table without anything having gone wrong. What
+    // makes the storey a real climb is the DISTANCE to it, so that is what is
+    // asserted: four moves of pure ascent before a single walk-back.
     expect(DOOR_LOCKS.chanceByRow[SANCTUM_ARC.surveyRow0]!).toBeGreaterThan(0.5);
-    expect(moveAt(SANCTUM_ARC.surveyRow0)).toBeLessThan(moveAt(0) * 3);
+    expect(SANCTUM_ARC.surveyRow0 * -moveAt(0)).toBeGreaterThan(BASE_DAY_BUDGET / 2);
   });
 
   it('warms monotonically from zero and clamps at one', () => {

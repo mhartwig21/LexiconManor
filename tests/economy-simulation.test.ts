@@ -12,7 +12,7 @@ import {
   doorLockedAt, fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, ledgerTotal,
   moveAt, moveRowOf,
   sanctumMercyArmed, sanctumPlanWarmth, solveKeys, surveyEveningsIn, teaArcPoints, teaBonus,
-  BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, KEY_SUPPLY,
+  BARE_ASCENT_STEPS, BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, KEY_SUPPLY,
   MOVE_COST_BY_ROW, SANCTUM_ARC, TEA_ARC, TEA_BY_POINTS,
 } from '../src/engine/economy/steps';
 import { createRng } from '../src/engine/rng';
@@ -138,12 +138,30 @@ const NEVER = CAMPAIGN_LENGTH + 1;
  * is not a tautology: the two sides are different artifacts, and it is precisely
  * the drift that has escaped twice.
  */
+/**
+ * === ROUND 36 - TWO OF THESE MOVED, AND ONLY HERS =========================
+ * The altitude toll is gone (docs/THE_CLIMB SS1, `MOVE_COST_BY_ROW`), and the
+ * SKILLED player's two bands did not need touching: his first door measures 16
+ * against 17 before, his win 17 against 18, both comfortably inside the bands
+ * round 24 published. The MEDIAN player's moved hard - door 27.5 -> 20, win
+ * 28 -> 22 - and the 12% of her campaigns that never finished inside 45
+ * evenings went to ~0%.
+ *
+ * That asymmetry IS the finding rather than a side effect: `walkbackPerRow` is
+ * 0.58 for her against 0.36 for him, so the toll on the upper storeys was being
+ * paid, overwhelmingly, by the player who doubles back - which is the player
+ * the owner was describing when he called the economy punishing. Removing it
+ * hands her back six evenings and hands him one.
+ *
+ * The bands are re-published at what the model measures, in AAA 4.10d/e, and
+ * the last test in this file greps the doc for each one.
+ */
 const BANDS = {
   skilledDoor: [14, 22],
   skilledWin: [12, 20],
-  decentDoor: [22, 30],
+  decentDoor: [17, 25],
   decentDeduce: [14, 24],
-  decentWin: [24, 32],
+  decentWin: [18, 26],
 } as const;
 const reachOrNever = reachDays.map((d) => d ?? NEVER);
 const winOrNever = winDays.map((d) => d ?? NEVER);
@@ -243,19 +261,32 @@ describe('the milestone is the LIVE door, not a storey nobody enters (round 7)',
     expect(SANCTUM_DOOR_KEY).toBe(cellKey(SANCTUM_DOOR_CELL));
   });
 
-  it('holds the headline invariant for THAT ascent, not the one above it', () => {
-    // The clause the finding proved false: a bare, perfectly efficient ascent
-    // to the door must cost more than the whole base budget, so the top is
-    // always bought with refunds. Measured at the live landing: 21 > 18.
+  it('measures the ascent the player pays for, with the walk in it', () => {
+    // === ROUND 36 - THIS TEST USED TO ASSERT A DEAD INVARIANT =============
+    // It read: the BARE ascent (`walkbackPerRow: 0`) must cost more than the
+    // base budget and more than day 1's whole purse - 22 > 18, 22 >= 22 - "so
+    // the top is always bought with refunds". That is an ALTITUDE-TOLL
+    // inequality: it is only ever true while five moves cost most of an
+    // evening. With one price on every storey (docs/THE_CLIMB SS1) a bare
+    // ascent is 15 against a 22-step budget, and no honest flat price makes
+    // five moves dearer than the dozen an evening contains.
+    //
+    // Re-typing the constant until the inequality came back would have been the
+    // exact failure this repo keeps recording. So the clause is replaced by the
+    // one that is still true and is what round 7 was really measuring - the
+    // ascent the player PAYS FOR is the one with the walk-backs in it:
     const bareToDoor = reserveToTop(1, { walkbackPerRow: 0 });
-    expect(bareToDoor).toBeGreaterThan(BASE_DAY_BUDGET);
-    // …and it is not scraping past it on a rounding error.
-    expect(bareToDoor).toBeGreaterThanOrEqual(BASE_DAY_BUDGET + 2);
-    // Day 1's whole purse — the budget plus the scripted welcome pot, with no
-    // tea at all at 0 affinity — is at best exactly the price of the bare
-    // walk: arriving would mean spending the entire first day on stairs, with
-    // nothing left for a card and no key for either padlocked storey.
-    expect(bareToDoor).toBeGreaterThanOrEqual(BASE_DAY_BUDGET + firstMorningPot(1));
+    const realAscent = reserveToTop(1, PROFILE_SKILLED);
+    expect(bareToDoor).toBe(BARE_ASCENT_STEPS);
+    expect(realAscent, `realistic ascent ${realAscent.toFixed(1)}`)
+      .toBeGreaterThan(BASE_DAY_BUDGET);
+    // ...and it is not scraping past it on a rounding error.
+    expect(realAscent).toBeGreaterThanOrEqual(BASE_DAY_BUDGET + 2);
+    // The DAY-1 half of the old clause is measured rather than derived now, on
+    // the grid-true model, further down this file: 4.10d's "essentially never
+    // on day 1" and 4.10a's skipper. Both are instruments that could disagree
+    // with this arithmetic, which the arithmetic could not.
+    expect(bareToDoor).toBeLessThan(BASE_DAY_BUDGET + firstMorningPot(1));
   });
 
   it('never claims a reach the live predicate would refuse', () => {
@@ -282,25 +313,31 @@ describe('the milestone is the LIVE door, not a storey nobody enters (round 7)',
 });
 
 describe('4.10 — climbing IS the expense', () => {
-  it('prices movement strictly upward by row band', () => {
+  it('prices one move at one price, on every storey (round 36)', () => {
+    // THE OWNER, AFTER PLAYING: "It shouldn't get more expensive the further
+    // you move up. The steps economy is driven by needing to double back."
+    // This test used to assert the opposite - a strictly-descending table with
+    // -2 on the ground floor and -9 up top. docs/THE_CLIMB SS1 is the ruling.
     for (let r = 1; r < MOVE_COST_BY_ROW.length; r++) {
-      expect(MOVE_COST_BY_ROW[r]!).toBeLessThanOrEqual(MOVE_COST_BY_ROW[r - 1]!);
+      expect(MOVE_COST_BY_ROW[r]!, `row ${r}`).toBe(MOVE_COST_BY_ROW[0]!);
     }
-    // ROUND 23 — the ground floor is −2, not −1 (REVIEW_AA §5.10). Changing
-    // this number is how §5.10 was answered; tests/economy-pressure.test.ts is
-    // the gate that stops it drifting back.
-    expect(MOVE_COST_BY_ROW[0]).toBe(-2);
-    expect(MOVE_COST_BY_ROW[6]).toBeLessThanOrEqual(-4);
+    // ROUND 23 - the ground floor is not free (REVIEW_AA SS5.10), and the
+    // flattening had to clear that bound rather than undo it. It got dearer:
+    // measured net -2.24 steps a ground-floor room against -1.22 before.
+    expect(-MOVE_COST_BY_ROW[0]!).toBeGreaterThanOrEqual(2);
   });
 
-  it('makes a bare, perfect ascent cost MORE than the whole day budget', () => {
-    // The headline of the overhaul: the Sanctum landing can never be reached
-    // on the budget alone — it has to be paid for with tea, snacks and solves.
+  it('makes the REAL ascent cost MORE than the whole day budget', () => {
+    // ROUND 36 - the bare staircase no longer outcosts the budget and cannot
+    // (see the round-7 block above). What still does is the ascent with the
+    // walk-backs in it, which is what a climb is: the landing is not reached on
+    // the budget alone, it is reached by not wasting it.
     const bare = reserveToTop(1, { walkbackPerRow: 0 });
-    expect(bare).toBeGreaterThan(BASE_DAY_BUDGET);
     const realistic = reserveToTop(1, PROFILE_SKILLED);
     expect(realistic).toBeGreaterThan(bare);
-    expect(realistic).toBeGreaterThan(BASE_DAY_BUDGET * 1.3);
+    expect(realistic).toBeGreaterThan(BASE_DAY_BUDGET);
+    // ...and the waste is most of the price: 15 of staircase, 25.8 with the walk.
+    expect(realistic - bare).toBeGreaterThan(bare * 0.5);
   });
 
   it('charges more for each storey than the one below it', () => {
@@ -353,7 +390,20 @@ describe('4.10a — the no-refund day', () => {
     const m = median(skipper, (r) => r.maxRow);
     expect(m).toBeGreaterThanOrEqual(3);
     expect(m).toBeLessThanOrEqual(5);
-    expect(share(skipper, (r) => r.reachedSanctum)).toBe(0);
+    // === ROUND 36 - THIS WAS `toBe(0)`, AND THE 0 WAS ARITHMETIC ==========
+    // Under the altitude toll a refund-less day could not reach the landing
+    // because the staircase alone cost more than the budget; the 0 was a
+    // consequence of the table, not an observation about play. A move costs a
+    // move now (docs/THE_CLIMB SS1), so a freak evening CAN walk a clean line
+    // up the stair column with both padlocks open and draw a north-opening plan
+    // at the top: measured 1 evening in 3000, 0.03%. It is published at that in
+    // AAA 4.10a rather than rounded back to zero, because "never" and "three
+    // hundredths of one per cent" are different claims and only one is true.
+    // She still wins nothing - she has solved nothing, so she has no fragments
+    // and no word to say.
+    const freak = share(skipper, (r) => r.reachedSanctum);
+    expect(freak, `no-refund day stood at the door on ${(freak * 100).toFixed(3)}%`)
+      .toBeLessThan(0.001);
   });
 
   it('is over in a couple of minutes — nothing was played', () => {
@@ -710,16 +760,37 @@ describe('4.10e — the SKILLED player wins the VOLUME in 12–20 days', () => {
     // and the SHAPE clause is what is gated now: the late evening may be
     // longer than the early one, but not by more than a fifth, or the tea arc
     // is buying an evening the owner did not ask for.
+    // === ROUND 36 - THE SHAPE CLAUSE LOST ITS SUBJECT ====================
+    //
+    // The clause was: "the tea arc's extra budget goes into the CLIMB (cheap in
+    // minutes), never into more puzzles per evening", gated as late/early < 1.2.
+    // It rested entirely on climbing being EXPENSIVE IN STEPS AND CHEAP IN
+    // MINUTES - which was true only because the top storeys were tolled at -7
+    // and -9. A move costs a move now (docs/THE_CLIMB SS1), so climbing IS
+    // drafting rooms: there is no longer a purchase the arc can make that does
+    // not also add minutes, and the ratio measures nothing it used to.
+    //
+    // MEASURED, both profiles, and published in AAA 4.10f: his inflation 1.05
+    // -> 1.26 and hers 1.07 -> 1.23. This is the honest cost of the change and
+    // it is stated rather than absorbed: a warmer Bramble now lengthens the
+    // late-campaign evening as well as raising it up the house.
+    //
+    // WHAT IS GATED INSTEAD is the thing 4.10f was always FOR and the thing the
+    // owner can feel - the ABSOLUTE window, unchanged at 14-20 with a p90 tail
+    // bound. His late evening measures 18.60 of that window (was 16.87), so
+    // there are 1.4 minutes of headroom and any further inflation fails here.
+    // The ratio is still bounded, at a re-derived number, so it cannot creep
+    // unwatched; it is no longer pretending to separate rooms from storeys.
     const early = campaigns.flatMap((c) => c.days.slice(0, 10)).map((d) => d.minutes);
     const late = campaigns.flatMap((c) => c.days.slice(19, 30)).map((d) => d.minutes);
     for (const window of [early, late]) {
       expect(medianOf(window)).toBeGreaterThanOrEqual(14);
       expect(medianOf(window)).toBeLessThanOrEqual(20);
-      expect(quantileOf(window, 0.9)).toBeLessThanOrEqual(26);
+      expect(quantileOf(window, 0.9)).toBeLessThanOrEqual(27);
     }
     expect(medianOf(late) / medianOf(early),
       `campaign inflation ${(medianOf(late) / medianOf(early)).toFixed(3)}`)
-      .toBeLessThan(1.2);
+      .toBeLessThan(1.3);
   });
 
   it('is deterministic per seed (replayable, AAA 4.8 spirit)', () => {
@@ -869,14 +940,20 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
     // because she climbs less, which is the shape 4.10f is really about; what
     // the round removed is the 18-minute clip that made the number true
     // whatever the arc did. See the skilled block above for the arithmetic.
+    // ROUND 36 - 13-18 -> 12-18, and the ratio bound is re-derived. Measured
+    // 12.67 early / 15.54 late (was 13.96 / 14.88), inflation 1.07 -> 1.23. Her
+    // early evening is SHORTER than it was and her late one LONGER, and both
+    // have the same cause: a flat move price makes Bramble's arc buy rooms
+    // instead of storeys, so the arc's own shape is now visible in the clock.
+    // See the skilled block above for why the ratio stopped being the gate.
     const early = decentCampaigns.flatMap((c) => c.days.slice(0, 10)).map((d) => d.minutes);
     const late = decentCampaigns.flatMap((c) => c.days.slice(19, 30)).map((d) => d.minutes);
     for (const window of [early, late]) {
-      expect(medianOf(window)).toBeGreaterThanOrEqual(13);
+      expect(medianOf(window)).toBeGreaterThanOrEqual(12);
       expect(medianOf(window)).toBeLessThanOrEqual(18);
       expect(quantileOf(window, 0.9)).toBeLessThanOrEqual(22);
     }
-    expect(medianOf(late) / medianOf(early)).toBeLessThan(1.2);
+    expect(medianOf(late) / medianOf(early)).toBeLessThan(1.3);
   });
 
   it('holds both medians across independent campaign seeds', async () => {
@@ -889,10 +966,12 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
       // win 21/22/22/21.5.
       // Round 24, measured across the four seeds: reach 26/25.5/24/24,
       // win 29/27.5/25.5/28.
-      expect(reach, `seed ${seed}: reach ${reach}`).toBeGreaterThanOrEqual(22);
-      expect(reach).toBeLessThanOrEqual(30);
-      expect(win, `seed ${seed}: win ${win}`).toBeGreaterThanOrEqual(24);
-      expect(win).toBeLessThanOrEqual(32);
+      // Round 36, measured across the four seeds: reach 20/20/21/20,
+      // win 21/21.5/22/21 - the altitude toll came off, and it was hers to pay.
+      expect(reach, `seed ${seed}: reach ${reach}`).toBeGreaterThanOrEqual(BANDS.decentDoor[0]);
+      expect(reach).toBeLessThanOrEqual(BANDS.decentDoor[1]);
+      expect(win, `seed ${seed}: win ${win}`).toBeGreaterThanOrEqual(BANDS.decentWin[0]);
+      expect(win).toBeLessThanOrEqual(BANDS.decentWin[1]);
     }
   }, HEAVY_MS);
 
@@ -1267,7 +1346,15 @@ describe('4.10g — the SEAL bites: entering gets the page, solving makes it out
     // the same storeys and meets more violet, because the room she enters is
     // the CARD SHE TOOK out of a real offer rather than a category sampled from
     // `deckMixAt` and resolved as if she had had no say in it.
-    expect(overnight).toBeLessThan(0.60);
+    // ROUND 36 - 25-60% -> 25-75% (measured 67.6%, and 67.5-69.1% across the
+    // four seeds the test below runs). Cause, stated: violet share is a
+    // function of ROW (`deckMixAt`: 2.0% at row 0, 10.5% at row 6), and a flat
+    // move price puts more of every evening on the upper storeys - while the
+    // number of rooms she can SOLVE in an evening is bounded by her patience
+    // and the clock, not by her purse. So she acquires more sealed pages
+    // without deciphering proportionally more of them. The backlog is still a
+    // pressure and not a debt spiral: her overnight median is 1 page.
+    expect(overnight).toBeLessThan(0.75);
     expect(medianOf(sealedDays.map((d) => d.sealedBacklog))).toBeLessThanOrEqual(2);
   });
 
@@ -1311,9 +1398,12 @@ describe('4.10g — the SEAL bites: entering gets the page, solving makes it out
     const overnight =
       decentCampaigns.reduce((s, c) => s + c.sealedOvernightDays, 0) / decentSealedDays.length;
     // ROUND 24 - 8-25% -> 8-35% (measured 29.3%), same cause as above.
+    // ROUND 36 - 8-35% -> 8-45% (measured 36.5%), same cause as the skilled
+    // band above: a flat move price puts more of her evening on the storeys
+    // where violet is dense, and solving is clock-bound rather than step-bound.
     expect(overnight, `median-player sealed-overnight share ${overnight.toFixed(3)}`)
       .toBeGreaterThan(0.08);
-    expect(overnight).toBeLessThan(0.35);
+    expect(overnight).toBeLessThan(0.45);
     // The 25–50% band above is the skilled player's, and the doc says so.
     expect(overnight).toBeLessThan(
       sealed.reduce((s, c) => s + c.sealedOvernightDays, 0) / sealedDays.length);
@@ -1382,8 +1472,9 @@ describe('4.10g — the SEAL bites: entering gets the page, solving makes it out
       const days = runs.flatMap((c) => c.days);
       const overnight = runs.reduce((s, c) => s + c.sealedOvernightDays, 0) / days.length;
       // Round 24: measured 0.550 / 0.551 / 0.548 / 0.552 across the four seeds.
+      // Round 36: 0.685 / 0.675 / 0.691 / 0.679 - see the band above for why.
       expect(overnight, `seed ${seed}: ${overnight.toFixed(3)}`).toBeGreaterThan(0.25);
-      expect(overnight, `seed ${seed}: ${overnight.toFixed(3)}`).toBeLessThan(0.60);
+      expect(overnight, `seed ${seed}: ${overnight.toFixed(3)}`).toBeLessThan(0.75);
     }
   }, HEAVY_MS);
 });
@@ -1665,7 +1756,9 @@ describe('the padlock is LIVE, and the live key supply can pay for it', () => {
       // …and a skipper, who solves nothing, earns no keys at all and never
       // stands at the door (4.10a) — solving is the difference.
       expect(skipper.every((r) => r.keysFromSolves === 0)).toBe(true);
-      expect(share(skipper, (r) => r.reachedSanctum)).toBe(0);
+      // Round 36: 0 -> <0.1%, and the reason is in 4.10a above - the number is
+      // an observation now rather than a consequence of the movement table.
+      expect(share(skipper, (r) => r.reachedSanctum)).toBeLessThan(0.001);
     });
 
     it('leaves the 10–15 minute evening exactly where it was (4.10f)', () => {
@@ -1780,18 +1873,23 @@ describe('4.10b — the FIRST evenings land inside 10–15 minutes too', () => {
   }
 
   it('is the scripted pot doing it, not a fatter base budget', () => {
-    // Raising BASE_DAY_BUDGET to 20 would equal the bare ascent cost and break
-    // the headline invariant, so the fix had to be a refill (AAA 4.10d).
-    expect(BASE_DAY_BUDGET).toBe(18);
-    expect(reserveToTop(1, { walkbackPerRow: 0 })).toBeGreaterThan(BASE_DAY_BUDGET);
-    // ROUND 7 (verifier): pin the EXACT bare ascent, not just the inequality.
+    // ROUND 36 - the reason this fix had to be a REFILL is no longer "20 would
+    // equal the bare ascent cost": that invariant died with the altitude toll,
+    // and the budget itself moved 18 -> 22 in the same round. The reason that
+    // survives is the one that was always the real one - the pot is a WELCOME,
+    // paid once, and a fatter base budget would hand it to day 30 as well.
+    expect(BASE_DAY_BUDGET).toBe(22);
+    expect(firstMorningPot(1)).toBeGreaterThan(firstMorningPot(30));
+    // ROUND 7 (verifier): pin the EXACT bare ascent, not just an inequality.
     // AAA 4.10d publishes this number and steps.ts's header quotes it; round 10
-    // moved MOVE_COST_BY_ROW[4] −6 → −7 and updated one of the three copies, so
-    // the docs said 21 while the game charged 22 and every assertion here
-    // (`> 18`, `>= 20`) stayed green straight through the drift. Now a movement
-    // retune has to come here and change the number on purpose.
-    // 1 + 2 + 3 + 7 + 9 = 22, entrance (row 0) → the landing (row 5).
-    expect(reserveToTop(1, { walkbackPerRow: 0 })).toBe(22);
+    // moved MOVE_COST_BY_ROW[4] -6 -> -7 and updated one of the three copies,
+    // so the docs said 21 while the game charged 22 and every assertion here
+    // (`> 18`, `>= 20`) stayed green straight through the drift. There is ONE
+    // of it now - `BARE_ASCENT_STEPS` - and a movement retune moves it here,
+    // in MANOR_DESIGN SS4 and in tests/economy-pressure.test.ts at once.
+    // 3 x 5 = 15, entrance (row 0) -> the landing (row 5).
+    expect(reserveToTop(1, { walkbackPerRow: 0 })).toBe(BARE_ASCENT_STEPS);
+    expect(BARE_ASCENT_STEPS).toBe(15);
     // Without the pot, day 1 sits on the very floor of the window — which is
     // the finding, re-measured.
     //
@@ -1815,10 +1913,23 @@ describe('4.10b — the FIRST evenings land inside 10–15 minutes too', () => {
     // minutes. What the assertion is FOR is unchanged and is re-pinned as the
     // gap: the pot must still be worth a real slice of her first evening, and
     // the bare evening must still sit in the lower half of the 10-15 window.
+    //
+    // ROUND 36 MOVED IT BACK, AND THAT IS THE INTERESTING PART: 12.05 -> 9.92.
+    // The round-5 finding was "day 1 runs ~9.0 minutes, UNDER the promised
+    // 10-15 floor", and rounds 22 and 24 lifted the bare evening above the
+    // floor for reasons that had nothing to do with the pot - at which point
+    // the pot's stated justification had quietly stopped being true and the
+    // test was re-argued as a gap instead. With a flat move price the bare
+    // first evening is 9.92 minutes and the finding is literally back: WITHOUT
+    // THE SCRIPTED POT, DAY 1 IS UNDER THE WINDOW. So both halves are gated -
+    // the bare evening is under the floor, and the potted one is inside it.
     const bareMin = median(bare, (r) => r.minutes);
+    const pottedMin = median(potted, (r) => r.minutes);
     expect(bareMin, `bare first evening ${bareMin.toFixed(2)} min`).toBeLessThan(13);
-    expect(bareMin).toBeGreaterThanOrEqual(10);
-    expect(median(potted, (r) => r.minutes)).toBeGreaterThan(bareMin + 1);
+    expect(pottedMin, `potted first evening ${pottedMin.toFixed(2)} min`)
+      .toBeGreaterThanOrEqual(10);
+    expect(pottedMin).toBeLessThanOrEqual(15);
+    expect(pottedMin).toBeGreaterThan(bareMin + 1);
   });
 });
 
@@ -1875,8 +1986,14 @@ describe('4.11 — something the player buys today pays out tomorrow', () => {
       { ...PROFILE_DECENT, dawnSteps: carried.steps, dawnKeys: carried.keys }, DAYS, 0xbeef);
     const m = median(withInvestment, (r) => r.minutes);
     const base = median(decent, (r) => r.minutes);
+    // ROUND 36 - the delta bound moved 1.0 -> 1.5 minutes (measured 1.09
+    // against 0.49), and it moved for the reason the whole round is about: with
+    // a flat move price the dawn steps this fixture hands her buy ROOMS rather
+    // than storeys, and rooms cost minutes. The clause the title makes - that
+    // carry-over buys climb - is still gated below and still holds: the median
+    // top row rises with it. What it no longer does is buy climb for free.
     expect(m - base, `carry-over adds ${(m - base).toFixed(2)} min to a ${base.toFixed(2)} min evening`)
-      .toBeLessThanOrEqual(1);
+      .toBeLessThanOrEqual(1.5);
     expect(m).toBeGreaterThanOrEqual(base);
     // …and the evening it lands on is still an evening, not a session.
     expect(m).toBeGreaterThanOrEqual(10);

@@ -10,6 +10,7 @@ import {
   solveKeys, solvePayout, stageSteps, BASE_DAY_BUDGET, KEY_SUPPLY, ROOM_SIZE, SOLVE_WAGE,
   STEP_TABLE, moveAt,
 } from '../src/engine/economy/steps';
+import { SANCTUM_LANDING_ROW } from '../src/engine/economy/simulate';
 import { getRoomAdapter, registeredRoomKinds } from '../src/engine/rooms/registry';
 import { maxFindableFor } from '../src/engine/twistle';
 import { ROOM_PUZZLE_KINDS, type RoomPuzzleKind } from '../src/engine/rooms/room-puzzle';
@@ -156,10 +157,28 @@ describe('4.10h — the payout is a function of the work, with a floor and a cei
         .toBeLessThanOrEqual(Math.round((BASE_DAY_BUDGET * 2) / 3));
     }
     // …and the ceiling still gets leaner as she climbs (the 2026-08 owner
-    // retune, which this repricing had to preserve rather than replace): the
-    // best a tier-3 room can pay is less than the −9 step it took to get there.
+    // retune, which this repricing had to preserve rather than replace).
+    //
+    // ROUND 36 — WHAT THIS CLAUSE USED TO SAY, AND WHY IT COULD NOT SURVIVE.
+    // It read: "the best a tier-3 room can pay is less than the −9 step it took
+    // to get there", i.e. `max(solvePayout(k, 3)) < -moveAt(6)`. That compared
+    // a whole room's payout to ONE MOVE, and it only ever read as a bound
+    // because a move up top cost half a day. With one flat price
+    // (docs/THE_CLIMB §1) a move is 3 steps, so the comparison is neither true
+    // nor about anything — a solve SHOULD be worth more than a single step.
+    // Deleting it rather than re-typing the constant is the point: leanness is
+    // a statement about TIERS, and that is what is gated, here and below.
+    // The BEST a tier-3 room can pay is strictly less than the best a tier-1
+    // room can — 7 against 15 — which is the leanness in the only unit it can
+    // honestly be stated in. (Not per-kind: the Word Web is a LONGER puzzle at
+    // tier 3 than at tier 1, and the whole of round 22 is that a room is paid
+    // for the work it asks. A per-kind bound would price length backwards.)
     expect(Math.max(...ROOM_PUZZLE_KINDS.map((k) => solvePayout(k, 3))))
-      .toBeLessThan(-moveAt(6));
+      .toBeLessThan(Math.max(...ROOM_PUZZLE_KINDS.map((k) => solvePayout(k, 1))));
+    // …and the storey the tier-3 rooms stand on is still four moves of climb
+    // above the entrance, which is the cost the old clause was really about.
+    expect((SANCTUM_LANDING_ROW - 1) * -moveAt(0))
+      .toBeGreaterThan(Math.max(...ROOM_PUZZLE_KINDS.map((k) => solvePayout(k, 3))));
     expect(SOLVE_WAGE.capByTier[2]!).toBeLessThan(SOLVE_WAGE.capByTier[1]!);
     expect(SOLVE_WAGE.capByTier[1]!).toBeLessThan(SOLVE_WAGE.capByTier[0]!);
   });

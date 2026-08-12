@@ -79,11 +79,11 @@ from v2 carry over (see §10).
 
 | Event | Steps |
 |---|---|
-| Start-of-day budget | 18 (`BASE_DAY_BUDGET`; day 1 adds a scripted `FIRST_MORNING_POT` of +4) |
-| Enter a room (move one cell) | priced per row (`MOVE_COST_BY_ROW`): −2, −2, −2, −2, −7, −9, −9 |
+| Start-of-day budget | 22 (`BASE_DAY_BUDGET`; day 1 adds a scripted `FIRST_MORNING_POT` of +4) |
+| Enter a room (move one cell) | **−3 on every storey** (`MOVE_COST_BY_ROW`, flat since round 36) |
 | Puzzle mistake (wrong guess / invalid word) | −2 (tier 3 rooms: −3) |
 | Solve a small room (micro-puzzle) | +3 |
-| Solve a large room (anchor mode) | `7 − tier` = +6 / +5 / +4 — deliberately INVERTED from the old +6..+8 in the round-4 overhaul, so a tier-3 solve softens the next mistake instead of bankrolling the next storey |
+| Solve a large room (anchor mode) | the room's own honest minutes at the house wage (`SOLVE_WAGE`, round 22), clamped to a cozy floor of +4 and a ceiling of +15 / +11 / +7 by tier — leaner as you climb, so a tier-3 solve softens the next mistake instead of bankrolling the next storey. The legacy unkeyed band is still `7 − tier` = +6 / +5 / +4 |
 | Perfect solve (no mistakes) | +2 bonus |
 | Kitchen snack / Bramble's tea | green-room refills +2..+6 (Kitchen +6, Larder +5, Boot Room +3, Still Room +2; compounding hooks +1..+2) · tea 0 → +13 across the friendship, poured as a cup at the door (`TEA_POUR.dawnCup`) and the rest of the pot on the second landing |
 | Petting Dewey (the cat) | −1 (worth it) |
@@ -91,14 +91,27 @@ from v2 carry over (see §10).
 - Steps never go negative mid-puzzle: a puzzle can always be *abandoned* (the room stays
   unsolved and yields nothing, no extra penalty — cozy, not cruel).
 - Day ends at 0 steps with a gentle "dusk" transition, never a failure sting.
-- Target (RETUNED, round 4 — see AAA 4.10a–f, which is the live spec): a decent day
-  visits **5–8 rooms** and solves 2–4 puzzles in **10–15 minutes**; a great day reaches
-  row 5–6, and the Sanctum row is a *campaign* event (first reached around day 6–10),
-  not something refills buy on a Tuesday. Base budget is **18 steps**, and movement is
-  priced per row (−2 on the ground floor rising to −9 up top), so the climb — not the
-  puzzle count — is what a day is spent on. A single minimum-length ascent to the
-  Sanctum landing therefore costs 22 steps of pure walking against a day-1 pot of 22
-  — the ascent is a campaign arc, not a day-1 option (AAA 4.10d/4.10e).
+- Target (see AAA 4.10a–f, which is the live spec): a decent day visits **7–11 rooms**
+  and solves 2–4 puzzles in **10–15 minutes**; a great day reaches row 5–6, and standing
+  at the Sanctum DOOR is a *campaign* event (AAA 4.10d), not something refills buy on a
+  Tuesday. Base budget is **22 steps**, and a move costs **−3 on every storey**, so what
+  a day is spent on is DISTANCE WALKED — the doubling back — rather than altitude.
+  A single minimum-length ascent to the Sanctum landing is five moves, i.e. 15 steps of
+  pure staircase; priced with the walk-backs a real climb needs it is 25.8 against a
+  22-step budget, which is why the ascent is a campaign arc and not a day-1 option.
+
+  *(Round 36 — THE ALTITUDE TOLL IS GONE, docs/THE_CLIMB §1. The table read −2, −2, −2,
+  −2, −7, −9, −9 and the owner's verdict after playing was "it shouldn't get more
+  expensive the further you move up… the steps economy is driven by needing to double
+  back". The budget moved with it, 18 → 22, because they are one lever: a flat −3 is 1.5×
+  the old ground-floor price on the storeys where nearly every move happens, and left at
+  18 the evening fell to 9.9–10.1 minutes. What this deleted, deliberately, is the
+  headline invariant `reserveToTop(1) > BASE_DAY_BUDGET` — five flat moves cannot outcost
+  a dozen-move evening, and no honest flat price makes them. What replaced it is measured
+  on the grid-true model rather than asserted in arithmetic: a skipper who refunds nothing
+  still tops out on the middle floors and stands at the door on 0.03% of evenings, and the
+  skilled player first stands there on day 16 of a 14–22 band. Every band that moved is
+  re-published in AAA 4.10.)*
 
   *(Round 19 — what the climb is FOR changed, and these numbers did not. The speaking
   tube (§7, `engine/manor/tube.ts`) means the ascent no longer sells permission to guess:
@@ -107,7 +120,8 @@ from v2 carry over (see §10).
   the engine and wired it to nothing; `tests/tube-day1-live.mjs` is the proof it is
   reachable.) `MOVE_COST_BY_ROW`, `BASE_DAY_BUDGET` and `reserveToTop(1) = 22` are all
   untouched, and so are 4.10d's first-landing bands. The volume bands in §7 moved; the
-  step economy did not.)*
+  step economy did not.)* *(Round 36 superseded the movement half of that sentence: the
+  table is flat, the budget is 22, and `reserveToTop(1)` is no longer a gate — see above.)*
 
   *(Round 16: the three cells above and this bullet had drifted from the live tables —
   the doc still quoted the pre-overhaul 40 / +6..+8 / −5, i.e. numbers the game has not
@@ -126,7 +140,9 @@ from v2 carry over (see §10).
   arc funds the climb it was always about instead of slackening the floor. Measured
   after: purse 28 → 18 (median player) and 30 → 20 (skilled), net steps per
   ground-floor room −0.84 → −2.55 and −0.36 → −0.96, and the ground floor now runs on
-  the same 22 steps on day 30 as on day 1. Pinned by `tests/economy-pressure.test.ts`.)*
+  the same purse on day 30 as on day 1 — 22 then, 26 since round 36 moved the budget, and
+  the gate is the EQUALITY rather than the level. Pinned by
+  `tests/economy-pressure.test.ts`.)*
 
 **Other currencies** (secondary, all reset nightly except keys' meta-variants):
 - **Gems** — spent to draft premium room cards and reroll a draft offer (1 gem).

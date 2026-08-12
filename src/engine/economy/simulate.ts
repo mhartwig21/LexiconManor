@@ -964,8 +964,13 @@ export const PROFILE_SKILLED: SimProfile = {
 /**
  * What ONE storey costs from 1-based `row`: the walk back to a frontier door
  * on this floor plus the step up, priced through the real `MOVE_COST_BY_ROW`.
- * The day model's push/farm decision reads this, so any movement retune moves
- * player behaviour too — the sim never "plays" a manor the ledger would not.
+ *
+ * ROUND 36 — THIS STILL RISES STRICTLY WITH THE ROW, and nothing was tuned to
+ * keep it. The step up is one flat move now; what makes the fourth storey
+ * dearer than the second is the `walkbackPerRow × (row − 1)` term — the walk
+ * back to a frontier door is longer the higher you are. That is the whole of
+ * the owner's "the steps economy is driven by needing to double back", in the
+ * one function that priced it as a tariff before.
  */
 export function climbStepCost(
   row: number,
@@ -978,11 +983,20 @@ export function climbStepCost(
 
 /**
  * What the whole remaining ascent costs from 1-based `fromRow` to THE SANCTUM
- * LANDING — movement only. Exported because it is the headline number of this
- * overhaul: a bare, perfectly-efficient ascent costs MORE than the day's base
- * budget, so the landing must be paid for with refunds and tea. Round 7: this
- * now stops at the landing (1-based 6) instead of the sealed Sanctum's own row
- * (7), i.e. it prices the climb the player is actually asked to make.
+ * LANDING — movement only. Round 7: this stops at the landing (1-based 6)
+ * instead of the sealed Sanctum's own row (7), i.e. it prices the climb the
+ * player is actually asked to make.
+ *
+ * ═══ ROUND 36 — WHICH ASCENT THE HEADLINE IS ABOUT ════════════════════════
+ * It used to be the BARE one (`walkbackPerRow: 0`): 22 steps against an 18-step
+ * budget, "so the landing must be paid for with refunds and tea". That
+ * inequality is an altitude-toll fact and it died with the toll — five flat
+ * moves cannot outcost a dozen-move evening. The clause that survives, and that
+ * tests/economy-pressure.test.ts gates, is about the WALK: a REALISTIC ascent
+ * (`reserveToTop(1, PROFILE_SKILLED)` = 25.8) still costs more than the whole
+ * base budget, because a climb is walk-backs. The bare number is still exported
+ * — it is `BARE_ASCENT_STEPS` in engine/economy/steps.ts — but it is a fact
+ * about the staircase now, not a gate.
  */
 export function reserveToTop(
   fromRow: number,
@@ -1206,12 +1220,17 @@ export const CARD_READING = {
   sanctumPull: 12,
   /**
    * Both geometry terms are scaled by what a walk on THIS storey costs, as a
-   * multiple of the ground floor's price (`moveAt(row) / moveAt(0)`: ×1 on rows
-   * 0–3, ×3.5 on row 4, ×4.5 on rows 5–6). A cul-de-sac on the ground floor is
-   * two steps of walking back; the same plan on the fourth storey is nine a
-   * room, and a player reading the sheet knows the difference. This is the one
-   * place the model lets geometry outrank category preference, and it only does
-   * so where the price says it should.
+   * multiple of the ground floor's price (`moveAt(row) / moveAt(0)`).
+   *
+   * ROUND 36 — THAT MULTIPLE IS 1 EVERYWHERE NOW, and the scaling is kept
+   * rather than deleted for one reason: it is the term that reads the TABLE. It
+   * used to run ×1 on rows 0–3 and ×4.5 up top, so a cul-de-sac up there
+   * outranked category preference; under a flat price a cul-de-sac costs the
+   * same wherever it is, and what makes the top expensive is that everything
+   * you have to walk back to is further away — which the model measures on the
+   * real grid (`priceOf` walks the BFS path) rather than inferring from a rate.
+   * If a future round prices a storey differently again, this term re-arms on
+   * its own; a hard-coded 1 would have to be found and re-derived.
    */
   priceScaled: true,
 } as const;

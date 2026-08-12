@@ -35,17 +35,19 @@
  * numbers. What is asserted here is only what §5.10 is about.
  */
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { create } from 'zustand';
 import {
-  medianOf, quantileOf, simulateCampaigns, simulateDays,
+  medianOf, quantileOf, reserveToTop, simulateCampaigns, simulateDays,
   CLOCK_BAND, FIRST_LOCKED_ROW, GROUND_ROWS, PROFILE_DECENT, PROFILE_GREAT, PROFILE_SKILLED,
   RETIREMENT,
   SESSION_WIND_DOWN, type SimDayResult, type SimProfile,
 } from '../src/engine/economy/simulate';
 import {
   moveAt, solvePayout, teaBonus, teaDawnPour, teaLandingPour,
-  BASE_DAY_BUDGET, DOOR_LOCKS, FIRST_MORNING_POT, MOVE_COST_BY_ROW, TEA_ARC, TEA_BY_POINTS,
-  TEA_POUR,
+  BARE_ASCENT_STEPS, BASE_DAY_BUDGET, DOOR_LOCKS, FIRST_MORNING_POT, MOVE_COST_BY_ROW,
+  TEA_ARC, TEA_BY_POINTS, TEA_POUR,
 } from '../src/engine/economy/steps';
 import { ROOM_PUZZLE_KINDS } from '../src/engine/rooms/room-puzzle';
 import { createManor, rowTier } from '../src/engine/manor/grid';
@@ -118,9 +120,16 @@ describe('4.10i — the band this is measured over is derived, not asserted', ()
     expect(GROUND_ROWS).toBeLessThan(FIRST_LOCKED_ROW);
   });
 
-  it('charges one price across the whole band, and more above it', () => {
+  it('charges one price across the whole band — and now above it too', () => {
     for (let r = 0; r <= GROUND_ROWS; r++) expect(moveAt(r)).toBe(moveAt(0));
-    expect(moveAt(FIRST_LOCKED_ROW)).toBeLessThan(moveAt(GROUND_ROWS));
+    // ROUND 36 — the second clause used to be `moveAt(FIRST_LOCKED_ROW) <
+    // moveAt(GROUND_ROWS)`: the storey above the band charged more. It does not
+    // any more (docs/THE_CLIMB §1), and §5.10 does not need it to. §5.10 is
+    // about the ground floor being a purse she can RUN DOWN, and every gate in
+    // this file measures that directly — what she is holding, what a room nets
+    // her, whether she arrives at the first padlock richer than she started.
+    // Those all held, and the drain got deeper: −1.22 → −2.24 net a room.
+    expect(moveAt(FIRST_LOCKED_ROW)).toBe(moveAt(GROUND_ROWS));
     // The lever itself: a ground-floor room is not free. −1 is what §5.10 was
     // written about; if this ever goes back to −1, the whole file is a lie.
     expect(-moveAt(0)).toBeGreaterThanOrEqual(2);
@@ -460,13 +469,24 @@ describe('4.10i — the evening can END with steps in hand (the vacuous gate)', 
 
 describe('4.10i — the movement table still says what the docs say', () => {
   it('keeps the bare ascent at the number three files quote', () => {
-    // Round 7's lesson, applied to round 23's retune: the ascent sum is quoted
-    // in steps.ts, MANOR_DESIGN §4 and tests/economy-simulation.test.ts, and a
-    // retune that moved it in one place only survived three rounds. The GROUND
-    // FLOOR moved this time and the ascent deliberately did not.
+    // Round 7's lesson: the ascent sum is quoted in steps.ts, MANOR_DESIGN §4
+    // and tests/economy-simulation.test.ts, and a retune that moved it in one
+    // place only survived three rounds — then drifted again in round 23, in the
+    // note that cited round 7. There is ONE of it now (`BARE_ASCENT_STEPS`) and
+    // this holds the doc to printing that, so the drift has nowhere to happen.
     let bare = 0;
     for (let r = 1; r < MOVE_COST_BY_ROW.length - 1; r++) bare += -moveAt(r);
-    expect(bare).toBe(22);
-    expect(bare).toBeGreaterThanOrEqual(DAY_ONE_PURSE);
+    expect(bare).toBe(BARE_ASCENT_STEPS);
+    // ROUND 36 — 22 → 15, and the clause under it inverted. It used to read
+    // `bare >= DAY_ONE_PURSE`: the staircase alone outcost the whole first
+    // evening. Five flat moves cannot do that (docs/THE_CLIMB §1), so what is
+    // gated is the honest replacement — a REAL ascent, with the walk-backs a
+    // climb is actually made of, still outcosts the base budget.
+    expect(bare).toBeLessThan(DAY_ONE_PURSE);
+    expect(reserveToTop(1, PROFILE_SKILLED)).toBeGreaterThan(BASE_DAY_BUDGET);
+    // …and the doc quotes the live number rather than a remembered one.
+    const doc = readFileSync(join(process.cwd(), 'docs', 'MANOR_DESIGN.md'), 'utf8');
+    expect(doc).toContain(`five moves, i.e. ${BARE_ASCENT_STEPS} steps of`);
+    expect(doc).not.toContain('costs 22 steps of pure walking');
   });
 });

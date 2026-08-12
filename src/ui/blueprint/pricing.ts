@@ -3,16 +3,22 @@
  *
  * ── WHY THIS FILE EXISTS ───────────────────────────────────────────────────
  * Round-5 audit, AAA 4.6/4.9/4.10: *the price of a step was invisible until
- * after it was charged*. `MOVE_COST_BY_ROW` ranges −1..−5 and nothing in the
+ * after it was charged*. `MOVE_COST_BY_ROW` ranged −1..−5 and nothing in the
  * live UI named it — the sheet drew tier bands that said "graver" and walk
  * targets carried the raw cell key as their accessible name (`Walk 2,5`). On
  * the upper storeys a single mis-tap spent 5 of an 18-step budget with no
  * pre-commit signal, no confirmation and no undo: exactly the surprise charge
  * 4.6 forbids, and the one thing the padlock arc was careful to avoid.
  *
- * Blue Prince can leave movement unlabelled because it is a flat 1/room. Ours
- * varies 5× and IS the push-your-luck decision, so every priced target on the
- * sheet names its cost, in ink and in its accessible name.
+ * ROUND 36 — THE TABLE IS FLAT (docs/THE_CLIMB §1), so the price is now one
+ * fact rather than seven. That does not retire this file: a fact she has never
+ * been told is still invisible, and "every move costs the same" is a thing she
+ * has to be able to READ, not to infer from a column of repeated marks. So the
+ * rate card collapses to one stamp per price band (`priceBands`), the spoken
+ * name says the band out loud, and every walk target still names its own price
+ * in words. What goes silent is the per-target −N: `stampsPrice` compares two
+ * storeys and there is nothing left to compare, which is the correct answer to
+ * a flat table rather than a shortcoming of it.
  *
  * Every number here is read from `moveAt`, never re-typed, so the sheet and
  * the ledger cannot drift apart.
@@ -73,7 +79,9 @@ export function walkLabel(row: number): string {
  * A critic captured every word of visible text on the blueprint and came away
  * with four wing names, "ONE ROOM", the title block — and a BARE UNHEADED
  * COLUMN reading −2 −2 −2 −2 −7 −9 −9. Both the rate card and the tier pips
- * carried `aria-hidden="true"`, so not even a screen reader could ask.
+ * carried `aria-hidden="true"`, so not even a screen reader could ask. (Round
+ * 36: that column is one −3 now, and `priceBands` is what the ink and this
+ * sentence both read, so they cannot disagree about how many marks there are.)
  *
  * The old reasoning for hiding them (round 28) was that every walk target
  * already speaks its own price in `walkLabel`, so a key would be a second
@@ -86,7 +94,7 @@ export function walkLabel(row: number): string {
  * Rows of equal price are collapsed into one clause, so the seven-row column
  * speaks as the three bands it actually is.
  */
-export function rateCardLabel(rows: number): string {
+export function priceBands(rows: number): { from: number; to: number; cost: number }[] {
   const bands: { from: number; to: number; cost: number }[] = [];
   for (let row = 0; row < rows; row++) {
     const cost = -moveAt(row);
@@ -94,6 +102,11 @@ export function rateCardLabel(rows: number): string {
     if (last && last.cost === cost) last.to = row;
     else bands.push({ from: row, to: row, cost });
   }
+  return bands;
+}
+
+export function rateCardLabel(rows: number): string {
+  const bands = priceBands(rows);
   const clauses = bands.map(({ from, to, cost }) => (
     from === to
       ? `${rowName(from)}, ${cost} steps`

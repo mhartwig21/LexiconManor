@@ -130,19 +130,34 @@ describe('the day’s account adds up', () => {
     expect(lines.map((l) => l.why)).toEqual(['tea', 'walk']);
     const walk = lines.find((l) => l.why === 'walk')!;
     expect(walk.count).toBe(3);
-    expect(walk.delta).toBe(-6);
+    expect(walk.delta).toBe(3 * moveAt(0));
   });
 
-  it('a climb and a walk are two rows, because they are two prices', () => {
+  /**
+   * ═══ ROUND 36 — THE CLIMB ROW EXISTS AND IS EMPTY, AND THAT IS THE TEST ═══
+   *
+   * A move costs a move now (docs/THE_CLIMB §1), so the climb DIFFERENTIAL —
+   * `moveAt(to) − moveAt(from)`, the second half of the two-part walk — is 0 on
+   * every pair of storeys, and the slice never writes the entry. The sheet
+   * therefore has one row where it used to have two.
+   *
+   * What this still has to prove, and what the old assertion really proved, is
+   * that the ACCOUNT CARRIES THE PRICE THE ENGINE SET rather than the one the
+   * caller asked for: the call below hands `priceEntry` a −7 it invented, and
+   * the sheet must show what `MOVE_COST_BY_ROW` says. That is the invariant a
+   * flat table makes easiest to break silently and hardest to notice.
+   */
+  it('a climb costs nothing extra, and the sheet says the engine’s price', () => {
     const { store } = inTheConservatory();
     const at = Date.now();
     store.getState().applyStepEntry({ reason: 'move', delta: -2, at, roomKey: '1,0' });
     store.getState().applyStepEntry({ reason: 'move', delta: -7, at, roomKey: '1,3>1,4' });
     const lines = ledgerLines(store.getState().ledger.entries, kindOf(store));
-    expect(lines.map((l) => l.why).sort()).toEqual(['climb', 'walk']);
-    // And the account carries the price the ENGINE set, not the one the caller
-    // asked for: `priceEntry` re-prices every move off `MOVE_COST_BY_ROW`.
-    expect(lines.find((l) => l.why === 'climb')!.delta).toBe(moveAt(4) - moveAt(3));
+    expect(moveAt(4) - moveAt(3)).toBe(0);
+    // The invented −7 is re-priced to the differential, which is nothing at all,
+    // so no 'climb' row is drawn and the walk row is the engine's own number.
+    expect(lines.map((l) => l.why)).toEqual(['walk']);
+    expect(lines.find((l) => l.why === 'walk')!.delta).toBe(moveAt(0));
   });
 });
 

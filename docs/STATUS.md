@@ -103,7 +103,55 @@ tooltip.
 
 ---
 
-## 3. What the last three rounds changed, with their numbers
+## 3. What the last few rounds changed, with their numbers
+
+### Round 36 — a move costs a move, wherever she is
+
+The owner, after playing: *"The steps economy is insane right now… It shouldn't get more
+expensive the further you move up. The steps economy is driven by needing to double
+back."* `MOVE_COST_BY_ROW` was `[-2, -2, -2, -2, -7, -9, -9]` — an **altitude toll** that
+charged her for doing the thing the game is about. It is one price now, and
+`BASE_DAY_BUDGET` moved with it because the two constants have always been one lever.
+Nothing else in `engine/economy/steps.ts` was retuned: the padlock, the key supply, the
+tea arc, the solve wage and the deck are untouched, so every number below is a
+consequence rather than a second tuning pass. Full derivation and every moved band:
+docs/THE_CLIMB §1 and AAA 4.10's round-36 block.
+
+| | Was | Now |
+|---|---|---|
+| A move, by storey | −2 −2 −2 −2 −7 −9 −9 | **−3 on every storey** |
+| Start-of-day budget | 18 | **22** (at 18 the evening fell to 9.9–10.1 min, under 4.10b's floor) |
+| Bare ascent to the landing | 22 steps, against an 18-step budget | **15**, against 22 |
+| Median player: first at the DOOR | day 23–26 | **day 20–21** (band 22–30 → **17–25**) |
+| Median player: volume won | day 25–28 | **day 21–22** (band 24–32 → **18–26**) |
+| Median player: never finished in 45 evenings | 8.4–13.6% | **0–1%** |
+| Skilled player: first at the DOOR / volume won | day 17–18 / 18–19 | **16 / 16.5–17** — both bands unmoved |
+| Decent evening (4.10b) | 14.6 min, p90 18.9 | **12.2 min, p90 17.5** — band 10–15 unmoved |
+| Ground floor: net steps per room | −1.22 | **−2.24** — §5.10's floor got dearer, not slacker |
+| A no-refund evening reaching the door | 0%, *by construction* | **0.03%**, measured |
+| Wage spread, every room × tier (4.10h) | 9.07× | **7.77×** — the ceiling is thirds of a day |
+
+**The asymmetry is the finding.** The skilled player's published bands did not need
+touching; the median player's moved by five or six evenings. She is modelled at
+`walkbackPerRow` 0.58 against his 0.36, and the old table charged −7 and −9 for exactly
+the storeys she re-walks — so the altitude toll was, measurably, a tax on doubling back
+that only the player who doubles back paid. The owner's diagnosis, arriving as a number.
+
+**What got worse, published rather than absorbed.** The late-campaign evening inflates
+harder (1.05 → 1.26 for him, 1.07 → 1.23 for her): climbing IS drafting rooms now, so
+Bramble's arc buys minutes as well as storeys, and if the owner wants the late evening
+shorter the lever is `TEA_BY_POINTS`, not the move price. The seal's overnight backlog
+rose for both profiles (67.6% / 36.5%), because more of every evening happens on the
+storeys where violet is dense while solving stays bounded by the clock. **The game did
+not get longer for anyone; it got about six evenings shorter for her.**
+
+**The invariant this deleted, on purpose.** `reserveToTop(1) > BASE_DAY_BUDGET` — "a
+bare, perfect ascent costs more than the whole day, so the top is always bought with
+refunds" — is an altitude-toll inequality and no honest flat price can restore it: an
+evening is a dozen-plus moves and the minimum ascent is five of them. It is replaced by
+the clause that is still true about the WALK (a realistic ascent, with walk-backs, costs
+25.8 against 22) and by the day-1 gate measured on the grid-true model instead of derived
+from the table it was gating.
 
 ### Round 35 — the fifth member the letters cannot see, and the median the Library owed
 
@@ -310,10 +358,10 @@ room saying nothing, which is exactly the class of defect that bar exists for.
 
 | | Was | Now |
 |---|---|---|
-| §5.10 Steps in hand on the ground floor (median / skilled) | **28 / 30** against an 18-step budget | **18 / 20** |
-| §5.10 Net steps per ground-floor room (median / skilled) | **−0.84 / −0.36** (a wash) | **−2.58 / −0.96** *(re-derived on round 24's grid-true instrument: −1.24 / −0.26)* |
+| §5.10 Steps in hand on the ground floor (median / skilled) | **28 / 30** against an 18-step budget | **18 / 20** *(round 36, against a 22-step budget: 15 / 20)* |
+| §5.10 Net steps per ground-floor room (median / skilled) | **−0.84 / −0.36** (a wash) | **−2.58 / −0.96** *(re-derived on round 24's grid-true instrument: −1.24 / −0.26; round 36's flat price: **−2.24**)* |
 | §5.10 In hand arriving at the first padlock (median / skilled) | 15 / **21** — richer than she started | 12 / 18 *(now 11 / 19)* |
-| §5.10 Solve : walk ratio on row 0 | 12 : 1 | **6 : 1** (one price, −2, across rows 0–2) |
+| §5.10 Solve : walk ratio on row 0 | 12 : 1 | **6 : 1** (one price, −2, across rows 0–2) *(round 36: one price, −3, across ALL SEVEN — 4 : 1)* |
 | §5.9 Darkroom plaintexts that are stock proverbs | **59 of 94 (62.8%)** | **0 of 121** |
 | §5.9 Linen Closet unique clues per entry | **0.431** (155 of 360) | **1.000** (696 clues over 174 bank words) |
 | §5.9 Most-repeated crossword answer / clue | SUN ×12 · "Parchment guide" ×8 | ×4 · **never twice** |

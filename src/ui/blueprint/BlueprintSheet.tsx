@@ -14,14 +14,21 @@
  *   - tap the room you stand in       → onEnterRoom  (unsolved puzzle rooms)
  *   - tap the Sanctum from its landing→ onSanctum
  *
- * PRICES (AAA 4.6 / 4.9 / 4.10): movement is priced per row (−1 on the ground
- * floor rising to −5 up top) and that is the whole push-your-luck decision, so
- * the sheet says so BEFORE the tap, never only after the charge. The left
- * margin carries a rate card — one −N per row beside the tier pips — and every
- * walk/ghost target onto a differently-priced storey wears its own −N and
- * names it in its accessible label ("Walk to the second landing — 3 steps").
- * All of it is read from `moveAt` via ./pricing.ts, so the ink and the ledger
- * cannot drift apart.
+ * PRICES (AAA 4.6 / 4.9 / 4.10): the sheet says what a move costs BEFORE the
+ * tap, never only after the charge. Every walk/ghost target names its price in
+ * its accessible label ("Walk to the second landing — 3 steps"), and the left
+ * margin carries a rate card beside the tier pips. All of it is read from
+ * `moveAt` via ./pricing.ts, so the ink and the ledger cannot drift apart.
+ *
+ * ROUND 36 — THE RATE CARD IS ONE STAMP PER PRICE BAND, NOT ONE PER ROW. The
+ * table is flat now (`MOVE_COST_BY_ROW`, docs/THE_CLIMB §1), and a column of
+ * seven identical −3s is the exact failure this file's own round-31 note names:
+ * *"a price stamped on everything stops being read"*. Bands are derived from
+ * `moveAt`, so a table that varies again draws a stamp per storey again with no
+ * edit here — and `rateCardLabel` has spoken in collapsed bands since round 31,
+ * so the ink and the spoken name now say the same thing. For the same reason
+ * `stampsPrice`/`stampsDraftPrice` put no −N on any target: there is no storey
+ * that costs differently from the one she is standing on.
  *
  * PADLOCKS (AAA 4.6 / 4.10d): doors into the upper storeys can be locked
  * (engine/manor/locks.ts). The sheet draws a small brass padlock on every gate
@@ -51,7 +58,7 @@ import { ROOM_KIND_GLYPH_PATHS } from './CategoryGlyph';
 import {
   draftLabel, draftStamp, landingRefusalAnnouncement, landingRefusalLine,
   lockedDraftLabel, lockedRefusalAnnouncement, lockedRefusalLine,
-  priceStamp, rateCardLabel, stampsDraftPrice, stampsPrice, tierPipLabel, walkLabel,
+  priceBands, priceStamp, rateCardLabel, stampsDraftPrice, stampsPrice, tierPipLabel, walkLabel,
   LANDING_SEALED_LABEL,
 } from './pricing';
 import {
@@ -557,8 +564,17 @@ export default function BlueprintSheet({
         <text className="bp-key__line" x={VIEW_W / 2} y={VIEW_H - 24}>
           Each row is a storey &mdash; north is up the sheet, and up the house.
         </text>
+        {/* ROUND 36: the second half of this line used to read "&minus;N is what
+            one move costs THERE", which is a sentence about a table that varies
+            by storey. It does not any more, so the key says the flat fact in
+            the flat case and the per-storey one otherwise — both derived from
+            `priceBands`, so neither can go stale on a retune. The flat form is
+            five characters SHORTER than the line it replaces, which is what
+            keeps it inside the key's measured width (AAA 1.5/6.6). */}
         <text className="bp-key__line" x={VIEW_W / 2} y={VIEW_H - 9}>
-          Diamonds mark its tier; &minus;N is what one move costs there.
+          {priceBands(MANOR_ROWS).length === 1
+            ? <>Diamonds mark its tier; {priceStamp(0)} is what any move costs.</>
+            : <>Diamonds mark its tier; &minus;N is what one move costs there.</>}
         </text>
         {/* …and the same word AT THE HEAD OF ITS OWN COLUMN. The key in the
             bottom margin is a legend, twenty rows away from the marks it
@@ -601,9 +617,14 @@ export default function BlueprintSheet({
           `moveAt(row)` so the margin and the ledger cannot drift apart — the
           surveyor's rate card, in the surveyor's margin. */}
       <g className="bp-rowprice" role="img" aria-label={rateCardLabel(MANOR_ROWS)}>
-        {Array.from({ length: MANOR_ROWS }, (_, row) => (
-          <text key={row} className="bp-rowprice__n" x={MX - 22} y={py(row) + CELL / 2 + 3.4}>
-            {priceStamp(row)}
+        {priceBands(MANOR_ROWS).map(({ from, to }) => (
+          <text
+            key={from}
+            className="bp-rowprice__n"
+            x={MX - 22}
+            y={(py(from) + py(to) + CELL) / 2 + 3.4}
+          >
+            {priceStamp(from)}
           </text>
         ))}
       </g>

@@ -81,7 +81,7 @@ describe('beginDay', () => {
     // Owner-playtest overhaul: the base budget is deliberately too lean to
     // buy the top of the house; the tea arc is what eventually pays for it.
     expect(begun!.ledger.budget).toBe(STEP_TABLE.dayStart);
-    expect(begun!.ledger.budget).toBe(18);
+    expect(begun!.ledger.budget).toBe(22);   // round 36: 18 → 22 (see BASE_DAY_BUDGET)
     expect(begun!.teaSteps).toBe(0);          // day 1: they have only just met
     // …but the FIRST morning gets a scripted welcome pot, or the very first
     // evening runs under the 10–15 minute floor (AAA 4.10b, round-5 audit).

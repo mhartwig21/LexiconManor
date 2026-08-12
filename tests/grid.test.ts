@@ -18,11 +18,11 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import BlueprintSheet from '../src/ui/blueprint/BlueprintSheet';
 import {
-  draftLabel, draftTotal, landingRefusalAnnouncement, landingRefusalLine, priceStamp, priceWords,
-  sanctumDraftStamp, stampsDraftPrice, stampsPrice, walkLabel,
+  draftLabel, draftTotal, landingRefusalAnnouncement, landingRefusalLine, priceBands,
+  priceStamp, priceWords, sanctumDraftStamp, stampsDraftPrice, stampsPrice, walkLabel,
   LANDING_REFUSAL_LINES, LANDING_SEALED_LABEL,
 } from '../src/ui/blueprint/pricing';
-import { DOOR_LOCKS, moveAt, rowName } from '../src/engine/economy/steps';
+import { DOOR_LOCKS, moveAt, rowName, MOVE_COST_BY_ROW } from '../src/engine/economy/steps';
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCard } from '../src/engine/types';
 import { ENTRANCE_CELL, MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../src/engine/types';
 import DraftModal from '../src/ui/blueprint/DraftModal';
@@ -1164,14 +1164,33 @@ describe('the blueprint names its prices (AAA 4.6 / 4.9 / 4.10)', () => {
   it('stamps a target only when it is priced differently from where she stands', () => {
     // A price stamped on everything stops being read; a price stamped on the
     // thing that costs more is the push-your-luck decision, in ink.
-    expect(stampsPrice(2, 2)).toBe(false);
-    // ROUND 23: rows 0–3 are one price now (REVIEW_AA §5.10), so the storey
-    // that reads as dearer is the first PADLOCKED one — which is also the only
-    // place the push-your-luck decision was ever really made.
-    expect(stampsPrice(3, 3)).toBe(false);
-    expect(stampsPrice(3, 4)).toBe(true);
-    expect(stampsDraftPrice(3, 3)).toBe(false);
-    expect(stampsDraftPrice(3, 4)).toBe(true);
+    //
+    // ═══ ROUND 36 — THERE IS NOTHING LEFT TO COMPARE, AND THAT IS THE ANSWER
+    // The table is flat (docs/THE_CLIMB §1), so no target is priced differently
+    // from the storey she is standing on and NO target wears a stamp. This is
+    // not the predicate going quiet by accident: it is the predicate answering
+    // a flat table correctly, and it is why the rate card collapsed to one mark
+    // in the same round. The test is written over the whole grid rather than
+    // over the two rows round 23 happened to pick, so a table that varies again
+    // re-arms it wherever it varies.
+    // The premise, stated so that it fails LOUDLY rather than making the claim
+    // below vacuous: the shipped table is one price. (Asserting the predicate
+    // against its own arithmetic would pass by construction — this repo's
+    // standing rule 1 — so what is checked is the shipped OUTCOME under a
+    // premise that is checked separately.)
+    expect(new Set(MOVE_COST_BY_ROW).size, 'the table varies again — re-arm this test')
+      .toBe(1);
+    const stamped: string[] = [];
+    for (let from = 0; from < MANOR_ROWS; from++) {
+      for (let to = 0; to < MANOR_ROWS; to++) {
+        if (stampsPrice(from, to)) stamped.push(`walk ${from}→${to}`);
+        if (stampsDraftPrice(from, to)) stamped.push(`draft ${from}→${to}`);
+      }
+    }
+    expect(stamped, 'a −N stamp on a target that costs what her own floor does')
+      .toEqual([]);
+    // …and the rate card is one mark rather than seven, for the same reason.
+    expect(priceBands(MANOR_ROWS).map((b) => b.cost)).toEqual([-moveAt(0)]);
     // Downstairs is never advertised as a discount it will not give: the
     // climb differential floors at 0, so taking a room below costs the local
     // rate, and the stamp says the local rate (i.e. no stamp at all).
