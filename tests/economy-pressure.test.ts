@@ -59,6 +59,27 @@ import { createJournalSlice } from '../src/app/slices/journal';
 import { createMetaSlice } from '../src/app/slices/meta';
 import type { PlacedRoom } from '../src/engine/types';
 
+/**
+ * ROUND 36 — WHY THE HEAVY GATES IN THIS FILE AWAIT.
+ *
+ * The same failure that took the round-25 deploy down, in a second file. The
+ * grid-true simulator and round 36's draft rules made a campaign sweep dearer,
+ * and the sign gate below runs NINE of them (three seeds x three profiles) in
+ * one synchronous `it()`. That blew the 30s testTimeout on a CI runner and
+ * starved the worker's reporter besides — `[vitest-worker]: Timeout calling
+ * "onTaskUpdate"` — so a suite of 1,400 PASSING tests failed the build.
+ *
+ * `breathe()` yields the event loop between sweeps and HEAVY_MS gives the gate
+ * a budget matched to what it actually does. No seed, count, profile or
+ * threshold changes: these are byte-for-byte the gates that were here before.
+ * If a future round adds a fourth seed, add the await and raise the budget —
+ * do not thin the sweep, because the seed count is the whole reason the sign
+ * clause means anything.
+ */
+const HEAVY_MS = 120_000;
+const breathe = () => new Promise<void>((resolve) => { setImmediate(resolve); });
+
+
 /** The day-1 purse — the leanest evening the game has ever had. */
 const DAY_ONE_PURSE = BASE_DAY_BUDGET + FIRST_MORNING_POT;
 
@@ -218,13 +239,14 @@ describe('4.10i — the ground floor is a purse she can run down', () => {
     expect(drain(PROFILE_GREAT)).toBeLessThanOrEqual(-0.02);
   });
 
-  it('never, on any profile or any campaign stream, PAYS her to walk it', () => {
+  it('never, on any profile or any campaign stream, PAYS her to walk it', async () => {
     // The clause the magnitude ratchet above is the soft version of. Round 36
     // loosened the magnitudes and this is the compensation: the sign is now
     // measured over three independent campaign streams and all three profiles,
     // so "the ground floor costs her" cannot become true of one lucky seed.
     for (const seed of [0x5a10, 0x1111, 0x7777]) {
       for (const profile of [PROFILE_DECENT, PROFILE_SKILLED, PROFILE_GREAT]) {
+        await breathe();
         const days = simulateCampaigns(profile, 120, DAYS, seed).flatMap((c) => c.days);
         const net = days.reduce((s, d) => s + d.pressure.groundNet, 0);
         const rooms = days.reduce((s, d) => s + d.pressure.groundRooms, 0);
@@ -233,7 +255,7 @@ describe('4.10i — the ground floor is a purse she can run down', () => {
           .toBeLessThan(0);
       }
     }
-  });
+  }, HEAVY_MS);
 
   it('keeps the solve:walk ratio on the ground floor inside 6:1', () => {
     // The ratio §5.10 is really about: what the longest tier-1 room pays
