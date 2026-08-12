@@ -105,6 +105,64 @@ tooltip.
 
 ## 3. What the last three rounds changed, with their numbers
 
+### Round 35 — the fifth member the letters cannot see, and the median the Library owed
+
+| | Was (round 30's shelf) | Now |
+|---|---|---|
+| Contested tiles per board — **median** | **1** | **2** |
+| — mean | 1.41 | **1.68** |
+| — distribution | 1:100 2:61 3:3 over 164 | **1:76 2:91 3:15 4:1 over 183** |
+| Boards inside Connections' 2–4 band (BENCHMARKS §2) | 39% | **58.5%** |
+| Shelf size | 164 | **183** (floor 150) |
+| What can make a tile contested | a SPELLING collision only | spelling **or authored membership** |
+| Named threads by relation | 5 kinds | **6** — `compound` is new and ships 75 |
+| Boards carrying a new-relation thread | — | **90 of 183** |
+
+**The wall was a detector, not a language.** Round 30 measured that 90 of 164 shipped boards
+could not contest a second tile at any budget and concluded the shelf needed authored supply.
+Both halves were true, and the reason the supply was so expensive is that everything in
+`findTraps` discovered a contested tile by SHAPE — three letters at a word's edge, a doubled
+pair, a rhyme key, a `Contains "X"` token spelled out in the label. Four hand-written categories
+collide in their *spelling* about once. `memberTraps` asks the other question, which this file
+has known how to answer since round 14 and only ever asked about DECOY labels: does this word
+honestly BELONG to that category. A bank pool is eight verified members and a board deals four,
+so the other four are exactly the provable fifth members — 273 words in the bank already sat in
+more than one pool and every one of them was invisible to the number the room is graded on.
+LINEN is a fabric and a thing a housekeeper counts; LEDGER is kept and on the desk; SADDLE is a
+mountain feature and in the coach house.
+
+**That is what made the authoring cheap, and the authoring is the round.** Twelve new pools were
+written to SHARE MEMBERS rather than to share spellings — four house pools (the butler's
+polishing, the stillroom, what the housemaid carries up, what the housekeeper locks away) and
+eight ordinary-English ones chosen for subjects the rest of the bank is built out of (`Things a
+Person Takes`, `Things That Can Be Broken`, `Things That Are Struck`, `Things a Fire Needs`…).
+Round 18's house pools had to smuggle a letter pattern into a subject the manor genuinely has,
+which is a real constraint on what the house is allowed to be about; these did not have to.
+`assertManorCollides` was widened to the same union the shipping detector scores, and still goes
+red on the round-17 pools it was written to condemn.
+
+**Three ceilings, because a shared member is a trap only up to a count.** `poolQuartetProblems`
+fails the build if two pools share four words — a dealt hand could then BE the other pool's whole
+category, which is a second right answer rather than a contested tile, and it caught three pools
+that were already in the bank (`Silent Letters at the End` was the union of `Silent "B"` and
+`Silent "N"`; `Can Precede "STONE"` was `___ STONE` under a second label). `memberSentenceOf` is
+a whitelist: a membership trap ships only where the room can say WHY truthfully, so a plain
+category is named out loud and `Add a "T" for a New Word` contests nothing. And a foreign
+category keeps quiet about a tile the board can already name — all four surviving cross-board
+threads were the same sentence twice.
+
+**Where the player is looking (standing rule 4), measured on glass.** The named-category line is
+the longest copy this room has ever printed: 90 characters against a shelf maximum of 55.
+`tests/round35-library-threads-live.mjs` drives a real wrong guess onto a new thread at 375×667
+and 390×844, and drives one onto an OLD thread on the same board and viewport so a new defect can
+be told from a standing one. The worst sentence the shelf can produce wraps to **two lines, the
+same as the worst sentence the room already printed**, and `--prove` pads it past that and watches
+the check go red. **Standing finding, not this round's:** a wrong guess that names any thread
+grows the Library's reserved toast slot by up to 12px and the board moves ~30px under her — on a
+build whose diff touches no CSS, no layout and no view, and identically on the old copy. That is
+`.anch--library .anch-toastslot`'s reservation being one line short at 375×667, and it wants a
+layout decision, not a content one.
+
 ### Round 31 — the card says which way is on, and the Study fits at tier 3
 
 COMPREHENSION wrong beliefs **7** and **8** were the only two on that list with no fix number, so

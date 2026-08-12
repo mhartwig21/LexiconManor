@@ -845,7 +845,7 @@ describe('shipped content — Library boards (AAA 2.6–2.11)', () => {
   // group's string buried inside it (HAMMER against Contains "HAM") is a
   // different deduction from four words that share an edge, and the room now
   // says a different sentence about it.
-  const HERRING_RELATIONS = ['rhyme', 'shared-affix', 'doubled-letter', 'semantic', 'hidden-string'];
+  const HERRING_RELATIONS = ['rhyme', 'shared-affix', 'doubled-letter', 'semantic', 'hidden-string', 'compound'];
 
   /**
    * ROUND 11 — THE ARCHITECTURE BUDGET (AAA 2.7 / 2.12).

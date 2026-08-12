@@ -153,6 +153,32 @@ authoring rule that follows: write a pool in two registers, so that some members
 category true and at least three are ordinary English words the rest of the bank is built out
 of. That is what stops "in the house's voice" and "the board pulls against you" being opposed.
 
+### Round 35's finding, and it is the other half of round 30's
+
+Round 30 said a board is cheapest to contest before it exists, and that the shelf therefore
+needed AUTHORED supply. It did. What it did not say is why authoring one was expensive, and the
+answer is a fact about generated word puzzles worth writing down here rather than in a code
+comment: **a generator discovers a contested tile by SPELLING, and an editor writes one by
+MEANING.** Every detector this project had — shared affix, doubled letter, rhyme key, hidden
+string — asks whether two categories collide in their letters, and four hand-written categories
+collide in their letters about once. Connections' editor is not doing that. She is choosing a
+word that honestly belongs to two threads.
+
+The cheap version of that for a pipeline is MEMBERSHIP: a pool holds more members than a board
+deals, so the undealt members are provable fifth members of a category that is on the board, and
+no phonetics or substring search is involved. It costs one authored list per category — which the
+bank already was. That single change took this room's median from 1 to 2 and its share inside the
+2–4 band from 39% to 58.5%.
+
+Two rules come with it, both paid for during the round:
+ * **Two pools may share at most three words.** Share four and a dealt hand can BE the other
+   pool's whole category under a second label, which is a second right answer rather than a
+   trap — the one thing a contested tile must never become.
+ * **A trap may ship only where the room can say why, truthfully.** Membership is true of
+   categories whose truth no relation can express (`Add a "T" for a New Word`, `Hidden Fruits` —
+   each word hides a DIFFERENT fruit). Supply is not worth a sentence the player can check and
+   find false; this is round 12's doubled-letter finding in a new place.
+
 ---
 
 ## 3. Wordle → benchmark for reveal juice, error states, daily ritual (all rooms)

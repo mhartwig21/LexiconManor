@@ -52,7 +52,10 @@ export interface WordWebGroupEx extends WordWebGroup {
  * kind of trap). Both carry `detail`: the letters you can point at.
  */
 export type WordWebHerringRelation =
-  | 'rhyme' | 'shared-affix' | 'doubled-letter' | 'semantic' | 'hidden-string';
+  | 'rhyme' | 'shared-affix' | 'doubled-letter' | 'semantic' | 'hidden-string'
+  // ROUND 35 — the compound frame's fifth member: WATER, NIGHT and SNOW share
+  // no letters, they share what they can be glued to.
+  | 'compound';
 export interface WordWebHerring {
   words: string[];
   relation: WordWebHerringRelation;

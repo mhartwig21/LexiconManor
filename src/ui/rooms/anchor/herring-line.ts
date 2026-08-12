@@ -54,7 +54,33 @@ export function herringLine(h: WordWebHerringMatch): string {
       return h.detail
         ? `${subject} all double ${anArticle(h.detail[0]!)} ${h.detail[0]}. But no.`
         : `${subject} double the same letter. But no.`;
+    case 'compound':
+      /**
+       * ROUND 35 — the compound frame's fifth member, and a sentence the room
+       * could not say before. `___ FALL` holding WATER, NIGHT, RAIN and FOOT
+       * while SNOW sits in another group is the most Connections-shaped trap
+       * this generator makes, and it used to come out as silence: nothing in
+       * `findTraps` could see it, because the five words share no letters at
+       * all — only what they can be glued to.
+       */
+      return h.detail
+        ? `${subject} do go with “${h.detail}”. But no.`
+        : `${subject} do all compound. But no.`;
     case 'semantic':
-      return `${subject} keep company. But no.`;
+      /**
+       * ROUND 35 — AND THIS ONE NAMES THE CATEGORY.
+       *
+       * "They keep company" was true of anything and checkable against nothing,
+       * and it was survivable while eight threads on the whole shelf were
+       * semantic. Membership traps made it the commonest sentence in the room,
+       * and standing rule 4 is that a label nobody can use is worse than none.
+       * The generator only tags `semantic` when the category is plain English
+       * (`memberSentenceOf`), so the label IS the thread and printing it is the
+       * same bargain the rhyme line strikes: she paid steps, she gets the
+       * thread by name, and she still has to find which four of the five.
+       */
+      return h.detail
+        ? `${subject} do belong under “${h.detail}”. But no.`
+        : `${subject} keep company. But no.`;
   }
 }

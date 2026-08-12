@@ -36,6 +36,7 @@
     "test:room-persistence": "node tests/room-persistence-live.mjs",
     "test:tube": "node tests/tube-day1-live.mjs",
     "test:rooms-say-it": "node tests/round34-rooms-live.mjs && node tests/round34-rooms-live.mjs --prove",
+    "test:library-threads": "node tests/round35-library-threads-live.mjs",
     "metrics:review": "tsx scripts/review-metrics.ts",
     "content:all": "npm run content:dictionary && npm run content:hive && npm run content:twistle && npm run content:cipher && npm run content:crossword && npm run content:wordweb && npm run content:forgotten-word && npm run content:sudoku && npm run content:verify",
     "build:pages": "tsx scripts/build.ts --pages",
