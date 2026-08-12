@@ -426,11 +426,61 @@ describe('4.10b — the decent day is 10–15 MINUTES (the owner-playtest fix)',
       median(skipper, (r) => r.maxRow));
   });
 
+  /**
+   * ═══ ROUND 36 — THIS TEST WAS TRUE OF ONE SEED, NOT OF THE MODEL ══════════
+   *
+   * It read:
+   *
+   *     const a = simulateDay(createRng(4242), PROFILE_DECENT);
+   *     const b = simulateDay(createRng(4242), PROFILE_DECENT, createRng(777));
+   *     expect([a.rooms, a.maxRow, a.spent, a.refunded]).toEqual([b.rooms, …]);
+   *
+   * — one seed, asserting that turning the clock on cannot change the evening.
+   * It is not true. `SESSION_WIND_DOWN` reads `seconds / 60`, and `seconds` is
+   * where `clockJitter(timeRng)` lands, so a long room makes her less patient,
+   * a less patient player leaves a board unfinished, and the ledger differs.
+   * MEASURED over 400 seeds, and measured on the code as it stood BEFORE this
+   * round touched anything (19/200 seeds; 20/200 after, i.e. the round-36 draft
+   * work did not cause it and does not change it): **the jittered clock changes
+   * the evening on ~6% of days.** Seed 4242 was one of the 94%.
+   *
+   * A gate that names a property and pins it to a lucky seed is this repo's own
+   * standing rule 1, and the fix is not to find another lucky seed. Both halves
+   * are now measured, and the half that IS true is the half the doc claims:
+   *
+   *   THE STREAMS ARE SEPARATE. A `timeRng` that always returns 0.5 makes
+   *   `clockJitter` return exactly 1 — the same value it returns with no clock
+   *   at all — so if sampling time ever drew from the economy's rng, the two
+   *   runs would diverge. Over 400 seeds they are bit-identical, every time.
+   *   THIS is "the economy never drifts because the clock exists".
+   *
+   *   THE WIND-DOWN IS A REAL COUPLING, and it is a mechanic rather than a bug:
+   *   an evening that runs long makes her less patient. It is published as a
+   *   rate with a ceiling so it cannot grow unnoticed.
+   */
   it('samples time from a separate stream — the economy never drifts because the clock exists', () => {
-    const a = simulateDay(createRng(4242), PROFILE_DECENT);
-    const b = simulateDay(createRng(4242), PROFILE_DECENT, createRng(777));
-    expect([a.rooms, a.maxRow, a.spent, a.refunded])
-      .toEqual([b.rooms, b.maxRow, b.spent, b.refunded]);
+    let identical = 0;
+    let windDownBit = 0;
+    const ledger = (r: ReturnType<typeof simulateDay>) =>
+      JSON.stringify([r.rooms, r.maxRow, r.spent, r.refunded]);
+    for (let seed = 1000; seed < 1400; seed++) {
+      const noClock = simulateDay(createRng(seed), PROFILE_DECENT);
+      // clockJitter(() => 0.5) === 0.8 + 0.5 * 0.4 === 1 === clockJitter(undefined).
+      const flatClock = simulateDay(createRng(seed), PROFILE_DECENT, () => 0.5);
+      const jittered = simulateDay(createRng(seed), PROFILE_DECENT, createRng(777));
+      if (ledger(noClock) === ledger(flatClock)) identical += 1;
+      if (ledger(noClock) !== ledger(jittered)) windDownBit += 1;
+    }
+    // (a) The streams do not touch. Any leak of the clock into the economy's
+    // draws breaks this on the first seed it happens on.
+    expect(identical, 'the clock drew from the economy stream').toBe(400);
+    // (b) …and what a DIFFERENT clock changes is only what SESSION_WIND_DOWN
+    // says it may: her patience late in a long evening. Measured 6.0%; the
+    // ceiling is a ratchet, and a rise means the clock has started steering the
+    // ledger through some path the wind-down does not name.
+    expect(windDownBit / 400, `the clock moved the evening on ${(100 * windDownBit / 400).toFixed(1)}% of days`)
+      .toBeLessThanOrEqual(0.10);
+    expect(windDownBit).toBeGreaterThan(0);
     // Round 22: durations are per KIND now, so the clock's own claim is that
     // the Conservatory is a different room from the Linen Closet — which is
     // the whole finding (`TIME_TABLE` used to price all five anchors at one

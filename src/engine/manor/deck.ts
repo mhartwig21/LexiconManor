@@ -72,6 +72,79 @@
  * opens north. Author a layout with this in mind: the `'N'` is the entrance
  * and the rest is what she finds once she is inside.
  *
+ * ── ROUND-36 REBALANCE (the dominance round) ──────────────────────────────
+ *
+ * THE CHARGE: the daily decision the whole loop hangs on was **67.0% DOMINATED**
+ * — on two thirds of offers some card was at least as good as every other on
+ * both axes a player can read before she spends (frontier and steps,
+ * engine/economy/manor-walk.ts). Against a permutation null of 68.7% that says
+ * the deck was not *pairing* geometry with payout; it was that the two axes were
+ * too COARSE to trade against each other. Frontier spread was zero on 31.6% of
+ * offers, because 60% of drawn plans left exactly one way on.
+ *
+ * The rebalance is one sentence: **the fatter the wage, the tighter the plan.**
+ *
+ *   - The 12-step anchors and the fat green room lose their halls. The Library
+ *     (TEE → CORNER_R), the Orangery (TEE → CORNER_L) and the Kitchen (which
+ *     dropped its TEE outright) are the three most-drawn wide plans in the deck
+ *     and all three sat on cards that also pay well; every offer containing one
+ *     had its answer written on it.
+ *   - The rooms that pay NOTHING get the halls. Every parlor is a thoroughfare
+ *     now (the Post Room forks, the Greenhouse and the Reading Nook tee), and
+ *     so are the Chart Room and the Bureau. The trade the draft is supposed to
+ *     be is now on the card face: *this room pays twelve steps and corners you;
+ *     that one pays nothing and keeps the house open.*
+ *   - The Linen Closet spans the range on its own (dead end · corner · tee), so
+ *     a single common card can be the narrow plan or the wide one.
+ *
+ * THE CHART ROOM AND THE BUREAU ARE NOT DECORATION — THEY ARE A REPAIR, and it
+ * is the finding this round nearly shipped without. A violet room pays no steps
+ * and, before this, drew no wide plan: on the two axes the draft is measured on
+ * it was the dominated card in every offer that held one. So the moment the
+ * draft became a decision, the player correctly started DECLINING the mystery.
+ * Measured on the day model: violet picks fell 1.21 → 0.79 an evening and the
+ * fragment drip thinned with it (worst filed drought 3 days → 4, through
+ * volume-pacing's floor). Giving those two cards a hall — a room of maps is a
+ * room you route from, and the Bureau's drawers stand in a passage — puts them
+ * back in the running without touching their draw weight, and the median
+ * player's violet-met rate lands at **33.9%** against the 37.0% it was and the
+ * 50% ceiling above which 4.10g says it has stopped being a rare room. The
+ * Observatory, the Boxroom and the Archive keep their dead ends: violet is
+ * still mostly a room you go INTO rather than through.
+ *
+ * MEASURED, with `scripts/draft-shape.ts` and the walker in
+ * tests/draft-dominance.test.ts: dominance **67.0% → 34.9%**, frontier spread
+ * zero **31.6% → 5.6%**, three-cards-one-category **19.3% → 15.5%**. The deck
+ * now sits fifteen points BELOW its own permutation null, which is the
+ * signature of cards that genuinely trade rather than merely differ.
+ *
+ * TWO THINGS HELD FIXED BY CONSTRUCTION, and both are checkable rather than
+ * asserted:
+ *   1. **The landing — the DECK half of it.** Every tier-3-eligible card's
+ *      chance of drawing an S-bearing plan is bit-identical: the four cards
+ *      that lost a plan had no S-plan to lose, and the Library kept its
+ *      corridor. 41 tier-3 plans before and after, 17.1% of them S-bearing,
+ *      and `scripts/draft-shape.ts` reads the same 19.0% of plans opening north
+ *      per card-day before and after. So nothing in THIS file moves AAA
+ *      4.10d/e, the way round 20 also kept them out of its own rebalance.
+ *
+ *      What DOES move the landing is drafting.ts's spread rule, and it is
+ *      reported rather than buried: a plan that opens north is a corridor, a
+ *      fork or a cross — the wide shapes — so the rule surfaces them, and a
+ *      bare offer up there contains one on **71.2%** of draws against 63.4%.
+ *      That is the round-13 blocker getting smaller (two evenings in five
+ *      arriving at an offer that could not open the door, now closer to one in
+ *      four), it is good news, and it is why `SANCTUM_ARC` has slightly less
+ *      work to do than it did.
+ *   2. **The deck's dead-end share and its mean way-on count.** 20.3% and 1.00
+ *      before; 20.7% and 1.05 after. This is a rebalance of WHICH cards carry
+ *      the wide plans, not a wider deck — a wider deck shows up immediately as
+ *      a cheaper climb and a ground floor that stops costing her (round 36
+ *      measured exactly that on its first attempt, at mean 1.08).
+ *
+ * THE THREE PROTECTED ROOMS ARE UNTOUCHED: the Conservatory, the Counting House
+ * and the Study keep the plans they had, and the Study keeps its single door.
+ *
  * A card may carry several plans. Which one arrives is a deterministic hash of
  * (daySeed, target cell, card id) — `layoutFor` — so the shape behind a given
  * door is fixed for the day and the draft card face can show it before she
@@ -101,13 +174,13 @@ const CROSS: Dir[] = ['N', 'E', 'S', 'W'];
 const PUZZLE_CARDS: RoomCard[] = [
   // Anchors (MANOR_DESIGN §6)
   { id: 'library', name: 'The Library', category: 'puzzle', puzzleKind: 'word-web',
-    doorLayouts: [TEE, CORRIDOR], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
+    doorLayouts: [CORNER_R, CORRIDOR], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'reading-room', name: 'The Reading Room', category: 'puzzle', puzzleKind: 'word-web',
     doorLayouts: [CORNER_L, CORNER_R, DEAD_END], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
   { id: 'conservatory', name: 'The Conservatory', category: 'puzzle', puzzleKind: 'hive',
     doorLayouts: [CORNER_R, CORRIDOR], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'orangery', name: 'The Orangery', category: 'puzzle', puzzleKind: 'hive',
-    doorLayouts: [TEE, CORNER_R], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
+    doorLayouts: [CORNER_L, CORNER_R], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
   { id: 'gallery', name: 'The Gallery', category: 'puzzle', puzzleKind: 'twistle',
     doorLayouts: [CORRIDOR, TEE], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'long-gallery', name: 'The Long Gallery', category: 'puzzle', puzzleKind: 'twistle',
@@ -128,7 +201,7 @@ const PUZZLE_CARDS: RoomCard[] = [
   { id: 'darkroom', name: 'The Darkroom', category: 'puzzle', puzzleKind: 'cipher',
     doorLayouts: [CORNER_L, CORNER_R, CORRIDOR], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
   { id: 'linen-closet', name: 'The Linen Closet', category: 'puzzle', puzzleKind: 'crossword',
-    doorLayouts: [CORNER_L, CORNER_R, DEAD_END], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
+    doorLayouts: [DEAD_END, CORNER_R, TEE], tierRange: [1, 3], gemCost: 0, rarity: 'common' },
 
   // The ledger rooms (sudoku). Playtest round: the owner's expert-baseline
   // request, so BOTH cards draw from a pool with no easy bin — the Counting
@@ -148,7 +221,7 @@ const PUZZLE_CARDS: RoomCard[] = [
 
 const UTILITY_CARDS: RoomCard[] = [
   { id: 'kitchen', name: 'The Kitchen', category: 'utility',
-    doorLayouts: [CORNER_L, CORNER_R, TEE], tierRange: [1, 2], gemCost: 0, rarity: 'standard' },
+    doorLayouts: [CORNER_L, CORNER_R], tierRange: [1, 2], gemCost: 0, rarity: 'standard' },
   { id: 'larder', name: 'The Larder', category: 'utility',
     doorLayouts: [DEAD_END, CORNER_R], tierRange: [1, 2], gemCost: 0, rarity: 'common' },
   { id: 'boot-room', name: 'The Boot Room', category: 'utility',
@@ -169,11 +242,11 @@ const UTILITY_CARDS: RoomCard[] = [
 
 const PARLOR_CARDS: RoomCard[] = [
   { id: 'reading-nook', name: 'The Reading Nook', category: 'parlor',
-    doorLayouts: [DEAD_END, CORNER_L, CORNER_R], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
+    doorLayouts: [TEE, CORNER_R, DEAD_END], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'post-room', name: 'The Post Room', category: 'parlor',
-    doorLayouts: [CORRIDOR, TEE], tierRange: [1, 2], gemCost: 0, rarity: 'standard' },
+    doorLayouts: [TEE, FORK_L], tierRange: [1, 2], gemCost: 0, rarity: 'standard' },
   { id: 'greenhouse', name: 'The Greenhouse', category: 'parlor',
-    doorLayouts: [CORNER_L, CORNER_R], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
+    doorLayouts: [TEE, CORNER_L], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'morning-room', name: 'The Morning Room', category: 'parlor',
     doorLayouts: [TEE, FORK_R], tierRange: [1, 2], gemCost: 0, rarity: 'unusual' },
   { id: 'drawing-room', name: 'The Drawing Room', category: 'parlor',
@@ -207,11 +280,11 @@ const MYSTERY_CARDS: RoomCard[] = [
   { id: 'archive', name: 'The Archive', category: 'mystery',
     doorLayouts: [DEAD_END, CORNER_R], tierRange: [1, 3], gemCost: 0, rarity: 'standard' },
   { id: 'chart-room', name: 'The Chart Room', category: 'mystery',
-    doorLayouts: [CORNER_L, CORNER_R], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
+    doorLayouts: [TEE, CORNER_R], tierRange: [2, 3], gemCost: 1, rarity: 'unusual' },
   { id: 'observatory', name: 'The Observatory', category: 'mystery',
     doorLayouts: [DEAD_END], tierRange: [2, 3], gemCost: 2, rarity: 'rare' },
   { id: 'bureau', name: 'The Bureau', category: 'mystery',
-    doorLayouts: [CORNER_L, CORNER_R, DEAD_END], tierRange: [1, 2], gemCost: 1, rarity: 'rare' },
+    doorLayouts: [TEE, CORNER_R, DEAD_END], tierRange: [1, 2], gemCost: 1, rarity: 'rare' },
   { id: 'boxroom', name: 'The Boxroom', category: 'mystery',
     doorLayouts: [DEAD_END, CORNER_R], tierRange: [3, 3], gemCost: 2, rarity: 'rare' },
 ];

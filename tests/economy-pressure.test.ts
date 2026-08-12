@@ -182,9 +182,57 @@ describe('4.10i — the ground floor is a purse she can run down', () => {
     // whole of REVIEW_AA 5.10. If a later round wants the sixth back, the
     // lever is the deck's ground-floor mix or the walk, not the room's clock:
     // the clock is now derived from the boards (`ROOM_EFFORT.sudoku`).
+    // ═══ ROUND 36 — THE DRAFT BECAME A DECISION AND THE FLOOR GOT CHEAPER ═══
+    //
+    // This is the one published band the dominance round moved against itself,
+    // and it is reported here rather than absorbed. Measured over this same
+    // fixture, and over two further campaign seeds so the size of the move is
+    // not one stream's opinion:
+    //
+    //             round 35        round 36 (0x5a10 / 0x1111 / 0x7777)
+    //   decent     -1.236         -1.238  -1.210  -1.231
+    //   skilled    -0.231         -0.191  -0.173  -0.202
+    //   great      -0.136         -0.033  -0.028  -0.037
+    //
+    // THE MECHANISM, and it is the round's own change rather than a leak. This
+    // number is net steps per ground-floor room, and the ground floor's cost is
+    // overwhelmingly the WALK BACK: a plan that seals a wing is paid for later,
+    // in the shuttling it forces. Round 36 stopped the offer from ever handing
+    // her three cul-de-sacs (4.91% of offers before, 0.10% now) and made the
+    // three cards differ in where they let her go (frontier flat on 31.6% of
+    // offers before, 5.6% now). A player who can see a way on takes it, and a
+    // house with a way on is a house she does not have to cross twice. The
+    // effect is isolated: with the deck rebalance alone and the two draft rules
+    // silent, the skilled drain is -0.23; with the rules and the round-35 deck
+    // it is -0.03. Almost all of the move is the rules, which is to say it is
+    // the decision, which is to say it is what the round was for.
+    //
+    // WHAT THE RATCHET STILL FORBIDS is the thing this file has always said may
+    // never come back: a POSITIVE drain, the +1.61 on row 0 the economy critic
+    // measured. The magnitude bound falls; the sign clause is strengthened to
+    // cover three independent campaign seeds instead of one, because a bound
+    // that loosens on magnitude had better tighten somewhere, and the sign is
+    // the half of §5.10 that carries the design.
     expect(drain(PROFILE_DECENT)).toBeLessThanOrEqual(-1);
-    expect(drain(PROFILE_SKILLED)).toBeLessThanOrEqual(-0.22);
-    expect(drain(PROFILE_GREAT)).toBeLessThanOrEqual(-0.1);
+    expect(drain(PROFILE_SKILLED)).toBeLessThanOrEqual(-0.15);
+    expect(drain(PROFILE_GREAT)).toBeLessThanOrEqual(-0.02);
+  });
+
+  it('never, on any profile or any campaign stream, PAYS her to walk it', () => {
+    // The clause the magnitude ratchet above is the soft version of. Round 36
+    // loosened the magnitudes and this is the compensation: the sign is now
+    // measured over three independent campaign streams and all three profiles,
+    // so "the ground floor costs her" cannot become true of one lucky seed.
+    for (const seed of [0x5a10, 0x1111, 0x7777]) {
+      for (const profile of [PROFILE_DECENT, PROFILE_SKILLED, PROFILE_GREAT]) {
+        const days = simulateCampaigns(profile, 120, DAYS, seed).flatMap((c) => c.days);
+        const net = days.reduce((s, d) => s + d.pressure.groundNet, 0);
+        const rooms = days.reduce((s, d) => s + d.pressure.groundRooms, 0);
+        expect(rooms).toBeGreaterThan(days.length);
+        expect(net / rooms, `${profile.name} @${seed.toString(16)} drained ${(net / rooms).toFixed(3)}`)
+          .toBeLessThan(0);
+      }
+    }
   });
 
   it('keeps the solve:walk ratio on the ground floor inside 6:1', () => {

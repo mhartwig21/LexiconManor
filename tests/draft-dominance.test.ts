@@ -48,17 +48,33 @@
  * Measured at round 24's HEAD: **67.0%** through the diagnostic walker and
  * **66.4–66.8%** on the evenings `simulateDays` really plays. The permutation
  * null — each offer's frontier vector paired with a DIFFERENT offer's step
- * vector — measures **68.7%**, i.e. the deck is *not* actively pairing the two
- * axes; the rate is what three coarse, tie-heavy axes produce on their own,
- * and the way down is finer spread rather than de-correlation. Frontier spread
- * is zero on 31.3% of offers and all three cards are one category on 19.9%.
+ * vector — measured **68.7%**, i.e. the deck was *not* actively pairing the two
+ * axes; the rate was what three coarse, tie-heavy axes produce on their own,
+ * and the way down was finer spread rather than de-correlation. Frontier spread
+ * was zero on 31.3% of offers and all three cards were one category on 19.9%.
  *
- * So `target` is the destination and `ratchet` is the gate that bites TODAY.
- * This round built the instrument and is forbidden from touching `deck.ts`; the
- * ratchet fails on any deck edit that makes offers MORE dominated, which is
- * what stops the next round's geometry work from going the wrong way while
- * looking busy. Same shape as 4.10h's wage ratchet and 4.10i's floor ratchet,
- * for the same reason.
+ * ── ROUND 36 — THE DECK ROUND LANDED, AND EVERY NUMBER ABOVE MOVED ─────────
+ *
+ *                       round 24        round 36
+ *   dominance (walker)    67.0%           34.9%
+ *   dominance (day model) 66.4–66.8%      37.4–39.0%  (four seeds)
+ *   permutation null      68.7%           49.5%
+ *   frontier spread zero  31.3%            5.6%
+ *   three of one category 19.9%           15.5%
+ *   all three cards seal   4.91%           0.10%
+ *
+ * Two changes, and the tests below separate them rather than claiming the pair:
+ * `engine/manor/deck.ts`'s ROUND-36 REBALANCE (the fatter the wage, the tighter
+ * the plan) is worth 67.0% → 58.4% on its own, and `drafting.ts`'s two draft
+ * rules — there is always a way on, and the manor does not deal the same plan
+ * three times — carry it the rest of the way. The 58.4% figure is not a
+ * reconstruction: it is measured live, by calling the shipped `rollCards`
+ * without a heading, which is what silences both rules.
+ *
+ * `ratchet` has walked down from 0.70 to 0.41 and `target` has NOT moved. The
+ * ratchet still fails on any edit that makes offers more dominated — same shape
+ * as 4.10h's wage ratchet and 4.10i's floor ratchet, for the same reason — and
+ * it is now proved red as well as green.
  */
 import { describe, expect, it } from 'vitest';
 import {
@@ -78,7 +94,9 @@ import { solvePayout } from '../src/engine/economy/steps';
 // A plausible evening, walked on the real grid (the same probe draft-shape uses)
 // ---------------------------------------------------------------------------
 
-function walkOffers(seed: number, rooms: number, deck: readonly RoomCard[]): CardShape[][] {
+function walkOffers(
+  seed: number, rooms: number, deck: readonly RoomCard[], heading = true,
+): CardShape[][] {
   const rng = createRng((seed ^ 0x5eed) >>> 0);
   let manor: ManorState = createManor(seed);
   const out: CardShape[][] = [];
@@ -88,9 +106,14 @@ function walkOffers(seed: number, rooms: number, deck: readonly RoomCard[]): Car
     if (targets.length === 0) break;
     targets.sort((a, b) => (b.cell.row - a.cell.row) || (rng() - 0.5));
     const { dir, cell } = targets[0]!;
-    const cards = rollCards(deck, manor, cell, {
-      gems: 2, declinedLastDraft: [], drawIndex: 0, entryDir: dir,
-    });
+    // `heading: false` is not a mock — it is the shipped draw with no door
+    // (`rollCards` states the rule: a plan without a heading is not a plan), so
+    // both round-36 rules go silent and this is EXACTLY the round-35 offer at
+    // the same door, from the same stream, over the same deck. It is what the
+    // red-proof below condemns.
+    const cards = rollCards(deck, manor, cell, heading
+      ? { gems: 2, declinedLastDraft: [], drawIndex: 0, entryDir: dir }
+      : { gems: 2, declinedLastDraft: [], drawIndex: 0 });
     const shapes = cards.map((c) => shapeOf(c, dir, manor, cell));
     out.push(shapes);
     const pick = shapes.find((sh) => !sh.seals) ?? shapes[0]!;
@@ -115,12 +138,18 @@ function walkOffers(seed: number, rooms: number, deck: readonly RoomCard[]): Car
   return out;
 }
 
-const WALKED: CardShape[][] = (() => {
+const walkAll = (heading: boolean): CardShape[][] => {
   const deck = deckFor([]);
   const out: CardShape[][] = [];
-  for (let seed = 1; seed <= 900; seed++) for (const o of walkOffers(seed, 7, deck)) out.push(o);
+  for (let seed = 1; seed <= 900; seed++) {
+    for (const o of walkOffers(seed, 7, deck, heading)) out.push(o);
+  }
   return out;
-})();
+};
+
+const WALKED: CardShape[][] = walkAll(true);
+/** The same doors, the same deck, drawn the way round 35 drew them. */
+const UNRULED: CardShape[][] = walkAll(false);
 
 const rateOf = (offers: readonly CardShape[][]) =>
   offers.filter((o) => isDominated(o)).length / offers.length;
@@ -225,25 +254,72 @@ describe('THE GATE — the deck may not make offers more dominated than they are
     }
   });
 
-  it('records the destination, and that the deck has not reached it', () => {
-    // The target is the derived one (1/3 by chance + ties). It is deliberately
-    // NOT asserted as passing: this round built the instrument and may not
-    // touch the deck, and a target quietly restated as the measurement is the
-    // failure this project keeps repeating. When the deck round lands, the
-    // ratchet walks down to the target and this assertion inverts.
-    expect(DOMINANCE_GATE.target).toBeLessThan(DOMINANCE_GATE.ratchet);
+  /**
+   * ═══ ROUND 36 — THE DECK REACHED THE TARGET, AND THIS TEST INVERTED ═══════
+   *
+   * Round 24 wrote: *"It is deliberately NOT asserted as passing: this round
+   * built the instrument and may not touch the deck… When the deck round lands,
+   * the ratchet walks down to the target and this assertion inverts."* It has.
+   *
+   *   round 24 HEAD   67.0% (walker) · 66.4–66.8% (the day model)
+   *   round 36 HEAD   34.9% (walker) · 37.4–39.0% (the day model, four seeds)
+   *
+   * The target is the SAME derived number — 1/3 by chance plus an allowance for
+   * honest ties — and it was NOT moved to meet the deck. What moved is
+   * `ratchet`, 0.70 → 0.41: the strictest instrument reads 39.0% at its worst
+   * seed and the gate sits a point above that, so the target is now a floor the
+   * deck stands on rather than a destination it is walking toward.
+   *
+   * THE DAY MODEL RUNS ~3 POINTS HOTTER THAN THE WALKER, and the gap is
+   * published rather than averaged away: its offers carry wing memory, key
+   * access and a real gem count, all of which narrow the pool a draw picks from.
+   * The walker is the clean instrument the target was derived on; the day model
+   * is the one the player lives in; both are under the bar.
+   */
+  it('records the destination — and the deck has now reached it', () => {
     expect(DOMINANCE_GATE.target).toBeGreaterThan(1 / 3);
-    expect(rateOf(WALKED), 'the deck has reached the target — invert this test')
-      .toBeGreaterThan(DOMINANCE_GATE.target);
+    expect(DOMINANCE_GATE.ratchet).toBeGreaterThanOrEqual(DOMINANCE_GATE.target);
+    expect(rateOf(WALKED), 'the walker has drifted back above the derived target')
+      .toBeLessThanOrEqual(DOMINANCE_GATE.target);
+  });
+
+  /**
+   * ═══ THE RED PROOF (standing rule 1: prove the gate goes red) ═════════════
+   *
+   * A gate that has only ever been seen green is a claim, not a measurement.
+   * `UNRULED` is the SAME 900 walks over the SAME deck at the SAME doors from
+   * the SAME streams with the round-36 draft rules silent — not a mock and not
+   * a flag, but the shipped `rollCards` called without an `entryDir`, which is
+   * the exact call every composition probe in this repo already makes. It is
+   * the round-35 offer, and it fails this gate by more than twenty points.
+   *
+   * It is also the round's honest accounting: the deck rebalance ALONE (which
+   * `UNRULED` already contains) is worth 67.0% → 58.4%, and the two draft rules
+   * are worth the rest. Neither half would have got here on its own.
+   */
+  it('goes RED on the offer this round replaced', () => {
+    const before = rateOf(UNRULED);
+    expect(UNRULED.length).toBeGreaterThan(5000);
+    expect(before, `the round-35 draw measures ${(100 * before).toFixed(1)}%`)
+      .toBeGreaterThan(DOMINANCE_GATE.ratchet);
+    // …by a margin no seed choice could manufacture.
+    expect(before - rateOf(WALKED)).toBeGreaterThan(0.15);
   });
 
   it('measures the permutation NULL beside it, so the rate has a scale', () => {
     // Pair each offer's frontier vector with a DIFFERENT offer's step vector.
     // Any correlation between "keeps the house open" and "pays well" is
-    // destroyed by construction, so this is the dominance three coarse axes
-    // produce on their own. The deck sits at or just under it — which says the
-    // way down is FINER SPREAD (more distinct frontier counts, more distinct
-    // wages) rather than de-correlating two things that are not correlated.
+    // destroyed by construction, so this is the dominance these axes produce on
+    // their own, at these marginals.
+    //
+    // ROUND 36 — THE SIGN OF THE GAP IS THE WHOLE FINDING. At round 24 the deck
+    // measured 67.0% against a null of 68.7%: it sat AT chance, which is why
+    // that round's note said the way down was finer spread and not
+    // de-correlation. It now measures 34.9% against a null of 49.5% — nearly
+    // fifteen points BELOW its own null. The null itself fell, because the
+    // marginals are far less tie-heavy; the deck fell further, because the fat
+    // wages now carry the tight plans. Both halves of round 24's diagnosis were
+    // needed, and both are visible in this one number.
     const rng = createRng(0xd01a);
     const order = WALKED.map((_, i) => i);
     for (let i = order.length - 1; i > 0; i--) {
@@ -256,23 +332,57 @@ describe('THE GATE — the deck may not make offers more dominated than they are
       return offer.slice(0, n).map((c, k) => ({ ...c, steps: steps[k]!.steps }));
     });
     const nullRate = rateOf(mixed);
-    expect(nullRate).toBeGreaterThan(0.5);
-    expect(rateOf(WALKED)).toBeLessThanOrEqual(nullRate + 0.03);
+    expect(nullRate, `permutation null ${(100 * nullRate).toFixed(1)}%`)
+      .toBeGreaterThan(0.42);
+    expect(rateOf(WALKED), 'the deck is no longer beating its own null')
+      .toBeLessThan(nullRate - 0.10);
   });
 
-  it('names the two things the deck round has to move', () => {
-    // Both are the reason the rate is where it is, and both are geometry/wage
-    // SPREAD rather than correlation — recorded as measurements so the next
-    // round can show movement instead of claiming it.
-    const spreadZero = WALKED.filter(
+  it('records the two things the deck round was told to move, and where they are now', () => {
+    // Round 24 published these as the reason the rate was where it was, each
+    // with a ratchet. Both fell with the deck; both stay ratchets, and both are
+    // now measured against the round-35 draw beside them, so neither number can
+    // drift into decoration.
+    const spreadZero = (offers: readonly CardShape[][]) => offers.filter(
       (o) => new Set(o.map((c) => c.frontier)).size === 1,
-    ).length / WALKED.length;
-    const oneCategory = WALKED.filter(
+    ).length / offers.length;
+    const oneCategory = (offers: readonly CardShape[][]) => offers.filter(
       (o) => new Set(o.map((c) => c.card.category)).size === 1,
-    ).length / WALKED.length;
-    expect(spreadZero, `frontier spread zero on ${(100 * spreadZero).toFixed(1)}% of offers`)
-      .toBeLessThanOrEqual(0.36);
-    expect(oneCategory, `one category on ${(100 * oneCategory).toFixed(1)}% of offers`)
-      .toBeLessThanOrEqual(0.25);
+    ).length / offers.length;
+
+    // 31.6% at round 24; 5.6% now. An offer whose three cards leave the same
+    // number of onward doors is dominated BY DEFINITION — whichever pays best
+    // wins on both axes — so this is a hard floor under the rate above.
+    expect(spreadZero(WALKED), `frontier spread zero on ${(100 * spreadZero(WALKED)).toFixed(1)}%`)
+      .toBeLessThanOrEqual(0.08);
+    // 19.9% at round 24, 19.3% re-measured at round 35's HEAD; 15.5% now.
+    expect(oneCategory(WALKED), `one category on ${(100 * oneCategory(WALKED)).toFixed(1)}%`)
+      .toBeLessThanOrEqual(0.17);
+    // …and both are worse without the rules — the red proof, per axis.
+    expect(spreadZero(UNRULED)).toBeGreaterThan(0.25);
+    expect(oneCategory(UNRULED)).toBeGreaterThan(oneCategory(WALKED));
+  });
+
+  /**
+   * ═══ THE COLD READ'S OTHER DEFECT, AND IT WAS THE SAME ONE ════════════════
+   *
+   * 11 Aug: a tester's run ended at a door where ALL THREE CARDS SEALED and he
+   * had no gems to reroll. He called it arbitrary. It was 4.91% of offers — at
+   * ~9.9 offers an evening, two evenings in five contained one — and it is not
+   * a separate bug from dominance, it is dominance at its extreme: three cards
+   * saying the same thing about where the house goes next, and the thing they
+   * say is "nowhere".
+   *
+   * `rollCards` RULE A draws the last slot from the plans that do not seal when
+   * the other two both do. What survives is the honest residue: rows whose
+   * eligible pool holds no plan that opens at all.
+   */
+  it('no longer deals three cul-de-sacs when the deck holds anything else', () => {
+    const allSeal = (offers: readonly CardShape[][]) =>
+      offers.filter((o) => o.every((c) => c.seals)).length / offers.length;
+    expect(allSeal(WALKED), `all three seal on ${(100 * allSeal(WALKED)).toFixed(2)}%`)
+      .toBeLessThanOrEqual(0.005);
+    // …and it goes red on the draw it replaced, by a factor of thirty.
+    expect(allSeal(UNRULED)).toBeGreaterThan(0.04);
   });
 });

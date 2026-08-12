@@ -531,7 +531,15 @@ describe('orientation at placement', () => {
         }
       }
     }
-    expect(sealed / total).toBeCloseTo(0.320, 2);
+    // ROUND 36 — 32.0% -> 31.5%, and DOWN is the direction to notice. The
+    // rebalance moved WHICH cards carry the wide plans rather than how many the
+    // deck holds (dead-end plans 20.3% -> 20.7%, mean ways-on 1.00 -> 1.05), so
+    // the deck seals marginally less by shape even though its dead-end share is
+    // a hair higher — the tees landed on cards that are drawn at more rows.
+    // What this measures is the DECK, not the offer: the game itself now hands
+    // her a way on (drafting.ts RULE A), and the (b,c) test below publishes the
+    // deck reading and the live reading side by side.
+    expect(sealed / total).toBeCloseTo(0.315, 2);
     // A one-door plan always seals — it has no other door to offer. A tee and
     // a cross never can: their remaining doors point three ways and at most
     // two walls of a cell are outer walls.
@@ -550,8 +558,34 @@ describe('orientation at placement', () => {
   });
 
   it('THE ACCEPTED CONSEQUENCE (b,c): reading the card face is what pays', () => {
-    /** One simulated day: draft from the room she stands in, `blind` or not. */
-    const play = (blind: boolean) => {
+    /**
+     * ═══ ROUND 36 — THIS TEST WAS MEASURING A DRAW THE GAME NO LONGER MAKES ══
+     *
+     * It rolled its offers with no `entryDir`, and round 36 gave `rollCards`
+     * two rules that are silent without one (there is always a way on; the
+     * manor does not deal the same plan three times). So the old single number
+     * had quietly become a DECK counterfactual rather than a measurement of the
+     * game. Both are worth having and both are published, side by side, because
+     * the pair is the finding:
+     *
+     *                        blind     reading     starved
+     *   deck alone           28.70%      7.52%       7.52%
+     *   the live offer       35.89%      2.37%       2.37%
+     *
+     * THE BLIND RATE WENT UP, ON PURPOSE, and it is the price of the round. The
+     * spread rule promotes whichever plan says something the offer has not said
+     * yet, and "no way on from here" is one of the things a plan can say — so a
+     * player who ignores the card face meets more dead ends than she used to.
+     * A player who READS it meets a third as many as before: the value of the
+     * diagram has gone from avoiding 72% of a blind player's seals to avoiding
+     * **93%** of them, which is the strongest that gap has ever been measured.
+     *
+     * And the last clause is now exact rather than nearly: `reading.rate`
+     * EQUALS `reading.starved`. Every seal a reading player still eats is an
+     * offer that held nothing else — which is precisely what round 36's RULE A
+     * promises, and the only way this line can be true.
+     */
+    const play = (blind: boolean, heading: boolean) => {
       let sealed = 0, total = 0, starved = 0;
       for (let seed = 0; seed < 200; seed++) {
         let manor = createManor(seed);
@@ -560,9 +594,9 @@ describe('orientation at placement', () => {
           const open = draftTargets(manor);
           if (open.length === 0) break;
           const at = open[randInt(rng, open.length)]!;
-          const cards = rollCards(deckFor([]), manor, at.cell, {
-            gems: 2, declinedLastDraft: [], drawIndex: 0,
-          });
+          const cards = rollCards(deckFor([]), manor, at.cell, heading
+            ? { gems: 2, declinedLastDraft: [], drawIndex: 0, entryDir: at.dir }
+            : { gems: 2, declinedLastDraft: [], drawIndex: 0 });
           if (cards.length === 0) break;
           const onward = cards.find(
             (c) => !sealsItself(resolveDoors(c, at.dir, manor, at.cell), at.dir, manor, at.cell));
@@ -579,14 +613,28 @@ describe('orientation at placement', () => {
       }
       return { rate: sealed / total, starved: starved / total };
     };
-    const blind = play(true);
-    const reading = play(false);
-    expect(blind.rate).toBeCloseTo(0.272, 2);
-    expect(reading.rate).toBeCloseTo(0.076, 2);
-    // The card face is worth most of the dead ends (round 20: was "a third").
-    expect(reading.rate).toBeLessThan(blind.rate * 0.35);
-    // …and what is left is very nearly just the offers that held nothing else.
-    expect(reading.rate - reading.starved).toBeLessThan(0.03);
+
+    // (i) THE DECK ALONE — the same probe this test has always run.
+    const deckBlind = play(true, false);
+    const deckReading = play(false, false);
+    expect(deckBlind.rate).toBeCloseTo(0.287, 2);
+    expect(deckReading.rate).toBeCloseTo(0.075, 2);
+    expect(deckReading.rate).toBeLessThan(deckBlind.rate * 0.35);
+
+    // (ii) THE OFFER THE PLAYER IS ACTUALLY HANDED.
+    const blind = play(true, true);
+    const reading = play(false, true);
+    expect(blind.rate).toBeCloseTo(0.359, 2);
+    expect(reading.rate).toBeCloseTo(0.024, 2);
+    // The card face is worth nearly all of the dead ends now (round 20: "a
+    // third"; round 24: "most"; round 36: 93% of them).
+    expect(reading.rate).toBeLessThan(blind.rate * 0.10);
+    // …and what is left is EXACTLY the offers that held nothing else, which is
+    // the shape of RULE A's promise rather than a coincidence of this fixture.
+    expect(reading.rate - reading.starved).toBeLessThan(0.001);
+    // The live offer is strictly kinder to a reader than the bare deck is,
+    // which is the direction the whole round has to have moved.
+    expect(reading.rate).toBeLessThan(deckReading.rate);
   });
 });
 

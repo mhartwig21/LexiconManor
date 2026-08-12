@@ -14,6 +14,18 @@
  *  - drafted cards thin the day's pool (BP's praised strategy layer), relaxed
  *    only when it would starve a 3-card offer
  *
+ * ── ROUND 36: THE OFFER IS THREE DIFFERENT PLANS, AND ONE OF THEM GOES ON ──
+ *  - RULE A, `nonSealing` — the last slot is drawn from the plans that do not
+ *    seal when the other two both do. The cold read watched a run die at a
+ *    door where all three cards sealed and there were no gems to reroll.
+ *  - RULE B, `PLAN_SPREAD_SUPPRESSION` — a card whose plan says the same
+ *    NUMBER OF WAYS ON as one already in the offer is suppressed. A weight,
+ *    not a filter, and renormalised so violet's share of an offer is
+ *    bit-identical (`drawOne`), for the same reason the wing term is.
+ *  Both are silent when the caller passes no `entryDir`, because a plan
+ *  without a heading is not a plan; that is what leaves `deckMixAt` and every
+ *  band derived from it exactly where they were.
+ *
  * All functions are pure. The manor slice owns the mutable bookkeeping
  * (per-cell draw indices, last-declined set) and passes it in.
  */
@@ -22,8 +34,8 @@ import type { Cell, Dir, DraftOffer, ManorState, RoomCard, RoomCategory, Tier } 
 import { MANOR_COLS } from '../types';
 import { createRng, pickWeighted, type Rng } from '../rng';
 import {
-  cardOpensOntoSanctum, cellKey, deweyCell, hashSeed, roomAt, rowTier, sameCell,
-  SANCTUM_DOOR_CELL,
+  cardOpensOntoSanctum, cellKey, deweyCell, hashSeed, onwardDoors, resolveDoors, roomAt,
+  rowTier, sameCell, SANCTUM_DOOR_CELL,
 } from './grid';
 import { cardById, isKeyBearing, SCRIPTED_FIRST_DRAFT } from './deck';
 import { wingOf, type WingCharacters } from './wings';
@@ -275,14 +287,36 @@ export function eligibleCards(
 function drawOne(
   rng: Rng, pool: RoomCard[], row: number, ctx: DraftRollCtx,
   boost: (card: RoomCard) => number = () => 1,
+  spread: (card: RoomCard) => number = () => 1,
 ): RoomCard {
   // The wing term is normalised against THIS pool (see `wingBoost`), so it is
   // resolved here rather than folded into the per-card weight.
   const wing = wingBoost(pool, row, ctx);
-  return pickWeighted(
-    rng,
-    pool.map((c) => ({ item: c, weight: cardWeight(c, row, ctx) * boost(c) * wing(c) })),
+  const base = pool.map(
+    (c) => ({ item: c, weight: cardWeight(c, row, ctx) * boost(c) * wing(c) }),
   );
+  // ── AND THE SPREAD RULE IS EXACTLY VIOLET-NEUTRAL, BY CONSTRUCTION ───────
+  // The same argument, and the same `k`, that `wingBoost` is built on: the
+  // mystery's supply is not this mechanic's to spend. Round 36 measured what
+  // happens without it — an un-normalised spread rule suppresses every
+  // ORDINARY card that repeats a plan and therefore lifts violet's share of
+  // the offer by a third, straight through 4.10g's "stays a rare room" ceiling
+  // (median violet-met 47.6% → 54.3%). So the rule is renormalised over the
+  // non-mystery pool: violet's share of an offer is bit-identical with the
+  // rule and without it, which is why 4.10g's published bands are untouched by
+  // any of this and the number that moves is the one the round is about.
+  let mysteryWeight = 0;
+  let otherWeight = 0;
+  let otherSpread = 0;
+  for (const { item, weight } of base) {
+    if (item.category === 'mystery') mysteryWeight += weight;
+    else { otherWeight += weight; otherSpread += weight * spread(item); }
+  }
+  const k = otherWeight > 0 && otherSpread > 0 ? otherWeight / otherSpread : 1;
+  return pickWeighted(rng, base.map(({ item, weight }) => ({
+    item,
+    weight: item.category === 'mystery' ? weight : weight * spread(item) * k,
+  })));
 }
 
 /**
@@ -295,6 +329,13 @@ function drawOne(
  * there contains one on just 60.8% of draws. Roughly two evenings in five, she
  * paid 22+ steps to arrive at an offer that CANNOT open the door, and nothing
  * in the game had ever told her the landing room needed to open north.
+ *
+ * ROUND 36 — THE BARE RATE IS 71.2% NOW, and this term did not do it: the plan
+ * that opens north is a corridor, a fork or a cross, which are the wide shapes,
+ * so RULE B's spread surfaces them without anything here or in the deck's
+ * S-share changing (19.0% of tier-3 plans, before and after). Reported because
+ * it is an ACCESS band that moved: the arc below has correspondingly less work
+ * to do, and every 4.10d/e/4.14 gate still holds with room to spare.
  *
  * Three things answer it, and only the third is here: the card face now stamps
  * which plans open onto the Sanctum (ui/blueprint/DraftModal.tsx), the
@@ -315,6 +356,115 @@ function landingBoost(
   const entry = ctx.entryDir ?? 'N';
   const gain = sanctumPlanWeightMultiplier(warmth);
   return (card) => (cardOpensOntoSanctum(card, entry, manor, target) ? gain : 1);
+}
+
+// ---------------------------------------------------------------------------
+// THE PLAN THE CARD FACE SAYS — the two round-36 rules, both about CONSEQUENCE
+// ---------------------------------------------------------------------------
+
+/**
+ * How many ways on this plan leaves at this door — the number the card face
+ * says in words ("Two ways on — north and east", ui/blueprint/doorplan.ts).
+ *
+ * `onwardDoors` and `resolveDoors` are the LIVE predicates; nothing here is a
+ * second opinion about what a plan does, which is the round-13 lesson.
+ */
+function waysOnReader(
+  entry: Dir, manor: ManorState, target: Cell,
+): (card: RoomCard) => number {
+  // Memoised for the life of ONE offer: both rules ask the same question of
+  // the same pool up to five times, and `resolveDoors` is not free (round 36
+  // measured a campaign band time out on the unmemoised first draft).
+  const seen = new Map<string, number>();
+  return (card) => {
+    const hit = seen.get(card.id);
+    if (hit !== undefined) return hit;
+    const n = onwardDoors(
+      resolveDoors(card, entry, manor, target), entry, manor, target,
+    ).length;
+    seen.set(card.id, n);
+    return n;
+  };
+}
+
+/**
+ * ── ROUND 36, RULE B: THE MANOR DOES NOT DEAL THE SAME PLAN THREE TIMES ────
+ *
+ * A weight, never a filter — the same ruling `wingBoost` is built on (AAA 4.6:
+ * the draft stays a decision, and a tidied deck must never be a replaced one).
+ * A card whose plan says the SAME NUMBER OF WAYS ON as a card already in the
+ * offer is suppressed to `PLAN_SPREAD_SUPPRESSION` of its weight; if the pool
+ * holds nothing else, the suppressed card still wins, because an offer that
+ * runs short is worse than an offer that repeats itself.
+ *
+ * WHY THE COUNT AND NOT THE CARD. Two cards that both say "one way on" are two
+ * different rooms and one decision: the door-plan line — the single change in
+ * this project that demonstrably altered how a stranger PLAYED — reads the same
+ * on both, so whatever she is choosing between, it is not where the house goes
+ * next. The rule is stated on the sentence the card prints, so what it fixes is
+ * what she reads.
+ *
+ * WHY 0.10, AND WHAT IT IS NOT. The number is not taste; it is where the whole
+ * 4.10 band set still holds, found by walking it down against the dominance
+ * instrument exactly the way `WING_AFFINITY` was walked down (measured on
+ * `tests/draft-dominance.test.ts`'s grid-true walker, on the round-36 deck):
+ *
+ *     1.00 (no rule)  dominance 55.4% · frontier flat on 25.5% of offers
+ *     0.45            47.3% / 15.4%
+ *     0.20            40.1% /  8.7%
+ *     0.12            36.0% /  6.1%
+ *     0.10            34.9% /  5.6%      ← shipped
+ *
+ * The curve is flattening by 0.10 (0.12 → 0.10 buys a single point), which is
+ * the honest reason to stop there rather than a round number: below it the rule
+ * costs the deck its variety and buys almost nothing.
+ *
+ * It is a SUPPRESSION and not a ban, and the difference is load-bearing: a
+ * suppressed card still wins its slot when the pool holds nothing else, and the
+ * deck can and does still deal her two plans that say the same thing (measured:
+ * some pair of cards still repeats a frontier count on 60.3% of offers — what
+ * has nearly gone is all THREE saying it, 31.6% → 5.6%). Below this it starts
+ * to read as a filter rather than a lean, and
+ * `tests/drafting.test.ts` pins the "it is still a weight" clause so a later
+ * round cannot quietly turn it into one.
+ *
+ * IT IS SILENT WITHOUT A HEADING. `entryDir` is what makes a plan a plan (the
+ * rotation is rigid), so a caller that has no door — `deckMixAt`'s composition
+ * probe, the key-rate probe, the wing tests — draws EXACTLY the cards it drew
+ * before. That is what keeps the 4.10b clock and every mix band calibrated,
+ * and `tests/drafting.test.ts` proves the bit-identity rather than asserting it.
+ */
+export const PLAN_SPREAD_SUPPRESSION = 0.10;
+
+/**
+ * ── ROUND 36, RULE A: THERE IS ALWAYS A WAY ON, IF THE DECK HOLDS ONE ──────
+ *
+ * From the 11 Aug cold read: a tester's run ended at a door where ALL THREE
+ * CARDS SEALED and he had no gems to reroll. He read it as arbitrary, and he
+ * was right to — an offer of three cul-de-sacs is not a decision, it is a
+ * dice roll the game already lost for him. Measured on the grid-true walker at
+ * round 35's HEAD: **4.91% of offers** — at ~9.9 offers an evening, roughly two
+ * evenings in five contained one. It is 0.10% now, and what is left is the
+ * honest residue: rows where the eligible pool genuinely holds no plan that
+ * opens, which is a fact about the deck and not a coin the offer flipped.
+ *
+ * So the LAST slot is drawn from the plans that do not seal, whenever the two
+ * already in her hand both do and the pool holds one. It rides on slot 3 rather
+ * than slot 1 because slot 1 has two promises already (free, and the landing
+ * mercy) and a third would start deciding the offer for her; and it is a
+ * NARROWED POOL rather than a redraw, so the rng stream is exactly where it was
+ * — a reroll at this door still advances only this door (AAA 4.8).
+ *
+ * The tension the round-20 rebalance was careful to keep is kept: a sealing
+ * plan can still be the best card in the offer (it pays a gem, and it is
+ * stamped), two of three can still seal, and the deck can still hand her three
+ * if it genuinely has nothing else at this row. What can no longer happen is
+ * being walled in with no card that says otherwise.
+ */
+function nonSealing(
+  pool: readonly RoomCard[], waysOn: (card: RoomCard) => number,
+): RoomCard[] {
+  return pool.filter((c) => waysOn(c) > 0);
 }
 
 /**
@@ -339,6 +489,11 @@ export function rollCards(
   const pool = eligibleCards(deck, manor, row);
   const cards: RoomCard[] = [];
   const boost = landingBoost(manor, target, ctx);
+  // Both round-36 rules read the plan, and a plan needs a heading (see
+  // PLAN_SPREAD_SUPPRESSION): with no door, this is exactly the old draw.
+  const heading = ctx.entryDir;
+  const waysOn = heading ? waysOnReader(heading, manor, target) : undefined;
+  const saidSoFar: number[] = [];
 
   // Slot 1: guaranteed free (AAA 4.1 / the BP slot-1 rule).
   const free = pool.filter((c) => c.gemCost === 0);
@@ -354,12 +509,26 @@ export function rollCards(
     if (opens.length > 0) first = opens;
   }
   cards.push(drawOne(rng, first, row, ctx, boost));
+  if (waysOn) saidSoFar.push(waysOn(cards[0]!));
 
   // Slots 2–3: full pool, minus what this offer already holds.
   for (let slot = 1; slot < 3; slot++) {
-    const rest = pool.filter((c) => !cards.some((p) => p.id === c.id));
+    let rest = pool.filter((c) => !cards.some((p) => p.id === c.id));
     if (rest.length === 0) break; // pathological end-of-deck; offer runs short
-    cards.push(drawOne(rng, rest, row, ctx, boost));
+    let spread: (card: RoomCard) => number = () => 1;
+    if (waysOn) {
+      // RULE A — the last slot answers a hand of nothing but cul-de-sacs.
+      if (slot === 2 && saidSoFar.every((n) => n === 0)) {
+        const open = nonSealing(rest, waysOn);
+        if (open.length > 0) rest = open;
+      }
+      // RULE B — and it prefers a plan that says something new.
+      const said = new Set(saidSoFar);
+      spread = (card) => (said.has(waysOn(card)) ? PLAN_SPREAD_SUPPRESSION : 1);
+    }
+    const drawn = drawOne(rng, rest, row, ctx, boost, spread);
+    cards.push(drawn);
+    if (waysOn) saidSoFar.push(waysOn(drawn));
   }
   return cards;
 }

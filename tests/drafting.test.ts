@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { create } from 'zustand';
 import {
   affordabilityMultiplier, ANTI_REPEAT_SUPPRESSION, cardWeight, categoryWeight,
-  deweyProphecy, eligibleCards, RARITY_WEIGHTS, rollCards, rollOffer,
-  type DraftRollCtx,
+  deweyProphecy, eligibleCards, PLAN_SPREAD_SUPPRESSION, RARITY_WEIGHTS, rollCards,
+  rollOffer, type DraftRollCtx,
 } from '../src/engine/manor/drafting';
 import {
   BASE_DECK, cardById, deckFor, isKeyBearing, CARD_PREVIEWS, SCRIPTED_FIRST_DRAFT,
@@ -751,5 +751,238 @@ describe('a room that seals itself keeps something (REVIEW_AA §5.7)', () => {
     // mechanic's business. One gem is a reroll at the next door.
     expect(SEALED_ROOM_BOUNTY.gems).toBe(1);
     expect(Object.keys(SEALED_ROOM_BOUNTY)).not.toContain('steps');
+  });
+});
+
+/**
+ * ═══ ROUND 36 — THE TWO RULES THAT MAKE THE OFFER THREE DIFFERENT PLANS ════
+ *
+ * `engine/manor/drafting.ts` RULE A ("there is always a way on") and RULE B
+ * ("the manor does not deal the same plan three times"). What is tested here is
+ * the CONTRACT — the three promises each rule makes and the one promise they
+ * share — rather than the dominance rate, which is measured against the deck in
+ * `tests/draft-dominance.test.ts` on an instrument that knows nothing about
+ * either rule's implementation.
+ *
+ * Every claim below is proved in both directions where it can be: the same
+ * `rollCards`, called without a heading, IS the round-35 draw, so a red proof
+ * costs nothing and there is no excuse for a green-only gate.
+ */
+describe('round 36 — RULE A: the offer holds a way on when the deck holds one', () => {
+  /** Every empty cell of a manor, each entered from a heading that varies. */
+  const doors = (manor: ManorState) => {
+    const out: { cell: Cell; dir: Dir }[] = [];
+    for (let row = 0; row < MANOR_ROWS; row++) {
+      for (let col = 0; col < MANOR_COLS; col++) {
+        const cell: Cell = { col: col as Cell['col'], row };
+        if (roomAt(manor, cell)) continue;
+        for (const dir of DIRS) out.push({ cell, dir });
+      }
+    }
+    return out;
+  };
+
+  const sealCounts = (heading: boolean) => {
+    let allSeal = 0, starved = 0, offers = 0;
+    for (let seed = 0; seed < 24; seed++) {
+      const manor = createManor(seed);
+      for (const { cell, dir } of doors(manor)) {
+        const cards = rollCards(DECK, manor, cell, heading
+          ? ctx({ gems: 2, entryDir: dir })
+          : ctx({ gems: 2 }));
+        offers += 1;
+        const seals = (c: (typeof cards)[number]) =>
+          sealsItself(resolveDoors(c, dir, manor, cell), dir, manor, cell);
+        if (cards.every(seals)) allSeal += 1;
+        // Could ANY card in the whole eligible pool have opened this door?
+        const pool = eligibleCards(DECK, manor, cell.row);
+        if (!pool.some((c) => !seals(c))) starved += 1;
+      }
+    }
+    return { allSeal: allSeal / offers, starved: starved / offers, offers };
+  };
+
+  it('never deals three sealing plans unless the POOL had nothing else', () => {
+    const live = sealCounts(true);
+    expect(live.offers).toBeGreaterThan(2000);
+    // The rule's exact promise: an all-sealing offer is only ever a fact about
+    // the deck at that row, never a roll of the dice.
+    expect(live.allSeal, `all three sealed on ${(100 * live.allSeal).toFixed(2)}% of offers`)
+      .toBeLessThanOrEqual(live.starved + 1e-9);
+  });
+
+  it('goes RED on the draw it replaced — the same call without a heading', () => {
+    // Not a mock: `rollCards` with no `entryDir` is the shipped round-35 draw,
+    // and it is the call `deckMixAt` and the key-rate probe still make.
+    const before = sealCounts(false);
+    const live = sealCounts(true);
+    expect(before.allSeal, 'the round-35 draw never dealt three cul-de-sacs')
+      .toBeGreaterThan(before.starved + 0.01);
+    expect(live.allSeal).toBeLessThan(before.allSeal);
+  });
+
+  it('rides on the LAST slot, so slot 1 keeps its own promise (free)', () => {
+    // AAA 4.1 outranks every later rule: the guaranteed-takeable card stays
+    // takeable even on the offers RULE A has reached into.
+    for (let seed = 0; seed < 24; seed++) {
+      const manor = createManor(seed);
+      for (const { cell, dir } of doors(manor)) {
+        const pool = eligibleCards(DECK, manor, cell.row);
+        if (!pool.some((c) => c.gemCost === 0)) continue;
+        const cards = rollCards(DECK, manor, cell, ctx({ gems: 2, entryDir: dir }));
+        expect(cards[0]!.gemCost, `${cards[0]!.id} @${cellKey(cell)}/${dir}`).toBe(0);
+      }
+    }
+  });
+});
+
+describe('round 36 — RULE B: the same plan three times, and the price of saying so', () => {
+  const waysOn = (card: (typeof BASE_DECK)[number], dir: Dir, manor: ManorState, cell: Cell) =>
+    resolveDoors(card, dir, manor, cell).filter((d) => {
+      if (d === opposite(dir)) return false;
+      const n = { N: { ...cell, row: cell.row + 1 }, S: { ...cell, row: cell.row - 1 },
+        E: { ...cell, col: cell.col + 1 }, W: { ...cell, col: cell.col - 1 } }[d] as Cell;
+      if (n.row < 0 || n.row >= MANOR_ROWS || n.col < 0 || n.col >= MANOR_COLS) return false;
+      const there = roomAt(manor, n);
+      return !there || there.doors.includes(opposite(d));
+    }).length;
+
+  /** How often all three cards say the same number of ways on. */
+  const flatShare = (heading: boolean) => {
+    let flat = 0, offers = 0, anyRepeat = 0;
+    for (let seed = 0; seed < 24; seed++) {
+      const manor = createManor(seed);
+      for (let row = 0; row < MANOR_ROWS; row++) {
+        for (let col = 0; col < MANOR_COLS; col++) {
+          const cell: Cell = { col: col as Cell['col'], row };
+          if (roomAt(manor, cell)) continue;
+          for (const dir of DIRS) {
+            const cards = rollCards(DECK, manor, cell, heading
+              ? ctx({ gems: 2, entryDir: dir }) : ctx({ gems: 2 }));
+            const said = new Set(cards.map((c) => waysOn(c, dir, manor, cell)));
+            offers += 1;
+            if (said.size === 1) flat += 1;
+            if (said.size < cards.length) anyRepeat += 1;
+          }
+        }
+      }
+    }
+    return { flat: flat / offers, anyRepeat: anyRepeat / offers, offers };
+  };
+
+  it('nearly stops the offer saying one thing three times — and goes red without it', () => {
+    const live = flatShare(true);
+    const before = flatShare(false);
+    expect(live.offers).toBeGreaterThan(2000);
+    expect(live.flat, `all three plans said the same on ${(100 * live.flat).toFixed(1)}%`)
+      .toBeLessThan(0.10);
+    // The red proof: the round-35 draw over this same deck says it far more.
+    expect(before.flat).toBeGreaterThan(live.flat * 2.5);
+  });
+
+  it('is still a WEIGHT and not a filter — two cards may agree, and often do', () => {
+    // The distinction AAA 4.6 is built on. A rule that BANNED a repeated plan
+    // would drive this to zero and quietly replace the deck rather than tidy
+    // it; a suppression leaves the hand legal and merely unlikely.
+    const live = flatShare(true);
+    expect(live.anyRepeat, `some pair still agreed on ${(100 * live.anyRepeat).toFixed(1)}%`)
+      .toBeGreaterThan(0.35);
+    expect(PLAN_SPREAD_SUPPRESSION).toBeGreaterThan(0);
+    expect(PLAN_SPREAD_SUPPRESSION).toBeLessThan(1);
+  });
+
+  /**
+   * THE CONSTRUCTION ARGUMENT, MEASURED. `drawOne` renormalises the spread over
+   * the NON-MYSTERY pool, the way `wingBoost` does and for the same reason: the
+   * mystery's supply is not this mechanic's to spend. Round 36 shipped the
+   * un-normalised version first and watched violet's share of an offer rise by
+   * a third, which took the median player's violet-met rate from 47.6% to
+   * 54.3% and straight through 4.10g's "or it has stopped being a rare room".
+   */
+  it('is exactly violet-neutral: the rules cannot change how often violet shows up', () => {
+    const mysteryShare = (heading: boolean) => {
+      let myst = 0, n = 0;
+      for (let seed = 0; seed < 120; seed++) {
+        const manor = createManor(seed);
+        for (let row = 0; row < MANOR_ROWS; row++) {
+          for (let col = 0; col < MANOR_COLS; col++) {
+            const cell: Cell = { col: col as Cell['col'], row };
+            const dir = DIRS[(seed + col + row) % DIRS.length]!;
+            for (const c of rollCards(DECK, manor, cell, heading
+              ? ctx({ gems: 2, entryDir: dir }) : ctx({ gems: 2 }))) {
+              n += 1;
+              if (c.category === 'mystery') myst += 1;
+            }
+          }
+        }
+      }
+      return { share: myst / n, n };
+    };
+    const before = mysteryShare(false);
+    const live = mysteryShare(true);
+    expect(before.n).toBeGreaterThan(10000);
+    expect(
+      Math.abs(live.share - before.share),
+      `violet share ${(100 * before.share).toFixed(3)}% → ${(100 * live.share).toFixed(3)}%`,
+    ).toBeLessThan(0.002);
+  });
+});
+
+describe('round 36 — both rules are SILENT without a heading', () => {
+  /**
+   * A plan without a heading is not a plan (the rotation is rigid), so a caller
+   * with no door draws exactly what it always drew. This is not decoration: it
+   * is what leaves `deckMixAt` — and the 4.10b clock derived from it, and every
+   * mix band in AAA 4.10 — calibrated exactly as they were. The same argument
+   * `keyAccess`, `sanctumPlanWarmth` and the wing term each make.
+   */
+  it('is blind to the manor’s DOORS: same rooms, different plaster, same offer', () => {
+    // Two manors holding the SAME cards in the SAME cells — so `eligibleCards`
+    // thins identically — differing only in which doors those rooms drew. That
+    // is exactly the input both round-36 rules read and the only input they
+    // add, so a headingless draw that notices it would be the regression this
+    // test exists to catch. (An earlier draft of this test walled the
+    // neighbours instead, which changed the placed set and therefore the pool,
+    // and skipped every seed: a test that asserts nothing is worse than none.)
+    let checked = 0;
+    for (let seed = 0; seed < 40; seed++) {
+      const bare = createManor(seed);
+      const cell: Cell = { col: 2, row: 3 };
+      if (roomAt(bare, cell)) continue;
+      const neighbours: Cell[] = [{ col: 1, row: 3 }, { col: 3, row: 3 }, { col: 2, row: 2 }];
+      const build = (doors: Dir[]): ManorState => {
+        let m: ManorState = bare;
+        for (const at of neighbours) {
+          if (roomAt(m, at)) continue;
+          m = placeRoom(m, {
+            cardId: 'gem-vault', cell: at, doors, solved: false, kind: 'utility',
+          } as PlacedRoom);
+        }
+        return m;
+      };
+      const shut = rollCards(DECK, build(['N']), cell, ctx({ gems: 2 })).map((c) => c.id);
+      const open = rollCards(
+        DECK, build(['N', 'E', 'S', 'W']), cell, ctx({ gems: 2 }),
+      ).map((c) => c.id);
+      expect(open, `seed ${seed}`).toEqual(shut);
+      checked += 1;
+    }
+    expect(checked, 'this test skipped every seed').toBeGreaterThan(20);
+  });
+
+  it('and WITH a heading it can differ, or neither rule would be doing anything', () => {
+    let differed = 0;
+    for (let seed = 0; seed < 60; seed++) {
+      const manor = createManor(seed);
+      const cell: Cell = { col: 2, row: 3 };
+      if (roomAt(manor, cell)) continue;
+      const plain = rollCards(DECK, manor, cell, ctx({ gems: 2 })).map((c) => c.id).join();
+      for (const dir of DIRS) {
+        const withDir = rollCards(DECK, manor, cell, ctx({ gems: 2, entryDir: dir }))
+          .map((c) => c.id).join();
+        if (withDir !== plain) differed += 1;
+      }
+    }
+    expect(differed).toBeGreaterThan(50);
   });
 });

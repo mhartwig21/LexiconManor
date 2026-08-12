@@ -273,7 +273,16 @@ export function isDominated(shapes: readonly CardShape[]): boolean {
  */
 export const DOMINANCE_GATE = {
   target: 0.40,
-  ratchet: 0.70,
+  /**
+   * ROUND 36: 0.70 -> 0.41. The deck round landed (engine/manor/deck.ts's
+   * ROUND-36 REBALANCE plus drafting.ts's two draft rules) and the rate fell
+   * from 67.0% to 34.9% on the walker and to 37.4-39.0% on the day model across
+   * four seeds. The gate sits a point above the strictest reading, so `target`
+   * is now a floor the deck stands on rather than a destination it is walking
+   * toward - and `tests/draft-dominance.test.ts` proves this gate RED against
+   * the round-35 draw (58.4%) rather than only ever having seen it green.
+   */
+  ratchet: 0.41,
 } as const;
 
 // ---------------------------------------------------------------------------
