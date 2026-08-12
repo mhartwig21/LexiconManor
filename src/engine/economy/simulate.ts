@@ -181,6 +181,7 @@ import {
   appendEntry, climbKey, createLedger, ledgerTotal, stepsRemaining, stepsRefunded, stepsSpent,
   fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, moveAt, solveKeys,
   sanctumMercyArmed, sanctumPlanWarmth, stageSteps, teaArcPoints, teaDawnPour, teaLandingPour,
+  studyRefundDue,
   BASE_DAY_BUDGET, DOOR_LOCKS, ROOM_SIZE, SANCTUM_ARC, STEP_TABLE, TEA_POUR,
 } from './steps';
 import type { StepLedger } from '../types';
@@ -864,6 +865,22 @@ export interface SimProfile {
   /** Costed mistakes before leaving an unsolved room for tomorrow: [min, max]. */
   mistakesUnsolved: [number, number];
   /**
+   * ROUND 44 — THE SHARE OF THE GALLERY'S OFF-ASK TRACES THIS RUN FORGIVES.
+   *
+   * A MODEL KNOB, NOT A PLAYER TRAIT, and the only one in this interface: it
+   * exists so the finding above can be MEASURED by this instrument rather than
+   * asserted in a comment. 0 (the default, and what every shipped profile runs
+   * at) reproduces the model as it has stood since round 22, charging the
+   * Gallery for wrong words the room stopped charging for in round 28; 1 is the
+   * truth, and `tests/economy-effort.test.ts` runs both every time and prints
+   * the gap.
+   *
+   * It is on the PROFILE rather than a module constant so a test can hold both
+   * readings side by side in one process — a constant would have to be edited
+   * to be measured, which is how a finding goes stale.
+   */
+  studyRelief?: number;
+  /**
    * Navigation intent: chance a given draft is aimed UP a row rather than
    * laterally. 1/pushBias is the old `roomsPerRow` — a sharp player who reads
    * door layouts wastes fewer rooms per storey.
@@ -1083,6 +1100,14 @@ export interface GroundPressure {
 export interface SimDayResult {
   rooms: number;            // new rooms drafted + entered
   roomsSolved: number;
+  /**
+   * ROUND 44 — moves handed back by STUDIES today (`STUDY_REFUND`, steps.ts).
+   * Reported apart from `refunded` on purpose: it is the whole cost of the
+   * mechanic in one number, so the bands in tests/economy-simulation.test.ts
+   * and tests/economy-pressure.test.ts can be read against it directly instead
+   * of against a total that mixes it with solves, tea and snacks.
+   */
+  studyRefunds: number;
   maxRow: number;           // 1-based; 6 = the Sanctum landing (the live door)
   /**
    * **The live second gate of AAA 4.10e — `atSanctumDoor`, not the storey.**
@@ -1408,6 +1433,8 @@ export function simulateDay(
 
   let rooms = 0;
   let roomsSolved = 0;
+  /** Moves handed back by studies today (round 44, `STUDY_REFUND`). */
+  let studyRefunds = 0;
   let fragmentsFound = 0;
   // The seal, in the order the evening really happens (round 11). Entering a
   // violet room pushes a smudged page onto `sealed`; finishing a word game
@@ -1698,13 +1725,62 @@ export function simulateDay(
         const [mMin, mMax] = solved ? profile.mistakesSolved : profile.mistakesUnsolved;
         // Mistakes scale with the time actually spent in the room: a board she
         // looked at for ninety seconds cannot cost her four wrong claims.
-        const mistakes = perfect ? 0
+        const offAsk = perfect ? 0
           : Math.round(randInt(rng, mMin, mMax) * (solved ? 1 : workedFraction));
+        // ══ ROUND 44 — THE GALLERY'S OFF-ASK TRACES, WHICH THIS MODEL HAD
+        //    NEVER HEARD OF, AND THE FINDING THAT FELL OUT OF ASKING ═══════
+        //
+        // `twistleAdapter.reduce` returns `kind: 'study'` for a real word she
+        // traced that the room did not ask for: no `mistake` event, no weight,
+        // no strike. Round 38 then took every remaining rule of play off
+        // acceptance, so on the shipped pool a board carries a median
+        // 102/104/200 accepted words against an ask of 5/6/6, and the only
+        // refusals left in the house are the cozy gate's 619 across all 210
+        // boards — a median THREE a board. An off-ask trace in the Gallery is
+        // a study perhaps fifty times more often than it is a refusal.
+        //
+        // So the question this model could not previously ask has an answer
+        // that needs no new random variable: SHE TRACED A STUDY IFF SHE TRACED
+        // ANYTHING OFF-ASK AT ALL. The refund is once a board (`STUDY_REFUND`),
+        // so nothing downstream depends on how many — only on whether.
+        const studies = puzzleKind === 'twistle' ? offAsk : 0;
+        // ── AND THE FINDING, WHICH IS NOT THIS ROUND'S TO FIX ──────────────
+        // Those traces are STILL CHARGED below at `STEP_TABLE.mistake` — a
+        // phantom tax the live Gallery deleted sixteen rounds ago and this
+        // model has gone on levying at every tier. `studyRelief` is the share
+        // of them a run is allowed to forgive; it is 0 by default, which is
+        // WRONG ON PURPOSE, because forgiving them is an ECONOMY change and not
+        // a word-game one: `tests/economy-effort.test.ts` runs the same model
+        // at relief 1 every time it runs and publishes what the truth costs —
+        // the median evening 13.81 → 15.99 minutes against AAA 4.10b's
+        // published 10–15, i.e. the Gallery has been taxed about two moves a
+        // visit that the room does not charge. That is a commission for whoever
+        // next moves the day's starting count (the owner's own lever,
+        // THE_CLIMB §1b), and it is measured rather than asserted so it cannot
+        // go stale between now and then.
+        const forgiven = Math.round(studies * (profile.studyRelief ?? 0));
+        const mistakes = offAsk - forgiven;
         for (let m = 0; m < mistakes; m++) {
           ledger = appendEntry(ledger, {
             reason: 'mistake', delta: STEP_TABLE.mistake(1, tier), at: 0, roomKey,
           });
         }
+        // ── WHAT A STUDY HANDS BACK ───────────────────────────────────────
+        // The slice's bound, run by the same function the live room runs
+        // (`studyRefundDue`), so the model and the glass cannot disagree about
+        // how many times one board may pay. No clock is added for the trace:
+        // `ROOM_EFFORT.twistle` is built at FIFTEEN SECONDS A FIND against a
+        // 12-25 s honest band precisely because a find's cost already absorbs
+        // the tracing that does not land on a work, and billing the same
+        // fifteen seconds twice would be a second opinion about the same play.
+        let studiesPaid = 0;
+        for (let s = 0; s < studies; s++) {
+          const due = studyRefundDue(studiesPaid);
+          if (due <= 0) break;
+          studiesPaid += due;
+          ledger = appendEntry(ledger, { reason: 'study', delta: due, at: 0, roomKey });
+        }
+        studyRefunds += studiesPaid;
         seconds += TIME_TABLE.solveSeconds(puzzleKind, tier) * workedFraction * clockJitter(timeRng);
         if (solved) {
           ledger = appendEntry(ledger, {
@@ -1781,6 +1857,7 @@ export function simulateDay(
   return {
     rooms,
     roomsSolved,
+    studyRefunds,
     maxRow,
     // ── THE GATE, ASKED OF THE MANOR (round 24). ─────────────────────────
     // `atSanctumDoor`'s own two clauses, on the real object: she is standing on

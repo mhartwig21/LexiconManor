@@ -18,6 +18,35 @@ either of the first two skips the deploy, so a broken build cannot reach product
 
 ## READ THIS FIRST — the one thing that is wrong right now
 
+**THE MODEL HAS BEEN CHARGING THE GALLERY FOR A MISTAKE CLASS THE ROOM DELETED IN ROUND 28, AND
+EVERY BAND IN AAA 4.10 WAS MEASURED THROUGH IT** (found in round 44 while pricing a study).
+`twistleAdapter` has returned `kind: 'study'` — no mistake event, no weight, no strike — for every
+real word she traces off the ask since round 28, and at tier 1 the Gallery cannot charge a costed
+mistake at all: there is no centre rule to break. `engine/economy/simulate.ts` has gone on levying
+`STEP_TABLE.mistake` for those traces at every tier for sixteen rounds.
+
+`SimProfile.studyRelief` is the share of them a run forgives — **0 in everything the game ships,
+1 is the truth** — and `tests/economy-effort.test.ts` runs both on every run and publishes the gap:
+forgiving them puts the median evening at **~16 minutes against 4.10b's published 10–15**. It is
+**more than twice** the size of the whole mechanic round 44 shipped, and it moves the day in the
+direction the owner cares about.
+
+**The fix is not in this file's gift.** Evening length is an OUTPUT of the starting count and the
+payouts (his own words, `docs/THE_CLIMB.md` §1b), and correcting the model makes evenings LONGER —
+so paying this off means moving `BASE_DAY_BUDGET`, re-measuring the whole campaign, and re-deriving
+every band that hangs off it. That is an economy round. Until it runs, every 4.10 band in the repo
+is measured through a Gallery that is poorer than the shipped one.
+
+**Second, and cheap:** *round 42 made a wrong claim cost ONE move at every weight and every tier,
+and five rooms still print the old price on the glass* — `const stepCost = tier === 3 ? 3 : 2` in
+`WordWebView`, `CrosswordView`, `SudokuView`, `ForgottenWordView` and `CipherView` (the Gallery's
+was fixed in round 44, read off `STEP_TABLE.mistake` so it cannot go stale again). The Library
+prints "One away… · −2 steps" beside a ledger entry of −1. That is the exact defect
+`ui/chrome/step-reasons.ts` was built to prevent, in five rooms at once — but three of them are
+PROTECTED, so it needs a task that names them.
+
+---
+
 **THE MOVE-COSTS-1 ECONOMY IS BUILT** (round 42). A move costs **1**, a day starts at **12
 moves**, a wrong guess costs **1** at every weight and every tier, and solving pays moves back —
 the owner's four rulings from `docs/THE_CLIMB.md` §1b, which now carries a BUILT block with every
@@ -164,6 +193,16 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
 4. **Reduced motion lost a quarter of its dusk**, unpublished — gone by ~906ms.
 5. **The Library** (median 2 contested tiles against 2–4) and **the Darkroom** — the two rooms that
    do not clear their benchmark.
+   - **THE GALLERY'S STUDIES PAY NOW (round 44)** — a study hands back the move she spent walking
+     in, once a board, and the clause that says so is on the never-hidden rule line. The finding
+     that made three rounds of copy fail is worth more than the mechanic: **the only sentence
+     stating what a study was for was deleted at 375×667 by
+     `@media (max-height: 700px) { .anch__flavour { display: none } }`** — authored, certified by
+     reading the string, and never once painted on the phone the game is judged on. Every band that
+     moved is in `docs/THE_CLIMB.md` §1c with its cause. `tests/round38-gallery-live.mjs` gained
+     GROUND/SAYS (the clause is painted, at both sizes, before she traces) and GROUND/PAID (the
+     candle rises by one on the first study and does not rise again for seven more), both proved
+     red by injection.
    - **The Gallery's grid was round 43, off owner play** — *"a lot of letter placements that
      totally close off any ability to ever form a word… like c c c all next to each other."*
      The measurement had to be invented and the FIRST one was green and wrong: counted against

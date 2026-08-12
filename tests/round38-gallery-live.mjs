@@ -95,6 +95,24 @@ const PROOFS = [
     css: '.anch-toast { display: none !important; }',
   },
   {
+    // ROUND 44 — THE SHAPE OF THE DEFECT THIS ROUND FOUND, restored exactly.
+    // The one sentence saying what a study was FOR lived in `.anch__flavour`,
+    // and anchor.css deletes that class at `max-height: 700px` — so on the
+    // 375x667 phone the game is judged on, it was never on the glass. Two
+    // rounds of copy failed for that reason and neither instrument could see
+    // it, because both read the string rather than the pixels.
+    name: 'the purpose of a study stated only in the line a short phone deletes',
+    check: 'GROUND/SAYS',
+    css: '.anch__rule { display: none !important; }',
+  },
+  {
+    // ROUND 44 — a study that hangs and pays nothing: the room as the owner
+    // met it. *"It didn't automatically add steps."*
+    name: 'a study that hangs but never moves the counter (the room he played)',
+    check: 'GROUND/PAID',
+    css: '.chr-steps__count { visibility: hidden !important; }',
+  },
+  {
     // Round 34's finding, asked of the ground floor: the board sized against a
     // CONSTANT guess at the deck instead of the deck it measures this frame.
     // Right for an empty deck — which is the only deck a tier-1 board has ever
@@ -317,10 +335,42 @@ async function checkGroundFloor(page, board, ranks) {
     }];
   }
 
+  /**
+   * ── GROUND/SAYS (round 44) ───────────────────────────────────────────────
+   * WHAT A STUDY IS FOR, ON THE GLASS, BEFORE SHE TRACES ONE. Read out of the
+   * painted DOM at the room's own rest state — not out of the string the engine
+   * returns, which is what the last two rounds checked and why they both
+   * certified copy that `@media (max-height: 700px)` was deleting.
+   */
+  const says = await page.evaluate((painted) => {
+    // eslint-disable-next-line no-eval
+    const seen = eval(painted);
+    const shots = [...document.querySelectorAll('.anch__rule, .anch__flavour, .tw-word__hint')]
+      .map((el) => seen(el)).filter(Boolean);
+    return { text: shots.map((x) => x.text).join(' ⁘ ') };
+  }, PAINTED);
+  out.push({
+    check: 'GROUND/SAYS',
+    ok: /step/i.test(says.text) && /stud/i.test(says.text),
+    message: says.text
+      ? `at rest the room says: “${says.text}”`
+      : 'nothing about a study is painted anywhere in the room before she traces one',
+  });
+
   const before = await page.evaluate(() => {
     const s = document.querySelector('.tw-standing__score');
     return Number((s?.textContent ?? '0').replace(/\D/g, ''));
   });
+  /** What the CANDLE reads — the number she spends, not the room's score. */
+  const readSteps = () => page.evaluate(() => {
+    const el = document.querySelector('.chr-steps__count');
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) return null;
+    if (getComputedStyle(el).visibility === 'hidden') return null;
+    return Number((el.textContent ?? '').replace(/\D/g, ''));
+  });
+  const stepsBefore = await readSteps();
 
   if (!(await claim(page, target.path))) {
     return [{ check: 'GROUND/KEPT', ok: false, message: `the trace of ${target.w} never reached the board` }];
@@ -344,6 +394,7 @@ async function checkGroundFloor(page, board, ranks) {
   });
 
   await page.waitForTimeout(1600);
+  const stepsAfterOne = await readSteps();
 
   const kept = await page.evaluate((painted) => {
     // eslint-disable-next-line no-eval
@@ -385,6 +436,30 @@ async function checkGroundFloor(page, board, ranks) {
     .slice(0, 7);
   for (const m of more) await claim(page, m.path);
   await page.waitForTimeout(1500);
+  const stepsAfterMore = await readSteps();
+  /**
+   * ── GROUND/PAID (round 44) ───────────────────────────────────────────────
+   * THE OWNER'S SENTENCE, MEASURED: *"It didn't automatically add steps."* The
+   * candle must rise by exactly one on the FIRST study — read off the chrome a
+   * player looks at, not off the ledger — and must not rise again for the seven
+   * that follow it, because a study is a refund of the move she spent walking
+   * in and there was only ever one of those.
+   */
+  out.push({
+    check: 'GROUND/PAID',
+    ok: stepsBefore !== null && stepsAfterOne === stepsBefore + 1
+      && stepsAfterMore === stepsAfterOne,
+    message: stepsBefore === null || stepsAfterOne === null
+      ? 'the step counter is not on the glass in this room, so nothing can be read off it'
+      : stepsAfterOne !== stepsBefore + 1
+        ? `she traced a real word off the ask and the candle went ${stepsBefore} → ${stepsAfterOne}`
+          + ' — the room kept the word and the economy said nothing'
+        : stepsAfterMore !== stepsAfterOne
+          ? `the board paid again: ${stepsAfterOne} → ${stepsAfterMore} over ${more.length} more studies,`
+            + ' which is a wage and not a refund'
+          : `the candle went ${stepsBefore} → ${stepsAfterOne} on the first study and stayed there`
+            + ` over ${more.length} more`,
+  });
   const fit = await page.evaluate(() => {
     const clips = (v) => v === 'auto' || v === 'scroll' || v === 'hidden' || v === 'clip';
     const rows = [];

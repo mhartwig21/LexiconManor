@@ -573,6 +573,43 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   > | bare ascent to the landing | 15 against a 22-step budget | **5 against 12** |
   > | realistic ascent (with walk-backs) | 25.8 against 22 = **8.6 moves against 7.3** | **8.6 moves against 12** — see below, the replacement invariant is deleted too |
   >
+  > ### ROUND 44 — the bands that moved for the Gallery's studies, and the one that did NOT
+  >
+  > A study hands back the move she spent walking in, once a board (`STUDY_REFUND`,
+  > `docs/THE_CLIMB.md` §1c) — the owner, from play: *"It didn't automatically add steps."*
+  > Measured over 4,800 evenings a profile on the grid-true model it pays the median
+  > player **1.04 moves a day**, and one move a day is one more room on the evenings that
+  > have the tea to spend it.
+  >
+  > | band | round 42 | round 44 |
+  > |---|---|---|
+  > | 4.10f median-player evening, LATE median | ≤18 (17.0) | **≤19** (measured **18.51**) |
+  > | 4.10f median-player evening, EARLY median | 12–18 (13.9) | band unmoved, measured **14.6** |
+  > | 4.10f median-player late p90 | ≤23 (22.3) | band unmoved, measured **22.9** |
+  > | 4.10g her sealed-overnight share | <45% (36.5%) | **<48%** (measured **47.3%**) |
+  > | 4.10g her violet-met share | <55% (50.3%) | **<56%** (measured **55.3%**) |
+  > | 4.10g HIS violet-met share | <85% | **<86%** (measured **85.8%**) — the SPLIT, which is what the clause is about, is unmoved |
+  > | 4.10g her overnight rate (`volume-pacing`) | 10–45% (36.5%) | **10–50%** (measured **48.2%**) |
+  > | **4.10h wage spread, every room × tier** | 4.53× | **4.53× — UNMOVED, and that is the point** |
+  >
+  > **THE WAGE SPREAD IS UNMOVED BECAUSE A REFUND IS NOT A WAGE, and the counterfactual is
+  > computed rather than asserted** (`tests/gallery-studies-pay.test.ts`). The Gallery is
+  > already the joint TOP of the wage table — 0.80 moves a minute, and it is there because
+  > `SOLVE_WAGE.floor` catches a 1.25-minute room, not because it is generous — so there is
+  > no room above it to pay a study out of. Priced honestly a study is worth **0.11 of a
+  > move** (nine to the move), which does not answer a woman who has traced ONE word;
+  > priced at the ledger's smallest coin a solved tier-1 Gallery plus four studies earns
+  > 2.22 moves a minute and **the published spread goes 4.53× → 12.6×**. `solvePayout` is
+  > therefore untouched, and the payment un-charges a cost instead of pricing work.
+  >
+  > **AND THE INSTRUMENT ITSELF IS OFF BY MORE THAN THE CHANGE.** Modelling a study
+  > exposed that `simulate.ts` has charged the Gallery for off-ask traces since round 28
+  > that the room does not charge — `SimProfile.studyRelief`, 0 as shipped, 1 as the truth
+  > — and `tests/economy-effort.test.ts` publishes the gap on every run: **the truthful
+  > median evening is ~16 minutes against 4.10b's 10–15.** Every 4.10 band above is
+  > measured through a Gallery poorer than the one that ships. Paying it off moves the
+  > day's STARTING COUNT, which is an economy commission (STATUS §0).
+  >
   > **THE SECOND HALF OF ROUND 36'S INVARIANT IS DELETED, DELIBERATELY.** Round 36 killed
   > `reserveToTop(1) > BASE_DAY_BUDGET` for the BARE staircase and replaced it with the
   > same inequality for the REALISTIC ascent (25.8 > 22). Denominated in moves the left

@@ -442,7 +442,18 @@ export interface TwistleRuleLines {
   trace: string;
   /** What the room is asking for — the CONSTRAINED class, corner floor and all. */
   ask: string;
-  /** The two above, in the one line the room prints. Never hidden. */
+  /**
+   * ROUND 44 — WHAT A STUDY IS FOR, IN THE UNIT SHE SPENDS. Load-bearing, and
+   * it did not used to be: a study paid a score point and nothing else, so the
+   * sentence about it lived in `studies` below, which anchor.css classes as
+   * decorative reserve and `@media (max-height: 700px)` DELETES — i.e. on the
+   * 375×667 phone this game is judged on, the only statement of what a study
+   * was for was not on the glass at all. It gates a step now (steps.ts
+   * `STUDY_REFUND`), so by this room's own taxonomy it has become a rule, and
+   * it rides the line that is never hidden.
+   */
+  pay: string;
+  /** The three above, in the one line the room prints. Never hidden. */
   line: string;
   /** The gesture and the second class — decorative reserve, may be dropped. */
   studies: string;
@@ -466,11 +477,22 @@ export function twistleRuleLines(puzzle: TwistlePuzzle): TwistleRuleLines {
     : corners === 1
       ? `${puzzle.targetCount} works, a corner each`
       : `${puzzle.targetCount} works`;
+  // ROUND 44 — AND WHAT THE OTHER WORDS ARE FOR, WHICH IS THE ONE THING THE
+  // OWNER COULD NOT WORK OUT: *"for the words that aren't part of the gallery,
+  // it was confusing what their purpose was. It didn't automatically add
+  // steps."* It does now, and the clause STATES ITS OWN BOUND rather than
+  // carrying a number: you spent one step walking in, so "buys back your step
+  // in" can only happen once, and the sentence stays true on the second study
+  // without saying "first" or "once" — the room is contractually required to
+  // keep this line true (see the block above) and a clause with a count in it
+  // is a clause that goes false the moment the count is edited.
+  const pay = 'a study buys back your step in';
   return {
     trace,
     ask,
-    line: `${trace} · ${ask}`,
-    studies: 'Trace through touching tiles. Any other word you find hangs as a study.',
+    pay,
+    line: `${trace} · ${ask} · ${pay}`,
+    studies: 'Trace through touching tiles. Any other real word you find hangs as a study.',
   };
 }
 

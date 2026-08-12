@@ -27,7 +27,7 @@ import { centerIndex, findPath, puzzleSize, STUDY_POINTS, twistleRuleLines, twis
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
 import './anchor.css';
-import { stepWords } from '../../../engine/economy/steps';
+import { stepWords, STEP_TABLE, STUDY_REFUND } from '../../../engine/economy/steps';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
 
@@ -65,7 +65,15 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const won = state.twistle.status === 'won';
-  const stepCost = tier === 3 ? 3 : 2;
+  /**
+   * ROUND 44 — THE PRICE TAG ON THIS TOAST WAS TWO ROUNDS STALE. It was
+   * `tier === 3 ? 3 : 2`, hard-coded, and round 42 made a wrong claim cost ONE
+   * move at every weight and every tier: the Gallery has been printing
+   * "It must cross the marked tile · −3 steps" beside a ledger entry of −1.
+   * A false price is the exact defect ui/chrome/step-reasons.ts exists to
+   * prevent, so it is read off the table now and cannot go stale again.
+   */
+  const stepCost = -STEP_TABLE.mistake(1, tier);
   const studies = state.twistle.foundStudies ?? [];
   /**
    * ROUND 28 — THE LADDER ON THE GLASS (BENCHMARKS §1's "points to next rank"
@@ -223,8 +231,22 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
       // ROUND 28 — the sound and the colour of a GOOD thing. This word used to
       // be told it "isn't in the lexicon", which was false: it clears every
       // rule the board states and only misses the ask's corner floor.
+      //
+      // ROUND 44 — AND IT SAYS WHAT IT PAID, IN STEPS. The owner traced one of
+      // these and reported: *"it was confusing what their purpose was. It
+      // didn't automatically add steps."* Round 34's toast read "a study · +1"
+      // and that +1 was a SCORE point — a unit she cannot spend, printed in the
+      // same shape as the one she can, beside a step counter that did not move.
+      // The word "step" is the whole difference, and the chip that follows
+      // still carries the point under a caption that says "point each", so the
+      // two ones can no longer be read as one thing.
       sfx.correct();
-      setToast({ kind: 'good', text: `${fb.word} — a study · +${fb.points}` });
+      setToast({
+        kind: 'good',
+        text: fb.refunded
+          ? `${fb.word} — a study · +${stepWords(STUDY_REFUND.perStudy)} back`
+          : `${fb.word} — a study, hung · +${fb.points} point`,
+      });
       later(() => setToast(null), 1400);
     } else {
       const messages: Record<typeof fb.reason, string> = {

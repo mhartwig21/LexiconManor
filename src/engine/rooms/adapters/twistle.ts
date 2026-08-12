@@ -41,8 +41,14 @@ export const TWISTLE_POOL = lazyContent<TwistlePuzzleEx[]>(
 
 export type TwistleFeedback =
   | { kind: 'valid'; word: string; found: number; target: number; won: boolean }
-  /** ROUND 28 — a real word she traced that the room did not ask for. */
-  | { kind: 'study'; word: string; points: number }
+  /**
+   * ROUND 28 — a real word she traced that the room did not ask for.
+   * ROUND 44 — and whether it BOUGHT BACK HER STEP IN. The room asks once a
+   * board (`STUDY_REFUND`, engine/economy/steps.ts); the ledger is what
+   * actually pays, and app/slices/room.ts clamps against it, so this flag is
+   * what the toast may PROMISE and never what the economy owes.
+   */
+  | { kind: 'study'; word: string; points: number; refunded: boolean }
   | { kind: 'invalid'; reason: 'too-short' | 'not-on-grid' | 'breaks-rule' | 'not-a-word' | 'already-found'; word: string; costed: boolean };
 
 export interface TwistleRoomState {
@@ -122,8 +128,29 @@ export const twistleAdapter: RoomPuzzleAdapter<TwistlePuzzleEx, TwistleRoomState
     // (`stageFractionOf` returns null for this kind, so a new progress detail
     // cannot move a step payout — the Gallery is under `LADDER_MINUTES`.)
     if (result.kind === 'study') {
-      next = { ...next, lastFeedback: { kind: 'study', word: result.word, points: result.points } };
-      events.push({ type: 'progress', detail: `study-found:${(twistle.foundStudies ?? []).length}` });
+      // ── ROUND 44 — AND IT PAYS ────────────────────────────────────────────
+      // The owner traced a real word off the ask and waited for the economy to
+      // answer: *"for the words that aren't part of the gallery, it was
+      // confusing what their purpose was. It didn't automatically add steps."*
+      // A study buys back the move she spent walking in — once a board
+      // (engine/economy/steps.ts `STUDY_REFUND`, and the argument there for why
+      // it is a REFUND and not a wage: the Gallery is already the joint top of
+      // the house's wage table and a waged study breaks 4.10h's ratchet 4.53×
+      // → 12.6×).
+      //
+      // THE ROOM ASKS ONCE; THE LEDGER DECIDES. `foundStudies` is restored with
+      // the session, so "the first study on this board" survives leaving the
+      // room and coming back, and app/slices/room.ts clamps the ask against the
+      // 'study' entries already stamped with this cell's key — a board cannot
+      // pay twice even if this branch were to ask twice.
+      const studiesNow = (twistle.foundStudies ?? []).length;
+      const refunded = studiesNow === 1;
+      next = {
+        ...next,
+        lastFeedback: { kind: 'study', word: result.word, points: result.points, refunded },
+      };
+      events.push({ type: 'progress', detail: `study-found:${studiesNow}` });
+      if (refunded) events.push({ type: 'refund', detail: 'study' });
       return { state: next, events, outcome: { status: 'active', perfect: isPerfect(next) } };
     }
 

@@ -108,6 +108,7 @@ the quantity it measures: "I have twelve moves left."
 | Solve a small room (micro-puzzle) | +1 |
 | Solve a large room (anchor mode) | the room's own honest minutes at the house wage (`SOLVE_WAGE`, round 22 — about two and a quarter minutes of word game per move), clamped to a cozy floor of +1 (*a solved room always pays back at least the move it cost to walk into*) and a ceiling of one BARE ASCENT, a move leaner every storey: +5 / +4 / +3 by tier. The legacy unkeyed band is +1 micro / +2 anchor |
 | Perfect solve (no mistakes) | +1 bonus |
+| **A study in the Gallery** (round 44) | **+1, once a board** — the move she spent walking in, handed back for a real word she traced that the room did not ask for (`STUDY_REFUND`). A REFUND and not a wage: it never pays past the cost of the room, it never opens the door, and `solvePayout` is untouched so no wage in AAA 4.10h moves. See `docs/THE_CLIMB.md` §1c |
 | Kitchen snack / Bramble's tea | green-room refills +1..+2 (Kitchen +2, Larder +2, Boot Room +1, Still Room +1; compounding hooks +1) · tea 0 → +6 across the friendship — one move a point — poured as a cup at the door (`TEA_POUR.dawnCup`) and the rest of the pot on the second landing |
 | Petting Dewey (the cat) | −1 (worth it) |
 

@@ -113,6 +113,12 @@ export function reasonWord(entry: StepEntry, roomKind?: string): string {
     );
     case 'hint': return 'hint';
     case 'solve': return 'solved';
+    // ROUND 44 — the word that answers the owner's *"it was confusing what
+    // their purpose was"*. A study hands back the move she spent walking in
+    // (steps.ts `STUDY_REFUND`), and the candle says so in the same breath the
+    // room's toast does, in the same word: "+1 study". A price she can read is
+    // a price she stops inventing — which is the whole reason this file exists.
+    case 'study': return 'study';
     // Named for the rule that earns it, not for the grade: the bonus arrives
     // exactly when no mistake and no hint was costed, and nobody knew that.
     case 'perfect': return 'no mistakes';

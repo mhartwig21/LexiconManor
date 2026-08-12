@@ -201,6 +201,92 @@ until the singular became the commonest number in the ledger; `stepWords` owns t
 
 ---
 
+## 1c. A study buys back your step in — round 44, from owner play
+
+**THE OWNER, FROM PLAY:** *"For the gallery, for the words that aren't part of the gallery, it was
+confusing what their purpose was. It didn't automatically add steps."* Two blind testers in
+`docs/COMPREHENSION.md` reached the same belief before him — *only the five pre-chosen words
+count* — which is exactly the belief round 28's two-class board was built to kill. He traced a real
+word on a legal path and waited for the economy to answer. It answered with a score point, which is
+not a unit he spends.
+
+### The finding, which is not the copy
+
+**The one sentence saying what a study was for has never been on the glass at 375x667.** It lived
+in `rules.studies`, rendered into `.anch__flavour`, and `anchor.css` carries
+`@media (max-height: 700px) { .anch__flavour { display: none } }` — the decorative reserve a short
+screen gives up. 667 is under 700. Round 28 wrote the sentence, round 34 wrote a caption and a mark
+to reinforce it, and on the phone this game is judged on the sentence was **deleted**, while both
+rounds certified it by reading the string the engine returns. That is failure mode 4 of
+`docs/STATUS.md` §3, verbatim: authored copy shipped invisible behind a media query.
+
+### The ruling
+
+**A STUDY HANDS BACK THE MOVE SHE SPENT WALKING IN. ONCE A BOARD.** It pays in moves, the one unit
+the game counts in. It does **not** open the door — the exhibition still opens on `targetCount`
+works and nothing else, so round 26's defect (five common words ending a room) stays shut. And the
+clause that says so rides `rules.line`, which is never hidden in any viewport, and states its own
+bound rather than carrying a count: *"a study buys back your step in"* can only happen once,
+because there was only ever one step in, so the sentence stays true on the second study without the
+word "first" in it.
+
+### Why it is a REFUND and not a wage — the number that settled it
+
+**The Gallery is already the joint top of the house's wage table.** `solvePayout` pays it 1 move
+for 1.25 honest minutes at tier 1 — **0.80 moves a minute**, against 0.176 at the bottom (sudoku
+t3), which is the **4.53x** spread AAA 4.10h publishes as a ratchet that may fall and may never
+rise. It is at the top because `SOLVE_WAGE.floor` catches it: 0.45 x 1.25 is 0.56 of a move and the
+ledger has no coin smaller than 1. So there is no room above it to pay a study a wage out of:
+
+- priced honestly at the house rate a study is worth **0.11 of a move** — nine studies to the move
+  at tiers 1-2, five at tier 3 — and nine is not a number that answers a woman who has traced one
+  word;
+- priced at the ledger's smallest coin, a solved tier-1 Gallery plus four studies earns 5 moves for
+  2.25 minutes: **2.22 moves a minute, and the published spread goes 4.53x → 12.6x.**
+
+A wage prices WORK; a refund un-charges a COST. The ledger has always known the difference
+(`stepsSpent` / `stepsRefunded`), and `SOLVE_WAGE.floor` already says the cozy version of it in this
+unit — *a solved room always pays back at least the move it cost to walk into*. This is that
+sentence moved off the solve and onto the honest word. **`solvePayout` is untouched, so not one
+number in 4.10h's wage table moves.**
+
+### BUILT — round 44. What shipped, what it cost, and what it found.
+
+`STUDY_REFUND` (steps.ts) + a `refund` RoomEvent + `StepReason` `'study'`, so the candle's float
+says the word **"study"** beside the **+1** — the price tag `ui/chrome/step-reasons.ts` exists for.
+The adapter asks once a board; **the ledger is what answers** (`app/slices/room.ts` reads the
+`'study'` entries already stamped with the room's key), so a board cannot pay twice by being left
+and come back to.
+
+**WHAT IT COSTS, measured over 4,800 evenings a profile on the grid-true model: 1.04 moves a day
+for the median player** — she meets about one Gallery an evening and traces a real word in it. One
+move a day is one more room on the evenings that have the tea to spend it, and **three published
+bands moved for it, all in the same direction, all republished with this cause:**
+
+| band | was | now | why |
+|---|---|---|---|
+| 4.10f her LATE evening median | ≤ 18 (17.0) | **≤ 19** (18.51) | one more room on a full evening. Her EARLY median (14.6) and her p90 (22.9 ≤ 23) did not move, and they are the guard |
+| 4.10g her sealed-overnight share | < 0.45 (36.5%) | **< 0.48** (47.3%) | a room drafted later is a violet page with no solve left after it |
+| 4.10g her violet-met share | < 0.55 (50.3%) | **< 0.56** (55.3%) | ten rooms an evening rather than nine, at the same violet share of the same deck |
+| 4.10g HIS violet-met share | < 0.85 | **< 0.86** (85.8%) | the same, upstairs, where violet is densest. The SPLIT — his against hers — is unmoved, and it is what the clause is about |
+| 4.10g her overnight rate (`volume-pacing`) | 10–45% (36.5%) | **10–50%** (48.2%) | the same one move a day, measured by the volume's own instrument |
+
+If a later round wants the 18 back, **the lever is the day's starting count** — the owner's own,
+§1b — never the price of a move and never this mechanic's reach.
+
+**AND THE COMMISSION IT UNCOVERED, measured every run so it cannot go stale.** Pricing a study
+meant modelling one, and modelling one exposed that `engine/economy/simulate.ts` **has been
+charging the Gallery for wrong words since round 28 that the room does not charge**: an off-ask
+trace has emitted no mistake event for sixteen rounds, and at tier 1 the Gallery cannot charge a
+costed mistake at all (there is no centre rule to break). `SimProfile.studyRelief` is the share of
+them a run forgives — **0 in everything the game ships, 1 is the truth** — and
+`tests/economy-effort.test.ts` runs both every time: forgiving them puts the median evening at
+**~16 minutes against 4.10b's published 10-15**, which is **more than twice what round 44's own
+mechanic costs.** Paying that off means moving the day's starting count. That is an economy round,
+not a word-game one, and it is the largest open number in this document.
+
+---
+
 ## 2. The landing is three cells, not one
 
 **Today** the manor is 5x7. `SANCTUM_CELL` is `{col: 2, row: 6}` — dead centre, top. The landing

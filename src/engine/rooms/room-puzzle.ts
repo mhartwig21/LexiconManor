@@ -48,6 +48,23 @@ export type RoomEvent =                    // consumed by slices, never by adapt
   // a purchased hint also forfeits `perfect`. Never weight 0.
   | { type: 'hint'; weight: 1 | 2 }
   | { type: 'progress'; detail?: string }  // sfx/juice/music-director hook
+  /**
+   * ROUND 44 — A ROOM HANDING BACK A MOVE IT HAS ALREADY TAKEN.
+   *
+   * The mirror of `hint`, and added on the same footing: `hint` lets a room
+   * CHARGE through the audited ledger, this lets a room GIVE BACK through it.
+   * The Gallery is the only room that emits one today — a STUDY hands back the
+   * move she spent walking in, once a board (engine/economy/steps.ts
+   * `STUDY_REFUND`, and the argument there for why a study cannot be paid a
+   * wage without breaking AAA 4.10h's ratchet).
+   *
+   * THE SLICE OWNS THE BOUND, NOT THE ADAPTER. `app/slices/room.ts` reads how
+   * much this room has already handed back off the LEDGER and pays
+   * `studyRefundDue` of it, so an adapter that emitted a thousand of these in
+   * one dispatch would still pay exactly one move. A room may ask; only the
+   * economy may answer.
+   */
+  | { type: 'refund'; detail: 'study' }
   | { type: 'solved'; perfect: boolean }
   /**
    * A payout from inside the puzzle. `gems`/`keys` are live (the Conservatory

@@ -18,7 +18,9 @@ import type { SaveV2 } from '../save';
 // provisional const, per the handoff comment that stood here. Values are
 // identical: weight 1 → −2 (tier 3 −3), weight 2 doubles; micro +3,
 // anchor +6/+7/+8 by tier; perfect +2. Hints price through the mistake row.
-import { solveKeys, stagePaidAt, stageSteps, STEP_TABLE } from '../../engine/economy/steps';
+import {
+  solveKeys, stagePaidAt, stageSteps, studyRefundDue, STEP_TABLE,
+} from '../../engine/economy/steps';
 import { paysInStages, stageFractionOf } from '../../engine/economy/effort';
 import type { RoomSessionSnapshot } from '../../engine/rooms/room-session';
 import {
@@ -200,6 +202,38 @@ export const createRoomSlice =
               // rather than writing `undefined` into every saved ledger.
               ...(ev.type === 'mistake' && ev.detail ? { detail: ev.detail } : {}),
             });
+            break;
+          }
+          // ── ROUND 44 — A ROOM HANDING BACK A MOVE IT HAS ALREADY TAKEN ──
+          //
+          // The Gallery's studies (`STUDY_REFUND`, engine/economy/steps.ts, and
+          // the argument there for why a study is refunded rather than waged).
+          // THE ADAPTER ASKS ON EVERY STUDY; THE ECONOMY ANSWERS ONCE. How much
+          // this board has already handed back is read off the LEDGER — the
+          // 'study' entries stamped with this room's key — and never off a
+          // counter in the room's state:
+          //
+          //   - the ledger is what survives a reload, a re-entry and the open
+          //     ledger's restore, so a board cannot pay twice by being left and
+          //     come back to (which is exactly how §5.4's re-solve exploit
+          //     worked, with a different number);
+          //   - it is what the night digest and the ledger sheet already read,
+          //     so the receipt and the payment cannot hold different opinions.
+          //     This repo has lost three rounds to a number kept in two places.
+          //
+          // It is rebuilt at dawn, so tomorrow's Gallery pays again — and that
+          // is not a farm: reaching it costs the move it hands back.
+          case 'refund': {
+            const paidHere = get().ledger.entries.reduce(
+              (n, e) => (e.reason === 'study' && e.roomKey === cellKey ? n + e.delta : n), 0,
+            );
+            const due = studyRefundDue(paidHere);
+            if (due > 0) {
+              // No `detail`: 'study' is the whole story, and the mistake branch
+              // above already established that an entry does not carry a field
+              // it has nothing to say with.
+              get().applyStepEntry({ reason: 'study', delta: due, at: now, roomKey: cellKey });
+            }
             break;
           }
           case 'progress': {

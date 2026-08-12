@@ -356,6 +356,12 @@ export interface DraftOffer {
 
 export type StepReason =
   | 'day-start' | 'move' | 'mistake' | 'hint' | 'solve' | 'perfect'
+  // ROUND 44 — a STUDY handing back the move she spent walking in (the
+  // Gallery's second class of accepted word; engine/economy/steps.ts
+  // `STUDY_REFUND`). Its own reason rather than 'solve' because it is not one:
+  // it pays no ladder, opens no door, and the step float has to be able to say
+  // the word "study" beside the number — which is the whole fix.
+  | 'study'
   | 'tea' | 'snack' | 'pet-dewey' | 'gift';
 
 export interface StepEntry {

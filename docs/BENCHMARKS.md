@@ -456,6 +456,26 @@ something" — never "LEAN is not a word", which is a lie, and never a silent bo
 reads as a bug. A word search's single worst feeling is tracing a word you can see and being
 told no; Strands designs that feeling out of existence rather than tuning it down.
 
+### ROUND 44 — WHAT STRANDS PAYS FOR AN OFF-THEME WORD, AND WHY OURS PAYS SOMETHING ELSE
+
+Strands' answer to *"what is this extra word FOR"* is **three of them buy a hint** — a currency
+that exists only inside the puzzle, spends only on the puzzle, and cannot leak into anything else.
+The Gallery has no hint to sell, and the manor has exactly one currency (moves), so the same design
+question has a different answer here: **a study hands back the move she spent walking into the
+room. Once a board.**
+
+It is deliberately a REFUND and not a wage, and the reason is a number rather than a taste: the
+Gallery is already the joint TOP of the house's wage table (0.80 moves a minute, and it is there
+because the cozy floor catches a 1.25-minute room), so a study paid at the ledger's smallest coin
+would take the published wage spread **4.53× → 12.6×**. Strands can pay in hints precisely because
+a hint is worth nothing outside the board; the manor's equivalent of "worth nothing outside the
+board" is money she has already spent. See `docs/THE_CLIMB.md` §1c.
+
+The owner found the gap the way Strands players never would: *"for the words that aren't part of
+the gallery, it was confusing what their purpose was. It didn't automatically add steps."* Strands
+tells you on the board — the hint meter fills where you can see it. We were telling her in a
+sentence that `@media (max-height: 700px)` deleted.
+
 ### What Strands does NOT have, and why it matters to us
 - **No score. No rank. No ladder.** Completion is binary — all theme words plus the spangram —
   and the share card is a row of 🔵/🟡 with 💡 per hint used. Nothing accrues, nothing ranks.
@@ -546,7 +566,7 @@ Strands ends flat, the Gallery should end on a rung with rungs visible above it.
 | Sudoku tier 3 | above NYT's published ladder: wing/fish/colouring | same — `ROOM_EFFORT.sudoku[2]` |
 | Unfinished sudoku | NYT: the board is still there tomorrow | the open ledger (engine/rooms/room-bank.ts) |
 | Word-search grid | Strands: 6×8 = 48 tiles, every tile in an answer | 5×5 (tiers 1–2) / 6×6 (tier 3), filler allowed |
-| Traced real word, not wanted | Strands: accepted, 3 of them = 1 hint | accepted as a *study* — 1 point, never refused |
+| Traced real word, not wanted | Strands: accepted, 3 of them = 1 hint | accepted as a *study* — 1 point, never refused, and **the first buys back the step she walked in on** (round 44) |
 | Word-search accept-list | Strands: its whole dictionary | ours: **the whole dictionary**, at every length and every rank (round 38) |
 | Words a board accepts (median) | Strands: 7–9, and every tile is spoken for | **102 / 104 / 200** by tier (round 43) — was 100 / 92 / 172 |
 | Dead ground on the board | Strands: **none** — every tile belongs to an answer | **no run of 3+ king-adjacent tiles serving under 2 words she'd know** (`MAX_BARREN_CLUSTER`, round 43) — was runs of 6 / 9 / 15 |

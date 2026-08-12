@@ -10,7 +10,9 @@ import {
   solveKeys, solvePayout, stageSteps, BASE_DAY_BUDGET, KEY_SUPPLY, ROOM_SIZE, SOLVE_WAGE,
   STEP_TABLE, moveAt,
 } from '../src/engine/economy/steps';
-import { SANCTUM_LANDING_ROW } from '../src/engine/economy/simulate';
+import {
+  medianOf, simulateDays, PROFILE_DECENT, SANCTUM_LANDING_ROW,
+} from '../src/engine/economy/simulate';
 import { getRoomAdapter, registeredRoomKinds } from '../src/engine/rooms/registry';
 import { maxFindableFor } from '../src/engine/twistle';
 import { ROOM_PUZZLE_KINDS, type RoomPuzzleKind } from '../src/engine/rooms/room-puzzle';
@@ -794,5 +796,57 @@ describe('4.10h — the durations are pinned to the content they were measured o
     // 16 tiles, one ambiguous, one herring — the review's own 3–6 minutes.
     expect(effortMinutes('word-web', 1)).toBeGreaterThanOrEqual(3);
     expect(effortMinutes('word-web', 1)).toBeLessThanOrEqual(6);
+  });
+});
+
+/**
+ * ═══ ROUND 44 — THE PHANTOM TAX ON THE GALLERY, MEASURED SO IT CANNOT GO
+ *     STALE, AND DELIBERATELY NOT PAID OFF HERE ══════════════════════════════
+ *
+ * Found while pricing a study. `twistleAdapter.reduce` has returned `kind:
+ * 'study'` — no mistake event, no weight, no strike — for every real word she
+ * traces off the ask SINCE ROUND 28, and round 38 then took the last rules of
+ * play off acceptance: on the shipped pool the only refusals left in the house
+ * are the cozy gate's 619 across all 210 boards, a median THREE a board against
+ * a median 102/104/200 accepted words. At tier 1 the Gallery cannot charge a
+ * costed mistake AT ALL — there is no centre rule to break.
+ *
+ * `engine/economy/simulate.ts` has gone on charging `STEP_TABLE.mistake` for
+ * those traces at every tier for sixteen rounds, and every band in AAA 4.10 was
+ * measured through it. `SimProfile.studyRelief` is the share of them a run
+ * forgives; it is 0 everywhere the game ships, and 1 is the truth.
+ *
+ * THIS TEST DOES NOT FIX IT. Forgiving them makes the median evening LONGER —
+ * she keeps moves she was being taxed — and the lever for an evening that runs
+ * long is the day's STARTING COUNT, which is the owner's own (THE_CLIMB §1b:
+ * *"What you should be modifying is the amount of steps you start with"*). That
+ * is an economy commission and this was a word-game round. What this test does
+ * is publish the size of the debt, re-measured on every run by the same model,
+ * so the round that pays it off knows what it is buying before it starts.
+ */
+describe('4.10b — the Gallery phantom mistake tax the model still levies (round 44)', () => {
+  it('measures what the truth would cost the published evening', () => {
+    const DAYS = 900;
+    const SEED = 0x5eed;
+    const asModelled = medianOf(
+      simulateDays(PROFILE_DECENT, DAYS, SEED).map((d) => d.minutes));
+    const truthful = medianOf(
+      simulateDays({ ...PROFILE_DECENT, studyRelief: 1 }, DAYS, SEED).map((d) => d.minutes));
+    // The shipped profiles all run at relief 0 — if one of them ever stops
+    // doing so, this file is where it has to say why.
+    expect(PROFILE_DECENT.studyRelief ?? 0).toBe(0);
+    // THE DEBT. It is a ratchet in the honest direction: it may SHRINK (a round
+    // that pays it off, or a re-derivation that finds it smaller than this) and
+    // it may not grow without a finding to point at.
+    const debt = truthful - asModelled;
+    expect(debt, `forgiving the Gallery's off-ask traces adds ${debt.toFixed(2)} min`
+      + ` to the median evening (${asModelled.toFixed(2)} → ${truthful.toFixed(2)})`)
+      .toBeGreaterThan(0.5);
+    expect(debt).toBeLessThan(3.0);
+    // And it is bigger than the mechanic round 44 actually shipped, which is
+    // the reason this is a commission and not a bug fix: the model is wrong by
+    // more than the thing it was asked to price.
+    expect(truthful, `the truthful median evening is ${truthful.toFixed(2)} min`
+      + ' against the 10–15 AAA 4.10b publishes').toBeGreaterThan(15);
   });
 });

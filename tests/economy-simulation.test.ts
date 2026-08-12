@@ -1092,9 +1092,24 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
     // reading of her appetite clock — she ends 0.2% of late evenings early
     // against his 9.7%, and her clock sits at 26 minutes — which is why hers
     // keeps a p90 where his is retired.
+    // ROUND 44 — HER LATE CEILING 18 → **19**, and the cause is one move a day.
+    // The Gallery's studies pay now (`STUDY_REFUND`): the first real word she
+    // traces off the ask hands back the move she spent walking in, because the
+    // owner traced one and reported *"it was confusing what their purpose was.
+    // It didn't automatically add steps."* Measured over 4,800 evenings a
+    // profile, the mechanic pays her **1.04 moves a day** — she meets about one
+    // Gallery an evening and traces a real word in it — and one move a day is
+    // one more room on the evenings that have the tea to spend it: her late
+    // median 17.0 → **18.51**, her EARLY median 13.9 → 14.6 (inside the band it
+    // has always been in), and her late p90 22.3 → 22.9, still under 23.
+    // The band is loosened at ONE END, by the width of the thing that moved it,
+    // and the two numbers that did NOT move are the guard: her early window and
+    // her p90. If a later round wants the 18 back the lever is the day's
+    // starting count, which is the owner's own (THE_CLIMB §1b) — never the
+    // price of a move, and never this mechanic's reach.
     for (const window of [early, late]) {
       expect(medianOf(window)).toBeGreaterThanOrEqual(12);
-      expect(medianOf(window)).toBeLessThanOrEqual(18);
+      expect(medianOf(window)).toBeLessThanOrEqual(19);
       expect(quantileOf(window, 0.9)).toBeLessThanOrEqual(23);
     }
     const lateEarlyNights = share(
@@ -1558,9 +1573,15 @@ describe('4.10g — the SEAL bites: entering gets the page, solving makes it out
     // ROUND 36 - 8-35% -> 8-45% (measured 36.5%), same cause as the skilled
     // band above: a flat move price puts more of her evening on the storeys
     // where violet is dense, and solving is clock-bound rather than step-bound.
+    // ROUND 44 - 8-45% -> 8-48% (measured 36.5% -> 47.3%). The Gallery's studies
+    // pay one move a day back (`STUDY_REFUND`), one move a day is one more room
+    // on the fuller evenings, and a room drafted late is a room whose violet
+    // page has no solve left after it to make it out. The mechanism is
+    // untouched: `decipherYield`, the violet share of the deck and the order of
+    // the evening are all exactly where round 36 left them.
     expect(overnight, `median-player sealed-overnight share ${overnight.toFixed(3)}`)
       .toBeGreaterThan(0.08);
-    expect(overnight).toBeLessThan(0.45);
+    expect(overnight).toBeLessThan(0.48);
     // The 25–50% band above is the skilled player's, and the doc says so.
     expect(overnight).toBeLessThan(
       sealed.reduce((s, c) => s + c.sealedOvernightDays, 0) / sealedDays.length);
@@ -1588,16 +1609,30 @@ describe('4.10g — the SEAL bites: entering gets the page, solving makes it out
     // (violet is 2.0% of row-0 offers and 10.5% of row-6 offers, untouched by
     // this round), not about how many offers an evening contains; and the split
     // that carries the criterion is the one asserted below, hers against his.
+    // ROUND 44 — 50.3% → **55.3%**, and the bound goes to <56%, for the same one
+    // move a day the two bands above moved for (`STUDY_REFUND`): ten rooms an
+    // evening rather than nine, at the same violet share of the same deck. The
+    // clause this bound serves is about THE ROOM — violet is 2.0% of row-0
+    // offers and 10.5% of row-6 offers, and this round did not touch either —
+    // and the criterion it really carries is the split asserted below, hers
+    // against his, which widens rather than narrows.
     expect(violetMet, `median-player violet-met share ${violetMet.toFixed(3)}`)
-      .toBeLessThan(0.55);
+      .toBeLessThan(0.56);
     expect(made).toBeLessThanOrEqual(violetMet + 0.05);
     // So lifting her to 1-in-3 means lifting her violet-met rate past 1 in 3,
     // which collides with THIS SAME CRITERION's "still a rare room (<50%)" and
     // with the 4.10b clock calibrated on the deck mix. The skilled player
     // clears the bar for the mirror-image reason: she meets violet far more
     // often, because she is further up the house.
+    // ROUND 44 — HIS ceiling 85% → **86%** (measured 85.8%), for the same one
+    // move a day the median player's two bands moved for (`STUDY_REFUND`, and
+    // docs/THE_CLIMB §1c): a Gallery she traces a real word in hands back the
+    // move she spent walking into it, one more room an evening follows, and he
+    // spends his evenings on the storeys where violet is densest. The SPLIT is
+    // what this pair of bounds is for and it is unmoved — his 85.8% against her
+    // 55.3% — and the floor below did not move at all.
     expect(share(sealedDays, (d) => d.fragmentsFound > 0)).toBeGreaterThan(0.4);
-    expect(share(sealedDays, (d) => d.fragmentsFound > 0)).toBeLessThan(0.85);
+    expect(share(sealedDays, (d) => d.fragmentsFound > 0)).toBeLessThan(0.86);
   });
 
   it('never makes out more than she was holding, and never out of order', () => {
@@ -1730,7 +1765,12 @@ describe('ledger invariants over every simulated day (AAA 4.9)', () => {
   it('every delta carries a known reason (the audited-table rule)', () => {
     const reasons = new Set(allDays.flatMap((r) => r.ledger.entries.map((e) => e.reason)));
     for (const reason of reasons) {
-      expect(['tea', 'move', 'mistake', 'solve', 'perfect', 'snack']).toContain(reason);
+      // ROUND 44 — 'study': the Gallery handing back the move she spent walking
+      // in when she traces a real word off the ask (engine/economy/steps.ts
+      // `STUDY_REFUND`). Its own reason rather than 'solve' because the step
+      // float has to be able to say the word.
+      expect(['tea', 'move', 'mistake', 'solve', 'perfect', 'snack', 'study'])
+        .toContain(reason);
     }
   });
 

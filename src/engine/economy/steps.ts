@@ -605,6 +605,92 @@ export const STEPS_LOW_AT = Math.round(BASE_DAY_BUDGET / 4);
 export const SANCTUM_GUESS_COST = 0;
 
 /**
+ * ═══ ROUND 44 — WHAT A STUDY PAYS, AND WHY IT IS A REFUND AND NOT A WAGE ══
+ *
+ * Owner, from play: *"For the gallery, for the words that aren't part of the
+ * gallery, it was confusing what their purpose was. It didn't automatically add
+ * steps."* Two blind testers reached the same belief in `docs/COMPREHENSION.md`
+ * before him — *only five specific pre-chosen words count* — which is the exact
+ * belief the class was built (round 28) to kill, and which two rounds of copy
+ * (28's captions, 20's `+1` mark) have now failed to kill. He traced a real word
+ * on a legal path and waited for the economy to answer. It answered with a score
+ * point, which is not a unit he spends.
+ *
+ * ═══ WHY IT CANNOT BE A WAGE, WITH THE NUMBER THAT SETTLES IT ═════════════
+ *
+ * The Gallery is ALREADY the joint top of the house's wage table: `solvePayout`
+ * pays it 1 move for 1.25 honest minutes at tier 1 — **0.80 moves a minute**,
+ * against 0.176 at the bottom (sudoku t3), which is the 4.53× spread AAA 4.10h
+ * publishes as a ratchet that may fall and may never rise. It is at the top not
+ * because it is generous but because `SOLVE_WAGE.floor` catches it: 0.45 × 1.25
+ * is 0.56 of a move, and the ledger has no coin smaller than 1.
+ *
+ * So there is no room above it to pay a study a WAGE. Priced honestly at the
+ * house rate a study is worth `0.45 × 0.25 min` = **0.11 of a move** — nine
+ * studies to the move at tiers 1–2, five at tier 3 — and nine is not a number
+ * that answers a woman who has traced one word. Priced at the smallest coin the
+ * ledger has, one move a study, a 1.25-minute room paying its solve plus four
+ * studies earns 5 moves for 2.25 minutes: **2.22 moves a minute, and the
+ * published spread goes 4.53× → 12.6×.** That is the ratchet broken by a factor
+ * of three, and `tests/economy-effort.test.ts` fails on it by name.
+ *
+ * ═══ SO IT GIVES BACK, RATHER THAN EARNING ════════════════════════════════
+ *
+ * A wage prices WORK; a refund un-charges a COST. The ledger has always known
+ * the difference (`stepsSpent` / `stepsRefunded`), and `SOLVE_WAGE.floor`
+ * already states the cozy version of it in this unit: *a solved room always pays
+ * back at least the move it cost to walk into.* This is that sentence, moved off
+ * the solve and onto the honest word:
+ *
+ *   **A STUDY PAYS BACK THE MOVE YOU SPENT WALKING IN. ONCE A BOARD.**
+ *
+ * Every clause of it is load-bearing:
+ *   - it PAYS, in moves, the one unit the game counts in — the owner's sentence;
+ *   - it is a refund, so it is bounded ABOVE by a cost she has already paid and
+ *     the Gallery's wage does not move at all. No band in 4.10h changes;
+ *   - it is once a board, so the forty studies on a tier-3 grid cannot be
+ *     farmed, and the room can never be walked out of richer than it was walked
+ *     into — a Gallery she traces one word in and abandons is exactly break-even
+ *     and never better;
+ *   - it does NOT open the door. The exhibition still opens on `targetCount`
+ *     WORKS and nothing else, so round 26's defect (five common words ending a
+ *     room) stays shut. Paying is not opening.
+ *
+ * WHAT IT COST, measured on the grid-true model over 4,800 evenings a profile
+ * (`tests/economy-pressure.test.ts`, `tests/economy-simulation.test.ts`), and
+ * both are re-measured every run by instruments that can disagree with this
+ * note: see the BUILT block in `docs/THE_CLIMB.md` §1c.
+ */
+export const STUDY_REFUND = {
+  /**
+   * Moves one study hands back — the move she spent walking in, which is the
+   * ledger's smallest coin and `SOLVE_WAGE.floor`'s own number. It is the same
+   * constant deliberately: if the price of a move ever moved, this moves with
+   * it, and the sentence on the glass stays true without an edit.
+   */
+  perStudy: 1,
+  /**
+   * Studies that may pay on ONE board. One. The cap is not a tuning knob — it
+   * is what makes the payment a refund instead of a wage, and lowering it to 0
+   * or raising it to 2 changes what the mechanic IS.
+   */
+  perBoard: 1,
+} as const;
+
+/**
+ * What this study hands back, given how many studies on this board have already
+ * been paid. Never more than the room took to walk into.
+ *
+ * `alreadyPaidHere` is read off the LEDGER (entries with `reason: 'study'` and
+ * this room's key), never off a counter: the ledger is what survives a reload,
+ * it is what the night digest reads, and this repo has lost three rounds to a
+ * number kept in two places.
+ */
+export function studyRefundDue(alreadyPaidHere: number): number {
+  return alreadyPaidHere >= STUDY_REFUND.perBoard ? 0 : STUDY_REFUND.perStudy;
+}
+
+/**
  * ═══ ROUND 22 — THE WAGE (REVIEW_AA §6, "make the anchors cost and pay
  * comparably") ════════════════════════════════════════════════════════════
  *

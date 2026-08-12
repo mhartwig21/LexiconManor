@@ -161,7 +161,15 @@ const VIEWPORTS = [
 const ROOMS = [
   { card: 'library',       kind: 'word-web',       root: '.anch--library',      cells: '.ww-tile',                    min: 8 },
   { card: 'conservatory',  kind: 'hive',           root: '.anch--conservatory', cells: '.hv-cell',                    min: 7 },
-  { card: 'gallery',       kind: 'twistle',        root: '.anch--gallery',      cells: '.tw-cell',                    min: 16 },
+  // ROUND 44 — PINNED, AND PINNED TO THE TIGHT CASE. The Gallery was the one
+  // room in this table left to the seed, so which board it measured was a
+  // coin toss between a 5x5 and a 6x6 — "how a gate becomes flaky", in this
+  // file's own words, on the room whose header round 28 measured at THREE
+  // PIXELS of spare stage at 375x667. A tier-3 board is the 6x6, the longest
+  // rule line (a centre rule and a four-corner ask) and the tallest deck, so
+  // it is the board that fails first when a clause is added to the header —
+  // which round 44 did.
+  { card: 'gallery',       kind: 'twistle',        root: '.anch--gallery',      cells: '.tw-cell',                    min: 16, pin: 'twistle-t3-1' },
   { card: 'study',         kind: 'forgotten-word', root: '.anch--study',        cells: '.fw-slot',                    min: 3 },
   { card: 'darkroom',      kind: 'cipher',         root: '.mic--darkroom',      cells: '.dk-cell',                    min: 8,  pin: 'cipher-t3-40' },
   { card: 'linen-closet',  kind: 'crossword',      root: '.m2--linen',          cells: '.lc-cell:not(.lc-cell--void)', min: 12, pin: 'crossword-t3-19' },
