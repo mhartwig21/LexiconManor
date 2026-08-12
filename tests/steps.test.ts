@@ -8,7 +8,8 @@ import {
   sanctumMercyArmed, sanctumPlanWarmth, sanctumPlanWeightMultiplier, surveyEveningsIn,
   teaArcFloor, teaArcPoints, teaBonus,
   BARE_ASCENT_STEPS, BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, FIRST_MORNING_POT, KEY_SUPPLY,
-  MOVE_COST_BY_ROW, SANCTUM_ARC, SANCTUM_GUESS_COST, STEP_TABLE, TEA_ARC, TEA_BY_POINTS,
+  MOVE_COST_BY_ROW, SANCTUM_ARC, SANCTUM_GUESS_COST, SOLVE_WAGE, STEP_TABLE, TEA_ARC,
+  TEA_BY_POINTS,
 } from '../src/engine/economy/steps';
 import { draftCardStake } from '../src/engine/economy/preview';
 import { effortLabel } from '../src/engine/economy/effort';
@@ -35,15 +36,18 @@ const entry = (reason: StepEntry['reason'], delta: number): StepEntry => ({
 });
 
 describe('STEP_TABLE (the one tunable const)', () => {
-  it('starts the day at a lean 22 steps (40 → 18 → 22)', () => {
-    // ROUND 36 — 18 → 22, and it is the SAME LEVER as the flat move price
-    // (docs/THE_CLIMB §1). A flat −3 is 1.5× the old ground-floor rate on the
-    // storeys where nearly every move happens, so left at 18 the evening ran
-    // 9.9–10.1 minutes across four seeds — under AAA 4.10b's own 10–15 floor.
-    // 22 is the smallest budget at which the measured evening lands back where
-    // the altitude table put it; see `BASE_DAY_BUDGET` for what 20 and 24 did.
-    expect(STEP_TABLE.dayStart).toBe(22);
-    expect(BASE_DAY_BUDGET).toBe(22);
+  it('starts the day at 12 MOVES (40 → 18 → 22 → 12)', () => {
+    // ROUND 42 (docs/THE_CLIMB §1b) — THE OWNER'S OWN NUMBER, and the first
+    // budget in this game's history that is not a derived quantity: *"10–14
+    // moves at the start… but you can earn more moves as you go yeah?"* 22
+    // steps at 3 a move was SEVEN moves, which is the arithmetic that made the
+    // counter unauditable. It is twelve, and a move costs one, so the number on
+    // the glass is the number of moves she has.
+    expect(STEP_TABLE.dayStart).toBe(12);
+    expect(BASE_DAY_BUDGET).toBe(12);
+    // …and it is inside the band he gave, which is the only bound on it.
+    expect(BASE_DAY_BUDGET).toBeGreaterThanOrEqual(10);
+    expect(BASE_DAY_BUDGET).toBeLessThanOrEqual(14);
   });
 
   it('prices ONE move at ONE price, on every storey (round 36)', () => {
@@ -56,7 +60,11 @@ describe('STEP_TABLE (the one tunable const)', () => {
     // ROUND 36 (docs/THE_CLIMB §1) — the owner, after playing: "It shouldn't
     // get more expensive the further you move up." It doesn't. Every storey,
     // including the sealed Sanctum's own row, charges the same for one move.
-    expect(moveAt(0)).toBe(-3);                        // the ground floor
+    // ROUND 42 — AND THE PRICE IS ONE. The owner: *"Why isn't it just 1 step
+    // is −1. Why do you keep coming up with a convoluted economy."* This is a
+    // RULING, not a tuning parameter: if the evening comes out too short or too
+    // long the levers are the starting count and the payouts, never this.
+    expect(moveAt(0)).toBe(-1);                        // the ground floor
     for (let r = 1; r < MOVE_COST_BY_ROW.length; r++) {
       expect(moveAt(r), `row ${r}`).toBe(moveAt(0));
     }
@@ -66,9 +74,21 @@ describe('STEP_TABLE (the one tunable const)', () => {
     expect(MOVE_COST_BY_ROW.length).toBe(MANOR_ROWS);
     expect(moveAt(-4)).toBe(moveAt(0));
     expect(moveAt(99)).toBe(moveAt(MANOR_ROWS - 1));
-    // The ground floor is not free — REVIEW_AA §5.10's whole finding, and the
-    // one bound the flattening had to clear rather than undo.
-    expect(-moveAt(0)).toBeGreaterThanOrEqual(2);
+    // ═══ ROUND 42 — `-moveAt(0) >= 2` IS DELETED, AND SAYING WHY MATTERS ═══
+    // That was round 23's "the ground floor is not free" bound (REVIEW_AA
+    // §5.10), written when a step was a third of a move and 2 was the smallest
+    // price that could bite. Under the owner's ruling the smallest price a move
+    // CAN have is 1, so the inequality is now a bound on the UNIT rather than on
+    // the design — it could only ever be satisfied by making a move cost more
+    // than a move, which is the thing being deleted.
+    //
+    // §5.10's real finding survives untouched and is MEASURED rather than
+    // asserted, on an instrument that can disagree: the ground floor DRAINS
+    // (tests/economy-pressure.test.ts — −0.95 moves a room for the median
+    // player, against −0.71 moves before), and the best a ground-floor room can
+    // pay is bounded against what walking there cost (the solve:walk ratio, same
+    // file, 5:1 now against a published 6:1).
+    expect(-moveAt(0)).toBe(1);
   });
 
   it('makes the REALISTIC ascent cost more than a whole day of budget', () => {
@@ -85,8 +105,32 @@ describe('STEP_TABLE (the one tunable const)', () => {
     // them (`reserveToTop(1, PROFILE_SKILLED)`, the skilled player's own
     // navigation) it costs 25.8 against a 22-step budget. The gate on day 1 is
     // measured on the grid-true model instead — see economy-simulation.test.ts.
+    //
+    // ═══ ROUND 42 — AND NOW THE *REALISTIC* ASCENT DOES NOT EITHER ══════
+    // Denominated in moves the left-hand side never moved: the skilled player's
+    // climb with her walk-backs in it was 25.8 steps at 3 a move = **8.6 moves**
+    // and it is 8.6 moves now. The right-hand side is 12. So the inequality is
+    // false, and the second half of round 36's replacement dies exactly the way
+    // the first half did — because it was arithmetic about a tariff, and the
+    // owner deleted the tariff.
+    //
+    // Re-typing `BASE_DAY_BUDGET` downward until it came back would mean
+    // overruling the owner's own 10–14 to keep a sentence alive. So what is
+    // asserted here is the SHAPE that is still true and still load-bearing — a
+    // climb is mostly walk-backs, not staircase — and the claim the inequality
+    // stood in for ("the top is not bought with the budget alone") is measured
+    // in economy-simulation.test.ts on the grid-true model, which is an
+    // instrument that could disagree with it: a refund-less skipper reaches the
+    // door on 0.067% of evenings, a skilled player on day 1 in 1.3% of campaigns
+    // (published <8%), and a GREAT single evening reaches the landing storey on
+    // 8.0% of days (published <25%).
     expect(BARE_ASCENT_STEPS).toBe([1, 2, 3, 4, 5].reduce((sum, r) => sum - moveAt(r), 0));
-    expect(reserveToTop(1, PROFILE_SKILLED)).toBeGreaterThan(BASE_DAY_BUDGET);
+    const realistic = reserveToTop(1, PROFILE_SKILLED);
+    expect(realistic).toBeGreaterThan(BARE_ASCENT_STEPS);
+    // The walk is most of the price of a climb — 3.6 moves of walking on top of
+    // a 5-move staircase — which is the whole of "scarcity comes from doubling
+    // back", as a number.
+    expect(realistic - BARE_ASCENT_STEPS).toBeGreaterThan(BARE_ASCENT_STEPS * 0.5);
   });
 
   it('keeps the deprecated flat move price equal to the ground floor', () => {
@@ -94,20 +138,24 @@ describe('STEP_TABLE (the one tunable const)', () => {
     expect(STEP_TABLE.petDewey).toBe(-1);              // worth it
   });
 
-  it('prices weight-1 mistakes at −2, tier 3 at −3 (deliberate claims only)', () => {
-    expect(STEP_TABLE.mistake(1, 1)).toBe(-2);
-    expect(STEP_TABLE.mistake(1, 2)).toBe(-2);
-    expect(STEP_TABLE.mistake(1, 3)).toBe(-3);
-  });
-
-  it('charges a flat −1 for a pre-warned structural slip (AAA R.1)', () => {
-    expect(STEP_TABLE.mistake('structural', 1)).toBe(-1);
-    expect(STEP_TABLE.mistake('structural', 3)).toBe(-1);
-  });
-
-  it('doubles for weight 2 (reserved risk rooms)', () => {
-    expect(STEP_TABLE.mistake(2, 1)).toBe(-4);
-    expect(STEP_TABLE.mistake(2, 3)).toBe(-6);
+  it('prices EVERY wrong guess at −1 move: every weight, every tier', () => {
+    // ROUND 42 — THE OWNER, 12 Aug: *"Step penalty for wrong guesses is way too
+    // harsh on things… it should be 1 step for a wrong guess on things."*
+    // It used to answer −1 / −2 / −3 / −4 / −6 depending on weight and tier: an
+    // incoherent ladder against a −3 move, so a single wrong Word Web group cost
+    // two thirds of a room and a heavy claim cost more than a room.
+    //
+    // EVERY pair is asserted, deliberately exhaustively, so a future round has
+    // to delete a documented ruling rather than reintroduce a ladder by adding
+    // one branch back.
+    for (const tier of [1, 2, 3] as Tier[]) {
+      for (const weight of [1, 2, 'structural'] as (1 | 2 | 'structural')[]) {
+        expect(STEP_TABLE.mistake(weight, tier), `weight ${weight} tier ${tier}`).toBe(-1);
+      }
+    }
+    // …and it is exactly the price of one move: the same as walking into the
+    // room the mistake happened in, which is the cozy reading of an error.
+    expect(STEP_TABLE.mistake(1, 1)).toBe(moveAt(0));
   });
 
   it("prices hints through the same row as mistakes (A3's contract revision)", () => {
@@ -116,13 +164,18 @@ describe('STEP_TABLE (the one tunable const)', () => {
     expect(STEP_TABLE.hint(2, 2)).toBe(STEP_TABLE.mistake(2, 2));
   });
 
-  it('pays LEANER as you climb: micro +3/+3/+2, anchors +6/+5/+4', () => {
-    expect(STEP_TABLE.solve('micro', 1)).toBe(3);
-    expect(STEP_TABLE.solve('micro', 2)).toBe(3);
-    expect(STEP_TABLE.solve('micro', 3)).toBe(2);
-    expect(STEP_TABLE.solve('anchor', 1)).toBe(6);
-    expect(STEP_TABLE.solve('anchor', 2)).toBe(5);
-    expect(STEP_TABLE.solve('anchor', 3)).toBe(4);
+  it('keeps the legacy size band in MOVES, bracketed by the real table', () => {
+    // ROUND 42 — this band was `micro 3/3/2, anchor 6/5/4` STEPS, i.e. one move
+    // and two. It says that now. It is the fallback for a caller that genuinely
+    // does not know which room it is (a generic preview, an old test); the real
+    // payout is `solvePayout(kind, tier)`, wage-priced off `ROOM_EFFORT`.
+    for (const t of [1, 2, 3] as Tier[]) {
+      expect(STEP_TABLE.solve('micro', t)).toBe(1);
+      expect(STEP_TABLE.solve('anchor', t)).toBe(2);
+      // A fallback may never pay outside what a real room can pay.
+      expect(STEP_TABLE.solve('micro', t)).toBeGreaterThanOrEqual(SOLVE_WAGE.floor);
+      expect(STEP_TABLE.solve('anchor', t)).toBeLessThanOrEqual(SOLVE_WAGE.capByTier[t - 1]!);
+    }
     // ROUND 36: the last clause here read "a tier-3 solve costs less than the
     // −9 step it took to get up there". That compared a room's payout to ONE
     // MOVE, which only ever read as a bound because a move up top cost most of
@@ -130,16 +183,43 @@ describe('STEP_TABLE (the one tunable const)', () => {
     // anything. Leanness is now exactly what the word means — each tier pays
     // less than the one below — and `SOLVE_WAGE.capByTier` carries it for the
     // wage-priced path (tests/economy-effort.test.ts).
-    expect(STEP_TABLE.solve('anchor', 3)).toBeLessThan(STEP_TABLE.solve('anchor', 2));
-    expect(STEP_TABLE.solve('anchor', 2)).toBeLessThan(STEP_TABLE.solve('anchor', 1));
+    // LEANER AS YOU CLIMB now lives entirely on `SOLVE_WAGE.capByTier` — the
+    // wage-priced path every live room takes (tests/economy-effort.test.ts).
+    // The legacy band is flat because a fallback that does not know which room
+    // it is cannot honestly claim to know its storey either.
+    expect(SOLVE_WAGE.capByTier[2]!).toBeLessThan(SOLVE_WAGE.capByTier[1]!);
+    expect(SOLVE_WAGE.capByTier[1]!).toBeLessThan(SOLVE_WAGE.capByTier[0]!);
   });
 
-  it('pays +2 for a perfect solve and keeps refills lean (+2..+6)', () => {
-    expect(STEP_TABLE.perfect).toBe(2);
-    expect(STEP_TABLE.snack.min).toBe(2);
-    expect(STEP_TABLE.snack.max).toBe(6);
+  it('pays +1 for a perfect solve and keeps refills lean (+1..+2)', () => {
+    // ROUND 42, all three re-denominated: +2 steps was two thirds of a move,
+    // and the deck's +6/+5/+3/+2 was 2 / 1.67 / 1 / 0.67 of one.
+    expect(STEP_TABLE.perfect).toBe(1);
+    expect(STEP_TABLE.snack.min).toBe(1);
+    expect(STEP_TABLE.snack.max).toBe(2);
     // A refill extends a day; it never doubles it.
     expect(STEP_TABLE.snack.max).toBeLessThan(BASE_DAY_BUDGET / 2);
+  });
+
+  it('caps a solve at ONE BARE ASCENT, and a move leaner each storey', () => {
+    // ═══ ROUND 42 — THE CEILING CAME OFF THE BUDGET AND ONTO THE STAIRCASE ══
+    // `capByTier` was `[round(2/3 · budget), round(budget/2), round(budget/3)]`.
+    // Tying what one room may print to the size of the purse is a loop: every
+    // round that moves the purse moves the ceiling with it, in the same
+    // direction, so a bigger day is automatically a day one room can buy back.
+    // On a 12-move budget those thirds would read 8/6/4 — two thirds of an
+    // evening for one Conservatory.
+    //
+    // It is the STAIRCASE now: the most a single solved room may ever pay is one
+    // whole climb, and one move less for every tier above the ground floor.
+    expect(SOLVE_WAGE.capByTier[0]).toBe(BARE_ASCENT_STEPS);
+    expect(SOLVE_WAGE.capByTier[1]).toBe(BARE_ASCENT_STEPS - 1);
+    expect(SOLVE_WAGE.capByTier[2]).toBe(BARE_ASCENT_STEPS - 2);
+    // The two rulings the old form carried, both still true and neither now a
+    // function of the purse: no room prints most of an evening…
+    expect(SOLVE_WAGE.capByTier[0]!).toBeLessThan(BASE_DAY_BUDGET / 2);
+    // …and the cozy floor is exactly the move the room cost to walk into.
+    expect(SOLVE_WAGE.floor).toBe(-moveAt(0));
   });
 
   /**
@@ -182,10 +262,18 @@ describe('STEP_TABLE (the one tunable const)', () => {
     expect(table).not.toMatch(/rising to −\d+ up top/);
     expect(table).toContain(`${BARE_ASCENT_STEPS} steps`);
 
-    // Anchor solve: the live triple, not the retired range.
-    const solves = ([1, 2, 3] as Tier[]).map((t) => STEP_TABLE.solve('anchor', t));
-    expect(table).toContain(solves.map((n) => `+${n}`).join(' / '));
+    // Anchor solve: ROUND 42 — the doc used to quote the LEGACY size band
+    // (`STEP_TABLE.solve('anchor', t)`), which is flat now, so quoting it would
+    // print "+2 / +2 / +2" and tell a reader nothing about what a room pays.
+    // What the doc has to name is the pair that actually bounds every live
+    // payout — the cozy floor and the by-tier ceiling — both read out of
+    // `SOLVE_WAGE` so a retune fails here instead of misleading §4's next reader.
+    expect(table).toContain(`floor of +${SOLVE_WAGE.floor}`);
+    expect(table).toContain(SOLVE_WAGE.capByTier.map((n) => `+${n}`).join(' / '));
     expect(table).not.toMatch(/anchor mode\) \| \+6 to \+8/);
+    // The mistake row is a ruling now, not a band: it may not print a tier split.
+    expect(table).toContain(`| Puzzle mistake (wrong guess / invalid word) | −${-STEP_TABLE.mistake(1, 1)},`);
+    expect(table).not.toMatch(/tier 3 rooms: −\d/);
   });
 
   /**
@@ -232,10 +320,16 @@ describe('STEP_TABLE (the one tunable const)', () => {
     }
     expect(Math.min(...hooks)).toBe(STEP_TABLE.compound.min);
     expect(Math.max(...hooks)).toBe(STEP_TABLE.compound.max);
-    // The classes are declared apart on purpose: a compounding rattle is
-    // allowed to sit below the refill floor, and one shared constant would
-    // have to lie about one of them.
-    expect(STEP_TABLE.compound.min).toBeLessThan(STEP_TABLE.snack.min);
+    // ROUND 42 — the classes used to be declared apart because a compounding
+    // rattle sat BELOW the refill floor (+1 against +2), and one shared constant
+    // would have lied about one of them. In moves they meet: a move is the
+    // ledger's smallest coin, so the cheapest refill and the rattle are both 1.
+    // They stay apart anyway, because what distinguishes the class is its SHAPE
+    // — a compound pays once per LATER room, so a hook taken early is worth
+    // several refills and one taken at dusk is worth nothing — and collapsing
+    // them would lose that the next time either number moves.
+    expect(STEP_TABLE.compound.min).toBeLessThanOrEqual(STEP_TABLE.snack.min);
+    expect(STEP_TABLE.compound.max).toBeLessThanOrEqual(STEP_TABLE.snack.max);
   });
 
   it('prices the bookmark gift at −1 (a small walk to find them)', () => {
@@ -317,7 +411,11 @@ describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () =
   it('states micro payouts in numbers, from STEP_TABLE not hand-copy', () => {
     const stake = draftCardStake({ category: 'puzzle', puzzleKind: 'cipher' }, 1);
     expect(stake).toEqual({
-      size: 'micro', label: 'a few minutes · +4 steps · +1 key on solve',
+      // ROUND 42 — and the SINGULAR is reachable now. The cozy floor is one
+      // move, so five of the seven shipped rooms sit on it and this line would
+      // have read "+1 steps" on the commonest card in the deck. `stepWords`
+      // owns the plural, in one place (engine/economy/steps.ts).
+      size: 'micro', label: 'a few minutes · +1 step · +1 key on solve',
     });
     expect(stake!.label).toContain(String(STEP_TABLE.solve('micro', 1, 'cipher')));
   });
@@ -333,16 +431,16 @@ describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () =
    */
   it('states each room’s own payout and its own expected length', () => {
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'hive' }, 1)!.label)
-      .toBe('a long sit · +15 steps · +1 key on solve');
+      .toBe('a long sit · +5 steps · +1 key on solve');
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 1)!.label)
-      .toBe('a minute or two · +4 steps on solve');
+      .toBe('a minute or two · +1 step on solve');
     // ROUND 10: the card face names the KEY too, because from tier 2 up the
     // solve is what buys the padlocked door above it — and the price of the
     // climb is exactly the thing a draft decision is made on (AAA 1.17/4.6).
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 2)!.label)
-      .toBe('a minute or two · +4 steps · +1 key on solve');
+      .toBe('a minute or two · +1 step · +1 key on solve');
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'word-web' }, 3)!.label)
-      .toBe('five minutes or so · +7 steps · +1 key on solve');
+      .toBe('five minutes or so · +3 steps · +1 key on solve');
     // The long room and the short one can no longer wear the same face.
     expect(draftCardStake({ category: 'puzzle', puzzleKind: 'sudoku' }, 1)!.label)
       .not.toBe(draftCardStake({ category: 'puzzle', puzzleKind: 'twistle' }, 1)!.label);
@@ -493,12 +591,15 @@ describe('UNITS — the affinity tables are indexed by POINTS, never by rank', (
     }
     // The exact values where the "fix" bites: at 2 and 3 points a rank lookup
     // answers with a smaller pot, and beyond 5 points it can never grow again.
-    expect(teaBonus(2)).toBe(6);
-    expect(TEA_BY_POINTS[rankFor(2)]).toBe(4);
+    // (ROUND 42 — the pot is one move a point now, so these read 2 and 1 where
+    // they read 6 and 4 in steps. The GAP is what the test is about and it is
+    // still there, which is why the assertions below are inequalities.)
+    expect(teaBonus(2)).toBe(2);
+    expect(TEA_BY_POINTS[rankFor(2)]).toBe(1);
     expect(teaBonus(2)).not.toBe(TEA_BY_POINTS[rankFor(2)]);
     expect(teaBonus(3)).not.toBe(TEA_BY_POINTS[rankFor(3)]);
     // Rank saturates at 4 (14 points), so a rank-indexed pot could never pay
-    // the published ceiling (+13 since the round-12 retune) that AAA 4.10d's
+    // the published ceiling (+6 since round 42 re-denominated it) that AAA 4.10d's
     // day 6–10 curve is built on. Asserted against `TEA_BY_POINTS.at(-1)`
     // rather than the literal, so a tuning edit cannot outdate the assertion —
     // only this comment, which is why the number is named here and nowhere else.
@@ -875,8 +976,17 @@ describe('SANCTUM_ARC — the access gate finally has an arc and a floor', () =>
     // and is now false of a flat table without anything having gone wrong. What
     // makes the storey a real climb is the DISTANCE to it, so that is what is
     // asserted: four moves of pure ascent before a single walk-back.
+    // ROUND 42 — the right-hand side was `BASE_DAY_BUDGET / 2`, i.e. "getting
+    // there costs half a day". That compared a WALK to a PURSE, and the two are
+    // no longer in anything like the same proportion now that a move costs one:
+    // the survey storey is 4 moves of a 12-move day, so a bound written to say
+    // "this is a real climb" started saying "this is a third of your evening",
+    // which is a claim about the budget rather than about the house.
+    // The referent that makes the sentence true is the CLIMB, so that is what it
+    // is measured against: reaching the survey storey is more than half of the
+    // whole ascent to the sealed door, on any move price at all.
     expect(DOOR_LOCKS.chanceByRow[SANCTUM_ARC.surveyRow0]!).toBeGreaterThan(0.5);
-    expect(SANCTUM_ARC.surveyRow0 * -moveAt(0)).toBeGreaterThan(BASE_DAY_BUDGET / 2);
+    expect(SANCTUM_ARC.surveyRow0 * -moveAt(0)).toBeGreaterThan(BARE_ASCENT_STEPS / 2);
   });
 
   it('warms monotonically from zero and clamps at one', () => {

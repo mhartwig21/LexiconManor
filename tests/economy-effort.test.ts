@@ -164,12 +164,13 @@ describe('4.10h — the payout is a function of the work, with a floor and a cei
     // to get there", i.e. `max(solvePayout(k, 3)) < -moveAt(6)`. That compared
     // a whole room's payout to ONE MOVE, and it only ever read as a bound
     // because a move up top cost half a day. With one flat price
-    // (docs/THE_CLIMB §1) a move is 3 steps, so the comparison is neither true
-    // nor about anything — a solve SHOULD be worth more than a single step.
-    // Deleting it rather than re-typing the constant is the point: leanness is
-    // a statement about TIERS, and that is what is gated, here and below.
+    // (docs/THE_CLIMB §1) a move was 3 steps and is ONE since round 42, so the
+    // comparison is neither true nor about anything — a solve SHOULD be worth
+    // more than a single move. Deleting it rather than re-typing the constant is
+    // the point: leanness is a statement about TIERS, and that is what is gated,
+    // here and below.
     // The BEST a tier-3 room can pay is strictly less than the best a tier-1
-    // room can — 7 against 15 — which is the leanness in the only unit it can
+    // room can — 3 against 5 — which is the leanness in the only unit it can
     // honestly be stated in. (Not per-kind: the Word Web is a LONGER puzzle at
     // tier 3 than at tier 1, and the whole of round 22 is that a room is paid
     // for the work it asks. A per-kind bound would price length backwards.)
@@ -282,15 +283,32 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
     // 0.471). The bound is re-derived, not relaxed on principle — but the
     // teeth are still the ABSOLUTE ratchet below, and this line's only job is
     // to say the alternative is worse, which `after < before` is what proves.
+    //
+    // ROUND 42 — AND THE ABSOLUTE FLOOR UNDER `before` HAD TO GO, for the third
+    // time and for a new reason. `>= 20` was a transcribed measurement of the
+    // LEGACY BAND, and round 42 re-denominated that band in moves (micro 3/3/2
+    // and anchor 6/5/4 steps became a flat 1 and 2), so the flat table now
+    // measures 13.60× without anything having gone wrong. Pinning `before` to an
+    // absolute number was always pinning the alternative rather than the game.
+    // What this line is FOR is one claim — the priced table beats the flat one —
+    // so that is all it asserts, as a ratio between the two rather than a level,
+    // and the teeth stay where round 26 put them: the absolute ratchet below.
     const before = spreadOf(legacyWageOf);
     const after = spreadOf(wageOf);
-    expect(before, `flat-table spread ${before.toFixed(2)}×`).toBeGreaterThanOrEqual(20);
     expect(after, `priced spread ${after.toFixed(2)}× (flat table ${before.toFixed(2)}×)`)
       .toBeLessThan(before);
+    expect(before / after, `the flat table is only ${(before / after).toFixed(2)}× worse`)
+      .toBeGreaterThanOrEqual(2);
     // ROUND 27: 16.00× → 9.07×. The bottom of the table was the Counting House
     // at tier 3 (+6 for thirty minutes = 0.200 steps a minute); the same room,
     // regraded and re-clocked to seventeen minutes, pays the same +6 for 0.353.
-    expect(after, `overall spread ${after.toFixed(2)}×`).toBeLessThanOrEqual(10.0);
+    // ROUND 36: 9.07× → 7.77×, the ceiling being thirds of a day and the day
+    // having grown. ROUND 42: **7.77× → 4.53×**, and this one is the ceiling
+    // rather than the day — `SOLVE_WAGE.capByTier` came off `BASE_DAY_BUDGET`
+    // and onto `BARE_ASCENT_STEPS`, which is three tiers tighter, so the two
+    // long rooms come down onto a table whose whole range is now five integers.
+    // The ratchet is re-tightened in the same commit, as its own rule requires.
+    expect(after, `overall spread ${after.toFixed(2)}×`).toBeLessThanOrEqual(5.0);
   });
 
   it('publishes the UNFILTERED tier-1/2 spread — the number the old name hid', () => {
@@ -307,13 +325,15 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
     // bottom of it — sudoku t2 pays +9 for 13.0 minutes (0.692) rather than
     // +9 for 27.0 (0.333), and the room that was one whole END of this spread
     // is now inside it.
-    expect(all, `tier-1/2 spread ${all.toFixed(2)}×`).toBeLessThanOrEqual(5);
+    // Round 42: 4.62× → 2.60×, same cause as the overall figure above.
+    expect(all, `tier-1/2 spread ${all.toFixed(2)}×`).toBeLessThanOrEqual(3);
     // …and the Counting House is one whole end of it. Without that single
     // 27-minute tier-2 board — a CONTENT commission REVIEW_AA §6 already asks
     // for (bank the grid across days) — the same band is 3.91× (was 4.89×).
     const exCountingHouse = spreadOf(wageOf, tier12.filter(([k, t]) => !(k === 'sudoku' && t === 2)));
+    // Round 42: 3.91× → 2.40×.
     expect(exCountingHouse, `tier-1/2 ex-Counting-House ${exCountingHouse.toFixed(2)}×`)
-      .toBeLessThanOrEqual(4);
+      .toBeLessThanOrEqual(3);
     // ROUND 27 — AND THIS LINE IS WHY THE SECOND NUMBER IS STILL PUBLISHED.
     // It used to read `toBeLessThan(all)`: taking the Counting House out
     // NARROWED the spread, which is the whole reason the room was named. It no
@@ -436,6 +456,11 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
     // because a cozy game must not punish a short choice, and +4 over 1.25
     // minutes is 3.200 steps a minute. Naming both of them is the point — the
     // assertion fails if either moves, or if a third room joins them.
+    // ROUND 42 — AND THE TWO ROOMS AT THE TOP ARE STILL THE SAME TWO, for the
+    // same reason, at a third of the number: the cozy floor is +1 move now and
+    // +1 over 1.25 minutes is 0.800 moves a minute (it was +4 over 1.25 = 3.200
+    // steps). That the membership did not move while the unit did is the check
+    // this assertion exists for.
     const wages = everyRoom.map(([k, t]) => [`${k} t${t}`, wageOf(k, t)] as const);
     const top = Math.max(...wages.map(([, w]) => w));
     expect(wages.filter(([, w]) => w === top).map(([n]) => n).sort(),

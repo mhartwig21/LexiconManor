@@ -621,10 +621,23 @@ export function guessHistory(content: VolumeContent, state: VolumeState): GuessR
 export type ArrivalShade = 'first' | 'spent' | 'again';
 
 /**
- * The step floor for "spent": one more storey's walk at the top of the house
- * — below that the landing IS the end of the evening — read off the live
- * movement table rather than re-typed, so retuning the climb retunes the line
- * that comments on it.
+ * The step floor for "spent": one more storey's THE TWO-PART WALK at the top of
+ * the house — below that the landing IS the end of the evening — read off the
+ * live movement table rather than re-typed, so retuning the climb retunes the
+ * line that comments on it.
+ *
+ * ═══ ROUND 42 — IT WAS ONE HALF OF THE WALK, AND THAT USED TO BE ENOUGH ═════
+ * This read `-moveAt(MANOR_ROWS - 1)` alone: nine steps under the altitude toll,
+ * three under the flat −3, and **one** now that a move costs one. At 1 the shade
+ * would have meant "her very last step", which is not what the line says and is
+ * a variant she would almost never see — the AAA 5.5 starvation shape the clamp
+ * below already guards against from the other side.
+ *
+ * So it is the whole of what one more storey costs, which the live slice has
+ * charged in two parts since AAA 4.6: the **door-step** (`openDraft` prices a
+ * move at her own row just to look at three plans) plus the **climb** into the
+ * cell. Two moves, at a flat price — the walk to a door and the look through it.
+ * Below that the arrival really is the last thing today will be.
  *
  * Clamped to a third of the day's budget so the shade can never swallow the
  * others: a future `MOVE_COST_BY_ROW` that priced the top storey at half a day
@@ -633,7 +646,7 @@ export type ArrivalShade = 'first' | 'spent' | 'again';
  * in priorities).
  */
 export const SPENT_ARRIVAL_STEPS = Math.min(
-  -moveAt(MANOR_ROWS - 1),
+  -moveAt(MANOR_ROWS - 1) * 2,
   Math.floor(BASE_DAY_BUDGET / 3),
 );
 

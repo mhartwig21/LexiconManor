@@ -26,7 +26,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useManorStore } from '../../app/store';
-import { dayStartTotal, stepsRemaining } from '../../engine/economy/steps';
+import { dayStartTotal, stepsRemaining, STEPS_LOW_AT, stepWords } from '../../engine/economy/steps';
 import type { StepReason } from '../../engine/types';
 import { reasonWord } from './step-reasons';
 import StepLedgerSheet from './StepLedgerSheet';
@@ -68,8 +68,11 @@ export default function StepMeter() {
   const ratio = Math.max(0, Math.min(1, steps / startTotal));
 
   // Guttering when the evening is close — either fraction or absolute band.
+  // ROUND 42: the absolute band was a transcribed `6`, written against a 26-step
+  // dawn purse. It is `STEPS_LOW_AT` now (engine/economy/steps.ts) — the same
+  // number the music director reads, so the flame and the bed gutter together.
   const band =
-    steps <= Math.max(6, startTotal * 0.15) ? 'guttering'
+    steps <= Math.max(STEPS_LOW_AT, startTotal * 0.15) ? 'guttering'
     : ratio <= 0.5 ? 'waning'
     : 'bright';
 
@@ -157,7 +160,7 @@ export default function StepMeter() {
       <button
         className="chr-steps__open"
         onClick={() => setLedgerOpen(true)}
-        aria-label={`${steps} steps left of ${startTotal} — open the day’s account`}
+        aria-label={`${stepWords(steps)} left of ${startTotal} — open the day’s account`}
       >
         <svg
           className="chr-steps__candle"
@@ -183,7 +186,9 @@ export default function StepMeter() {
           <span key={steps} className="chr-steps__count chr-steps__count--tick tabular-nums">
             {steps}
           </span>
-          <span className="chr-steps__label"> steps</span>
+          {/* ROUND 42: singular is reachable now — a move costs 1, so the last
+              tick of every evening reads "1 step". */}
+          <span className="chr-steps__label">{steps === 1 ? ' step' : ' steps'}</span>
         </div>
       </button>
       {ledgerOpen ? <StepLedgerSheet onClose={() => setLedgerOpen(false)} /> : null}

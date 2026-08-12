@@ -526,6 +526,116 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   > the climb and the tail of every distribution that waits on it. Nothing in `deck.ts`,
   > `drafting.ts` or any content file was edited: an instrument round that also tunes the
   > thing it measures is worthless.
+  >
+  > ### ROUND 42 — A STEP IS A MOVE, AND EVERY BAND WAS RE-DERIVED
+  >
+  > **THE OWNER, 12 Aug** (docs/THE_CLIMB §1b, binding): *"Why isn't it just 1 step is
+  > −1. Why do you keep coming up with a convoluted economy. What you should be modifying
+  > is the amount of steps you start with and how many more you can earn and the
+  > penalties."* · *"10–14 moves at the start… but you can earn more moves as you go
+  > yeah?"* · *"Step penalty for wrong guesses is way too harsh on things… it should be
+  > 1 step for a wrong guess on things."*
+  >
+  > Round 36 shipped a flat **−3 a move against a budget of 22**, and 22 steps at 3 a
+  > move is **seven moves** — a fiction the player has to divide her way out of, and the
+  > largest unresolved COMPREHENSION finding (both cold testers reported the counter
+  > moving for reasons they could not account for; you cannot audit a ledger denominated
+  > in an arbitrary unit). Four rulings, none of them a tuning parameter: **a move costs
+  > 1**, **a day starts at 12 moves**, **a wrong guess costs 1 move at every weight and
+  > every tier**, and **solving buys more day**. Everything else in the economy is
+  > re-denominated to match, and **evening length is an OUTPUT** of the starting count
+  > and the payouts — never again steered by re-pricing a move.
+  >
+  > What was measured: 4,800 seeded evenings a profile and 800 seeded campaigns a
+  > profile on the grid-true model, before and after, plus a 30,000-evening skipper run.
+  >
+  > | band | before (a move costs 3) | after (a move costs 1) |
+  > |---|---|---|
+  > | 4.10a skipper stands at the DOOR | 0.03%; gated <0.1% | **0.163%** over 30,000 evenings (per-seed 0.067–0.267%); gated **<0.5%** |
+  > | 4.10a skipper evening | 2–5 min (2.4), 7 rooms | band unmoved, measured **3.4 min**, 10 rooms |
+  > | 4.10b median / p90 minutes | band 10–15 / ≤23, measured 12.2 / 17.5 | **band unmoved**, measured **13.6 / 17.8** |
+  > | 4.10b rooms per evening | 7–11 (measured 8) | band unmoved, measured **9** |
+  > | 4.10b day-1 evening | 12.5 min | **13.2 min** |
+  > | 4.10c great day, max row | 5–6 (measured 5) | unmoved (measured **5**); landing 6.1% → **8.7%**, band <25% |
+  > | 4.10d skilled first DOOR | 11–19 (measured 13–14) | **band unmoved**, measured **12–13** |
+  > | 4.10d skilled day-1 DOOR | <8% (0.5–1.5%) | band unmoved, measured **0.4–2.4%** |
+  > | 4.10e skilled volume win | 12–20 (measured 15–15.5) | **band unmoved**, measured **14–15** |
+  > | 4.10d/e median player first DOOR | 14–22 (measured 16.5–17) | **band unmoved**, measured **15–16** |
+  > | 4.10d/e median player volume win | 16–24 (measured 19) | **band unmoved**, measured **18–19** |
+  > | 4.10d/e median player deduction | 14–24 (measured 17) | **band unmoved**, measured **16–17** |
+  > | 4.10f skilled evening early → late | 14–20 (15.2 → 18.8), p90 ≤27 | **14–22** (**17.1 → 21.1**), inflation 1.23 unmoved; **the late p90 is RETIRED — see below** |
+  > | 4.10f skilled late evenings ended EARLY | 5.5% *(unpublished)* | **9.7%**, published and gated 2–15% |
+  > | 4.10f median-player evening | 12–18 (12.7 → 15.5), inflation 1.23 | band unmoved, measured **13.9 → 17.0**, inflation 1.22 |
+  > | 4.10g a solve makes HER page out | <45% (35.2%) | **<60%**, measured **56.8%** — the gap to his 79.7% is what the clause is about, and it holds |
+  > | 4.10h wage spread, every room × tier | 7.77× | **4.53×** *(the ceiling came off the budget and onto the staircase)* |
+  > | 4.10i ground-floor drain per room | −2.24 steps hers / −1.15 his = **−0.75 / −0.38 moves** | **−0.95 / −0.42 moves** — the floor got DEARER in the unit she counts in |
+  > | 4.10i steps in hand, rows 0–2 | 16 hers / 20 his, of a 26-step purse | **8 / 11**, of a **13-move** purse |
+  > | bare ascent to the landing | 15 against a 22-step budget | **5 against 12** |
+  > | realistic ascent (with walk-backs) | 25.8 against 22 = **8.6 moves against 7.3** | **8.6 moves against 12** — see below, the replacement invariant is deleted too |
+  >
+  > **THE SECOND HALF OF ROUND 36'S INVARIANT IS DELETED, DELIBERATELY.** Round 36 killed
+  > `reserveToTop(1) > BASE_DAY_BUDGET` for the BARE staircase and replaced it with the
+  > same inequality for the REALISTIC ascent (25.8 > 22). Denominated in moves the left
+  > side never moved — the climb is 8.6 moves before and after — while the purse went 7.3
+  > → 12 on the owner's own number, so the inequality is false and the only way to
+  > restore it is to overrule his 10–14. **The claim it stood in for is measured instead,
+  > on instruments that could disagree with it, and all three hold:** the refund-less
+  > skipper reaches the door on 0.163% of evenings, the skilled player on day 1 in
+  > 0.4–2.4% of campaigns against a published <8%, and a great single evening reaches the
+  > landing storey on 8.7% against a published <25%. Round 24 had already found the
+  > reason: *"the deck's door layouts, not the step table, are what price the top of the
+  > house."*
+  >
+  > **WHY SO LITTLE MOVED, and it is not a design achievement — it is arithmetic nobody
+  > predicted.** The purse grew 64% in moves and the campaign barely shifted, because the
+  > third ruling pushes the other way: mistakes were 36% of the whole economy at round-36
+  > HEAD (≈10 a day at −2 steps against a 56-step turnover) and are 45% of it now (≈10 a
+  > day at −1 move against a 22-move turnover). A bigger purse and a dearer error very
+  > nearly cancel. It is written down because the next round will otherwise read the
+  > stability as evidence that the change was small.
+  >
+  > **THE GUARDRAIL, DERIVED RATHER THAN ASSUMED.** "Solving buys more day" invites the
+  > owner's own first complaint back — a day that never ends is *"way too easy"* wearing
+  > a new hat. What stops it is **not** a cap on moves earned. It is two measured facts,
+  > both re-measured every run in `tests/economy-pressure.test.ts`:
+  > **(1) ARITHMETIC** — the average room is net NEGATIVE in moves for every profile
+  > (the median player spends 1.50 and earns 0.95; the skilled 1.64 and 0.81; a GREAT day
+  > 1.70 and 1.13), so solving lengthens an evening and can never sustain one;
+  > **(2) GEOMETRY** — the manor is 31 draftable cells and the frontier closes as it
+  > fills. Over 6,000 simulated evenings across four profiles **not one ended `filled`**,
+  > and 8–20% ended `stranded` — the house shut with moves still in hand.
+  >
+  > **AND WHAT GOT WORSE, PUBLISHED RATHER THAN ABSORBED.**
+  > 1. **His late-campaign evening is 21.1 minutes** and 9.7% of those evenings now end
+  >    on his own appetite clock rather than on an empty ledger (it was 5.5%). That is
+  >    why the LATE p90 is retired: it measured 28.0 against a `sessionMinutes` of 28, so
+  >    it was reading the clock and not the game — `CLOCK_BAND`'s own rule, applied to the
+  >    quantity it is actually about. What replaces it is the median (nowhere near the
+  >    cap) and the early-night share itself, which is two-sided and cannot be clipped.
+  > 2. **The refund-less player reaches the sealed door five times more often** (0.03% →
+  >    0.163%), because a 5-move staircase is affordable out of a 12-move purse in a way
+  >    it was not out of seven moves. She still wins nothing: she has solved nothing, so
+  >    she holds no fragments and has no word to say.
+  > 3. **One of 4.10h's four wage spreads ROSE** — tier-1/2 rooms of two minutes or more,
+  >    1.43× → 1.71× — and the ratchet is supposed to be one-way. The cause is the unit
+  >    rather than the pricing: the Darkroom is 3.0 minutes at tier 1 and 3.5 at tier 2, a
+  >    17% difference in length that rounds to 1 move and 2 moves, a 100% difference in
+  >    pay. **That is the honest floor a coarse unit puts under this metric**, and the way
+  >    to pay it back is content (lengthen the Darkroom's tier 1 or shorten its tier 2),
+  >    not a fractional step. The other three all fell, hard.
+  > 4. **The Kitchen and the Larder now pay the same**, and so do the Boot Room and the
+  >    Still Room: +6/+5/+3/+2 steps is 2/1.67/1/0.67 moves and there are only two
+  >    integers in that range. Four distinct refills became two, distinguished now by what
+  >    else they carry rather than by how much they pay.
+  >
+  > **AND ONE THING THE UNIT ALMOST BROKE, caught by a test rather than by a reviewer.**
+  > `stageSteps` paid `floor(total × fraction)`, and with the Library's whole payout at
+  > +2 moves the first thread she wove banked **nothing** — REVIEW_AA §6's original
+  > complaint, reintroduced by a change of unit. Two clauses fixed it and neither moves a
+  > published band, because a solved room still pays exactly `solvePayout`: *a rung she
+  > has climbed pays at least one move* (the ledger has no smaller coin), and *the summit
+  > always keeps one*. The Conservatory's instalments are 1/2/3 with 2 at Full Bloom,
+  > exactly what `floor` paid.
   - **4.10a — the no-refund day.** Skipping every puzzle tops out on the middle floors
     (median 1-based row 4) and is over in **2–5 minutes**. Refunds are what buy a real
     day.
@@ -538,9 +648,17 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     measured, and she wins nothing when she gets there because she has solved nothing and
     has no word to say. It is published at 0.03% rather than rounded back to zero,
     because "never" and "three hundredths of one per cent" are different claims.
-    `tests/economy-simulation.test.ts` gates it at <0.1%.
+    *ROUND 42 — **0.03% → 0.163%**, measured over 30,000 skipper evenings across ten
+    seeds (per-seed 0.067–0.267%), gated at **<0.5%**. A bare staircase is five moves and
+    the dawn purse is twelve, so the freak clean line is affordable in a way it was not
+    when 22 steps bought seven moves. The old <0.1% was not merely tight — it sat inside
+    the seed noise of the suite's own 3,000-day fixture, which is why the honest bound is
+    published against a run ten times its size. She still wins nothing up there.*
   - **4.10b — the decent day is 10–15 MINUTES at the median, p90 ≤ 23.** Not 20 (the
-    pre-overhaul measurement) and not 29 at p90. **Measured at round-36 HEAD: median
+    pre-overhaul measurement) and not 29 at p90. ***ROUND 42: the band is UNMOVED and
+    the measurement inside it rose — median **13.64**, p90 **17.82**, **9 rooms** — on a
+    day that starts at 12 moves rather than 7.3. See the round-42 block above for why so
+    little moved.*** **Measured at round-36 HEAD: median
     12.21, p90 17.45** (3,000 seeded days, `PROFILE_DECENT`, seed `0xbeef`; 12.07–12.67
     and 17.41–17.66 across the four independent seeds the test also runs). That is
     **7–11 rooms** (measured 8) with a median 2 puzzles actually solved — the post-cull
@@ -573,7 +691,8 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     rather than the owner's evening).
   - **4.10c — a great single day flirts with the top, it does not own it.** A sharply
     played day reaches row 5–6 (measured **5** at round-36 HEAD); the **Sanctum landing**
-    is reached on **<25%** of even great days (measured **6.1%**, against 3.7% before —
+    is reached on **<25%** of even great days (measured **8.7%** at round-42 HEAD, 6.1%
+    at round-36 HEAD, against 3.7% before —
     a flat move price makes the top reachable more often on a single sharp evening, and
     the band is where round 24 set it). Standing at that door is a campaign event, not a
     Tuesday.
@@ -779,8 +898,18 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
       the volume won at median **15–15.5** (enforced 12–20), **100% inside 28
       evenings** (enforced >85%), 0% inside the first week, and he stands at the
       door on day 1 in **0.5–1.5%** of campaigns (enforced <8%). His evening runs
-      **14.9–15.0 minutes early, 18.3–18.8 late**, p90 23.1/26.0 (4.10f's band,
-      14–20 and p90 ≤27).
+      **17.1 early → 21.1 late** at round-42 HEAD (14.9–15.0 → 18.3–18.8 before), and
+      the band is re-published **14–20 → 14–22** with **the late p90 RETIRED**: it
+      measured 28.0 against his own 28-minute appetite, so it was reading the stopping
+      rule rather than the game (`CLOCK_BAND`'s own lesson, applied to the quantity it is
+      about). What is published in its place is the SHARE OF LATE EVENINGS HE ENDS EARLY
+      — **9.7%, from 5.5%** — which is the clock's effect stated directly, is gated
+      two-sided at 2–15%, and cannot be clipped by the thing it measures. The EARLY
+      window keeps its p90 (24.4, gated ≤27). *(The pre-round-42 figures: p90
+      23.1/26.0 against 4.10f's then-band of 14–20 and p90 ≤27.)*
+      Also re-published at round 42: his DOOR at median **12–13** (enforced 11–19,
+      unmoved) and his WIN at median **14–15** (enforced 12–20, unmoved); day-1 door
+      **0.4–2.4%** against the same <8%.
       *ROUND 37 — THE LANDING IS THREE CELLS, AND THIS IS AN ACCESS BAND, SO IT
       MOVED (docs/THE_CLIMB §2).* **His door 16 → 13–14 and his win 16.5–17 →
       15–15.5, band 14–22 → 11–19.** The cause is geometry and nothing else: the
@@ -1039,10 +1168,16 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     (`engine/economy/effort.ts ROOM_EFFORT`, per kind AND tier) — **a room cannot ship
     unpriced or unclocked**; (b) the payout is `clamp(wage × honest minutes)` and is
     **monotone in the work** — no shorter room may out-earn a longer one at the same
-    tier; (c) between the cozy floor (+4, so a short puzzle is never a bad choice) and
-    the day-budget ceiling (⅔ / ½ / ⅓ of `BASE_DAY_BUDGET` by tier, so no single room
-    prints an evening and refunds still get leaner as you climb) **a minute is worth a
-    minute**; (d) the residual spread is a RATCHET — that may fall and may never rise —
+    tier; (c) between the cozy floor (**+1 move** — *a solved room always pays back at
+    least the move it cost to walk into*, so a short puzzle is never a bad choice) and
+    the STAIRCASE ceiling (**one `BARE_ASCENT_STEPS`, a move leaner every storey: +5 /
+    +4 / +3**, so no single room prints an evening and refunds still get leaner as you
+    climb) **a minute is worth a minute**; *(ROUND 42 — both were re-derived. The floor
+    was +4 steps and the ceiling was ⅔ / ½ / ⅓ of `BASE_DAY_BUDGET`, which is a LOOP:
+    every round that moves the purse moves what one room may print, in the same
+    direction, so a bigger day is automatically a day one room can buy back. On a
+    12-move budget those thirds read 8/6/4 — two thirds of an evening for one
+    Conservatory. The ceiling is tied to the climb now and not to the purse.)* (d) the residual spread is a RATCHET — that may fall and may never rise —
     and **round 25 re-derived it unfiltered**, because the second half of this clause
     used to read *"≤ 2× across the rooms an ordinary evening is actually made of
     (measured 1.75×)"* and that population was a filtered sample: `tier ≤ 2 AND
@@ -1053,9 +1188,23 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     round that was told about that one. All four populations are published and gated now
     (`tests/economy-effort.test.ts`), and none is called "an evening":
     **every room × every tier 45.00× → 20.00× → 16.00× → 9.07× (round 27) → 7.77×
-    (round 36)**; **every tier-1/2 room, unfiltered 12.00× → 9.60× → 4.62× → 3.78×**;
-    **tier-1/2 minus the Counting House 4.89× → 3.91× → 3.20×**; **tier-1/2 of two
-    minutes or more, minus the Counting House, 1.75× → 1.43×**.
+    (round 36) → 4.53× (round 42)**; **every tier-1/2 room, unfiltered 12.00× → 9.60× →
+    4.62× → 3.78× → 2.60×**; **tier-1/2 minus the Counting House 4.89× → 3.91× → 3.20× →
+    2.40×**; **tier-1/2 of two minutes or more, minus the Counting House, 1.75× → 1.43× →
+    1.71×**.
+    ***ROUND 42 — THREE FELL HARD AND ONE ROSE, AND THE ONE THAT ROSE IS THE FINDING.***
+    The economy is denominated in MOVES now (docs/THE_CLIMB §1b) and the ceiling in
+    clause (c) came off the budget and onto the staircase, which is three tiers tighter —
+    so every payout in the shipped game is one of {1, 2, 3, 4, 5} and the two long rooms
+    come down onto a table whose whole range is five integers. **But the fourth
+    population went 1.43× → 1.71×, and this ratchet is supposed to be one-way.** The
+    cause is the UNIT rather than the pricing, and it is the honest floor a coarse unit
+    puts under this metric: the Darkroom is 3.0 minutes at tier 1 and 3.5 at tier 2 — a
+    17% difference in length that rounds to 1 move and 2 moves, a 100% difference in pay.
+    No wage can fix it (0.50 moves a minute makes the same population 1.87×); the way to
+    pay it back is CONTENT — lengthen the Darkroom's tier 1 or shorten its tier 2 — and
+    that is a commission for a word-game round, recorded here rather than absorbed. The
+    ends, at HEAD: overall `twistle t1 / crossword t1 0.800 · sudoku t3 0.176`.
     ***ROUND 36 — ALL FOUR FELL, AND NOT ONE OF THEM WAS AIMED AT.*** The step economy
     flattened (docs/THE_CLIMB §1) and `BASE_DAY_BUDGET` moved 18 → 22 with it, which is
     the same lever; the ceiling in clause (c) is DEFINED as thirds of a day, so it rose

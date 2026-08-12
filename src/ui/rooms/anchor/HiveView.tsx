@@ -26,7 +26,7 @@ import {
   type HiveAction, type HiveRoomState,
 } from '../../../engine/rooms/adapters/hive';
 import { fernLine } from '../../../engine/rooms/fern-lines';
-import { STEP_TABLE } from '../../../engine/economy/steps';
+import { STEP_TABLE, stepWords } from '../../../engine/economy/steps';
 import { createRng, shuffle } from '../../../engine/rng';
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
@@ -405,7 +405,7 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
   const payoutLine = useMemo(() => {
     const solve = STEP_TABLE.solve('anchor', tier, 'hive');
     const clean = state.costedMistakes === 0;
-    return `+${solve} steps in all, a share at every rung${clean ? ` · +${STEP_TABLE.perfect} for a bed without a bent stem` : ''}`;
+    return `+${stepWords(solve)} in all, a share at every rung${clean ? ` · +${STEP_TABLE.perfect} for a bed without a bent stem` : ''}`;
   }, [tier, state.costedMistakes]);
 
   const found = [...state.hive.foundWords].reverse();

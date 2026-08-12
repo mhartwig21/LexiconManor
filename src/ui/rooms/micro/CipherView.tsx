@@ -19,6 +19,7 @@ import type { CipherAction, CipherRoomState } from '../../../engine/puzzles/ciph
 import { cipherLettersOf } from '../../../engine/puzzles/cipher';
 import { sfx } from '../../../app/sound';
 import './micro.css';
+import { stepWords } from '../../../engine/economy/steps';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
 
@@ -106,7 +107,7 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
             // has to stay compact, so the fraction is the idiom that wins and
             // the toast now speaks it too — the eye can match the toast to the
             // chip it just filed without re-parsing the number.
-            ? `Still murky — ${fb.correct}/${fb.total} letters ring true · −${hintCost} steps`
+            ? `Still murky — ${fb.correct}/${fb.total} letters ring true · −${stepWords(hintCost)}`
             : 'The same print again — no charge for looking twice.',
         });
         later(() => setToast(null), 2000);

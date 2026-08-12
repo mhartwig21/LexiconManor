@@ -367,12 +367,14 @@ describe('§5.3 — in-room progress survives a reload', () => {
     expect(steps(after), `${drill.room} charged twice / refunded`).toBe(stepsBefore);
   });
 
-  it('the Library, exactly as the editor drove it: −4 in penalties, reload, tiles still solved', () => {
+  it('the Library, exactly as the editor drove it: −2 in penalties, reload, tiles still solved', () => {
     const store = seedStore('word-web');
     const host = openHost(store);
     const puzzle = host.session.puzzle as WordWebPuzzleEx;
 
-    // Two wrong groups (−2 each at tier 1) and one thread woven.
+    // Two wrong groups and one thread woven. ROUND 42: a wrong group is −1, at
+    // every tier and every room (docs/THE_CLIMB §1b — the owner's ruling); it
+    // was −2, i.e. two thirds of the price of the room she was standing in.
     hostDispatch(store, host, { type: 'submit', selection: puzzle.groups.map((g) => g.words[0]!) });
     hostDispatch(store, host, { type: 'submit', selection: puzzle.groups.map((g) => g.words[1]!) });
     hostDispatch(store, host, { type: 'submit', selection: [...puzzle.groups[0]!.words] });
@@ -380,11 +382,21 @@ describe('§5.3 — in-room progress survives a reload', () => {
     // ROUND 22 (REVIEW_AA §6) — THE THREAD SHE WOVE IS PAID FOR. The Library
     // is one of the rooms long enough to pay its rungs (`paysInStages`), so a
     // solved group banks its quarter of the room's payout the moment it lands
-    // instead of paying nothing until all four are placed. −4 in penalties,
+    // instead of paying nothing until all four are placed. −2 in penalties,
     // +1 for the thread.
+    //
+    // ROUND 42 — THIS DRILL CAUGHT THE ONE THING THE NEW UNIT ALMOST BROKE.
+    // The Library's whole payout is +2 MOVES now, and `stageSteps` paid
+    // `floor(total × fraction)` — so `floor(2 × 0.25)` was 0 and the first
+    // thread she wove banked NOTHING, which is REVIEW_AA §6's original
+    // complaint reintroduced by a change of unit rather than of mind. The
+    // assertion below is what went red. `stageSteps` now pays at least one move
+    // for a rung she has climbed and keeps at least one for the summit; see its
+    // note in engine/economy/steps.ts.
+    const mistakes = 2 * -STEP_TABLE.mistake(1, 1);
     const rung = stageSteps('word-web', 1, 0.25, 0);
     expect(rung, 'the Library stopped paying its rungs').toBeGreaterThan(0);
-    expect(steps(store)).toBe(START_STEPS - 4 + rung);
+    expect(steps(store)).toBe(START_STEPS - mistakes + rung);
     const solvedTiers = (host.session.state as WordWebRoomState).web.solvedTiers;
     expect(solvedTiers).toHaveLength(1);
 
@@ -395,7 +407,7 @@ describe('§5.3 — in-room progress survives a reload', () => {
     expect(state.web.solvedTiers).toEqual(solvedTiers);
     expect(state.web.remainingWords).toHaveLength(12);   // NOT sixteen unsolved tiles
     expect(state.costedMistakes).toBe(2);
-    expect(steps(after)).toBe(START_STEPS - 4 + rung);
+    expect(steps(after)).toBe(START_STEPS - mistakes + rung);
     // …and the rung cannot be paid twice by coming back to the room: the
     // fraction earned rides on the PlacedRoom, beside the board itself.
     expect(after.getState().manor!.rooms[KEY]!.ladderEarned).toBeCloseTo(0.25, 6);

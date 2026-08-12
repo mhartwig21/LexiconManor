@@ -121,6 +121,84 @@ steered by re-pricing a move.
 Everything in section 1 above still holds — scarcity comes from distance walked, and doubling
 back is what drains her. This section only fixes the unit it is counted in.
 
+### BUILT — round 42. What shipped, what moved, and the two things that got worse.
+
+**A STEP IS A MOVE.** `MOVE_COST_BY_ROW` is **−1 on every storey**, `BASE_DAY_BUDGET` is **12**,
+and every costed mistake at every weight and every tier is **−1**. The counter on the glass is
+now the quantity it measures: *twelve moves, and a cup*. The player-facing word stays "steps" —
+it is the manor's word, and for the first time it is honest, because one step is one move.
+
+The whole economy is re-denominated with it. Solve payouts are wage-priced as before, at **0.45
+moves a minute** (read the other way: *about two and a quarter minutes of honest word game buys
+one more move*), with a cozy floor of **+1** — *a solved room always pays back at least the move
+it cost to walk into* — and a ceiling that came off the budget and onto the **staircase**:
+`BARE_ASCENT_STEPS` is 5, so **the most any single room may pay is one whole climb, a move
+leaner every storey: +5 / +4 / +3**. Every payout in the shipped game is now one of {1,2,3,4,5}.
+Bramble's pot is **one move a point, 0 → +6**. Refills are +1..+2. A perfect solve is +1.
+
+**THE TWO CONSTANTS THAT ARE NOT KNOBS.** The move price is a ruling and `tests/steps.test.ts`
+says so beside it; the starting count is the owner's own 10–14. If a future round finds the
+evening too long or too short, the levers are the STARTING COUNT and the PAYOUTS, in his words,
+and never the move price. That rule is the whole of why the previous economy was convoluted.
+
+**WHY SO LITTLE MOVED, and it is arithmetic rather than design.** The purse grew 64% in moves
+(7.3 → 12) and the campaign barely shifted, because the mistake ruling pushes the other way:
+mistakes were 36% of the whole economy at round-36 HEAD and are 45% of it now. A bigger purse
+and a dearer error very nearly cancel. It is written down so the next round does not read the
+stability as evidence the change was small.
+
+| | before | after |
+|---|---|---|
+| her evening, median / p90 | 12.2 / 17.5 min, 8 rooms | **13.6 / 17.8 min, 9 rooms** (band 10–15 / ≤23, unmoved) |
+| her first DOOR / WIN | 16.5–17 / 19 | **15–16 / 18–19** (bands unmoved) |
+| her DEDUCTION | 17 | **16–17** (band unmoved) |
+| his first DOOR / WIN | 13–14 / 15–15.5 | **12–13 / 14–15** (bands unmoved) |
+| his evening, early → late | 15.2 → 18.8 | **17.1 → 21.1**; band 14–20 → **14–22** |
+| ground floor, net per room | −0.75 moves hers | **−0.95 moves** — the floor got DEARER |
+| steps in hand, rows 0–2 | 16 of a 26-step purse | **8 of a 13-move purse** |
+| wage spread, every room × tier | 7.77× | **4.53×** |
+| the bare ascent | 15 of a 22-step budget | **5 of 12** |
+
+**THE GUARDRAIL, DERIVED RATHER THAN ASSUMED — this section asked for it and here it is.**
+What stops a great day being endless is **not** a cap on moves earned. Measured on the grid-true
+model and gated in `tests/economy-pressure.test.ts`:
+1. **ARITHMETIC.** The average room is net NEGATIVE in moves for *every* profile — the median
+   player spends 1.50 and earns 0.95, the skilled 1.64 and 0.81, a GREAT day 1.70 and 1.13. So
+   solving LENGTHENS an evening and can never SUSTAIN one, and the gap is widest for the player
+   who doubles back most, which is where §1 says scarcity should come from.
+2. **GEOMETRY.** 31 draftable cells, and a frontier that closes as it fills. Over 6,000
+   simulated evenings across four profiles **not one ended `filled`**, and 8–20% ended
+   `stranded` — the house shut with moves still in her hand.
+A hard ceiling was not needed and was not added: it would be one more fiction to divide out of.
+
+**WHAT GOT WORSE, PUBLISHED RATHER THAN ABSORBED.**
+1. **A coarse unit ties the draft.** `isDominated` reads what a card pays, and five of the seven
+   shipped rooms now pay +1 at tier 1 — so offers TIE on the wage axis far more often and a tie
+   is a weak win. The dominance ratchet rose for the first time in its life, **0.41 → 0.42**
+   (measured 41.3%), and one of 4.10h's four wage spreads rose with it, **1.43× → 1.71×** (the
+   Darkroom is 3.0 minutes at tier 1 and 3.5 at tier 2 — a 17% difference in length that rounds
+   to a 100% difference in pay). **Neither is fixable with a wage; both are fixable with
+   CONTENT** — a wage table needs more distinct room LENGTHS in it — and they should be paid off
+   together by a word-game round.
+2. **His late-campaign evening is 21.1 minutes**, and 9.7% of them now end on his own appetite
+   clock rather than on an empty ledger (5.5% before). 4.10f's late p90 is retired because of it:
+   it measured 28.0 against a `sessionMinutes` of 28, i.e. it had started reading the clock
+   rather than the game. What replaces it is the median and the early-night share itself.
+3. **Four green cards became two.** The Kitchen and the Larder now pay the same, and so do the
+   Boot Room and the Still Room: +6/+5/+3/+2 steps is 2/1.67/1/0.67 moves, and there are two
+   integers in that range.
+
+**AND TWO THINGS THE UNIT NEARLY BROKE, both caught by tests rather than by a reviewer.**
+`stageSteps` paid `floor(total × fraction)`, so with the Library's whole payout at +2 the first
+thread she wove banked **nothing** — REVIEW_AA §6's original complaint, reintroduced by a change
+of unit. It pays at least one move for a rung climbed and keeps one for the summit now. Fixing
+that exposed the second: `app/slices/room.ts` reconstructed the ladder's receipt as
+`floor(total × ladderEarned)` in two places — its own second opinion about `stageSteps` — and the
+moment the two disagreed a room paid MORE than `solvePayout`. There is one of that number now
+(`stagePaidAt`). Twelve player-facing strings also said `${n} steps` and were right by accident
+until the singular became the commonest number in the ledger; `stepWords` owns the plural and
+`tests/notice-copy.test.ts` walks the tree for "1 steps".
+
 ---
 
 ## 2. The landing is three cells, not one

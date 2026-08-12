@@ -18,22 +18,26 @@ either of the first two skips the deploy, so a broken build cannot reach product
 
 ## READ THIS FIRST — the one thing that is wrong right now
 
-**The owner ruled that a move costs 1 step. The code still charges 3.** The ruling is written in
-`docs/THE_CLIMB.md` section 1b and marked binding; it is documented, not built. An adversarial
-verifier refuted round 21 on exactly this and was correct to.
+**THE MOVE-COSTS-1 ECONOMY IS BUILT** (round 42). A move costs **1**, a day starts at **12
+moves**, a wrong guess costs **1** at every weight and every tier, and solving pays moves back —
+the owner's four rulings from `docs/THE_CLIMB.md` §1b, which now carries a BUILT block with every
+band that moved and every measurement behind it. The move price and the starting count are
+RULINGS, not knobs: if an evening ever runs long or short, the levers are the starting count and
+the payouts, in his own words, and never the move price.
 
-- `MOVE_COST_BY_ROW` is a flat −3 and `BASE_DAY_BUDGET` is 22. **22 steps at 3 a move is 7 moves**
-  — the 22 is a fiction the player has to divide her way out of.
-- The spec: **a move costs 1; a day STARTS at 10–14 moves (build to ~12) and she EARNS MORE as she
-  goes.** Solving buys more day. Earnings and penalties re-denominate into moves.
-- **~66 test and doc sites are pinned to the rejected constants**, and `MANOR_DESIGN.md` plus
-  `AAA_BAR.md` 4.10a still argue for them.
-- **Evening length must never again be steered by re-pricing a move.** It is an OUTPUT of moves
-  granted and moves earned back. Steering it through the move price is what produced the −3.
-- The ceiling on a great day should be **geometric** — 35 cells, a frontier that closes, dead ends
-  that cost walks — not a cap on moves earned. Measure it before reaching for a constant.
+**The one thing that is wrong now is a CONTENT debt the new unit exposed, and it is a word-game
+job rather than an economy one.** Denominating in moves collapsed the payout table onto five
+integers, and five of the seven shipped rooms pay **+1** at tier 1 — so:
 
-**This is the first job of the next round.**
+- the **draft dominance** ratchet rose for the first time in its life, 0.41 → **0.42** (measured
+  41.3%): `isDominated` reads what a card pays, and offers now TIE on that axis far more often;
+- one of AAA **4.10h**'s four wage spreads rose with it, 1.43× → **1.71×** — the Darkroom is 3.0
+  minutes at tier 1 and 3.5 at tier 2, a 17% difference in length that rounds to a 100%
+  difference in pay.
+
+**No wage fixes either** (0.50 moves a minute makes the second one worse). What fixes both is
+more DISTINCT ROOM LENGTHS in `ROOM_EFFORT` — lengthen the Darkroom's tier 1, or shorten its
+tier 2 — which is a content commission, and the two should be paid off together.
 
 ---
 
@@ -118,8 +122,8 @@ Rounds of ultracode subagents. **Critique and verification fan out in parallel; 
 STRICTLY SEQUENTIAL** — parallel writers in one checkout lost ten agents twice. Each builder owns
 distinct files, runs every gate, and commits its own work.
 
-Every builder runs: `tsc --noEmit` · `vitest run` (1,401 baseline) · `content:verify` ·
-`lint:clearance` · `build` · `gate:glass` (0 findings at both sizes).
+Every builder runs: `tsc --noEmit` · `vitest run` (**1,418** baseline as of round 42) ·
+`content:verify` · `lint:clearance` · `build` · `gate:glass` (0 findings at both sizes).
 
 **Playwright must use system Edge (`channel: msedge`)** — the browser download silently fails on
 this machine. ONE browser at a time. **Test 375×667 first** — nearly every defect found in August
@@ -150,8 +154,9 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
 
 ## 6. What is open, ranked
 
-1. **THE MOVE-COSTS-1 ECONOMY** (top of this file). Documented, not built.
-2. **Her campaign is now ~19 days, was ~28.** Flat movement took ~6 evenings off the median player
+1. **The wage table is too coarse to spread a draft** (top of this file). The move-costs-1
+   economy is BUILT; what it left behind is a content debt in `ROOM_EFFORT`.
+2. **Her campaign is ~18–19 days, was ~28.** Flat movement took ~6 evenings off the median player
    and the three-cell landing took more; the skilled player barely moved, because the old toll fell
    on exactly the storeys she re-walks. **If 28 was deliberate, this needs a ruling.**
 3. **A moment seal paints over the dusk veil undimmed** — a cream card over the candle at full
@@ -176,7 +181,8 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
 - `docs/BENCHMARKS.md` — teardowns of Spelling Bee, Connections, Wordle, the Mini, the Acrostic,
   Strands, NYT Sudoku, Blue Prince, Hades. **Two rooms were being judged against teardowns that did
   not exist in this file; if yours is missing, write it before you build.**
-- `docs/AAA_BAR.md` — ~130 criteria plus the mandatory live-interaction pass. **Its 4.10a still
-  argues for the rejected economy.**
+- `docs/AAA_BAR.md` — ~130 criteria plus the mandatory live-interaction pass. **Round 42 added a
+  block re-publishing every 4.10 band that moved, with its cause.**
 - `docs/REVIEW_AA.md` — the hostile 5/10 review that drove rounds 15–19. Largely answered.
-- `docs/MANOR_DESIGN.md` — the original design. **Also carries rejected-economy blocks.**
+- `docs/MANOR_DESIGN.md` — the original design. **§4's step table is denominated in moves as of
+  round 42, and `tests/steps.test.ts` holds it to the live constants.**

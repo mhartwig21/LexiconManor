@@ -371,13 +371,13 @@ export const CARD_PREVIEWS: Record<string, string> = {
   'linen-closet': 'A crossword folded small',
   'counting-house': 'Nine figures, nine columns, one ledger',
   'strong-room': 'The ledger the auditors gave up on',
-  'kitchen': '+6 steps · +2 per green room drafted after',
-  'larder': '+5 steps · dough set to rise: +2 tomorrow',
-  'boot-room': `+3 steps · +${KEY_SUPPLY.bootRoomKeys} key`,
+  'kitchen': '+2 steps · +1 per green room drafted after',
+  'larder': '+2 steps · dough set to rise: +1 tomorrow',
+  'boot-room': `+1 step · +${KEY_SUPPLY.bootRoomKeys} key`,
   'gem-vault': '+2 gems',
   'key-cabinet': `+${KEY_SUPPLY.cabinetKeys} keys · for the padlocks upstairs`,
   'dumbwaiter': '+1 step per room drafted after it',
-  'still-room': '+1 gem · +2 steps · a key on the sill tomorrow',
+  'still-room': '+1 gem · +1 step · a key on the sill tomorrow',
   'reading-nook': 'Ellery keeps the lamps low',
   'post-room': 'Posy sorts the morning letters',
   'greenhouse': 'Fern tends something for you',
@@ -426,20 +426,40 @@ export interface UtilityEffect {
  * and category are untouched, which is what keeps `deckMixAt` (and therefore
  * the 4.10b clock) calibrated exactly as it was.
  */
+/**
+ * ROUND 42 — THE GREEN DECK, RE-DENOMINATED IN MOVES (docs/THE_CLIMB §1b).
+ *
+ * These are the authored, player-facing refill numbers: +6/+5/+3/+2 steps at
+ * 3 steps a move, i.e. 2 / 1.67 / 1 / 0.67 MOVES. A move costs one now, so they
+ * read +2 / +2 / +1 / +1 — and every card NAMES its number in its own toast, so
+ * the copy moves in the same edit (`tests/notice-copy.test.ts` fails the build
+ * if a shipped notice string loses its render site, and `tests/steps.test.ts`
+ * holds every payout here inside `STEP_TABLE.snack`).
+ *
+ * WHAT THE COARSER UNIT COSTS, stated rather than absorbed: the Kitchen and the
+ * Larder used to differ by a step and no longer do, and so do the Boot Room and
+ * the Still Room. Four distinct refills became two. That resolution is gone for
+ * as long as a move is the smallest coin, and buying it back would mean either
+ * a fractional step (which is the convoluted economy the owner rejected) or
+ * lifting the Kitchen to +3, which is a quarter of a day off one green card.
+ * What still distinguishes them is what else they carry: the Kitchen hums for
+ * every later green room, the Larder leaves dough for tomorrow, the Boot Room
+ * hangs a key, the Still Room steeps one.
+ */
 export const UTILITY_EFFECTS: Record<string, UtilityEffect> = {
-  'kitchen': { steps: 6, compounding: 'utility', compoundSteps: 2,
-    toast: 'Something warm from the oven. +6 steps' },
-  'larder': { steps: 5,
-    toast: 'Bread, cheese, and a stolen minute. +5 steps — dough left to rise' },
-  'boot-room': { steps: 3, keys: KEY_SUPPLY.bootRoomKeys,
-    toast: 'Dry socks, and a spare key on the hook. +3 steps' },
+  'kitchen': { steps: 2, compounding: 'utility', compoundSteps: 1,
+    toast: 'Something warm from the oven. +2 steps' },
+  'larder': { steps: 2,
+    toast: 'Bread, cheese, and a stolen minute. +2 steps — dough left to rise' },
+  'boot-room': { steps: 1, keys: KEY_SUPPLY.bootRoomKeys,
+    toast: 'Dry socks, and a spare key on the hook. +1 step' },
   'gem-vault': { gems: 2, toast: 'Two gems, cold and bright' },
   'key-cabinet': { keys: KEY_SUPPLY.cabinetKeys,
     toast: 'Keys, filed under someday. Two of them look upward' },
   'dumbwaiter': { compounding: 'any', compoundSteps: 1,
     toast: 'It rattles helpfully at every new room' },
-  'still-room': { gems: 1, steps: 2,
-    toast: 'Cordial and a gem. +2 steps — and a batch set to steep for tomorrow' },
+  'still-room': { gems: 1, steps: 1,
+    toast: 'Cordial and a gem. +1 step — and a batch set to steep for tomorrow' },
 };
 
 /**
@@ -549,7 +569,7 @@ export function isKeyBearing(cardId: string): boolean {
  * Still Room changes what those rooms MEAN without touching deck composition
  * at all.
  *
- *   - The Larder: dough set to rise → +2 steps at tomorrow's dawn, ledgered as
+ *   - The Larder: dough set to rise → +1 step at tomorrow's dawn, ledgered as
  *     a 'tea'-class entry through the audited path (app/slices/day.ts).
  *   - The Still Room: cordial set to steep → +1 key on the sill at dawn,
  *     granted beside Fern's morning key when the manor is built
@@ -571,8 +591,9 @@ export interface CarryOverEffect {
 
 export const CARRY_OVER_EFFECTS: Record<string, CarryOverEffect> = {
   'larder': {
-    steps: 2,
-    promise: 'dough set to rise · +2 steps tomorrow',
+    // ROUND 42: +2 steps was two thirds of a move; one move is what it pays now.
+    steps: 1,
+    promise: 'dough set to rise · +1 step tomorrow',
     dawnLine: 'The Larder’s dough rose overnight.',
   },
   'still-room': {

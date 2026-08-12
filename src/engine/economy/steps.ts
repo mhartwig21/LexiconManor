@@ -5,6 +5,48 @@
  * through `STEP_TABLE` + `appendEntry`. No slice writes steps directly; the
  * UI renders each entry as a floating +N/−N on the counter.
  *
+ * ═══ ROUND 42 — A STEP *IS* A MOVE. THE OWNER'S CORRECTION (THE_CLIMB §1b) ═══
+ *
+ * > *"Why isn't it just 1 step is −1. Why do you keep coming up with a
+ * >  convoluted economy. What you should be modifying is the amount of steps
+ * >  you start with and how many more you can earn and the penalties."*
+ * > *"Step penalty for wrong guesses is way too harsh on things… it should be
+ * >  1 step for a wrong guess on things."*
+ *
+ * Round 36 shipped a flat **−3 a move against a budget of 22**, and 22 steps at
+ * 3 a move is **seven moves** — a fiction the player has to divide her way out
+ * of. Both cold-read testers reported their step counter moving for reasons they
+ * could not account for; you cannot audit a ledger denominated in an arbitrary
+ * unit. Every number in this file is now denominated in MOVES, and a move costs
+ * one, so the counter *is* the quantity it measures: "I have twelve moves left."
+ * The player-facing word stays "steps" — it is the manor's word — and for the
+ * first time it is honest, because one step is exactly one move.
+ *
+ * THE SHAPE, and none of the first four lines is a tuning parameter:
+ *
+ *   1. **A MOVE COSTS 1**, on every storey (`MOVE_COST_BY_ROW`). Scarcity comes
+ *      from DISTANCE WALKED — you run low because you went east, hit a sealed
+ *      room and had to come all the way back (round 36, THE_CLIMB §1, kept).
+ *   2. **A DAY STARTS AT 12 MOVES** (`BASE_DAY_BUDGET`, the owner's 10–14).
+ *   3. **A WRONG GUESS COSTS 1 MOVE**, every room, every tier, every weight
+ *      (`mistakeDelta`). It was −2, −3 at tier 3 and ×2 on a heavy claim: an
+ *      incoherent ladder that priced an error at up to a whole room.
+ *   4. **SOLVING BUYS MORE DAY.** A room costs a move to walk into and a solve
+ *      pays moves back (`SOLVE_WAGE`), so a good session extends itself and a
+ *      poor one folds early. That is what puts the word games at the CENTRE of
+ *      the economy rather than beside it.
+ *   5. WHAT STOPS A GREAT DAY BEING ENDLESS is *not* a cap on what she can earn
+ *      — it is geometry plus arithmetic, both measured rather than assumed. See
+ *      `SOLVE_WAGE` for the measurement: the average room is net **negative** in
+ *      moves for every profile, so solving lengthens the evening and can never
+ *      sustain it, and the manor is 31 draftable cells with a frontier that
+ *      closes. Measured over 6,000 evenings, no profile ever filled the house
+ *      and the median great day is 13 rooms.
+ *   6. **EVENING LENGTH IS AN OUTPUT** of (2) and (4) and must never again be
+ *      steered by re-pricing (1). Round 36 chose −3 to hold the evening inside
+ *      its published band; that is tuning a derived quantity through the wrong
+ *      lever and it is what produced the mess.
+ *
  * ═══ ECONOMY OVERHAUL — DIRECT OWNER FEEDBACK, 2026-08 playtest ═══
  * "Way too easy — I reached the Forgotten Word on my first day; Blue Prince
  * took me 28 days." The campaign arc was missing: day 1 played like day 30.
@@ -19,18 +61,20 @@
  *      doing the thing the game is about; see that constant for the owner's
  *      words, the measurement and what the deleted invariant was replaced with.
  *   2. REFUNDS GET LEANER AS YOU CLIMB. Now the ceiling on a solve
- *      (`SOLVE_WAGE.capByTier`) rather than a per-tier anchor rate: two thirds
- *      of a day at tier 1, a half at tier 2, a third at tier 3. A tier-3 solve
- *      softens the next mistake; it no longer bankrolls the next storey.
- *   3. LEAN DAY BUDGET. 40 → 18 → 22 (round 36, the other end of the same
- *      lever). A decent day is 7–11 rooms and 10–15 minutes (AAA 4.10), not
- *      8–12 rooms and twenty-plus.
+ *      (`SOLVE_WAGE.capByTier`) rather than a per-tier anchor rate. Round 42
+ *      re-derives the ceiling off the STAIRCASE rather than off the budget: the
+ *      most a single solve may pay is one bare ascent, and a move leaner every
+ *      storey. A tier-3 solve softens the next mistake; it never bankrolls the
+ *      next storey.
+ *   3. LEAN DAY BUDGET. 40 → 18 → 22 → **12 moves** (round 42, the owner's own
+ *      number). A decent day is 7–11 rooms and 10–15 minutes (AAA 4.10).
  *   4. LOCKED DOORS UP TOP. `DOOR_LOCKS`: drafting into 0-based rows 4+ can
  *      demand a key. Deep pushes are PREPARED for (Key Cabinet, Fern's
  *      trades) — you cannot stumble into the Sanctum row.
  *   5. THE REFILL CURVE IS A CAMPAIGN ARC. Bramble's tea (`TEA_BY_POINTS`)
- *      climbs 0 → +13 across her friendship, and refills shrink to +2..+6.
- *      The budget that makes the Sanctum reachable is EARNED over days.
+ *      climbs 0 → +6 across her friendship — one move a point — and refills
+ *      shrink to +1..+2. The budget that makes the Sanctum reachable is EARNED
+ *      over days.
  *
  * ═══ THE INDEXING CONTRACT — READ BEFORE TOUCHING AN AFFINITY TABLE ═══
  * Every affinity-indexed table in this file is indexed by raw affinity
@@ -115,7 +159,9 @@
  *
  * Unchanged rulings:
  *   - weight 0 → free feedback moment, never ledgered (AAA R.1 / 3.2)
- *   - weight 1 → −2 (tier 3 rooms −3); weight 2 doubles (reserved risk rooms)
+ *   - **ROUND 42: every costed mistake is −1, at every weight and every tier**
+ *     (it was −2, −3 at tier 3, ×2 on a heavy claim) — the owner's ruling, see
+ *     `mistakeDelta`
  *   - hint purchases price through the same row as mistakes (A3's revision)
  *   - a wrong guess at the Sanctum: once per day, always FREE (AAA 4.17) —
  *     `SANCTUM_GUESS_COST`, kept explicit so no future retune quietly prices it
@@ -129,51 +175,76 @@ import { effortMinutes } from './effort';
 import { FRAGMENTS_TO_DEDUCE } from '../volume';
 
 /**
- * Start-of-day step budget (AAA 4.10). Owner retune: 40 → 18 → **22**. Read
- * this together with `MOVE_COST_BY_ROW` — the two numbers are one lever, and
- * this file has said so since the overhaul. Round 36 pulled the other end of
- * it, so this end had to move with it.
+ * Start-of-day budget, **in moves** (AAA 4.10). Owner retune: 40 → 18 → 22 →
+ * **12**. Read this together with `MOVE_COST_BY_ROW` — the two numbers were one
+ * lever for six rounds, and round 42 unbolted them: the move price is a RULING
+ * now (a move costs 1) and this is the only end of the lever anyone may pull.
  *
- * ═══ ROUND 36 — 18 → 22, BECAUSE A MOVE COSTS A MOVE NOW (docs/THE_CLIMB §1)
- * ═══════════════════════════════════════════════════════════════════════════
- * The flat −3 below is **1.5× the old ground-floor price**, and rows 0–3 are
- * where the median player spends the overwhelming majority of her moves. Left
- * at 18, the same evening bought 7 rooms instead of 10 and ran **9.9–10.1
- * minutes at the median across four seeds** — under AAA 4.10b's promised 10–15
- * window, i.e. the owner's own "way too easy" fix undone from the other side.
+ * ═══ ROUND 42 — 22 STEPS AT 3 A MOVE WAS SEVEN MOVES (docs/THE_CLIMB §1b) ═══
  *
- * 22 is not a round number chosen to be safe: it is the SMALLEST budget at
- * which every measured EVENING quantity lands back on what the old table
- * produced — median minutes 12.1–12.7 (was 13.9), rooms 8 (band 7–11), and the
- * storey a GREAT day reaches back at 1-based 5 (at 18 and at 20 it fell to 4,
- * i.e. 4.10c's floor). Above 22 the evening starts inflating instead: at 24 the
- * median player's evening runs 15.6 minutes and the skilled player's 18.5,
- * against published ceilings of 18 and 20.
+ * > *"What you should be modifying is the amount of steps you start with and
+ * >  how many more you can earn and the penalties."*
+ * > *"10–14 moves at the start… but you can earn more moves as you go yeah?"*
  *
- * TWO THINGS MOVE WITH IT, both by construction rather than by choice, and both
- * re-measured rather than argued:
- *   - `SOLVE_WAGE.capByTier` is defined as thirds of a day, so the ceiling on a
- *     single solve rises 12/9/6 → 15/11/7. That lifts exactly the two LONG
- *     rooms round 22 found underpaid (the Conservatory and the Counting House)
- *     and the published wage spread FALLS, 9.07× → 7.77× — the direction AAA
- *     4.10h's ratchet allows.
- *   - the dawn purse (`TEA_POUR.dawnCup`) is 22 + 4 = **26**, not 22. §5.10's
- *     invariant is that the ground floor does not get RICHER as the campaign
- *     warms, and it still does not; what changed is the level, and the floor is
- *     dearer per room than it has ever been (measured net −2.2 a room against
- *     −1.2 before).
+ * **12 is the owner's number**, the middle of the 10–14 he gave, and it is not
+ * derived from a band — the bands are derived from IT. What was measured is
+ * everything downstream, on the grid-true model, before and after (4,800 seeded
+ * evenings a profile, 800 campaigns a profile, four seeds):
+ *
+ *   - the median evening holds inside 4.10b: **13.6 minutes** against 12.2
+ *     before, p90 17.8 against 17.5, **9 rooms** against 8 (band 7–11);
+ *   - the campaign holds: her first door day 16 (was 16), her volume win day 18
+ *     (was 19), his door 13 (was 14), his win 14 (was 15);
+ *   - the ground floor got DEARER per room, not cheaper: **−0.95 moves** a
+ *     ground-floor room against −2.14 steps (−0.71 moves) before.
+ *
+ * The reason those numbers barely move while the purse grows 7.3 → 12 moves is
+ * the third clause of the same ruling: **a wrong guess costs 1 move now** rather
+ * than two thirds of one. Mistakes were 36% of the whole economy at round-36
+ * HEAD (≈10 a day at −2 against a 56-step turnover) and they are the same ≈10 a
+ * day at −1 against a 22-move turnover — 45%. A bigger purse and a dearer error
+ * very nearly cancel, which nobody predicted and which is why it is written down
+ * here rather than claimed as design.
+ *
+ * WHAT MOVES WITH IT, by construction rather than by choice:
+ *   - `TEA_POUR.dawnCup` = `FIRST_MORNING_POT` = 1, so the dawn purse is **13**
+ *     on day 1 and on day 30 alike (§5.10's equality, unchanged in form);
+ *   - `SOLVE_WAGE.capByTier` is NO LONGER thirds of this number — see its own
+ *     note. Tying the payout ceiling to the budget is what made a solve worth
+ *     two thirds of a day; it is tied to the staircase now.
  */
-export const BASE_DAY_BUDGET = 22;
+export const BASE_DAY_BUDGET = 12;
 
 /**
  * Mistake / hint pricing row: a deliberate wrong claim in a deduction room.
- * Weight 'structural' is the AAA R.1 ruling: a structural slip the live
- * entry-coloring already warned about (hive dead letter / missing center)
- * costs a flat −1 at every tier — spending, never a sting.
+ *
+ * ═══ ROUND 42 — ONE MOVE. EVERY ROOM, EVERY TIER, EVERY WEIGHT ════════════
+ *
+ * THE OWNER, 12 Aug: *"Step penalty for wrong guesses is way too harsh on
+ * things… it should be 1 step for a wrong guess on things."*
+ *
+ * This function used to answer −1 (structural), −2, −3 (tier 3) and −4 (a
+ * weight-2 claim at tiers 1–2) — an incoherent ladder against a −3 move, so a
+ * single wrong Word Web group cost two thirds of a room and a heavy claim cost
+ * more than a room. It is **−1** now, which is one move: the same price as
+ * walking into the room the mistake happened in, and the smallest integer the
+ * ledger has.
+ *
+ * The parameters stay in the signature and are deliberately ignored. Nine call
+ * sites across five adapters pass a weight and a tier, and a room that wants to
+ * price its own errors differently is a conversation with the owner, not a
+ * refactor — deleting the arguments would hide that the option was closed on
+ * purpose. `tests/steps.test.ts` asserts every (weight, tier) pair answers −1,
+ * so a future round has to delete a documented ruling rather than reintroduce a
+ * ladder by adding one branch.
+ *
+ * The AAA R.1 rulings that survive unchanged: weight 0 is a FREE feedback
+ * moment and is never ledgered at all, and a hint purchase prices through this
+ * same row (A3's revision) — a hint asked for and an answer got wrong cost the
+ * same one move, which is the cozy reading of both.
  */
-function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
-  if (weight === 'structural') return -1;
-  return (tier === 3 ? -3 : -2) * weight;
+function mistakeDelta(_weight: 1 | 2 | 'structural', _tier: Tier): number {
+  return -1;
 }
 
 /**
@@ -189,7 +260,29 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
  * from DISTANCE WALKED — she runs low because she went east, hit a sealed room,
  * and had to come all the way back.
  *
- * ── WHY −3 AND NOT −2 ──────────────────────────────────────────────────────
+ * ═══ ROUND 42 — AND THE PRICE IS **ONE**. IT IS A RULING, NOT A KNOB ═══════
+ *
+ * > *"Why isn't it just 1 step is −1. Why do you keep coming up with a
+ * >  convoluted economy."*
+ *
+ * Round 36 chose −3 over −2 to keep EVENING LENGTH inside its published band,
+ * and wrote the reasoning out at length two paragraphs below this one. That is
+ * steering a DERIVED quantity through the wrong lever, and it is the whole of
+ * how this economy got convoluted: 22 steps at 3 a move is seven moves, so the
+ * counter on the glass measured nothing the player could name.
+ *
+ * **The price is 1. It is not available to a future round as a tuning
+ * parameter.** If the evening comes out too short or too long, the levers are
+ * `BASE_DAY_BUDGET` and the PAYOUTS (`SOLVE_WAGE`, `TEA_BY_POINTS`,
+ * `STEP_TABLE.snack`) — which is the owner's own list, in his own words, and
+ * `tests/steps.test.ts` pins this table to −1 with that sentence attached.
+ *
+ * What survives from round 36 whole: scarcity comes from DISTANCE WALKED, the
+ * table stays seven long so a future storey can still be priced differently if
+ * an owner ruling ever asks for it, and `climbStepCost` still rises strictly
+ * with the row because the walk-back to a frontier door is longer up top.
+ *
+ * ── THE ROUND-36 REASONING, KEPT SO THE MISTAKE IS LEGIBLE ─────────────────
  * −2 (the old ground price, kept everywhere) was measured and rejected: it made
  * the whole campaign a walkover. The skilled player's first door fell to day 14
  * — the floor of a band whose ceiling is 22 — the median player's volume win to
@@ -197,11 +290,11 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
  * published ceiling of 20. The bare ascent to the landing would have been 10
  * steps of a 22-step purse. −4 goes the other way and is worse: the evening
  * collapses to 7.6 minutes and the median player's win runs to day 30.
+ * Every one of those measurements is real and every one of them is an argument
+ * about the wrong lever: they are all statements about how long an evening runs,
+ * and an evening's length is an output of what she is GIVEN and what she EARNS.
  *
- * −3 is the only integer in between, and `BASE_DAY_BUDGET` (18 → 22) is the
- * other half of the same lever — see its own note for why 22 and not 20 or 24.
- *
- * ── WHAT THIS DELETES, AND WHAT REPLACES IT ────────────────────────────────
+ * ── WHAT ROUND 36 DELETED, AND WHAT REPLACED IT ────────────────────────────
  * THE HEADLINE INVARIANT IS GONE, deliberately, and this is the single most
  * important sentence in this file: `reserveToTop(1) > BASE_DAY_BUDGET` — "a
  * bare, perfect ascent costs more than the whole day budget, so the top is
@@ -227,10 +320,31 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
  *     out loud: *"the deck's door layouts, not the step table, are what price
  *     the top of the house."*
  *
- * The arithmetic clause that IS still true, and that `tests/economy-*` now
- * gate, is the one about the walk rather than the tariff: **the REALISTIC
- * ascent costs more than the whole budget** — `reserveToTop(1, PROFILE_SKILLED)`
- * is 25.8 against 22 — because a climb is walk-backs, not a staircase.
+ * ── ROUND 42 KILLS THE SECOND HALF OF THAT INVARIANT TOO, AND SAYS SO ──────
+ * Round 36's replacement clause was: **the REALISTIC ascent costs more than the
+ * whole budget** — `reserveToTop(1, PROFILE_SKILLED)` was 25.8 against 22, i.e.
+ * 8.6 moves against 7.3. Denominated in moves the left-hand side does not move
+ * at all (**8.6 moves**, the same climb), and the right-hand side is 12 now, so
+ * the inequality is false: 8.6 < 12. A skilled player CAN pay for the whole
+ * realistic ascent out of the dawn purse.
+ *
+ * That is stated rather than repaired, because repairing it would mean pushing
+ * the budget back under the owner's own 10–14 to keep an arithmetic sentence
+ * alive. **The claim it was standing in for is measured instead, on instruments
+ * that can disagree with it, and every one of them still holds:**
+ *
+ *   - a refund-less SKIPPER stands at the sealed door on **0.067% of evenings**
+ *     (2 in 3,000; it was 0.03%) and still tops out at 1-based row 4;
+ *   - a skilled player stands there on **day 1 in 1.3% of campaigns** against a
+ *     published <8%, and first stands there at median **day 13**;
+ *   - a GREAT single evening reaches the landing storey on **8.0%** of days,
+ *     against a published <25%.
+ *
+ * The reason the arithmetic can die without the design dying is the one round 24
+ * wrote down and round 37 confirmed: ***"the deck's door layouts, not the step
+ * table, are what price the top of the house."*** The ascent was never bought
+ * with the tariff; it is bought with a north-opening plan at the top of a house
+ * that has to be walked through to get there.
  *
  * ── AND THE STOREY STILL COSTS MORE THAN THE ONE BELOW IT ──────────────────
  * `climbStepCost` rises strictly with the row it starts from, exactly as it did
@@ -326,7 +440,7 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
  * tests/economy-simulation.test.ts and the ground floor pinned in
  * tests/economy-pressure.test.ts.
  */
-export const MOVE_COST_BY_ROW: readonly number[] = [-3, -3, -3, -3, -3, -3, -3];
+export const MOVE_COST_BY_ROW: readonly number[] = [-1, -1, -1, -1, -1, -1, -1];
 
 export function moveAt(row: number): number {
   const i = Math.max(0, Math.min(MOVE_COST_BY_ROW.length - 1, Math.floor(row)));
@@ -336,7 +450,12 @@ export function moveAt(row: number): number {
 /**
  * The bare, perfectly efficient ascent from the entrance (0-based row 0) to the
  * Sanctum landing (0-based row 5): five moves, at whatever one move costs. 22
- * under the altitude toll; **15** under a flat −3.
+ * under the altitude toll; 15 under a flat −3; **5** now that a move costs 1,
+ * which is the first time this constant reads as what it is — *the staircase is
+ * five moves tall.*
+ *
+ * It is also the payout ceiling (`SOLVE_WAGE.capByTier`), on purpose: the most
+ * a single solved room may ever hand back is one whole staircase.
  *
  * Derived, never transcribed. Round 7 lost a day to this number drifting in one
  * of the three files that quote it, and round 23 shipped it wrong again in the
@@ -355,8 +474,28 @@ export const BARE_ASCENT_STEPS: number = Array.from(
  * tap, never only after the charge).
  */
 export function moveCostLabel(row: number): string {
-  const n = -moveAt(row);
-  return `${n} step${n === 1 ? '' : 's'}`;
+  return stepWords(-moveAt(row));
+}
+
+/**
+ * "3 steps" / "**1 step**" — the one place the unit is pluralised.
+ *
+ * ═══ ROUND 42 — "−1 steps" WAS UNREACHABLE FOR SIX ROUNDS, THEN IT WASN'T ═══
+ * Every price in the game used to be 2 or more, so a dozen toast strings across
+ * five room adapters, the rate card and the draft card wrote `${n} steps` and
+ * were right by accident. A move costs 1 now, a wrong guess costs 1, the cozy
+ * solve floor is 1 and four of the seven green cards pay 1 — so the commonest
+ * numbers in the ledger are the singular ones, and the ungrammatical form would
+ * have shipped on the very first wrong guess of the very first room.
+ *
+ * There is one of these now, exported from the table that owns the unit, and
+ * `tests/notice-copy.test.ts` walks every shipped step string for a bare
+ * "1 steps". It takes a MAGNITUDE: the sign belongs to the sentence around it
+ * ("−1 step", "+1 step"), because a toast says what it cost and the ledger says
+ * which way.
+ */
+export function stepWords(n: number): string {
+  return `${n} step${Math.abs(n) === 1 ? '' : 's'}`;
 }
 
 /**
@@ -442,6 +581,22 @@ export function rowName(row: number): string {
 }
 
 /**
+ * WHEN THE DAY READS AS NEARLY OVER — a quarter of the starting moves left.
+ *
+ * ═══ ROUND 42 — TWO SURFACES HELD TWO TRANSCRIBED COPIES OF THIS ═══════════
+ * The music director guttered its bed at `stepsRemaining() <= 6` and the candle
+ * in the chrome guttered its flame at `Math.max(6, startTotal * 0.15)`. Both
+ * sixes were written against a 26-step dawn purse (23% of it) and neither was
+ * derived, so denominating the day in moves would have left the score anxious
+ * and the candle low for HALF of every evening — the two loudest "you are
+ * running out" signals in the game, firing from the middle of a normal day.
+ *
+ * There is one of it, it lives with the unit it counts, and both surfaces read
+ * it, so the flame and the bed can never disagree about when the day is late.
+ */
+export const STEPS_LOW_AT = Math.round(BASE_DAY_BUDGET / 4);
+
+/**
  * A wrong guess at the Sanctum door costs nothing but the day's one guess
  * (AAA 4.17, MANOR_DESIGN §7). Exported as a named zero so the rule is
  * grep-able and a future economy pass has to delete a documented constant
@@ -506,53 +661,103 @@ export const SANCTUM_GUESS_COST = 0;
  */
 export const SOLVE_WAGE = {
   /**
-   * Steps per honest minute — the house wage, and the only number in the
+   * **MOVES per honest minute** — the house wage, and the only number in the
    * payout that is a tuning knob rather than a derivation. It is set where the
-   * Library lands back on exactly the +6 the whole campaign was calibrated
-   * against (4.5 honest minutes × 1.4 ≈ 6), because the Word Web is the one
-   * anchor whose length was never in dispute: it is the room the old flat +6
-   * actually described. Every other room is now priced relative to it.
+   * Library lands on exactly **2 moves** (4.5 honest minutes × 0.45 ≈ 2),
+   * because the Word Web is the one anchor whose length was never in dispute:
+   * it is the room the old flat +6 actually described, and +6 steps at 3 a move
+   * WAS two moves. Every other room is priced relative to it.
+   *
+   * ROUND 42 — 1.4 STEPS A MINUTE IS 0.45 MOVES A MINUTE, and the name of the
+   * field is the only thing that had to be argued about. Read the other way
+   * round it is the sentence the player can actually hold: **about two and a
+   * quarter minutes of honest word game buys one more move.**
    */
-  stepsPerMinute: 1.4,
+  stepsPerMinute: 0.45,
   /**
    * THE COZY FLOOR. A solved room never pays less than this, however short it
    * turned out to be — the owner's constraint in one constant: *a cozy game
    * must not punish the player for choosing a short puzzle.* The Linen Closet
    * on a tired evening is a small win, never a mistake.
    *
+   * ROUND 42 — 4 steps became **1 move**, and in the new unit the floor states
+   * itself: **a solved room always pays back at least the move it cost to walk
+   * into.** That is the cozy constraint and the loop's own definition at the
+   * same time, and it is the smallest number the ledger has, so it cannot be
+   * lowered without making a short puzzle a bad choice.
+   *
    * ONE floor for every room, deliberately, and `tests/economy-effort.test.ts`
    * is why: with a floor per SIZE, the 75-second Linen Closet paid +3 while the
    * 20-second Gallery paid +4, i.e. the shorter room paid more — the exact
-   * defect this round exists to delete, reintroduced by the clamp meant to
+   * defect round 22 existed to delete, reintroduced by the clamp meant to
    * soften it. The player does not experience "micro" and "anchor"; she
    * experiences minutes.
    */
-  floor: 4,
+  floor: 1,
   /**
-   * THE CEILING, in thirds of a day (`BASE_DAY_BUDGET`): two thirds at tier 1,
-   * a half at tier 2, a third at tier 3. Two rulings live here at once —
-   * no single room may print most of an evening's budget, and payouts still
-   * get LEANER AS YOU CLIMB (the 2026-08 owner retune), so a tier-3 solve
-   * softens the next mistake instead of bankrolling the next storey.
+   * THE CEILING — **one bare ascent, and a move leaner every storey.**
    *
-   * ROUND 36: the second clause used to read "…and still costs less than the −9
-   * step it took to walk up there", which was an ALTITUDE-TOLL sentence and is
-   * now false by design — a move costs a move, so a solve of course pays more
-   * than one of them. The leanness that survives is the one this table states:
-   * `capByTier[2] < capByTier[1] < capByTier[0]`, gated in
-   * tests/economy-effort.test.ts.
+   * ═══ ROUND 42 — THIS USED TO BE THIRDS OF THE DAY BUDGET, AND THAT IS WHAT
+   * MADE ONE ROOM WORTH TWO THIRDS OF AN EVENING ════════════════════════════
+   *
+   * `[round(2/3 · budget), round(budget/2), round(budget/3)]` was 15/11/7 at a
+   * budget of 22 — i.e. **5 / 3.7 / 2.3 moves** — and left as thirds of a
+   * 12-MOVE day it would have read 8/6/4, handing a single Conservatory solve
+   * two thirds of the day it was solved in. Tying the payout ceiling to the
+   * budget is a loop: every round that moves the purse moves what one room may
+   * print, in the same direction, so a bigger day is automatically a day one
+   * room can buy back.
+   *
+   * It is tied to the STAIRCASE instead. `BARE_ASCENT_STEPS` is 5 — the five
+   * storeys from the front door to the Sanctum landing — so the rule is: **the
+   * most a single solved room may ever pay is one whole climb, and one move less
+   * for each tier above the ground floor.** Both original rulings survive intact
+   * and neither is now a function of the purse:
+   *
+   *   - no single room prints most of an evening (5 of 12 moves, was 15 of 22);
+   *   - payouts get LEANER AS YOU CLIMB — `capByTier[2] < capByTier[1] <
+   *     capByTier[0]` — so a tier-3 solve softens the next mistake instead of
+   *     bankrolling the next storey.
+   *
+   * WHAT IT MEASURED: the published wage spread FALLS **7.77× → 4.53×** (AAA
+   * 4.10h's ratchet may fall and may never rise), because the two long rooms
+   * come off a ceiling that was three tiers too generous and the whole table
+   * squeezes toward the floor. Every solve payout in the shipped game is now one
+   * of {1, 2, 3, 4, 5} moves — small integers she can hold in her head, which is
+   * the owner's ask in the one place it is hardest to satisfy.
+   *
+   * ── THE GUARDRAIL, DERIVED RATHER THAN ASSUMED (THE_CLIMB §1b) ────────────
+   * "Solving buys more day" invites the question the owner asked first of all:
+   * what stops a great day being endless? **Not a cap on moves earned.** It is
+   * two measured facts:
+   *
+   *   1. ARITHMETIC. The average room is net NEGATIVE in moves for every
+   *      profile. Measured over 4,800 evenings each: the median player spends
+   *      1.50 moves a room and earns 0.95 back (net −0.55), the skilled player
+   *      1.64 and 0.81, the great day 1.70 and 1.13. Solving lengthens an
+   *      evening; it can never sustain one, and the gap is widest for the
+   *      player who doubles back — which is the owner's own description of where
+   *      scarcity should come from.
+   *   2. GEOMETRY. The manor is 31 draftable cells and the frontier closes as it
+   *      fills. Over 6,000 simulated evenings across four profiles **not one
+   *      ended `filled`**, and 7–20% ended `stranded` — the house shut with moves
+   *      still in her hand — which is the geometric ceiling arriving before the
+   *      arithmetic one ever has to.
+   *
+   * Both are re-measured every run in `tests/economy-pressure.test.ts`, on the
+   * grid-true model, which is an instrument that can disagree with this note.
    *
    * The ceiling is also the honest limit of what pricing alone can do: the
-   * shipped rooms span 30× in length (75 seconds to half an hour) and no
-   * payout table with a floor and a ceiling can span 30×. What the wage
-   * guarantees is that BETWEEN the clamps a minute is worth a minute, and
-   * `tests/economy-effort.test.ts` publishes the residual spread as a ratchet
-   * that may fall and may never rise.
+   * shipped rooms span 14× in length (75 seconds to seventeen minutes) and no
+   * payout table with a floor and a ceiling can span 14× on five integers. What
+   * the wage guarantees is that BETWEEN the clamps a minute is worth a minute,
+   * and `tests/economy-effort.test.ts` publishes the residual spread as a
+   * ratchet.
    */
   capByTier: [
-    Math.round((BASE_DAY_BUDGET * 2) / 3),
-    Math.round(BASE_DAY_BUDGET / 2),
-    Math.round(BASE_DAY_BUDGET / 3),
+    BARE_ASCENT_STEPS,
+    BARE_ASCENT_STEPS - 1,
+    BARE_ASCENT_STEPS - 2,
   ] as readonly number[],
 } as const;
 
@@ -606,8 +811,55 @@ export function stageSteps(
   kind: RoomPuzzleKind, tier: Tier, earnedFraction: number, alreadyPaid: number,
 ): number {
   const total = solvePayout(kind, tier);
-  const due = Math.floor(total * Math.max(0, Math.min(1, earnedFraction)));
+  const f = Math.max(0, Math.min(1, earnedFraction));
+  // ═══ ROUND 42 — THE LADDER NEARLY DIED WHEN THE UNIT GOT COARSE ═════════
+  // This was `Math.floor(total × f)`, and in MOVES that pays NOTHING for the
+  // first rung of any room whose whole payout is two: the Library at tiers 1–2
+  // pays +2, so `floor(2 × 0.25)` is 0 and the first thread she wove banked
+  // nothing at all — REVIEW_AA §6's exact complaint, reintroduced by a change of
+  // unit rather than by a change of mind. (`tests/room-session.test.ts` caught
+  // it, which is what that drill is for.)
+  //
+  // Two clauses, and each one is a sentence about play rather than arithmetic:
+  //   A RUNG SHE HAS CLIMBED PAYS AT LEAST ONE MOVE. The ledger has no smaller
+  //     coin, so "she banked something for that thread" and "she banked nothing"
+  //     are the only two options and the review already ruled between them.
+  //   THE SUMMIT ALWAYS KEEPS ONE. The climb is capped a move below the total,
+  //     so finishing the room is never worth zero — which `ceil` would have made
+  //     it (a Conservatory at Garden would have banked 4 of its 5 and Full Bloom
+  //     would have paid 1). Nothing else in the table moves for this: the hive's
+  //     instalments are 1/2/3 with 2 at the summit, exactly as `floor` paid them.
+  //
+  // THE INVARIANT IS UNTOUCHED, which is why no published band moves: a solved
+  // room pays exactly `solvePayout(kind, tier)`, staged or not, because the
+  // `solved` event pays `total − alreadyPaid`.
+  const due = f >= 1
+    ? total
+    : Math.min(Math.max(0, total - 1), Math.max(f > 0 ? 1 : 0, Math.floor(total * f)));
   return Math.max(0, due - Math.max(0, alreadyPaid));
+}
+
+/**
+ * What the ladder has ALREADY paid at `earnedFraction` — the only honest source
+ * for `stageSteps`' `alreadyPaid` argument.
+ *
+ * ═══ ROUND 42 — TWO CALL SITES HELD A SECOND OPINION ABOUT THIS NUMBER ═════
+ * `app/slices/room.ts` computed it, twice, as `Math.floor(total × ladderEarned)`
+ * — a RE-DERIVATION of `stageSteps`' own arithmetic rather than a call to it.
+ * That was harmless while `stageSteps` was exactly `floor(total × f)`, and the
+ * moment round 42 gave the ladder a one-move floor it stopped agreeing: the
+ * first rung paid 1 while the receipt read 0, so the next rung paid for it
+ * again and the `solved` branch deducted a number that had never been paid.
+ * A room would have paid MORE than `solvePayout`, which is the one invariant the
+ * staging mechanic exists to keep. `tests/room-bank.test.ts` caught it.
+ *
+ * There is one of it now. This repo has lost three rounds to a number computed
+ * in two places (the bare-ascent sum); it is not going to lose a fourth.
+ */
+export function stagePaidAt(
+  kind: RoomPuzzleKind, tier: Tier, earnedFraction: number,
+): number {
+  return stageSteps(kind, tier, earnedFraction, 0);
 }
 
 export const STEP_TABLE = {
@@ -622,7 +874,12 @@ export const STEP_TABLE = {
   move: moveAt(0),
   /** Row-priced move (see moveAt / MOVE_COST_BY_ROW). */
   moveAt,
-  /** −1, worth it. */
+  /**
+   * −1, worth it. ROUND 42: unchanged in the ledger and dearer in the day —
+   * one step used to be a third of a move and is a whole move now. Kept
+   * deliberately: the cat is the one thing in the manor you spend a move on for
+   * nothing but the cat, and pricing that at zero would make it furniture.
+   */
   petDewey: -1,
   /** Deliberate wrong claim (Library group, Study guess, cipher letter…). */
   mistake: mistakeDelta,
@@ -637,10 +894,20 @@ export const STEP_TABLE = {
    */
   solve(size: 'micro' | 'anchor', tier: Tier, kind?: RoomPuzzleKind): number {
     if (kind) return solvePayout(kind, tier);
-    return size === 'micro' ? (tier === 3 ? 2 : 3) : 7 - tier;
+    // ROUND 42 — the legacy band in moves. It was `micro 3/3/2, anchor 6/5/4`
+    // steps, i.e. one move and two; it says exactly that now. It is a fallback
+    // for a caller that genuinely does not know which room it is, and the two
+    // numbers bracket the real table (floor 1, cap 5) rather than reproducing it.
+    return size === 'micro' ? 1 : 2;
   },
-  /** No costed mistakes and no purchased hints → bonus. */
-  perfect: 2,
+  /**
+   * No costed mistakes and no purchased hints → bonus. ROUND 42: 2 steps was
+   * two thirds of a move; it is **one move** now — the smallest thing the ledger
+   * can pay, which is what a grace note should be. A perfect solve of the
+   * shortest room in the house therefore pays 2 moves in all, and the day it
+   * cost one to walk into is a move to the good.
+   */
+  perfect: 1,
   /**
    * REFILL PAYOUTS — the declared BOUND on a green room's own step payout,
    * ledgered with reason 'snack'.
@@ -666,8 +933,18 @@ export const STEP_TABLE = {
    * engine/economy/simulate.ts), never a uniform roll over this range.
    *
    * A refill extends a day; it never doubles it (< half BASE_DAY_BUDGET).
+   *
+   * ROUND 42 — RE-DENOMINATED IN MOVES, and the deck moved with it: the
+   * Kitchen's +6 and the Larder's +5 are **+2 moves**, the Boot Room's +3 and
+   * the Still Room's +2 are **+1**. The coarser unit collapses two pairs of
+   * cards onto one number each, which is a real loss of resolution and is stated
+   * rather than hidden: the Kitchen and the Larder are now worth the same in
+   * steps and differ only in what else they carry (the Kitchen hums for later
+   * green rooms, the Larder leaves dough for tomorrow). Every one of those cards
+   * NAMES its number in its own toast, so `engine/manor/deck.ts` was edited in
+   * the same breath and `tests/notice-copy.test.ts` holds the copy to the table.
    */
-  snack: { min: 2, max: 6 },
+  snack: { min: 1, max: 2 },
   /**
    * COMPOUNDING HOOKS pay a smaller, separate class through the same 'snack'
    * reason (AAA 4.11, BP's Nursery pattern): the Kitchen hums +2 for every
@@ -675,8 +952,16 @@ export const STEP_TABLE = {
    * stripe. Declared apart from `snack` because +1 sits below the refill
    * floor by design — one constant covering both would have to lie about one
    * of them. Also contract-checked against `UTILITY_EFFECTS`.
+   *
+   * ROUND 42 — AND NOW IT SITS EXACTLY *AT* THE REFILL FLOOR. A move is the
+   * ledger's smallest coin, so the Kitchen's hum and the Dumbwaiter's rattle are
+   * both +1 and both equal to the cheapest refill in the deck. The class is kept
+   * separate anyway, because what distinguishes it is not the size but the
+   * SHAPE: a compound pays once per LATER room, so a hook taken early is worth
+   * several refills and a hook taken at dusk is worth nothing. Collapsing it
+   * into `snack` would lose that distinction the next time either number moves.
    */
-  compound: { min: 1, max: 2 },
+  compound: { min: 1, max: 1 },
   /** Gifting a bookmark is a small walk to find them (reason 'gift'). */
   gift: -1,
   /** A wrong Sanctum guess is free, forever (AAA 4.17). */
@@ -1160,8 +1445,30 @@ export function doorLockedAt(daySeed: number, cellKey: string, row: number): boo
  * tests/economy-simulation.test.ts, which is the half of this that matters:
  * the retune narrows the gap, the second measured profile is what stops the
  * criterion from describing a player nobody checked.
+ *
+ * ═══ ROUND 42 — ONE MOVE A POINT. THE ARC SAYS ITSELF NOW ═════════════════
+ * The table was `[0, 4, 6, 8, 10, 12, 13]` steps — 0 → 4.33 moves on a 7.3-move
+ * day. Re-denominated it is **[0, 1, 2, 3, 4, 5, 6]**: every point of Bramble's
+ * friendship is worth exactly one more move, and fully warmed she is worth half
+ * a day again (6 of 12), which is the same share the old table carried (13 of
+ * 22 = 59%) and the same clause AAA 4.10 has always published.
+ *
+ * The old table's steps were 4, 2, 2, 2, 2, 1 — a windfall at the first point
+ * and a shrug at the last. A uniform rung is not a simplification for its own
+ * sake: it is what makes the arc auditable from the counter, which is the whole
+ * of §1b. She sits down to tea, the pot goes up by one, and she can see it.
+ * `tests/economy-simulation.test.ts` still gates the table strictly increasing —
+ * a rung that pays nothing is a morning that bought nothing — and that gate is
+ * the reason the top is 6 and not the 4 a literal re-denomination would give:
+ * six rungs above zero need six distinct integers, and moves are integers.
+ *
+ * MEASURED, because a stronger arc is a longer late-campaign evening and this
+ * file has been wrong about that before: her evening runs 13.6 min early → 16.9
+ * late (was 12.5 → 15.6) and his 16.8 → 21.1 (was 15.2 → 18.8). Both are
+ * re-published in AAA 4.10f with the cause, and his p90 is retired there in
+ * favour of a statistic his own appetite clock does not bound.
  */
-export const TEA_BY_POINTS: readonly number[] = [0, 4, 6, 8, 10, 12, 13];
+export const TEA_BY_POINTS: readonly number[] = [0, 1, 2, 3, 4, 5, 6];
 
 /**
  * The morning pot for a Bramble affinity of `bramblePoints` RAW POINTS
@@ -1224,15 +1531,17 @@ export function teaBonus(bramblePoints: number): number {
 export const TEA_POUR = {
   /**
    * The cup at the door. Deliberately `FIRST_MORNING_POT`-sized: with it, the
-   * dawn purse is `BASE_DAY_BUDGET + 4` on every evening of the campaign,
+   * dawn purse is `BASE_DAY_BUDGET + dawnCup` on every evening of the campaign,
    * which is the exact purse day 1 has always had (22 when this shipped; 26
-   * since round 36 moved the budget with the move price). The ground floor
-   * stops getting easier — that invariant is the §5.10 gate
+   * since round 36 moved the budget with the move price; **13 since round 42
+   * denominated it in moves** — twelve moves and a cup, where 4 steps of cup was
+   * 1.33 moves). The ground floor stops getting easier — that invariant is the
+   * §5.10 gate
    * (tests/economy-pressure.test.ts), and it is stated as an EQUALITY between
    * day 1 and day 30 rather than as a level, so moving the budget cannot
    * quietly satisfy it.
    */
-  dawnCup: 4,
+  dawnCup: 1,
   /**
    * 0-based grid row the rest of the pot is set down on: the second landing,
    * the first storey above the tier-1 band and the last one below a padlock.
@@ -1346,8 +1655,15 @@ export function teaArcFloor(day: number): number {
  * given here — "20 would equal the bare ascent cost and break the headline
  * invariant `reserveToTop(1) > BASE_DAY_BUDGET`" — died with that invariant in
  * round 36; see `MOVE_COST_BY_ROW` for what replaced it.)
+ *
+ * ROUND 42 — 4 steps is **1 move**, and day 1 was re-measured rather than
+ * assumed: her first evening runs **13.2 minutes** at the median (the round-5
+ * audit's whole reason for this constant was a day 1 measuring 9.0, under the
+ * 10-minute floor). It stays load-bearing for the §5.10 equality — `dawnCup` is
+ * defined to match it — and it is now the smallest coin the ledger has, which is
+ * as small as a scripted welcome can get before it stops existing.
  */
-export const FIRST_MORNING_POT = 4;
+export const FIRST_MORNING_POT = 1;
 
 /** The scripted welcome pot, on day 1 only. */
 export function firstMorningPot(day: number): number {

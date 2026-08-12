@@ -281,6 +281,17 @@ describe('the leaf survives the night, and the manor does not pay for it twice',
     const rungs = Math.ceil(
       blanksOf(sudokuAdapter.select({ tier: 1, seed: 42, seenIds: [] })) / SUDOKU_CELLS_PER_STAGE);
     // Honest: four rungs' worth of the room's price, once.
+    //
+    // ROUND 42 — THIS ASSERTION CAUGHT A DOUBLE-PAY, which is more than it was
+    // written to do. `stageSteps` gained a one-move floor per rung (the ledger
+    // has no smaller coin), and `app/slices/room.ts` was reconstructing the
+    // receipt as `floor(total × ladderEarned)` — its own second opinion about
+    // `stageSteps`' arithmetic. The two stopped agreeing the moment the floor
+    // landed: the first rung paid 1 while the receipt read 0, so the next rung
+    // paid for it again and the room went on to pay MORE than `solvePayout`.
+    // There is one of that number now (`stagePaidAt`), and this line — which
+    // compares the incremental run against the one-shot computation — is what
+    // says so.
     const honest = run(true);
     expect(honest, `four rungs of ${total}`).toBe(stageSteps('sudoku', 1, 4 / rungs, 0));
     // Forgetful: the first three rungs sold a second time.

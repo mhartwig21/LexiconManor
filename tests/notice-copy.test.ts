@@ -34,6 +34,7 @@ import { momentForEvent } from '../src/ui/moment/moments';
 import { LAYERS } from '../src/ui/chrome/layers';
 import { MAX_AFFINITY_RANK } from '../src/engine/dialogue/affinity';
 import { CHARACTER_IDS } from '../src/engine/types';
+import { stepWords } from '../src/engine/economy/steps';
 
 const root = join(__dirname, '..');
 
@@ -278,5 +279,79 @@ describe('AAA 11.15/11.16 — the chrome currencies', () => {
     // copy of the moment layer's card height either — the band is relative.
     expect(rail).not.toMatch(/top:\s*\d+px/);
     expect(rail).toMatch(/top:\s*\d+%/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND 42 — "1 steps" (docs/THE_CLIMB §1b)
+// ---------------------------------------------------------------------------
+
+describe('the unit is pluralised, now that the singular is reachable', () => {
+  /**
+   * ═══ THE DEFECT CLASS, AND WHY IT COULD NOT HAPPEN BEFORE ══════════════
+   *
+   * Twelve toast strings across five room adapters, the blueprint's rate card,
+   * the draft card's stake line, the chrome counter's own label and its aria
+   * name all wrote `${n} steps`, and every one of them was right BY ACCIDENT:
+   * the cheapest thing in the game cost 2 steps, so `n` was never 1.
+   *
+   * Round 42 priced a move at 1, a wrong guess at 1, the cozy solve floor at 1
+   * and four of the seven green cards at 1 — so the SINGULAR is now the
+   * commonest number in the ledger, and "−1 steps" would have shipped on the
+   * first wrong guess of the first room of the first evening.
+   *
+   * `stepWords` (engine/economy/steps.ts) owns the plural, in one place. This
+   * walks every shipped source file for the ungrammatical form, so a new toast
+   * that hand-builds it fails here rather than on the owner's phone.
+   */
+  const SOURCES = [
+    ...sourcesUnder(join(root, 'src', 'ui')),
+    ...sourcesUnder(join(root, 'src', 'pages')),
+    ...sourcesUnder(join(root, 'src', 'engine')),
+  ];
+
+  it('never ships the string "1 steps", in copy or in a template', () => {
+    const offenders: string[] = [];
+    for (const file of SOURCES) {
+      const text = readFileSync(file, 'utf8');
+      for (const [i, line] of text.split('\n').entries()) {
+        // Comments are prose about history and may quote the old form. (The
+        // sources are CRLF and `.` does not match `\r`, so `//.*$` never
+        // reaches `$` — the first draft of this lint flagged its own
+        // explanatory comments. It strips by PREFIX instead.)
+        const bare = line.replace(/\r/g, '').trim();
+        if (bare.startsWith('*') || bare.startsWith('//') || bare.startsWith('/*')) continue;
+        const code = bare.split('//')[0]!;
+        if (/\b1 steps\b/.test(code)) offenders.push(`${file}:${i + 1}`);
+      }
+    }
+    expect(offenders, `these ship "1 steps":\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('proves the lint by the strings it is written to condemn', () => {
+    // NOT GREEN BY CONSTRUCTION: the regex really does catch the form, and
+    // `stepWords` really does avoid it, at the magnitudes the game produces.
+    expect(/\b1 steps\b/.test('Not quite — · −1 steps')).toBe(true);
+    expect(stepWords(1)).toBe('1 step');
+    expect(stepWords(-1)).toBe('-1 step');
+    expect(stepWords(2)).toBe('2 steps');
+    expect(stepWords(0)).toBe('0 steps');
+    expect(/\b1 steps\b/.test(`· −${stepWords(1)}`)).toBe(false);
+  });
+
+  it('pluralises every payout line the shipped deck can print', () => {
+    // The green cards NAME their own numbers, and round 42 moved four of them
+    // to +1. Every one of those strings is walked here rather than spot-checked.
+    for (const [id, effect] of Object.entries(UTILITY_EFFECTS)) {
+      if ((effect.steps ?? 0) === 1) {
+        expect(effect.toast, `${id} toast`).toContain('+1 step');
+        expect(effect.toast, `${id} toast`).not.toMatch(/\b1 steps\b/);
+      }
+    }
+    for (const [id, effect] of Object.entries(CARRY_OVER_EFFECTS)) {
+      if ((effect.steps ?? 0) === 1) {
+        expect(effect.promise, `${id} promise`).not.toMatch(/\b1 steps\b/);
+      }
+    }
   });
 });

@@ -298,8 +298,26 @@ export const DOMINANCE_GATE = {
    * is 0.88 points at the worst of eight runs; if a later round needs more, the
    * lever is the deck's within-category plan spread and NOT this number, which
    * may still only ever fall.
+   *
+   * ═══ ROUND 42 — IT ROSE, FOR THE FIRST TIME, AND THE CAUSE IS THE UNIT ════
+   *
+   * 0.41 → **0.42**, measured 41.3% for the median player (40.9% before). This
+   * ratchet says it may only ever fall, so a rise has to be explained or undone,
+   * and this one is neither a deck edit nor a drafting edit: `isDominated` reads
+   * `steps`, the economy was denominated in MOVES (docs/THE_CLIMB §1b), and the
+   * payout table collapsed from {4, 6, 15} at tier 1 onto {1, 2, 5} — five of
+   * the seven shipped rooms pay exactly +1 down there. **Far more offers now TIE
+   * on the wage axis, and a tie is a weak win**, so the same three cards
+   * dominate more often without the deck having changed at all.
+   *
+   * It is moved by the measured amount and no further, and the way to pay it
+   * back is named rather than deferred to a knob: the wage table needs more
+   * DISTINCT values in it, which is a fact about how long the rooms are
+   * (`ROOM_EFFORT`) and therefore a content question. The same coarseness shows
+   * up in 4.10h's fourth wage spread, which rose for the identical reason, and
+   * the two should be paid off together.
    */
-  ratchet: 0.41,
+  ratchet: 0.42,
 } as const;
 
 // ---------------------------------------------------------------------------

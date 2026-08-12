@@ -40,7 +40,8 @@ import { join } from 'node:path';
 import { create } from 'zustand';
 import {
   medianOf, quantileOf, reserveToTop, simulateCampaigns, simulateDays,
-  CLOCK_BAND, FIRST_LOCKED_ROW, GROUND_ROWS, PROFILE_DECENT, PROFILE_GREAT, PROFILE_SKILLED,
+  CLOCK_BAND, FIRST_LOCKED_ROW, GROUND_ROWS, MOVEMENT,
+  PROFILE_DECENT, PROFILE_GREAT, PROFILE_SKILLED, PROFILE_SKIPPER,
   RETIREMENT,
   SESSION_WIND_DOWN, type SimDayResult, type SimProfile,
 } from '../src/engine/economy/simulate';
@@ -130,9 +131,28 @@ describe('4.10i — the band this is measured over is derived, not asserted', ()
     // her, whether she arrives at the first padlock richer than she started.
     // Those all held, and the drain got deeper: −1.22 → −2.24 net a room.
     expect(moveAt(FIRST_LOCKED_ROW)).toBe(moveAt(GROUND_ROWS));
-    // The lever itself: a ground-floor room is not free. −1 is what §5.10 was
-    // written about; if this ever goes back to −1, the whole file is a lie.
-    expect(-moveAt(0)).toBeGreaterThanOrEqual(2);
+    // ═══ ROUND 42 — IT WENT BACK TO −1, AND THE FILE IS NOT A LIE ══════════
+    // The line above read: *"−1 is what §5.10 was written about; if this ever
+    // goes back to −1, the whole file is a lie."* It has, on an owner ruling
+    // (THE_CLIMB §1b: a move costs one), so the sentence has to be answered
+    // rather than deleted.
+    //
+    // What §5.10 measured in round 23 was **a ground floor that cost 1 step out
+    // of a 26-step purse and paid up to 12 for a solve** — 4% of the day to
+    // cross and half the day to solve. A move costing 1 out of 12, against a
+    // ground-floor solve capped at 5, is a different game with the same numeral:
+    // the price is 8% of the day and the best payout is a fifth of what it was
+    // relative to the purse. The numeral was never the finding; the RATIOS were,
+    // and every one of them is measured in this file rather than asserted here:
+    //   - what she is holding while she walks rows 0–2 (median 8 moves against a
+    //     13-move day-1 purse, was 16 of 26);
+    //   - what a ground-floor room NETS her (−0.95 moves, was −2.14 steps =
+    //     −0.71 moves — the floor got dearer, not cheaper);
+    //   - the solve:walk ratio, gated below (5:1, was 12:1 when §5.10 was
+    //     written and 6:1 at round-36 HEAD).
+    // So this clause becomes the one thing that is still checkable about the
+    // numeral itself: a move is priced, and it is priced at the ruling.
+    expect(-moveAt(0)).toBe(1);
   });
 });
 
@@ -243,9 +263,22 @@ describe('4.10i — the ground floor is a purse she can run down', () => {
     // cover three independent campaign seeds instead of one, because a bound
     // that loosens on magnitude had better tighten somewhere, and the sign is
     // the half of §5.10 that carries the design.
-    expect(drain(PROFILE_DECENT)).toBeLessThanOrEqual(-1);
-    expect(drain(PROFILE_SKILLED)).toBeLessThanOrEqual(-0.15);
-    expect(drain(PROFILE_GREAT)).toBeLessThanOrEqual(-0.02);
+    //
+    // ═══ ROUND 42 — THE UNIT CHANGED UNDER ALL THREE OF THESE ══════════════
+    // These are STEPS per ground-floor room and a step was a third of a move, so
+    // the round-36 figures −1.24 / −0.19 / −0.03 were −0.41 / −0.06 / −0.01
+    // MOVES. Measured at round-42 HEAD they are **−0.95 / −0.42 / −0.19 moves**:
+    // every profile's ground floor drains two to twenty times harder in the unit
+    // the player counts in, because a wrong guess costs a whole move now and the
+    // solve that used to cover it is capped at one staircase.
+    //
+    // The magnitude bounds are re-derived at the measurement with the same
+    // headroom the round-36 bounds carried (about 25%), and the SIGN clause
+    // below — three seeds, three profiles — is untouched and remains the half of
+    // §5.10 that carries the design.
+    expect(drain(PROFILE_DECENT)).toBeLessThanOrEqual(-0.7);
+    expect(drain(PROFILE_SKILLED)).toBeLessThanOrEqual(-0.3);
+    expect(drain(PROFILE_GREAT)).toBeLessThanOrEqual(-0.1);
   });
 
   it('never, on any profile or any campaign stream, PAYS her to walk it', async () => {
@@ -266,14 +299,19 @@ describe('4.10i — the ground floor is a purse she can run down', () => {
     }
   }, HEAVY_MS);
 
-  it('keeps the solve:walk ratio on the ground floor inside 6:1', () => {
+  it('keeps the solve:walk ratio on the ground floor inside 5:1', () => {
     // The ratio §5.10 is really about: what the longest tier-1 room pays
     // against what the storey it stands on charges. It ran 12:1 (a wage-capped
     // Conservatory against a −1 walk). The payout side is locked by 4.10h —
     // re-opening the 36× wage spread to fix this would be a worse trade — so
     // the walk is the half that moved.
+    // ROUND 42 — 6:1 → **5:1**, and this time it is the PAYOUT side that moved:
+    // `SOLVE_WAGE.capByTier` came off `BASE_DAY_BUDGET` and onto
+    // `BARE_ASCENT_STEPS`, so the longest tier-1 room pays one staircase (5
+    // moves) against a 1-move walk. The ratchet tightens in the same commit as
+    // the change that earned it, which is the rule for every bound in this file.
     const best = Math.max(...ROOM_PUZZLE_KINDS.map((k) => solvePayout(k, 1)));
-    expect(best / -moveAt(0)).toBeLessThanOrEqual(6);
+    expect(best / -moveAt(0)).toBeLessThanOrEqual(5);
   });
 });
 
@@ -482,11 +520,106 @@ describe('4.10i — the movement table still says what the docs say', () => {
     // evening. Five flat moves cannot do that (docs/THE_CLIMB §1), so what is
     // gated is the honest replacement — a REAL ascent, with the walk-backs a
     // climb is actually made of, still outcosts the base budget.
+    // ROUND 42 — 15 → **5**, and the replacement clause dies with it: the REAL
+    // ascent is 8.6 MOVES and it was always 8.6 moves (25.8 steps at 3 a move),
+    // while the purse went 7.3 moves → 12 on the owner's ruling. See the long
+    // note in tests/economy-simulation.test.ts; the claim it stood in for is
+    // measured there on the grid-true model instead of asserted here.
     expect(bare).toBeLessThan(DAY_ONE_PURSE);
-    expect(reserveToTop(1, PROFILE_SKILLED)).toBeGreaterThan(BASE_DAY_BUDGET);
+    expect(reserveToTop(1, PROFILE_SKILLED)).toBeGreaterThan(bare);
     // …and the doc quotes the live number rather than a remembered one.
     const doc = readFileSync(join(process.cwd(), 'docs', 'MANOR_DESIGN.md'), 'utf8');
     expect(doc).toContain(`five moves, i.e. ${BARE_ASCENT_STEPS} steps of`);
     expect(doc).not.toContain('costs 22 steps of pure walking');
   });
+});
+
+// ---------------------------------------------------------------------------
+// ROUND 42 — WHAT STOPS A GREAT DAY BEING ENDLESS (docs/THE_CLIMB §1b)
+// ---------------------------------------------------------------------------
+
+/**
+ * ═══ THE GUARDRAIL, DERIVED RATHER THAN ASSUMED ═══════════════════════════
+ *
+ * The owner's ruling makes SOLVING BUY MORE DAY — a room costs a move to walk
+ * into and a solve pays moves back — and his own first economy complaint, long
+ * before any of this, was that the game was **too easy**: he reached the
+ * Forgotten Word on day one. A day that never ends is that complaint wearing a
+ * new hat, so the round that adds the earning loop owes a bound on it.
+ *
+ * THE_CLIMB §1b says the honest ceiling is probably geometric and says to
+ * MEASURE IT before reaching for a constant. Measured, there are two bounds and
+ * neither of them is a cap on moves earned:
+ *
+ *   1. ARITHMETIC — the average room is net NEGATIVE in moves for every
+ *      profile. Solving LENGTHENS an evening; it can never SUSTAIN one, and the
+ *      gap is widest for the player who doubles back most, which is the owner's
+ *      own account of where scarcity should come from.
+ *   2. GEOMETRY — the manor holds 31 draftable cells and its frontier closes as
+ *      it fills, so an evening can run out of house before it runs out of
+ *      moves. It does: `stranded` is a real ending on 8–20% of evenings.
+ *
+ * Both are asserted here, on the grid-true model, so a future round that lifts
+ * the payouts until a room pays for itself fails a test rather than shipping an
+ * endless evening. This is deliberately NOT a cap: a hard ceiling on earnings
+ * would be one more fiction the player has to divide her way out of, which is
+ * exactly what §1b was written to delete.
+ */
+describe('4.10a/b — solving lengthens the evening and can never sustain it', () => {
+  const PROFILES = [PROFILE_SKIPPER, PROFILE_DECENT, PROFILE_GREAT, PROFILE_SKILLED];
+
+  it('keeps the average room NET NEGATIVE in moves, on every profile', async () => {
+    for (const profile of PROFILES) {
+      await breathe();
+      const days = simulateDays(profile, 1500, 0x42e0);
+      let moves = 0;
+      let earned = 0;
+      let rooms = 0;
+      for (const d of days) {
+        moves += d.ledger.entries.filter((e) => e.reason === 'move').length;
+        earned += d.refunded;
+        rooms += d.rooms;
+      }
+      const spentPerRoom = moves / rooms;          // one move costs 1, so this IS moves
+      const earnedPerRoom = earned / rooms;
+      expect(rooms, `${profile.name} drafted nothing`).toBeGreaterThan(days.length * 3);
+      // Measured at round-42 HEAD: skipper 1.57/0.35, decent 1.50/0.94,
+      // great 1.70/1.17, skilled 1.64/0.82. The bound is the SIGN, with a
+      // tenth of a move of headroom so a rounding difference cannot flip it.
+      expect(
+        earnedPerRoom,
+        `${profile.name} earns ${earnedPerRoom.toFixed(2)} a room and spends ${spentPerRoom.toFixed(2)}`,
+      ).toBeLessThan(spentPerRoom - 0.1);
+      // …and the loop is REAL: a solver earns back a serious share of what the
+      // walking costs her, or "solving buys more day" is decoration. (The
+      // skipper is the control — she solves nothing and earns only off the
+      // green deck.)
+      if (profile !== PROFILE_SKIPPER) {
+        expect(earnedPerRoom / spentPerRoom,
+          `${profile.name} earns back only ${(100 * earnedPerRoom / spentPerRoom).toFixed(0)}% of her walking`)
+          .toBeGreaterThan(0.4);
+      }
+    }
+  }, HEAVY_MS);
+
+  it('never fills the house, and shuts it often enough to be an ending', async () => {
+    for (const profile of PROFILES) {
+      await breathe();
+      const days = simulateDays(profile, 1500, 0x42e1);
+      const filled = days.filter((d) => d.endReason === 'filled');
+      const stranded = days.filter((d) => d.endReason === 'stranded');
+      // THE GEOMETRIC CEILING, stated as what it forbids. `filled` means she
+      // placed a room in every one of the manor's 31 draftable cells — the
+      // evening the arithmetic bound above exists to make impossible.
+      expect(filled.length, `${profile.name} filled the house on ${filled.length} evenings`).toBe(0);
+      expect(Math.max(...days.map((d) => d.rooms)))
+        .toBeLessThan(MOVEMENT.maxRoomsPerDay);
+      // …and the frontier really does close: the house shuts on her, with moves
+      // still in hand, often enough to be an ending rather than a curiosity.
+      const shut = stranded.length / days.length;
+      expect(shut, `${profile.name} was shut in on ${(shut * 100).toFixed(1)}% of evenings`)
+        .toBeGreaterThan(0.02);
+      expect(medianOf(stranded.map((d) => d.stepsLeft))).toBeGreaterThan(0);
+    }
+  }, HEAVY_MS);
 });

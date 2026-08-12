@@ -450,9 +450,16 @@ describe('hive adapter', () => {
     for (const tier of [1, 2, 3] as const) {
       expect(STEP_TABLE.mistake('structural', tier)).toBe(-1);
     }
-    // The deliberate-claim row stays −2 (−3 at tier 3).
-    expect(STEP_TABLE.mistake(1, 1)).toBe(-2);
-    expect(STEP_TABLE.mistake(1, 3)).toBe(-3);
+    // ROUND 42 — AND THE DELIBERATE-CLAIM ROW CAME DOWN TO MEET IT. This read
+    // "the deliberate-claim row stays −2 (−3 at tier 3)", which was the whole
+    // point of the distinction: a structural slip the entry-colouring had
+    // already warned about cost less than a real wrong claim. The owner priced
+    // EVERY wrong guess at one move (docs/THE_CLIMB §1b), so the two rows are
+    // one price now and the distinction survives only in the copy — a structural
+    // slip says "it must cross the marked tile", a claim says "one away".
+    // Asserted as an EQUALITY rather than as two literals, so it cannot drift.
+    expect(STEP_TABLE.mistake(1, 1)).toBe(STEP_TABLE.mistake('structural', 1));
+    expect(STEP_TABLE.mistake(1, 3)).toBe(STEP_TABLE.mistake('structural', 3));
   });
 
   it('entropy is retired: letters never fade, the hive is never lost', () => {

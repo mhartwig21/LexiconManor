@@ -181,7 +181,7 @@ import {
   appendEntry, climbKey, createLedger, ledgerTotal, stepsRemaining, stepsRefunded, stepsSpent,
   fernMorningKeys, fernPointsOnDay, firstMorningPot, keyAccessFor, moveAt, solveKeys,
   sanctumMercyArmed, sanctumPlanWarmth, stageSteps, teaArcPoints, teaDawnPour, teaLandingPour,
-  DOOR_LOCKS, ROOM_SIZE, SANCTUM_ARC, STEP_TABLE, TEA_POUR,
+  BASE_DAY_BUDGET, DOOR_LOCKS, ROOM_SIZE, SANCTUM_ARC, STEP_TABLE, TEA_POUR,
 } from './steps';
 import type { StepLedger } from '../types';
 
@@ -353,13 +353,25 @@ export const MOVEMENT = {
    * away from THE LANDING BAND when a draft is aimed upward — `sanctumColumnDrift`,
    * which is 0 across all three landing columns since round 37 and rises only
    * outside them. It is a PREFERENCE and not a rule: a cheap door two columns
-   * over still wins on a storey where a move is two steps, and loses on one
-   * where a move is nine. What the three-cell landing changes here is that the
+   * over still wins, because two columns of drift is dearer than the walk. (That
+   * sentence used to read "on a storey where a move is two steps, and loses on
+   * one where a move is nine" — an altitude-toll clause, dead since round 36 and
+   * meaningless since round 42.) What the three-cell landing changes here is that the
    * pull no longer aims her at ONE column, so the climb has three targets and
    * the west and east thirds of the top storeys stop being detours by
    * construction.
+   *
+   * -- ROUND 42: DERIVED FROM THE MOVE PRICE, NEVER TRANSCRIBED AGAIN -------
+   * This was the literal `2.5` -- steps, on a table that charged 3 a move, i.e.
+   * five sixths of one move. Left at 2.5 when a move became 1 it would have been
+   * two and a half MOVES of drift tolerance, silently trebling how hard the
+   * model steers toward the stair column and moving every landing band with it.
+   * It is written as what it always meant: **she will pay about five sixths of
+   * one move per column of drift to climb under the sealed chamber** -- under a
+   * whole move, so a cheap door one column over still wins, which is what makes
+   * it a preference and not a rule. It re-derives the day a price moves.
    */
-  sanctumColumnPull: 2.5,
+  sanctumColumnPull: 0.85 * -moveAt(0),
 } as const;
 
 /**
@@ -1200,6 +1212,26 @@ const randInt = (rng: () => number, min: number, max: number) =>
  * then blue. (AAA 4.1's affordability rule guarantees a takeable card always
  * exists, so there is no "declined everything" branch to model.)
  */
+/**
+ * ── ROUND 42: THE TWO "SHE IS RUNNING LOW" THRESHOLDS ARE DERIVED NOW ──────
+ *
+ * They were the literals `10` (below this she reaches for a green room) and `8`
+ * (below this she declines to open a long puzzle). Both were written against a
+ * 22-step budget — 45% and 36% of a day — and both were transcribed rather than
+ * derived, so re-denominating the economy in moves would have left the model
+ * playing a player who panics for the whole of her evening: a `< 10` on a
+ * 12-move day fires on 83% of it. They are stated as the fractions they always
+ * were, against the live `BASE_DAY_BUDGET`, so a budget change moves them with
+ * it. Round 19's own lesson, applied to the instrument: *derive, never
+ * transcribe.*
+ */
+export const LOW_PURSE = {
+  /** Half a day left: she starts preferring the green rooms. (10 of 22 → 6 of 12.) */
+  reachesForARefill: Math.round(BASE_DAY_BUDGET / 2),
+  /** A third left: she will not settle into a long room. (8 of 22 → 4 of 12.) */
+  wontOpenALongRoom: Math.round(BASE_DAY_BUDGET / 3),
+} as const;
+
 function preferenceFor(
   kind: SimRoomKind, profile: SimProfile,
   ctx: { stepsLeft: number; keys: number; needsKeySoon: boolean },
@@ -1208,7 +1240,7 @@ function preferenceFor(
     case 'mystery': return profile.mysteryPull;
     case 'utility':
       return 1
-        + (ctx.stepsLeft < 10 ? 4 : 0)
+        + (ctx.stepsLeft < LOW_PURSE.reachesForARefill ? 4 : 0)
         + (ctx.needsKeySoon && ctx.keys < 2 ? 4 : 0);
     case 'anchor':
     case 'micro': return profile.puzzlePull;
@@ -1648,7 +1680,7 @@ export function simulateDay(
       // afford the mistakes, and leaves it for tomorrow (AAA 4.13) — and she
       // is far more willing to squeeze in a 60-second Linen Closet than to
       // open a six-minute Library on her last four steps.
-      const lowOnSteps = stepsRemaining(ledger) < 8;
+      const lowOnSteps = stepsRemaining(ledger) < LOW_PURSE.wontOpenALongRoom;
       const attemptChance = profile.attemptRate
         * (lowOnSteps ? (kind === 'anchor' ? 0.2 : 0.7) : 1);
       if (rng() < attemptChance) {

@@ -27,6 +27,7 @@ import { centerIndex, findPath, puzzleSize, STUDY_POINTS, twistleRuleLines, twis
 import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
 import './anchor.css';
+import { stepWords } from '../../../engine/economy/steps';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
 
@@ -229,7 +230,7 @@ export default function TwistleView({ puzzle, state, tier, dispatch }: RoomViewP
       const messages: Record<typeof fb.reason, string> = {
         'too-short': `Words need ${puzzle.rules.minLength}+ letters`,
         'not-on-grid': "The tiles won’t connect so",
-        'breaks-rule': `It must cross the marked tile · −${stepCost} steps`,
+        'breaks-rule': `It must cross the marked tile · −${stepWords(stepCost)}`,
         // Not "isn't a word" — the room cannot know that, and for the words
         // that land here (corpus-obscure, or refused by the cozy gate) it would
         // be a lie. It is a curator's list, and it says so.

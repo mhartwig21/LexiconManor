@@ -33,7 +33,7 @@ import {
 import { BASE_DECK, deckFor } from '../src/engine/manor/deck';
 import { cellKey, createManor, ENTRANCE_KEY, rowTier } from '../src/engine/manor/grid';
 import { draftLabel } from '../src/ui/blueprint/pricing';
-import { moveAt } from '../src/engine/economy/steps';
+import { moveAt, stepWords } from '../src/engine/economy/steps';
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -271,6 +271,9 @@ describe('5. the three doors stop reading as one sentence (REVIEW_AA §4)', () =
   });
 
   it('still names the price it always named', () => {
-    expect(draftLabel(0, 1, 'stair')).toContain(`${-moveAt(0)} steps`);
+    // ROUND 42 — pluralised. A move costs one, so this label reads "1 step" and
+    // the assertion reads it out of the same helper the label does rather than
+    // hand-building "N steps" (which is how "1 steps" would have shipped).
+    expect(draftLabel(0, 1, 'stair')).toContain(stepWords(-moveAt(0)));
   });
 });

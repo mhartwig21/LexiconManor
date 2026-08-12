@@ -23,6 +23,7 @@ import { useManorStore } from '../../app/store';
 import {
   fernMorningKeys, keyAccessFor, rowName, teaArcPoints, teaBonus, teaLandingPour,
   TEA_ARC, TEA_BY_POINTS, TEA_POUR,
+  stepWords,
 } from '../../engine/economy/steps';
 import { UNLOCKABLE_CARDS } from '../../engine/manor/deck';
 import './chrome.css';
@@ -56,7 +57,7 @@ export default function HouseSoFar() {
       <div className="chr-house__row">
         <span>Mrs. Bramble's pot</span>
         <span className="chr-house__value tabular-nums">
-          {pot > 0 ? `+${pot} steps` : 'a plain, kind cup'}
+          {pot > 0 ? `+${stepWords(pot)}` : 'a plain, kind cup'}
         </span>
         <p className="chr-house__note">
           {atTop

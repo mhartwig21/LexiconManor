@@ -35,6 +35,7 @@ import {
 import type { SudokuAction, SudokuRoomState } from '../../../engine/puzzles/sudoku-adapter';
 import { sfx } from '../../../app/sound';
 import './counting-house.css';
+import { stepWords } from '../../../engine/economy/steps';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
 
@@ -225,7 +226,7 @@ export default function SudokuView({
           setToast({
             kind: 'good',
             text: fb.charged
-              ? `The books balance — ${mine} · −${claimCost} steps`
+              ? `The books balance — ${mine} · −${stepWords(claimCost)}`
               : `The books balance — ${mine}. No charge for weighing twice.`,
           });
           later(() => setToast(null), 2000);
@@ -241,7 +242,7 @@ export default function SudokuView({
         setToast({
           kind: fb.charged ? 'bad' : 'info',
           text: fb.charged
-            ? `${tally} · −${claimCost} steps`
+            ? `${tally} · −${stepWords(claimCost)}`
             : `${tally} — no charge for weighing twice.`,
         });
         later(() => setToast(null), 2200);
@@ -257,7 +258,7 @@ export default function SudokuView({
           : '';
         setToast({
           kind: 'good',
-          text: `${lead}${phrase.it} ${verb} ${place} · −${claimCost} steps`,
+          text: `${lead}${phrase.it} ${verb} ${place} · −${stepWords(claimCost)}`,
         });
         later(() => setToast(null), 3400);
         break;
@@ -271,7 +272,7 @@ export default function SudokuView({
         break;
       case 'revealed':
         sfx.glyph();
-        setToast({ kind: 'info', text: `The old ledger supplies one figure · −${figureCost} steps` });
+        setToast({ kind: 'info', text: `The old ledger supplies one figure · −${stepWords(figureCost)}` });
         later(() => setToast(null), 1900);
         break;
       case 'solved':
@@ -544,7 +545,7 @@ export default function SudokuView({
                 <button
                   className="ch-tool"
                   onClick={() => dispatch({ type: 'balance' })}
-                  aria-label={`Balance the books: check the leaf against his hand, minus ${claimCost} steps`}
+                  aria-label={`Balance the books: check the leaf against his hand, minus ${stepWords(claimCost)}`}
                   title="Balance the books"
                 >
                   <span className="ch-tool__verb">Balance</span>
@@ -553,7 +554,7 @@ export default function SudokuView({
                 <button
                   className="ch-tool"
                   onClick={() => dispatch({ type: 'nudge' })}
-                  aria-label={`A word from the clerk: name the next deduction on this leaf, minus ${claimCost} steps`}
+                  aria-label={`A word from the clerk: name the next deduction on this leaf, minus ${stepWords(claimCost)}`}
                   title="Ask the clerk"
                 >
                   <span className="ch-tool__verb">Ask clerk</span>
@@ -562,7 +563,7 @@ export default function SudokuView({
                 <button
                   className="ch-tool"
                   onClick={consult}
-                  aria-label={`Consult a figure: the ledger fills the selected cell, minus ${figureCost} steps`}
+                  aria-label={`Consult a figure: the ledger fills the selected cell, minus ${stepWords(figureCost)}`}
                   title="Consult a figure"
                 >
                   <span className="ch-tool__verb">Consult</span>

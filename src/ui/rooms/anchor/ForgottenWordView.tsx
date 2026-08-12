@@ -25,6 +25,7 @@ import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
 import { typeset } from '../../../../content/lib/typography';
 import './anchor.css';
+import { stepWords } from '../../../engine/economy/steps';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string; bit?: string } | null;
 
@@ -146,7 +147,7 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
         later(() => setShaking(false), 340);
         setToast({
           kind: 'bad',
-          text: `Not “${fb.guess.toLowerCase()}” — ${fb.guessesLeft} whisper${fb.guessesLeft === 1 ? '' : 's'} remain${fb.guessesLeft === 1 ? 's' : ''}. · −${clueCost} steps`,
+          text: `Not “${fb.guess.toLowerCase()}” — ${fb.guessesLeft} whisper${fb.guessesLeft === 1 ? '' : 's'} remain${fb.guessesLeft === 1 ? 's' : ''}. · −${stepWords(clueCost)}`,
           bit: closenessLine(fb.shared, fb.exact),
         });
         later(() => setToast(null), 2400);

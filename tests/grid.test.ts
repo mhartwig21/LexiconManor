@@ -24,7 +24,7 @@ import {
   priceStamp, priceWords, sanctumDraftStamp, stampsDraftPrice, stampsPrice, walkLabel,
   LANDING_REFUSAL_LINES, LANDING_SEALED_LABEL,
 } from '../src/ui/blueprint/pricing';
-import { DOOR_LOCKS, moveAt, rowName, MOVE_COST_BY_ROW } from '../src/engine/economy/steps';
+import { DOOR_LOCKS, moveAt, rowName, stepWords, MOVE_COST_BY_ROW } from '../src/engine/economy/steps';
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCard } from '../src/engine/types';
 import { ENTRANCE_CELL, MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../src/engine/types';
 import DraftModal from '../src/ui/blueprint/DraftModal';
@@ -705,7 +705,15 @@ describe('orientation at placement', () => {
     // (ii) THE OFFER THE PLAYER IS ACTUALLY HANDED.
     const blind = play(true, true);
     const reading = play(false, true);
-    expect(blind.rate).toBeCloseTo(0.346, 2);
+    // ROUND 42 — 34.61% → 35.41%, and the cause is Rule C rather than anything
+    // about seals. `WAGE_SPREAD_SUPPRESSION` suppresses a card whose wage
+    // matches one already in the offer, and the wage table got COARSE when the
+    // economy was denominated in moves: five of the seven rooms pay +1 at tier
+    // 1 where they used to pay 4, 6 and 15 steps. So the rule fires far more
+    // often, reaches further down the pool for a card that differs, and a player
+    // who ignores the card face eats slightly more dead ends. The number that
+    // matters is the one below it — a reading player still avoids ~93% of them.
+    expect(blind.rate).toBeCloseTo(0.354, 2);
     expect(reading.rate).toBeCloseTo(0.024, 2);
     // The card face is worth nearly all of the dead ends now (round 20: "a
     // third"; round 24: "most"; round 36: 93% of them).
@@ -1185,12 +1193,15 @@ describe('the blueprint names its prices (AAA 4.6 / 4.9 / 4.10)', () => {
       else bands.push({ from: row, to: row, cost });
     }
     for (const band of bands) {
-      expect(rateName, `band at row ${band.from}`).toContain(`${band.cost} steps`);
+      // ROUND 42: read out of the same helper the label uses — a move costs 1
+      // and the rate card says "1 step", which is the whole reason `stepWords`
+      // exists (engine/economy/steps.ts).
+      expect(rateName, `band at row ${band.from}`).toContain(stepWords(band.cost));
       expect(rateName, `band at row ${band.from}`).toContain(rowName(band.from));
       expect(rateName, `band at row ${band.to}`).toContain(rowName(band.to));
     }
     // …and it says nothing MORE than the bands: one price clause per band.
-    expect(rateName.match(/ steps/g) ?? []).toHaveLength(bands.length);
+    expect(rateName.match(/ steps?[.,;]/g) ?? []).toHaveLength(bands.length);
 
     const pips = groupOf('bp-tierpips');
     expect(pips).toHaveLength(3);

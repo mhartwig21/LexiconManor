@@ -24,7 +24,9 @@ import {
 import { pianoNote, celestaNote } from './instruments';
 import { Beds, type BedMix } from './beds';
 import { densityFactor } from './duck';
+import { STEPS_LOW_AT } from '../../engine/economy/steps';
 import { createRng, type Rng } from '../../engine/rng';
+
 
 export interface RoomMood {
   scale: ScaleName;
@@ -262,7 +264,7 @@ class Director {
       activeRoomKind: active?.kind ?? null,
       activeRoomCategory: category === 'mystery' || category === 'parlor' || category === 'utility' ? category : null,
       playerRow: s.manor?.playerCell.row ?? 0,
-      stepsLow: s.stepsRemaining() <= 6 && s.day != null,
+      stepsLow: s.stepsRemaining() <= STEPS_LOW_AT && s.day != null,
     });
     if (key === this.moodKey) return;
     this.moodKey = key;

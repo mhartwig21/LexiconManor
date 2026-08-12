@@ -57,6 +57,7 @@ import {
 import type { CrosswordAction, CrosswordRoomState } from '../../../engine/puzzles/crossword-adapter';
 import { sfx } from '../../../app/sound';
 import './a5micro.css';
+import { stepWords } from '../../../engine/economy/steps';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
 
@@ -151,7 +152,7 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
       setToast({
         kind: fb.charged ? 'bad' : 'info',
         text: fb.charged
-          ? `Not quite — ${fb.wrongCount} thread${fb.wrongCount === 1 ? '' : 's'} loose. · −${stepCost} steps`
+          ? `Not quite — ${fb.wrongCount} thread${fb.wrongCount === 1 ? '' : 's'} loose. · −${stepWords(stepCost)}`
           : 'Still the same folding — no charge for looking twice.',
       });
       later(() => setToast(null), 1800);
@@ -461,7 +462,7 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
                     className="lc-key lc-key--verb"
                     onClick={reveal}
                     disabled={state.cw.revealedCells.includes(active.cell)}
-                    aria-label={`Smooth a crease — reveals this square, costs ${stepCost} steps`}
+                    aria-label={`Smooth a crease — reveals this square, costs ${stepWords(stepCost)}`}
                   >
                     <span className="lc-key__glyph" aria-hidden>✎</span>
                     <span className="lc-key__price" aria-hidden>−{stepCost}</span>

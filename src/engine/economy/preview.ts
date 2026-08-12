@@ -68,7 +68,13 @@ export function draftCardStake(
     // losing evenings to it. It leads the line because it is the first thing
     // she is choosing between, and it is words rather than a stopwatch: this is
     // a cozy game and every room is leavable (AAA 4.13).
-    const parts = [`+${payout} steps`];
+    // ROUND 42 — "+1 steps" WAS UNREACHABLE UNTIL IT WASN'T. This read
+    // `+${payout} steps`, and it was correct for six rounds because the cozy
+    // floor was +4 and no room could ever pay one. Denominated in moves the
+    // floor IS 1 (`SOLVE_WAGE.floor`) and five of the seven shipped rooms sit on
+    // it, so the commonest card in the deck would have printed "+1 steps".
+    // Pluralised off the number, like `moveCostLabel` beside it.
+    const parts = [`+${payout} step${payout === 1 ? '' : 's'}`];
     if (keys > 0) parts.push(`+${keys} key${keys === 1 ? '' : 's'}`);
     // ═══ ROUND 33 — THE SIZE WORD COMES OFF (COMPREHENSION 33, fix 5) ═══════
     // Two blind testers, unprompted, named "anchor · micro · standard · common

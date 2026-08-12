@@ -24,7 +24,7 @@
  * the ledger cannot drift apart.
  */
 
-import { moveAt, rowName } from '../../engine/economy/steps';
+import { moveAt, rowName, stepWords } from '../../engine/economy/steps';
 import {
   WING_CHARACTER_WORDS, WING_NAMES, type WingCharacter, type WingId,
 } from '../../engine/manor/wings';
@@ -59,10 +59,9 @@ export function priceStamp(row: number): string {
   return `−${-moveAt(row)}`;
 }
 
-/** "3 steps" / "1 step" — the spoken form. */
+/** "3 steps" / "1 step" — the spoken form. Pluralised in ONE place (round 42). */
 export function priceWords(row: number): string {
-  const n = -moveAt(row);
-  return `${n} step${n === 1 ? '' : 's'}`;
+  return stepWords(-moveAt(row));
 }
 
 /**
@@ -109,8 +108,8 @@ export function rateCardLabel(rows: number): string {
   const bands = priceBands(rows);
   const clauses = bands.map(({ from, to, cost }) => (
     from === to
-      ? `${rowName(from)}, ${cost} steps`
-      : `${rowName(from)} up to ${rowName(to)}, ${cost} steps`
+      ? `${rowName(from)}, ${stepWords(cost)}`
+      : `${rowName(from)} up to ${rowName(to)}, ${stepWords(cost)}`
   ));
   return `Rate card — what one move costs on each storey: ${clauses.join('; ')}.`;
 }

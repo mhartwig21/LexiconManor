@@ -18,7 +18,7 @@ import type { SaveV2 } from '../save';
 // provisional const, per the handoff comment that stood here. Values are
 // identical: weight 1 → −2 (tier 3 −3), weight 2 doubles; micro +3,
 // anchor +6/+7/+8 by tier; perfect +2. Hints price through the mistake row.
-import { solveKeys, stageSteps, STEP_TABLE } from '../../engine/economy/steps';
+import { solveKeys, stagePaidAt, stageSteps, STEP_TABLE } from '../../engine/economy/steps';
 import { paysInStages, stageFractionOf } from '../../engine/economy/effort';
 import type { RoomSessionSnapshot } from '../../engine/rooms/room-session';
 import {
@@ -220,8 +220,10 @@ export const createRoomSlice =
                 const earned = room.ladderEarned ?? 0;
                 const next = stageFractionOf(kind, ev.detail, earned);
                 if (next !== null && next > earned) {
-                  const total = STEP_TABLE.solve(size, tier, kind);
-                  const due = stageSteps(kind, tier, next, Math.floor(total * earned));
+                  // ROUND 42: `stagePaidAt`, never `floor(total × earned)` —
+                  // see its note in engine/economy/steps.ts for the double-pay
+                  // this second opinion would have shipped.
+                  const due = stageSteps(kind, tier, next, stagePaidAt(kind, tier, earned));
                   if (due > 0) {
                     get().applyStepEntry({ reason: 'solve', delta: due, at: now, roomKey: cellKey });
                   }
@@ -263,8 +265,8 @@ export const createRoomSlice =
             // (`solvePayout`, engine/economy/effort.ts), and anything already
             // banked on the way up is deducted here, so the total a solved room
             // pays is exactly its price whether it paid in one lump or four.
-            const paidOnTheWay = Math.floor(
-              STEP_TABLE.solve(size, tier, kind) * (get().manor?.rooms[cellKey]?.ladderEarned ?? 0),
+            const paidOnTheWay = stagePaidAt(
+              kind, tier, get().manor?.rooms[cellKey]?.ladderEarned ?? 0,
             );
             get().applyStepEntry({
               reason: 'solve',

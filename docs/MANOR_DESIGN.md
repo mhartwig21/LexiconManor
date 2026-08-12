@@ -96,15 +96,19 @@ from v2 carry over (see §10).
 
 ## 4. Step economy (first-pass numbers, all tunable)
 
+**ROUND 42 — A STEP IS A MOVE. Every number in this table is denominated in MOVES, and a
+move costs one** (docs/THE_CLIMB §1b, the owner's ruling). The counter on the glass is now
+the quantity it measures: "I have twelve moves left."
+
 | Event | Steps |
 |---|---|
-| Start-of-day budget | 22 (`BASE_DAY_BUDGET`; day 1 adds a scripted `FIRST_MORNING_POT` of +4) |
-| Enter a room (move one cell) | **−3 on every storey** (`MOVE_COST_BY_ROW`, flat since round 36) |
-| Puzzle mistake (wrong guess / invalid word) | −2 (tier 3 rooms: −3) |
-| Solve a small room (micro-puzzle) | +3 |
-| Solve a large room (anchor mode) | the room's own honest minutes at the house wage (`SOLVE_WAGE`, round 22), clamped to a cozy floor of +4 and a ceiling of +15 / +11 / +7 by tier — leaner as you climb, so a tier-3 solve softens the next mistake instead of bankrolling the next storey. The legacy unkeyed band is still `7 − tier` = +6 / +5 / +4 |
-| Perfect solve (no mistakes) | +2 bonus |
-| Kitchen snack / Bramble's tea | green-room refills +2..+6 (Kitchen +6, Larder +5, Boot Room +3, Still Room +2; compounding hooks +1..+2) · tea 0 → +13 across the friendship, poured as a cup at the door (`TEA_POUR.dawnCup`) and the rest of the pot on the second landing |
+| Start-of-day budget | 12 (`BASE_DAY_BUDGET`; day 1 adds a scripted `FIRST_MORNING_POT` of +1) |
+| Enter a room (move one cell) | **−1 on every storey** (`MOVE_COST_BY_ROW`, flat since round 36, one move since round 42) |
+| Puzzle mistake (wrong guess / invalid word) | −1, every room, every tier, every weight |
+| Solve a small room (micro-puzzle) | +1 |
+| Solve a large room (anchor mode) | the room's own honest minutes at the house wage (`SOLVE_WAGE`, round 22 — about two and a quarter minutes of word game per move), clamped to a cozy floor of +1 (*a solved room always pays back at least the move it cost to walk into*) and a ceiling of one BARE ASCENT, a move leaner every storey: +5 / +4 / +3 by tier. The legacy unkeyed band is +1 micro / +2 anchor |
+| Perfect solve (no mistakes) | +1 bonus |
+| Kitchen snack / Bramble's tea | green-room refills +1..+2 (Kitchen +2, Larder +2, Boot Room +1, Still Room +1; compounding hooks +1) · tea 0 → +6 across the friendship — one move a point — poured as a cup at the door (`TEA_POUR.dawnCup`) and the rest of the pot on the second landing |
 | Petting Dewey (the cat) | −1 (worth it) |
 
 - Steps never go negative mid-puzzle: a puzzle can always be *abandoned* (the room stays
@@ -113,11 +117,29 @@ from v2 carry over (see §10).
 - Target (see AAA 4.10a–f, which is the live spec): a decent day visits **7–11 rooms**
   and solves 2–4 puzzles in **10–15 minutes**; a great day reaches row 5–6, and standing
   at the Sanctum DOOR is a *campaign* event (AAA 4.10d), not something refills buy on a
-  Tuesday. Base budget is **22 steps**, and a move costs **−3 on every storey**, so what
+  Tuesday. Base budget is **12 steps**, and a move costs **−1 on every storey**, so what
   a day is spent on is DISTANCE WALKED — the doubling back — rather than altitude.
-  A single minimum-length ascent to the Sanctum landing is five moves, i.e. 15 steps of
-  pure staircase; priced with the walk-backs a real climb needs it is 25.8 against a
-  22-step budget, which is why the ascent is a campaign arc and not a day-1 option.
+  A single minimum-length ascent to the Sanctum landing is five moves, i.e. 5 steps of
+  pure staircase; priced with the walk-backs a real climb needs it is 8.6.
+  **The day is not a budget, it is a starting count: she earns more as she goes**, because
+  a room costs a move to walk into and solving it pays moves back. What stops a great day
+  being endless is measured rather than capped — the average room is net NEGATIVE in moves
+  for every profile (the median player spends 1.50 and earns 0.95), and the manor is 31
+  draftable cells with a frontier that closes.
+
+  *(Round 42 — THE UNIT, docs/THE_CLIMB §1b. The owner: "Why isn't it just 1 step is −1.
+  Why do you keep coming up with a convoluted economy. What you should be modifying is the
+  amount of steps you start with and how many more you can earn and the penalties." Round
+  36's 22 steps at 3 a move was SEVEN moves — a fiction the player had to divide her way
+  out of, and the largest unresolved comprehension finding (both cold testers reported the
+  counter moving for reasons they could not account for). What this deletes, deliberately,
+  is round 36's own replacement invariant: the REALISTIC ascent no longer outcosts the
+  budget either, because it never moved (8.6 moves before and after) while the purse went
+  7.3 → 12. That claim is measured instead, on instruments that could disagree: a
+  refund-less skipper reaches the sealed door on 0.067% of evenings, a skilled player on
+  day 1 in 1.3% of campaigns against a published <8%, and a great single evening reaches
+  the landing storey on 8.0% against a published <25%. Every band that moved is re-published
+  in AAA 4.10.)*
 
   *(Round 36 — THE ALTITUDE TOLL IS GONE, docs/THE_CLIMB §1. The table read −2, −2, −2,
   −2, −7, −9, −9 and the owner's verdict after playing was "it shouldn't get more

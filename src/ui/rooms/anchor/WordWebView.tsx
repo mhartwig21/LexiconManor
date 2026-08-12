@@ -41,6 +41,7 @@ import { typeset } from '../../../../content/lib/typography';
 import { herringLine } from './herring-line';
 import { endCopy } from './web-grade';
 import './anchor.css';
+import { stepWords } from '../../../engine/economy/steps';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string; bit?: string } | null;
 
@@ -229,7 +230,7 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
       case 'one-away':
         pendingMerge.current = [];
         sfx.wrong();
-        setToast({ kind: 'bad', text: `One away… · −${stepCost} steps` });
+        setToast({ kind: 'bad', text: `One away… · −${stepWords(stepCost)}` });
         setShaking(true);
         later(() => setShaking(false), 420);
         later(() => setBusy(false), 430);
@@ -241,7 +242,7 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
         // genuinely followed is named beneath it (AAA 2.10).
         setToast({
           kind: 'bad',
-          text: `${togetherLine(fb.together)} · −${stepCost} steps`,
+          text: `${togetherLine(fb.together)} · −${stepWords(stepCost)}`,
           bit: fb.herring ? herringLine(fb.herring) : undefined,
         });
         setShaking(true);
