@@ -1,13 +1,18 @@
 # Lexicon Manor — where this stands
 
-*Handoff written 12 Aug 2026, at the end of round 21. Live at `7093e2f`.*
+*Handoff written 12 Aug 2026, at the end of round 21.*
+
+**This file names no commit sha and no commit count, deliberately.** Three separate
+critics have now caught this doc stale on exactly that line, because a document that
+carries a moving number is wrong the moment the next commit lands. To find out what is
+live: `git log --oneline -1`, then grep the served bundle for that sha (the build stamps
+it). That is the check the deploy protocol already requires, so it can never disagree.
 
 **Play it:** https://mhartwig21.github.io/LexiconManor/ — installable on a phone via Add to Home
 Screen. Deploys from `main` on every push, three CI jobs (build · glass · deploy); a failure in
 either of the first two skips the deploy, so a broken build cannot reach production.
 
-**Repo:** github.com/mhartwig21/LexiconManor — 77 commits. The owner is building it as a gift for
-his wife.
+**Repo:** github.com/mhartwig21/LexiconManor. The owner is building it as a gift for his wife.
 
 ---
 

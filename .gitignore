@@ -32,3 +32,4 @@ content/data/*
 *.sweep-backup.json
 vt-report.json
 /*.png
+scratch/
