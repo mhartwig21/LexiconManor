@@ -23,7 +23,8 @@
  *      to has its doors on outer walls or on neighbours' blank plaster, and the
  *      evening ends with steps still in her hand.
  *   3. **The landing gate was a proxy.** `landingDraft` rolled a hypothetical
- *      offer at (2,5) on a FRESH manor whenever the scalar row hit 6 — a manor
+ *      offer at the middle landing cell on a FRESH manor whenever the scalar
+ *      row hit 6 — a manor
  *      with no rooms in it, so `eligibleCards`' deck thinning, the wing term
  *      and the actual entry direction were all wrong up there. The real gate is
  *      `atSanctumDoor(manor)`, and it can only be asked of a manor.

@@ -21,7 +21,8 @@ import { createJournalSlice } from '../src/app/slices/journal';
 import { createMetaSlice } from '../src/app/slices/meta';
 import {
   cardOpensOntoSanctum, cellKey, createManor, deweyCell, DIRS, opposite, placeRoom, resolveDoors,
-  roomAt, rowTier, sealsItself, SANCTUM_DOOR_CELL,
+  roomAt, rowTier, sealsItself, SANCTUM_LANDING_CELLS, SANCTUM_LANDING_MID,
+  SANCTUM_LANDING_ROW0,
 } from '../src/engine/manor/grid';
 import type { Cell, Dir, ManorState, PlacedRoom, RoomCategory } from '../src/engine/types';
 import { MANOR_COLS, MANOR_ROWS } from '../src/engine/types';
@@ -572,14 +573,14 @@ describe('the landing offer leans toward the door (round 13)', () => {
   const opensNorth = (manor: ManorState, card: { id: string }) =>
     cardOpensOntoSanctum(
       BASE_DECK.find((c) => c.id === card.id) ?? cardById(card.id)!,
-      'N', manor, SANCTUM_DOOR_CELL,
+      'N', manor, SANCTUM_LANDING_MID,
     );
 
   const offerRate = (over: Partial<DraftRollCtx>, samples = 1200) => {
     let hit = 0;
     for (let seed = 0; seed < samples; seed++) {
       const manor = createManor(seed);
-      const cards = rollCards(DECK, manor, SANCTUM_DOOR_CELL, landingCtx(over));
+      const cards = rollCards(DECK, manor, SANCTUM_LANDING_MID, landingCtx(over));
       if (cards.some((c) => opensNorth(manor, c))) hit += 1;
     }
     return hit / samples;
@@ -612,7 +613,7 @@ describe('the landing offer leans toward the door (round 13)', () => {
     for (let seed = 0; seed < 400; seed++) {
       const manor = createManor(seed);
       const cards = rollCards(
-        DECK, manor, SANCTUM_DOOR_CELL, landingCtx({ gems: 0, sanctumMercy: true }));
+        DECK, manor, SANCTUM_LANDING_MID, landingCtx({ gems: 0, sanctumMercy: true }));
       expect(cards[0]!.gemCost).toBe(0);
       if (opensNorth(manor, cards[0]!)) freeAndOpens += 1;
     }
@@ -624,11 +625,18 @@ describe('the landing offer leans toward the door (round 13)', () => {
     // The landing terms may not touch one other draft in the game — otherwise
     // they move `deckMixAt`, and with it the 4.10b clock every campaign number
     // is calibrated against.
+    //
+    // ROUND 37: (1,5) came OFF this list and (0,5) went on. It is not a
+    // weakened claim — it is the same claim about a landing that is three
+    // cells wide, and the test below asserts the other half, that the arc
+    // reaches all three. (0,5) and (4,5) are the cells on the landing storey
+    // that no plan can ever open onto the chamber from, and they are the
+    // sharpest possible probe of the boundary: same row, same tier, same deck.
     for (let seed = 0; seed < 200; seed++) {
       const manor = createManor(seed);
       for (const cell of [
-        { col: 2, row: 1 }, { col: 0, row: 4 }, { col: 4, row: 5 },
-        { col: 1, row: SANCTUM_DOOR_CELL.row },
+        { col: 2, row: 1 }, { col: 0, row: 4 },
+        { col: 0, row: SANCTUM_LANDING_ROW0 }, { col: 4, row: SANCTUM_LANDING_ROW0 },
       ] as Cell[]) {
         const plain = rollCards(DECK, manor, cell, landingCtx()).map((c) => c.id);
         const warmed = rollCards(DECK, manor, cell, landingCtx({
@@ -639,19 +647,46 @@ describe('the landing offer leans toward the door (round 13)', () => {
     }
   });
 
+  it('reaches ALL THREE landing cells, not just the middle one (round 37)', () => {
+    // THE FAILURE MODE THIS EXISTS FOR: widen the landing and leave the arc
+    // keyed to (2,5), and two of the three ways up would quietly be the
+    // un-warmed, un-mercied offer the round-13 finding measured at 61% — the
+    // route variety would be real and the access floor would only cover a
+    // third of it. Measured per cell, so a cell that missed cannot hide in an
+    // average.
+    for (const cell of SANCTUM_LANDING_CELLS) {
+      const rate = (over: Partial<DraftRollCtx>) => {
+        let hit = 0;
+        for (let seed = 0; seed < 400; seed++) {
+          const manor = createManor(seed);
+          const cards = rollCards(DECK, manor, cell, landingCtx(over));
+          if (cards.some((c) => cardOpensOntoSanctum(
+            BASE_DECK.find((d) => d.id === c.id) ?? cardById(c.id)!, 'N', manor, cell,
+          ))) hit += 1;
+        }
+        return hit / 400;
+      };
+      const bare = rate({});
+      const armed = rate({ sanctumMercy: true });
+      expect(bare, `col ${cell.col} bare ${bare.toFixed(3)}`).toBeGreaterThan(0.5);
+      expect(armed, `col ${cell.col} mercy ${armed.toFixed(3)}`).toBeGreaterThan(0.9);
+      expect(armed).toBeGreaterThan(bare);
+    }
+  });
+
   it('keeps the per-cell stream: the landing arc is not a reroll', () => {
     // AAA 4.8 — the offer behind a door is a property of the door, so warming
     // the arc must not perturb any OTHER door's stream, and the same warmth on
     // the same day must give the same three cards every time it is asked.
     const manor = createManor(77);
-    const a = rollCards(DECK, manor, SANCTUM_DOOR_CELL,
+    const a = rollCards(DECK, manor, SANCTUM_LANDING_MID,
       landingCtx({ sanctumPlanWarmth: 0.5 })).map((c) => c.id);
-    const b = rollCards(DECK, manor, SANCTUM_DOOR_CELL,
+    const b = rollCards(DECK, manor, SANCTUM_LANDING_MID,
       landingCtx({ sanctumPlanWarmth: 0.5 })).map((c) => c.id);
     expect(a).toEqual(b);
     const other: Cell = { col: 0, row: 2 };
     const before = rollCards(DECK, manor, other, landingCtx()).map((c) => c.id);
-    rollCards(DECK, manor, SANCTUM_DOOR_CELL, landingCtx({ sanctumPlanWarmth: 1 }));
+    rollCards(DECK, manor, SANCTUM_LANDING_MID, landingCtx({ sanctumPlanWarmth: 1 }));
     expect(rollCards(DECK, manor, other, landingCtx()).map((c) => c.id)).toEqual(before);
   });
 
@@ -659,9 +694,9 @@ describe('the landing offer leans toward the door (round 13)', () => {
     // The door she stands at IS her heading through it. Without this the
     // landing terms would silently ask the question for the wrong wall.
     const manor = createManor(4242);
-    const from: Cell = { col: SANCTUM_DOOR_CELL.col, row: SANCTUM_DOOR_CELL.row - 1 };
+    const from: Cell = { col: SANCTUM_LANDING_MID.col, row: SANCTUM_LANDING_MID.row - 1 };
     const offer = rollOffer(
-      DECK, manor, from, 'N', SANCTUM_DOOR_CELL, ctx({ gems: 2, sanctumMercy: true }));
+      DECK, manor, from, 'N', SANCTUM_LANDING_MID, ctx({ gems: 2, sanctumMercy: true }));
     expect(offer.cards.some((c) => opensNorth(manor, c))).toBe(true);
   });
 });

@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { DayRecord, ManorState, PlacedRoom, VolumeState } from '../src/engine/types';
-import { cellKey, createManor, SANCTUM_DOOR_CELL } from '../src/engine/manor/grid';
+import { cellKey, createManor, SANCTUM_LANDING_MID } from '../src/engine/manor/grid';
 import { sanctumAnswered } from '../src/engine/manor/tube';
 import { ENTRANCE_CELL } from '../src/engine/types';
 import {
@@ -841,13 +841,13 @@ describe('sealed fragments — filed forever, made out by solving', () => {
 function manorAtTheDoor(): ManorState {
   const base = createManor(1);
   const landing: PlacedRoom = {
-    cardId: 'reading-nook', cell: SANCTUM_DOOR_CELL, doors: ['N', 'S'],
+    cardId: 'reading-nook', cell: SANCTUM_LANDING_MID, doors: ['N', 'S'],
     solved: true, kind: 'parlor',
   };
   return {
     ...base,
-    rooms: { ...base.rooms, [cellKey(SANCTUM_DOOR_CELL)]: landing },
-    playerCell: { ...SANCTUM_DOOR_CELL },
+    rooms: { ...base.rooms, [cellKey(SANCTUM_LANDING_MID)]: landing },
+    playerCell: { ...SANCTUM_LANDING_MID },
   };
 }
 

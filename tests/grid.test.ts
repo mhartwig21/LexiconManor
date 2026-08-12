@@ -6,7 +6,9 @@ import {
   rotateDirBy, turnsBetween, sealsItself, hashSeed,
   roomSeed, deweyCell, roomAt, atSanctumDoor, cardOpensOntoSanctum, onSanctumLanding,
   opensOntoSanctum, sanctumStanding, canAddressSanctum, atSpeakingTube, SPEAKING_TUBE_CELL,
-  DIRS, ENTRANCE_KEY, SANCTUM_DOOR_CELL, SANCTUM_DOOR_KEY, SANCTUM_KEY,
+  isSanctumCell, isSanctumLanding, SANCTUM_CARD_ID, SANCTUM_CELLS, SANCTUM_LANDING_CELLS,
+  SANCTUM_LANDING_KEYS, SANCTUM_LANDING_ROW0,
+  DIRS, ENTRANCE_KEY, SANCTUM_LANDING_MID, SANCTUM_LANDING_MID_KEY, SANCTUM_KEY,
 } from '../src/engine/manor/grid';
 import { BASE_DECK, deckFor } from '../src/engine/manor/deck';
 import { rollCards } from '../src/engine/manor/drafting';
@@ -92,13 +94,35 @@ describe('cell arithmetic', () => {
 describe('createManor', () => {
   it('pre-places the entrance and the sealed sanctum, player home', () => {
     const m = createManor(42);
-    expect(Object.keys(m.rooms)).toHaveLength(2);
+    // ROUND 37: the chamber fills three cells, so four rooms stand at dawn.
+    expect(Object.keys(m.rooms)).toHaveLength(1 + SANCTUM_CELLS.length);
     expect(m.rooms[ENTRANCE_KEY]!.cell).toEqual(ENTRANCE_CELL);
     expect(m.rooms[ENTRANCE_KEY]!.solved).toBe(true);
     expect(m.rooms[SANCTUM_KEY]!.cell).toEqual(SANCTUM_CELL);
     expect(m.rooms[SANCTUM_KEY]!.kind).toBe('mystery');
     expect(m.playerCell).toEqual(ENTRANCE_CELL);
     expect(m.daySeed).toBe(42);
+  });
+
+  it('THE CHAMBER IS THREE CELLS, AND NOTHING PATHS THROUGH IT (round 37)', () => {
+    const m = createManor(42);
+    expect(SANCTUM_CELLS.map((c) => c.col)).toEqual([1, 2, 3]);
+    for (const cell of SANCTUM_CELLS) {
+      const seal = m.rooms[cellKey(cell)]!;
+      expect(seal.cardId).toBe(SANCTUM_CARD_ID);
+      // ONE door each, south onto its own landing cell. Two adjoining seals
+      // with an E/W pair between them would let `reachableFrontier`'s BFS walk
+      // the ending like a corridor and come out on the next landing cell.
+      expect(seal.doors).toEqual(['S']);
+      expect(isSanctumCell(cell)).toBe(true);
+      // …and she is never walked into it, however the doors match.
+      expect(canMoveTo({ ...m, playerCell: { col: cell.col, row: cell.row - 1 } }, cell))
+        .toBe(false);
+    }
+    // The corners of the top storey are still a storey.
+    for (const col of [0, 4] as const) {
+      expect(isSanctumCell({ col, row: SANCTUM_CELL.row })).toBe(false);
+    }
   });
 
   it('entrance never opens through the front wall', () => {
@@ -109,9 +133,9 @@ describe('createManor', () => {
 
 describe('the Sanctum door is a PLACE (AAA 4.10e — the second gate)', () => {
   it('sits on the landing directly below the sealed Sanctum', () => {
-    expect(SANCTUM_DOOR_CELL.col).toBe(SANCTUM_CELL.col);
-    expect(SANCTUM_DOOR_CELL.row).toBe(SANCTUM_CELL.row - 1);
-    expect(SANCTUM_DOOR_KEY).toBe(cellKey(SANCTUM_DOOR_CELL));
+    expect(SANCTUM_LANDING_MID.col).toBe(SANCTUM_CELL.col);
+    expect(SANCTUM_LANDING_MID.row).toBe(SANCTUM_CELL.row - 1);
+    expect(SANCTUM_LANDING_MID_KEY).toBe(cellKey(SANCTUM_LANDING_MID));
     // The Sanctum's own cell is sealed with one south door and is never a
     // draft target — the landing is where the word is spoken from.
     expect(createManor(3).rooms[SANCTUM_KEY]!.doors).toEqual(['S']);
@@ -128,9 +152,49 @@ describe('the Sanctum door is a PLACE (AAA 4.10e — the second gate)', () => {
     for (const row of [0, 1, 2, 3, 4]) {
       expect(atSanctumDoor({ ...m, playerCell: { col: 2, row } })).toBe(false);
     }
-    // Even the rest of the landing storey: only the cell under the door.
-    for (const col of [0, 1, 3, 4] as const) {
-      expect(atSanctumDoor({ ...m, playerCell: { col, row: SANCTUM_DOOR_CELL.row } })).toBe(false);
+    // Even the rest of the landing storey: the two cells OUTSIDE the band,
+    // which no plan can ever open onto the chamber from (the three inside it
+    // are false here too, for the other reason — nothing is drafted there yet).
+    for (const col of [0, 4] as const) {
+      expect(atSanctumDoor({ ...m, playerCell: { col, row: SANCTUM_LANDING_ROW0 } })).toBe(false);
+      expect(isSanctumLanding({ col, row: SANCTUM_LANDING_ROW0 })).toBe(false);
+    }
+  });
+
+  it('THE LANDING IS THREE CELLS, AND EACH ONE IS A WAY IN (round 37)', () => {
+    // THE DEFECT: `opensOntoSanctum` was `sameCell(cell, SANCTUM_DOOR_CELL)`,
+    // so every campaign funnelled through (2,5) and three sealing cards there
+    // was checkmate. A cold tester's run ended exactly that way.
+    expect(SANCTUM_LANDING_CELLS.map((c) => c.col)).toEqual([1, 2, 3]);
+    for (const cell of SANCTUM_LANDING_CELLS) {
+      expect(cell.row).toBe(SANCTUM_LANDING_ROW0);
+      expect(isSanctumLanding(cell)).toBe(true);
+      const base = createManor(11);
+      // sealed here: on the landing, and the plan turns its back on the door
+      const shut = placeRoom(base, room(cell, ['S', 'E']));
+      expect(atSanctumDoor({ ...shut, playerCell: { ...cell } })).toBe(false);
+      expect(sanctumStanding({ ...shut, playerCell: { ...cell } })).toBe('landing-sealed');
+      // open here: the same predicate answers yes at ALL THREE cells
+      const open = placeRoom(base, room(cell, ['S', 'N']));
+      expect(atSanctumDoor({ ...open, playerCell: { ...cell } })).toBe(true);
+      expect(sanctumStanding({ ...open, playerCell: { ...cell } })).toBe('at-door');
+      expect(canAddressSanctum({ ...open, playerCell: { ...cell } })).toBe(true);
+      expect(opensOntoSanctum(['N'], cell)).toBe(true);
+    }
+    // …and nowhere else on the storey, however many north doors a plan draws.
+    for (const col of [0, 4] as const) {
+      const cell: Cell = { col, row: SANCTUM_LANDING_ROW0 };
+      const open = placeRoom(createManor(11), room(cell, ['S', 'N']));
+      expect(atSanctumDoor({ ...open, playerCell: { ...cell } })).toBe(false);
+      expect(opensOntoSanctum(['N', 'E', 'S', 'W'], cell)).toBe(false);
+    }
+    // A detour, not checkmate: sealing the middle landing leaves two ways up.
+    const detour = placeRoom(createManor(11), room(SANCTUM_LANDING_MID, ['S', 'E']));
+    const others = SANCTUM_LANDING_CELLS.filter((c) => c.col !== SANCTUM_LANDING_MID.col);
+    expect(others).toHaveLength(2);
+    for (const cell of others) {
+      const on = placeRoom(detour, room(cell, ['S', 'N']));
+      expect(atSanctumDoor({ ...on, playerCell: { ...cell } })).toBe(true);
     }
   });
 
@@ -138,14 +202,14 @@ describe('the Sanctum door is a PLACE (AAA 4.10e — the second gate)', () => {
     let m = createManor(11);
     // Standing on the landing in a room that drew no north door: arriving on
     // the storey is not arriving at the door.
-    m = placeRoom(m, room(SANCTUM_DOOR_CELL, ['S', 'E']));
-    expect(atSanctumDoor({ ...m, playerCell: { ...SANCTUM_DOOR_CELL } })).toBe(false);
+    m = placeRoom(m, room(SANCTUM_LANDING_MID, ['S', 'E']));
+    expect(atSanctumDoor({ ...m, playerCell: { ...SANCTUM_LANDING_MID } })).toBe(false);
 
     let open = createManor(11);
-    open = placeRoom(open, room(SANCTUM_DOOR_CELL, ['S', 'N']));
-    expect(atSanctumDoor({ ...open, playerCell: { ...SANCTUM_DOOR_CELL } })).toBe(true);
+    open = placeRoom(open, room(SANCTUM_LANDING_MID, ['S', 'N']));
+    expect(atSanctumDoor({ ...open, playerCell: { ...SANCTUM_LANDING_MID } })).toBe(true);
     // …and it is the same fact the blueprint's approach is drawn from.
-    expect(doorsConnect(open, SANCTUM_DOOR_CELL, 'N')).toBe(true);
+    expect(doorsConnect(open, SANCTUM_LANDING_MID, 'N')).toBe(true);
   });
 
   /**
@@ -171,14 +235,14 @@ describe('the Sanctum door is a PLACE (AAA 4.10e — the second gate)', () => {
     expect(atSanctumDoor(base)).toBe(false);
     expect(canAddressSanctum(base)).toBe(true);
 
-    const sealed = placeRoom(base, room(SANCTUM_DOOR_CELL, ['S', 'E']));
-    const standingSealed = { ...sealed, playerCell: { ...SANCTUM_DOOR_CELL } };
+    const sealed = placeRoom(base, room(SANCTUM_LANDING_MID, ['S', 'E']));
+    const standingSealed = { ...sealed, playerCell: { ...SANCTUM_LANDING_MID } };
     expect(sanctumStanding(standingSealed)).toBe('landing-sealed');
     expect(onSanctumLanding(standingSealed)).toBe(true);
     expect(atSanctumDoor(standingSealed)).toBe(false);
 
-    const open = placeRoom(base, room(SANCTUM_DOOR_CELL, ['S', 'N']));
-    const standingOpen = { ...open, playerCell: { ...SANCTUM_DOOR_CELL } };
+    const open = placeRoom(base, room(SANCTUM_LANDING_MID, ['S', 'N']));
+    const standingOpen = { ...open, playerCell: { ...SANCTUM_LANDING_MID } };
     expect(sanctumStanding(standingOpen)).toBe('at-door');
     expect(onSanctumLanding(standingOpen)).toBe(true);
 
@@ -223,17 +287,17 @@ describe('the Sanctum door is a PLACE (AAA 4.10e — the second gate)', () => {
 
     // Both mouths answer to the one predicate, so "can she speak" cannot come
     // to mean two things (the defect that kept the door unreachable in r13).
-    const open = placeRoom(base, room(SANCTUM_DOOR_CELL, ['S', 'N']));
-    expect(canAddressSanctum({ ...open, playerCell: { ...SANCTUM_DOOR_CELL } })).toBe(true);
-    const sealed = placeRoom(base, room(SANCTUM_DOOR_CELL, ['S', 'E']));
-    expect(canAddressSanctum({ ...sealed, playerCell: { ...SANCTUM_DOOR_CELL } })).toBe(false);
+    const open = placeRoom(base, room(SANCTUM_LANDING_MID, ['S', 'N']));
+    expect(canAddressSanctum({ ...open, playerCell: { ...SANCTUM_LANDING_MID } })).toBe(true);
+    const sealed = placeRoom(base, room(SANCTUM_LANDING_MID, ['S', 'E']));
+    expect(canAddressSanctum({ ...sealed, playerCell: { ...SANCTUM_LANDING_MID } })).toBe(false);
   });
 
   it('shares ONE predicate for "this plan opens onto the Sanctum"', () => {
     // The card face, the blueprint and the economy simulation all read this,
     // so "this plan opens the door" cannot come to mean three things.
-    expect(opensOntoSanctum(['S', 'N'], SANCTUM_DOOR_CELL)).toBe(true);
-    expect(opensOntoSanctum(['S', 'E'], SANCTUM_DOOR_CELL)).toBe(false);
+    expect(opensOntoSanctum(['S', 'N'], SANCTUM_LANDING_MID)).toBe(true);
+    expect(opensOntoSanctum(['S', 'E'], SANCTUM_LANDING_MID)).toBe(false);
     // Only the landing can open onto the Sanctum, whatever else draws north.
     for (const cell of [{ col: 2, row: 4 }, { col: 0, row: 5 }, ENTRANCE_CELL] as Cell[]) {
       expect(opensOntoSanctum(['N', 'E', 'S', 'W'], cell)).toBe(false);
@@ -244,8 +308,8 @@ describe('the Sanctum door is a PLACE (AAA 4.10e — the second gate)', () => {
     const manor = createManor(4242);
     for (const card of BASE_DECK) {
       for (const entry of DIRS) {
-        expect(cardOpensOntoSanctum(card, entry, manor, SANCTUM_DOOR_CELL)).toBe(
-          resolveDoors(card, entry, manor, SANCTUM_DOOR_CELL).includes('N'),
+        expect(cardOpensOntoSanctum(card, entry, manor, SANCTUM_LANDING_MID)).toBe(
+          resolveDoors(card, entry, manor, SANCTUM_LANDING_MID).includes('N'),
         );
       }
     }
@@ -264,7 +328,7 @@ describe('the Sanctum door is a PLACE (AAA 4.10e — the second gate)', () => {
       (c) => c.tierRange[0] <= 3 && 3 <= c.tierRange[1]);
     expect(eligible.length).toBeGreaterThan(5);
     const opens = eligible.filter(
-      (c) => cardOpensOntoSanctum(c, 'N', manor, SANCTUM_DOOR_CELL));
+      (c) => cardOpensOntoSanctum(c, 'N', manor, SANCTUM_LANDING_MID));
     const rate = opens.length / eligible.length;
     expect(rate, `unweighted P(opens north from below) = ${rate.toFixed(3)}`)
       .toBeGreaterThan(0.05);
@@ -544,8 +608,16 @@ describe('orientation at placement', () => {
     // a cross never can: their remaining doors point three ways and at most
     // two walls of a cell are outer walls.
     expect(byShape.get('N')!.sealed / byShape.get('N')!.total).toBe(1);
-    expect(byShape.get('ENW')!.sealed).toBe(0);
-    expect(byShape.get('ENSW')!.sealed).toBe(0);
+    // ROUND 37 — A TEE CAN SEAL NOW, IN EXACTLY TWO CELLS, and the reason is
+    // the sealed chamber's new width. (0,6) and (4,6) are the corners beside
+    // it: two of their walls are the plot's outer wall and the third is the
+    // Sanctum's blank plaster, so a tee laid there has nowhere to go. That is
+    // a real dead end a real player can draft, not a modelling artefact — it
+    // was 0 when (1,6) and (3,6) were ordinary empty cells.
+    for (const shape of ['ENW', 'ENSW']) {
+      const bucket = byShape.get(shape)!;
+      expect(bucket.sealed / bucket.total).toBeLessThan(0.06);
+    }
     // A FORK (round 20) is the interesting middle: it carries on AND branches,
     // but its two onward doors are adjacent rather than opposed, so a fork laid
     // into a CORNER of the plot can still turn its back on the house. That is
@@ -1010,8 +1082,11 @@ describe('padlocks are VISIBLE before a step is spent toward them (AAA 4.6)', ()
     for (let seed = 0; seed < 60; seed++) {
       const m = createManor(seed);
       const seen = visibleLocks(m).map((l) => cellKey(l.cell));
-      expect(seen.every((k) => k === '2,5')).toBe(true);
-      expect(seen.length).toBeLessThanOrEqual(1);
+      // ROUND 37: three sealed doors on the chamber, so up to three padlocks
+      // — and this is the one place the three-cell landing announces itself
+      // on day 1 without a word of copy.
+      expect(seen.every((k) => SANCTUM_LANDING_KEYS.includes(k))).toBe(true);
+      expect(seen.length).toBeLessThanOrEqual(SANCTUM_LANDING_CELLS.length);
     }
   });
 });
@@ -1242,11 +1317,11 @@ function landingSheet(opts: { northDoor: boolean }): string {
     ...base,
     rooms: {
       ...base.rooms,
-      [SANCTUM_DOOR_KEY]: {
-        cardId: 'gallery', cell: SANCTUM_DOOR_CELL, doors, solved: true, kind: 'twistle',
+      [SANCTUM_LANDING_MID_KEY]: {
+        cardId: 'gallery', cell: SANCTUM_LANDING_MID, doors, solved: true, kind: 'twistle',
       },
     },
-    playerCell: { ...SANCTUM_DOOR_CELL },
+    playerCell: { ...SANCTUM_LANDING_MID },
   };
   return renderToStaticMarkup(createElement(BlueprintSheet, {
     manor, canEnterCurrent: false, interactive: true, keys: 2,
@@ -1310,7 +1385,7 @@ describe('the sealed landing answers instead of vanishing (round 13)', () => {
 });
 
 describe('the landing draft names the Sanctum on every card (round 13)', () => {
-  const from: Cell = { col: SANCTUM_DOOR_CELL.col, row: SANCTUM_DOOR_CELL.row - 1 };
+  const from: Cell = { col: SANCTUM_LANDING_MID.col, row: SANCTUM_LANDING_MID.row - 1 };
 
   function landingModal(cards: RoomCard[]): string {
     const base = createManor(4242);
@@ -1344,7 +1419,7 @@ describe('the landing draft names the Sanctum on every card (round 13)', () => {
       .map((m) => m[1]!);
     expect(stamps).toHaveLength(cards.length);
     cards.forEach((card, i) => {
-      const opens = cardOpensOntoSanctum(card, 'N', manor, SANCTUM_DOOR_CELL);
+      const opens = cardOpensOntoSanctum(card, 'N', manor, SANCTUM_LANDING_MID);
       // THE assertion: the stamp is the same computation as the placement,
       // through the same `resolveDoors` the diagram beside it already draws.
       expect(stamps[i]).toBe(sanctumDraftStamp(opens));

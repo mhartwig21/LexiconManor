@@ -183,12 +183,14 @@ const DECLARED_SCROLLERS = [
   {
     scene: 'landing-offer',
     match: 'bp-modal__sheet',
-    why: 'DEBT, NOT A DECISION. The landing offer prints four lines no other offer prints —'
-      + ' the Sanctum rule and an opens-onto stamp on each of three cards — and round 19'
-      + ' already cut this sheet 768 -> 682 against 613px of glass. The owner has ruled the'
-      + ' door-plan line untouchable and three of those four lines sit beside it, so the'
-      + ' remaining answer is a different LAYOUT for this one draft, which is a design'
-      + ' decision and not a tuning. Until it is taken, judgeLanding owns the number',
+    why: 'DEBT, NOT A DECISION, AND NOW SMALLER THAN THE LINES IT IS MADE OF. Round 19 cut'
+      + ' this sheet 768 -> 682 against 613px of glass; round 37 merged the orientation rule'
+      + ' into the Sanctum rule (they became one fact when the landing became three cells)'
+      + ' and cut it 682 -> 640, i.e. 27px over at 375x667 and 31px at 390x844. What is left'
+      + ' is LESS than the three per-card opens-onto stamps alone (56px), so the only'
+      + ' remaining payment is round 13\'s rule that every card prints its own answer — a'
+      + ' design ruling, not a tuning, and the owner has already frozen the door-plan line'
+      + ' those stamps sit beside. Until he takes it, judgeLanding owns the number',
     ownedBy: 'LANDING',
   },
 ];
@@ -284,6 +286,23 @@ const COPY = [
     says: 'reaches the sealed door', expect: 'visible',
     why: 'the round-13 blocker: the modal named door DIRECTIONS and never once named the'
       + ' Sanctum, so the most expensive tap in the campaign was made blind',
+  },
+  {
+    scene: 'landing-offer', sel: '.bp-modal__orient', expect: 'hidden',
+    why: 'ROUND 37 — it is not deleted, it is MERGED. At every other door the rotation rule'
+      + ' ("each plan is turned to the gilt door at your feet") and the Sanctum rule are two'
+      + ' facts; at this one, since the landing became three cells and can be entered from'
+      + ' the south, the east or the west, they are one fact with two halves — which way she'
+      + ' came is what decides which plans can open north. `.bp-modal__sanctum` carries both'
+      + ' halves here and is asserted visible one row up, so nothing has left the glass; what'
+      + ' left is a paragraph break worth 42px on the one sheet that cannot afford it',
+  },
+  {
+    scene: 'draft-offer', sel: '.bp-modal__orient',
+    says: 'turned to the gilt door at your feet', expect: 'visible',
+    why: 'and the other half of the same claim: the merge above is LANDING-ONLY, so the'
+      + ' rotation rule must still be on the glass at every ordinary door. Without this row'
+      + ' the hidden-at-the-landing entry could be satisfied by deleting the line outright',
   },
   /**
    * ROUND 32/33's LIVE DRIVERS, FOLDED IN. `test:ledger`, `test:key-and-letter`
@@ -556,14 +575,20 @@ const LETTER_SIGNOFF = '— Posy, Post Room';
 /**
  * THE LANDING OFFER — WALKED, MEASURED, AND ITS DEBT BOUNDED.
  *
- * This sheet does not fit. Measured on HEAD, in a real landing draft: 682px of
- * content in 613px of glass at 375x667, and 821 in 742 at 390x844 (the second
- * number is new — the last round believed this was a 375-only defect). Round 19
- * had already cut it 768 -> 682 and said, correctly, that what is left needs a
- * design answer rather than another 4% of glass. The owner has since ruled the
- * door-plan line untouchable and three of the four offending lines sit beside
- * it, so the remaining move is a different LAYOUT for this one draft — a
- * decision, not a tuning, and not one to invent blind.
+ * This sheet does not fit. Measured in a real landing draft: 682px of content
+ * in 613px of glass at 375x667 and 821 in 742 at 390x844 before round 37;
+ * **640 in 613 and 773 in 742 after it**, i.e. 27px and 31px over. Round 19
+ * cut it 768 -> 682 and said, correctly, that what is left needs a design
+ * answer rather than another 4% of glass; round 37 took the half of that
+ * answer its own change made true — with the landing three cells wide, "each
+ * plan turns to the wall at your feet" and "only a plan that opens north gets
+ * in" stopped being two facts and became one sentence, worth 42px and 48px.
+ *
+ * WHAT IS LEFT IS NOW SMALLER THAN THE THREE PER-CARD STAMPS (56px), which is
+ * a sharper statement of the debt than the old one: the whole residue is round
+ * 13's rule that EVERY card prints its own opens-onto answer, and the owner has
+ * frozen the door-plan line those stamps sit beside. That is a design ruling,
+ * not a tuning, and not one to invent blind.
  *
  * SO THE GATE DOES THE HONEST THING INSTEAD OF THE COMFORTABLE ONE. It walks
  * the scene, it prints the number on every run, and it bounds the debt with a
@@ -604,6 +629,66 @@ export function judgeLanding(m) {
         + ` ${m.budget}px of that (the Sanctum rule at ${m.ruleH}px plus ${m.stamps.length} stamps)`
         + ' — something OTHER than the Sanctum copy has grown this sheet, and the known debt was'
         + ' bounded precisely so that this would be visible' });
+  }
+  return out;
+}
+
+/**
+ * ═══ THE LANDING IS THREE CELLS, AND THE VOW IS TAKEN AT ALL THREE ════════
+ *
+ * ROUND 37 widened the landing from one cell to three (docs/THE_CLIMB §2), and
+ * everything the unit suite can say about that it says against `atSanctumDoor`
+ * — a pure predicate over a `ManorState`. What it cannot say is whether the
+ * BLUEPRINT agrees: the vow control used to be a rect nailed over `SANCTUM_CELL`
+ * and the sealed seam a bar nailed over `SANCTUM_DOOR_CELL`, so a predicate that
+ * says yes at (1,5) and a sheet that draws the control at (2,6) is a green suite
+ * and an unreachable ending on the west landing. That is this project's own
+ * recurring failure — verifying a fix with an instrument that shares its
+ * assumptions — so the claim is made where it can be false: in the built app,
+ * at each cell in turn, with the control's own box measured against the player
+ * token's own box.
+ *
+ * For every landing cell the walk asserts, in both states:
+ *   OPEN   — `.bp-sanctumhit` exists, is not the sealed variant, and its hit
+ *            zone sits DIRECTLY ABOVE HER: same column as the token, one cell
+ *            up. A control drawn over a fixed column would fail two cells in
+ *            three, which is exactly the defect this round could have shipped.
+ *   SEALED — `.bp-sanctumhit--sealed` exists (round 13: the refusal is a real
+ *            control, never a vanished one) and the bricked seam is drawn on
+ *            HER north wall, not on a fixed one.
+ */
+export function judgeLandingCells(cells) {
+  const out = [];
+  const want = 3;
+  if (!cells || cells.length < want) {
+    out.push({ klass: 'VOW', scene: 'landing-cells', what: 'the Sanctum landing',
+      message: `${cells?.length ?? 0} of ${want} landing cells were walked — round 37 made the`
+        + ' ending reachable from three cells, and a walk that only visits one cannot tell'
+        + ' a three-cell landing from the single square it replaced' });
+  }
+  for (const c of cells ?? []) {
+    if (!c.open) {
+      out.push({ klass: 'VOW', scene: 'landing-cells', what: `col ${c.col}, plan opens north`,
+        message: 'no `.bp-sanctumhit` control on the sheet — the engine says she is at the'
+          + ' Sanctum door and the blueprint offers no way to take the vow' });
+    } else if (!c.aboveHer) {
+      out.push({ klass: 'VOW', scene: 'landing-cells', what: `col ${c.col}, the vow's own box`,
+        message: `the vow control is drawn at x ${Math.round(c.hitMidX)} while she is standing at`
+          + ` x ${Math.round(c.tokenMidX)}, ${Math.round(c.dy)}px above her — it is nailed to a`
+          + ' fixed cell rather than to the chamber door over her head, so two of the three'
+          + ' landings send her tap into the wrong square' });
+    }
+    if (!c.sealedControl) {
+      out.push({ klass: 'VOW', scene: 'landing-cells', what: `col ${c.col}, plan seals`,
+        message: 'no `.bp-sanctumhit--sealed` control — the round-13 blocker, back: a landing'
+          + ' that refuses by drawing nothing is indistinguishable from a bug on the most'
+          + ' expensive arrival in the campaign' });
+    }
+    if (!c.seam) {
+      out.push({ klass: 'VOW', scene: 'landing-cells', what: `col ${c.col}, the sealed seam`,
+        message: 'the bricked seam is not drawn on her own north wall — the one fact the game'
+          + ' never drew, drawn at the wrong cell is drawn nowhere' });
+    }
   }
   return out;
 }
@@ -761,6 +846,13 @@ export const COVERAGE_FLOORS = {
   letterParas: 3,    // Posy's welcome letter is four paragraphs
   landingStamps: 3,  // one Sanctum answer per card, both answers printed
   clipLines: 2,      // the blueprint margin's key is two sentences
+  /**
+   * ROUND 37. The landing is three cells; a walk that visits one of them
+   * cannot tell the new ending from the single square it replaced, and
+   * `judgeLandingCells` filters a list — so an empty list has to be a finding
+   * in its own right rather than a silent pass.
+   */
+  landingCells: 3,   // the vow, offered and refused at each landing cell
 };
 
 /* ─────────────────────────────── SELF-TEST ───────────────────────────────
@@ -969,6 +1061,38 @@ export function selfTest() {
     judgeLanding({ ...landingToday, stamps: [stamp, stamp, { ...stamp, h: 0 }] }),
     ['LANDING']);
 
+  // --- VOW (round 37 — the landing is three cells) -------------------------
+  const atCol = (col) => ({
+    col, open: true, sealedControl: true, seam: true, aboveHer: true,
+    hitMidX: 100, tokenMidX: 100, dy: 64,
+  });
+  const allThree = [atCol(1), atCol(2), atCol(3)];
+  check('the vow offered and refused at each of the three landing cells',
+    judgeLandingCells(allThree),
+    []);
+  check('a walk that only ever stood on the middle landing',
+    judgeLandingCells([atCol(2)]),
+    ['VOW']);
+  check('THE DEFECT ROUND 37 COULD HAVE SHIPPED: the vow nailed to a fixed column',
+    judgeLandingCells([
+      { ...atCol(1), aboveHer: false, hitMidX: 164, tokenMidX: 100 },
+      atCol(2),
+      { ...atCol(3), aboveHer: false, hitMidX: 164, tokenMidX: 228 },
+    ]),
+    ['VOW', 'VOW']);
+  check('a landing whose engine says door and whose sheet draws none',
+    judgeLandingCells([atCol(1), { ...atCol(2), open: false }, atCol(3)]),
+    ['VOW']);
+  check('the round-13 blocker, back at one cell: a refusal that draws nothing',
+    judgeLandingCells([atCol(1), atCol(2), { ...atCol(3), sealedControl: false }]),
+    ['VOW']);
+  check('the bricked seam drawn at a fixed wall rather than hers',
+    judgeLandingCells([{ ...atCol(1), seam: false }, atCol(2), atCol(3)]),
+    ['VOW']);
+  check('a walk that never reached the landing storey at all',
+    judgeLandingCells(null),
+    ['VOW']);
+
   // --- CLIP / INERT --------------------------------------------------------
   const vb = { w: 300, h: 420 };
   check('round 28’s lost glyph: a key line laid past the viewBox that clips it',
@@ -986,8 +1110,8 @@ export function selfTest() {
 
   // --- BLIND (the anti-construction guard) ---------------------------------
   const fullWalk = {
-    scenes: 17, probes: 1600, scrollRows: 260, copyAssertions: 12, driven: 6,
-    accountRows: 7, letterParas: 4, landingStamps: 3, clipLines: 2,
+    scenes: 18, probes: 1600, scrollRows: 260, copyAssertions: 12, driven: 6,
+    accountRows: 7, letterParas: 4, landingStamps: 3, clipLines: 2, landingCells: 3,
   };
   check('a probe selector that stopped matching anything',
     judgeCoverage({ ...fullWalk, probes: 0 }),
@@ -1015,6 +1139,9 @@ export function selfTest() {
     ['BLIND']);
   check('a walk that stopped seeing the margin’s key',
     judgeCoverage({ ...fullWalk, clipLines: 0 }),
+    ['BLIND']);
+  check('a walk that never stood on a landing cell (round 37)',
+    judgeCoverage({ ...fullWalk, landingCells: 0 }),
     ['BLIND']);
   check('a full walk',
     judgeCoverage({ ...fullWalk, perScene: { 'room:study': 14 } }),
@@ -1104,6 +1231,33 @@ export const PROOFS = [
     klass: 'CONSOLE',
     why: 'a page that complains on the way past, which today nothing does',
     init: () => { setTimeout(() => console.error('[proof] the manor tripped over the rug'), 400); },
+  },
+  {
+    id: 'vow-nailed-to-one-cell',
+    klass: 'VOW',
+    /**
+     * ROUND 37, THE DEFECT THIS ROUND COULD HAVE SHIPPED. The landing became
+     * three cells and `atSanctumDoor` moved with it; the blueprint's vow
+     * control was a rect nailed over `SANCTUM_CELL`. A unit suite over the
+     * predicate cannot see that at all — it is green while two of the three
+     * ways into the ending send the tap into a wall.
+     *
+     * Staged by shoving the vow control two columns east, which is exactly the
+     * displacement a fixed rect produces at the west landing.
+     */
+    why: 'the Sanctum vow drawn at a fixed column rather than over the landing she is standing on',
+    css: '.bp-sanctumhit { transform: translateX(128px) !important; }',
+  },
+  {
+    id: 'landing-refuses-by-vanishing',
+    klass: 'VOW',
+    /**
+     * The round-13 blocker, re-broken at the class that fixed it: a landing
+     * whose plan turns its back on the chamber draws NOTHING, on the most
+     * expensive arrival in the campaign. It shipped that way for four rounds.
+     */
+    why: 'the sealed landing refusing by drawing no control at all, the round-13 blocker',
+    css: '.bp-sanctumhit--sealed, .bp-sealedseam { display: none !important; }',
   },
 
   /* ═══ ROUND 35 — THE THREE HOLES, RE-BROKEN ════════════════════════════════
@@ -1568,6 +1722,56 @@ function measureLanding() {
 }
 
 /**
+ * One landing cell, in both states. Run once per cell with the store already
+ * standing her there; reads only what the sheet drew.
+ */
+function measureLandingCell(col) {
+  const rectOf = (el) => (el ? el.getBoundingClientRect() : null);
+  const hit = document.querySelector('.bp-sanctumhit:not(.bp-sanctumhit--sealed) .bp-hit__zone');
+  const token = document.querySelector('.bp-token');
+  const h = rectOf(hit);
+  const t = rectOf(token);
+  const drawn = Boolean(h) && h.width > 0 && h.height > 0;
+  const hitMidX = h ? h.x + h.width / 2 : NaN;
+  const tokenMidX = t ? t.x + t.width / 2 : NaN;
+  const dy = h && t ? (t.y + t.height / 2) - (h.y + h.height / 2) : NaN;
+  return {
+    col,
+    open: drawn,
+    hitMidX,
+    tokenMidX,
+    dy,
+    // Same column as the token, and one cell straight up: the tolerance is
+    // half a cell, so a control nailed to a neighbouring column fails.
+    aboveHer: Boolean(h && t) && Math.abs(hitMidX - tokenMidX) < h.width / 2
+      && dy > h.height * 0.5 && dy < h.height * 1.6,
+  };
+}
+
+/**
+ * …and the other state: the plan turns its back on the chamber.
+ *
+ * DRAWN, not merely mounted. `display: none` leaves a node exactly where
+ * `querySelector` finds it, and the way this house loses a control is not by
+ * deleting it — the round-13 blocker WAS a control that measured nothing. Both
+ * halves are judged on their boxes.
+ */
+function measureLandingCellSealed() {
+  // A horizontal SVG path has a real width and NO height, so the test is "has
+  // an extent at all" rather than "has both". Hidden either way measures 0x0.
+  const drawn = (sel) => {
+    const el = document.querySelector(sel);
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 || r.height > 0;
+  };
+  return {
+    sealedControl: drawn('.bp-sanctumhit--sealed .bp-hit__zone'),
+    seam: drawn('.bp-sealedseam'),
+  };
+}
+
+/**
  * The blueprint's margin key, judged where the clipping happens: `getBBox()`
  * in user units against the root's `viewBox`, never the transformed rect.
  */
@@ -1794,7 +1998,7 @@ async function walkOneViewport(browser, base, vp, inject, quiet) {
   const roomsSeen = [];
   const counts = {
     scenes: 0, probes: 0, scrollRows: 0, copyAssertions: 0, driven: 0, perScene: {},
-    accountRows: 0, letterParas: 0, landingStamps: 0, clipLines: 0,
+    accountRows: 0, letterParas: 0, landingStamps: 0, clipLines: 0, landingCells: 0,
   };
   let appSource = null;
   let scene = 'boot';
@@ -1960,6 +2164,83 @@ async function walkOneViewport(browser, base, vp, inject, quiet) {
       await page.waitForSelector('.bp-modal', { state: 'detached', timeout: 8000 }).catch(() => {});
     } else {
       findings.push(...judgeLanding(null));
+    }
+
+    /**
+     * ═══ THE VOW, AT EVERY LANDING CELL (round 37) ═══════════════════════════
+     * SETUP ONLY: the store stands her on each landing cell in turn with a real
+     * placed room, and then the REAL blueprint decides whether there is a
+     * control over her head and where it is drawn. Nothing here skips a control
+     * the gate is about to make a claim about — the last cell's open state is
+     * taken with a REAL POINTER TAP, and the Sanctum screen has to answer it.
+     */
+    scene = 'landing-cells';
+    const landingCells = [];
+    const landingCols = await page.evaluate(() => window.__LANDING_COLS__ ?? [1, 2, 3]);
+    for (const col of landingCols) {
+      const stand = async (doors) => page.evaluate(([c, d]) => {
+        const store = window.__manorStore;
+        const s = store.getState();
+        const cell = { col: c, row: 5 };
+        const rooms = { ...s.manor.rooms };
+        rooms[`${c},5`] = {
+          cardId: 'reading-nook', cell, doors: d, solved: true, kind: 'parlor',
+        };
+        store.setState({ draftOffer: null, manor: { ...s.manor, rooms, playerCell: cell } });
+      }, [col, doors]);
+      await stand(['S', 'N']);
+      await page.waitForTimeout(160);
+      const open = await stable(page, () => page.evaluate(measureLandingCell, col));
+      await stand(['S', 'E']);
+      await page.waitForTimeout(160);
+      const sealed = await stable(page, () => page.evaluate(measureLandingCellSealed));
+      landingCells.push({ ...open, ...sealed });
+    }
+    counts.landingCells += landingCells.length;
+    findings.push(...judgeLandingCells(landingCells));
+    await audit('landing-cells');
+    {
+      // …and the WEST landing takes the vow with a real pointer tap, because
+      // the middle cell is the one every older driver already stands on.
+      const west = landingCols[0];
+      await page.evaluate((c) => {
+        const store = window.__manorStore;
+        const s = store.getState();
+        const cell = { col: c, row: 5 };
+        const rooms = { ...s.manor.rooms };
+        rooms[`${c},5`] = {
+          cardId: 'reading-nook', cell, doors: ['S', 'N'], solved: true, kind: 'parlor',
+        };
+        store.setState({ draftOffer: null, manor: { ...s.manor, rooms, playerCell: cell } });
+      }, west);
+      await page.waitForTimeout(220);
+      const vow = await page.$('.bp-sanctumhit:not(.bp-sanctumhit--sealed) .bp-hit__zone');
+      const vbox = vow ? await vow.boundingBox() : null;
+      if (vbox) {
+        await page.mouse.move(vbox.x + vbox.width / 2, vbox.y + vbox.height / 2);
+        await page.mouse.down();
+        await page.mouse.up();
+        counts.driven += 1;
+        const arrived = await page.waitForSelector('.snc-page', { timeout: 8000 }).catch(() => null);
+        if (!arrived) {
+          findings.push({ klass: 'VOW', scene: 'landing-cells',
+            what: `col ${west}, a real tap on the vow`,
+            message: 'the tap landed on the control and the Sanctum never opened — the west'
+              + ' landing draws a way in that does not go anywhere' });
+        }
+        // Back to the sheet by ROUTE, never by reloading: a reload restarts the
+        // day, and every scene downstream of this one would then be measuring a
+        // different app. `--prove` caught precisely that — `room-goes-dark`
+        // stopped going red the first time this block navigated instead of
+        // routing.
+        await page.evaluate(() => { location.hash = '#/'; });
+        await page.waitForSelector('svg.bp-sheet', { timeout: 20000 }).catch(() => {});
+        await clearMoments(page);
+      } else {
+        findings.push({ klass: 'VOW', scene: 'landing-cells',
+          what: `col ${west}, a real tap on the vow`,
+          message: 'no vow control had a box to tap — the driven half of this verdict never ran' });
+      }
     }
 
     // The Cabinet — opened with a real tap on a real button.
@@ -2147,7 +2428,8 @@ async function runGate({ viewports, inject, quiet }) {
           + ` · ${c.scenes} scenes · ${c.probes} hit probes · ${c.scrollRows} scrollports`
           + ` · ${c.copyAssertions} copy lines · ${c.driven} driven taps`
           + ` · ${c.accountRows} account rows · ${c.letterParas} letter paragraphs`
-          + ` · ${c.landingStamps} Sanctum stamps · ${c.clipLines} key lines`
+          + ` · ${c.landingStamps} Sanctum stamps · ${c.landingCells} landing cells`
+          + ` · ${c.clipLines} key lines`
           + ` · ${mine.length} finding(s)`);
       }
     }

@@ -6,7 +6,7 @@
  * THE FINDING. The volume is solvable in principle on day 1 (AAA 4.18) and the
  * guess itself has always been free (`SANCTUM_GUESS_COST` is 0). What was not
  * free was ADDRESSING the door at all: `atSanctumDoor` wanted her standing on
- * (2,5) with a north-opening plan drafted there, an ascent priced at 22 bare
+ * a landing cell with a north-opening plan drafted there, an ascent priced at 22 bare
  * steps against a base budget of 18, across ~1.85 padlocks at 2 keys each, and
  * a landing offer that contained an opening plan on ~0.61 of draws. Measured on
  * `PROFILE_DECENT`: first door median day 19, 7–14% never inside 45 evenings.

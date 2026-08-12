@@ -18,6 +18,11 @@ import {
   type SaveV2,
 } from '../src/app/save';
 import { ROOM_PUZZLE_KINDS } from '../src/engine/rooms/room-puzzle';
+import {
+  atSanctumDoor, cellKey, createManor, isSanctumCell, roomAt,
+  SANCTUM_CARD_ID, SANCTUM_CELLS, SANCTUM_LANDING_CELLS,
+} from '../src/engine/manor/grid';
+import { ENTRANCE_CELL, type PlacedRoom } from '../src/engine/types';
 import { VIEWED_BACKFILL_FLAG, viewedFragmentFlag } from '../src/engine/journal';
 
 // --- localStorage stub (vitest runs in node) -------------------------------
@@ -264,6 +269,95 @@ describe('unread viewed-flags backfill (AAA 11.20/11.21)', () => {
     const once = migrate(JSON.parse(JSON.stringify(old)));
     const twice = migrate(JSON.parse(JSON.stringify(once)));
     expect(twice.journal.flags).toEqual(once.journal.flags);
+  });
+});
+
+/**
+ * ═══ ROUND 37 — THE SANCTUM GREW, AND A SAVE CAN ARRIVE FROM BEFORE IT ════
+ *
+ * The chamber was one cell and is three. The manor is rebuilt at every dawn, so
+ * the only way the new geometry can arrive wrong is an evening interrupted
+ * under the old build: it may hold a DRAFTED room at (1,6) or (3,6), and a
+ * manor missing two of its three seals is one where a landing room's north door
+ * opens onto an ordinary parlor. `atSanctumDoor` asks the MANOR — that is the
+ * round-28 ruling, one predicate, no second copy — so it would answer yes at a
+ * door that is not the ending, and the volume would close in a Reading Nook.
+ *
+ * The migration is therefore verified against the failure it exists to stop,
+ * not against its own shape: the assertion below is that `atSanctumDoor` says
+ * NO through the impostor, which is an instrument that could disagree with the
+ * migration rather than one that shares its assumptions.
+ */
+describe('the Sanctum suite is restored at the door (round 37)', () => {
+  const legacyManor = () => {
+    const m = createManor(7);
+    const rooms: Record<string, PlacedRoom> = { ...m.rooms };
+    // …as the old build wrote it: one seal, and two draftable cells beside it.
+    for (const cell of SANCTUM_CELLS) {
+      if (cell.col !== 2) delete rooms[cellKey(cell)];
+    }
+    return { ...m, rooms };
+  };
+
+  it('installs a seal in every chamber cell of a pre-round-37 save', () => {
+    const save = createEmptySaveV2('Meredith');
+    save.manor = legacyManor();
+    const out = migrate(JSON.parse(JSON.stringify(save)));
+    for (const cell of SANCTUM_CELLS) {
+      const seal = roomAt(out.manor!, cell)!;
+      expect(seal, `no seal at ${cellKey(cell)}`).toBeDefined();
+      expect(seal.cardId).toBe(SANCTUM_CARD_ID);
+      expect(seal.doors).toEqual(['S']);
+    }
+  });
+
+  it('EVICTS a room standing where the chamber now is, and says no at its door', () => {
+    const save = createEmptySaveV2('Meredith');
+    const manor = legacyManor();
+    const west = SANCTUM_CELLS[0]!;                       // (1,6)
+    const landing = SANCTUM_LANDING_CELLS[0]!;            // (1,5)
+    // The impostor: an ordinary room where the chamber now stands, drawing a
+    // south door that would match a landing plan's north one.
+    manor.rooms[cellKey(west)] = {
+      cardId: 'reading-nook', cell: west, doors: ['S', 'E'], solved: true, kind: 'parlor',
+    };
+    manor.rooms[cellKey(landing)] = {
+      cardId: 'gallery', cell: landing, doors: ['N', 'S'], solved: true, kind: 'twistle',
+    };
+    manor.playerCell = { ...landing };
+    // Before the migration the two doors match and the live gate is FOOLED —
+    // which is the whole reason this migration exists, asserted rather than
+    // asserted-about.
+    save.manor = manor;
+    expect(atSanctumDoor(manor)).toBe(true);
+    const out = migrate(JSON.parse(JSON.stringify(save)));
+    expect(roomAt(out.manor!, west)!.cardId).toBe(SANCTUM_CARD_ID);
+    // …and now it is the ending, not a parlor: she is at a real door.
+    expect(atSanctumDoor(out.manor!)).toBe(true);
+    expect(out.manor!.playerCell).toEqual(landing);
+  });
+
+  it('puts her back in the hall if she was standing inside the new chamber', () => {
+    const save = createEmptySaveV2('Meredith');
+    const manor = legacyManor();
+    const east = SANCTUM_CELLS[2]!;                       // (3,6)
+    manor.rooms[cellKey(east)] = {
+      cardId: 'gallery', cell: east, doors: ['S'], solved: false, kind: 'twistle',
+    };
+    manor.playerCell = { ...east };
+    save.manor = manor;
+    const out = migrate(JSON.parse(JSON.stringify(save)));
+    expect(isSanctumCell(out.manor!.playerCell)).toBe(false);
+    expect(out.manor!.playerCell).toEqual(ENTRANCE_CELL);
+  });
+
+  it('leaves a round-37 manor byte-identical, and is idempotent', () => {
+    const save = createEmptySaveV2('Meredith');
+    save.manor = createManor(11);
+    const once = migrate(JSON.parse(JSON.stringify(save)));
+    expect(once.manor).toEqual(save.manor);
+    const twice = migrate(JSON.parse(JSON.stringify(once)));
+    expect(twice.manor).toEqual(once.manor);
   });
 });
 

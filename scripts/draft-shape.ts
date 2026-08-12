@@ -24,7 +24,7 @@ import { MANOR_COLS } from '../src/engine/types';
 import { BASE_DECK, deckFor } from '../src/engine/manor/deck';
 import {
   cardOpensOntoSanctum, cellKey, createManor, draftTargets, neighbor, resolveDoors,
-  roomAt, sealsItself, SANCTUM_DOOR_CELL,
+  roomAt, sealsItself, SANCTUM_LANDING_MID,
 } from '../src/engine/manor/grid';
 import { rollCards } from '../src/engine/manor/drafting';
 import { wingCharacterOf, wingOf, WING_NAMES } from '../src/engine/manor/wings';
@@ -204,18 +204,18 @@ function landingRates(deck: readonly RoomCard[], samples = 4000) {
     const m = createManor(seed);
     for (const c of eligible) {
       plans += 1;
-      if (cardOpensOntoSanctum(c, entry, m, SANCTUM_DOOR_CELL)) opens += 1;
+      if (cardOpensOntoSanctum(c, entry, m, SANCTUM_LANDING_MID)) opens += 1;
     }
   }
   let offers = 0;
   let withNorth = 0;
   for (let seed = 0; seed < samples; seed++) {
     const m = createManor(seed);
-    const cards = rollCards(deck, m, SANCTUM_DOOR_CELL, {
+    const cards = rollCards(deck, m, SANCTUM_LANDING_MID, {
       gems: 2, declinedLastDraft: [], drawIndex: 0, entryDir: entry,
     });
     offers += 1;
-    if (cards.some((c) => cardOpensOntoSanctum(c, entry, m, SANCTUM_DOOR_CELL))) withNorth += 1;
+    if (cards.some((c) => cardOpensOntoSanctum(c, entry, m, SANCTUM_LANDING_MID))) withNorth += 1;
   }
   console.log(`\n(3) THE LANDING (AAA 4.10d) — entered from below, ${eligible.length} tier-3-eligible cards`);
   console.log(`    plans that open north (per card-day) : ${pct(opens / plans)}   [published 27.7%]`);

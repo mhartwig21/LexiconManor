@@ -1304,13 +1304,27 @@
    campaign — prints four more lines than the sheet measured above: the
    Sanctum rule (two lines) and an "opens onto / turns its back on" stamp on
    each of the three cards. Measured live at 375x667, that sheet held 768px
-   before this change and holds 682px after, against the same 613px of glass:
-   86px better and still 69px over. The gate does not walk that scene, so it
-   is not what failed the deploy, and it cannot be paid for out of frame — it
-   is four lines of type, and three of them sit directly beside the door-plan
-   line whose fate is the owner's call. It wants a design answer (the stamp
-   folded into the plan line, or the rule stated once and not thrice), not
-   another 4% of glass.
+   before round 31 and 682px after, against the same 613px of glass.
+
+   ═══ ROUND 37 — 682 -> 640 AT 375x667, AND 821 -> 773 AT 390x844 ══════════
+   Paid by DELETING A PARAGRAPH, not by trimming one. The landing became three
+   cells (docs/THE_CLIMB §2), and at that door the orientation rule ("each plan
+   is turned to the gilt door at your feet") and the Sanctum rule stopped being
+   two facts: which way she comes at the landing is what decides which of the
+   three plans can open north, so they are one sentence there and two
+   everywhere else. `.bp-modal__orient` is not rendered at the landing;
+   `.bp-modal__sanctum` carries both halves. Worth 42px here and 48px at
+   390x844, and registered in the gate's COPY table at BOTH ends — hidden at
+   the landing, and still asserted VISIBLE at an ordinary draft, so the merge
+   cannot decay into a deletion.
+
+   WHAT IS LEFT IS 27px AND 31px, AND IT IS NOW SMALLER THAN THE THREE PER-CARD
+   STAMPS (56px). That is the sharpest the debt can be stated without an owner
+   ruling: the whole residue is round 13's "every card prints its own answer",
+   and the two ways to pay it are folding the stamp into the door-plan line
+   (frozen by the owner) or printing the answer once instead of three times
+   (contradicts round 13's reason for printing both). It still cannot be paid
+   out of frame, and it is still not another 4% of glass.
    -------------------------------------------------------------------------- */
 @media (max-height: 700px) {
   .bp-modal__sheet { max-height: 92%; padding-top: 0.55rem; }

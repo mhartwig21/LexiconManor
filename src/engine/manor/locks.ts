@@ -26,9 +26,9 @@
  */
 
 import type { Cell, Dir, ManorState } from '../types';
-import { MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../types';
+import { MANOR_COLS, MANOR_ROWS } from '../types';
 import { DOOR_LOCKS, doorLockedAt } from '../economy/steps';
-import { cellKey, draftTargets, neighbor, roomAt, sameCell } from './grid';
+import { cellKey, draftTargets, isSanctumCell, neighbor, roomAt } from './grid';
 
 /** Keys a padlocked door asks for (one, today — kept as a named constant). */
 export const KEY_COST = DOOR_LOCKS.keyCost;
@@ -131,7 +131,7 @@ export function visibleLocks(manor: ManorState, view?: LockView): DraftTargetLoc
   // its landing legible, or every fresh manor would open with the whole top
   // storey padlocked in view.
   const openRows = new Set(
-    rooms.filter((r) => !sameCell(r.cell, SANCTUM_CELL)).map((r) => r.cell.row),
+    rooms.filter((r) => !isSanctumCell(r.cell)).map((r) => r.cell.row),
   );
   const out: DraftTargetLock[] = [];
   const seen = new Set<string>();

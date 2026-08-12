@@ -147,7 +147,8 @@ export default function SanctumView() {
   const guessAtSanctum = useManorStore((s) => s.guessAtSanctum);
   /**
    * ── THE DOOR IS A PLACE (AAA 4.10e). ─────────────────────────────────────
-   * The word is spoken from the landing at (2,5), through that room's north
+   * The word is spoken from the landing — any of its three cells — through
+   * that room's north
    * door — the one shared predicate the blueprint draws its approach with
    * (engine/manor/grid.ts `atSanctumDoor`), and the same one the store's
    * `guessAtSanctum` refuses without. Everything else on this screen stays

@@ -21,8 +21,8 @@
 import type { PointerEvent } from 'react';
 import type { Dir, DraftOffer, ManorState, RoomCard } from '../../engine/types';
 import {
-  layoutFor, neighbor, onwardDoors, opensOntoSanctum, opposite, orientLayout, resolveDoors,
-  rowTier, sameCell, sealsItself, SANCTUM_DOOR_CELL,
+  isSanctumLanding, layoutFor, neighbor, onwardDoors, opensOntoSanctum, opposite,
+  orientLayout, resolveDoors, rowTier, sealsItself,
 } from '../../engine/manor/grid';
 import { rememberedWings, wingOf, WING_CHARACTER_WORDS, WING_NAMES } from '../../engine/manor/wings';
 import { SEALED_ROOM_BOUNTY } from '../../engine/manor/deck';
@@ -164,7 +164,7 @@ export default function DraftModal({
   // opens it, so it is a real choice being hidden, not a coin the player
   // cannot influence. Every card in a landing offer now says which it is, off
   // the same `resolveDoors` the diagram beside it already draws.
-  const atLanding = Boolean(target && sameCell(target, SANCTUM_DOOR_CELL));
+  const atLanding = Boolean(target && isSanctumLanding(target));
   const opensSanctum = (card: RoomCard): boolean =>
     Boolean(target && opensOntoSanctum(doorsOf(card), target));
 
@@ -227,18 +227,36 @@ export default function DraftModal({
               could hear it. It is the same wall on all three cards, so it is
               said once — here — and each card is left to say the thing that
               actually differs between them: where it lets her go next. */}
-          <p className="bp-modal__orient">
-            Each plan is turned to the gilt door at your feet — the{' '}
-            {DIR_WORDS[entryWall]} wall
-          </p>
-          {/* The rule nothing in the game had ever stated (round 13): standing
+          {!atLanding && (
+            <p className="bp-modal__orient">
+              Each plan is turned to the gilt door at your feet — the{' '}
+              {DIR_WORDS[entryWall]} wall
+            </p>
+          )}
+          {/* ══ THE LANDING'S ONE SENTENCE (round 37; was two, round 13 + 31) ══
+              The rule nothing in the game had ever stated (round 13): standing
               on the landing is not reaching the Sanctum — the room you lay here
-              has to open north onto its sealed door. Said once, at the top,
-              before the three cards that answer it. */}
+              has to open north onto its sealed door.
+
+              IT IS ONE PARAGRAPH NOW, AND THE THREE-CELL LANDING IS WHY. The
+              orientation line above says the plan turns to the wall at her
+              feet; this line says only a plan that opens north gets in. At
+              every other door in the house those are two facts. At THIS door,
+              since the landing became three cells and can be entered from the
+              south, the east or the west, they are one fact with two halves:
+              which way she came at the landing is what decides which of the
+              three offered plans can open north (`resolveDoors` — the rotation
+              is rigid). Saying it in two paragraphs said the halves and hid
+              the join, and cost this sheet 42px it does not have.
+
+              THE STANDING RULE IS OBEYED, NOT BENT: this states the RULE OF
+              PLAY and stops there. It does not tell her which approach is
+              better, and it does not tell her that walking one cell along the
+              landing deals a different offer. Those are hers to find. */}
           {atLanding && (
             <p className="bp-modal__sanctum">
-              This door opens onto the Sanctum landing. Only a plan that opens
-              {' '}<strong>north</strong> from there reaches the sealed door.
+              Each plan turns to the {DIR_WORDS[entryWall]} wall at your feet.
+              Only one that opens {' '}<strong>north</strong> reaches the sealed door.
             </p>
           )}
           {keyCost > 0 && (

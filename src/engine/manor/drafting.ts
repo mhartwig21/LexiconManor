@@ -34,8 +34,8 @@ import type { Cell, Dir, DraftOffer, ManorState, RoomCard, RoomCategory, Tier } 
 import { MANOR_COLS } from '../types';
 import { createRng, pickWeighted, type Rng } from '../rng';
 import {
-  cardOpensOntoSanctum, cellKey, deweyCell, hashSeed, onwardDoors, resolveDoors, roomAt,
-  rowTier, sameCell, SANCTUM_DOOR_CELL,
+  cardOpensOntoSanctum, cellKey, deweyCell, hashSeed, isSanctumLanding, onwardDoors,
+  resolveDoors, roomAt, rowTier,
 } from './grid';
 import { cardById, isKeyBearing, SCRIPTED_FIRST_DRAFT } from './deck';
 import { wingOf, type WingCharacters } from './wings';
@@ -73,7 +73,7 @@ export interface DraftRollCtx {
    * the surveyed-plan bonus: every evening she has stood on the Sanctum
    * landing is a plan of that storey the floorplan cabinet keeps, so plans
    * that open onto the sealed door surface more often up there. Reads ONLY at
-   * `SANCTUM_DOOR_CELL`; 0/omitted leaves every weight in the game exactly as
+   * the Sanctum landing; 0/omitted leaves every weight in the game exactly as
    * it was, which is why `deckMixAt` and the 4.10b clock are untouched by it.
    */
   sanctumPlanWarmth?: number;
@@ -344,15 +344,15 @@ function drawOne(
  * (engine/economy/steps.ts `SANCTUM_ARC`).
  *
  * Returns a per-card weight multiplier, and it is exactly 1 everywhere except
- * `SANCTUM_DOOR_CELL` with a warmed arc — no other cell in the manor can be
- * affected by any of this, which is what keeps `deckMixAt` (and the 4.10b
- * clock derived from it) untouched.
+ * the three landing cells (`SANCTUM_LANDING_CELLS`) with a warmed arc — no
+ * other cell in the manor can be affected by any of this, which is what keeps
+ * `deckMixAt` (and the 4.10b clock derived from it) untouched.
  */
 function landingBoost(
   manor: ManorState, target: Cell, ctx: DraftRollCtx,
 ): (card: RoomCard) => number {
   const warmth = ctx.sanctumPlanWarmth ?? 0;
-  if (warmth <= 0 || !sameCell(target, SANCTUM_DOOR_CELL)) return () => 1;
+  if (warmth <= 0 || !isSanctumLanding(target)) return () => 1;
   const entry = ctx.entryDir ?? 'N';
   const gain = sanctumPlanWeightMultiplier(warmth);
   return (card) => (cardOpensOntoSanctum(card, entry, manor, target) ? gain : 1);
@@ -503,7 +503,7 @@ export function rollCards(
   // promise: the guaranteed-takeable card is the one that opens the door. It
   // narrows the pool only if something is left in it — affordability outranks
   // mercy, because an offer she cannot take is the one thing 4.1 forbids.
-  if (ctx.sanctumMercy && sameCell(target, SANCTUM_DOOR_CELL)) {
+  if (ctx.sanctumMercy && isSanctumLanding(target)) {
     const entry = ctx.entryDir ?? 'N';
     const opens = first.filter((c) => cardOpensOntoSanctum(c, entry, manor, target));
     if (opens.length > 0) first = opens;

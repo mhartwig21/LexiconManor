@@ -14,7 +14,7 @@ import { CARRY_OVER_EFFECTS, carryOverFrom } from '../src/engine/manor/deck';
 import type { DayState, DraftOffer, PlacedRoom, StepLedger } from '../src/engine/types';
 import type { RecordedEvent } from '../src/engine/events';
 import {
-  atSanctumDoor, atSpeakingTube, draftTargets, SANCTUM_DOOR_CELL, SANCTUM_DOOR_KEY,
+  atSanctumDoor, atSpeakingTube, draftTargets, SANCTUM_LANDING_MID, SANCTUM_LANDING_MID_KEY,
 } from '../src/engine/manor/grid';
 import { sanctumAnswered } from '../src/engine/manor/tube';
 import { ENTRANCE_CELL } from '../src/engine/types';
@@ -340,13 +340,13 @@ describe('THE SECOND GATE: the word is spoken at the door (AAA 4.10e, round 7)',
     const store = exploringStore();
     const manor = store.getState().manor!;
     const blind: PlacedRoom = {
-      cardId: 'test-room', cell: SANCTUM_DOOR_CELL, doors: ['S'], solved: true, kind: 'parlor',
+      cardId: 'test-room', cell: SANCTUM_LANDING_MID, doors: ['S'], solved: true, kind: 'parlor',
     };
     store.setState({
       manor: {
         ...manor,
-        rooms: { ...manor.rooms, [SANCTUM_DOOR_KEY]: blind },
-        playerCell: { ...SANCTUM_DOOR_CELL },
+        rooms: { ...manor.rooms, [SANCTUM_LANDING_MID_KEY]: blind },
+        playerCell: { ...SANCTUM_LANDING_MID },
       },
     });
     expect(atSanctumDoor(store.getState().manor)).toBe(false);
@@ -359,13 +359,13 @@ describe('THE SECOND GATE: the word is spoken at the door (AAA 4.10e, round 7)',
     const store = exploringStore();
     const manor = store.getState().manor!;
     const landing: PlacedRoom = {
-      cardId: 'test-room', cell: SANCTUM_DOOR_CELL, doors: ['N', 'S'], solved: true, kind: 'parlor',
+      cardId: 'test-room', cell: SANCTUM_LANDING_MID, doors: ['N', 'S'], solved: true, kind: 'parlor',
     };
     store.setState({
       manor: {
         ...manor,
-        rooms: { ...manor.rooms, [SANCTUM_DOOR_KEY]: landing },
-        playerCell: { ...SANCTUM_DOOR_CELL },
+        rooms: { ...manor.rooms, [SANCTUM_LANDING_MID_KEY]: landing },
+        playerCell: { ...SANCTUM_LANDING_MID },
       },
     });
     expect(atSanctumDoor(store.getState().manor)).toBe(true);
@@ -381,12 +381,12 @@ describe('THE SECOND GATE: the word is spoken at the door (AAA 4.10e, round 7)',
         ...manor,
         rooms: {
           ...manor.rooms,
-          [SANCTUM_DOOR_KEY]: {
-            cardId: 'test-room', cell: SANCTUM_DOOR_CELL, doors: ['N', 'S'],
+          [SANCTUM_LANDING_MID_KEY]: {
+            cardId: 'test-room', cell: SANCTUM_LANDING_MID, doors: ['N', 'S'],
             solved: true, kind: 'parlor',
           },
         },
-        playerCell: { ...SANCTUM_DOOR_CELL },
+        playerCell: { ...SANCTUM_LANDING_MID },
       },
     });
     const stepsBefore = store.getState().stepsRemaining();
@@ -494,17 +494,23 @@ describe('the gift is a priced action through the audited ledger (AAA 4.9)', () 
 // ROUND-5 AUDIT — the live paths behind the campaign model
 // ---------------------------------------------------------------------------
 
-/** Standing in a room on 0-based `row`, column 1 (clear of the Sanctum stack). */
+/**
+ * Standing in a room on 0-based `row`, column 0 — clear of the Sanctum, which
+ * since round 37 fills (1,6), (2,6) and (3,6). It used to be column 1, and at
+ * row 5 that now opens north onto the sealed chamber: there is no draft there
+ * at all, which is the whole point of the change and not what this test is
+ * about.
+ */
 const atRow = (row: number) => {
   const store = exploringStore();
   const manor = store.getState().manor!;
   const landing: PlacedRoom = {
-    cardId: 'gallery', cell: { col: 1, row }, doors: ['N', 'S'],
+    cardId: 'gallery', cell: { col: 0, row }, doors: ['N', 'S'],
     solved: true, kind: 'twistle',
   };
   store.setState({
-    manor: { ...manor, rooms: { ...manor.rooms, [`1,${row}`]: landing },
-      playerCell: { col: 1, row } },
+    manor: { ...manor, rooms: { ...manor.rooms, [`0,${row}`]: landing },
+      playerCell: { col: 0, row } },
     currencies: { gems: 0, keys: 4, bookmarks: 0 },   // keys so no padlock refuses
     ledger: { budget: 40, entries: [] },
   });
@@ -540,7 +546,7 @@ describe('backing out of a draft costs the LOCAL rate, not a storey (AAA 4.6)', 
       const moves = store.getState().ledger.entries.filter((e) => e.reason === 'move');
       expect(moves.reduce((s, e) => s + e.delta, 0)).toBe(moveAt(row + 1));
       // …and the room really was placed a storey up.
-      expect(store.getState().manor!.rooms[`1,${row + 1}`]).toBeDefined();
+      expect(store.getState().manor!.rooms[`0,${row + 1}`]).toBeDefined();
       expect(before - store.getState().stepsRemaining()).toBeGreaterThan(0);
     }
   });

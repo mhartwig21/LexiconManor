@@ -14,7 +14,7 @@ import { draftCardStake } from '../src/engine/economy/preview';
 import { effortLabel } from '../src/engine/economy/effort';
 import { reserveToTop, PROFILE_SKILLED, REFILL_PAYOUTS } from '../src/engine/economy/simulate';
 import { UTILITY_EFFECTS } from '../src/engine/manor/deck';
-import { rowTier, SANCTUM_DOOR_CELL } from '../src/engine/manor/grid';
+import { rowTier, SANCTUM_LANDING_MID } from '../src/engine/manor/grid';
 import { MANOR_ROWS, SANCTUM_CELL } from '../src/engine/types';
 import { rankFor, AFFINITY_RANK_THRESHOLDS } from '../src/engine/dialogue/affinity';
 import type { StepEntry, StepLedger, Tier } from '../src/engine/types';
@@ -752,10 +752,10 @@ describe("the night digest's two missing numbers (AAA 4.10 / R.3)", () => {
     expect(new Set(MOVE_COST_BY_ROW.map((_, r) => rowName(r))).size)
       .toBe(MOVE_COST_BY_ROW.length);
     // …and it names the right storey the Sanctum landing. Round 7: row 5 IS
-    // the landing the word is spoken from (grid.ts SANCTUM_DOOR_CELL) and row
+    // the landing the word is spoken from (grid.ts SANCTUM_LANDING_MID) and row
     // 6 is the sealed room; the names were one storey out, so the digest
     // congratulated her on reaching a floor she had not.
-    expect(rowName(SANCTUM_DOOR_CELL.row)).toMatch(/Sanctum landing/);
+    expect(rowName(SANCTUM_LANDING_MID.row)).toMatch(/Sanctum landing/);
     expect(rowName(SANCTUM_CELL.row)).not.toMatch(/landing/);
   });
 
@@ -866,7 +866,7 @@ describe('SANCTUM_ARC — the access gate finally has an arc and a floor', () =>
   it('is fuelled by the storey below the landing, tied to the live geometry', () => {
     // Pinned as an IDENTITY (round 7's lesson: a hand-typed copy of somebody
     // else's row is exactly how a milestone drifts off the thing it measures).
-    expect(SANCTUM_ARC.surveyRow0).toBe(SANCTUM_DOOR_CELL.row - 1);
+    expect(SANCTUM_ARC.surveyRow0).toBe(SANCTUM_LANDING_MID.row - 1);
     expect(SANCTUM_ARC.surveyRow0).toBe(SANCTUM_CELL.row - 2);
     // It is a real climb: the first storey `DOOR_LOCKS` padlocks, and four
     // storeys of walking from the door — so warmth cannot be farmed downstairs.
@@ -927,7 +927,7 @@ describe('SANCTUM_ARC — the access gate finally has an arc and a floor', () =>
     expect(surveyEveningsIn([{}, { highestRow: 0 }, { highestRow: 3 }])).toBe(0);
     expect(surveyEveningsIn([
       { highestRow: SANCTUM_ARC.surveyRow0 },
-      { highestRow: SANCTUM_DOOR_CELL.row },
+      { highestRow: SANCTUM_LANDING_MID.row },
       { highestRow: SANCTUM_ARC.surveyRow0 - 1 },
     ])).toBe(2);
   });

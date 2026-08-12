@@ -48,8 +48,8 @@ import type { Cell, Dir, ManorState, PlacedRoom } from '../../engine/types';
 import { MANOR_COLS, MANOR_ROWS, SANCTUM_CELL } from '../../engine/types';
 import {
   cellKey, deadDoors, deweyCell, doorsConnect, draftTargets, ENTRANCE_CARD_ID,
-  roomAt, sameCell, sanctumStanding, walkableNeighbors, SANCTUM_DOOR_CELL,
-  SPEAKING_TUBE_CELL,
+  isSanctumCell, roomAt, sameCell, sanctumStanding, walkableNeighbors,
+  SANCTUM_CELLS, SANCTUM_LANDING_ROW0, SPEAKING_TUBE_CELL,
 } from '../../engine/manor/grid';
 import { isDoorLocked, visibleLocks, KEY_COST, type LockView } from '../../engine/manor/locks';
 import { useManorStore } from '../../app/store';
@@ -154,6 +154,33 @@ function deadDoorBar(x: number, y: number, d: Dir): string {
   return d === 'N' || d === 'S'
     ? `M${p.x - GAP / 2} ${p.y}h${GAP}`
     : `M${p.x} ${p.y - GAP / 2}v${GAP}`;
+}
+
+/**
+ * ── THE SEALED CHAMBER, DRAWN AS ONE ROOM (round 37, THE_CLIMB §2) ─────────
+ *
+ * The Sanctum fills three cells of the top storey and is held as three
+ * `PlacedRoom` records, one per cell, each with a single south door — that
+ * shape is what stops a BFS pathing THROUGH the ending (engine/manor/grid.ts
+ * `createManor`). It is not a statement that there are three rooms up there,
+ * so the sheet draws what it is: one chamber, three sealed doors along its
+ * foot, no internal walls, because a chamber does not have any.
+ */
+function sanctumBandPath(): string {
+  const first = SANCTUM_CELLS[0]!, last = SANCTUM_CELLS[SANCTUM_CELLS.length - 1]!;
+  const y = py(first.row);
+  const L = px(first.col) + INSET, R = px(last.col) + CELL - INSET;
+  const T = y + INSET, B = y + CELL - INSET;
+  const parts = [`M${L} ${T}H${R}`, `M${L} ${T}V${B}`, `M${R} ${T}V${B}`];
+  // the foot, with a true gap at each cell's sealed south door
+  let cursor = L;
+  for (const cell of SANCTUM_CELLS) {
+    const mid = px(cell.col) + CELL / 2;
+    parts.push(`M${cursor} ${B}H${mid - GAP / 2}`);
+    cursor = mid + GAP / 2;
+  }
+  parts.push(`M${cursor} ${B}H${R}`);
+  return parts.join('');
 }
 
 /** Faint drafting-paper crosses at every grid intersection. */
@@ -359,8 +386,8 @@ export default function BlueprintSheet({
     );
   };
   /**
-   * THE LANDING'S ANSWER (round-13 blocker). She is on (2,5) and the plan she
-   * drafted here drew no north door. Before this the Sanctum simply had no hit
+   * THE LANDING'S ANSWER (round-13 blocker). She is on a landing cell and the
+   * plan she drafted here drew no north door. Before this the Sanctum simply had no hit
    * target and the sheet said nothing at all, while `/sanctum` and the journal
    * both told her to climb to the landing she was standing on. Same channel as
    * the padlock, one storey up, and the same price: nothing.
@@ -370,7 +397,7 @@ export default function BlueprintSheet({
     const attempt = refuseCount.current.get(key) ?? 0;
     refuseCount.current.set(key, attempt + 1);
     showRefusal(
-      key, SANCTUM_DOOR_CELL.row, landingRefusalLine(attempt),
+      key, SANCTUM_LANDING_ROW0, landingRefusalLine(attempt),
       landingRefusalAnnouncement(attempt),
     );
   };
@@ -401,11 +428,12 @@ export default function BlueprintSheet({
   /** She is in the hall, and the brass is a control (see `SpeakingTube`). */
   const atTube = standing === 'at-tube';
 
-  const roomNodes: ReactNode[] = rooms.map((room) => {
+  // The three Sanctum records are drawn together, below, as the one chamber
+  // they are — never as three rooms with walls between them.
+  const roomNodes: ReactNode[] = rooms.filter((r) => !isSanctumCell(r.cell)).map((room) => {
     const x = px(room.cell.col), y = py(room.cell.row);
     const cat = categoryOf(room);
     const dead = deadDoors(room, manor);
-    const isSanctum = sameCell(room.cell, SANCTUM_CELL);
     const key = cellKey(room.cell);
     return (
       <g key={key} className={`bp-room ${CAT_CLASS[cat]}`}>
@@ -426,7 +454,7 @@ export default function BlueprintSheet({
           {/* per-kind silhouette: WHICH room, not just its category (AAA 6.3) */}
           {ROOM_KIND_GLYPH_PATHS[room.kind]}
         </g>
-        {room.solved && !isSanctum && room.cardId !== ENTRANCE_CARD_ID && (
+        {room.solved && room.cardId !== ENTRANCE_CARD_ID && (
           <g className="bp-room__tick" transform={`translate(${x + CELL - 15} ${y + 8})`}>
             <path d="M0 3.5 2.6 6 7 0.5" />
           </g>
@@ -435,12 +463,6 @@ export default function BlueprintSheet({
             (round 24; see `SpeakingTube` above for why this is not gated). */}
         {sameCell(room.cell, SPEAKING_TUBE_CELL) && (
           <SpeakingTube x={x} y={y} live={atTube} />
-        )}
-        {isSanctum && (
-          <g className="bp-seal" transform={`translate(${x + CELL / 2} ${y + CELL - INSET})`}>
-            <circle r={5.2} />
-            <circle r={2.4} className="bp-seal__inner" />
-          </g>
         )}
         {deweyHome && sameCell(room.cell, den) && (
           <g className="bp-dewey" transform={`translate(${x + 9} ${y + CELL - 20})`}>
@@ -635,6 +657,43 @@ export default function BlueprintSheet({
         d={`M${px(2) + 16} ${py(0) + CELL + 2}h32M${px(2) + 22} ${py(0) + CELL + 6}h20`}
       />
 
+      {/* THE SEALED CHAMBER (round 37). Three cells, one room, three sealed
+          south doors — the landing beneath it is three cells wide and any of
+          them can open north onto it. Drawn before the hit layers so every
+          control below still sits on top of it. */}
+      <g className="bp-room bp-room--mystery bp-sanctumband">
+        <rect
+          className="bp-room__floor"
+          x={px(SANCTUM_CELLS[0]!.col) + INSET}
+          y={py(SANCTUM_CELLS[0]!.row) + INSET}
+          width={SANCTUM_CELLS.length * CELL - 2 * INSET}
+          height={CELL - 2 * INSET}
+          rx={2}
+        />
+        <path className="bp-room__walls" d={sanctumBandPath()} />
+        <path
+          className="bp-room__jambs"
+          d={SANCTUM_CELLS.map((c) => jambPath(px(c.col), py(c.row), ['S'])).join('')}
+        />
+        <g
+          className="bp-room__glyph"
+          transform={`translate(${px(SANCTUM_CELL.col) + CELL / 2 - 11} ${py(SANCTUM_CELL.row) + CELL / 2 - 11}) scale(0.92)`}
+        >
+          {ROOM_KIND_GLYPH_PATHS.mystery}
+        </g>
+        {/* one wax seal per sealed door: three ways in, all of them shut */}
+        {SANCTUM_CELLS.map((c) => (
+          <g
+            key={`seal-${cellKey(c)}`}
+            className="bp-seal"
+            transform={`translate(${px(c.col) + CELL / 2} ${py(c.row) + CELL - INSET})`}
+          >
+            <circle r={5.2} />
+            <circle r={2.4} className="bp-seal__inner" />
+          </g>
+        ))}
+      </g>
+
       {roomNodes}
 
       {/* ghost rooms behind draftable doors */}
@@ -698,9 +757,10 @@ export default function BlueprintSheet({
       })}
 
       {/* walkable neighbours */}
+      {/* `walkableNeighbors` already withholds the Sanctum's own cells — it is
+          addressed through its sealed door by the vow control below, never
+          walked into (engine/manor/grid.ts `canMoveTo`). */}
       {walkable.map((cell) => {
-        const isSanctum = sameCell(cell, SANCTUM_CELL);
-        if (isSanctum) return null; // the Sanctum is entered via its own vow below
         const x = px(cell.col), y = py(cell.row);
         return (
           <g
@@ -733,7 +793,7 @@ export default function BlueprintSheet({
         <path
           className="bp-room__dead bp-sealedseam"
           aria-hidden="true"
-          d={deadDoorBar(px(SANCTUM_DOOR_CELL.col), py(SANCTUM_DOOR_CELL.row), 'N')}
+          d={deadDoorBar(px(player.col), py(player.row), 'N')}
         />
       )}
 
@@ -750,9 +810,12 @@ export default function BlueprintSheet({
           {...pressProps}
           onClick={() => (sanctumReachable ? onSanctum() : refuseLanding())}
         >
-          <rect className="bp-hit__zone" x={px(SANCTUM_CELL.col)} y={py(SANCTUM_CELL.row)} width={CELL} height={CELL} />
+          {/* The cell of the chamber directly over HER landing — with three
+              landing cells the vow is taken at the door she is standing under,
+              not at a fixed square (round 37). */}
+          <rect className="bp-hit__zone" x={px(player.col)} y={py(player.row + 1)} width={CELL} height={CELL} />
           {sanctumReachable && (
-            <rect className="bp-walk__wash" x={px(SANCTUM_CELL.col) + INSET + 1} y={py(SANCTUM_CELL.row) + INSET + 1} width={CELL - 2 * INSET - 2} height={CELL - 2 * INSET - 2} rx={2} />
+            <rect className="bp-walk__wash" x={px(player.col) + INSET + 1} y={py(player.row + 1) + INSET + 1} width={CELL - 2 * INSET - 2} height={CELL - 2 * INSET - 2} rx={2} />
           )}
         </g>
       )}

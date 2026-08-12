@@ -94,6 +94,84 @@ It also completes change 1: with one landing cell, three sealed cards is the end
 campaign. With three, it is a **detour** — which costs steps, which is exactly the doubling-back
 economy the owner described.
 
+### BUILT — round 37. What shipped, what moved, and the one thing that got worse.
+
+**THE SANCTUM IS THREE CELLS WIDE.** For a cell at (1,5) to open north *onto the Sanctum*, the
+Sanctum has to BE at (1,6) — so the sealed chamber fills the middle three cells of the top storey,
+(1,6)–(3,6), and shows three sealed south doors. The landing is the three cells beneath them and
+**any of them can open north**: `opensOntoSanctum` is now `isSanctumLanding(cell) && doors.includes('N')`,
+and `atSanctumDoor` is that predicate asked of the cell she is standing on. `SANCTUM_DOOR_CELL` was
+DELETED rather than redefined — a constant named "the door cell" that means "the middle one of
+three" is this project's own standing failure, so every one of its ~40 call sites was moved to
+`SANCTUM_LANDING_CELLS` / `isSanctumLanding` / `SANCTUM_LANDING_MID`. (0,6) and (4,6) stay
+draftable: 31 draftable cells, not 33.
+
+The three seals are three `PlacedRoom` records with **one south door each and no doors between
+them**, which is load-bearing: give them E/W doors and the grid-true walker's BFS would path
+*through* the ending and come out on the next landing cell. `canMoveTo` now refuses a Sanctum cell
+outright — the blueprint had always declined to draw that walk, and with three chambers there were
+three matched door pairs a caller could have stepped through into the ending.
+
+**THE BANDS MOVED, THREE EVENINGS EACH, AND THE DEDUCTION BAND DID NOT.** Measured on
+`scripts/review-metrics.ts` immediately before and after, 800 campaigns a profile:
+
+| | before | after |
+|---|---|---|
+| his first DOOR | 16 | **13–14** (band 14–22 → 11–19) |
+| his volume WIN | 16.5–17 | **15–15.5** |
+| her first DOOR | 20 | **16.5–17** (band 17–25 → 14–22) |
+| her volume WIN | 22 | **19** (band 18–26 → 16–24) |
+| her DEDUCTION | 17 | **17** ← unmoved |
+| her never-finished | 0–0.4% | **0.0%** |
+| her win inside 28 evenings | 86–91.6% | **98–100%** |
+| first LANDING (his / hers) | 8–10 / 10–12 | 8–9 / 10–11 |
+
+The deduction band holding still is the check on the whole claim: she reads him at exactly the
+same speed, and every evening this hands back is an evening she used to spend waiting on one
+square. The landing day barely moving is round 24's finding arriving as a number — **the storey
+was never the gate.** `engine/economy/steps.ts` was not retuned by a single constant to absorb
+any of it; the note it left for this round said so in advance, on purpose.
+
+**WHAT GOT WORSE, PUBLISHED RATHER THAN ABSORBED.** His day-1 door rate **tripled, 0–0.5% →
+0.5–1.5%** — three ways up on the last hop is three rolls at it, and "I reached the Forgotten
+Word on my first day" is the owner playtest behind 4.10d. It is still five times under the
+enforced <8% and it is the number to watch if the landing is ever widened again.
+
+**A SECONDARY CAUSE, NAMED SO IT IS NOT MISTAKEN FOR THE LANDING.** `MOVEMENT.sanctumColumnPull`
+used to pull toward one column; it reads `sanctumColumnDrift` now, which is 0 across all three
+landing columns. So a climb aimed at the top of the house stops paying a preference tax for being
+one column off centre, and her steps in hand entering the first padlocked storey rose 14 → 15.
+
+**THE APPROACH — SAID OUT LOUD, ONCE, AS A RULE OF PLAY.** The rotation already made the approach
+matter and nothing surfaced it. The draft modal now merges its two header rules into one sentence
+**at the landing only** — *"Each plan turns to the south wall at your feet. Only one that opens
+north reaches the sealed door."* At every other door those are two facts; at this one, since the
+landing can be entered from the south, the east or the west, they are one fact with two halves.
+It states the RULE and stops: it does not say which approach is better, and it does not say that
+walking one cell along the landing deals a different offer. Those are hers to find.
+
+**THE OVERFLOW: 69px → 27px at 375x667 and 79px → 31px at 390x844.** That merge is worth 42px and
+48px. What is left is now **smaller than the three per-card "opens onto / turns its back on"
+stamps (56px)**, so the entire residue is round 13's rule that every card prints its own answer —
+and the owner has frozen the door-plan line those stamps sit beside. **It is his call, and the
+glass gate still owns the number.** The two options on the table are unchanged: fold the stamp
+into the plan line (blocked by the ruling) or print the answer once instead of three times
+(contradicts round 13's "a card that says nothing beside two that do reads as a rendering gap").
+
+**TWO CONSEQUENCES NOBODY ASKED FOR, both real and both kept.**
+1. **The landing spans all three wings** — (1,5) West, (2,5) Stair Hall, (3,5) East — so the
+   papers' wing memory is informative at the ending for the first time.
+2. **The two corners of the top storey got harder.** (0,6) and (4,6) have two outer walls and the
+   chamber's blank plaster on the third, so a tee or a cross laid there can seal itself, which it
+   never could. Measured under 6% of those shapes' placements; `tests/grid.test.ts` had asserted
+   a flat 0 and now asserts the bound with its cause.
+
+**A SAVE MIGRATION SHIPPED WITH IT.** An evening interrupted under the old build can hold a
+drafted room at (1,6) or (3,6); a manor missing two of its three seals is one where a landing
+room's north door opens onto an ordinary parlor and `atSanctumDoor` — which asks the manor, not a
+constant — would answer yes at a door that is not the ending. `migrateSanctumSuite` restores the
+chamber at the door and drops whatever stood in it.
+
 ---
 
 ## Blast radius — name it before building
@@ -132,3 +210,13 @@ Two rules from this project's own history apply hard here:
   Sanctum rule is a statement about the whole offer rather than about any card, so it belongs
   above the three cards as a header. Note this may change shape entirely once the landing is
   three cells.
+  - **PART-PAID, round 37 — 69 → 27 and 79 → 31.** The Sanctum rule already WAS a header; what
+    it was not was the *only* header. With the landing three cells wide, the rotation rule
+    ("each plan is turned to the gilt door at your feet") and the Sanctum rule became one fact
+    with two halves, so at this door they are one sentence: 42px at 375 and 48px at 390.
+    **The residue is now smaller than the three per-card stamps that make it up (56px)**, which
+    is the sharpest the debt can be stated without an owner ruling: the whole of what is left is
+    round 13's "every card prints its own answer", and the two ways to pay it are folding the
+    stamp into the door-plan line (**frozen by ruling 1**) or printing the answer once instead
+    of three times (**contradicts round 13**). The glass gate walks the scene, prints the
+    number every run, and still bounds it. **This one is the owner's.**

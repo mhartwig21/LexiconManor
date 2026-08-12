@@ -42,10 +42,12 @@ const sudokuPool = JSON.parse(readFileSync(resolve(root, 'content/generated/sudo
  * old constant therefore asserted something that was true for free, which is
  * how the economy shipped a 41.5% day-1 reach against a published <8%.
  *
- * Kept in lockstep with the engine rather than re-typed: SANCTUM_DOOR_CELL is
- * the one place the door's cell is declared (engine/manor/grid.ts), so if it
- * moves, this smoke pass moves with it instead of silently checking a storey
- * nobody enters.
+ * Kept in lockstep with the engine rather than re-typed: the landing's row is
+ * declared once, in engine/manor/grid.ts (`SANCTUM_LANDING_ROW0`, derived from
+ * `SANCTUM_CELL`), so if the chamber moves this smoke pass moves with it
+ * instead of silently checking a storey nobody enters. ROUND 37: the landing is
+ * three CELLS wide now — (1,5), (2,5), (3,5) — but it is still one ROW, which
+ * is the only thing this pass reads.
  */
 const typesSrc = readFileSync(resolve(root, 'src/engine/types.ts'), 'utf8');
 const sanctumRow = Number(
@@ -55,7 +57,7 @@ if (!Number.isInteger(sanctumRow)) {
   console.error('[smoke] FAIL: could not read SANCTUM_CELL from engine/types.ts');
   process.exit(1);
 }
-// grid.ts: SANCTUM_DOOR_CELL.row === SANCTUM_CELL.row - 1. The landing.
+// grid.ts: SANCTUM_LANDING_ROW0 === SANCTUM_CELL.row - 1. The landing.
 const SANCTUM_LANDING_ROW = sanctumRow - 1;
 
 const log = (...a) => console.log('[smoke]', ...a);

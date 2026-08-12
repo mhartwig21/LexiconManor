@@ -2,8 +2,9 @@
  * The manor grid — OWNER: A1 (Manor). Pure TS, zero React/DOM.
  *
  * 5 columns x 7 rows, row 0 at the bottom. The Entrance Hall is fixed at
- * (2,0), the Sanctum sealed at (2,6); the other 33 cells are draftable
- * (MANOR_DESIGN §3). Rooms are 1x1 with doors on 1-4 walls; a door drawn
+ * (2,0) and the sealed Sanctum fills (1,6)-(3,6); the other 31 cells are
+ * draftable (MANOR_DESIGN §3). Rooms are 1x1 with doors on 1-4 walls; a door
+ * drawn
  * against the manor's outer wall, or against a neighbouring wall with no
  * matching door, is dead. Movement flows only through matched door pairs.
  *
@@ -27,10 +28,10 @@ export const SANCTUM_KEY = cellKey(SANCTUM_CELL);
 /**
  * ── THE DOOR IS A PLACE (AAA 4.10e, MANOR_DESIGN §7) ───────────────────────
  *
- * The Sanctum cell (2,6) is sealed and never walked into; the word is spoken
- * from the landing directly below it, (2,5), through that room's north door.
- * So "reaching the Sanctum" means STANDING HERE with a matched door pair
- * overhead — nothing else in the game is the second gate.
+ * The Sanctum is sealed and never walked into; the word is spoken from the
+ * landing directly below it, through that room's north door. So "reaching the
+ * Sanctum" means STANDING ON THE LANDING with a matched door pair overhead —
+ * nothing else in the game is the second gate.
  *
  * ROUND-7 DEFECT this exists to close: the predicate was written inline in
  * `ui/blueprint/BlueprintSheet.tsx` only, so the journal's "Take it to the
@@ -40,15 +41,96 @@ export const SANCTUM_KEY = cellKey(SANCTUM_CELL);
  * a fresh save at 21 untouched steps. One exported predicate now, consumed by
  * the sheet, by the guess flow (app/slices/journal.ts) and by the Sanctum
  * screen, so a fourth caller cannot invent a fifth answer.
+ *
+ * ═══ ROUND 37 — THE LANDING IS THREE CELLS (THE_CLIMB §2) ══════════════════
+ *
+ * IT WAS ONE. `SANCTUM_DOOR_CELL` was a single cell, (2,5), and
+ * `opensOntoSanctum` was `sameCell(cell, SANCTUM_DOOR_CELL) && doors.includes('N')`
+ * — so EVERY campaign in the game funnelled through one square, and a bad
+ * draft at that square was checkmate. A cold tester's run ended at exactly that
+ * door with all three offered cards sealing and no gem to reroll; he read it as
+ * arbitrary and he was right to.
+ *
+ * The owner's change: the landing is a ROW of cells beneath the Sanctum, any of
+ * which can open north onto it. For a cell at (1,5) to open north ONTO the
+ * Sanctum, the Sanctum has to BE at (1,6) — so the sealed chamber spans the
+ * middle three cells of the top storey and shows three sealed south doors.
+ * (0,6) and (4,6) stay draftable: the top storey is still a storey.
+ *
+ * Three consequences, and they are the point:
+ *   - three sealed cards at a landing door is now a DETOUR rather than
+ *     checkmate, and a detour costs steps — which is exactly the doubling-back
+ *     economy the flat move price installed one commit ago;
+ *   - the climax gains route variety: west landing, centre landing, east;
+ *   - THE APPROACH BECOMES THE SHAPE OF THE ENDING. Rooms rotate rigidly to
+ *     face the direction she enters from (`resolveDoors`), so coming at a
+ *     landing cell from the south, the east or the west already changes WHICH
+ *     of the three offered cards can open north. That was true of the single
+ *     cell too, and it was worth nothing there because there was one way up.
+ *
+ * `SANCTUM_DOOR_CELL` is GONE rather than redefined, because a name that says
+ * "the door cell" while meaning "the middle one of three" is this repo's own
+ * standing failure (a metric's name must match what it computes).
  */
-export const SANCTUM_DOOR_CELL: Cell = {
-  col: SANCTUM_CELL.col,
-  row: SANCTUM_CELL.row - 1,
-};
 
-export const SANCTUM_DOOR_KEY = cellKey(SANCTUM_DOOR_CELL);
+/** Columns either side of the Sanctum's centre that the chamber also fills. */
+export const SANCTUM_HALF_SPAN = 1;
 
-/** Reserved card ids for the two pre-placed rooms (deck registry touchpoint). */
+/** The cells the sealed chamber occupies — (1,6), (2,6), (3,6). */
+export const SANCTUM_CELLS: readonly Cell[] = (() => {
+  const out: Cell[] = [];
+  for (let d = -SANCTUM_HALF_SPAN; d <= SANCTUM_HALF_SPAN; d++) {
+    const col = SANCTUM_CELL.col + d;
+    if (col >= 0 && col < MANOR_COLS) out.push({ col: col as Cell['col'], row: SANCTUM_CELL.row });
+  }
+  return out;
+})();
+
+export const SANCTUM_KEYS: readonly string[] = SANCTUM_CELLS.map(cellKey);
+
+/** Is this cell part of the sealed chamber? (Never draftable, never walked.) */
+export function isSanctumCell(cell: Cell): boolean {
+  return cell.row === SANCTUM_CELL.row && SANCTUM_CELLS.some((c) => c.col === cell.col);
+}
+
+/** The storey the word is spoken from, 0-based (engine convention). */
+export const SANCTUM_LANDING_ROW0 = SANCTUM_CELL.row - 1;
+
+/** THE LANDING — every cell that can open north onto the Sanctum. */
+export const SANCTUM_LANDING_CELLS: readonly Cell[] = SANCTUM_CELLS.map(
+  (c) => ({ col: c.col, row: SANCTUM_LANDING_ROW0 }),
+);
+
+export const SANCTUM_LANDING_KEYS: readonly string[] = SANCTUM_LANDING_CELLS.map(cellKey);
+
+/**
+ * The middle landing cell — (2,5), directly under the Sanctum's centre. It is
+ * NOT privileged by any rule; it exists so diagnostics and fixtures that need
+ * ONE landing cell name it honestly instead of pretending it is the only one.
+ */
+export const SANCTUM_LANDING_MID: Cell =
+  SANCTUM_LANDING_CELLS[SANCTUM_HALF_SPAN] ?? { col: SANCTUM_CELL.col, row: SANCTUM_LANDING_ROW0 };
+
+export const SANCTUM_LANDING_MID_KEY = cellKey(SANCTUM_LANDING_MID);
+
+/** Is she standing on a cell that could open north onto the Sanctum? */
+export function isSanctumLanding(cell: Cell): boolean {
+  return cell.row === SANCTUM_LANDING_ROW0
+    && SANCTUM_LANDING_CELLS.some((c) => c.col === cell.col);
+}
+
+/**
+ * How far this column is from the nearest landing cell, in columns. 0 across
+ * the whole landing band — the climb has three targets now, not one, and the
+ * simulator's column pull reads this rather than a distance to (2,·).
+ */
+export function sanctumColumnDrift(col: number): number {
+  let best = Infinity;
+  for (const c of SANCTUM_LANDING_CELLS) best = Math.min(best, Math.abs(col - c.col));
+  return best;
+}
+
+/** Reserved card ids for the pre-placed rooms (deck registry touchpoint). */
 export const ENTRANCE_CARD_ID = 'entrance-hall';
 export const SANCTUM_CARD_ID = 'sanctum';
 
@@ -137,15 +219,23 @@ export function createManor(daySeed: number): ManorState {
     solved: true,             // never a puzzle — it is home
     kind: 'parlor',           // Mrs. Bramble's morning territory
   };
-  const sanctum: PlacedRoom = {
-    cardId: SANCTUM_CARD_ID,
-    cell: SANCTUM_CELL,
-    doors: ['S'],             // one sealed door, facing down the manor
-    solved: false,
-    kind: 'mystery',
-  };
+  const rooms: Record<string, PlacedRoom> = { [ENTRANCE_KEY]: entrance };
+  // THE SEALED CHAMBER, one record per cell it fills. Each draws exactly ONE
+  // door — south, onto its landing cell — and no doors between them, so BFS
+  // can never path THROUGH the Sanctum from one landing cell to the next
+  // (engine/economy/manor-walk.ts `reachableFrontier` walks `doorsConnect`).
+  // The blueprint draws the three as one chamber, which is what they are.
+  for (const cell of SANCTUM_CELLS) {
+    rooms[cellKey(cell)] = {
+      cardId: SANCTUM_CARD_ID,
+      cell,
+      doors: ['S'],
+      solved: false,
+      kind: 'mystery',
+    };
+  }
   return {
-    rooms: { [ENTRANCE_KEY]: entrance, [SANCTUM_KEY]: sanctum },
+    rooms,
     playerCell: { ...ENTRANCE_CELL },
     daySeed,
   };
@@ -164,8 +254,17 @@ export function doorsConnect(manor: ManorState, from: Cell, dir: Dir): boolean {
   return Boolean(there && there.doors.includes(opposite(dir)));
 }
 
-/** May the player step from their cell into `target`? (Adjacency + doors.) */
+/**
+ * May the player step from their cell into `target`? (Adjacency + doors.)
+ *
+ * The Sanctum is never walked INTO — it is addressed through its sealed door
+ * from the landing (`atSanctumDoor`, and the blueprint's own vow control). The
+ * blueprint has always drawn it that way; round 37 states it in the predicate,
+ * because with three sanctum cells there are now three matched door pairs a
+ * caller could otherwise step through into the ending.
+ */
 export function canMoveTo(manor: ManorState, target: Cell): boolean {
+  if (isSanctumCell(target)) return false;
   const dir = dirBetween(manor.playerCell, target);
   if (!dir) return false;
   return doorsConnect(manor, manor.playerCell, dir);
@@ -176,22 +275,23 @@ export function walkableNeighbors(manor: ManorState): Cell[] {
   const out: Cell[] = [];
   for (const d of DIRS) {
     const n = neighbor(manor.playerCell, d);
-    if (n && doorsConnect(manor, manor.playerCell, d)) out.push(n);
+    if (n && !isSanctumCell(n) && doorsConnect(manor, manor.playerCell, d)) out.push(n);
   }
   return out;
 }
 
 /**
- * Is the player standing at the Sanctum door right now? (See SANCTUM_DOOR_CELL.)
+ * Is the player standing at the Sanctum door right now? (See SANCTUM_CELLS.)
  *
- * Both halves matter: she is on the landing AND the room she drafted there
- * drew a north door that matches the Sanctum's sealed south one. A landing
- * room with no north door is a landing she has to draft again tomorrow — the
- * climb is not banked by arriving on the storey.
+ * Both halves matter: she is on THE LANDING — any of its three cells — AND the
+ * room she drafted there drew a north door that matches the Sanctum's sealed
+ * south one. A landing room with no north door is a landing she has to draft
+ * again tomorrow, or walk one cell along and try from there; the climb is not
+ * banked by arriving on the storey.
  */
 export function atSanctumDoor(manor: ManorState | null | undefined): boolean {
   if (!manor) return false;
-  if (!sameCell(manor.playerCell, SANCTUM_DOOR_CELL)) return false;
+  if (!isSanctumLanding(manor.playerCell)) return false;
   return doorsConnect(manor, manor.playerCell, 'N');
 }
 
@@ -221,7 +321,7 @@ export type SanctumStanding = 'at-door' | 'landing-sealed' | 'at-tube' | 'away';
 export function sanctumStanding(manor: ManorState | null | undefined): SanctumStanding {
   if (!manor) return 'away';
   if (sameCell(manor.playerCell, SPEAKING_TUBE_CELL)) return 'at-tube';
-  if (!sameCell(manor.playerCell, SANCTUM_DOOR_CELL)) return 'away';
+  if (!isSanctumLanding(manor.playerCell)) return 'away';
   return doorsConnect(manor, manor.playerCell, 'N') ? 'at-door' : 'landing-sealed';
 }
 
@@ -284,7 +384,7 @@ export function canAddressSanctum(manor: ManorState | null | undefined): boolean
  * conflating the two is the round-13 defect this pair exists to close.
  */
 export function onSanctumLanding(manor: ManorState | null | undefined): boolean {
-  return Boolean(manor && sameCell(manor.playerCell, SANCTUM_DOOR_CELL));
+  return Boolean(manor && isSanctumLanding(manor.playerCell));
 }
 
 /**
@@ -292,11 +392,11 @@ export function onSanctumLanding(manor: ManorState | null | undefined): boolean 
  *
  * The one predicate the draft card face, the blueprint and the simulation all
  * read, so "this plan opens the door" cannot mean three things. Only the
- * landing can: everywhere else the answer is no, however many north doors the
- * plan draws.
+ * landing can — any of its three cells since round 37 — and everywhere else the
+ * answer is no, however many north doors the plan draws.
  */
 export function opensOntoSanctum(doors: readonly Dir[], cell: Cell): boolean {
-  return sameCell(cell, SANCTUM_DOOR_CELL) && doors.includes('N');
+  return isSanctumLanding(cell) && doors.includes('N');
 }
 
 /**
@@ -548,6 +648,6 @@ export function deweyCell(daySeed: number): Cell {
     const col = randInt(rng, MANOR_COLS) as Cell['col'];
     const row = 1 + randInt(rng, MANOR_ROWS - 2); // rows 1..5
     const cell: Cell = { col, row };
-    if (!sameCell(cell, ENTRANCE_CELL) && !sameCell(cell, SANCTUM_CELL)) return cell;
+    if (!sameCell(cell, ENTRANCE_CELL) && !isSanctumCell(cell)) return cell;
   }
 }

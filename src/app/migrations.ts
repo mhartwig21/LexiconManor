@@ -28,6 +28,10 @@ import { getRoomAdapter } from '../engine/rooms/registry';
 import { isUsableLedger } from '../engine/rooms/room-bank';
 import { isUsableSnapshot } from '../engine/rooms/room-session';
 import type { PlacedRoom } from '../engine/types';
+import { ENTRANCE_CELL } from '../engine/types';
+import {
+  cellKey, isSanctumCell, SANCTUM_CARD_ID, SANCTUM_CELLS,
+} from '../engine/manor/grid';
 import { ROOM_PUZZLE_KINDS, type RoomPuzzleKind } from '../engine/rooms/room-puzzle';
 
 const V1_MODES: readonly GameMode[] = ['word-web', 'hive', 'twistle', 'forgotten-word'];
@@ -210,9 +214,48 @@ function migrateOpenLedger(save: SaveV2): SaveV2 {
   return isUsableLedger(ledger, adapter) ? save : { ...save, openLedger: null };
 }
 
+/**
+ * ── THE SANCTUM GREW (round 37, THE_CLIMB §2) ──────────────────────────────
+ *
+ * The sealed chamber used to be one cell, (2,6); it is three now, and the
+ * landing beneath it is three cells wide. A save written by the previous build
+ * is the one place that geometry can arrive wrong: an evening interrupted
+ * mid-play may hold a DRAFTED room at (1,6) or (3,6), and a manor missing two
+ * of its three seals is one where a landing room's north door opens onto an
+ * ordinary parlor and `atSanctumDoor` — which asks the manor, not a constant —
+ * would answer yes at a door that is not the ending.
+ *
+ * So the chamber is restored at the door, once, and whatever stood in its cells
+ * is dropped. That costs an interrupted evening one or two rooms; the
+ * alternative costs it the ending, and the manor is rebuilt at every dawn
+ * anyway (`app/slices/manor.ts ensureManor`), so the blast radius is a single
+ * evening resumed across the deploy. If she was STANDING in one of those cells,
+ * she is put back in the Entrance Hall — the one room that always exists.
+ *
+ * Idempotent: a manor already carrying the three seals is returned untouched.
+ */
+function migrateSanctumSuite(save: SaveV2): SaveV2 {
+  const manor = save.manor;
+  if (!manor?.rooms) return save;
+  const missing = SANCTUM_CELLS.filter(
+    (c) => manor.rooms[cellKey(c)]?.cardId !== SANCTUM_CARD_ID,
+  );
+  if (missing.length === 0) return save;
+  const rooms: Record<string, PlacedRoom> = { ...manor.rooms };
+  for (const cell of SANCTUM_CELLS) {
+    rooms[cellKey(cell)] = {
+      cardId: SANCTUM_CARD_ID, cell, doors: ['S'], solved: false, kind: 'mystery',
+    };
+  }
+  const playerCell = manor.playerCell && isSanctumCell(manor.playerCell)
+    ? { ...ENTRANCE_CELL }
+    : manor.playerCell;
+  return { ...save, manor: { ...manor, rooms, playerCell } };
+}
+
 export function migrate(raw: unknown): SaveV2 {
-  return migrateOpenLedger(
-    migrateRoomSessions(backfillKeepsakes(backfillViewedFragments(migrateShape(raw)))));
+  return migrateOpenLedger(migrateSanctumSuite(
+    migrateRoomSessions(backfillKeepsakes(backfillViewedFragments(migrateShape(raw))))));
 }
 
 function migrateShape(raw: unknown): SaveV2 {

@@ -22,7 +22,7 @@ import {
 import { categoryWeight, rollCards, RARITY_WEIGHTS } from '../src/engine/manor/drafting';
 import {
   atSanctumDoor, cardOpensOntoSanctum, cellKey, createManor, opensOntoSanctum, placeRoom,
-  resolveDoors, rowTier, sanctumStanding, SANCTUM_DOOR_CELL, SANCTUM_DOOR_KEY,
+  resolveDoors, rowTier, sanctumStanding, SANCTUM_LANDING_MID, SANCTUM_LANDING_MID_KEY,
 } from '../src/engine/manor/grid';
 import { MANOR_ROWS, SANCTUM_CELL } from '../src/engine/types';
 import { getRoomAdapter, registeredRoomKinds } from '../src/engine/rooms/registry';
@@ -156,12 +156,50 @@ const NEVER = CAMPAIGN_LENGTH + 1;
  * The bands are re-published at what the model measures, in AAA 4.10d/e, and
  * the last test in this file greps the doc for each one.
  */
+/**
+ * ═══ ROUND 37 — THE LANDING IS THREE CELLS, AND THE ACCESS BANDS MOVED ════
+ *
+ * Every band in this table is an ACCESS band: it measures how long it takes to
+ * be let in, not how long it takes to read the volume. Round 37 widened the
+ * landing from one cell to three (engine/manor/grid.ts `SANCTUM_LANDING_CELLS`,
+ * THE_CLIMB §2), so three of them moved and the DEDUCTION band did not — which
+ * is the shape the change predicts, and the reason `decentDeduce` is left
+ * exactly where round 21 put it. She reads him at the same speed; she is
+ * simply no longer waiting on one square.
+ *
+ * Measured on `scripts/review-metrics.ts` at 800 campaigns per profile, the
+ * same instrument, immediately before and after the change:
+ *
+ *                       before        after
+ *   his first DOOR      16            14      (per-seed 16,16.5,16,16 → 13,14,13,14)
+ *   his volume WIN      17            15      (p10 14→13, p90 22→19)
+ *   her first DOOR      20            17      (per-seed 20,20,21,20 → 17,17,17,17)
+ *   her volume WIN      22            19      (p10 17→16, p90 28→24)
+ *   her deduction       17            17      ← unmoved, and that is the check
+ *   her never-finished  0.3%          0.0%
+ *   his first LANDING   9             9       ← unmoved: the STOREY was never the gate
+ *   her first LANDING   11            10
+ *
+ * WHY THE DOOR MOVED THREE EVENINGS AND THE LANDING BARELY MOVED AT ALL. The
+ * storey was never the gate — round 24 already found that only 24.5% of the
+ * evenings that reached the landing storey ended on the landing CELL, and the
+ * fix for that is not a cheaper climb, it is more than one cell to land on.
+ * A secondary cause is real and worth naming: `MOVEMENT.sanctumColumnPull` now
+ * reads `sanctumColumnDrift`, which is 0 across all three landing columns, so
+ * a climb aimed at the top of the house no longer pays a preference tax for
+ * being one column off centre. Her steps in hand entering row 4 rose 14 → 15
+ * on the back of exactly that.
+ *
+ * `skilledWin` and `decentDeduce` are NOT re-published. Both still contain
+ * their measurement with room to spare, and moving a band that holds is the
+ * same failure as holding a band that has moved.
+ */
 const BANDS = {
-  skilledDoor: [14, 22],
+  skilledDoor: [11, 19],
   skilledWin: [12, 20],
-  decentDoor: [17, 25],
+  decentDoor: [14, 22],
   decentDeduce: [14, 24],
-  decentWin: [18, 26],
+  decentWin: [16, 24],
 } as const;
 const reachOrNever = reachDays.map((d) => d ?? NEVER);
 const winOrNever = winDays.map((d) => d ?? NEVER);
@@ -256,9 +294,9 @@ describe('the milestone is the LIVE door, not a storey nobody enters (round 7)',
     // against a storey the game never asks the player to enter, while the
     // storey it does ask for (the landing, 0-based row 5) cost 15 bare steps:
     // under the 18-step budget. The milestone is now the landing itself.
-    expect(SANCTUM_LANDING_ROW).toBe(SANCTUM_DOOR_CELL.row + 1);   // 1-based
+    expect(SANCTUM_LANDING_ROW).toBe(SANCTUM_LANDING_MID.row + 1);   // 1-based
     expect(SANCTUM_LANDING_ROW).toBeLessThan(SANCTUM_CELL.row + 1);
-    expect(SANCTUM_DOOR_KEY).toBe(cellKey(SANCTUM_DOOR_CELL));
+    expect(SANCTUM_LANDING_MID_KEY).toBe(cellKey(SANCTUM_LANDING_MID));
   });
 
   it('measures the ascent the player pays for, with the walk in it', () => {
@@ -298,7 +336,7 @@ describe('the milestone is the LIVE door, not a storey nobody enters (round 7)',
     expect(atSanctumDoor(null)).toBe(false);
     // Standing on the landing cell is necessary but NOT sufficient: the room
     // she drafted there has to have drawn the north door.
-    expect(atSanctumDoor({ ...manor, playerCell: { ...SANCTUM_DOOR_CELL } })).toBe(false);
+    expect(atSanctumDoor({ ...manor, playerCell: { ...SANCTUM_LANDING_MID } })).toBe(false);
     // ROUND 24 — AND THE STOREY ABOVE THE LANDING EXISTS. The scalar model
     // could not climb past `SANCTUM_LANDING_ROW` because its own loop capped
     // the row there; the manor has a seventh row with four draftable cells in
@@ -560,7 +598,7 @@ describe('4.10c — a great single day still only flirts with the Sanctum landin
   });
 });
 
-describe('4.10d — the SKILLED player first reaches the Sanctum DOOR on day 14–22', () => {
+describe('4.10d — the SKILLED player first reaches the Sanctum DOOR on day 11–19', () => {
   it('puts the median first reach inside the published band', () => {
     // ═══ ROUND 24 — RE-DERIVED ON THE GRID-TRUE INSTRUMENT ═══════════════
     // 6–10 → **14–22** (measured 18, on all four campaign seeds). The band did
@@ -862,7 +900,7 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
     expect(share(decentReach, (d) => d <= 2)).toBeLessThan(0.04);
   });
 
-  it('wins the volume in 18–28 days at the median — the published second band', () => {
+  it('wins the volume in 16–24 days at the median — the published second band', () => {
     // ROUND 19 — 26–34 → 14–24. HER BAND WAS THE ONE MADE ALMOST ENTIRELY OF
     // THE ACCESS LOTTERY, so §5.2 moved it furthest. Round 13 measured the gap
     // between her knowing the word and being allowed to say it at median 9
@@ -892,13 +930,29 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
     // weeks of daily play, while the doc promised >90% by day 35 with no
     // qualifier. Her real curve is published now, and it has to stay a curve.
     // Round 24, measured: 84.8% / 72.0% / 50.8%.
-    expect(share(decentWin, (d) => d <= 45)).toBeGreaterThan(0.8);
-    expect(share(decentWin, (d) => d <= 35)).toBeGreaterThan(0.6);
-    expect(share(decentWin, (d) => d <= 28)).toBeGreaterThan(0.35);
+    // ROUND 37, measured: 100% / 100% / 98.4% — the three-cell landing took
+    // her never-finished tail to zero. The floors are ratcheted to where they
+    // still bite (a regression of three points on the 28-day figure fails
+    // here), because a floor of 0.35 against a measurement of 0.984 is a gate
+    // that has stopped asking anything.
+    expect(share(decentWin, (d) => d <= 45)).toBeGreaterThan(0.95);
+    expect(share(decentWin, (d) => d <= 35)).toBeGreaterThan(0.95);
+    expect(share(decentWin, (d) => d <= 28)).toBeGreaterThan(0.9);
     // The skilled player's ">90% by day 35" is HERS, not a house promise —
     // pinned as an inequality so nobody re-reads 4.10e as one number again.
-    expect(share(winOrNever, (d) => d <= 35))
-      .toBeGreaterThan(share(decentWin, (d) => d <= 35));
+    //
+    // ROUND 37: the threshold is DERIVED, not typed. Both curves now clear
+    // 100% by day 35, so a fixed day-35 comparison had become `1 > 1` — a
+    // claim about two distinct campaigns that could no longer be false, which
+    // is this repo's own named failure mode. Cut at HER median instead: she is
+    // at 50% there by construction, so the assertion is "by the evening the
+    // median player finishes, strictly more than half of his campaigns are
+    // already done" — and it stays askable however far either curve moves.
+    const herMedian = medianOf(decentWin);
+    expect(
+      share(winOrNever, (d) => d <= herMedian),
+      `his share by her median day ${herMedian}`,
+    ).toBeGreaterThan(share(decentWin, (d) => d <= herMedian));
   });
 
   it('needs BOTH gates for her too, and never learns past the volume', () => {
@@ -1042,7 +1096,7 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
  * retuned across rounds 6–12 had been measured against a storey, not a door.
  *
  * The block below pins the identity the way round 7 pinned
- * `SANCTUM_LANDING_ROW === SANCTUM_DOOR_CELL.row + 1`, so the two can never
+ * `SANCTUM_LANDING_ROW === SANCTUM_LANDING_MID.row + 1`, so the two can never
  * drift again — and then pins the arc and the floor the gate never had.
  */
 describe('4.10d/e — the milestone is the DOOR the live game enforces', () => {
@@ -1051,16 +1105,16 @@ describe('4.10d/e — the milestone is the DOOR the live game enforces', () => {
     // is a landing she has to draft again tomorrow…
     const bare = createManor(4242);
     const sealedLanding = placeRoom(bare, {
-      cardId: 'x', cell: SANCTUM_DOOR_CELL, doors: ['S', 'E'], solved: false, kind: 'utility',
+      cardId: 'x', cell: SANCTUM_LANDING_MID, doors: ['S', 'E'], solved: false, kind: 'utility',
     });
-    const standingSealed = { ...sealedLanding, playerCell: { ...SANCTUM_DOOR_CELL } };
+    const standingSealed = { ...sealedLanding, playerCell: { ...SANCTUM_LANDING_MID } };
     expect(atSanctumDoor(standingSealed)).toBe(false);
     expect(sanctumStanding(standingSealed)).toBe('landing-sealed');
     // …and the same cell with the north door IS the gate.
     const openLanding = placeRoom(bare, {
-      cardId: 'x', cell: SANCTUM_DOOR_CELL, doors: ['S', 'N'], solved: false, kind: 'utility',
+      cardId: 'x', cell: SANCTUM_LANDING_MID, doors: ['S', 'N'], solved: false, kind: 'utility',
     });
-    const standingOpen = { ...openLanding, playerCell: { ...SANCTUM_DOOR_CELL } };
+    const standingOpen = { ...openLanding, playerCell: { ...SANCTUM_LANDING_MID } };
     expect(atSanctumDoor(standingOpen)).toBe(true);
     expect(sanctumStanding(standingOpen)).toBe('at-door');
     // A bare manor stands her in the Entrance Hall, which is the speaking tube
@@ -1072,25 +1126,25 @@ describe('4.10d/e — the milestone is the DOOR the live game enforces', () => {
     expect(atSanctumDoor(bare)).toBe(false);
     // The predicate the card face and the drafting engine share agrees, and it
     // is false everywhere else in the house however many north doors are drawn.
-    expect(opensOntoSanctum(['S', 'N'], SANCTUM_DOOR_CELL)).toBe(true);
-    expect(opensOntoSanctum(['S', 'E'], SANCTUM_DOOR_CELL)).toBe(false);
+    expect(opensOntoSanctum(['S', 'N'], SANCTUM_LANDING_MID)).toBe(true);
+    expect(opensOntoSanctum(['S', 'E'], SANCTUM_LANDING_MID)).toBe(false);
     expect(opensOntoSanctum(['N'], { col: 2, row: 3 })).toBe(false);
   });
 
   it('measures the gate the finding measured: the landing is not the door', () => {
     // The two numbers the finding published, re-derived here so a deck edit or
     // a rotation change moves a TEST rather than the owner's campaign.
-    const tier = rowTier(SANCTUM_DOOR_CELL.row);
+    const tier = rowTier(SANCTUM_LANDING_MID.row);
     let weight = 0;
     let northWeight = 0;
     for (let seed = 0; seed < 200; seed++) {
       const manor = createManor(seed);
       for (const card of BASE_DECK) {
         if (card.tierRange[0] > tier || tier > card.tierRange[1]) continue;
-        const w = categoryWeight(card.category, SANCTUM_DOOR_CELL.row)
+        const w = categoryWeight(card.category, SANCTUM_LANDING_MID.row)
           * RARITY_WEIGHTS[tier][card.rarity];
         weight += w;
-        if (cardOpensOntoSanctum(card, LANDING_ENTRY_DIR, manor, SANCTUM_DOOR_CELL)) {
+        if (cardOpensOntoSanctum(card, LANDING_ENTRY_DIR, manor, SANCTUM_LANDING_MID)) {
           northWeight += w;
         }
       }
@@ -1157,7 +1211,7 @@ describe('4.10d/e + 4.14 — the landing arc: earned, progressive, and floored',
     // The storey the Sanctum stair is visible from, and the first `DOOR_LOCKS`
     // padlocks. Pinned as an IDENTITY (round-7's lesson) so a grid change
     // cannot leave the arc measuring a floor that has moved.
-    expect(SANCTUM_ARC.surveyRow0).toBe(SANCTUM_DOOR_CELL.row - 1);
+    expect(SANCTUM_ARC.surveyRow0).toBe(SANCTUM_LANDING_MID.row - 1);
     expect(DOOR_LOCKS.chanceByRow[SANCTUM_ARC.surveyRow0]!).toBeGreaterThan(0);
     // The mercy's knowledge half is the deduction band the model uses, so the
     // floor cannot open before she could possibly name the word.
@@ -1180,7 +1234,7 @@ describe('4.10d/e + 4.14 — the landing arc: earned, progressive, and floored',
     expect(surveyEveningsIn([])).toBe(0);
     expect(surveyEveningsIn([
       { highestRow: 0 }, { highestRow: SANCTUM_ARC.surveyRow0 }, {},
-      { highestRow: SANCTUM_DOOR_CELL.row },
+      { highestRow: SANCTUM_LANDING_MID.row },
     ])).toBe(2);
   });
 

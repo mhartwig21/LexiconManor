@@ -247,24 +247,16 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
  * being paid almost entirely by the player who doubles back, which is the
  * player the owner was describing. Both bands are re-published in AAA 4.10d/e.
  *
- * ── FOR THE NEXT BUILDER IN THIS ROUND (the three-cell landing) ────────────
- * The Sanctum landing becomes a ROW of cells rather than one (docs/THE_CLIMB
- * §2), which changes `reserveToTop`, `SANCTUM_DOOR_CELL` and the shape of the
- * last hop. The two constants this round moved are `MOVE_COST_BY_ROW` (flat −3)
- * and `BASE_DAY_BUDGET` (22), and they are one lever: the budget is set where
- * the measured EVENING lands back on the old table's numbers (4.10b median
- * minutes, rooms per evening, the storey a great day reaches), and the flat
- * price is set where the CAMPAIGN does. Both were chosen by sweeping the pair
- * against every AAA 4.10 band on the grid-true model, and the rejected settings
- * are recorded above so nobody has to re-run them: −2 at any budget is a
- * walkover, −4 collapses the evening, 18 puts the evening under its floor and
- * 24 puts it over its ceiling.
- *
- * A three-cell landing makes the last hop EASIER, so expect the median player's
- * door and win days to fall further and 4.10d/e to need re-publishing again.
- * If they fall far enough to matter, the lever is not this table — it is the
- * padlock (`DOOR_LOCKS`), which was measured this round and found nearly inert
- * under a flat price: `keyCost` 2 → 4 → 5 moved her volume win 19 → 20 → 19.
+ * ── ROUND 37 BUILT THE THREE-CELL LANDING, AND THIS TABLE DID NOT MOVE ─────
+ * The prediction written here was right and is now a measurement: the last hop
+ * got easier and 4.10d/e were re-published (her door 20 → 16.5–17, her win
+ * 22 → 19; his 16 → 13–14 and 16.5–17 → 15–15.5). **Not one number in this
+ * file was retuned to absorb it**, which was the whole point of writing the
+ * prediction down — the round that widens the landing must be allowed to move
+ * the bands, or the change is measured against a table adjusted to hide it.
+ * The lever named here if the campaign ever falls too far is still the padlock
+ * (`DOOR_LOCKS`), measured last round and found nearly inert under a flat
+ * price: `keyCost` 2 → 4 → 5 moved her volume win 19 → 20 → 19.
  *
  * ── WHAT IT IS INDEXED BY, STILL ───────────────────────────────────────────
  * The 0-based grid row of the cell being STEPPED INTO (engine/types.ts
@@ -282,7 +274,7 @@ function mistakeDelta(weight: 1 | 2 | 'structural', tier: Tier): number {
  * The old curve (−1,−1,−2,−3,−4,−5,−5) was verified against the SANCTUM'S OWN
  * ROW (0-based 6) — a cell that is sealed, never drafted, never walked into.
  * The word is spoken from the landing BELOW it, 0-based row 5
- * (engine/manor/grid.ts `SANCTUM_DOOR_CELL`), and the bare ascent to THERE
+ * (engine/manor/grid.ts `SANCTUM_LANDING_CELLS`), and the bare ascent to THERE
  * cost 1+2+3+4+5 = 15: comfortably under the 18-step base budget and under
  * day 1's 21. So the headline invariant `reserveToTop(1) > BASE_DAY_BUDGET`
  * was true of a storey the game never asks her to enter and false of the one
@@ -428,7 +420,7 @@ export function highestRowVisited(ledger: StepLedger): number {
  * steps", not "Walk 2,5").
  *
  * ROUND-7: row 5 is the LANDING OUTSIDE THE SANCTUM — the cell the word is
- * spoken from (engine/manor/grid.ts `SANCTUM_DOOR_CELL`) — and row 6 is the
+ * spoken from (engine/manor/grid.ts `SANCTUM_LANDING_ROW0`) — and row 6 is the
  * sealed Sanctum itself, which is never entered. The names used to be one
  * storey out ('the upper gallery' for the landing), so the night digest
  * congratulated her on reaching a floor she had not, and hid the one arrival
@@ -914,7 +906,7 @@ export const SANCTUM_ARC = {
   /**
    * WHAT COUNTS AS SURVEYING THE TOP, as a 0-based grid row: the third landing
    * (`ROW_NAMES[4]`), the storey the Sanctum stair is visible from, and the
-   * first one `DOOR_LOCKS` padlocks. It is `SANCTUM_DOOR_CELL.row - 1`, and
+   * first one `DOOR_LOCKS` padlocks. It is `SANCTUM_LANDING_ROW0 - 1`, and
    * tests/economy-simulation.test.ts pins the identity so the two cannot drift.
    *
    * Deliberately NOT the landing itself. Fuelled by landing evenings alone the

@@ -162,9 +162,9 @@ export function dawnCarryOverLines(
  * ── THE LANDING ARC, LIVE (round-13 blocker; engine/economy/steps.ts) ──────
  *
  * The second gate of AAA 4.10e is ACCESS, and it had neither an arc nor a
- * floor: `atSanctumDoor` needs the plan drafted at (2,5) to draw a north door,
- * ~28% of the plans eligible up there do, and nothing in the game moved that
- * number across a six-week campaign. Measured over 400 median-player
+ * floor: `atSanctumDoor` needs the plan drafted on the landing to draw a north
+ * door, ~28% of the plans eligible up there do, and nothing in the game moved
+ * that number across a six-week campaign. Measured over 400 median-player
  * campaigns, EVERY unfinished one belonged to a player who already knew the
  * word, median 9 evenings and p90 25 between knowing and being let in.
  *
@@ -180,8 +180,9 @@ export function dawnCarryOverLines(
  *     already NAME the word (legible pages, never sealed smudges) and has been
  *     up there and turned away before.
  *
- * Both are inert everywhere except `SANCTUM_DOOR_CELL` (engine/manor/drafting.ts
- * reads them only there), so no other draft in the manor changes at all.
+ * Both are inert everywhere except the landing — `SANCTUM_LANDING_CELLS`, all
+ * three of them since round 37 (engine/manor/drafting.ts reads them only
+ * there), so no other draft in the manor changes at all.
  */
 export function landingArcFor(
   s: Pick<ManorStore, 'chronicles' | 'volume' | 'flags'>,
@@ -361,7 +362,8 @@ export const createManorSlice =
             // Fern's arc, supply side (AAA 4.10d): key-bearing cards surface
             // more often as her friendship warms. 0 → weights unchanged.
             keyAccess: keyAccessFor(get().affinities?.fern ?? 0),
-            // The landing arc (round 13). Inert at every cell but (2,5).
+            // The landing arc (round 13). Inert at every cell but the three
+            // that make up the landing (round 37).
             ...landingArcFor(get()),
             // The wings (round 20). Inert until the papers remember one.
             wings: wingsFor(get()),

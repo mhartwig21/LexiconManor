@@ -570,14 +570,15 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     is the *landing* where the sealed door is, and row 7 is the Sanctum behind it.
     The arc was therefore verified against a storey nobody enters; at the live
     landing the old tables gave 41.5% day-1 reach against a published <8%. The
-    milestone row is now `SANCTUM_LANDING_ROW`, tied to `SANCTUM_DOOR_CELL.row`, and
+    milestone row is now `SANCTUM_LANDING_ROW`, tied to `SANCTUM_LANDING_ROW0`, and
     `tests/economy-simulation.test.ts` asserts the identity so the two can never drift
     apart again.
-  - **4.10d — a skilled player FIRST STANDS AT THE SANCTUM DOOR on day 14–22**
-    (median; **6–10 before round 24 made the instrument grid-true** — see the round-24
-    block above; the LANDING STOREY under it is still reached at median day 12),
-    **<8% on day 1** (measured 0.0–0.5%), and >65% of campaigns get there by day 21
-    (measured 90–91%), >85% by day 28.
+  - **4.10d — a skilled player FIRST STANDS AT THE SANCTUM DOOR on day 11–19**
+    (median; **6–10 before round 24 made the instrument grid-true**, 14–22 before round 37
+    made the landing three cells — see both blocks above; the LANDING STOREY under it is
+    still reached at median day 8–9), **<8% on day 1** (measured 0.5–1.5% — round 37
+    tripled it, see the block above), and >65% of campaigns get there by day 21,
+    >85% by day 28.
     ***ROUND 36 — THE HEADLINE INVARIANT OF THIS CLAUSE IS DELETED, ON PURPOSE.*** It
     read: *a bare, perfectly efficient ascent must cost more than the entire base day
     budget (`reserveToTop(1) > BASE_DAY_BUDGET`, measured to the landing: 22 > 18, i.e.
@@ -651,9 +652,11 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     exactly those cards, off the same predicate. That UI is load-bearing for
     this number.*
   - **4.10e — the volume is typically won in 12–20 days** of daily play by **the
-    skilled player of 4.10d** (median; measured 15 on all four campaign seeds,
-    p10 13, p90 18), **<3% inside the first week** (measured 0%), 0% on day 1,
-    100% by day 28. Winning requires **both** gates independently:
+    skilled player of 4.10d** (median; measured 15–15.5 across the four campaign
+    seeds since round 37, p10 13, p90 19 — the band itself is unmoved and is NOT
+    re-published, because moving a band that still holds is the same failure as
+    holding a band that has moved), **<3% inside the first week** (measured 0%),
+    0% on day 1, 100% by day 28. Winning requires **both** gates independently:
     knowing the word (fragments) *and* reaching the door that day.
     **Round 21 correction — 8–16 → 12–20, because THE CONTENT COMMISSION BELOW
     WAS DELIVERED.** The round-19 note that follows closes with *"a four-week
@@ -754,17 +757,36 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     each, 45-evening window), printed per seed as a range, and set beside the band
     the test enforces. Where a band moved, the move is published with its cause.*
     **AND TWO MILESTONES, NEVER ONE.** `firstLandingDay` is the day she stands on
-    the landing CELL; `firstSanctumReachDay` is the day she stands at a landing that
-    actually opened north — the live `atSanctumDoor` gate. The old bullets printed
+    the landing — since round 37 that is any of THREE cells, (1,5)/(2,5)/(3,5);
+    `firstSanctumReachDay` is the day she stands at a landing that actually opened
+    north — the live `atSanctumDoor` gate. The old bullets printed
     one number and called it "first landing" while the test asserted the other, which
     is how a doc drifts eight evenings from its own gate. Both are published now.
-    - **the skilled player** (4.10d's): the DOOR — the gate — at median day **16**
-      on every one of the four seeds (enforced 14–22; 0% never inside 45 evenings),
-      the volume won at median **16.5–17** (enforced 12–20), **98–100% inside 28
+    - **the skilled player** (4.10d's): the DOOR — the gate — at median day
+      **13–14** across the four seeds (enforced 11–19; 0% never inside 45 evenings),
+      the volume won at median **15–15.5** (enforced 12–20), **100% inside 28
       evenings** (enforced >85%), 0% inside the first week, and he stands at the
-      door on day 1 in **0–0.5%** of campaigns (enforced <8%). His evening runs
-      **14.8 minutes early, 18.6 late**, p90 22.8/26.3 (4.10f's band, 14–20 and
-      p90 ≤27).
+      door on day 1 in **0.5–1.5%** of campaigns (enforced <8%). His evening runs
+      **14.9–15.0 minutes early, 18.3–18.8 late**, p90 23.1/26.0 (4.10f's band,
+      14–20 and p90 ≤27).
+      *ROUND 37 — THE LANDING IS THREE CELLS, AND THIS IS AN ACCESS BAND, SO IT
+      MOVED (docs/THE_CLIMB §2).* **His door 16 → 13–14 and his win 16.5–17 →
+      15–15.5, band 14–22 → 11–19.** The cause is geometry and nothing else: the
+      sealed chamber now fills (1,6)–(3,6) and any of the three cells beneath it
+      can open north onto it, so three sealing cards at a landing door is a
+      detour rather than checkmate. **His DEDUCTION did not move — 14, before and
+      after — and that is the check on the claim**: he reads the volume at exactly
+      the same speed, and every evening this round hands back is an evening he
+      used to spend waiting on one square. His first LANDING day barely moved
+      either (8–10 → 8–9), which is round 24's finding arriving as a number: the
+      storey was never the gate.
+      **WHAT GOT WORSE, PUBLISHED RATHER THAN ABSORBED: his day-1 door rate
+      TRIPLED, 0–0.5% → 0.5–1.5%.** Three ways up on the last hop is three rolls
+      at it, and the owner-playtest blocker behind 4.10d is precisely "I reached
+      the Forgotten Word on my first day". It is still five times under the
+      enforced <8% and an order of magnitude under the 17–20% that clause was
+      written against, so it is reported and not acted on — but it is the number
+      to watch if the landing is ever widened again.
       *Round 36 — HIS BANDS DID NOT MOVE, and that is the measurement. The
       altitude toll came off (docs/THE_CLIMB §1) and his door slid 17 → 16 and his
       win 18 → 17, inside bands set two rounds ago. What DID move for him is the
@@ -781,12 +803,27 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
       about eight evenings later. Nothing about the climb got dearer; the instrument
       stopped assuming the door.*
     - **the median player** (`PROFILE_DECENT`, 4.10b's): the DOOR at median day
-      **20–21** (enforced 17–25; **0–1% never inside 45 evenings**), the word
-      deducible at median **17–18** (enforced 14–24), the volume won at median
-      **21–22** (enforced 18–26), **99–100% inside 45 evenings** (enforced
-      >80%), **0.0% inside the first week**. Her evening runs **12.7 minutes
-      early, 15.5 late**, p90 17.6/20.3 (4.10f's band for her, 12–18 and
-      p90 ≤22).
+      **16.5–17** (enforced 14–22; **0.0% never inside 45 evenings**), the word
+      deducible at median **17** (enforced 14–24), the volume won at median
+      **19** on every one of the four seeds (enforced 16–24), **100% inside 45
+      evenings** and **98–100% inside 28** (enforced >95% and >90%), **0.0%
+      inside the first week**. Her evening runs **12.7–12.9 minutes early,
+      15.4–15.5 late**, p90 17.9/20.0 (4.10f's band for her, 12–18 and p90 ≤22).
+      *ROUND 37 — HER TWO ACCESS BANDS MOVED AGAIN, THREE EVENINGS EACH, AND HER
+      KNOWLEDGE BAND DID NOT.* **Her door 20 → 16.5–17 (band 17–25 → 14–22) and
+      her win 22 → 19 (band 18–26 → 16–24)**, with the never-finished tail
+      **0–0.4% → 0.0%** and the inside-28-evenings figure **86–91.6% → 98–100%**.
+      Her deduction is unmoved at 17, for the third change running: she reads him
+      at the same speed, and what keeps changing is how long the house makes her
+      wait to say it. The secondary cause is worth naming because it is not the
+      landing itself — `MOVEMENT.sanctumColumnPull` now reads `sanctumColumnDrift`,
+      which is zero across all three landing columns, so a climb aimed at the top
+      of the house stops paying a preference tax for being one column off centre.
+      Her steps in hand entering the first padlocked storey rose **14 → 15** on
+      the back of exactly that, and her first LANDING day 10–12 → 10–11.
+      **The ratcheted floors are part of the move**: "99–100% inside 45" against
+      a floor of >80% had become a gate that could not fail, and the 28-evening
+      figure it was hiding is the one that actually moved.
       *ROUND 36 — THESE TWO BANDS MOVED FURTHER THAN ANY OTHER NUMBER IN 4.10,
       AND ONLY HERS DID.* **Her door 23–26 → 20–21 and her win 25–28 → 21–22**,
       with the never-finished tail **8.4–13.6% → 0–1%**, because the altitude toll

@@ -44,7 +44,7 @@
  * pre-placed and sealed at manor build, it is never drafted, and
  * `walkableNeighbors` only ever offers it as the door the blueprint refuses to
  * render as a walk. The word is spoken from the landing BELOW it — 0-based
- * (2,5), `engine/manor/grid.ts SANCTUM_DOOR_CELL` — so every published number
+ * row 5, `engine/manor/grid.ts SANCTUM_LANDING_CELLS` — so every published number
  * ("first reach day 6–10", "<8% on day 1", "the top is always bought with
  * refunds") was verified against a floor the player is never asked to enter,
  * and the floor she IS asked to reach cost 15 steps bare: under the 18-step
@@ -154,7 +154,7 @@ export const WING_MODEL = {
 } as const;
 import {
   canAddressSanctum, cardOpensOntoSanctum, cellKey, createManor, rowTier,
-  SANCTUM_CARD_ID, SANCTUM_DOOR_CELL,
+  sanctumColumnDrift, SANCTUM_CARD_ID, SANCTUM_CELLS, SANCTUM_LANDING_MID,
 } from '../manor/grid';
 import { KEY_COST, type LockView } from '../manor/locks';
 import {
@@ -187,7 +187,7 @@ import type { StepLedger } from '../types';
 
 /**
  * THE LIVE MILESTONE, 1-based: the landing the word is spoken from — engine
- * row 5, cell (2,5), `SANCTUM_DOOR_CELL`. Standing here with a north door onto
+ * row 5 — any of `SANCTUM_LANDING_CELLS`. Standing there with a north door onto
  * the sealed Sanctum is what "reached the Sanctum" means everywhere in the
  * game; the Sanctum's own row (1-based 7) is not walkable and is not a
  * milestone. Named for the landing so a future reader cannot re-confuse the
@@ -214,11 +214,11 @@ export const SANCTUM_LANDING_ROW = 6;
  *
  * The model now DRAFTS THE LANDING FOR REAL: `landingDraft` below rolls the
  * offer through the same `rollCards` the slice calls, at the same
- * `SANCTUM_DOOR_CELL`, and asks the same `cardOpensOntoSanctum` the card face
+ * middle landing cell, and asks the same `cardOpensOntoSanctum` the card face
  * draws. `SimDayResult.reachedSanctum` IS `atSanctumDoor`; the storey is
  * reported separately as `reachedLanding`, and the two can never be conflated
  * again because `tests/economy-simulation.test.ts` pins the identity the way
- * it already pins `SANCTUM_LANDING_ROW === SANCTUM_DOOR_CELL.row + 1`.
+ * it already pins `SANCTUM_LANDING_ROW === SANCTUM_LANDING_ROW0 + 1`.
  *
  * ONE MODELLING CHOICE, STATED: when the offer contains a plan that opens
  * north, the model assumes she takes it (p = the offer rate, 0.61 bare). That
@@ -261,7 +261,7 @@ export function landingDraft(
 ): boolean {
   landingDeck ??= deckFor([]);
   const manor = createManor(seed);
-  const cards = rollCards(landingDeck, manor, SANCTUM_DOOR_CELL, {
+  const cards = rollCards(landingDeck, manor, SANCTUM_LANDING_MID, {
     gems: 2,
     declinedLastDraft: [],
     drawIndex: 0,
@@ -271,7 +271,7 @@ export function landingDraft(
     sanctumMercy: arc.mercy ?? false,
   });
   return cards.some(
-    (c) => cardOpensOntoSanctum(c, LANDING_ENTRY_DIR, manor, SANCTUM_DOOR_CELL),
+    (c) => cardOpensOntoSanctum(c, LANDING_ENTRY_DIR, manor, SANCTUM_LANDING_MID),
   );
 }
 
@@ -300,12 +300,13 @@ export const MOVEMENT = {
    *
    * This was a flat 60 on a model with no grid, i.e. a number no evening could
    * ever reach and a `capped` ending nothing could ever produce. The manor has
-   * 5×7 cells, two of them pre-placed (the Entrance Hall and the sealed
-   * Sanctum), so 33 is what the house physically holds — and an evening that
-   * fills it ends `filled`, which is a real ending a real player can have.
-   * Derived from `MANOR_COLS`/`MANOR_ROWS` so a grid resize moves it.
+   * 5×7 cells, and four of them are pre-placed since round 37 — the Entrance
+   * Hall and the three cells of the sealed Sanctum — so 31 is what the house
+   * physically holds, and an evening that fills it ends `filled`, which is a
+   * real ending a real player can have. Derived from `MANOR_COLS`/`MANOR_ROWS`
+   * and `SANCTUM_CELLS` so a grid resize or a wider chamber moves it.
    */
-  maxRoomsPerDay: MANOR_COLS * MANOR_ROWS - 2,
+  maxRoomsPerDay: MANOR_COLS * MANOR_ROWS - 1 - SANCTUM_CELLS.length,
   /**
    * ROUND 24 — `lockoutDetourChance` IS GONE, and its removal is the point.
    *
@@ -349,9 +350,14 @@ export const MOVEMENT = {
    * all only **8.1%** of the evenings that reached the storey ended on the cell.
    *
    * This is the cost, in steps, that she is willing to pay per column of drift
-   * away from `SANCTUM_DOOR_CELL.col` when a draft is aimed upward. It is a
-   * PREFERENCE and not a rule: a cheap door two columns over still wins on a
-   * storey where a move is two steps, and loses on one where a move is nine.
+   * away from THE LANDING BAND when a draft is aimed upward — `sanctumColumnDrift`,
+   * which is 0 across all three landing columns since round 37 and rises only
+   * outside them. It is a PREFERENCE and not a rule: a cheap door two columns
+   * over still wins on a storey where a move is two steps, and loses on one
+   * where a move is nine. What the three-cell landing changes here is that the
+   * pull no longer aims her at ONE column, so the climb has three targets and
+   * the west and east thirds of the top storeys stop being detours by
+   * construction.
    */
   sanctumColumnPull: 2.5,
 } as const;
@@ -1507,7 +1513,7 @@ export function simulateDay(
       // her way under the stair column is most of how a real climb is made, and
       // a pull that only fired on the step up could never move her sideways.
       + (wantsUp || d.cell.row > GROUND_ROWS
-        ? Math.abs(d.cell.col - SANCTUM_DOOR_CELL.col) * MOVEMENT.sanctumColumnPull : 0)
+        ? sanctumColumnDrift(d.cell.col) * MOVEMENT.sanctumColumnPull : 0)
       - d.cell.row * 0.01;                               // ties go to the higher door
     const sloppy = rng() < Math.min(1, profile.walkbackPerRow * MOVEMENT.navigationNoise);
     const local = pool.filter((d) => d.walk.length <= MOVEMENT.sloppyWalkRadius);

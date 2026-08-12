@@ -105,6 +105,85 @@ tooltip.
 
 ## 3. What the last few rounds changed, with their numbers
 
+### Round 37 — the landing is three cells, so the ending has three ways in
+
+The owner, from docs/THE_CLIMB §2: *"make the landing a row of cells beneath the Sanctum,
+any of which can open north onto it."* It was **one** cell, (2,5), so every campaign in
+the game funnelled through one square — and a cold tester's run ended at exactly that
+door with all three offered cards sealing and no gem to reroll. He read it as arbitrary,
+and he was right to. For a cell at (1,5) to open north *onto the Sanctum*, the Sanctum
+has to BE at (1,6), so the sealed chamber now fills the middle three cells of the top
+storey and shows three sealed south doors. Three sealed cards at a landing door is a
+**detour** now, and a detour costs steps — which is exactly the doubling-back economy
+round 36 installed. The two changes were always one idea seen from both ends.
+
+| | Was | Now |
+|---|---|---|
+| The Sanctum | one cell, (2,6) | **three cells, (1,6)–(3,6)**, one sealed south door each |
+| The landing | one cell, (2,5) | **three cells, (1,5)–(3,5)**, any of which can open north |
+| Draftable cells | 33 | **31** |
+| Median player: first at the DOOR | day 20 | **day 16.5–17** (band 17–25 → **14–22**) |
+| Median player: volume won | day 22 | **day 19** (band 18–26 → **16–24**) |
+| Median player: won inside 28 evenings | 86–91.6% | **98–100%** |
+| Median player: never finished in 45 evenings | 0–0.4% | **0.0%** |
+| Median player: the word DEDUCIBLE | day 17 | **day 17** — unmoved, and that is the check |
+| Skilled player: first at the DOOR | day 16 | **day 13–14** (band 14–22 → **11–19**) |
+| Skilled player: volume won | day 16.5–17 | **day 15–15.5** — band 12–20 unmoved |
+| Skilled player: at the door on DAY 1 | 0–0.5% | **0.5–1.5%** — worse, published, still under the enforced <8% |
+| First LANDING day (his / hers) | 8–10 / 10–12 | 8–9 / 10–11 — barely moved: **the storey was never the gate** |
+| The landing offer's overflow (375 / 390) | 69px / 79px | **27px / 31px** |
+
+**The deduction band holding still is the finding, not a footnote.** Widening the landing
+can change how long the house makes her wait to say the word; it cannot change how fast
+she reads him. If her deduction had moved, the instrument would have been measuring
+something other than access. **Not one constant in `engine/economy/steps.ts` was retuned
+to absorb any of this** — the note that file left for this round said so in advance, on
+purpose, because a landing round that also adjusts the step table is a landing round
+nobody can measure.
+
+**A secondary cause, named so it is not mistaken for the landing.**
+`MOVEMENT.sanctumColumnPull` used to pull the climb toward one column; it reads
+`sanctumColumnDrift` now, which is zero across all three landing columns. Her steps in
+hand entering the first padlocked storey rose 14 → 15 on the back of that alone.
+
+**What got worse, published rather than absorbed.** His day-1 door rate **tripled** —
+three ways up on the last hop is three rolls at it, and *"I reached the Forgotten Word on
+my first day"* is the owner playtest that AAA 4.10d exists for. 0.5–1.5% against an
+enforced <8% is not a defect; it is the number to watch if the landing is ever widened
+again, and it is written down rather than left to be rediscovered.
+
+**Two consequences nobody asked for, both real and both kept.** The landing now spans all
+three wings — (1,5) West, (2,5) Stair Hall, (3,5) East — so the papers' wing memory is
+informative at the ending for the first time. And the two corners of the top storey got
+harder: (0,6) and (4,6) have two outer walls and the chamber's blank plaster on the
+third, so a tee or a cross laid there can seal itself, which it never could. Measured
+under 6% of those shapes' placements; the test that asserted a flat 0 now asserts the
+bound with its cause.
+
+**The approach is said out loud, once, as a rule of play.** Rooms have always rotated to
+face the direction she enters from, so coming at a landing cell from the south, east or
+west already changed which offered plans could open north — a real decision, in the
+engine, surfaced nowhere. The landing draft now merges its two header rules into one
+sentence: *"Each plan turns to the south wall at your feet. Only one that opens north
+reaches the sealed door."* It states the RULE and stops — it does not say which approach
+is better, and it does not say that walking one cell along deals a different offer.
+
+**Verified where it could be false.** Everything the unit suite can say about a three-cell
+landing it says against `atSanctumDoor`, a pure predicate over a `ManorState` — and the
+defect this round could actually have shipped is a predicate that says yes at (1,5) beside
+a blueprint that still draws the vow control over (2,6). So the glass gate walks an
+eighteenth scene: it stands her on each landing cell in turn, in both states, and measures
+the control's own box against the player token's own box. Two new `--prove` injections
+re-introduce the failure live — the vow nailed to a fixed column, and the round-13 blocker
+of a sealed landing that refuses by drawing nothing — and both turn the gate red. The west
+landing's vow is then taken with a real pointer tap, and the Sanctum has to answer it.
+
+**The overflow is part-paid and the rest is the owner's.** That merge is worth 42px at
+375x667 and 48px at 390x844. What is left, 27px and 31px, is now **smaller than the three
+per-card Sanctum stamps that make it up (56px)** — so the entire residue is round 13's
+rule that every card prints its own answer, beside a door-plan line the owner has frozen.
+The glass gate walks the scene, prints the number on every run and still bounds it.
+
 ### Round 36 — a move costs a move, wherever she is
 
 The owner, after playing: *"The steps economy is insane right now… It shouldn't get more

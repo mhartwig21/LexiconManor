@@ -41,9 +41,28 @@ from v2 carry over (see §10).
 
 ## 3. The manor grid
 
-- **5 columns × 7 rows.** Entrance Hall fixed at bottom-center; the **Sanctum** fixed at
-  top-center, sealed. 33 draftable cells. (Smaller than Blue Prince's 5×9 to hit the
-  10–15 minute day.)
+- **5 columns × 7 rows.** Entrance Hall fixed at bottom-center; the **Sanctum** sealed
+  across the middle three cells of the top row, (1,6)–(3,6). **31 draftable cells.**
+  (Smaller than Blue Prince's 5×9 to hit the 10–15 minute day.)
+- **THE LANDING IS THREE CELLS** — *round 37, docs/THE_CLIMB §2.* The chamber shows
+  three sealed south doors, and the three cells beneath them, (1,5)/(2,5)/(3,5), are
+  the landing: **any of them can open north onto the Sanctum** (`SANCTUM_LANDING_CELLS`,
+  `opensOntoSanctum`). It used to be one cell, so every campaign in the game funnelled
+  through one square and a bad draft there was checkmate — a cold tester's run ended at
+  exactly that door with all three offered cards sealing and no gem to reroll. It is a
+  **detour** now, and a detour costs steps, which is the doubling-back economy §1 of the
+  same doc installed. Two consequences worth naming:
+  - **the landing spans all three wings.** (1,5) is the West Wing, (2,5) the Stair Hall,
+    (3,5) the East Wing — so the wing memory the papers keep (below) is informative at
+    the ending for the first time, and *which way you come at the top of the house* is a
+    real question with three real answers.
+  - **the two corners of the top storey got harder.** (0,6) and (4,6) now have two outer
+    walls and the chamber's blank plaster on the third, so a tee or a cross laid there
+    can seal itself — which it never could before. Measured on the real deck: under 6%
+    of those two shapes' placements, and 0% everywhere else in the house.
+  The Sanctum is held as three `PlacedRoom` records with one south door each and **no
+  doors between them**, so nothing can path *through* the ending; the blueprint draws
+  the band as the single chamber it is.
 - Rooms are 1×1 cells with door openings on 1–4 walls. A door drawn against the manor's
   outer wall or an existing wall is dead. Drafting is only offered at a door you're
   standing at, into an empty adjacent cell.
@@ -235,11 +254,21 @@ Sanctum doesn't want a key — it wants the word *spoken* (typed).
   the seal, the reveal and the Portrait's monologue only ever play at the door, and once
   the true word has gone up the brass the house holds its padlocks open for the walk.
   Both bands are published and measured in AAA 4.10e:
-  - the **skilled player** first stands at the landing on day 6–10, first *says a word*
-    on **day 1**, and wins at a median of **12–20 days** (measured 15);
-  - the **median player** (`PROFILE_DECENT`, the owner) first lands at median day 12–20,
-    also speaks on **day 1**, can deduce the word at median day **14–24** (measured
-    18), and wins at median day **18–28** (measured 21–22).
+  - the **skilled player** first stands at the landing on day 8–9, reaches the DOOR at
+    median day **13–14** (band 11–19), first *says a word* on **day 1**, and wins at a
+    median of **12–20 days** (measured 15–15.5);
+  - the **median player** (`PROFILE_DECENT`, the owner) first lands at median day 10–11,
+    reaches the DOOR at median day **16.5–17** (band 14–22), also speaks on **day 1**,
+    can deduce the word at median day **14–24** (measured 17), and wins at median day
+    **16–24** (measured 19).
+
+  *Round 37 moved both DOOR bands and both WIN bands, three evenings each, and moved
+  neither DEDUCTION band at all — which is the check on the claim rather than a
+  coincidence. Widening the landing changes how long the house makes her wait to say the
+  word; it cannot change how fast she reads him. Her never-finished tail went 0–0.4% →
+  0.0%. The one number that got worse is published with them: his day-1 door rate tripled,
+  0–0.5% → 0.5–1.5%, because three ways up on the last hop is three rolls at it — still
+  five times under 4.10d's enforced <8%.*
 
   *Round 19 moved both win bands (from 14–28 and 26–34) and her deduction band (from
   16–24). Two things moved them, both mandated by REVIEW_AA: §5.2's tube deleted the
