@@ -212,6 +212,18 @@ const DECLARED_SCROLLERS = [
       + ' those stamps sit beside. Until he takes it, judgeLanding owns the number',
     ownedBy: 'LANDING',
   },
+  {
+    scene: 'room:study',
+    match: 'room-host__stage',
+    why: 'OWNER-DEFERRED, 12 Aug. The Study is one of the three PROTECTED rooms and its tier-3'
+      + ' stage overflows on the longest definitions in the pool (7-65px at 375x667, depending'
+      + ' on the board drawn, which is why this finding is intermittent). The owner has ruled'
+      + ' it stays until he has tested it himself, because closing it needs either shorter'
+      + ' riddles or a tap target removed, and both are protected content. A DEFERRAL, not an'
+      + ' exemption: the number is printed every run and the gate goes red the moment it grows'
+      + ' past the ceiling, so the debt cannot quietly get worse while he decides',
+    debtCeiling: 80,
+  },
 ];
 const MARGINAL_OVERFLOW_PX = 64;
 /** Sub-pixel layout noise. Anything at or under this is not a scrollbar. */
@@ -430,6 +442,24 @@ export function judgeScroll(rows, scrollers = DECLARED_SCROLLERS) {
      * on a day the panel happened to overflow by 40px instead of 70). The
      * field is `ownedBy` and it must name a klass that really exists.
      */
+    /**
+     * A DEFERRAL WITH A CEILING. `debtCeiling` is for a defect the OWNER has
+     * seen, judged and chosen to leave — not for one the gate finds
+     * inconvenient. It differs from an exemption in the only way that matters:
+     * the number is reported on every run and the gate goes RED the moment it
+     * exceeds the ceiling, so a deferred debt cannot quietly grow into a
+     * broken room while the decision is outstanding.
+     */
+    if (typeof declared.debtCeiling === 'number') {
+      if (dy > declared.debtCeiling) {
+        out.push({
+          klass: 'SCROLL', scene: row.scene, what: row.sel,
+          message: `scrolls ${dy}px down, past its deferred ceiling of ${declared.debtCeiling}px`
+            + ` — the owner deferred this debt, he did not agree to it growing (${declared.why})`,
+        });
+      }
+      continue;
+    }
     if (declared.ownedBy) continue;
     if (dy > SCROLL_TOLERANCE_PX && dy <= MARGINAL_OVERFLOW_PX) {
       out.push({
