@@ -56,7 +56,7 @@ Seven rooms, ~1,123 shipped puzzles, all solver-verified at build time:
 | The Study | Forgotten Word | 113 | **yes** — publishable writing |
 | The Counting House | Sudoku | 120 | **yes** — t1 = NYT Medium, t2 = NYT Hard exactly |
 | The Linen Closet | Acrostic-like sparse grid + the hem | 76 | **yes** |
-| The Gallery | Twistle (word search) | 210 | **yes**, on section 8 one rule |
+| The Gallery | Twistle (word search) | 210 | **yes**, on section 8's two rules |
 | The Library | Word Web (Connections) | 183 | no — median 2 contested tiles, wants 2–4 |
 | The Darkroom | Substitution cipher | 121 | no |
 
@@ -164,6 +164,24 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
 4. **Reduced motion lost a quarter of its dusk**, unpublished — gone by ~906ms.
 5. **The Library** (median 2 contested tiles against 2–4) and **the Darkroom** — the two rooms that
    do not clear their benchmark.
+   - **The Gallery's grid was round 43, off owner play** — *"a lot of letter placements that
+     totally close off any ability to ever form a word… like c c c all next to each other."*
+     The measurement had to be invented and the FIRST one was green and wrong: counted against
+     the board's accept-list, a tile serving no word is essentially extinct (median 0 a tier), so
+     that gate would have passed without a grid moving. The accept-list is the wrong denominator
+     — round 38 grew it to the whole dictionary, so a tile "serving 22 words" means AIVERS and
+     AKEES. Counted against what is FINDABLE IN PRACTICE (accepted **and** rank ≤ 20k) the
+     complaint is right there: the largest run of king-adjacent tiles serving under two such
+     words was a median 1 / 2 / 6 and a worst of 6 / 9 / 15, on **103 of the 210 boards**. The
+     ceiling is 2, enforced at generation and gated by an enumerator that reads raw ENABLE and
+     walks the shipped grid itself; it is red on the previous pool and clean on this one at both
+     rank ≤ 20k and rank ≤ 60k. **And his own example is not the mechanism** — three touching C's
+     is uncorrelated with barren ground (0.160 barren share either way), so the fill rule written
+     to suppress it was deleted on that number rather than shipped with a comment the data
+     refuses. Bands that moved, with causes, in BENCHMARKS §8: accepted words a board 100 / 92 /
+     172 → **102 / 104 / 200**; cozy-gate refusals 534 → **619**, still zero for any rule of play;
+     tier 2's `minEntryRank` 1,000 → **1,500**, because word-dense boards carry commoner words
+     and the tier-2 median cheapest solve had fallen under its published floor.
 6. **The landing offer overflows** 69px at 375×667 and 79px at 390×844 — known debt, bounded by the
    gate, needs a different layout rather than another trim.
 7. **`docs/ROOM_CHANNELS.md`** — typed clue channels, the room sets the lens and the puzzle pays,

@@ -4,7 +4,11 @@ import { fileURLToPath } from 'node:url';
 import { loadDictionary, bandOf, type Dictionary, type Band } from './lib/dictionary';
 import { gateOk } from './generate-gate';
 import { createRng, pick, randInt, shuffle, type Rng } from '../src/engine/rng';
-import { findPath, centerIndex, gridSize, maxFindableFor, MIN_ASK_SHARE, straightestTurns } from '../src/engine/twistle';
+import {
+  findPath, centerIndex, gridSize, maxFindableFor, MIN_ASK_SHARE, straightestTurns,
+  tileCoverage, barrenTiles, barrenClusterSizes, largestBarrenCluster,
+  BARREN_MIN_WORDS, MAX_BARREN_CLUSTER,
+} from '../src/engine/twistle';
 import { tierLabel } from '../src/engine/rooms/adapters/tier-select';
 import type { TwistlePuzzle, Tier } from '../src/engine/types';
 
@@ -175,6 +179,12 @@ import type { TwistlePuzzle, Tier } from '../src/engine/types';
  * construction), while the accept-list went 7,685 → 26,107 words and the median
  * board from 22 accepted words to 101. Refusals of a traceable dictionary word
  * are now **534 in the whole house, every one of them the cozy gate's**.
+ * (ROUND 43: **619** — 158 / 181 / 280 — still every one of them editorial, 594
+ * the cozy gate's and 25 the blocklist's, and still ZERO for any rule of play.
+ * The count rose because the barren-ground floor selects word-DENSE boards and a
+ * board with more words on it has more words the manor will not print; the
+ * accept-list WIDENED with it, a median 100 / 92 / 172 words to 102 / 104 / 200.
+ * A refusal count is only a regression if the CLASS changes, and it did not.)
  */
 
 const TARGET_PER_TIER = 70; // 3 tiers => 210 total
@@ -211,6 +221,31 @@ const ASK_MAX_LENGTH = 8;
 
 // Letter frequency weights for filling gaps (rough English distribution).
 const FILL_LETTERS = 'eeeeeeeeeeeetttttttttaaaaaaaaoooooooiiiiiiinnnnnnnsssssshhhhhhrrrrrrddddllllcccuuummwwffggyyppbbvk';
+
+/*
+ * ═══ ROUND 43 — "LIKE C C C ALL NEXT TO EACH OTHER" IS NOT THE MECHANISM ═══
+ *
+ * The fill is still independent frequency-weighted noise, on purpose, and this
+ * is the measurement that says leave it alone.
+ *
+ * The owner's example was literal enough to build against — every gap tile is an
+ * independent draw, independent draws stack, and **70 of the 210 boards shipped
+ * before this round carried a run of three or more king-adjacent tiles of the
+ * SAME letter**, up to six. A re-draw rule that refuses a letter one of the
+ * tile's king-neighbours already carries was written, and then measured, and it
+ * bought nothing: same-letter runs are UNCORRELATED with barren ground. On the
+ * pool he complained about, boards carrying such a run and boards carrying none
+ * have the same barren share to three decimal places (0.160 vs 0.160) and
+ * largest walls of the same median (2 and 2). The rule made the runs no rarer
+ * either — 70 boards to 87 — because the barren floor now selects for word-DENSE
+ * boards, and word-dense boards double their letters: STALLS, LISTENS, SEEDS.
+ *
+ * So the run of C's is what he SAW and the barren ground is what he FELT, and
+ * only one of the two is worth a rule. Chasing the letters would have been this
+ * project's own recurring failure — fixing the artifact that was described
+ * instead of the experience that was reported — and it would have shipped with a
+ * comment claiming a fix that the numbers in this file's own test refuse.
+ */
 
 interface TierSpec {
   /** Frequency bands allowed for the words the player must find. */
@@ -261,9 +296,19 @@ const SPECS: Record<Tier, TierSpec> = {
   // of words but the board: every target turns at least twice AND crosses the
   // marked centre tile, a rule the room states at rest in its header and marks
   // on the glass before it can cost anything.
+  //
+  // ROUND 43 — `minEntryRank` 1000 → 1500, and it is a RATCHET rather than a
+  // re-tune. The barren-ground floor selects for word-DENSE boards, and a
+  // word-dense board carries more COMMON words, so tier 2's median cheapest
+  // solve fell 3,540 → 2,918 and went under its own published median floor of
+  // 3,000. Re-typing that floor to fit is this project's standing failure, so
+  // the per-board ratchet moved instead — no tier-2 board now answers to
+  // anything inside the 1,500 commonest words in English, which is tier 3's own
+  // bar — and the median came back ABOVE where it started. The tier had the
+  // headroom to pay for it (652 attempts of a 28,000 budget).
   2: { targetBands: ['everyday'], seedWordCount: 7, targetCount: 6, minFindable: 12,
        centerRequired: true, minLength: 5, minTurns: 2, minEntryTurns: 2, maxEntryTurns: 99,
-       minEntryRank: 1000 },
+       minEntryRank: 1500 },
   // 6×6: more tiles to seed (10 words; the rest of the board fills with
   // frequency noise), and the twist bar goes up a notch now that there is room
   // for it — EVERY tier-3 target turns at least four times (the old 5×5 tier 3
@@ -484,6 +529,14 @@ function generatePuzzle(
   // words she already had in her head (see `minEntryRank`).
   const rank = entryRank(targets.map((w) => { const r = dict.rankOf(w); return r > 0 ? r : UNRANKED; }), spec.targetCount);
   if (rank < spec.minEntryRank) return null;
+  // ROUND 43 — NO WALL OF GROUND SHE CAN NEVER FORM A WORD ON (owner, from
+  // play). Barren-ness is counted against the words that are FINDABLE IN
+  // PRACTICE — accepted AND rank ≤ 20,000 — because round 38 made the
+  // accept-list the whole dictionary and a tile served only by AIVERS is a tile
+  // she will stare through. See the derivation in src/engine/twistle.ts.
+  const practical = accepted.filter((w) => bandOf(dict.rankOf(w)) === 'everyday');
+  const coverage = tileCoverage(upper, practical.map((w) => w.toUpperCase()), rules);
+  if (largestBarrenCluster(coverage, n) > MAX_BARREN_CLUSTER) return null;
 
   return {
     id: `twistle-t${tier}-${index}`,
@@ -525,8 +578,13 @@ function main() {
   for (const tier of [1, 2, 3] as Tier[]) {
     let made = 0;
     let attempts = 0;
+    const t0 = Date.now();
     while (made < TARGET_PER_TIER && attempts < TARGET_PER_TIER * 400) {
       attempts++;
+      // The barren floor made tier 3 a ~7-minute search (3,859 attempts against
+      // 318), so this file prints progress rather than sitting silent for ten
+      // minutes and reading like a hang.
+      if (attempts % 1000 === 0) console.log(`  ...tier ${tier}: ${made}/${TARGET_PER_TIER} in ${attempts} attempts, ${((Date.now() - t0) / 1000).toFixed(0)}s`);
       const p = generatePuzzle(dict, trie, pools, tier, rng, made + 1);
       if (p) {
         puzzles.push(p);
@@ -602,6 +660,15 @@ function validate(puzzles: GeneratedTwistlePuzzle[], dict: Dictionary) {
     const rank = entryRank(p.targetWords.map((w) => { const r = dict.rankOf(w); return r > 0 ? r : UNRANKED; }), p.targetCount);
     if (rank < spec.minEntryRank) {
       problems.push(`${p.id}: the cheapest solve ends on rank ${rank}, inside tier ${p.tier}'s reflex floor of ${spec.minEntryRank}`);
+    }
+    // ROUND 43 — BARREN GROUND, re-derived off the SHIPPED lists rather than off
+    // the candidate's own working set, so a board cannot pass generation and
+    // ship a wall anyway.
+    const practical = [...p.targetWords, ...p.extraWords]
+      .filter((w) => bandOf(dict.rankOf(w.toLowerCase())) === 'everyday');
+    const sizes = barrenClusterSizes(barrenTiles(tileCoverage(p.grid, practical, p.rules), n * n), n);
+    if ((sizes[0] ?? 0) > MAX_BARREN_CLUSTER) {
+      problems.push(`${p.id}: a wall of ${sizes[0]} king-adjacent tiles each serve under ${BARREN_MIN_WORDS} findable-in-practice words — the barren-cluster ceiling is ${MAX_BARREN_CLUSTER}`);
     }
   }
   if (problems.length > 0) {

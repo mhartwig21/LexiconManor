@@ -486,7 +486,8 @@ describe('twistle accepts what it lets you trace (round 28, BENCHMARKS §8)', ()
    * letter trie and its own `everyday` band line (see the note above).
    *
    * On this pool the only word any board refuses is one the COZY GATE refuses:
-   * 534 in the house — 138 / 143 / 253 — every one a word the manor will not
+   * 619 in the house — 158 / 181 / 280, and 534 (138 / 143 / 253) before round
+   * 43's grids — every one a word the manor will not
    * print (DEATH, PENIS, ANGER, SLUTS, CANCER…). That is an editorial refusal,
    * not a rule of play she could see on the board and obey, and it is the whole
    * residue. Everything else the dictionary carries and the grid can spell is

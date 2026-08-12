@@ -175,7 +175,8 @@ export function maxFindableFor(targetCount: number): number {
  * Every word of the dictionary she can draw is a work or a study.
  *
  * Measured after, by the same independent enumerator: **the ONLY refusal left
- * anywhere in the house is the cozy gate's — 534 of them (138 / 143 / 253),
+ * anywhere in the house is the cozy gate's — 534 of them (138 / 143 / 253; round
+ * 43 re-measured it at 619 on new grids, same class, see below),
  * every single one a word the manor will not print** (DEATH, PENIS, ANGER,
  * SLUTS, NIGGER, CANCER…). Zero refusals for any rule of play, at any tier, at
  * any rank, at any length. Not a number that was aimed at: the enumerator counts
@@ -184,6 +185,198 @@ export function maxFindableFor(targetCount: number): number {
  * boards themselves — every grid, every work, every published band of the ask —
  * are byte-identical to the pool round 28 shipped.
  */
+
+/**
+ * ═══ ROUND 43 — BARREN GROUND, AND WHY NOTHING HAD EVER SEEN IT ════════════
+ *
+ * Owner, from play: *"There is a lot of letter placements that totally close off
+ * any ability to ever form a word. That is not fun. It is okay to have some, but
+ * it is too much — like c c c all next to each other."*
+ *
+ * THE FIRST THREE MEASUREMENTS OF THIS WERE ALL GREEN, AND ALL WRONG. Counted
+ * against the board's accept-list — every ENABLE word it takes — a tile that
+ * serves NO word is essentially extinct: median 0 at every tier, 4 at the very
+ * worst on any of the 210 boards. Had this round gated on that number it would
+ * have shipped green without touching a grid, which is this project's standing
+ * failure with a new face. The accept-list is the wrong denominator, and round
+ * 38 is exactly why: it grew the list 7,685 → 26,107 words by admitting the
+ * whole dictionary, so "this tile serves 22 words" now routinely means AIVERS,
+ * AKEES, ALIYOT and nineteen others no player will ever type. **A tile is not
+ * alive because a word crosses it. It is alive because a word SHE COULD FIND
+ * crosses it.**
+ *
+ * So:
+ *
+ *   FINDABLE IN PRACTICE  the board accepts it (a legal trace under the rules
+ *                         the room states) AND she plausibly knows it — Norvig
+ *                         rank ≤ 20,000, round 28's own line for that phrase.
+ *   BARREN TILE           fewer than `BARREN_MIN_WORDS` = 2 findable-in-practice
+ *                         words trace through it. Zero means she can never form
+ *                         a word there at all; exactly one means there is nothing
+ *                         to SEARCH for, only one specific word to recall. Two is
+ *                         the smallest number at which a tile offers a choice,
+ *                         and a word search that offers no choice is a memory
+ *                         test with extra steps.
+ *   BARREN CLUSTER        king-adjacent barren tiles, because king-adjacency is
+ *                         how a trace moves. **The floor is on cluster SIZE, not
+ *                         on the count** — his own words are "it is okay to have
+ *                         some, but it is too much". A lone barren tile is chaff
+ *                         and a search with no chaff is not a search; four in a
+ *                         corner is a wall she learns to distrust.
+ *
+ * Measured that way on the pool round 38 shipped, by an enumerator that walks
+ * every legal path against raw ENABLE off disk (`tests/puzzles/twistle-dead-ground.test.ts`):
+ *
+ *   | per board                       | tier 1 | tier 2 | tier 3 |
+ *   |---------------------------------|--------|--------|--------|
+ *   | barren tiles, median            | 2 / 25 | 4 / 25 | 10 / 36 |
+ *   | LARGEST BARREN CLUSTER, median  |   1    |   2    |   6    |
+ *   | boards with a cluster of 3+     | 13/70  | 30/70  | 60/70  |
+ *   | worst cluster in the tier       |   6    |   9    |   15   |
+ *
+ * Fifteen of a tier-3 board's thirty-six tiles in one connected wall. That is
+ * the complaint, and it is a RIM effect: `centerRequired` puts every accepted
+ * word through the marked tile, seven to ten seeded words cluster in the middle,
+ * and the rest of the board is frequency-weighted noise.
+ *
+ * WHAT SHIPPED, measured by the same independent enumerator:
+ *
+ *   | largest barren cluster | tier 1 | tier 2 | tier 3 |
+ *   |------------------------|--------|--------|--------|
+ *   | median, before → after | 1 → 1  | 2 → 1  | 6 → 2  |
+ *   | WORST BOARD IN THE TIER| 6 → 2  | 9 → 2  | 15 → 2 |
+ *   | boards over the ceiling| 13 → 0 | 30 → 0 | 60 → 0 |
+ *
+ * **No board in the house now carries a wall.** Barren PAIRS remain and are
+ * meant to (median 2 / 3 / 5 barren tiles a board, in ones and twos): a search
+ * with nothing to reject is not a search, and the owner asked for some.
+ *
+ * AND THE THING HE NAMED IS NOT THE THING HE FELT — measured, and left alone
+ * because of it. Three touching C's is real (70 of the 210 boards carried a run
+ * of three-or-more king-adjacent identical letters, up to six) and it is
+ * UNCORRELATED with barren ground: on that pool the boards carrying such a run
+ * and the boards carrying none have the same barren share to three decimals,
+ * 0.160 against 0.160. A fill rule that suppressed the runs was written and then
+ * deleted on that number — see the note in `content/generate-twistle.ts`. SS and
+ * LL are how STALLS and LISTENS are spelled.
+ *
+ * The floor is enforced in `content/generate-twistle.ts` at generation and again
+ * at validation, and gated against the shipped JSON by an independent
+ * enumerator in `tests/puzzles/twistle-dead-ground.test.ts`.
+ */
+
+/** Below this many findable-in-practice words, a tile is barren. */
+export const BARREN_MIN_WORDS = 2;
+
+/**
+ * The largest run of king-adjacent barren tiles a board may ship.
+ *
+ * TWO — so a barren PAIR is allowed anywhere on any board and a barren THREE is
+ * not, which is exactly where the owner drew the line: *"It is okay to have
+ * some, but it is too much — like c c c all next to each other."* Some chaff is
+ * not a defect (a search with nothing to reject is not a search), and his
+ * example of too much is three touching. It is stated here rather than in the
+ * generator because the generator runs `main()` on import and the gate needs the
+ * number, not the generator.
+ */
+export const MAX_BARREN_CLUSTER = 2;
+
+/**
+ * Every tile that lies on SOME legal trace of each of `words`, in one walk.
+ *
+ * A word's coverage is the UNION over all its readings, not the tiles of one
+ * path: `findPath` returns the first trace it happens to find, and a tile the
+ * player could route through is alive whether or not that particular walk chose
+ * it. Built as a trie walk over the whole board so the cost is one DFS rather
+ * than one per word.
+ */
+export function tileCoverage(
+  grid: string[],
+  words: Iterable<string>,
+  rules: TwistleRules,
+): Map<string, Set<number>> {
+  const n = gridSize(grid);
+  const centre = centerIndex(n);
+  const root: { kids: Map<string, unknown>; word: string | null } = { kids: new Map(), word: null };
+  type Node = { kids: Map<string, Node>; word: string | null };
+  const trie = root as Node;
+  const coverage = new Map<string, Set<number>>();
+  let any = false;
+  for (const raw of words) {
+    const w = raw.toUpperCase();
+    if (w.length < rules.minLength) continue;
+    any = true;
+    coverage.set(w, new Set());
+    let node = trie;
+    for (const ch of w) {
+      let next = node.kids.get(ch);
+      if (!next) { next = { kids: new Map(), word: null }; node.kids.set(ch, next); }
+      node = next;
+    }
+    node.word = w;
+  }
+  if (!any) return coverage;
+
+  const used = new Array<boolean>(grid.length).fill(false);
+  const path: number[] = [];
+  const walk = (pos: number, node: Node, hitCentre: boolean) => {
+    const next = node.kids.get(grid[pos]!);
+    if (!next) return;
+    used[pos] = true;
+    path.push(pos);
+    const hit = hitCentre || pos === centre;
+    if (next.word && (hit || !rules.centerRequired)) {
+      const set = coverage.get(next.word)!;
+      for (const t of path) set.add(t);
+    }
+    for (const nb of neighbors(pos, n)) if (!used[nb]) walk(nb, next, hit);
+    path.pop();
+    used[pos] = false;
+  };
+  for (let i = 0; i < grid.length; i++) walk(i, trie, false);
+  return coverage;
+}
+
+/** How many of `coverage`'s words trace through each tile. */
+export function tileYield(coverage: Map<string, Set<number>>, tileCount: number): number[] {
+  const out = new Array<number>(tileCount).fill(0);
+  for (const tiles of coverage.values()) for (const t of tiles) out[t]! += 1;
+  return out;
+}
+
+/** The tiles too thinly served to search on — see BARREN_MIN_WORDS. */
+export function barrenTiles(coverage: Map<string, Set<number>>, tileCount: number): number[] {
+  const served = tileYield(coverage, tileCount);
+  const out: number[] = [];
+  for (let i = 0; i < tileCount; i++) if (served[i]! < BARREN_MIN_WORDS) out.push(i);
+  return out;
+}
+
+/** Sizes of the king-adjacent runs `tiles` forms, largest first. */
+export function barrenClusterSizes(tiles: number[], n: number): number[] {
+  const inSet = new Set(tiles);
+  const seen = new Set<number>();
+  const sizes: number[] = [];
+  for (const start of tiles) {
+    if (seen.has(start)) continue;
+    let size = 0;
+    const stack = [start];
+    while (stack.length > 0) {
+      const cur = stack.pop()!;
+      if (seen.has(cur)) continue;
+      seen.add(cur);
+      size += 1;
+      for (const nb of neighbors(cur, n)) if (inSet.has(nb) && !seen.has(nb)) stack.push(nb);
+    }
+    sizes.push(size);
+  }
+  return sizes.sort((a, b) => b - a);
+}
+
+/** The board's worst wall: the largest barren cluster on it, 0 if there is none. */
+export function largestBarrenCluster(coverage: Map<string, Set<number>>, n: number): number {
+  return barrenClusterSizes(barrenTiles(coverage, n * n), n)[0] ?? 0;
+}
 
 /**
  * ═══ THE LADDER (BENCHMARKS §1, §8) ═══════════════════════════════════════

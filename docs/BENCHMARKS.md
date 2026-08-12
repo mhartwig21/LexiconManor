@@ -491,6 +491,33 @@ rule is doing the work: the room states its own constraint over the board.
 > and they are a deliberate choice; everything else the dictionary carries is a work or a
 > study. Measured by enumeration that shares nothing with the generator — see STATUS' round-38
 > entry and `tests/puzzles/twistle-boards.test.ts`.
+
+> **ROUND 43 — AND STRANDS' OTHER RULE IS THE ONE THE OWNER JUST ASKED FOR.**
+> The line four bullets up — *"Every tile belongs to an answer. The board is exactly tiled by
+> the theme words plus the spangram — there is no filler on a Strands board at all"* — has sat
+> in this teardown unused since it was written, because the Gallery's whole difficulty model
+> (round 26) depends on filler. Owner, from play: *"There is a lot of letter placements that
+> totally close off any ability to ever form a word. That is not fun. It is okay to have some,
+> but it is too much — like c c c all next to each other."* That is this row of the teardown
+> arriving as a complaint.
+>
+> **The Gallery cannot copy the rule** — a board exactly tiled by its answers gives away the
+> answers, and Strands can afford that because a theme, not a search, is what it is selling.
+> So it is copied as a FLOOR rather than as a construction: no wall of ground she can never
+> form a word on. Measured against the words that are FINDABLE IN PRACTICE — the board accepts
+> it AND she plausibly knows it — because round 38's whole-dictionary accept-list makes "a word
+> crosses this tile" nearly meaningless (a tile "serving 22 words" is usually AIVERS, AKEES and
+> twenty more she will never type). **The largest run of king-adjacent tiles serving fewer than
+> two such words went 6 / 9 / 15 to 2 / 2 / 2, and 103 of the 210 boards were over the ceiling
+> and none are.** Pairs stay, on purpose: a search with nothing to reject is not a search, and
+> he asked for some.
+>
+> **His example was not the mechanism, and that is worth more than the fix.** Three touching
+> C's is real — 70 of the 210 boards carried a run of three-or-more identical king-adjacent
+> letters — and it is UNCORRELATED with barren ground: boards with such a run and boards
+> without have the same barren share to three decimals (0.160 vs 0.160). A fill rule to
+> suppress the runs was written and deleted on that number. He described the artifact he could
+> see; the thing he felt was underneath it.
 **Fix/beat:** give it the ladder Strands refuses to have (§1's curve, re-based on this room's
 own material — letters AND corners, since a word search ranks on shape), and keep the *door*
 on the constrained class so the ladder can never be climbed into a solve on easy words. Where
@@ -521,7 +548,8 @@ Strands ends flat, the Gallery should end on a rung with rungs visible above it.
 | Word-search grid | Strands: 6×8 = 48 tiles, every tile in an answer | 5×5 (tiers 1–2) / 6×6 (tier 3), filler allowed |
 | Traced real word, not wanted | Strands: accepted, 3 of them = 1 hint | accepted as a *study* — 1 point, never refused |
 | Word-search accept-list | Strands: its whole dictionary | ours: **the whole dictionary**, at every length and every rank (round 38) |
-| Words a board accepts (median) | Strands: 7–9, and every tile is spoken for | **100 / 92 / 172** by tier (round 38) — was 23 / 22 / 64 |
+| Words a board accepts (median) | Strands: 7–9, and every tile is spoken for | **102 / 104 / 200** by tier (round 43) — was 100 / 92 / 172 |
+| Dead ground on the board | Strands: **none** — every tile belongs to an answer | **no run of 3+ king-adjacent tiles serving under 2 words she'd know** (`MAX_BARREN_CLUSTER`, round 43) — was runs of 6 / 9 / 15 |
 | Word-search answer count | Strands: 7–9 theme words + spangram | 5 / 6 / 6 *works* (`ROOM_EFFORT.twistle`) |
 | Word-search ladder | Strands: none at all | Bee's curve on letters + 2×corners (`TWISTLE_RANKS`) |
 | Linen Closet benchmark | **NYT Acrostic (§10)**, not the Mini — the Mini is struck, with the measurement | one marked square per entry spelling a clued answer |
