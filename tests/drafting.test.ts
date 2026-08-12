@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { create } from 'zustand';
 import {
   affordabilityMultiplier, ANTI_REPEAT_SUPPRESSION, cardWeight, categoryWeight,
-  deweyProphecy, eligibleCards, PLAN_SPREAD_SUPPRESSION, RARITY_WEIGHTS, rollCards,
-  rollOffer, type DraftRollCtx,
+  categoryNeutral, deweyProphecy, eligibleCards, PLAN_SPREAD_SUPPRESSION, RARITY_WEIGHTS,
+  rollCards, rollOffer, type DraftRollCtx,
 } from '../src/engine/manor/drafting';
 import {
   BASE_DECK, cardById, deckFor, isKeyBearing, CARD_PREVIEWS, SCRIPTED_FIRST_DRAFT,
@@ -299,6 +299,115 @@ describe("Dewey's prophecy", () => {
     }
     expect(yes).toBeGreaterThan(0);
     expect(no).toBeGreaterThan(0);
+  });
+
+  /**
+   * ═══ ROUND 40 — "NO VIOLET ROOMS ON THIS FLOOR TODAY" IS TRUE AGAIN ═══════
+   *
+   * The cat prints an absolute (`pages/ManorPage.tsx`), and from round 36 it
+   * was a guess: the offer depends on which DOOR the player opens, this
+   * function cannot know which, and it inspected a heading-free draw the game
+   * never makes. Dewey is the only cat in the house and she is meant to be
+   * right.
+   *
+   * The fix is not to guess a heading — it is to ask over ALL of them, which
+   * makes the "no" exact. This test is the contract, and it is proved on the
+   * draw the round replaced: the shipped `rollCards` with no `entryDir` is what
+   * she used to consult, and there are days on which it says NO while a real
+   * door in that row deals a violet card. Those are the days she lied.
+   */
+  it('never says "no violet" on a floor a real door would deal violet from', () => {
+    let stale = 0;      // days the round-36 prophecy got wrong
+    let checked = 0;
+    for (let seed = 0; seed < 400; seed++) {
+      const manor = createManor(seed);
+      const row = deweyCell(manor.daySeed).row;
+      if (Object.values(manor.rooms).some((r) => r.cell.row === row && r.kind === 'mystery')) {
+        continue;
+      }
+      checked += 1;
+      // What some real door in this row would actually deal her today.
+      let reachable = false;
+      for (let col = 0; col < MANOR_COLS && !reachable; col++) {
+        const cell: Cell = { col: col as Cell['col'], row };
+        if (roomAt(manor, cell)) continue;
+        for (const dir of DIRS) {
+          const cards = rollCards(DECK, manor, cell, ctx({ entryDir: dir }));
+          if (cards.some((c) => c.category === 'mystery')) { reachable = true; break; }
+        }
+      }
+      // THE CONTRACT: she says yes exactly when a door in the row deals one.
+      expect(deweyProphecy(DECK, manor, opts), `day ${seed}, row ${row}`).toBe(reachable);
+      // THE ROUND-36 PROPHECY, on the same day — the shipped headless draw.
+      let headless = false;
+      for (let col = 0; col < MANOR_COLS && !headless; col++) {
+        const cell: Cell = { col: col as Cell['col'], row };
+        if (roomAt(manor, cell)) continue;
+        if (rollCards(DECK, manor, cell, ctx()).some((c) => c.category === 'mystery')) {
+          headless = true;
+        }
+      }
+      if (headless !== reachable) stale += 1;
+    }
+    expect(checked).toBeGreaterThan(100);
+    expect(stale, 'the round-36 prophecy was already right on every day')
+      .toBeGreaterThan(0);
+  });
+});
+
+/**
+ * ═══ ROUND 40 — WHY THE CAT CAN BE ASKED AT ALL ═══════════════════════════
+ *
+ * `deweyProphecy` asks a CATEGORY question, and the property that makes it
+ * answerable is a consequence of `categoryNeutral` plus `BASE_DECK` being held
+ * in category blocks: each category's share of a pool's weight is invariant
+ * under the spread rules, the blocks are contiguous, so the cumulative weight
+ * at each block boundary is invariant and `pickWeighted` lands in the same
+ * category for the same rng draw whichever door she came in by.
+ *
+ * It is a real property with a real residue and both are measured here rather
+ * than asserted, because "by construction" is how this repo has shipped wrong
+ * numbers before. The residue is RULE A: it narrows the pool, which moves the
+ * boundaries, which is exactly the case where the category CAN change.
+ */
+describe('round 40 — the heading changes which card, almost never which kind', () => {
+  it('leaves the CATEGORY of the offer alone, and RULE A is the whole residue', () => {
+    let n = 0, catDiffers = 0, cardDiffers = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const manor = createManor(seed);
+      for (let row = 0; row < MANOR_ROWS - 1; row++) {
+        for (let col = 0; col < MANOR_COLS; col++) {
+          const cell: Cell = { col: col as Cell['col'], row };
+          if (roomAt(manor, cell) || SANCTUM_LANDING_CELLS.some(
+            (l) => l.col === cell.col && l.row === cell.row,
+          )) continue;
+          const bare = rollCards(DECK, manor, cell, ctx({ gems: 2 }));
+          for (const dir of DIRS) {
+            const headed = rollCards(DECK, manor, cell, ctx({ gems: 2, entryDir: dir }));
+            n += 1;
+            if (bare.map((c) => c.category).join('|') !== headed.map((c) => c.category).join('|')) {
+              catDiffers += 1;
+            }
+            if (bare.map((c) => c.id).join('|') !== headed.map((c) => c.id).join('|')) {
+              cardDiffers += 1;
+            }
+          }
+        }
+      }
+    }
+    expect(n).toBeGreaterThan(10000);
+    // The kind of room behind the door is the same whichever wall she came in
+    // by, on all but a small measured residue.
+    expect(
+      catDiffers / n,
+      `the CATEGORY triple moved on ${(100 * catDiffers / n).toFixed(2)}% of draws`,
+    ).toBeLessThan(0.02);
+    // …and this is not because the heading does nothing: WHICH card it is
+    // changes on four draws in five, which is the whole of round 36's work.
+    expect(
+      cardDiffers / n,
+      `the CARD triple moved on ${(100 * cardDiffers / n).toFixed(2)}% of draws`,
+    ).toBeGreaterThan(0.5);
   });
 });
 
@@ -933,10 +1042,18 @@ describe('round 36 — RULE B: the same plan three times, and the price of sayin
    * un-normalised version first and watched violet's share of an offer rise by
    * a third, which took the median player's violet-met rate from 47.6% to
    * 54.3% and straight through 4.10g's "or it has stopped being a rare room".
+   *
+   * ROUND 40 WIDENED IT TO EVERY CATEGORY, because holding violet still and
+   * letting the other three float is what let the rules move puzzle weight into
+   * parlor weight for four rounds without anyone measuring it. The clause below
+   * is now asked of all four categories, and violet is simply one of them.
    */
-  it('is exactly violet-neutral: the rules cannot change how often violet shows up', () => {
-    const mysteryShare = (heading: boolean) => {
-      let myst = 0, n = 0;
+  it('is exactly CATEGORY-neutral: the rules cannot change what kind of room shows up', () => {
+    const shares = (heading: boolean) => {
+      const seen: Record<RoomCategory, number> = {
+        puzzle: 0, utility: 0, parlor: 0, mystery: 0,
+      };
+      let n = 0;
       for (let seed = 0; seed < 120; seed++) {
         const manor = createManor(seed);
         for (let row = 0; row < MANOR_ROWS; row++) {
@@ -946,20 +1063,151 @@ describe('round 36 — RULE B: the same plan three times, and the price of sayin
             for (const c of rollCards(DECK, manor, cell, heading
               ? ctx({ gems: 2, entryDir: dir }) : ctx({ gems: 2 }))) {
               n += 1;
-              if (c.category === 'mystery') myst += 1;
+              seen[c.category] += 1;
             }
           }
         }
       }
-      return { share: myst / n, n };
+      return { seen, n };
     };
-    const before = mysteryShare(false);
-    const live = mysteryShare(true);
+    const before = shares(false);
+    const live = shares(true);
     expect(before.n).toBeGreaterThan(10000);
+    const cats: RoomCategory[] = ['puzzle', 'utility', 'parlor', 'mystery'];
+    for (const cat of cats) {
+      const was = before.seen[cat] / before.n;
+      const now = live.seen[cat] / live.n;
+      expect(
+        Math.abs(now - was),
+        `${cat} share ${(100 * was).toFixed(3)}% → ${(100 * now).toFixed(3)}%`,
+      ).toBeLessThan(0.004);
+    }
+    // …and this is the clause that was missing: measured at round 36's HEAD on
+    // the grid-true walker, PUZZLE fell 58.90% → 55.26% and PARLOR rose 11.21%
+    // → 14.38% between these two draws. Nothing failed, because nothing asked.
+  });
+});
+
+/**
+ * ═══ ROUND 40 — THE OFFER MIX IS `categoryWeight`'s BUSINESS, AND ONLY ITS ══
+ *
+ * THE FINDING, and it is the shape this project keeps failing in. Round 36's
+ * spread rule renormalised over the NON-MYSTERY pool, so it balanced violet's
+ * books and paid for plan variety out of whichever ordinary category happened
+ * to hold the wide plans. Measured on the grid-true walker at round 36's HEAD,
+ * the same door, the same manor, the same stream, rules on and rules off:
+ *
+ *     PUZZLE  58.90% → 55.26%      (−3.64pp)
+ *     PARLOR  11.21% → 14.38%      (+3.17pp)
+ *     violet   4.98% →  4.93%      (held, as designed)
+ *
+ * Nothing failed, because nothing asked — and `deckMixAt`, from which the
+ * 4.10b clock, the fragment drip and volume pacing are all derived, still
+ * documented itself as *"probability that a card drawn for a door is of each
+ * kind"*. It was a claim about a draw the game had stopped making.
+ *
+ * TWO GATES, at the two levels the failure had:
+ *   1. THE MECHANISM — `categoryNeutral` may not move weight between
+ *      categories, proved against the same weights WITHOUT it.
+ *   2. THE OFFER — the cards actually dealt at a door must hold the same mix
+ *      as the same call with the rules silent, storey by storey. That second
+ *      draw is the shipped `rollCards` without a heading (the round-35 draw),
+ *      not a mock, and it is the comparison that measured −3.64pp above.
+ */
+describe('round 40 — the mix of an offer is not the spread rules’ to spend', () => {
+  const CATS: RoomCategory[] = ['puzzle', 'utility', 'parlor', 'mystery'];
+  const zero = (): Record<RoomCategory, number> =>
+    ({ puzzle: 0, utility: 0, parlor: 0, mystery: 0 });
+
+  it('the normaliser moves no weight between categories — and the round-36 shape did', () => {
+    // A real pool, real weights, and a real spread function: the wide plans in
+    // this deck sit outside the puzzle category, which is exactly why a rule
+    // that prefers them leaks weight out of it.
+    const manor = createManor(4242);
+    const row = 1;
+    const pool = eligibleCards(DECK, manor, row);
+    const rollCtx = ctx({ gems: 2 });
+    const base = pool.map((c) => ({ item: c, weight: cardWeight(c, row, rollCtx) }));
+    // "the offer already holds a plan with one way on" — the commonest case.
+    const wide = (c: typeof pool[number]) =>
+      c.doorLayouts.some((l) => l.length >= 3);
+    const spread = (c: typeof pool[number]) => (wide(c) ? 1 : PLAN_SPREAD_SUPPRESSION);
+
+    const totals = (rows: readonly { item: typeof pool[number]; weight: number }[]) => {
+      const out = zero();
+      let all = 0;
+      for (const { item, weight } of rows) { out[item.category] += weight; all += weight; }
+      for (const c of CATS) out[c] /= all;
+      return out;
+    };
+
+    const was = totals(base);
+    const shipped = totals(categoryNeutral(base, spread));
+    // (a) THE SHIPPED NORMALISER: every category's share of the pool's weight
+    //     is what it was, to floating-point noise.
+    for (const c of CATS) {
+      expect(
+        Math.abs(shipped[c] - was[c]),
+        `${c} weight share ${(100 * was[c]).toFixed(3)}% → ${(100 * shipped[c]).toFixed(3)}%`,
+      ).toBeLessThan(1e-9);
+    }
+    // (b) THE RED PROOF — the same weights and the same spread with the
+    //     normalisation taken off. This is the round-36 shape (it held only
+    //     violet still), and it moves the puzzle category by points, not by
+    //     noise. If a later round loosens `categoryNeutral`, this is the gap
+    //     that reopens.
+    const unruled = totals(base.map(({ item, weight }) => ({
+      item, weight: weight * spread(item),
+    })));
     expect(
-      Math.abs(live.share - before.share),
-      `violet share ${(100 * before.share).toFixed(3)}% → ${(100 * live.share).toFixed(3)}%`,
-    ).toBeLessThan(0.002);
+      Math.abs(unruled.puzzle - was.puzzle),
+      `un-normalised, puzzle went ${(100 * was.puzzle).toFixed(2)}% → ${(100 * unruled.puzzle).toFixed(2)}%`,
+    ).toBeGreaterThan(0.02);
+    expect(unruled.puzzle).toBeLessThan(was.puzzle);
+    expect(unruled.parlor).toBeGreaterThan(was.parlor);
+  });
+
+  it('deals the same kinds the rules-silent draw deals, storey by storey', () => {
+    /** What the live draft actually deals at this row, over many cells and doors. */
+    const dealt = (row: number, heading: boolean) => {
+      const seen = zero();
+      let n = 0;
+      for (let seed = 0; seed < 500; seed++) {
+        const manor = createManor(seed);
+        for (let col = 0; col < MANOR_COLS; col++) {
+          const cell: Cell = { col: col as Cell['col'], row };
+          if (roomAt(manor, cell)) continue;
+          const dir = DIRS[(seed + col) % DIRS.length]!;
+          for (const c of rollCards(DECK, manor, cell, heading
+            ? ctx({ gems: 2, entryDir: dir }) : ctx({ gems: 2 }))) {
+            n += 1;
+            seen[c.category] += 1;
+          }
+        }
+      }
+      return { seen, n };
+    };
+
+    /**
+     * TOLERANCE. Not zero, and the residue has a name: RULE A narrows the last
+     * slot to the plans that do not seal when the first two both do, which is a
+     * pool edit and therefore a mix edit. It fires on ~1.2% of draws. What may
+     * never come back is a SYSTEMATIC lean, which measured 3.64 points.
+     */
+    const TOL = 0.006;
+    for (let row = 0; row < MANOR_ROWS - 1; row++) {
+      const live = dealt(row, true);
+      const silent = dealt(row, false);
+      expect(live.n).toBeGreaterThan(1500);
+      for (const cat of CATS) {
+        const now = live.seen[cat] / live.n;
+        const was = silent.seen[cat] / silent.n;
+        expect(
+          Math.abs(now - was),
+          `row ${row} ${cat}: rules silent ${(100 * was).toFixed(2)}% → live ${(100 * now).toFixed(2)}%`,
+        ).toBeLessThan(TOL);
+      }
+    }
   });
 });
 

@@ -642,7 +642,16 @@ describe('orientation at placement', () => {
      *
      *                        blind     reading     starved
      *   deck alone           28.70%      7.52%       7.52%
-     *   the live offer       35.89%      2.37%       2.37%
+     *   the live offer       34.61%      2.45%       2.45%
+     *
+     * ROUND 40 — THE LIVE BLIND RATE CAME BACK DOWN, 35.89% → 34.61%, and the
+     * reason is the round's one-line change: the spread rules are renormalised
+     * PER CATEGORY now, so when the offer wants a plan that says something new
+     * it can no longer reach out of the puzzle category to find one. Fewer of
+     * those reaches land on a parlor's dead end, so a player who ignores the
+     * card face eats slightly fewer of them. The DECK-ALONE column is
+     * bit-identical (28.70% / 7.52%), which is the check on that story: nothing
+     * about the cards changed this round, only which of them the offer picks.
      *
      * THE BLIND RATE WENT UP, ON PURPOSE, and it is the price of the round. The
      * spread rule promotes whichever plan says something the offer has not said
@@ -696,7 +705,7 @@ describe('orientation at placement', () => {
     // (ii) THE OFFER THE PLAYER IS ACTUALLY HANDED.
     const blind = play(true, true);
     const reading = play(false, true);
-    expect(blind.rate).toBeCloseTo(0.359, 2);
+    expect(blind.rate).toBeCloseTo(0.346, 2);
     expect(reading.rate).toBeCloseTo(0.024, 2);
     // The card face is worth nearly all of the dead ends now (round 20: "a
     // third"; round 24: "most"; round 36: 93% of them).

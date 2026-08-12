@@ -56,7 +56,8 @@ import {
 } from '../manor/grid';
 import { isDoorLocked, KEY_COST, type LockView } from '../manor/locks';
 import { rollCards, type DraftRollCtx } from '../manor/drafting';
-import { UTILITY_EFFECTS } from '../manor/deck';
+import { cardStepValue } from '../manor/deck';
+export { cardStepValue };
 import { ROOM_SIZE, solvePayout } from './steps';
 
 // ---------------------------------------------------------------------------
@@ -209,11 +210,7 @@ export interface CardShape {
 }
 
 /** The step value printed on a card's face, at the tier it would be placed in. */
-export function cardStepValue(card: RoomCard, tier: Tier): number {
-  if (card.category === 'puzzle' && card.puzzleKind) return solvePayout(card.puzzleKind, tier);
-  if (card.category === 'utility') return UTILITY_EFFECTS[card.id]?.steps ?? 0;
-  return 0;
-}
+
 
 /** Both axes of one card at one door, read off the live predicates. */
 export function shapeOf(
@@ -282,6 +279,25 @@ export const DOMINANCE_GATE = {
    * is now a floor the deck stands on rather than a destination it is walking
    * toward - and `tests/draft-dominance.test.ts` proves this gate RED against
    * the round-35 draw (58.4%) rather than only ever having seen it green.
+   *
+   * ROUND 40: IT DID NOT MOVE, AND THAT IS THE ROUND'S CLAIM. Restoring the
+   * offer mix (drafting.ts `categoryNeutral`) took away the spread rule's
+   * cheapest source of variety, so the rule had to be re-derived from scratch
+   * -- PLAN_SPREAD_SUPPRESSION 0.10 -> 0.03 and a second axis, RULE C, on what
+   * the room can pay. Re-measured on the current tree, which is also the first
+   * measurement since round 21 replaced the movement model:
+   *
+   *     walker       34.87% (shipped) -> 34.63%
+   *     day model    35.99-38.01%     -> 37.89-40.12% (eight runs, four seeds)
+   *
+   * The walker is where the target was derived and it is a shade BETTER. The
+   * day model gave back one and a half points and it is published rather than
+   * absorbed: its offers carry the live anti-repeat list, which suppresses two
+   * named cards per draw, so a rule that may no longer reach outside a category
+   * for its variety has least room exactly there. The margin under this ratchet
+   * is 0.88 points at the worst of eight runs; if a later round needs more, the
+   * lever is the deck's within-category plan spread and NOT this number, which
+   * may still only ever fall.
    */
   ratchet: 0.41,
 } as const;

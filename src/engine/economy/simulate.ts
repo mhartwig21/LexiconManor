@@ -98,7 +98,7 @@
  */
 
 import { createRng } from '../rng';
-import type { Cell, RoomCard, Tier } from '../types';
+import type { Cell, Dir, RoomCard, Tier } from '../types';
 import type { RoomPuzzleKind } from '../rooms/room-puzzle';
 import { effortMinutes, paysInStages } from './effort';
 import { BASE_DECK, deckFor, isKeyBearing, UTILITY_EFFECTS } from '../manor/deck';
@@ -628,10 +628,34 @@ export function microShareAt(row0: number, deck: readonly RoomCard[] = BASE_DECK
  * MEASURE the thing the live game does: roll real offers through `rollCards`
  * on the storeys she banks on, and count how often one carries a key.
  *
+ * ── ROUND 40: IT WAS MEASURING A DRAW THE GAME DOES NOT MAKE ───────────────
+ *
+ * The whole point of this function is that it rolls what the game rolls, and
+ * since round 36 it had stopped. `rollOffer` always supplies a heading
+ * (`entryDir: ctx.entryDir ?? atDoor` — the door she walks through IS her
+ * heading), and the draft's spread rules are silent without one. This probe
+ * passed none, so it measured the round-35 draw and called it live.
+ *
+ * It is not a rounding difference: measured over 324,000 (manor, cell, heading)
+ * draws off the landing, whether the offer HOLDS A KEY differs between the
+ * heading-free draw and a real one on **8.91%** of them. A number that
+ * describes a code path the game does not run is this project's own recurring
+ * failure, and this one fed `SimProfile.keyLuck`, i.e. every published campaign
+ * band that involves a padlock.
+ *
+ * SO IT ROLLS ALL FOUR HEADINGS. The live game deals this offer behind whatever
+ * door she opens, and by round 37 that is genuinely any of the four (the
+ * landing alone can be entered three ways). Averaging the four is the faithful
+ * thing and it is also the stable one — a single canonical heading would make
+ * the campaign's key supply an artefact of which wall the probe chose.
+ *
  * Memoised per access level: the campaign model calls this once per day and
  * there are only a handful of distinct levels.
  */
 const keyRateCache = new Map<string, number>();
+
+/** Every wall she can walk in through — the probe averages over all of them. */
+const KEY_RATE_HEADINGS: readonly Dir[] = ['N', 'E', 'S', 'W'];
 
 export function measuredKeyRate(
   keyAccess: number,
@@ -647,11 +671,13 @@ export function measuredKeyRate(
   let withKey = 0;
   for (const row of rows) {
     for (let seed = 0; seed < samples; seed++) {
-      const cards = rollCards(deck, createManor(seed), { col: (seed % 5) as Cell['col'], row }, {
-        gems: 2, declinedLastDraft: [], drawIndex: 0, keyAccess,
-      });
-      offers += 1;
-      if (cards.some((c) => isKeyBearing(c.id))) withKey += 1;
+      for (const entryDir of KEY_RATE_HEADINGS) {
+        const cards = rollCards(deck, createManor(seed), { col: (seed % 5) as Cell['col'], row }, {
+          gems: 2, declinedLastDraft: [], drawIndex: 0, keyAccess, entryDir,
+        });
+        offers += 1;
+        if (cards.some((c) => isKeyBearing(c.id))) withKey += 1;
+      }
     }
   }
   const rate = offers > 0 ? withKey / offers : 0;

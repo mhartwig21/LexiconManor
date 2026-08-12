@@ -19,10 +19,15 @@
  *    seal when the other two both do. The cold read watched a run die at a
  *    door where all three cards sealed and there were no gems to reroll.
  *  - RULE B, `PLAN_SPREAD_SUPPRESSION` — a card whose plan says the same
- *    NUMBER OF WAYS ON as one already in the offer is suppressed. A weight,
- *    not a filter, and renormalised so violet's share of an offer is
- *    bit-identical (`drawOne`), for the same reason the wing term is.
- *  Both are silent when the caller passes no `entryDir`, because a plan
+ *    NUMBER OF WAYS ON as one already in the offer is suppressed.
+ *  - RULE C, `WAGE_SPREAD_SUPPRESSION` (round 40) — and so is a card that
+ *    pays exactly what one already in the offer pays. The card face says two
+ *    things and `isDominated` reads two things; round 36 spread one of them.
+ *  All three are weights, not filters, and all three are renormalised PER
+ *  CATEGORY (`drawOne`), so the mix of an offer is what `categoryWeight` says
+ *  it is and nothing else. Round 36 renormalised over the non-mystery pool
+ *  instead, which held violet fixed and quietly moved puzzle into parlor.
+ *  All are silent when the caller passes no `entryDir`, because a plan
  *  without a heading is not a plan; that is what leaves `deckMixAt` and every
  *  band derived from it exactly where they were.
  *
@@ -37,7 +42,7 @@ import {
   cardOpensOntoSanctum, cellKey, deweyCell, hashSeed, isSanctumLanding, onwardDoors,
   resolveDoors, roomAt, rowTier,
 } from './grid';
-import { cardById, isKeyBearing, SCRIPTED_FIRST_DRAFT } from './deck';
+import { cardById, cardStepValue, isKeyBearing, SCRIPTED_FIRST_DRAFT } from './deck';
 import { wingOf, type WingCharacters } from './wings';
 import { keyCardWeightMultiplier, sanctumPlanWeightMultiplier } from '../economy/steps';
 
@@ -295,28 +300,57 @@ function drawOne(
   const base = pool.map(
     (c) => ({ item: c, weight: cardWeight(c, row, ctx) * boost(c) * wing(c) }),
   );
-  // ── AND THE SPREAD RULE IS EXACTLY VIOLET-NEUTRAL, BY CONSTRUCTION ───────
-  // The same argument, and the same `k`, that `wingBoost` is built on: the
-  // mystery's supply is not this mechanic's to spend. Round 36 measured what
-  // happens without it — an un-normalised spread rule suppresses every
-  // ORDINARY card that repeats a plan and therefore lifts violet's share of
-  // the offer by a third, straight through 4.10g's "stays a rare room" ceiling
-  // (median violet-met 47.6% → 54.3%). So the rule is renormalised over the
-  // non-mystery pool: violet's share of an offer is bit-identical with the
-  // rule and without it, which is why 4.10g's published bands are untouched by
-  // any of this and the number that moves is the one the round is about.
-  let mysteryWeight = 0;
-  let otherWeight = 0;
-  let otherSpread = 0;
+  // ── AND THE SPREAD RULE IS EXACTLY CATEGORY-NEUTRAL, BY CONSTRUCTION ─────
+  //
+  // ROUND 40 WIDENED THIS FROM VIOLET TO EVERY CATEGORY, because round 36's
+  // narrower version had the failure it was written to prevent, one category
+  // over. It held the MYSTERY share fixed and renormalised the rest as a single
+  // pool — so the rule was free to move puzzle weight into parlor weight, and
+  // it did: measured on the paired walker (the same door, the same manor, the
+  // same stream, rules on and rules off), the offer went **puzzle −4.65pp and
+  // parlor +3.17pp**. Which direction that is matters more here than the size:
+  // the owner's standing steer is that the game leans too far from the word
+  // games already, and nothing reported that the draft had leaned further.
+  //
+  // The generalisation is the same argument round 36 made about violet, made
+  // about all four: **which category the deck deals is `categoryWeight`'s
+  // business and not this rule's.** So each category is normalised against
+  // ITSELF — the cards inside it are re-weighted toward the plan that says
+  // something new, and the category's total weight comes out exactly where
+  // `cardWeight × wing × boost` put it. Violet-neutrality is now a corollary
+  // rather than a special case, and violet gets the spread rule inside its own
+  // supply for the first time (round 36 exempted it outright).
+  return pickWeighted(rng, categoryNeutral(base, spread));
+}
+
+/** One weighted card, as `pickWeighted` wants it. */
+export interface WeightedCard { item: RoomCard; weight: number }
+
+/**
+ * Apply `spread` to a weighted pool WITHOUT letting it move a single unit of
+ * weight between categories: each category is re-weighted inside itself and
+ * renormalised back to the total it arrived with.
+ *
+ * Exported so `tests/drafting.test.ts` can hold it against the same weights
+ * un-normalised — the round-36 shape — and measure what that costs the puzzle
+ * category, rather than taking "category-neutral" on trust.
+ */
+export function categoryNeutral(
+  base: readonly WeightedCard[],
+  spread: (card: RoomCard) => number,
+): WeightedCard[] {
+  const before = new Map<RoomCategory, number>();
+  const after = new Map<RoomCategory, number>();
   for (const { item, weight } of base) {
-    if (item.category === 'mystery') mysteryWeight += weight;
-    else { otherWeight += weight; otherSpread += weight * spread(item); }
+    before.set(item.category, (before.get(item.category) ?? 0) + weight);
+    after.set(item.category, (after.get(item.category) ?? 0) + weight * spread(item));
   }
-  const k = otherWeight > 0 && otherSpread > 0 ? otherWeight / otherSpread : 1;
-  return pickWeighted(rng, base.map(({ item, weight }) => ({
-    item,
-    weight: item.category === 'mystery' ? weight : weight * spread(item) * k,
-  })));
+  return base.map(({ item, weight }) => {
+    const was = before.get(item.category) ?? 0;
+    const now = after.get(item.category) ?? 0;
+    const k = was > 0 && now > 0 ? was / now : 1;
+    return { item, weight: weight * spread(item) * k };
+  });
 }
 
 /**
@@ -329,6 +363,11 @@ function drawOne(
  * there contains one on just 60.8% of draws. Roughly two evenings in five, she
  * paid 22+ steps to arrive at an offer that CANNOT open the door, and nothing
  * in the game had ever told her the landing room needed to open north.
+ *
+ * ROUND 40 — AND IT IS 74.3% NOW, for the same reason and by the same term:
+ * `PLAN_SPREAD_SUPPRESSION` walked 0.10 → 0.03 when the spread rules were made
+ * category-neutral, and a firmer spread surfaces the wide shapes harder. This
+ * arc has less work to do than ever; 4.10d/e and 4.14 still hold with room.
  *
  * ROUND 36 — THE BARE RATE IS 71.2% NOW, and this term did not do it: the plan
  * that opens north is a corridor, a fork or a cross, which are the wide shapes,
@@ -404,37 +443,86 @@ function waysOnReader(
  * next. The rule is stated on the sentence the card prints, so what it fixes is
  * what she reads.
  *
- * WHY 0.10, AND WHAT IT IS NOT. The number is not taste; it is where the whole
- * 4.10 band set still holds, found by walking it down against the dominance
- * instrument exactly the way `WING_AFFINITY` was walked down (measured on
- * `tests/draft-dominance.test.ts`'s grid-true walker, on the round-36 deck):
+ * WHY 0.03, AND WHY IT IS NOT 0.10 ANY MORE. Round 36 shipped 0.10 and derived
+ * it honestly — but it derived it against a rule that was allowed to pay for
+ * plan variety with CATEGORY weight, and this round has taken that purse away
+ * (`drawOne`). A weaker rule needs a firmer hand for the same work, so the walk
+ * was redone from scratch on the same instrument (`tests/draft-dominance.test.ts`
+ * grid-true walker, 900 evenings, category-neutral `drawOne`, `WAGE_SPREAD`
+ * live), and the stopping rule is no longer "where the curve flattens" — it is
+ * **the value at which the round-36 dominance rate is preserved with the mix
+ * pinned**, which is a published number rather than a judgement about a knee:
  *
- *     1.00 (no rule)  dominance 55.4% · frontier flat on 25.5% of offers
- *     0.45            47.3% / 15.4%
- *     0.20            40.1% /  8.7%
- *     0.12            36.0% /  6.1%
- *     0.10            34.9% /  5.6%      ← shipped
+ *     value          dominance   offer puzzle share   frontier flat
+ *     1.00 (no rule)   51.9%           59.5%               26.1%
+ *     0.20             41.3%           59.2%               13.2%
+ *     0.10             38.0%           59.1%               10.0%
+ *     0.05             36.0%           59.1%                8.6%
+ *     0.03             34.6%           59.0%                7.7%   ← shipped
+ *     0.02             33.8%           59.1%                7.2%
  *
- * The curve is flattening by 0.10 (0.12 → 0.10 buys a single point), which is
- * the honest reason to stop there rather than a round number: below it the rule
- * costs the deck its variety and buys almost nothing.
+ * 0.03 is where the walker comes back to what round 36 measured (34.9%) with
+ * the mix pinned. Below it the walker keeps falling and the DAY model stops
+ * following — at 0.02 the two instruments read 33.8% and 39.4% and the
+ * five-point agreement clause in `tests/draft-dominance.test.ts` fails. That
+ * clause is the reason to stop, and it is a measurement rather than a knee.
  *
  * It is a SUPPRESSION and not a ban, and the difference is load-bearing: a
  * suppressed card still wins its slot when the pool holds nothing else, and the
- * deck can and does still deal her two plans that say the same thing (measured:
- * some pair of cards still repeats a frontier count on 60.3% of offers — what
- * has nearly gone is all THREE saying it, 31.6% → 5.6%). Below this it starts
- * to read as a filter rather than a lean, and
+ * deck can and does still deal her two plans that say the same thing (measured
+ * at 0.03: some pair of cards still repeats a frontier count on 64.1% of
+ * offers — what has nearly gone is all THREE saying it, 31.6% → 7.7%).
  * `tests/drafting.test.ts` pins the "it is still a weight" clause so a later
  * round cannot quietly turn it into one.
  *
  * IT IS SILENT WITHOUT A HEADING. `entryDir` is what makes a plan a plan (the
  * rotation is rigid), so a caller that has no door — `deckMixAt`'s composition
- * probe, the key-rate probe, the wing tests — draws EXACTLY the cards it drew
- * before. That is what keeps the 4.10b clock and every mix band calibrated,
- * and `tests/drafting.test.ts` proves the bit-identity rather than asserting it.
+ * probe, the wing tests — draws EXACTLY the cards it drew before. That is what
+ * keeps the 4.10b clock and every mix band calibrated, and
+ * `tests/drafting.test.ts` proves the bit-identity rather than asserting it.
+ * (The KEY-RATE probe used to be on that list and should never have been: see
+ * `measuredKeyRate`, which round 40 gave the heading the live game supplies.)
  */
-export const PLAN_SPREAD_SUPPRESSION = 0.10;
+export const PLAN_SPREAD_SUPPRESSION = 0.03;
+
+/**
+ * ── ROUND 40, RULE C: NOR THE SAME WAGE THREE TIMES ────────────────────────
+ *
+ * RULE B'S OTHER HALF, and it exists because round 40 took away Rule B's
+ * cheapest source of variety. The draft card face prints exactly two things a
+ * player can act on before she spends — the door plan (how many ways on) and
+ * what the room can pay — and `isDominated` reads exactly those two. Round 36
+ * spread the first and left the second alone, which was survivable only because
+ * the rule could reach ACROSS categories for a card that differed on both at
+ * once: a parlor is wide and pays nothing, a puzzle room is tight and pays.
+ * Take the category away (which is what restoring the mix does) and spreading
+ * the plan alone leaves the wage axis tie-heavy inside the category — three
+ * puzzle rooms, three different plans, and whichever pays most is top of both.
+ *
+ * So a card whose WAGE at this row band equals one already in the offer is
+ * suppressed to `WAGE_SPREAD_SUPPRESSION` of its weight, through the same
+ * per-category normalisation, and the wage is read off `cardStepValue` — the
+ * same function the dominance instrument reads, never a second opinion.
+ *
+ * IT IS A NO-OP WHERE A CATEGORY HAS NO WAGES TO SPREAD, by construction, which
+ * is the neatest evidence that it is doing what its name says: every parlor and
+ * every violet room pays 0, so inside those categories the term is a constant
+ * and the normalisation divides it straight back out. It acts on the puzzle
+ * rooms (4 · 6 · 15 steps at tier 1) and on the utility rooms, and nowhere else.
+ *
+ * WHY 0.10 AND NOT 0.03. Walked the same way, on the same instrument, at
+ * `PLAN_SPREAD_SUPPRESSION = 0.03`:
+ *
+ *     1.00 (no rule)  walker 37.6%  ·  day model 40.9/40.6%
+ *     0.30            35.8%  ·  40.0/39.3%
+ *     0.15            34.8%  ·  40.6/38.9%     the two instruments drift apart
+ *     0.10            34.6%  ·  39.2/37.9%     ← shipped
+ *     0.06            34.7%  ·  40.2/39.2%     no further gain, and the gap grows
+ *
+ * 0.10 is where BOTH instruments are lowest together. Below it the walker stops
+ * improving and the day model gets noisier, which is the honest reason to stop.
+ */
+export const WAGE_SPREAD_SUPPRESSION = 0.10;
 
 /**
  * ── ROUND 36, RULE A: THERE IS ALWAYS A WAY ON, IF THE DECK HOLDS ONE ──────
@@ -489,11 +577,16 @@ export function rollCards(
   const pool = eligibleCards(deck, manor, row);
   const cards: RoomCard[] = [];
   const boost = landingBoost(manor, target, ctx);
-  // Both round-36 rules read the plan, and a plan needs a heading (see
+  // The spread rules read the plan, and a plan needs a heading (see
   // PLAN_SPREAD_SUPPRESSION): with no door, this is exactly the old draw.
+  // The WAGE half rides on the same switch on purpose — a card's wage is
+  // knowable without a door, but the two halves are one rule about one card
+  // face, and a caller with no heading is a probe rather than a player.
   const heading = ctx.entryDir;
   const waysOn = heading ? waysOnReader(heading, manor, target) : undefined;
   const saidSoFar: number[] = [];
+  const wageAt = (card: RoomCard) => cardStepValue(card, rowTier(row));
+  const wagesSoFar: number[] = [];
 
   // Slot 1: guaranteed free (AAA 4.1 / the BP slot-1 rule).
   const free = pool.filter((c) => c.gemCost === 0);
@@ -509,7 +602,7 @@ export function rollCards(
     if (opens.length > 0) first = opens;
   }
   cards.push(drawOne(rng, first, row, ctx, boost));
-  if (waysOn) saidSoFar.push(waysOn(cards[0]!));
+  if (waysOn) { saidSoFar.push(waysOn(cards[0]!)); wagesSoFar.push(wageAt(cards[0]!)); }
 
   // Slots 2–3: full pool, minus what this offer already holds.
   for (let slot = 1; slot < 3; slot++) {
@@ -522,13 +615,16 @@ export function rollCards(
         const open = nonSealing(rest, waysOn);
         if (open.length > 0) rest = open;
       }
-      // RULE B — and it prefers a plan that says something new.
+      // RULES B and C — and it prefers a card that says something new about
+      // either of the two things its face says.
       const said = new Set(saidSoFar);
-      spread = (card) => (said.has(waysOn(card)) ? PLAN_SPREAD_SUPPRESSION : 1);
+      const paid = new Set(wagesSoFar);
+      spread = (card) => (said.has(waysOn(card)) ? PLAN_SPREAD_SUPPRESSION : 1)
+        * (paid.has(wageAt(card)) ? WAGE_SPREAD_SUPPRESSION : 1);
     }
     const drawn = drawOne(rng, rest, row, ctx, boost, spread);
     cards.push(drawn);
-    if (waysOn) saidSoFar.push(waysOn(drawn));
+    if (waysOn) { saidSoFar.push(waysOn(drawn)); wagesSoFar.push(wageAt(drawn)); }
   }
   return cards;
 }
@@ -553,11 +649,48 @@ export function rollOffer(
 // Dewey's prophecy
 // ---------------------------------------------------------------------------
 
+/** Every wall an empty cell can be walked in through (see below). */
+const DEWEY_HEADINGS: readonly Dir[] = ['N', 'E', 'S', 'W'];
+
 /**
  * Petting Dewey reveals whether his row hides a violet room (MANOR_DESIGN §8).
  * Honest and deterministic: true if a mystery room is already placed in his
  * row, or if any empty cell in the row would offer a violet card in its next
  * draft (same streams the real drafts will use).
+ *
+ * ── ROUND 40: WHAT SHE SAYS IS TRUE AGAIN, AND WHAT SHE CANNOT KNOW ────────
+ *
+ * The cat prints one of two absolute sentences (`pages/ManorPage.tsx`):
+ * *"Something violet hides on this floor"* or *"No violet rooms on this floor
+ * today"*. Round 36 made both of them guesses. This function has no way of
+ * knowing which DOOR the player will open into a given cell, and from round 36
+ * the offer depends on it — so the draw it inspected (heading-free) was one the
+ * game never makes, and a cat who is the only one in the house was telling her
+ * something that need not be so.
+ *
+ * The heading is genuinely unknowable here, so the fix is not to guess one: it
+ * is to ask the question she can actually be told the answer to. **Every wall,
+ * every empty cell in the row.** That makes each sentence exact in the
+ * direction it is stated:
+ *
+ *   - "No violet rooms on this floor today" is now EXACT. There is no door into
+ *     any empty cell of this row whose next offer holds a violet card, and no
+ *     violet room already standing in it. Whatever she does, the row is empty
+ *     of violet. Round 36 could not say this at all.
+ *   - "Something violet hides on this floor" means there IS a way in that deals
+ *     her one — which is what "hides" says. It does not promise the first door
+ *     she tries; a cat points, she still has to look.
+ *
+ * IT COSTS ALMOST NOTHING AND IT CHANGES ALMOST NOTHING, which is the tell that
+ * the leak was in the reasoning rather than in the numbers: measured over 2,000
+ * days, Dewey says yes on 47.5% of them, against 47.5% for the heading-free
+ * draw and 47.1% for a single canonical heading. The reason is round 40's
+ * `drawOne`: with the spread rules normalised PER CATEGORY and the pool held in
+ * category blocks, the CATEGORY of each card drawn is invariant under the
+ * heading on 98.77% of draws (measured, 324,000 of them) — the residue is
+ * RULE A, which narrows the pool and so moves the category boundaries. So the
+ * union over four headings is cheap, and the reason it is cheap is a property
+ * worth stating out loud rather than a coincidence.
  */
 export function deweyProphecy(
   deck: readonly RoomCard[], manor: ManorState,
@@ -578,14 +711,17 @@ export function deweyProphecy(
   for (let col = 0; col < MANOR_COLS; col++) {
     const cell: Cell = { col: col as Cell['col'], row };
     if (roomAt(manor, cell)) continue;
-    const cards = rollCards(deck, manor, cell, {
-      gems: opts.gems,
-      declinedLastDraft: opts.declinedLastDraft,
-      drawIndex: opts.drawIndexFor(cellKey(cell)),
-      keyAccess: opts.keyAccess,
-      wings: opts.wings,
-    });
-    if (cards.some((c) => c.category === 'mystery')) return true;
+    for (const entryDir of DEWEY_HEADINGS) {
+      const cards = rollCards(deck, manor, cell, {
+        gems: opts.gems,
+        declinedLastDraft: opts.declinedLastDraft,
+        drawIndex: opts.drawIndexFor(cellKey(cell)),
+        keyAccess: opts.keyAccess,
+        wings: opts.wings,
+        entryDir,
+      });
+      if (cards.some((c) => c.category === 'mystery')) return true;
+    }
   }
   return false;
 }

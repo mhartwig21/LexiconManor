@@ -131,7 +131,11 @@
  *      What DOES move the landing is drafting.ts's spread rule, and it is
  *      reported rather than buried: a plan that opens north is a corridor, a
  *      fork or a cross — the wide shapes — so the rule surfaces them, and a
- *      bare offer up there contains one on **71.2%** of draws against 63.4%.
+ *      bare offer up there contains one on **71.2%** of draws against 63.4%
+ *      (round 40: **74.3%** — see `PLAN_SPREAD_SUPPRESSION`, which had to be
+ *      walked down from 0.10 to 0.03 once the rule stopped being allowed to
+ *      pay for plan variety with category weight, and a firmer spread rule
+ *      surfaces the wide — i.e. north-opening — shapes harder still).
  *      That is the round-13 blocker getting smaller (two evenings in five
  *      arriving at an offer that could not open the door, now closer to one in
  *      four), it is good news, and it is why `SANCTUM_ARC` has slightly less
@@ -152,8 +156,8 @@
  * like at every door, but never *whether* it is placeable.
  */
 
-import type { Dir, RoomCard } from '../types';
-import { KEY_SUPPLY } from '../economy/steps';
+import type { Dir, RoomCard, Tier } from '../types';
+import { KEY_SUPPLY, solvePayout } from '../economy/steps';
 
 const DEAD_END: Dir[] = ['N'];
 const CORRIDOR: Dir[] = ['N', 'S'];
@@ -289,6 +293,17 @@ const MYSTERY_CARDS: RoomCard[] = [
     doorLayouts: [DEAD_END, CORNER_R], tierRange: [3, 3], gemCost: 2, rarity: 'rare' },
 ];
 
+/**
+ * THE POOL IS HELD IN CATEGORY BLOCKS, and since round 40 that is load-bearing
+ * rather than tidy. `drafting.ts` normalises its spread rules per category, so
+ * every category's share of a pool's weight is invariant; because the blocks
+ * are contiguous, the cumulative weight at each block boundary is invariant
+ * too, and `pickWeighted` therefore lands in the SAME CATEGORY for the same rng
+ * draw whether the rules are on or off. That is what makes Dewey's prophecy
+ * honest again (measured: the category triple is unchanged on 98.77% of draws;
+ * the residue is RULE A, which edits the pool). Re-order this array by
+ * anything other than category and that property goes away silently.
+ */
 export const BASE_DECK: readonly RoomCard[] = [
   ...PUZZLE_CARDS, ...UTILITY_CARDS, ...PARLOR_CARDS, ...MYSTERY_CARDS,
 ];
@@ -588,3 +603,19 @@ export function carryOverFrom(cardIds: readonly string[]): {
 
 /** Day 1, draft #1 — tutorial disguised as RNG (AAA 4.5, slot 1 playable now). */
 export const SCRIPTED_FIRST_DRAFT: readonly string[] = ['library', 'kitchen', 'darkroom'];
+
+/**
+ * WHAT A CARD CAN PAY at this row band — the STEPS axis of the draft decision
+ * (engine/economy/manor-walk.ts). A puzzle room pays its solve wage; a utility
+ * room pays what its effect hands over; parlors and violet rooms pay nothing
+ * in steps, which is the whole of their side of the trade.
+ *
+ * It lives here, beside the cards and the effects it reads, because BOTH the
+ * dominance instrument and the draft's own wage-spread rule need it and
+ * neither may hold a second opinion about what a card is worth.
+ */
+export function cardStepValue(card: RoomCard, tier: Tier): number {
+  if (card.category === 'puzzle' && card.puzzleKind) return solvePayout(card.puzzleKind, tier);
+  if (card.category === 'utility') return UTILITY_EFFECTS[card.id]?.steps ?? 0;
+  return 0;
+}

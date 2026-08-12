@@ -55,13 +55,22 @@
  *
  * ── ROUND 36 — THE DECK ROUND LANDED, AND EVERY NUMBER ABOVE MOVED ─────────
  *
- *                       round 24        round 36
- *   dominance (walker)    67.0%           34.9%
- *   dominance (day model) 66.4–66.8%      37.4–39.0%  (four seeds)
- *   permutation null      68.7%           49.5%
- *   frontier spread zero  31.3%            5.6%
- *   three of one category 19.9%           15.5%
- *   all three cards seal   4.91%           0.10%
+ *                       round 24        round 36        round 40
+ *   dominance (walker)    67.0%           34.9%           34.6%
+ *   dominance (day model) 66.4–66.8%      37.4–39.0%      37.9–40.1%
+ *   permutation null      68.7%           49.5%           49.7%
+ *   frontier spread zero  31.3%            5.6%            7.7%   ← see below
+ *   three of one category 19.9%           15.5%           19.5%   ← see below
+ *   all three cards seal   4.91%           0.10%           0.10%
+ *   offer's PUZZLE share  —               55.3%           59.1%
+ *
+ * ROUND 40 restored the offer mix (`drafting.ts categoryNeutral`) and re-derived
+ * the spread rule against the deck that was left: PLAN_SPREAD_SUPPRESSION 0.10 →
+ * 0.03, plus RULE C on what the room pays. "Three of one category" ROSE, and
+ * that is arithmetic rather than a regression — it goes as the cube of the
+ * commonest category's share, and round 36 had been buying it by dealing fewer
+ * puzzle rooms. The clause below now measures it against its own independence
+ * null instead of an absolute bound.
  *
  * Two changes, and the tests below separate them rather than claiming the pair:
  * `engine/manor/deck.ts`'s ROUND-36 REBALANCE (the fatter the wage, the tighter
@@ -350,17 +359,73 @@ describe('THE GATE — the deck may not make offers more dominated than they are
       (o) => new Set(o.map((c) => c.card.category)).size === 1,
     ).length / offers.length;
 
-    // 31.6% at round 24; 5.6% now. An offer whose three cards leave the same
-    // number of onward doors is dominated BY DEFINITION — whichever pays best
-    // wins on both axes — so this is a hard floor under the rate above.
+    // 31.6% at round 24; 5.6% at round 36; 7.7% now. An offer whose three cards
+    // leave the same number of onward doors is dominated BY DEFINITION —
+    // whichever pays best wins on both axes — so this is a hard floor under the
+    // rate above.
+    //
+    // ROUND 40 — IT ROSE TWO POINTS AND THE RATE DID NOT, which is the shape of
+    // the round in one line. RULE C spreads the WAGE axis as well, so a card
+    // that repeats the plan but pays differently is sometimes now the better
+    // draw; the offer buys its decision on the other axis instead. The bound
+    // stays where round 36 put it (a bound may fall and may never rise) and the
+    // margin is 0.3 points, which is thin and is said so: if a later round
+    // needs room here, the lever is within-category plan spread in the DECK —
+    // the cheapest rooms in the house carry the narrowest plans, and that is
+    // what leaves this residue.
     expect(spreadZero(WALKED), `frontier spread zero on ${(100 * spreadZero(WALKED)).toFixed(1)}%`)
       .toBeLessThanOrEqual(0.08);
-    // 19.9% at round 24, 19.3% re-measured at round 35's HEAD; 15.5% now.
-    expect(oneCategory(WALKED), `one category on ${(100 * oneCategory(WALKED)).toFixed(1)}%`)
-      .toBeLessThanOrEqual(0.17);
-    // …and both are worse without the rules — the red proof, per axis.
+    // …and it is worse without the rule — the red proof for this axis.
     expect(spreadZero(UNRULED)).toBeGreaterThan(0.25);
-    expect(oneCategory(UNRULED)).toBeGreaterThan(oneCategory(WALKED));
+
+    /**
+     * ═══ ROUND 40 — "THREE OF ONE CATEGORY" WAS MEASURING THE MIX LEAK ══════
+     *
+     * Round 24 published 19.9%, round 35 re-measured 19.3%, round 36 reported
+     * **15.5%** and this file pinned it at ≤17%. That fall was not variety. It
+     * was arithmetic: round 36's spread rule paid for plan variety out of the
+     * PUZZLE category's weight (58.90% → 55.26% of cards offered), and three of
+     * a kind goes as roughly the cube of the commonest category's share —
+     * 0.589³ = 20.4%, 0.553³ = 16.9%. Restore the mix and the number comes back
+     * to 19.5% without a single offer becoming less varied, which is why an
+     * ABSOLUTE bound here was the wrong instrument: it condemned the deck for
+     * being puzzle-heavy, which is the one thing the owner's standing steer
+     * says it should be.
+     *
+     * So the clause asks the question it always meant to ask: does the offer
+     * CLUMP by category beyond what its own marginals already imply? The null
+     * shuffles each slot's categories independently across offers, destroying
+     * any within-offer correlation while keeping every slot's marginal exactly
+     * as it is. A draft that started dealing three puzzle rooms TOGETHER would
+     * sit above its null; this one does not.
+     */
+    const rng = createRng(0xca7);
+    const slots = [0, 1, 2].map((k) => WALKED.map((o) => o[k]?.card.category));
+    for (const col of slots) {
+      for (let i = col.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        const t = col[i]; col[i] = col[j]!; col[j] = t!;
+      }
+    }
+    let nullClumps = 0;
+    let counted = 0;
+    for (let i = 0; i < WALKED.length; i++) {
+      const cats = slots.map((col) => col[i]).filter(Boolean);
+      if (cats.length !== 3) continue;
+      counted += 1;
+      if (new Set(cats).size === 1) nullClumps += 1;
+    }
+    const independent = nullClumps / counted;
+    const real = oneCategory(WALKED);
+    expect(counted).toBeGreaterThan(5000);
+    expect(
+      real,
+      `one category on ${(100 * real).toFixed(1)}% against an independence null of ${(100 * independent).toFixed(1)}%`,
+    ).toBeLessThanOrEqual(independent + 0.02);
+    // …and the statistic still has teeth: an offer set that DOES clump — every
+    // offer's three slots taken from the same card — sits far above the null.
+    const clumped = WALKED.map((o) => (o[0] ? [o[0], o[0], o[0]] : o));
+    expect(oneCategory(clumped)).toBeGreaterThan(independent + 0.02);
   });
 
   /**

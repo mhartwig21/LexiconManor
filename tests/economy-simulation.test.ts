@@ -17,9 +17,10 @@ import {
 } from '../src/engine/economy/steps';
 import { createRng } from '../src/engine/rng';
 import {
-  BASE_DECK, carryOverFrom, deckFor, CARRY_OVER_EFFECTS, UTILITY_EFFECTS,
+  BASE_DECK, carryOverFrom, deckFor, isKeyBearing, CARRY_OVER_EFFECTS, UTILITY_EFFECTS,
 } from '../src/engine/manor/deck';
 import { categoryWeight, rollCards, RARITY_WEIGHTS } from '../src/engine/manor/drafting';
+import { offerAt, reachableFrontier } from '../src/engine/economy/manor-walk';
 import {
   atSanctumDoor, cardOpensOntoSanctum, cellKey, createManor, opensOntoSanctum, placeRoom,
   resolveDoors, rowTier, sanctumStanding, SANCTUM_LANDING_MID, SANCTUM_LANDING_MID_KEY,
@@ -1871,6 +1872,69 @@ describe('4.10d — the meta arcs are driven by live code, not by free constants
       const p = campaignProfileForDay(PROFILE_SKILLED, day);
       expect(p.keyLuck).toBe(keyLuckFor(fernPointsOnDay(day)));
     }
+  });
+
+  /**
+   * ═══ ROUND 40 — THE PROBE WAS ROLLING A DRAW THE GAME DOES NOT MAKE ═══════
+   *
+   * `measuredKeyRate` exists for exactly one reason: to stop `keyLuck` being a
+   * hand-tuned constant by MEASURING the live offer. Round 36 gave the draft
+   * two rules that only fire when the caller supplies a heading, and the live
+   * `rollOffer` always supplies one (`entryDir: ctx.entryDir ?? atDoor`) — this
+   * probe never did. For four rounds it measured the round-35 draw and every
+   * padlock band in this file was calibrated against it.
+   *
+   * THE GUARD THAT COULD NOT SEE IT, and why. The tests around this one ask
+   * whether the rate ramps with Fern, whether it is monotone and whether it
+   * stays inside a band. Every one of those is true of the stale draw as well,
+   * so none of them could fail. What was missing was an instrument that reaches
+   * the offer by a DIFFERENT ROUTE — so this one does: it walks real frontier
+   * doors on real manors through `offerAt`, which is the call `simulateDay`
+   * itself uses, and asks the same question of the answer.
+   *
+   * It is proved red the only way that means anything: the same walk with the
+   * heading dropped — the shipped `rollCards` with no `entryDir`, which is what
+   * this probe used to be — disagrees with the live one by more than the bound.
+   */
+  it('measures the offer the GAME rolls, not the one with no door in it', () => {
+    const deck = deckFor([]);
+    const access = keyAccessFor(fernPointsOnDay(10));
+    /** Real frontier doors, real manors — the route `simulateDay` takes. */
+    const walked = (heading: boolean) => {
+      let offers = 0;
+      let withKey = 0;
+      for (let seed = 0; seed < 1200; seed++) {
+        const manor = createManor(seed);
+        for (const door of reachableFrontier(manor)) {
+          if (door.cell.row > 2) continue;          // the storeys the probe reads
+          const cards = heading
+            ? offerAt(deck, manor, door, {
+              gems: 2, declinedLastDraft: [], drawIndex: 0, keyAccess: access,
+            })
+            : rollCards(deck, manor, door.cell, {
+              gems: 2, declinedLastDraft: [], drawIndex: 0, keyAccess: access,
+            });
+          offers += 1;
+          if (cards.some((c) => isKeyBearing(c.id))) withKey += 1;
+        }
+      }
+      return withKey / offers;
+    };
+    const live = walked(true);
+    const headless = walked(false);
+    const probe = measuredKeyRate(access);
+    // (a) The probe agrees with the offers the game deals behind real doors.
+    expect(
+      Math.abs(probe - live),
+      `probe ${(100 * probe).toFixed(2)}% vs live doors ${(100 * live).toFixed(2)}%`,
+    ).toBeLessThan(0.05);
+    // (b) …and the two draws are genuinely different, so (a) is a measurement
+    //     rather than a tautology. Whether an offer holds a key differs between
+    //     them on 8.91% of draws (324,000 of them, off the landing).
+    expect(
+      Math.abs(live - headless),
+      `live ${(100 * live).toFixed(2)}% vs headless ${(100 * headless).toFixed(2)}%`,
+    ).toBeGreaterThan(0.01);
   });
 
   it('makes key frequency a RAMP: day 1 and day 30 are no longer identical', () => {

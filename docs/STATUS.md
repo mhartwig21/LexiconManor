@@ -105,6 +105,66 @@ tooltip.
 
 ## 3. What the last few rounds changed, with their numbers
 
+### Round 40 — two thirds of the offers had the answer on them, and the fix quietly took the word games out
+
+Round 36's dominance win (67.0% → 34.9%) was real and it stands. It also moved something it
+did not report, in the direction this project is trying not to go. Its spread rule was
+renormalised over the NON-mystery pool — violet's share held, everything else free to float —
+and the wide plans in this deck sit outside the puzzle category, so the rule paid for plan
+variety with puzzle weight. Measured on the grid-true walker, same door, same manor, same
+stream, rules on against rules off:
+
+| cards OFFERED | round 35 draw | round 36 live |
+|---|---|---|
+| puzzle | 58.90% | **55.26%** |
+| parlor | 11.21% | **14.38%** |
+| violet | 4.98% | 4.93% (held, as designed) |
+
+Nothing failed, because nothing asked — and `deckMixAt`, whose docstring says *"probability
+that a card drawn for a door is of each kind"* and from which the 4.10b clock, the fragment
+drip and volume pacing are derived, had become a claim about a draw the game no longer made.
+
+**The mix is `categoryWeight`'s business and nobody else's.** `drawOne` renormalises the
+spread rules PER CATEGORY now, so no rule can move a unit of weight between categories.
+Gated twice in `tests/drafting.test.ts`: the normaliser is proved against the same weights
+without it (which moves puzzle by points, not noise), and the offer actually dealt is held
+against the rules-silent draw storey by storey, to 0.6pp.
+
+**The two trade, so the frontier is published rather than picked.** With the mix pinned the
+spread rule loses its cheapest source of variety, and holding the dominance win took
+`PLAN_SPREAD_SUPPRESSION` 0.10 → 0.03 plus a second axis — RULE C, on what the room PAYS,
+which is the other thing the card face prints and the other thing `isDominated` reads. Every
+band that moved is in AAA 4.10j with its cause; the headlines: **offer puzzle share 55.26% →
+59.05%**, dominance 34.9% → **34.6%** on the walker and 37.4–39.0% → **37.9–40.1%** on the day
+model (0.88pp under the ratchet at its worst of eight runs, and said so). "Three of one
+category" rose 15.5% → 19.5%, which is arithmetic — it goes as the cube of the commonest
+category's share — so that gate is re-derived against the offer's own independence null
+instead of an absolute bound that punished the deck for being puzzle-heavy.
+
+**Two more things round 36 left behind, both the same bug.** `measuredKeyRate` and
+`deweyProphecy` both called `rollCards` with no heading, while the live `rollOffer` always
+supplies one — so both described a code path the game does not run.
+- The key-rate probe fed `SimProfile.keyLuck`, i.e. every published padlock band. Whether an
+  offer holds a key differs between the two draws on **8.91%** of 324,000 measured draws; the
+  corrected supply reads **18.6% → 44.6%** across Fern's arc against a stale **21.5% → 53.4%**,
+  and every 4.10 band held at the honest number. Its guard could not see the fault because
+  every clause around it (ramps with Fern, monotone, inside a band) was true of the stale
+  draw too; the new one reaches the offer by a different route — real frontier doors through
+  `offerAt`, the call `simulateDay` makes — and is proved red against the headless draw.
+- **Dewey was telling the player something that need not be so.** She prints an absolute —
+  *"No violet rooms on this floor today"* — and this function cannot know which door the
+  player will open. It asks over all four walls now, which makes the "no" exact; the "yes"
+  means there is a way in that deals one, which is what *hides* says. It costs almost
+  nothing (47.5% yes, against 47.5% for the old draw), and the reason it costs almost
+  nothing is the round's own property: with the spread normalised per category and
+  `BASE_DECK` held in category blocks, the CATEGORY of each card drawn is invariant under
+  the heading on **98.77%** of draws. The residue is RULE A, which edits the pool.
+
+**The deck was not touched.** Dead-end share 20.69% and mean ways-on 1.052 are bit-identical,
+which is why 4.10a's no-refund day, 4.10i's stranding and the campaign bands are where they
+were — and why the deck-alone seal rates in `tests/grid.test.ts` did not move a digit while
+the LIVE blind rate fell 35.89% → 34.61%.
+
 ### Round 39 — the end of the day, walked at last, and a fade that dozes off
 
 Two notes from the owner playing it, and they turned out to be one note.

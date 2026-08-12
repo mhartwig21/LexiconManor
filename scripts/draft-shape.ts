@@ -219,7 +219,7 @@ function landingRates(deck: readonly RoomCard[], samples = 4000) {
   }
   console.log(`\n(3) THE LANDING (AAA 4.10d) — entered from below, ${eligible.length} tier-3-eligible cards`);
   console.log(`    plans that open north (per card-day) : ${pct(opens / plans)}   [published 27.7%]`);
-  console.log(`    bare offers containing one           : ${pct(withNorth / offers)}   [round 13: 60.8% · round 35: 63.4% · round 36: 71.2%]`);
+  console.log(`    bare offers containing one           : ${pct(withNorth / offers)}   [round 13: 60.8% · round 35: 63.4% · round 36: 71.2% · round 40: 74.3%]`);
 }
 
 // ── (5) wings ──────────────────────────────────────────────────────────────

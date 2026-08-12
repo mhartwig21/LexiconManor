@@ -1151,10 +1151,48 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     tie-heavy axes produce on their own, and the way down is **finer spread** rather than
     de-correlation: frontier spread is zero on **31.3%** of offers and all three cards
     are one category on **19.9%**.
-    `tests/draft-dominance.test.ts` gates the **RATCHET (≤70%)** — which fails on any
+    `tests/draft-dominance.test.ts` gates the **RATCHET** — which fails on any
     deck edit that makes offers more dominated — and pins the target as the destination
     the next round walks it down to. Same shape as 4.10h's and 4.10i's ratchets, for the
     same reason.
+    **ROUND 36 REACHED IT** (ratchet 0.70 → 0.41): 34.9% on the walker, 37.4–39.0% on the
+    day model, against a null that fell to 49.5%.
+    **ROUND 40 — THE OFFER MIX, AND WHAT IT COST TO PUT IT BACK.** Round 36 bought part of
+    that fall out of a purse that was not its own. Its spread rule renormalised over the
+    NON-mystery pool, so it held violet's share fixed and paid for plan variety with
+    whichever ordinary category held the wide plans — and in this deck that is the
+    parlors. Measured on the same walker, same door, same manor, same stream, rules on
+    against rules off: **cards OFFERED went puzzle 58.90% → 55.26% and parlor 11.21% →
+    14.38%**, unreported, in the direction the owner's standing steer says the game
+    already leans too far. It also made `deckMixAt`'s own docstring false — *"probability
+    that a card drawn for a door is of each kind"* — and the 4.10b clock, the fragment
+    drip and volume pacing are all derived from it.
+    The mix is restored by construction (`drafting.ts categoryNeutral`: every category is
+    renormalised against itself, so no rule can move weight between categories) and gated
+    two ways in `tests/drafting.test.ts` — the normaliser is proved against the same
+    weights without it, and the dealt offer is held against the rules-silent draw storey
+    by storey. **THE TWO GENUINELY TRADE**, so here is the frontier rather than a quiet
+    pick: with the mix pinned, the spread rule loses its cheapest source of variety, and
+    holding dominance took `PLAN_SPREAD_SUPPRESSION` 0.10 → 0.03 plus a second axis
+    (RULE C, on what the room pays — the other thing the card face prints). Every band
+    that moved, with its cause:
+
+    | | round 36 | round 40 | why |
+    |---|---|---|---|
+    | offer's puzzle share | 55.26% | **59.05%** | the mix is `categoryWeight`'s again |
+    | offer's parlor share | 14.38% | **11.16%** | ditto |
+    | dominance (walker) | 34.9% | **34.6%** | RULE C replaces what RULE B lost |
+    | dominance (day model) | 37.4–39.0% | **37.9–40.1%** | its offers carry the live anti-repeat list, so a rule that may not leave a category has least room there — 0.88pp under the ratchet at the worst of eight runs |
+    | frontier spread zero | 5.6% | **7.7%** | RULE C sometimes buys the decision on the wage axis instead; bound held at ≤8% |
+    | three of one category | 15.5% | **19.5%** | ARITHMETIC, not a regression — it goes as the cube of the commonest category's share. The gate is re-derived against the offer's own independence null, because an absolute bound here condemned the deck for being puzzle-heavy |
+    | landing's bare N-opening offer | 71.2% | **74.3%** | a firmer spread surfaces the wide (north-opening) shapes harder |
+    | a blind player's live seal rate | 35.89% | **34.61%** | fewer reaches out of the puzzle category land on a parlor's dead end. The DECK-alone column is bit-identical |
+    | `keyLuck` (fern 0 → 3) | 21.5% → 53.4% | **18.6% → 44.6%** | `measuredKeyRate` was rolling a heading-free draw the game never makes; whether an offer holds a key differs on 8.91% of draws. Every 4.10 padlock band held at the corrected supply |
+
+    **The deck was not touched.** `BASE_DECK`'s dead-end share (20.69%) and mean ways-on
+    (1.052) are bit-identical, which is what keeps 4.10a's no-refund day, 4.10i's
+    stranding and the campaign bands where they were — and it is why the deck-alone seal
+    rates above did not move a digit.
   - **4.10i — THE GROUND FLOOR IS A RESOURCE, NOT A FORMALITY** (REVIEW_AA §5.10, round
     23). *"If a resource is never scarce it is not a resource."* Nothing in 4.10a–h
     constrained the storeys the median player spends 62% of her evening on, and measured
