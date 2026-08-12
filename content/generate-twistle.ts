@@ -139,6 +139,42 @@ import type { TwistlePuzzle, Tier } from '../src/engine/types';
  * Measured on the pool this file now ships: known traceable printable words
  * refused goes **1,610 / 51 / 3 → 0 / 0 / 0** at tiers 3 / 2 / 1, and what a
  * tier-3 board accepts of the words she knows goes from a median 11 to 35.
+ *
+ * ---------------------------------------------------------------------------
+ * ROUND 38 — AND TWO MORE OF THEM WERE STILL ACCEPTANCE RULES, IN HIDING
+ * ---------------------------------------------------------------------------
+ * That 0/0/0 was measured with this file's own trie, and this file's own trie
+ * enumerated words of 4 TO 8 LETTERS. Nine letters was not a refusal, it was a
+ * blind spot — shared by the generator, by the gate that certified it, and by
+ * the round that wrote both. An enumerator that shares neither the trie, the
+ * language, the dictionary nor the frequency line (round 38; every legal path on
+ * the shipped board against the whole of ENABLE, then `submitTwistleWord` asked
+ * what the room does with each word) found the pool refusing a median **81 / 69 /
+ * 110** traceable dictionary words a board, and **240 at rank ≤ 20,000 — round
+ * 28's own bar — of which the 56 that are not the cozy gate's are every one of
+ * them nine or ten letters long**: CONDITIONS (rank 452), DESCRIBED (1,828),
+ * ADDRESSED (4,310), IMPRESSIVE (6,716).
+ *
+ * Two rules were still deciding whether a real word is a word:
+ *
+ *   THE FREQUENCY BAND. `targetBands` is the vocabulary the ASK is drawn from —
+ *     it is what keeps `minEntryRank` honest — and it was being applied to
+ *     acceptance as well, so tiers 1 and 2 (`everyday`, rank ≤ 20k) refused
+ *     SNAIL (20,170), SPADE (20,261), GLARE (20,263), STRIDE, GRIDS, CLOUT,
+ *     LINGER, BUSHES: a median 48 and 43 words a board that anybody knows. The
+ *     round-28 gate could not see one of them, because it drew "she plausibly
+ *     knows it" at rank 20,000 — the same line `bandOf` draws.
+ *   THE LENGTH WINDOW. Now `ASK_MAX_LENGTH`, stated on the ask, where it is a
+ *     choice. The solver sees the whole dictionary.
+ *
+ * `accepted` is therefore the rules the board STATES and nothing else — length
+ * floor, legal trace, the marked tile, the cozy gate — and `isWork` carries all
+ * three conditions of the exhibition. The split is measured, not asserted: the
+ * grids, the works and every published band of the ask came out **byte-identical
+ * to the pool round 28 shipped** (the ask's material is unchanged by
+ * construction), while the accept-list went 7,685 → 26,107 words and the median
+ * board from 22 accepted words to 101. Refusals of a traceable dictionary word
+ * are now **534 in the whole house, every one of them the cozy gate's**.
  */
 
 const TARGET_PER_TIER = 70; // 3 tiers => 210 total
@@ -153,6 +189,25 @@ const SEED = 20260702;
 
 /** Board side length per tier — the Gallery itself grows at the top. */
 const SIZES: Record<Tier, number> = { 1: 5, 2: 5, 3: 6 };
+
+/**
+ * ═══ ROUND 38 — THE LONGEST WORD THE *ASK* MAY BE MADE OF ══════════════════
+ *
+ * This number used to exist, and it was `MAX_ENUM = 8` inside the solver's
+ * TRIE — i.e. the ask's length ceiling was expressed as the generator being
+ * BLIND to longer words, which made it a ceiling on ACCEPTANCE too and put it
+ * beyond the reach of any measurement that shared the trie. Round 28's fix and
+ * the gate that certified it were both built on that trie, so both were blind
+ * to CONDITIONS (Norvig rank 452), DESCRIBED (1,828), ADDRESSED (4,310) and
+ * 737 other traceable 9-and-10-letter refusals across the shipped pool.
+ *
+ * It is a stated constant on the ASK now and the solver sees the whole
+ * dictionary. It stays at 8 deliberately: `targetCount` words out of a pool
+ * bounded by `maxFindableFor` is round 26's contract, the seeded material is
+ * 4–7 letters, and admitting ten-letter words to the ask would re-open every
+ * band that round measured. The ask is chosen; acceptance is not.
+ */
+const ASK_MAX_LENGTH = 8;
 
 // Letter frequency weights for filling gaps (rough English distribution).
 const FILL_LETTERS = 'eeeeeeeeeeeetttttttttaaaaaaaaoooooooiiiiiiinnnnnnnsssssshhhhhhrrrrrrddddllllcccuuummwwffggyyppbbvk';
@@ -400,7 +455,6 @@ function generatePuzzle(
   const turnsByWord = new Map<string, number>();
   const accepted = [...findable].filter((w) => {
     if (w.length < spec.minLength) return false;
-    if (!spec.targetBands.includes(bandOf(dict.rankOf(w)))) return false;
     // The Gallery prints everything it accepts — the cozy gate applies (task 2).
     if (!gateOk(w)) return false;
     // Under centerRequired / minLength the trie solver over-counts; the
@@ -411,8 +465,14 @@ function generatePuzzle(
     turnsByWord.set(w, turns);
     return true;
   });
-  const targets = accepted.filter((w) => turnsByWord.get(w)! >= spec.minTurns);
-  const studies = accepted.filter((w) => turnsByWord.get(w)! < spec.minTurns);
+  // ROUND 38 — the three conditions of the ASK, in one predicate, so no rule of
+  // the exhibition can ever leak back into the rule of acceptance again.
+  const isWork = (w: string) =>
+    spec.targetBands.includes(bandOf(dict.rankOf(w)))
+    && w.length <= ASK_MAX_LENGTH
+    && turnsByWord.get(w)! >= spec.minTurns;
+  const targets = accepted.filter(isWork);
+  const studies = accepted.filter((w) => !isWork(w));
   if (targets.length < Math.max(spec.minFindable, spec.targetCount + 4)) return null;
   // ROUND 26 — the ask may never be thinner than one word in five of the board
   // it is asked on (`MIN_ASK_SHARE`). This rejects the haystacks: a 5×5 whose
@@ -452,7 +512,14 @@ function main() {
     if (w.length < 4 || w.length > 7) continue;
     pools[bandOf(dict.rankOf(w))].push(w);
   }
-  const trie = buildTrie([...dict.words].filter((w) => w.length >= 4 && w.length <= 8));
+  // ROUND 38 — EVERY WORD THE DICTIONARY HAS, AT EVERY LENGTH. This filter used
+  // to read `w.length >= 4 && w.length <= 8`, and that upper bound was the
+  // Gallery's longest-running lie: a word of nine letters was not refused by a
+  // rule, it was INVISIBLE — to the generator, and to every check that measured
+  // the generator with its own trie. The board is 25 or 36 tiles, so the walk
+  // bounds itself; the ask's length ceiling is `ASK_MAX_LENGTH`, stated once,
+  // where it applies.
+  const trie = buildTrie([...dict.words].filter((w) => w.length >= 4));
 
   const puzzles: GeneratedTwistlePuzzle[] = [];
   for (const tier of [1, 2, 3] as Tier[]) {
@@ -496,8 +563,11 @@ function validate(puzzles: GeneratedTwistlePuzzle[], dict: Dictionary) {
     }
     if (p.targetCount !== spec.targetCount) problems.push(`${p.id}: targetCount ${p.targetCount} != tier ${p.tier} ask ${spec.targetCount}`);
     // ROUND 28 — the accept-list. A study must be a word she could really have
-    // traced (or the room is accepting nonsense), must not also be a work, and
-    // must genuinely fall short of the corner floor (or it belonged in the ask).
+    // traced (or the room is accepting nonsense) and must not also be a work.
+    // ROUND 38 — and it must miss the ask by one of the ask's OWN three
+    // conditions (band, length, corners). It used to be checked against the
+    // corner floor alone, which was true only because the other two were
+    // enforced by a blind spot rather than by a rule.
     if (p.minTurns !== spec.minTurns) problems.push(`${p.id}: minTurns ${p.minTurns} != tier ${p.tier} corner floor ${spec.minTurns}`);
     const works = new Set(p.targetWords);
     for (const w of p.extraWords) {
@@ -506,7 +576,9 @@ function validate(puzzles: GeneratedTwistlePuzzle[], dict: Dictionary) {
       if (findPath(p.grid, w, p.rules) === null) problems.push(`${p.id}: study ${w} has no valid trace`);
       if (!gateOk(w.toLowerCase())) problems.push(`${p.id}: study ${w} fails the cozy gate`);
       const t = straightestTurns(p.grid, w, p.rules);
-      if (t !== null && t >= spec.minTurns) problems.push(`${p.id}: study ${w} turns ${t} — it is a work`);
+      const asks = spec.targetBands.includes(bandOf(dict.rankOf(w.toLowerCase())))
+        && w.length <= ASK_MAX_LENGTH && t !== null && t >= spec.minTurns;
+      if (asks) problems.push(`${p.id}: study ${w} meets every condition of the ask — it is a work`);
     }
     if (p.rules.minLength !== spec.minLength) problems.push(`${p.id}: minLength ${p.rules.minLength} != tier ${p.tier} floor ${spec.minLength}`);
     if (p.rules.centerRequired !== spec.centerRequired) problems.push(`${p.id}: centerRequired != tier ${p.tier} rule`);

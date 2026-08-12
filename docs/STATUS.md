@@ -595,6 +595,7 @@ Ordered most value first.
   untouched) and **studies** (accepted, kept, scored, and they do not open the door). Refusals
   of known traceable words: **1,610 / 51 / 3 → 0 / 0 / 0** at tiers 3 / 2 / 1. The only
   refusals left in the house are the cozy gate's 175, which is an editorial choice.
+  **← THAT LAST SENTENCE WAS FALSE. See round 38 below; the measurement could not have failed.**
   And the room got the **ladder** it never had (BENCHMARKS §1 calls the Bee's *the retention
   machine*; this room's win was `foundWords.length >= targetCount` and nothing else): *a
   letter is a point, a corner is two*, a study is one, five rungs from Bare Wall to Curator's
@@ -602,6 +603,55 @@ Ordered most value first.
   every board at every tier**, always with something above her. **No minute of the evening
   moved** — the door is still the same count of the same words, `ROOM_EFFORT.twistle` is
   untouched, and no room had to be shortened to pay for it.
+- **~~The Gallery, a third time~~ — DONE, round 38.** *(Left here with the finding, because the
+  finding is about MEASUREMENT and it is this campaign's signature failure.)*
+  Rounds 26 and 28 both narrowed this room's accept-list, and **both certified themselves with
+  an instrument made out of the thing under test.** `content/generate-twistle.ts` enumerated
+  each board against a trie of dictionary words **4 to 8 letters long**, so a nine-letter word
+  was never refused — it was INVISIBLE, to the generator and to the gate that graded the
+  generator. That gate then drew *"a word she plausibly knows"* at **Norvig rank ≤ 20,000**,
+  which is exactly where `bandOf` draws the `everyday` band — i.e. exactly the filter tiers 1
+  and 2 were applying to acceptance. Two blind spots, each the same shape as the rule it was
+  meant to audit, and between them they certified **0 / 0 / 0**.
+  Re-measured by an enumerator sharing neither (another language, its own path walk, the whole
+  of ENABLE at every length, raw Norvig counts, and `submitTwistleWord` itself asked what the
+  room does with each word), the round-28 pool refused a median **81 / 69 / 110** traceable
+  dictionary words a board — SNAIL, SPADE, GLARE, STRIDE, GRIDS, CLOUT, LINGER, BUSHES — and
+  **240 at rank ≤ 20,000, the gate's own bar, on 128 of the 210 boards.** 184 of those are the
+  cozy gate's; **the other 56 are every one of them nine or ten letters long** — CONDITIONS
+  (rank 452), DESCRIBED (1,828), ADDRESSED (4,310), IMPRESSIVE (6,716) — so every
+  counter-example to round 28's claim sat in the one window its instrument could not see.
+  THE FIX IS ROUND 28's, FINISHED: the band and the length window are demoted from rules of
+  ACCEPTANCE to rules of the ASK, stated where the ask is composed (`ASK_MAX_LENGTH`,
+  `targetBands`). Acceptance is now five letters, a legal trace, the marked tile where the
+  board marks one, and the cozy gate — **nothing else**. Every grid, every work and every
+  published band of the ask came out byte-identical; the accept-list went **7,685 → 26,107
+  words**, a median board from 22 accepted to 101, and refusals of a traceable dictionary word
+  to **534 in the whole house, every one of them the cozy gate's** (DEATH, PENIS, ANGER,
+  SLUTS, CANCER…), which is an editorial call and not a rule of play.
+  **AND IT CLOSES THE COMPREHENSION FINDING NOTHING ELSE COULD.** Both cold readers finished
+  the Gallery believing only the pre-chosen words count — the exact belief round 28 existed to
+  kill, which round 34 then attacked as an EVIDENCE problem (the +1 mark, the captions, the
+  separated piles). The real reason: **tiers 1 and 2 shipped a median of ZERO studies**, and
+  the ground floor is 62% of the rooms the median player enters. In the room she plays most,
+  the second class did not exist — so she was reading her screen correctly. It is a median
+  **79 / 68 / 148** now, and `tests/round38-gallery-live.mjs` traces GRIDS (rank 20,286 — 286
+  places past a boundary she cannot see) on a tier-1 board with real pointer input at both
+  shipped sizes and requires the room to answer, keep, mark and score it.
+  **Two bands moved and both are republished here with their cause.** (1) `TWISTLE_RANKS`,
+  0.06/0.12/0.30/0.55 → **0.04/0.08/0.20/0.40**: the ladder is a fraction of the board's
+  maximum and the maximum is every word the board accepts, so a fourfold accept-list moves the
+  denominator. Re-placed by the rule that placed it — 0.08 sits two points under the leanest
+  solve in the house (0.10, measured after) exactly as 0.12 sat one point under 0.13 — and a
+  player who merely solves still lands rung 2–4 of 5 with something above her. (2) The
+  anti-farm gate **`studiesOnly.score < leanestSolve.score` is retired**: with a complete
+  accept-list the margin out-scores the ask on 177 of 210 boards, which is arithmetic (a
+  tier-1 board carries 79 studies against a five-word ask) and is also exactly the Bee, where
+  the four-letter chaff out-scores the pangram. What replaces it is what is load-bearing and
+  still true: the door is a COUNT of works and studies can never open it, the cheapest work in
+  the house is worth **7 points against a study's 1**, and the margin alone never reaches the
+  summit. **No minute and no payout moved** — the ask, `ROOM_EFFORT.twistle` and the whole
+  economy are untouched, because none of them ever read the second class.
 - **~~The Counting House~~ — DONE, round 27.** *(Left here with the finding.)* It was a
   27-minute tier-2 board inside a 10–15-minute evening, and the deeper defect was that
   **there was no sudoku benchmark in this repo at all** — the ladder's three tiers were the

@@ -702,9 +702,23 @@ async function checkGallery(page, board) {
   // ── The two verdicts, driven.
   const size = board.size ?? Math.round(Math.sqrt(board.grid.length));
   const grid = board.grid.map((g) => g.toUpperCase());
+  /**
+   * THE SHORTEST study the board can be made to spell, not the first one in the
+   * list — and it is the difference between a proof and a coincidence.
+   *
+   * `extraWords` ships alphabetically, so "the first traceable study" is
+   * whatever letter the board happens to start on. Round 38 widened the
+   * accept-list and the alphabetical head of `twistle-t3-1` went ARDENT (6) to
+   * ACCOUNTED (9) — long enough that the struck chip wrapped to its own row
+   * WITHOUT the break doing anything, so the proof that removes `.tw-lists__break`
+   * stopped going red while the check itself was unchanged and still correct.
+   * A separation claim has to be tested in the state where the two piles most
+   * nearly touch, which is the state with the shortest chips in it.
+   */
   const study = (board.extraWords ?? [])
     .map((w) => ({ w: w.toUpperCase(), p: tracePath(grid, size, w.toUpperCase(), !!board.rules.centerRequired) }))
-    .find((x) => x.p);
+    .filter((x) => x.p)
+    .sort((a, b) => a.w.length - b.w.length)[0];
   const refusal = findRefusal(
     grid, size, board.rules.minLength, !!board.rules.centerRequired,
     [...board.targetWords, ...(board.extraWords ?? [])],

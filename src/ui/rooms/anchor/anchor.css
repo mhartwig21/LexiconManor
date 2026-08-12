@@ -1072,6 +1072,16 @@
 .tw-slot { display: grid; }
 .tw-slot > * { grid-area: 1 / 1; }
 .tw-standing--hushed { opacity: 0; }
+/* ROUND 38 — AND THE ONE ON TOP IS THE ONE THAT ANSWERED HER.
+   `opacity: 0` hushes the standing but still makes a stacking context of it, so
+   the hushed line was painted ABOVE its non-positioned sibling and owned the
+   point: `elementFromPoint` at the middle of the toast that says "GRIDS — a
+   study · +1" returned `.tw-standing__rank`. Nothing there takes a tap, so no
+   gesture was ever lost — but a room whose hit test disagrees with its own
+   pixels is a room no probe can honestly read, and this house has shipped that
+   confusion twice. `tests/round38-gallery-live.mjs` requires the answer to be
+   the thing at the point where the answer is painted. */
+.tw-slot .anch-toastslot { position: relative; z-index: 1; }
 .tw-standing {
   display: flex;
   align-items: baseline;

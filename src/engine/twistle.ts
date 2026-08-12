@@ -131,6 +131,58 @@ export function maxFindableFor(targetCount: number): number {
  * words she knows goes from a median 11 to 35. The only refusals left in the
  * house are the cozy gate's 175 (TRANS, NUDES, ANGER, PENIS, COCAINE…), which
  * are a deliberate editorial choice and not a rule she could obey if she saw it.
+ *
+ * ═══ ROUND 38 — THAT MEASUREMENT COULD NOT HAVE FAILED ═════════════════════
+ *
+ * Two rounds fixed this room's accept-list and both certified themselves with an
+ * instrument built out of the thing under test. `content/generate-twistle.ts`
+ * enumerated the board with a trie of dictionary words **4 to 8 letters long**,
+ * so a nine-letter word was not refused by a rule — it was INVISIBLE, to the
+ * generator and to the gate that measured the generator. The gate in
+ * `tests/puzzles/twistle-boards.test.ts` then drew "a word she plausibly knows"
+ * at **Norvig rank ≤ 20,000**, which is exactly where `bandOf` draws the
+ * `everyday` band — i.e. exactly the filter tiers 1 and 2 were applying. Two
+ * blind spots, each of them the same shape as the rule it was meant to audit.
+ *
+ * Re-measured in round 38 by an enumerator that shares neither (a separate
+ * implementation, in another language, walking every legal path on the shipped
+ * board against the whole of ENABLE at every length, ranked off the raw Norvig
+ * counts, and then asking `submitTwistleWord` itself what the room does with
+ * each word), the pool round 28 shipped refused, per board, a MEDIAN:
+ *
+ *   | refused, traceable, printable | tier 1 | tier 2 | tier 3 |
+ *   |-------------------------------|--------|--------|--------|
+ *   | rank ≤ 20,000 (ROUND 28'S OWN LINE) |  1 |  1 |  1 |
+ *   | rank 20,000–60,000            |   19   |   18   |    1   |
+ *   | rank 60,000–120,000           |   13   |   12   |   22   |
+ *   | any dictionary word           |   81   |   69   |  110   |
+ *
+ * SNAIL, SPADE, GLARE, STRIDE, GRIDS, CLOUT, LINGER, BUSHES — refused. And the
+ * two blind spots meet on the sharpest number of the round: **240 refusals at
+ * rank ≤ 20,000, round 28's own bar, on 128 of the 210 boards. 184 are the cozy
+ * gate's. The other 56 are all nine and ten letters** — CONDITIONS (452),
+ * CONDITION (1,067), PROPERTIES (1,344), DESCRIBED (1,828), ADDRESSED (4,310),
+ * IMPRESSIVE (6,716), CORRECTED (8,789) — so every counter-example to round 28's
+ * claim sat in the one length window its instrument could not enumerate. That is
+ * not bad luck; it is what happens when a gate is built from the thing it audits.
+ *
+ * THE FIX IS THE SAME FIX, FINISHED. Round 28 demoted the corner floor from a
+ * rule of acceptance to a rule of the ASK; round 38 does the same to the other
+ * two — the frequency band and the length window — and states them where the ask
+ * is composed (`ASK_MAX_LENGTH`, `targetBands`) instead of leaving them as
+ * properties of a solver. **Acceptance is now: five letters, a legal trace, the
+ * marked tile where the board marks one, and the cozy gate. Nothing else.**
+ * Every word of the dictionary she can draw is a work or a study.
+ *
+ * Measured after, by the same independent enumerator: **the ONLY refusal left
+ * anywhere in the house is the cozy gate's — 534 of them (138 / 143 / 253),
+ * every single one a word the manor will not print** (DEATH, PENIS, ANGER,
+ * SLUTS, NIGGER, CANCER…). Zero refusals for any rule of play, at any tier, at
+ * any rank, at any length. Not a number that was aimed at: the enumerator counts
+ * refusals by cause, and this cause is the one the manor chose on purpose.
+ * The accept-list went 7,685 words to 26,107 across the 210 boards, and the
+ * boards themselves — every grid, every work, every published band of the ask —
+ * are byte-identical to the pool round 28 shipped.
  */
 
 /**
@@ -248,17 +300,29 @@ export interface TwistleRung {
 
 /**
  * Placed against the shipped pool rather than chosen for the sound of it: rung
- * 2 sits at 0.12 because the LOWEST-scoring set of works that can open any board
- * in the house scores 0.13 of that board's maximum, so a player who merely
- * solves always arrives there and never above it.
- * `tests/puzzles/twistle-boards.test.ts` re-derives both facts off the JSON.
+ * 2 sits just under the LOWEST-scoring set of works that can open any board in
+ * the house, so a player who merely solves always arrives there and never above
+ * it. `tests/puzzles/twistle-boards.test.ts` re-derives both facts off the JSON.
+ *
+ * ROUND 38 — RE-PLACED, BECAUSE THE DENOMINATOR MOVED. The board's maximum is
+ * every word it accepts, and this round the accept-list stopped being bounded by
+ * a frequency band and a solver's blind spot (see the note below): a median
+ * board went from 22 accepted words to 101, and the leanest solve in the house
+ * from 0.13 of the maximum to 0.10. The curve is the same shape one notch
+ * lower — 0.06/0.12/0.30/0.55 → 0.04/0.08/0.20/0.40 — and it is placed the same
+ * way it was: 0.08 is two points under the leanest solve in the house (0.10),
+ * exactly as 0.12 was one point under 0.13. Measured after the move: every
+ * cheapest and every leanest solve on all 210 boards lands on rung 2, 3 or 4,
+ * with something still above it. The rungs were NOT re-typed until the fraction
+ * they answer to had been re-measured — a ladder tuned to keep a number green is
+ * this project's own standing failure.
  */
 export const TWISTLE_RANKS: readonly TwistleRung[] = [
   { name: 'Bare Wall', at: 0 },
-  { name: 'First Nail', at: 0.06 },
-  { name: 'Small Hang', at: 0.12 },
-  { name: 'Full Wall', at: 0.30 },
-  { name: 'Salon Hang', at: 0.55 },
+  { name: 'First Nail', at: 0.04 },
+  { name: 'Small Hang', at: 0.08 },
+  { name: 'Full Wall', at: 0.20 },
+  { name: 'Salon Hang', at: 0.40 },
   { name: 'Curator’s Eye', at: 1 },
 ];
 

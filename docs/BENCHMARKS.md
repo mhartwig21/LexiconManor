@@ -476,6 +476,21 @@ because the grid is dense with plausible wrong traces, not because the words are
 **Steal:** the two-class accept model, exactly — a real, traceable word she plausibly knows is
 never refused; it lands somewhere and it is worth something. And Strands' honesty about which
 rule is doing the work: the room states its own constraint over the board.
+
+> **ROUND 38 — AND "PLAUSIBLY KNOWS" IS NOT A LINE THE ROOM MAY DRAW.**
+> Twice this room was fixed against that sentence and twice the fix was graded with an
+> instrument that shared the fix's own bounds — a solver blind past eight letters, and a
+> "she plausibly knows it" bar drawn at the exact rank where the tier's vocabulary band
+> stops. The rule is *simpler* than the sentence and it is the one this room now runs on:
+> **every word of the game's dictionary she can trace under the rules the board PRINTS is
+> accepted.** No frequency line, no length window. The ask keeps both — that is what a
+> curator's choice IS — but the ask is not the accept-list, and any bound on acceptance is a
+> bound somebody will have to justify to a player who can see the word on the tiles.
+> The residue is one class and it is editorial, not mechanical: **534 words in the house that
+> the manor will not print** (DEATH, PENIS, ANGER, SLUTS, CANCER…). Those are the cozy gate's
+> and they are a deliberate choice; everything else the dictionary carries is a work or a
+> study. Measured by enumeration that shares nothing with the generator — see STATUS' round-38
+> entry and `tests/puzzles/twistle-boards.test.ts`.
 **Fix/beat:** give it the ladder Strands refuses to have (§1's curve, re-based on this room's
 own material — letters AND corners, since a word search ranks on shape), and keep the *door*
 on the constrained class so the ladder can never be climbed into a solve on easy words. Where
@@ -505,6 +520,8 @@ Strands ends flat, the Gallery should end on a rung with rungs visible above it.
 | Unfinished sudoku | NYT: the board is still there tomorrow | the open ledger (engine/rooms/room-bank.ts) |
 | Word-search grid | Strands: 6×8 = 48 tiles, every tile in an answer | 5×5 (tiers 1–2) / 6×6 (tier 3), filler allowed |
 | Traced real word, not wanted | Strands: accepted, 3 of them = 1 hint | accepted as a *study* — 1 point, never refused |
+| Word-search accept-list | Strands: its whole dictionary | ours: **the whole dictionary**, at every length and every rank (round 38) |
+| Words a board accepts (median) | Strands: 7–9, and every tile is spoken for | **100 / 92 / 172** by tier (round 38) — was 23 / 22 / 64 |
 | Word-search answer count | Strands: 7–9 theme words + spangram | 5 / 6 / 6 *works* (`ROOM_EFFORT.twistle`) |
 | Word-search ladder | Strands: none at all | Bee's curve on letters + 2×corners (`TWISTLE_RANKS`) |
 | Linen Closet benchmark | **NYT Acrostic (§10)**, not the Mini — the Mini is struck, with the measurement | one marked square per entry spelling a clued answer |
