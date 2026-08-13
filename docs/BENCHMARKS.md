@@ -179,6 +179,43 @@ Two rules come with it, both paid for during the round:
    each word hides a DIFFERENT fruit). Supply is not worth a sentence the player can check and
    find false; this is round 12's doubled-letter finding in a new place.
 
+### Round 50's clock — and the number the room is GRADED on cannot be the one it is CLOCKED on
+
+`ROOM_EFFORT['word-web']` was `[4.5, 5.0, 6.0]` with no derivation under it: one line, *"16
+tiles, 4 groups, 1 ambiguous, 1 herring"*, with no tier in it.
+
+The obvious candidate for a tier lever is the room's headline figure, and it does not work.
+**Contested tiles (`ambiguousWords`) are a median 2 at every tier on the shipped pool, and so are
+herrings.** That is the format working as intended — 2 is the floor Connections wants and the
+room now clears it at all three storeys — but it means a clock built on the graded number would
+have no tier in it at all. *A room's difficulty grade and a room's clock are not the same
+measurement, and this is the cleanest example of it in the repo.*
+
+What does move, monotonically, is **how many of the four threads read straight off the tiles.**
+`TIER_SPECS.minPlain` is 2 / 1 / 1 and the shipped shelf carries a median **3 / 2 / 1 PLAIN**
+categories (`isPlainish`: semantic, trivia or compound — solved by thinking in English). The
+other 1 / 2 / 3 are WORKED: an anagram, a silent letter, a doubled pair, invisible until you
+perform something on the word. That is Koster's rap sheet answered as a clock — a worked thread
+is a *mechanic you have to find*, a plain one is a *list you have to recognise*, and they do not
+cost the same.
+
+| | tier 1 | tier 2 | tier 3 |
+|---|---|---|---|
+| plain / worked categories (median) | 3 / 1 | 2 / 2 | 1 / 3 |
+| contested tiles (median) | 2 | 2 | 2 — **flat, by design** |
+| `ROOM_EFFORT` | 4.5 | **5.25** (was 5.0) | 6.0 |
+
+**Only the middle tier moves, and it is forced rather than chosen.** The two rates come off this
+row's own two ends, which round 22 set and never derived — that half is circular and the code
+says so. What has teeth is the over-determination: with plain counts of exactly 3 / 2 / 1, two
+rates and three tiers leave one degree of freedom, and the arithmetic makes **t2 the mean of the
+ends**. A tier-2 board carries one more worked category than a tier-1 board and one fewer than a
+tier-3 board; it cannot cost less than the midpoint. The implied rates are **56.25 s a plain
+category and 101.25 s a worked one**, both inside the bands `WEB_CLOCK` publishes.
+
+**No payout moves** (0.45 × 5.25 = 2.36, the +2 the room already paid) and the wage falls
+0.400 → 0.381 moves a minute at tier 2, interior to all four of AAA 4.10h's populations.
+
 ---
 
 ## 3. Wordle → benchmark for reveal juice, error states, daily ritual (all rooms)
@@ -614,6 +651,13 @@ Strands ends flat, the Gallery should end on a rung with rungs visible above it.
 | Cryptogram letters given | Cryptoquote: **zero** | **3 / 1 / 2** (`REVEALS`), high-frequency at t1, MID above it |
 | Cryptogram crib | whatever the quotation happens to carry | graded: one-letter word / two-letter word / **nothing under 3** |
 | Cryptogram clock | 3–8 min for a regular solver | **3.0 / 4.5 / 5.5** = opening(crib) + letters × 12.5 s (`CIPHER_CLOCK`) |
+| Library clock | Connections has no published time | **4.5 / 5.25 / 6.0** = plain × 56.25 s + worked × 101.25 s (`WEB_CLOCK`, §2) |
+| Library tier lever | editor's yellow→purple ordering | **plain categories 3 / 2 / 1** — contested tiles are flat at 2, by design |
+| Closet clock | Mini: 20–60 s over ~10 crossed entries | **1.25 / 1.75 / 2.25** = clued answers × 18.75 / 21 / 27 s (`CLOSET_CLOCK`, §10) |
+| Closet tier lever | Mini: none — one size, one grade | 4 / 5 / 5 clued answers, answers at corpus rank **5,100 / 8,854 / 19,461** |
+| Study benchmark | **none — no NYT twin (§12)**, bounded by Wordle and the cryptic definition | a definition in three registers, a letter count and a crib |
+| Study answer list | Wordle: ordinary vocabulary, on purpose | the opposite: median rank **25,286 / 81,158 / 219,760**, 15 of 43 off the corpus at tier 3 |
+| Study clock | Wordle: ~4 guesses of 6 on a word you know | **1.5 / 2.25 / 3.5** = read + candidates × 50 s (`STUDY_CLOCK`, §12) |
 
 ## 10. NYT Acrostic → benchmark for the Linen Closet (the Hem)
 
@@ -760,6 +804,47 @@ hardest — 16 boards, from 30 — since a 4×4 with three entries and 8 squares
 very few uncrossed letters to choose from. Ten per tier is the shipped floor
 and tier 1 clears it by six.
 
+### Round 50's clock — the room's unit is the CLUE, and the middle tier ran backwards
+
+Round 29 gave this room a fourth and fifth printed row and `docs/LINEN_CLOSET.md` records, in
+its own cost list, that ***"`ROOM_EFFORT.crossword` is untouched."*** The room grew a clued
+answer and its whole checking mechanic and its clock did not move. It had never been derived at
+all: one header line, *"4×4, 3 entries, 11 letters — ~75 s"*, written before the hem existed.
+
+**The unit matters more than the numbers, because the obvious measurement is the wrong one.**
+Counted per SQUARE the shipped row ran **9.4 / 6.9 / 8.6 seconds**, which reads as the defect
+round 26 caught in the Gallery and round 27 in the Counting House — a bigger, later board
+implying a faster unit. It is not that defect. **This room is not a crossword** (the owner's
+ruling, LINEN_CLOSET.md), and on a sparse grid a square is *typed*, not *solved*: three quarters
+of the letters have no crossing, so the work is the clue and there are `entries + 1` of them,
+because the hem is clued in the list with the rest.
+
+Counted in the room's own unit the shipped row ran **18.8 / 18.0 / 24.0 seconds a clued answer —
+and the middle one still ran backwards**, on a board that asks one more clue, one more letter per
+answer and a rarer word than the one below it. That is the finding, and it survives the change of
+unit, which is why the unit is written down here.
+
+| | tier 1 | tier 2 | tier 3 |
+|---|---|---|---|
+| grid | 4×4 | 5×5 | 5×5 |
+| clued answers (entries + hem) | **4** | **5** | **5** |
+| median answer length | 3 | 4 | 4 |
+| **median answer's corpus rank** | **5,100** | **8,854** | **19,461** |
+| clue length (median words / chars) | 4 / 22 | 4 / 22 | **5 / 29** |
+| seconds a clued answer | 18.75 | **21.0** | **27.0** |
+| `ROOM_EFFORT` | 1.25 — unchanged | **1.75** (was 1.5) | **2.25** (was 2.0) |
+
+Tier 3 does not get another entry, so its only levers are the ones the table shows: answers
+**3.8× rarer than tier 1's** and clues a word longer. The Mini's reference figure is 20–60
+seconds for ~10 entries, i.e. 2–6 s a square with the crossings doing the confirming; ours is a
+clue at a time with only the hem to confirm it, and the bands in `CLOSET_CLOCK` are that
+reference scaled by exactly that difference.
+
+**No payout moves** — 0.45 × 1.75 and 0.45 × 2.25 both round to the +1 the cozy floor was
+already paying — so no ledger band moves with it. What moves is the wage (0.667 → 0.571 at tier
+2, 0.500 → 0.444 at tier 3, both interior), the clock, and the draft card's tier-3 duration
+clause: *"a few minutes"* rather than *"a minute or two"*, which is truer and is a rule of play.
+
 ---
 
 ## 11. The newspaper cryptogram → benchmark for the Darkroom
@@ -768,7 +853,9 @@ and tier 1 clears it by six.
 until this round there was no benchmark in this file to clear. That is the same failure the
 Linen Closet's §10 opens on — a room failed for twenty rounds against a spec nobody wrote down
 — and it is why `ROOM_EFFORT.cipher` was the only row in the effort table with no derivation
-behind it and no pin under it.*
+behind it and no pin under it. **(Round 50's correction: it was the only row with no derivation
+AND a wrong shape. Three more had a plausible shape and no derivation at all — §2's Library,
+§10's Linen Closet and §12's Study — and the Study's was FLAT.)***
 
 ### The reference, and its exact numbers
 
@@ -862,3 +949,103 @@ letters back to compensate for the length it cannot have.
   at the end — so there is no marker to hang a rung on. The reference has the same shape and gets
   away with it at 3–8 minutes and no economy attached; this room has an economy attached.
   `tests/economy-effort.test.ts` pins the list of unstaged long rooms so the debt is bounded.
+
+---
+
+## 12. The Study (Forgotten Word) → the room with NO NYT twin, and what it is graded against instead
+
+*Written round 50. `docs/STATUS.md` §7 has said for four rounds that **"two rooms were being
+judged against teardowns that did not exist in this file; if yours is missing, write it before
+you build."** Round 46 wrote the Darkroom's. This is the other one, and it was worse off than
+the Darkroom, because the Darkroom at least had a wrong clock — the Study had a FLAT one.*
+
+### First, the thing `docs/LINEN_CLOSET.md` told us to say out loud
+
+**There is no NYT twin for this room, and the gap is stated rather than left for a later round
+to fill with an assumption.** The Study shows a definition in one of three authored registers,
+names the letter count, stands some of the letters up, and takes up to six guesses, answering
+each wrong one with Wordle's two closeness signals. Nothing in the NYT lineup does that. The two
+references that BOUND it, and what each one settles:
+
+- **Wordle** — six guesses, letter feedback, and *an answer list deliberately restricted to
+  ordinary vocabulary*. That restriction is the whole reason the format is fair: with only
+  letter feedback, a word you have never met is unguessable. **The Study does the opposite** —
+  its tier-3 headwords have a median corpus rank of 219,760 and fifteen of forty-three do not
+  occur in a third of a million words of English — **and it pays for that with the two things
+  Wordle does not have: a MEANING and a CRIB.** That is the trade the room is, and round 14
+  already built it (`glossForLevel` free at every tier, `cribIndices` keyed on obscurity,
+  `maxGuessesForLevel` no longer shrinking with rarity). Wordle's other useful number is its
+  measured mean of ~4 guesses of 6 on a list of words everybody knows.
+- **The cryptic crossword's definition half** — a clue's definition is exact and unhelpful at the
+  same time; you confirm it with the wordplay. Our confirmation is the letter count plus the
+  standing letters, which is a weaker check, which is why the room may not also take the gloss
+  away (AAA 3.5/3.8, and the generator's own `solvabilityProblems` refuses to ship an unranked
+  word without a gloss, five guesses and a crib).
+
+### The clock, and the flat row it replaces
+
+`ROOM_EFFORT['forgotten-word']` was `[1.5, 1.5, 1.5]` — **the only row in the effort table that
+claimed a tier costs nothing** — and its whole account was one header line: *"read three authored
+definitions, name a word."* Measured against the room the generator actually ships, the three
+tiers differ in four ways at once:
+
+| | tier 1 | tier 2 | tier 3 |
+|---|---|---|---|
+| obscurity tag | 34/34 `common` | 36/36 `medium` | 31 `rare` + 12 `archaic` |
+| **median corpus rank** | **25,286** | **81,158** | **219,760** |
+| **absent from a 333,333-word corpus** | 0 of 34 | 4 of 36 | **15 of 43** |
+| headline register | poetic | poetic | **the riddle** |
+| letters standing (`cribIndices`) | 0 | 1 | 2 |
+| guesses (`maxGuessesForLevel`) | 6 | 5 | 5 |
+| registers to read (median words) | 25 | 27 | 29 |
+
+**The model is a READ and then CANDIDATES**, and only the second term moves:
+
+```
+minutes = registers / 150 wpm  +  candidates(tier) × 50 s
+```
+
+The read is measured off the pool and is 10 / 11 / 12 seconds — it is not where the tier lives.
+The candidate rate does not move either, and that is deliberate: it is the Darkroom's cascade
+argument in another room (*the fill is the fill*). Producing one word that fits the letter count,
+the standing letters and the meaning, submitting it and reading the closeness that comes back is
+the same act at every storey; **what the tier changes is how many of them the median solve
+takes.** 50 s is the middle of a published 40–60 s band, above the Conservatory's ~20–30 s find
+because a hive word is spotted on seven letters and a Study word is retrieved against a meaning.
+
+| | tier 1 | tier 2 | tier 3 |
+|---|---|---|---|
+| candidates (median solve) | 1.5 | 2.5 | **4 of the 5 allowed** |
+| `ROOM_EFFORT` | **1.5 — unchanged** | **2.25** | **3.5** |
+
+**And the crib is the one lever pushing the other way, measured rather than waved at.** The
+letters standing cut the LEXICAL field — ENABLE words of the right length with those letters in
+those places — from a median 23,109 at tier 1 (no crib) to 856 at tier 2 to **52 at tier 3**.
+That is what stops the tier-3 row running away, and it is why the room is fair; it is not enough
+to make it as quick as tier 1, because a fifty-two-word field is only a field if you can read the
+riddle that picks one out of it.
+
+### The one payout this row moves, and the two things to know about it
+
+**A tier-3 Study pays +2 rather than +1** (0.45 × 3.5 = 1.58). It is an OUTPUT of the
+derivation, not its purpose, and it is the only payout `ROOM_EFFORT` moved in round 50.
+
+- **The rounding edge is at 3.34 minutes and the row sits 0.16 above it.** Anywhere from 48 s a
+  candidate up pays +2 and anywhere below pays +1. A later re-derivation that lands under the
+  edge has to say so and re-publish — the same disclosure round 46 wrote into the Darkroom's row.
+- **The Study only ever ships at tier 3.** `deck.ts` gives it `tierRange: [3, 3]` (the 2026-08
+  owner playtest: *"I reached the Forgotten Word on my FIRST DAY"*), so tiers 1 and 2 of this row
+  are priced, are counted in two of AAA 4.10h's four wage populations, and are never dealt. They
+  are derived anyway, because a three-tier table has to be honest at all three and because a deck
+  edit that lowers the Study must not find two invented numbers waiting for it.
+
+### Steal / Fix for the Study
+
+**Steal:** Wordle's closeness as the answer to a costed claim (round 7 already did — the room
+returns shared and exact letters rather than "no"); Wordle's *restraint about its answer list*,
+inverted deliberately and paid for in gloss and crib rather than borrowed for free.
+**Fix, still open:** the room has no ladder and does not need one at 3.5 minutes, but it is the
+only anchor whose whole payout arrives at the summit and whose failure mode is running out of
+rope — `docs/COMPREHENSION.md` has no finding on it because no blind tester ever reached row 5.
+**That is this room's real open problem and it is not a clock problem: nothing in
+`docs/COMPREHENSION.md` describes the Study being PLAYED, by anyone, ever.**

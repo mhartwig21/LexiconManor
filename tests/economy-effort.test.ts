@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   effortLabel, effortMinutes, paysInStages, stageFractionOf,
-  CIPHER_CLOCK, HIVE_SOLVE_PCT, HIVE_STAGE_PCT, LADDER_MINUTES, ROOM_EFFORT,
-  SUDOKU_CELLS_PER_STAGE, WEB_GROUPS,
+  CIPHER_CLOCK, CLOSET_CLOCK, HIVE_SOLVE_PCT, HIVE_STAGE_PCT, LADDER_MINUTES,
+  ROOM_EFFORT, STUDY_CLOCK, SUDOKU_CELLS_PER_STAGE, WEB_GROUPS,
 } from '../src/engine/economy/effort';
 import {
   solveKeys, solvePayout, stageSteps, BASE_DAY_BUDGET, KEY_SUPPLY, ROOM_SIZE, SOLVE_WAGE,
@@ -20,12 +20,15 @@ import { HIVE_LADDER, ladderThreshold } from '../src/engine/rooms/adapters/hive'
 import {
   ABOVE_NYT_HARD, SUDOKU_TIER_GRADE, solveWithTechniques,
 } from '../src/engine/puzzles/sudoku';
-import type { Tier } from '../src/engine/types';
+import type { ForgottenWordPuzzle, Tier } from '../src/engine/types';
+import { cribIndices, maxGuessesForLevel } from '../src/engine/forgotten-word';
 import twistlePool from '../content/generated/twistle.json';
 import hivePool from '../content/generated/hive.json';
 import sudokuPool from '../content/generated/sudoku.json';
 import webPool from '../content/generated/word-web.json';
 import cipherPoolJson from '../content/generated/cipher.json';
+import fwPool from '../content/generated/forgotten-word.json';
+import closetPool from '../content/generated/crossword.json';
 
 /**
  * ═══ 4.10h — TIME FOR REWARD (REVIEW_AA §6, round 22) ══════════════════════
@@ -58,13 +61,60 @@ const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[xs.length >> 1]!;
 interface TwistlePuzzleLike { tier: number; targetCount: number; targetWords: string[] }
 interface HivePuzzleLike { tier: number; validWords: string[]; pangrams: string[]; totalPoints: number }
 interface SudokuPuzzleLike { id: string; tier: number; givens: string }
-interface WebPuzzleLike { tier: number; groups: { words: string[] }[] }
+interface WebPuzzleLike {
+  tier: number;
+  groups: { theme: string; words: string[] }[];
+  ambiguousWords?: string[];
+}
 interface CipherPuzzleLike { tier: number; plaintext: string; reveals: string[] }
+interface StudyPuzzleLike {
+  tier: number; word: string; obscurity: 'common' | 'medium' | 'rare' | 'archaic';
+  definitions: { plain: string; poetic: string; riddle: string };
+}
+interface ClosetPuzzleLike {
+  tier: number; size: number;
+  entries: { answer: string; clue: string }[];
+  spine: { answer: string; clue: string };
+}
 
 const twistles = twistlePool as unknown as TwistlePuzzleLike[];
 const hives = hivePool as unknown as HivePuzzleLike[];
 const sudokus = sudokuPool as unknown as SudokuPuzzleLike[];
 const webs = webPool as unknown as WebPuzzleLike[];
+const studies = fwPool as unknown as StudyPuzzleLike[];
+const closets = closetPool as unknown as ClosetPuzzleLike[];
+
+/**
+ * ═══ ROUND 50 — THE CORPUS THE STUDY AND THE CLOSET ARE CLOCKED AGAINST ═════
+ *
+ * `content/data/count_1w.txt`, 333,333 words of web frequency, vendored on
+ * purpose (see `.gitignore`, which carries the reason: three deploys in a row
+ * died on corpora that were present locally and missing in CI, and a gate whose
+ * data is absent does not fail — it changes its mind).
+ *
+ * This is the SAME reader `content/generate-forgotten-word.ts` uses for its own
+ * solvability gate — line index, tab-split, last occurrence wins — so the two
+ * cannot disagree about what a rank is. A word the corpus has never seen scores
+ * `UNRANKED`, which is deliberately past the end rather than null: it is the
+ * measurement the tier-3 Study's whole clock rests on.
+ */
+const UNRANKED = 400_000;
+let rankCache: Map<string, number> | null = null;
+function corpusRank(word: string): number {
+  if (!rankCache) {
+    rankCache = new Map();
+    const lines = readFileSync(
+      resolve(__dirname, '..', 'content', 'data', 'count_1w.txt'), 'utf-8').split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const w = lines[i]!.split('\t')[0]?.trim();
+      if (w) rankCache.set(w.toUpperCase(), i + 1);
+    }
+    expect(rankCache.size, 'count_1w.txt is missing or truncated').toBeGreaterThan(300_000);
+  }
+  return rankCache.get(word.toUpperCase()) ?? UNRANKED;
+}
+
+const wordCount = (s: string) => s.trim().split(/\s+/).length;
 
 /** Steps per honest minute — the quantity the whole criterion is about. */
 const wageOf = (kind: RoomPuzzleKind, tier: Tier) =>
@@ -353,9 +403,12 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
     // THE NAME IS THE FILTER (round 25). This used to be titled "the rooms an
     // ordinary evening is made of", which is the population measured in the
     // test above — not this one. What it excludes, by name, is the Gallery
-    // (twistle t1/t2, 1.25 and 1.5 min), the Linen Closet (forgotten-word
-    // t1/t2, 1.5 min), the Study (crossword t1/t2, 1.25/1.5 min) and the
-    // Counting House at tier 2. Seven of fourteen pairs remain.
+    // (twistle t1/t2, 1.25 and 1.5 min), the Study (forgotten-word t1, 1.5 min),
+    // the Linen Closet (crossword t1/t2, 1.25 and 1.75 min) and the Counting
+    // House at tier 2. EIGHT of fourteen pairs remain (round 50).
+    // (Round 50 also corrects the two room names in that list, which were
+    // swapped: `forgotten-word` is the STUDY and `crossword` is the LINEN
+    // CLOSET. AAA 4.10h had it right; this comment had it backwards.)
     //
     // ROUND 26 — THE MEMBERSHIP WAS CHECKED AND IT DID NOT MOVE. The Gallery
     // was re-clocked 1.0 → 1.25 and 1.5 → 1.5 in that round; both tiers are
@@ -364,6 +417,22 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
     // says so — it fails the moment the membership moves, in either direction,
     // rather than letting a seven-pair number be re-baselined as a nine-pair
     // one under the same title.
+    //
+    // ═══ ROUND 50 — AND IT MOVED, 7 PAIRS → 8, WHICH IS WHY THIS IS HERE ════
+    //
+    // `forgotten-word t2` JOINS the population. The Study was clocked flat at
+    // 1.5 minutes at every tier and is re-derived to [1.5, 2.25, 3.5] (see the
+    // row), so tier 2 crosses the two-minute line this filter is named for.
+    // The SPREAD does not move — **1.36×**, both ends unchanged (sudoku t1
+    // 0.455 over cipher t1 0.333); the new member sits interior at 0.444 — so
+    // this is a population that got BIGGER at the same ratio, which is the
+    // honest direction: more of the house is inside the band where a minute is
+    // worth a minute. `word-web t2` is also re-clocked (5.0 → 5.25) and stays a
+    // member, its wage falling 0.400 → 0.381, also interior.
+    //
+    // (`forgotten-word t1` stays excluded at 1.5 min, and `crossword t2` stays
+    // excluded at 1.75 — the Linen Closet's re-derivation lengthened it without
+    // taking it over the line.)
     //
     // It is still worth gating, because it is the honest claim underneath the
     // dishonest one: once a room is long enough for the wage to bind rather
@@ -375,13 +444,13 @@ describe('4.10h — the wage spread is a ratchet: it may fall, never rise', () =
       .filter(([k, t]) => t <= 2 && !twoMinutePlus.some(([k2, t2]) => k2 === k && t2 === t))
       .map(([k, t]) => `${k} t${t}`);
     expect(excluded.sort(), 'the exclusion list moved — retitle the metric').toEqual([
-      'crossword t1', 'crossword t2', 'forgotten-word t1', 'forgotten-word t2',
+      'crossword t1', 'crossword t2', 'forgotten-word t1',
       'sudoku t2', 'twistle t1', 'twistle t2',
     ]);
     const s = spreadOf(wageOf, twoMinutePlus);
     expect(s, `two-minute-plus spread ${s.toFixed(2)}× over ${twoMinutePlus.length} pairs`)
       .toBeLessThanOrEqual(2);
-    expect(twoMinutePlus.length).toBe(7);
+    expect(twoMinutePlus.length).toBe(8);
   });
 
   /**
@@ -798,6 +867,140 @@ describe('4.10h — the durations are pinned to the content they were measured o
     // 16 tiles, one ambiguous, one herring — the review's own 3–6 minutes.
     expect(effortMinutes('word-web', 1)).toBeGreaterThanOrEqual(3);
     expect(effortMinutes('word-web', 1)).toBeLessThanOrEqual(6);
+  });
+
+  /**
+   * The Library's clock pin lives in `tests/content.test.ts` — "the Library is
+   * clocked on the categories she can read straight off" — and not here, for a
+   * measured reason: it needs the generator's own `isPlainish`, and importing
+   * `content/generate-wordweb.ts` into this file costs **24 seconds of
+   * synchronous module evaluation** (cmudict and the banks) against this file's
+   * 1.6 s of tests. `content.test.ts` already loads it, so the pin is free
+   * there and would have been a second copy of that load here — which is
+   * `docs/STATUS.md` §3.6, the file that starved the vitest worker reporter and
+   * failed a deploy with every test green.
+   */
+
+  /**
+   * ═══ ROUND 50 — THE STUDY WAS FLAT ACROSS THREE TIERS THAT ARE NOT ════════
+   *
+   * `[1.5, 1.5, 1.5]` claimed a tier costs nothing. Four content facts say
+   * otherwise and all four are re-derived here off the shipped pool and the
+   * corpus the generator itself grades against. The row is inverted through
+   * `STUDY_CLOCK` the way the Darkroom's is through `CIPHER_CLOCK`: subtract
+   * the measured read, and the residue is candidates, which must match the
+   * tier's published count, must climb, and may never exceed the rope the room
+   * actually hands her.
+   */
+  it('the Study is clocked on how far outside ordinary English its word is', () => {
+    const ranks: number[] = [];
+    const candidates: number[] = [];
+    for (const tier of TIERS) {
+      const group = studies.filter((p) => p.tier === tier);
+      expect(group.length, `study tier ${tier} pool`).toBeGreaterThan(10);
+
+      // (a) THE CONTENT GRADE — how far out of the language the headword sits,
+      //     measured against the same corpus the generator's solvability gate
+      //     uses. This is the fact the flat row was denying.
+      const rank = median(group.map((p) => corpusRank(p.word)));
+      ranks.push(rank);
+      // …and the tail that no median can show: words that do not occur at all.
+      const absent = group.filter((p) => corpusRank(p.word) >= UNRANKED).length;
+      if (tier === 3) {
+        expect(absent, `only ${absent}/${group.length} tier-3 headwords are off`
+          + ' the corpus — the tier stopped being the rare one').toBeGreaterThanOrEqual(10);
+      }
+
+      // (b) THE LENGTH GRADE — the read she is given free, off the registers
+      //     the room actually stages (poetic at tiers 1–2, the riddle at 3).
+      const words = median(group.map((p) =>
+        wordCount(tier <= 2 ? p.definitions.poetic : p.definitions.riddle)
+        + wordCount(p.definitions.plain)));
+      const read = words / STUDY_CLOCK.readWordsPerMinute;
+      expect(read, `study t${tier} read ${(read * 60).toFixed(0)}s`).toBeLessThan(0.5);
+
+      // (c) THE CLOCK. Everything the row does not explain by the read is
+      //     candidates, at one rate for the whole house.
+      const implied = ((effortMinutes('forgotten-word', tier) - read) * 60)
+        / STUDY_CLOCK.candidateSeconds;
+      candidates.push(implied);
+      expect(Math.abs(implied - STUDY_CLOCK.candidatesByTier[tier - 1]!),
+        `study t${tier} implies ${implied.toFixed(2)} candidates against a`
+        + ` published ${STUDY_CLOCK.candidatesByTier[tier - 1]}`).toBeLessThan(0.2);
+      // She can never be modelled as needing more tries than the room gives her
+      // (round 14 moved the difficulty OFF the guess allowance; this is the
+      // assertion that stops a later re-clock quietly putting it back).
+      expect(implied, `study t${tier} models ${implied.toFixed(2)} of`
+        + ` ${maxGuessesForLevel(tier)} guesses`).toBeLessThanOrEqual(maxGuessesForLevel(tier));
+
+      // (d) THE CRIB, which is the one lever pushing the other way: letters
+      //     standing cut the lexical field she has to search.
+      expect(median(group.map((p) => cribIndices(p as unknown as ForgottenWordPuzzle).length)),
+        `study t${tier} crib`)
+        .toBe([0, 1, 2][tier - 1]);
+    }
+    // A rarer headword may never imply a faster solve — round 26's rule, here.
+    expect(ranks[1]!, `t2 rank ${ranks[1]} vs t1 ${ranks[0]}`).toBeGreaterThan(ranks[0]!);
+    expect(ranks[2]!, `t3 rank ${ranks[2]} vs t2 ${ranks[1]}`).toBeGreaterThan(ranks[1]!);
+    expect(candidates[1]!).toBeGreaterThan(candidates[0]!);
+    expect(candidates[2]!).toBeGreaterThan(candidates[1]!);
+    expect(STUDY_CLOCK.candidateSeconds)
+      .toBeGreaterThanOrEqual(STUDY_CLOCK.candidateBandSeconds[0]);
+    expect(STUDY_CLOCK.candidateSeconds)
+      .toBeLessThanOrEqual(STUDY_CLOCK.candidateBandSeconds[1]);
+    // THE ONE PAYOUT THIS ROUND MOVES, pinned with the edge it sits above so a
+    // later re-derivation can see what it is crossing (round 46's rule).
+    expect(solvePayout('forgotten-word', 3)).toBe(2);
+    expect(effortMinutes('forgotten-word', 3)).toBeGreaterThan(1.5 / SOLVE_WAGE.stepsPerMinute);
+    // …and the room stays short enough not to owe a ladder it does not have.
+    expect(effortMinutes('forgotten-word', 3)).toBeLessThan(LADDER_MINUTES);
+  });
+
+  /**
+   * ═══ ROUND 50 — THE LINEN CLOSET, AND THE UNIT IT IS CLOCKED IN ═══════════
+   *
+   * Round 29 gave this room a hem — a fifth clued answer and the whole of its
+   * checking mechanic — and `docs/LINEN_CLOSET.md` records that
+   * `ROOM_EFFORT.crossword` was left untouched. The room's unit is the CLUE and
+   * not the square (the owner's ruling: it is not a crossword), and in that
+   * unit the shipped row ran backwards at tier 2: 18.8 s a clue at tier 1 and
+   * 18.0 at tier 2, on a board with one more clue, a longer answer and a rarer
+   * word in it.
+   */
+  it('the Linen Closet is clocked per CLUED ANSWER, and the rate climbs', () => {
+    const perAnswer: number[] = [];
+    const ranks: number[] = [];
+    for (const tier of TIERS) {
+      const group = closets.filter((p) => p.tier === tier);
+      expect(group.length, `closet tier ${tier} pool`).toBeGreaterThan(10);
+      // (a) THE CONTENT GRADE — entries plus the hem, which is clued in the
+      //     list with the rest and is therefore one more answer to get.
+      const clued = median(group.map((p) => p.entries.length + (p.spine ? 1 : 0)));
+      expect(clued, `closet t${tier} clued answers`).toBe([4, 5, 5][tier - 1]);
+      // …and the tier's answers really are rarer, which is the only lever
+      // tier 3 has left once the entry count stops growing.
+      const rank = median(group.flatMap((p) =>
+        [...p.entries.map((e) => e.answer), p.spine.answer].map(corpusRank)));
+      ranks.push(rank);
+      // (b) THE CLOCK, in the room's own unit and inside the tier's band.
+      const seconds = (effortMinutes('crossword', tier) * 60) / clued;
+      perAnswer.push(seconds);
+      const [lo, hi] = CLOSET_CLOCK.answerBandSeconds[tier - 1]!;
+      expect(seconds, `closet t${tier} implies ${seconds.toFixed(1)}s a clued`
+        + ` answer against a band of ${lo}-${hi}`).toBeGreaterThanOrEqual(lo);
+      expect(seconds).toBeLessThanOrEqual(hi);
+    }
+    // THE ASSERTION THE SHIPPED ROW FAILED: a later board may never imply a
+    // faster clue. 18.75 → 21.0 → 27.0, from 18.75 → 18.0 → 24.0.
+    expect(perAnswer[1]!, `t2 ${perAnswer[1]!.toFixed(1)}s a clue vs t1`
+      + ` ${perAnswer[0]!.toFixed(1)}s`).toBeGreaterThan(perAnswer[0]!);
+    expect(perAnswer[2]!, `t3 ${perAnswer[2]!.toFixed(1)}s a clue vs t2`
+      + ` ${perAnswer[1]!.toFixed(1)}s`).toBeGreaterThan(perAnswer[1]!);
+    expect(ranks[2]!, `t3 answers rank ${ranks[2]} vs t1 ${ranks[0]}`)
+      .toBeGreaterThan(ranks[0]!);
+    // …and the room is still the short one: nothing here made it an anchor.
+    expect(ROOM_SIZE.crossword).toBe('micro');
+    expect(effortMinutes('crossword', 3)).toBeLessThan(LADDER_MINUTES);
   });
 });
 

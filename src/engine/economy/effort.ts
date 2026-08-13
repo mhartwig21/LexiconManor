@@ -41,10 +41,25 @@
  *                              letters and turning at least once; 6 of 21 at
  *                              tier 2 with the centre tile required; 6 of 22
  *                              at tier 3, unchanged. See the row itself.
- *   crossword (Linen Closet)   4×4, 3 entries, 11 letters — ~75 s.
- *   cipher (the Darkroom)      11 of 14 distinct letters to deduce over 26.
- *   word-web (the Library)     16 tiles, 4 groups, 1 ambiguous, 1 herring.
- *   forgotten-word (the Study)  read three authored definitions, name a word.
+ *   crossword (Linen Closet)   ROUND 50, DERIVED — the room is CLUE-led (the
+ *                              owner's ruling, docs/LINEN_CLOSET.md), so its
+ *                              unit is the clued answer and not the square:
+ *                              4 / 5 / 5 of them (entries + the hem), against
+ *                              answers whose median corpus rank runs
+ *                              5,100 / 8,854 / 19,461. See the row.
+ *   cipher (the Darkroom)      ROUND 46 — opening(crib class) + letters ×
+ *                              12.5 s (`CIPHER_CLOCK`). See the row.
+ *   word-web (the Library)     ROUND 50, DERIVED — 16 tiles, 4 groups, and the
+ *                              tier lever is which of the four you can read
+ *                              straight off: a median 3 / 2 / 1 PLAIN
+ *                              categories by tier (`WEB_CLOCK`). See the row.
+ *   forgotten-word (the Study)  ROUND 50, DERIVED — read two registers, then
+ *                              produce candidates against a length, a crib and
+ *                              a meaning. The tier moves how many candidates
+ *                              that takes, because the headword's median corpus
+ *                              rank runs 25,286 / 81,158 / 219,760 and 15 of
+ *                              the 43 tier-3 words are absent from a
+ *                              333,333-word corpus outright (`STUDY_CLOCK`).
  *   hive (the Conservatory)    Full Bloom is 70% of totalPoints, which needs
  *                              32 of the median 70 valid words EVEN PLAYING
  *                              PERFECTLY (highest-scoring first; worst order
@@ -141,9 +156,145 @@ export const ROOM_EFFORT: Record<RoomPuzzleKind, EffortByTier> = {
    * pool; `tests/puzzles/twistle-boards.test.ts` gates the board itself.
    */
   'twistle': [1.25, 1.5, 2.5],
-  'word-web': [4.5, 5.0, 6.0],
+  /**
+   * ROUND 50 — THE LIBRARY, AND THE MIDDLE TIER WAS OFF ITS OWN LINE.
+   *
+   * `[4.5, 5.0, 6.0]` had no derivation under it: one line in the header,
+   * *"16 tiles, 4 groups, 1 ambiguous, 1 herring"*, with no tier in it. That is
+   * the state `ROOM_EFFORT.cipher` was in before round 46.
+   *
+   * ═══ WHAT A TIER ACTUALLY CHANGES ABOUT A WORD WEB ════════════════════════
+   *
+   * Not the contested tiles. `ambiguousWords` is the room's HEADLINE figure
+   * (BENCHMARKS §2, round 30) and it is a median **2 at every tier** on the
+   * shipped pool — so does `herrings` — which means the number the room is
+   * GRADED on is not the number its CLOCK can be built out of. What does move,
+   * monotonically, is how many of the four threads read straight off the tiles:
+   * `TIER_SPECS.minPlain` is 2 / 1 / 1 and the shipped pool carries a median
+   * **3 / 2 / 1 PLAIN categories** by tier (`isPlainish` in
+   * content/generate-wordweb.ts — a semantic, trivia or compound thread, solved
+   * by thinking in English rather than by performing an operation on the
+   * letters). The other 1 / 2 / 3 are WORKED: an anagram, a silent letter, a
+   * doubled pair — invisible until you do something to the word.
+   *
+   * So the board is four categories of two kinds, and the row is:
+   *
+   *     minutes = (plain × WEB_CLOCK.plainSeconds
+   *                + worked × WEB_CLOCK.workedSeconds) / 60
+   *
+   * ═══ WHAT IS DERIVED HERE, AND WHAT IS ONLY CHECKED — SAID PLAINLY ════════
+   *
+   * The two RATES are read off this row's own two ends, which round 22 set and
+   * never derived. That half is circular and is not claimed as a derivation:
+   * what it establishes is only that the ends imply a **plausible** pair — a
+   * plain category just under a minute, a worked one just under one and three
+   * quarters — both inside the bands `WEB_CLOCK` publishes.
+   *
+   * THE CLAIM THIS ROUND ACTUALLY MAKES IS THE OVER-DETERMINATION, and it is a
+   * gate that can go red. With plain counts of exactly 3 / 2 / 1 the middle
+   * tier is not free: two rates and three tiers leave one degree of it, and the
+   * arithmetic forces **t2 = (t1 + t3) / 2 = 5.25**. The shipped row said 5.00.
+   * A tier-2 board carries one more worked category than a tier-1 board and one
+   * fewer than a tier-3 board; it cannot cost less than the midpoint of the two.
+   * `tests/content.test.ts` re-reads the plain counts off the shipped JSON
+   * every run — it lives there rather than in `economy-effort.test.ts` because
+   * it needs the generator's own `isPlainish` and that import costs 24 seconds
+   * of module evaluation, which content.test.ts is already paying — so a pool
+   * regeneration that changes the mix fails instead of leaving this row
+   * describing yesterday's shelf.
+   *
+   * WHAT IT COSTS: **no payout moves** (0.45 × 5.25 = 2.36, the +2 the room
+   * already paid) and the wage falls 0.400 → 0.381 moves a minute at tier 2,
+   * which is interior to all four of 4.10h's populations.
+   */
+  'word-web': [4.5, 5.25, 6.0],
   'hive': [14.0, 11.0, 7.0],
-  'forgotten-word': [1.5, 1.5, 1.5],
+  /**
+   * ROUND 50 — THE STUDY, WHICH WAS FLAT ACROSS THREE TIERS THAT ARE NOT.
+   *
+   * `[1.5, 1.5, 1.5]` was the only row in this table that claimed a tier costs
+   * NOTHING, and its whole account was one line in the header — *"read three
+   * authored definitions, name a word"*. Measured against the room the
+   * generator actually ships, the three tiers differ in four ways at once, and
+   * every one of them is a fact about the clock:
+   *
+   *   | | t1 | t2 | t3 |
+   *   |---|---|---|---|
+   *   | headword's median corpus rank | 25,286 | 81,158 | **219,760** |
+   *   | absent from a 333,333-word corpus | 0 of 34 | 4 of 36 | **15 of 43** |
+   *   | headline register | poetic | poetic | **riddle** |
+   *   | letters standing (`cribIndices`) | 0 | 1 | 2 |
+   *   | guesses (`maxGuessesForLevel`) | 6 | 5 | 5 |
+   *
+   * A flat row says a word fifteen of whose forty-three instances do not occur
+   * in a third of a million words of English costs the same to reach as one at
+   * rank 25,000. It does not.
+   *
+   * ═══ THE MODEL: A READ, AND THEN CANDIDATES ═══════════════════════════════
+   *
+   *     minutes = registers / STUDY_CLOCK.readWordsPerMinute
+   *               + candidates(tier) × STUDY_CLOCK.candidateSeconds / 60
+   *
+   * The READ is measured off the pool: the headline register plus the free
+   * plain gloss run a median 25 / 27 / 29 words, which is 10 / 11 / 12 seconds
+   * and is NOT where the tier lives.
+   *
+   * The CANDIDATE RATE does not move either, and that is deliberate — it is the
+   * Darkroom's cascade argument in a different room (*the fill is the fill*).
+   * Producing one word that fits the letter count, the standing letters and the
+   * meaning, submitting it, and reading the closeness that comes back is the
+   * same act at every storey. What the tier changes is HOW MANY of them the
+   * median solve takes, and the pool says why:
+   *
+   *   tier 1 — every entry tagged `common`, all 34 inside ENABLE, median rank
+   *            25,286, and NO crib because none is needed. The gloss names a
+   *            word she owns. **1.5 candidates**: 0.17 + 1.25 = 1.42 →
+   *            **1.5 min** at the table's own quarter-minute granularity,
+   *            which is where the flat row was already right.
+   *   tier 2 — median rank 81,158, three times deeper, four of the thirty-six
+   *            outside the corpus entirely, one letter standing. She has met
+   *            the word and does not have it to hand. **2.5 candidates**:
+   *            0.18 + 2.08 = 2.26 → **2.25 min**.
+   *   tier 3 — median rank 219,760, and **fifteen of forty-three do not occur
+   *            in the corpus at all** (SMEUSE, SELCOUTH, APRICITY — round 14's
+   *            own list). The headline is the riddle. There is nothing to
+   *            retrieve, so she builds the word out of the gloss, the length
+   *            and two standing letters, and she uses most of the rope she is
+   *            given. **4 candidates of the 5 allowed**: 0.20 + 3.33 = 3.53 →
+   *            **3.5 min**.
+   *
+   * The two crib letters are the one lever pushing the other way and they are
+   * measured rather than waved at: they cut the lexical field — ENABLE words of
+   * the right length with those letters standing — from a median 856 at tier 2
+   * to **52** at tier 3. That is what stops the tier-3 row running away, and it
+   * is why the room is fair; it is not enough to make it as quick as tier 1.
+   *
+   * ═══ WHAT IT COSTS, AND THE ONE PAYOUT THAT MOVES ═════════════════════════
+   *
+   * **A tier-3 Study pays +2 rather than +1** (0.45 × 3.5 = 1.58). It is the
+   * only payout `ROOM_EFFORT` moves this round and it is an OUTPUT of the
+   * derivation, not the reason for it. Two things about it are worth writing
+   * down rather than discovering later:
+   *
+   *   - **THE ROUNDING EDGE IS AT 3.34 MINUTES** and this row sits 0.16 above
+   *     it. `candidateSeconds` is 50 and its published band is 40–60; anywhere
+   *     from 48 s up pays +2 and anywhere below pays +1. A later
+   *     re-derivation that lands under the edge has to say so and re-publish.
+   *   - **THE STUDY ONLY EVER SHIPS AT TIER 3.** `deck.ts` gives it
+   *     `tierRange: [3, 3]` (the 2026-08 owner playtest: *"I reached the
+   *     Forgotten Word on my FIRST DAY"*), so tiers 1 and 2 of this row are
+   *     priced, published in 4.10h's wage populations, and never dealt. They
+   *     are derived here anyway because a table with three tiers must be honest
+   *     at all three, and because a deck edit that lowers the Study must not
+   *     find two invented numbers waiting for it.
+   *
+   * It stays under `LADDER_MINUTES` (4), so the Study does not join the
+   * no-ladder debt the Darkroom carries, and the draft card's own duration
+   * clause goes from *"a minute or two"* to *"a few minutes"* — which is a RULE
+   * OF PLAY (how long the room asks for), the half of the owner's 13 Aug ruling
+   * that is always stated.
+   */
+  'forgotten-word': [1.5, 2.25, 3.5],
   /**
    * ROUND 27 — THE COUNTING HOUSE, RE-CLOCKED BECAUSE ITS BOARDS WERE REGRADED.
    *
@@ -315,8 +466,144 @@ export const ROOM_EFFORT: Record<RoomPuzzleKind, EffortByTier> = {
    * print has developed, which is A4's seam and a room's own change.
    */
   'cipher': [3.0, 4.5, 5.5],
-  'crossword': [1.25, 1.5, 2.0],
+  /**
+   * ROUND 50 — THE LINEN CLOSET, AND THE UNIT IT HAS TO BE CLOCKED IN.
+   *
+   * `[1.25, 1.5, 2.0]` was one header line — *"4×4, 3 entries, 11 letters —
+   * ~75 s"* — written before round 29 gave the room a hem, and
+   * `docs/LINEN_CLOSET.md` records in its own cost list that
+   * *"`ROOM_EFFORT.crossword` is untouched"*. A room grew a second clued answer
+   * and a whole checking mechanic and its clock did not move.
+   *
+   * ═══ THE UNIT IS THE CLUED ANSWER, NOT THE SQUARE ═════════════════════════
+   *
+   * This matters more than the numbers, because the obvious measurement is
+   * wrong. Counted per SQUARE the shipped row runs 9.4 / 6.9 / 8.6 seconds and
+   * reads as a defect — a bigger, later board implying a faster square, which
+   * is exactly what round 26 caught in the Gallery and round 27 in the Counting
+   * House. It is not that defect. **This room is not a crossword** (the owner's
+   * ruling, LINEN_CLOSET.md: *"build it around its clues — the thing it is
+   * actually good at — rather than around crossings"*), and a sparse grid's
+   * squares are not its work: three quarters of them have no crossing, so a
+   * square is typed, not solved. The work is the CLUE, and there are
+   * `entries + 1` of them because the hem is clued in the list with the rest.
+   *
+   * Counted in the room's own unit the shipped row runs **18.8 / 18.0 / 24.0
+   * seconds a clued answer — and the middle one still runs backwards**, on a
+   * tier that asks one more clue, a longer answer and a rarer word than the one
+   * below it. That is the real finding, and it survives the unit change.
+   *
+   *     minutes = cluedAnswers × CLOSET_CLOCK.answerSecondsByTier / 60
+   *
+   * Measured off `content/generated/crossword.json`, and every fact here is a
+   * median over the shipped boards:
+   *
+   *   tier 1 — 4×4, **3 entries + the hem = 4 clued answers**, 3-letter
+   *            answers at corpus rank 5,100, clues of 4 words. 4 × 18.5 s =
+   *            74 s = 1.23 → **1.25 min — UNCHANGED**, which is the check on
+   *            the model rather than a result of it.
+   *   tier 2 — 5×5, **4 + hem = 5**, 4-letter answers at rank 8,854, clues
+   *            still 4 words. One more clue and one more letter in each
+   *            answer: 5 × 22 s = 110 s = 1.83 → **1.75 min** (was 1.5).
+   *   tier 3 — 5×5, **5 clued answers** again, but the answers are **3.8×
+   *            rarer than tier 1's** (median rank 19,461) and the clues are a
+   *            word longer (5 words, 29 characters against 22) — the room's
+   *            only remaining lever, since it does not get another entry.
+   *            5 × 28 s = 140 s = 2.33 → **2.25 min** (was 2.0).
+   *
+   * The per-answer figures are 18.75 / 21.0 / 27.0 s and they climb, which is
+   * the invariant round 26 wrote down: a harder board may never imply a faster
+   * unit of its own work. Each sits inside `CLOSET_CLOCK`'s published band for
+   * its tier, and the bands are the NYT Mini's 2–6 s a square (BENCHMARKS §10)
+   * scaled by the thing that separates the two rooms — a Mini answer is
+   * confirmed by its crossings and one of ours is confirmed only by the hem.
+   *
+   * **No payout moves**: 0.45 × 1.75 and 0.45 × 2.25 both round to the +1 the
+   * cozy floor was already paying. What moves is the wage (0.667 → 0.571 at
+   * tier 2, 0.500 → 0.444 at tier 3, both interior to 4.10h), the clock, and
+   * the draft card's tier-3 duration clause — *"a few minutes"* rather than
+   * *"a minute or two"*, which is truer and is a rule of play.
+   */
+  'crossword': [1.25, 1.75, 2.25],
 };
+
+/**
+ * ── THE LIBRARY'S TWO RATES, NAMED SO THE ROW CAN BE RE-DERIVED ────────────
+ *
+ * A Word Web board is four categories of two kinds, and the tier chooses the
+ * mix (`TIER_SPECS.minPlain` 2/1/1; the shipped pool's medians 3/2/1). See the
+ * row for what is derived here and what is only checked.
+ */
+export const WEB_CLOCK = {
+  /**
+   * Seconds for a category you can read straight off the tiles — semantic,
+   * trivia or compound (`isPlainish`). It is the board's way in, and the
+   * player's own verb is the same one Connections asks for: name the thread.
+   */
+  plainSeconds: 56.25,
+  /**
+   * …and for one that has to be PERFORMED before it is visible: an anagram, a
+   * silent letter, a doubled pair. BENCHMARKS §2's fairness note is the reason
+   * these are not the same number — a worked thread is a mechanic you have to
+   * find, not a list you have to recognise.
+   */
+  workedSeconds: 101.25,
+  /** The bands the two rates must sit inside (seconds). */
+  plainBandSeconds: [45, 70] as readonly [number, number],
+  workedBandSeconds: [85, 120] as readonly [number, number],
+} as const;
+
+/**
+ * ── THE STUDY'S TWO TERMS, NAMED SO THE ROW CAN BE RE-DERIVED ──────────────
+ *
+ * `ROOM_EFFORT['forgotten-word']` is arithmetic over these and the shipped
+ * pool's own register lengths, corpus ranks and crib counts (see the row).
+ * `tests/economy-effort.test.ts` inverts the row through them every run.
+ */
+export const STUDY_CLOCK = {
+  /**
+   * Reading rate for the two registers the room gives away free — the headline
+   * (poetic at tiers 1–2, the riddle at tier 3) and the plain gloss under it.
+   * Deliberately slow for prose: these are the best-written sentences in the
+   * game and they are read as clues, not skimmed.
+   */
+  readWordsPerMinute: 150,
+  /**
+   * Seconds to produce ONE candidate — a word that fits the letter count, the
+   * letters already standing and the meaning — submit it, and read the
+   * closeness that comes back. **Constant across tiers on purpose**, exactly as
+   * `CIPHER_CLOCK.cascadeSeconds` is: the act is the same act at every storey,
+   * and the tier changes how many of them the median solve takes. It sits above
+   * the Conservatory's ~20–30 s find because a hive word is spotted on seven
+   * letters and a Study word is retrieved against a meaning.
+   */
+  candidateSeconds: 50,
+  /** The band that rate must sit inside. The row takes the middle. */
+  candidateBandSeconds: [40, 60] as readonly [number, number],
+  /**
+   * Candidates the median solve takes, by tier — the only term that moves, and
+   * the one the pool's corpus ranks argue for. Bounded above by the room's own
+   * rope (`maxGuessesForLevel`, 6 / 5 / 5).
+   */
+  candidatesByTier: [1.5, 2.5, 4.0] as readonly number[],
+} as const;
+
+/**
+ * ── THE LINEN CLOSET'S RATE, NAMED SO THE ROW CAN BE RE-DERIVED ────────────
+ *
+ * Seconds for one CLUED ANSWER (an entry, or the hem, which is clued in the
+ * list with the rest). The room's unit is the clue and never the square — see
+ * the row, and `docs/LINEN_CLOSET.md` for the ruling that makes it so.
+ */
+export const CLOSET_CLOCK = {
+  answerSecondsByTier: [18.5, 22, 28] as readonly number[],
+  /** Per-tier bands; the row takes the middle of each. */
+  answerBandSeconds: [
+    [15, 22],   // 3-letter answers, rank ~5k, 4-word clues
+    [18, 26],   // 4-letter answers, rank ~9k
+    [24, 32],   // 4-letter answers at rank ~19k, clues a word longer
+  ] as readonly (readonly [number, number])[],
+} as const;
 
 /**
  * ── THE DARKROOM'S TWO TERMS, NAMED SO THE ROW CAN BE RE-DERIVED ───────────

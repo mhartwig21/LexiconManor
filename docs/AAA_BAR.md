@@ -793,6 +793,20 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     A second consequence is worth recording because round 22 had quietly retired it: the
     scripted first-morning pot is load-bearing again. Day 1 WITHOUT it measures **9.92
     minutes**, under the floor, exactly as the round-5 audit originally found.*
+    ***ROUND 50 — AND THAT GATE WAS RETIRED, NOT WIDENED, BECAUSE IT HAD STOPPED
+    COMPUTING WHAT IT WAS NAMED FOR.*** The assertion under the sentence above read
+    `bare < 13` beneath a note claiming the bare evening *"sits in the LOWER HALF of the
+    10–15 window"* — which is ≤ 12.5. At round-49 HEAD it measures **12.991**: RED against
+    its own description, and passing its own bound by **half a second**. Both round-48
+    failures in one line — a name that does not match the computation, and a
+    `ceil(measured)` level with a hundredth of the headroom one move a day buys. It is
+    replaced by the claim the note actually argues, which can fail in both directions:
+    **`FIRST_MORNING_POT` is ONE MOVE and what that move buys is measured — 1.14 minutes
+    of first evening**, against round 44's independent measurement of a move a day at 1.04
+    rooms and ~1.5 minutes. Gated **0.7–2.5 minutes**: red if the pot ever becomes
+    decorative, red if day 1 quietly becomes a different evening from the other
+    twenty-nine. The potted first evening keeps its 10–15 window unmoved (measured
+    **14.21**).
     *Round 25 — THIS PARAGRAPH WAS THE STALEST PROSE IN THE FILE, and it disagreed with
     round 24's own table 40 lines above it. It read "measured median ~11.6, p90 ~21.5"
     and "5–8 rooms", both of which were round-5 figures: the median has since gone
@@ -1017,9 +1031,31 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
       **13–14** across the four seeds (enforced 11–19; 0% never inside 45 evenings),
       the volume won at median **15–15.5** (enforced 12–20), **100% inside 28
       evenings** (enforced >85%), 0% inside the first week, and he stands at the
-      door on day 1 in **0.5–1.5%** of campaigns (enforced <8%). His evening runs
-      **17.1 early → 21.1 late** at round-42 HEAD (14.9–15.0 → 18.3–18.8 before), and
-      the band is re-published **14–20 → 14–22** with **the late p90 RETIRED**: it
+      door on day 1 in **0.5–1.5%** of campaigns (enforced <8%).
+      ***ROUND 50 — HIS ABSOLUTE WINDOW WAS `ceil(measured)` AND HAD ELEVEN SECONDS
+      UNDER IT.*** Round 42 published **14–22** off a measured 21.1 and four rounds put
+      minutes into the evening without anyone re-reading the line: at round-49 HEAD it
+      measures **21.824 against a ceiling of 22 — 0.176 minutes of headroom.** Round 48's
+      own rule condemns it (*a band's headroom must exceed the granularity of the lever
+      allowed to move it*; the only lever 4.10 permits here is the day's starting count,
+      whose smallest step round 44 measured at **1.5 minutes**), and it is the same class
+      as the five round 48 found, in a clause round 48 did not reach — it re-derived
+      4.10f/g's day-SHARES, not this absolute window. Round 50's re-clock of the Linen
+      Closet, the Library and the Study (`ROOM_EFFORT`) adds **0.185 min** and takes it
+      red. The band is re-published **14–22 → 14–24**, measured **22.009** = the
+      measurement plus one move a day, rounded up to the whole minute. *The re-clock is
+      not why the band moved; it is only what made a spent band visible.* The neighbouring
+      clause moved with it for the identical reason: *"the median is not the cap either,
+      with room to spare"* read `sessionMinutes − 5` (= 23) against 21.824, i.e. 1.18
+      minutes of "spare" — under the 1.5 one move buys — and is `sessionMinutes − 4`
+      (= 24) now, measured 22.009, 1.99 minutes of it. The CLAIM under both is unchanged:
+      his late evening is a fact about the game and not a reading of his appetite clock,
+      and the two-sided early-nights share below is what states the clock's real effect
+      (12.9%, gated 2–15%, unmoved in kind).
+      His evening runs
+      **17.1 early → 21.1 late** at round-42 HEAD (14.9–15.0 → 18.3–18.8 before; **17.7 →
+      22.0 at round 50**), and
+      the band was re-published **14–20 → 14–22** with **the late p90 RETIRED**: it
       measured 28.0 against his own 28-minute appetite, so it was reading the stopping
       rule rather than the game (`CLOCK_BAND`'s own lesson, applied to the quantity it is
       about). What is published in its place is the SHARE OF LATE EVENINGS HE ENDS EARLY
@@ -1312,6 +1348,39 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     4.62× → 3.78× → 2.60×**; **tier-1/2 minus the Counting House 4.89× → 3.91× → 3.20× →
     2.40×**; **tier-1/2 of two minutes or more, minus the Counting House, 1.75× → 1.43× →
     1.71× → 1.36×**.
+    ***ROUND 50 — THREE ROWS OF `ROOM_EFFORT` HAD NO DERIVATION UNDER THEM AND NOW DO;
+    NOT ONE OF THE FOUR SPREADS MOVES, AND THE FOURTH POPULATION GETS BIGGER AT THE SAME
+    RATIO.*** Round 46 said the Darkroom was *"the only row in the table with no
+    derivation behind it"* — it was the only row with no derivation AND a wrong shape.
+    Three more had a plausible shape and no derivation at all: the Library
+    (*"16 tiles, 4 groups, 1 ambiguous, 1 herring"*, with no tier in it), the Linen Closet
+    (*"4×4, 3 entries, 11 letters — ~75 s"*, written before round 29 gave the room a hem
+    and left the clock alone by its own admission) and the Study, which was **flat at 1.5
+    minutes across three tiers** whose headwords run a median corpus rank of 25,286 /
+    81,158 / **219,760**, fifteen of the forty-three tier-3 words being absent from a
+    333,333-word corpus outright. All three are derived in `docs/BENCHMARKS.md` — §2's
+    new clock, §10's new clock, and §12, **the Study's teardown, which did not exist**
+    (STATUS §7: *"if yours is missing, write it before you build"*; the Study's answer is
+    that it has NO NYT twin, said out loud rather than left for a later round to assume).
+    Rows: `word-web` **[4.5, 5.25, 6.0]**, `crossword` **[1.25, 1.75, 2.25]**,
+    `forgotten-word` **[1.5, 2.25, 3.5]**.
+    **All four spreads are unmoved — 4.53× / 2.60× / 2.40× / 1.36× — because every wage
+    that moved is interior to every population it is in.** What DOES move is the fourth
+    population's MEMBERSHIP, **7 pairs → 8**: `forgotten-word t2` crosses the two-minute
+    line the filter is named for and joins at 0.444, between the same two ends
+    (`sudoku t1` 0.455 over `cipher t1` 0.333). A population that grew at the same ratio
+    is the honest direction — more of the house sits in the band where a minute is worth a
+    minute — and it is published here because the gate asserts that membership BY NAME and
+    would otherwise let an eight-pair number be read as the seven-pair one.
+    **ONE PAYOUT MOVES: a tier-3 Study pays +2 rather than +1** (0.45 × 3.5 = 1.58), the
+    first payout `ROOM_EFFORT` has moved since round 27. It is an output of the derivation
+    rather than its purpose, and the rounding edge it sits 0.16 minutes above is published
+    in the row so a later re-derivation can see what it would be crossing. Two campaign
+    bands moved in the same round and NEITHER because of that payout — both were
+    `ceil(measured)` ceilings with less headroom than one move a day buys, and both are
+    re-derived above (4.10f's skilled window **14–22 → 14–24**, and 4.10b's
+    bare-first-evening `< 13` RETIRED in favour of what the welcome pot is measurably
+    worth).
     ***ROUND 46 — THE ONE THAT ROSE HAS BEEN PAID BACK, AND THE COMMISSION THAT WAS
     SUPPOSED TO PAY IT IS VOID.*** The fourth population **1.71× → 1.36×**, under the
     1.43× it stood at before round 42 collapsed the unit. **Both ends of that ratio were

@@ -127,6 +127,45 @@ day-4 field **9 → 208**, first ten-word shortlist **day 4 → 9**), and **the 
 the Word tab prints how many words still fit the engravings she can READ, precomputed by
 `content/generate-volume.ts --plate` and verified in `content:verify`. A count, never a list.
 
+**AND THREE ROOMS HAD A CLOCK NOBODY HAD EVER DERIVED (round 50).** Round 46 wrote that the
+Darkroom was *"the only row in the effort table with no derivation behind it and no pin under
+it."* It was the only row with no derivation **and a wrong shape**. Three more had a plausible
+shape and nothing under it, and one of them was FLAT — the Study was clocked at 1.5 minutes at
+every tier, across three tiers whose headwords run a median corpus rank of **25,286 / 81,158 /
+219,760** and **fifteen of whose forty-three tier-3 words do not occur in a third of a million
+words of English**. Full account in `docs/THE_CLIMB.md` §1h.
+
+- **`forgotten-word` [1.5, 1.5, 1.5] → [1.5, 2.25, 3.5]**, and **the Study's teardown did not
+  exist** — §7 of this file has said *"if yours is missing, write it before you build"* for four
+  rounds. `docs/BENCHMARKS.md` §12 is it, and its first finding is the one `LINEN_CLOSET.md`
+  told us to make explicit: **this room has NO NYT twin.** Wordle bounds it and is not it —
+  Wordle restricts its answers to ordinary vocabulary *because* letter feedback alone cannot
+  make a rare word fair; the Study does the opposite and pays for it in a free gloss and a crib.
+- **`crossword` [1.25, 1.5, 2.0] → [1.25, 1.75, 2.25]**. Round 29 gave the room a hem and
+  `docs/LINEN_CLOSET.md` records in its own cost list that *"`ROOM_EFFORT.crossword` is
+  untouched"*. **The unit is the finding**: per SQUARE the row read 9.4 / 6.9 / 8.6 s and looked
+  like round 26's defect, but this room is not a crossword and a sparse grid's squares are typed
+  rather than solved. Per CLUED ANSWER — the room's own unit — it read 18.8 / **18.0** / 24.0 s,
+  and still ran backwards at tier 2.
+- **`word-web` [4.5, 5.0, 6.0] → [4.5, 5.25, 6.0]**, and the rule underneath it is the round's
+  real product: **a room's difficulty GRADE and its CLOCK are not the same measurement.** The
+  Library's headline figure is contested tiles and it is a median 2 at EVERY tier by design, so
+  a clock built on the graded number could not have had a tier in it. The tier lever is duller
+  and real — plain categories 3 / 2 / 1 — and with counts like that the middle tier is forced to
+  the mean of the ends, which the shipped row missed by a quarter of a minute.
+- **ONE PAYOUT MOVES — a tier-3 Study pays +2** — the first `ROOM_EFFORT` has moved since round
+  27, an output rather than an aim, with the rounding edge it sits 0.16 minutes above published
+  in the row. **No wage spread moves** (4.53× / 2.60× / 2.40× / 1.36×) and **the game did not
+  get longer**: the decent evening is 14.53 → 14.61 on the suite's fixture and flat or shorter
+  across its four seeds.
+- **TWO `ceil(measured)` BANDS FELL OUT OF IT, and neither was broken by the content.** 4.10f's
+  skilled evening ceiling had **eleven seconds** of headroom (21.824 against 22) and 4.10b's
+  bare first evening had **half a second** (12.991 against 13) — and that one was already RED
+  against its own note, which claims *"the lower half of the 10–15 window"* (≤ 12.5). Round 48's
+  rule condemns both (headroom must exceed one move a day, 1.5 min); the first is re-published
+  **14–24** and the second is RETIRED in favour of what the welcome pot is measurably worth
+  (1.14 minutes of first evening, gated two-sided).
+
 **AND ROUND 48 WAS A GATE-INTEGRITY ROUND: three gates could not do their job.** An
 adversarial verifier refuted round 44's evidence and every finding held up when re-derived.
 
@@ -264,7 +303,7 @@ Rounds of ultracode subagents. **Critique and verification fan out in parallel; 
 STRICTLY SEQUENTIAL** — parallel writers in one checkout lost ten agents twice. Each builder owns
 distinct files, runs every gate, and commits its own work.
 
-Every builder runs: `tsc --noEmit` · `vitest run` (**1,480** baseline as of round 49) ·
+Every builder runs: `tsc --noEmit` · `vitest run` (**1,483** baseline as of round 50) ·
 `content:verify` · `lint:clearance` · `build` · `gate:glass` (0 findings at both sizes) ·
 `test:prices` · `gate:attribution` (both, and both `--prove` halves).
 
@@ -302,7 +341,9 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
    the word room's card reverts to the round-45 face once the day's engraving is filed — the
    named next lever is printing `decipherYield(tier)` (1/2/3 sealed pages made out, unvalved,
    on every solve), which needs a second live predicate and a second clause on a stake line that
-   already wraps at 375×667; **(b)** the Darkroom is over `LADDER_MINUTES` at tiers 2 and 3 with
+   already wraps at 375×667 — **(a) IS DEAD: the owner deleted the page clause on 13 Aug and
+   round 49 moved the burden to the moment of reward, so a round that revives it in any form is
+   relitigating a ruling**; **(b)** the Darkroom is over `LADDER_MINUTES` at tiers 2 and 3 with
    no rung to pay — its adapter emits one progress event in the whole room — pinned as a bounded
    debt in `tests/economy-effort.test.ts`; **(c)** 13 of 44 tier-2 cipher boards carry no crib
    word at all, because `tierOf` is two gates and a remainder (BENCHMARKS §11).
@@ -314,6 +355,12 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
 4. **Reduced motion lost a quarter of its dusk**, unpublished — gone by ~906ms.
 5. **The Library** (median 2 contested tiles against 2–4) and **the Darkroom** — the two rooms that
    do not clear their benchmark.
+   - **AND THE STUDY IS THE ROOM NOBODY HAS EVER SEEN PLAYED (named round 50, BENCHMARKS §12).**
+     It is `tierRange: [3, 3]`, so it sits on rows 5–6 behind the padlocks, and **no blind tester
+     in `docs/COMPREHENSION.md` has ever reached it** — there is not one finding about it in that
+     file. Its clock is derived now and its teardown exists; what nothing in this repo can tell
+     you is whether a stranger solves an archaic word off a riddle with two letters standing.
+     That is a cold-read question, and the next cold read should be told to climb.
    - **THE GALLERY'S STUDIES PAY NOW (round 44)** — a study hands back the move she spent walking
      in, once a board, and the clause that says so is on the never-hidden rule line. The finding
      that made three rounds of copy fail is worth more than the mechanic: **the only sentence
@@ -357,8 +404,11 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
 - `docs/COMPREHENSION.md` — the blind-play test. The most valuable evidence in the repo.
 - `docs/LINEN_CLOSET.md`, `docs/ROOM_CHANNELS.md` — owner rulings on those two designs.
 - `docs/BENCHMARKS.md` — teardowns of Spelling Bee, Connections, Wordle, the Mini, the Acrostic,
-  Strands, NYT Sudoku, Blue Prince, Hades. **Two rooms were being judged against teardowns that did
-  not exist in this file; if yours is missing, write it before you build.**
+  Strands, NYT Sudoku, the Cryptoquote, Blue Prince, Hades — **and, since round 50, the Study
+  (§12), whose finding is that it has NO NYT twin and is bounded rather than benchmarked.**
+  **Rooms were being judged against teardowns that did not exist in this file; if yours is
+  missing, write it before you build.** All seven rooms now have one, and §2 and §10 gained the
+  CLOCKS they had never carried.
 - `docs/AAA_BAR.md` — ~130 criteria plus the mandatory live-interaction pass. **Round 42 added a
   block re-publishing every 4.10 band that moved, with its cause.**
 - `docs/REVIEW_AA.md` — the hostile 5/10 review that drove rounds 15–19. Largely answered.

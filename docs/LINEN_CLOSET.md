@@ -153,6 +153,16 @@ instead (32,979 of them), and both the generator and the suite re-measure it.
   running mean per tier at the mean the old pool shipped (8.40 / 13.30, and 14 at tier 3 against
   its old 16.10), because the hem's freshness rule pulls the search toward sparser layouts and,
   unconstrained, took tiers 1 and 2 to 9.00 and 14.50. `ROOM_EFFORT.crossword` is untouched.
+  - **ROUND 50 — AND THAT LAST SENTENCE WAS THE DEBT.** The room gained a fourth and a fifth
+    clued answer and its clock did not move, because it had never been derived at all (one
+    header line, *"4×4, 3 entries, 11 letters — ~75 s"*, written before the hem existed). It is
+    derived now, in the room's OWN unit — the CLUE, not the square, which is this ruling's whole
+    point — and `ROOM_EFFORT.crossword` is **[1.25, 1.75, 2.25]**: 4 / 5 / 5 clued answers at
+    18.75 / 21 / 27 seconds each. Tier 1 does not move, which is the check on the model rather
+    than a result of it. Per SQUARE the shipped row read 9.4 / 6.9 / 8.6 s and looked like a
+    defect; per CLUED ANSWER it read 18.8 / **18.0** / 24.0 and WAS one — a tier-2 board asking
+    one more clue, one more letter an answer and a rarer word than tier 1, at a faster rate.
+    No payout moves. Teardown in `docs/BENCHMARKS.md` §10.
 - **The 696 clues survived.** One was shortened — "Posy saves the crimson for letters that
   matter" (46 chars) rendered 40.7px in a 28px row at 375×667 — and the bank is now gated at 42
   characters, which is the longest sentence measured to fit on one line.

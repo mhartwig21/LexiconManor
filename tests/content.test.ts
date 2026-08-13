@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { findPath, startHive, submitHiveWord, startWordWeb, submitGroup } from '../src/engine/index';
+import { WEB_CLOCK, WEB_GROUPS, effortMinutes } from '../src/engine/economy/effort';
 import type { WordWebPuzzleEx } from '../src/engine/rooms/adapters/word-web';
 import type { ForgottenWordPuzzle, HivePuzzle, TwistlePuzzle, WordWebPuzzle } from '../src/engine/types';
 /**
@@ -536,6 +537,60 @@ describe('forgotten word bundle', () => {
       expect(p.definitions.riddle, p.id).toBeTruthy();
       expect(p.etymology, p.id).toBeTruthy();
       expect(p.usage, p.id).toContain('___');
+    }
+  });
+});
+
+
+const medianOf = (xs: number[]) => [...xs].sort((a, b) => a - b)[xs.length >> 1]!;
+
+describe("the Library's clock (round 50)", () => {
+  /**
+   * ═══ ROUND 50 — THE LIBRARY'S MIDDLE TIER WAS OFF ITS OWN LINE ════════════
+   *
+   * The row's two ends set the two rates (that half is circular and the row
+   * says so). What has teeth is the OVER-DETERMINATION: the shipped pool's
+   * plain-category counts are exactly 3 / 2 / 1, so two rates and three tiers
+   * leave one degree of freedom and the middle is forced to the mean of the
+   * ends. `[4.5, 5.0, 6.0]` breaks it by a quarter of a minute; `[4.5, 5.25,
+   * 6.0]` does not. If a pool regeneration moves the mix, this fires and the
+   * row is re-derived rather than the pin relaxed.
+   */
+  it('the Library is clocked on the categories she can read straight off', () => {
+    const plainByTier: number[] = [];
+    for (const tier of [1, 2, 3] as const) {
+      const group = wordWeb.filter((p) => p.tier === tier);
+      expect(group.length, `web tier ${tier} pool`).toBeGreaterThan(10);
+      // (a) THE CONTENT GRADE, off the generator's own predicate rather than a
+      //     transcription of it: how many of the four threads are a way IN.
+      const plain = medianOf(group.map((p) =>
+        p.groups.filter((g) => isPlainish(g.theme)).length));
+      plainByTier.push(plain);
+      // (b) THE CLOCK. The row is the two rates against that mix.
+      const worked = WEB_GROUPS - plain;
+      const modelled =
+        (plain * WEB_CLOCK.plainSeconds + worked * WEB_CLOCK.workedSeconds) / 60;
+      expect(Math.abs(effortMinutes('word-web', tier) - modelled),
+        `word-web t${tier}: ${plain} plain + ${worked} worked models`
+        + ` ${modelled.toFixed(2)} min against a row of ${effortMinutes('word-web', tier)}`)
+        .toBeLessThanOrEqual(0.13);
+      // …and the CONTESTED TILES, which are the room's headline figure and are
+      // deliberately NOT its clock: flat at every tier, so a row built on them
+      // could not have a tier in it at all (BENCHMARKS §2).
+      expect(medianOf(group.map((p) => (p.ambiguousWords ?? []).length)),
+        `web t${tier} contested tiles`).toBe(2);
+    }
+    // A way IN is scarcer the higher she climbs — the tier lever, measured.
+    expect(plainByTier, 'the plain-category mix moved — re-derive the row')
+      .toEqual([3, 2, 1]);
+    // A thread you have to PERFORM always costs more than one you can read.
+    expect(WEB_CLOCK.workedSeconds).toBeGreaterThan(WEB_CLOCK.plainSeconds);
+    for (const [rate, band] of [
+      [WEB_CLOCK.plainSeconds, WEB_CLOCK.plainBandSeconds],
+      [WEB_CLOCK.workedSeconds, WEB_CLOCK.workedBandSeconds],
+    ] as const) {
+      expect(rate).toBeGreaterThanOrEqual(band[0]);
+      expect(rate).toBeLessThanOrEqual(band[1]);
     }
   });
 });

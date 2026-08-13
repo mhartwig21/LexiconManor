@@ -587,6 +587,103 @@ read's question, and COMPREHENSION now names the question to ask her.
 
 ---
 
+## 1h. Three rooms had a clock nobody had ever derived — round 50
+
+**THE COMMISSION THIS ROUND WAS GIVEN, and the first honest thing to say about it is that
+half of it was already settled and the other half was already proved void.** The brief was
+round 42's: five of seven rooms pay +1 at tier 1, the draft ties on the axis that decides
+whether a choice is real, and a wage spread rose with it — *"what fixes both is MORE DISTINCT
+ROOM LENGTHS in `ROOM_EFFORT`."*
+
+- **The wage spread was paid in round 46** (1.71× → 1.36×, the Darkroom's row derived for the
+  first time), and it is FOUR of seven rooms at tier 1, not five (§1f).
+- **The dominance ratchet cannot be paid with room lengths, and round 46 proved it twice** —
+  an ORACLE forcing the widest payout spread the ceiling allows makes it WORSE (41.7/41.0% →
+  43.0/44.2%), and at tier 3 seven rooms are clamped into three integers, so ties are forced
+  by pigeonhole at *every possible value of `ROOM_EFFORT`*. That proof stands, this round did
+  not relitigate it, and **no later round should spend itself on room lengths for that
+  number.** The levers named there are the deck's plan spread and the payout CEILING.
+
+**What was still open, and it is the craft half, was that the table had rows with nothing
+under them.** Round 46 wrote that the Darkroom was *"the only row in the effort table with no
+derivation behind it and no pin under it."* That was true of the only row with no derivation
+**and a wrong shape**. Three more had a plausible shape and no derivation at all, and one of
+them was flat.
+
+### What was actually wrong with each, measured
+
+| room | row | what its whole account said | what the pool says |
+|---|---|---|---|
+| **the Library** | `[4.5, 5.0, 6.0]` | *"16 tiles, 4 groups, 1 ambiguous, 1 herring"* — no tier in it | the graded number (contested tiles) is **flat at 2** across tiers; the tier lever is **plain categories 3 / 2 / 1** |
+| **the Linen Closet** | `[1.25, 1.5, 2.0]` | *"4×4, 3 entries, 11 letters — ~75 s"*, written before the room had a hem | per CLUED ANSWER the row ran **18.8 / 18.0 / 24.0 s — backwards at tier 2** |
+| **the Study** | `[1.5, 1.5, 1.5]` | *"read three authored definitions, name a word"* | median corpus rank **25,286 / 81,158 / 219,760**, and **15 of 43** tier-3 words absent from a 333,333-word corpus |
+
+**THE STUDY IS THE ONE THAT MATTERS.** A flat row is a claim that a tier costs nothing, and it
+was made about a room whose three tiers differ in four ways at once — the headword's rarity,
+the register in the headline, the letters standing, and the rope. Fifteen of its forty-three
+tier-3 words do not occur in a third of a million words of English. That is not a 1.5-minute
+room, and nothing in the repo had ever said so because **the Study had no teardown at all** —
+`docs/STATUS.md` §7 has carried *"if yours is missing, write it before you build"* for four
+rounds, and round 46 wrote the Darkroom's and left this one. `docs/BENCHMARKS.md` §12 is it,
+and its first finding is the one `LINEN_CLOSET.md` told us to make explicit: **this room has NO
+NYT twin.** Wordle and the cryptic definition BOUND it and neither is it, and the difference is
+load-bearing — Wordle restricts its answers to ordinary vocabulary *because* letter feedback
+alone cannot make a rare word fair, and the Study does the opposite and pays for it in gloss
+and crib.
+
+### The rows, and the one payout that moves
+
+| room | was | now | model |
+|---|---|---|---|
+| `word-web` | 4.5 / 5.0 / 6.0 | **4.5 / 5.25 / 6.0** | plain × 56.25 s + worked × 101.25 s |
+| `crossword` | 1.25 / 1.5 / 2.0 | **1.25 / 1.75 / 2.25** | clued answers × 18.75 / 21 / 27 s |
+| `forgotten-word` | 1.5 / 1.5 / 1.5 | **1.5 / 2.25 / 3.5** | read + candidates × 50 s |
+
+**Two of the three tier-1 numbers did not move, and that is the check rather than the result.**
+The model reproduces the Linen Closet's 1.25 and the Study's 1.5 from content facts that had
+nothing to do with how those numbers were originally chosen.
+
+**A TIER-3 STUDY PAYS +2 RATHER THAN +1.** It is the only payout `ROOM_EFFORT` has moved since
+round 27, it is an OUTPUT of the derivation, and the row publishes the rounding edge it sits
+0.16 minutes above so the next round to touch it knows what it would be crossing. **No other
+payout moves and no wage spread moves** — 4.53× / 2.60× / 2.40× / 1.36×, all four unchanged,
+because every wage that moved is interior to every population it is in.
+
+### What it did to the evening, and to every band — measured, not asserted
+
+**The game did not get longer.** The decent evening measures **14.53 → 14.61** minutes on the
+suite's own fixture (band 10–15, unmoved) and 14.58 / 14.52 / 14.57 / 14.50 across its four
+seeds against 14.59 / 14.63 / 14.54 / 14.63 before — flat, or slightly shorter. Her campaign
+door and win, his door and win, the room count, the refunds, `volume-pacing`, the ground-floor
+drain and the whole of `economy-pressure` are unmoved. The Study is `tierRange: [3, 3]` and
+rare, so the largest re-clock in the round costs the evening almost nothing.
+
+**TWO BANDS DID MOVE, AND NEITHER MOVED BECAUSE OF THIS ROUND'S CONTENT.** Both were
+`ceil(measured)` ceilings with less headroom than the granularity of the only lever allowed to
+move them — round 48's own rule, in two clauses round 48 did not reach — and this re-clock is
+what made them visible rather than what broke them:
+
+| band | headroom at round-49 HEAD | now | what replaced it |
+|---|---|---|---|
+| 4.10f his campaign evening ≤ **22** | measured **21.824 — eleven seconds** | measured 22.009 | re-published **14–24**: the measurement plus one move a day (1.5 min, round 44), rounded up |
+| 4.10b bare first evening **< 13** | measured **12.991 — half a second**, and RED against its own note (*"the lower half of the 10–15 window"* is ≤ 12.5) | — | **RETIRED, not widened.** What replaced it is the claim the note argues: `FIRST_MORNING_POT` is one move and it is worth **1.14 minutes** of first evening, gated two-sided at 0.7–2.5 |
+
+The neighbouring *"the median is not the cap either, with room to spare"* moved with the first
+for the identical reason — `sessionMinutes − 5` left 1.18 minutes of "spare" against a 1.5-minute
+lever — and reads `sessionMinutes − 4` now.
+
+### The rule this round is worth remembering for
+
+**A room's difficulty GRADE and a room's CLOCK are not the same measurement, and the Library is
+the clean example.** Its headline figure is contested tiles, it is the number three rounds of
+craft were spent on, and it is a median 2 at every tier *by design* — so a clock built on the
+graded number could not have had a tier in it. The clock had to be built on a different, duller
+fact (how many threads read straight off the tiles: 3 / 2 / 1). Reaching for the graded number
+would have produced a flat row and a derivation that looked rigorous, which is exactly what the
+Study already had.
+
+---
+
 ## 2. The landing is three cells, not one
 
 **Today** the manor is 5x7. `SANCTUM_CELL` is `{col: 2, row: 6}` — dead centre, top. The landing
