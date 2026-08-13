@@ -1245,7 +1245,32 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
     (round 36) → 4.53× (round 42)**; **every tier-1/2 room, unfiltered 12.00× → 9.60× →
     4.62× → 3.78× → 2.60×**; **tier-1/2 minus the Counting House 4.89× → 3.91× → 3.20× →
     2.40×**; **tier-1/2 of two minutes or more, minus the Counting House, 1.75× → 1.43× →
-    1.71×**.
+    1.71× → 1.36×**.
+    ***ROUND 46 — THE ONE THAT ROSE HAS BEEN PAID BACK, AND THE COMMISSION THAT WAS
+    SUPPOSED TO PAY IT IS VOID.*** The fourth population **1.71× → 1.36×**, under the
+    1.43× it stood at before round 42 collapsed the unit. **Both ends of that ratio were
+    the Darkroom** and the cause was never the unit: `ROOM_EFFORT.cipher` was the only
+    row in the effort table with no derivation behind it and no pin under it, and it
+    priced a **no-crib** cryptogram at 33% above one that hands over an `A` and three
+    high-frequency letters — while `content/generate-cipher.ts` has graded that room on
+    crib class since round 4. `docs/BENCHMARKS.md` §11 (written this round; the Darkroom
+    is one of the two rooms this repo grades and it had no teardown) derives the row as
+    an OPENING plus a CASCADE, and the row is **3.0 / 4.5 / 5.5**. *Not one payout
+    moves* — 0.45 × 4.5 and 0.45 × 5.5 both round to the +2 the room already paid — so
+    this is a wage correction with no ledger in it, and the other three populations do
+    not move because the Darkroom is at neither end of any of them.
+    **AND THE COMMISSION ROUND 42 LEFT — *"the wage table needs more DISTINCT values in
+    it, which is a fact about how long the rooms are"* — IS FALSE, and
+    `tests/economy-effort.test.ts` proves it two ways rather than arguing it.** (i) An
+    ORACLE run that forces the widest payout spread this ceiling permits, honesty
+    ignored, measures the draft-dominance rate **WORSE**, not better: 41.7% / 41.0% →
+    **43.0% / 44.2%**. (ii) It is not even available — the tier-3 ceiling is +3, so
+    seven rooms share three integers and ties are forced by pigeonhole at every possible
+    row of the table. The dominance ratchet's rise is a fact about the CEILING and the
+    UNIT, and the next round to touch it should not spend itself on room lengths.
+    *(Also corrected, because it is repeated in three documents and is wrong: **FOUR of
+    the seven shipped rooms pay +1 at tier 1**, not five — twistle, forgotten-word,
+    cipher and crossword. The Word Web pays +2.)*
     ***ROUND 42 — THREE FELL HARD AND ONE ROSE, AND THE ONE THAT ROSE IS THE FINDING.***
     The economy is denominated in MOVES now (docs/THE_CLIMB §1b) and the ceiling in
     clause (c) came off the budget and onto the staircase, which is three tiers tighter —

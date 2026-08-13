@@ -1227,6 +1227,59 @@ describe('solving matters — the live channel, end to end', () => {
       .knownLength).toBe(6);
   });
 
+  /**
+   * ═══ ROUND 46 — THE CARD'S PROMISE, HELD TO THE PAYER THAT KEEPS IT ═══════
+   *
+   * The draft card now prints `+1 page` on a word room whose channel is open
+   * (`draftCardStake`'s page clause, off the store's `pageOnSolve`). Round 45's
+   * rule, in the mystery's own currency: **no room may PRINT something the
+   * ledger does not HAND OVER.** So the claim is not checked against the
+   * predicate that makes it — that is where both halves of a mispriced control
+   * agree — it is checked against the PAYMENT, by solving the room and counting
+   * what the volume actually gained.
+   */
+  it('never promises a page the solve declines to file (round 46)', () => {
+    const answered: boolean[] = [];
+    const paid: boolean[] = [];
+    const ask = (kind: 'twistle' | 'forgotten-word') => {
+      const before = useManorStore.getState().volume.foundFragmentIds.length;
+      answered.push(useManorStore.getState().pageOnSolve(kind));
+      useManorStore.getState().creditSolve(kind, 1, false);
+      paid.push(useManorStore.getState().volume.foundFragmentIds.length > before);
+    };
+    // Four solves across one day: a lintel room twice (the valve shuts after
+    // the first) and the Study twice (its own channel, so the first still pays
+    // even though the lintel has already gone).
+    ask('twistle');
+    ask('twistle');
+    ask('forgotten-word');
+    ask('forgotten-word');
+    expect(answered).toEqual([true, false, true, false]);
+    expect(paid).toEqual(answered);
+
+    // …and the next day both channels are open again, on the same volume.
+    useManorStore.setState({ day: { day: 2, phase: 'exploring', daySeed: 2, activeRoom: null } });
+    expect(useManorStore.getState().pageOnSolve('twistle')).toBe(true);
+    expect(useManorStore.getState().pageOnSolve('forgotten-word')).toBe(true);
+  });
+
+  it('goes quiet when the channel is spent out, not just valved (round 46)', () => {
+    // A volume with every lintel page already found says NO on a fresh day —
+    // the card must not promise a page out of an empty channel. Driven by
+    // filing the channel's whole stock rather than by faking the predicate.
+    const lintels = volume.fragments
+      .filter((f) => (f as { channel?: string }).channel === 'lintel'
+        || (f.sourceRoomCategory === 'puzzle' && f.kind === 'engraving'))
+      .map((f) => f.id);
+    expect(lintels.length).toBeGreaterThan(4);
+    for (const id of lintels) useManorStore.getState().fileFragment(id);
+    useManorStore.setState({ recentEvents: [] });   // a fresh day, valve open
+    expect(useManorStore.getState().pageOnSolve('twistle')).toBe(false);
+    const before = useManorStore.getState().volume.foundFragmentIds.length;
+    useManorStore.getState().creditSolve('twistle', 1, false);
+    expect(useManorStore.getState().volume.foundFragmentIds.length).toBe(before);
+  });
+
   it('A PERFECT solve buys the reading Ellery would charge affinity for', () => {
     const s = useManorStore.getState();
     s.collectFragmentForRoom('mystery');           // v1-d1, sealed

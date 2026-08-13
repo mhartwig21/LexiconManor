@@ -305,10 +305,11 @@ export const DOMINANCE_GATE = {
    * ratchet says it may only ever fall, so a rise has to be explained or undone,
    * and this one is neither a deck edit nor a drafting edit: `isDominated` reads
    * `steps`, the economy was denominated in MOVES (docs/THE_CLIMB §1b), and the
-   * payout table collapsed from {4, 6, 15} at tier 1 onto {1, 2, 5} — five of
-   * the seven shipped rooms pay exactly +1 down there. **Far more offers now TIE
-   * on the wage axis, and a tie is a weak win**, so the same three cards
-   * dominate more often without the deck having changed at all.
+   * payout table collapsed from {4, 6, 15} at tier 1 onto {1, 2, 5} — FOUR of
+   * the seven shipped rooms pay exactly +1 down there (this said five; round 46
+   * counted them). **Far more offers now TIE on the wage axis, and a tie is a
+   * weak win**, so the same three cards dominate more often without the deck
+   * having changed at all.
    *
    * It is moved by the measured amount and no further, and the way to pay it
    * back is named rather than deferred to a knob: the wage table needs more
@@ -316,6 +317,33 @@ export const DOMINANCE_GATE = {
    * (`ROOM_EFFORT`) and therefore a content question. The same coarseness shows
    * up in 4.10h's fourth wage spread, which rose for the identical reason, and
    * the two should be paid off together.
+   *
+   * ═══ ROUND 46 — THE PARAGRAPH ABOVE IS WRONG ABOUT THE FIX, AND IT WAS NEVER
+   * MEASURED ════════════════════════════════════════════════════════════════
+   *
+   * "More distinct room lengths" is reasoned from "ties are weak wins", which is
+   * true, and then assumed to run the other way, which is not.
+   * `tests/draft-dominance.test.ts` refutes it with two instruments:
+   *
+   *   1. an ORACLE that forces the widest payout spread this ceiling permits,
+   *      honesty ignored, measures the rate **WORSE** — 41.7% / 41.0% →
+   *      **43.0% / 44.2%**. Spreading the wage axis manufactures STRICT winners,
+   *      and a strict winner dominates whenever it also leads on frontier;
+   *   2. the PIGEONHOLE: at tier 3 the payout is clamped to `[SOLVE_WAGE.floor,
+   *      capByTier[2]]` = **[1, 3]**, so seven rooms share three integers and at
+   *      least three of them tie at every tier-3 door, at every possible value
+   *      of `ROOM_EFFORT`.
+   *
+   * The rise is a fact about the CEILING and the UNIT. **A later round must not
+   * spend itself on room lengths for this number.** The levers that could still
+   * move it are the ones round 40 named — within-category plan spread in the
+   * deck — or `SOLVE_WAGE.capByTier` itself, which is an owner-facing economy
+   * decision (one bare ascent, THE_CLIMB §1b), not a content one.
+   *
+   * (The 4.10h half of round 42's commission WAS real and is paid: the Darkroom
+   * was the only unclocked row in `ROOM_EFFORT` and both ends of that spread
+   * were it. 1.71× → 1.36×, with no payout moving. See `effort.ts`'s cipher row
+   * and `docs/BENCHMARKS.md` §11.)
    */
   ratchet: 0.42,
 } as const;

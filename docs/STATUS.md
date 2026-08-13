@@ -57,19 +57,35 @@ band that moved and every measurement behind it. The move price and the starting
 RULINGS, not knobs: if an evening ever runs long or short, the levers are the starting count and
 the payouts, in his own words, and never the move price.
 
-**The one thing that is wrong now is a CONTENT debt the new unit exposed, and it is a word-game
-job rather than an economy one.** Denominating in moves collapsed the payout table onto five
-integers, and five of the seven shipped rooms pay **+1** at tier 1 — so:
+**~~The one thing that is wrong now is a CONTENT debt~~ — ROUND 46 PAID HALF OF IT AND PROVED
+THE OTHER HALF VOID.** Round 42 published one commission for two ratchets and it was reasoned
+rather than measured. Full account in `docs/THE_CLIMB.md` §1f.
 
-- the **draft dominance** ratchet rose for the first time in its life, 0.41 → **0.42** (measured
-  41.3%): `isDominated` reads what a card pays, and offers now TIE on that axis far more often;
-- one of AAA **4.10h**'s four wage spreads rose with it, 1.43× → **1.71×** — the Darkroom is 3.0
-  minutes at tier 1 and 3.5 at tier 2, a 17% difference in length that rounds to a 100%
-  difference in pay.
+- **PAID: 4.10h's fourth wage spread, 1.71× → 1.36×**, back under the 1.43× it stood at before
+  round 42. Both ends of that ratio were the Darkroom, and `ROOM_EFFORT.cipher` was the only row
+  in the effort table with **no derivation behind it and no pin under it** — it priced a
+  *no-crib* cryptogram 33% above one that hands over an `A` and three high-frequency letters,
+  while the generator has graded that room on crib class since round 4. `docs/BENCHMARKS.md`
+  §11 is the teardown that did not exist; the row is `[3.0, 4.5, 5.5]` and **not one payout
+  moves**, so no ledger band moves with it.
+- **VOID: the dominance ratchet cannot be paid with room lengths.** An ORACLE that forces the
+  widest payout spread the ceiling allows makes it **WORSE** (41.7/41.0% → 43.0/44.2%), and it
+  is not even available — at tier 3 the payout is clamped to {1,2,3}, so seven rooms tie by
+  pigeonhole at every possible value of `ROOM_EFFORT`. Both proofs run in
+  `tests/draft-dominance.test.ts`. If that ratchet is ever to fall the levers are deck plan
+  spread or the payout CEILING, and a later round should not spend itself on room lengths.
+- **Also corrected: FOUR of the seven rooms pay +1 at tier 1, not five** (twistle,
+  forgotten-word, cipher, crossword — the Word Web pays +2). It was repeated in three documents
+  and four code comments.
 
-**No wage fixes either** (0.50 moves a minute makes the second one worse). What fixes both is
-more DISTINCT ROOM LENGTHS in `ROOM_EFFORT` — lengthen the Darkroom's tier 1, or shorten its
-tier 2 — which is a content commission, and the two should be paid off together.
+**AND THE CARD IS THE LEVER, NOT THE WAGE (round 46, the owner's steer).** *"Not one of three
+blind players entered a Gallery."* A puzzle card now prints **`+1 page`** beside its steps —
+the mystery's main supply line, `docs/COMPREHENSION.md`'s only [blocker] blind spot, and a live
+claim rather than a boast (`solveChannelPage` is one decision; the card asks it and the solve is
+paid out of it). Measured in `tests/word-room-face.test.ts`: a word room is outbid on its face by
+every card that asks nothing of her on **7.5%** of contested offers, from **11.3%** — and on
+**0.0%** where the clause is printed. The residue is the daily valve, not the card; the next
+lever is `decipherYield`, named in THE_CLIMB §1e.
 
 ---
 
@@ -162,7 +178,7 @@ Rounds of ultracode subagents. **Critique and verification fan out in parallel; 
 STRICTLY SEQUENTIAL** — parallel writers in one checkout lost ten agents twice. Each builder owns
 distinct files, runs every gate, and commits its own work.
 
-Every builder runs: `tsc --noEmit` · `vitest run` (**1,435** baseline as of round 45) ·
+Every builder runs: `tsc --noEmit` · `vitest run` (**1,452** baseline as of round 46) ·
 `content:verify` · `lint:clearance` · `build` · `gate:glass` (0 findings at both sizes).
 
 **Playwright must use system Edge (`channel: msedge`)** — the browser download silently fails on
@@ -194,8 +210,15 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
 
 ## 6. What is open, ranked
 
-1. **The wage table is too coarse to spread a draft** (top of this file). The move-costs-1
-   economy is BUILT; what it left behind is a content debt in `ROOM_EFFORT`.
+1. **~~The wage table is too coarse to spread a draft~~ — settled in round 46, both halves**
+   (top of this file). What is left in its place, ranked: **(a)** the page clause is VALVED, so
+   the word room's card reverts to the round-45 face once the day's engraving is filed — the
+   named next lever is printing `decipherYield(tier)` (1/2/3 sealed pages made out, unvalved,
+   on every solve), which needs a second live predicate and a second clause on a stake line that
+   already wraps at 375×667; **(b)** the Darkroom is over `LADDER_MINUTES` at tiers 2 and 3 with
+   no rung to pay — its adapter emits one progress event in the whole room — pinned as a bounded
+   debt in `tests/economy-effort.test.ts`; **(c)** 13 of 44 tier-2 cipher boards carry no crib
+   word at all, because `tierOf` is two gates and a remainder (BENCHMARKS §11).
 2. **Her campaign is ~18–19 days, was ~28.** Flat movement took ~6 evenings off the median player
    and the three-cell landing took more; the skilled player barely moved, because the old toll fell
    on exactly the storeys she re-walks. **If 28 was deliberate, this needs a ruling.**

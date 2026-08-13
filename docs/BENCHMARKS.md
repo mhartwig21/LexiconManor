@@ -576,6 +576,11 @@ Strands ends flat, the Gallery should end on a rung with rungs visible above it.
 | Closet board | Mini: 5×5, ~10 entries, 100% checked | 4×4/3 entries (t1), 5×5/4 (t2, t3) + a hem row |
 | Closet letters under outside check | Mini 100%; Acrostic ~100% by transfer | 39.9% → **62.3%**; entries with ≤1 checked letter 52.8% → **0%** |
 | Closet squares to fill (mean) | — | 8.38 / 13.30 / 13.93 (was 8.40 / 13.30 / 16.10) |
+| Darkroom benchmark | **the syndicated Cryptoquote (§11)** — written round 46; the room had none | crib-graded tiers, short phrases, letters given back |
+| Cryptogram length | Cryptoquote: 60–120 letters, so frequency analysis bites | median **25 / 24 / 31** (`MAX_LETTERS` 41 — a glass ceiling, not a design one) |
+| Cryptogram letters given | Cryptoquote: **zero** | **3 / 1 / 2** (`REVEALS`), high-frequency at t1, MID above it |
+| Cryptogram crib | whatever the quotation happens to carry | graded: one-letter word / two-letter word / **nothing under 3** |
+| Cryptogram clock | 3–8 min for a regular solver | **3.0 / 4.5 / 5.5** = opening(crib) + letters × 12.5 s (`CIPHER_CLOCK`) |
 
 ## 10. NYT Acrostic → benchmark for the Linen Closet (the Hem)
 
@@ -723,3 +728,104 @@ very few uncrossed letters to choose from. Ten per tier is the shipped floor
 and tier 1 clears it by six.
 
 ---
+
+## 11. The newspaper cryptogram → benchmark for the Darkroom
+
+*The Darkroom is one of two rooms `docs/STATUS.md` grades as NOT clearing its benchmark, and
+until this round there was no benchmark in this file to clear. That is the same failure the
+Linen Closet's §10 opens on — a room failed for twenty rounds against a spec nobody wrote down
+— and it is why `ROOM_EFFORT.cipher` was the only row in the effort table with no derivation
+behind it and no pin under it.*
+
+### The reference, and its exact numbers
+
+The syndicated **Cryptoquote / Celebrity Cipher** (King Features, Tribune) is the form this room
+is a cosy version of. A simple monoalphabetic substitution, word spacing preserved, one puzzle a
+day, no timer, no fail state.
+
+- **Length: 60–120 letters.** This is the single most load-bearing number in the format and it
+  is not decoration. Frequency analysis is a law-of-large-numbers argument: at 100 letters
+  `E` really does show up about twelve times and the top of the count is trustworthy. At 25
+  letters it is noise, and the solver has nothing to do with a frequency table.
+- **Letters given: zero.** The published puzzle reveals nothing.
+- **The crib is the WORD SHAPE, not the letters.** In order of what a solver actually reaches
+  for: one-letter words (`A`/`I` — a two-way guess before a single deduction), the apostrophe
+  (`'S`, `'T`, `N'T`), two-letter words (a couple of dozen candidates), doubled letters, and
+  then the trigram `THE`, which at 60+ letters is nearly always present and nearly always
+  findable by pattern.
+- **Attribution line.** Celebrity Cipher prints the speaker's name in the same cipher, which is
+  a second crib: a name is a word shape with a known population.
+- **Time: 3–8 minutes** for a regular solver; 15 minutes or nothing at all for a first-timer.
+  Every published "how to" agrees on the shape of that time, and it is the finding below.
+
+### THE FINDING THIS ROOM IS PRICED ON: the clock is the OPENING, not the letters
+
+Every account of solving one of these describes the same curve: a long flat stretch of nothing,
+then a foothold, then the rest falls over in under a minute. Once three or four letters stand,
+word shape does the remaining work — `T_E` is `THE`, and `THE` gives you `H` everywhere. **The
+letters are cheap; the first foothold is the whole puzzle.**
+
+That is why a cryptogram's difficulty ladder is made of CRIBS and not of length, and it is why
+the Darkroom's own generator (`content/generate-cipher.ts`, round 4, on the owner's directive)
+already reverses the naive rule: *"What actually makes a cryptogram tractable is not text volume
+but a CRIB — a place to stand."* The generator has graded on crib class since round 4. The
+clock never followed it. `ROOM_EFFORT.cipher` was `[3.0, 3.5, 4.0]`, which prices a phrase that
+hands over nothing at 33% above one that hands over an `A` and three high-frequency letters.
+
+### Where the Darkroom sits against the reference, and where it deliberately does not
+
+| | Cryptoquote | The Darkroom |
+|---|---|---|
+| Length | 60–120 letters | **19–41**, median 25 / 24 / 31 by tier (`MAX_LETTERS` 41) |
+| Letters revealed | 0 | **3 / 1 / 2** (`REVEALS`) — high-frequency at tier 1, MID at tiers 2–3 |
+| Crib word | whatever the quotation happens to carry | **graded**: a one-letter word (34/34 t1), a two-letter word and no shorter (0/44 t2 carry a one-letter word), **nothing under 3 letters at all** (0/43 t3) |
+| Distinct letters | ~20–24 of 26 | median **13 / 13 / 15** |
+| Letters to deduce | ~22 | median **10 / 12 / 13** |
+| Recognisable text | often — a famous quotation IS a crib | none: the proverbs were cut in round 24 for exactly that reason |
+| Fail state | none | none |
+| Time | 3–8 min | **3.0 / 4.5 / 5.5** — see below |
+
+**The room is deliberately SHORT of the reference on length, and the reveals are what pay for
+it.** A 25-letter phrase with nothing given is below the frequency-analysis floor and would be
+a worse puzzle than a 100-letter one, not a harder one — round 24 already found this the
+expensive way, when tier 3 shipped at zero reveals on the argument that pattern alone was
+enough, and had to be walked back to two. The length ceiling is a GLASS constraint, not a design
+one (`MAX_LETTERS` 41: the dense sheet has to sit above the deck at 375×667 without scrolling,
+and the owner's standing rule is that a panel that scrolls instead of fitting is a defect). So
+the room buys its difficulty in the one currency the reference also uses — the crib — and gives
+letters back to compensate for the length it cannot have.
+
+### Steal / Fix for the Darkroom
+
+- **Price the room as an opening plus a cascade.** `minutes = opening(crib class) + letters to
+  deduce × 12.5 s`, with the cascade constant across tiers because the fill is the fill.
+  Openings measured against the reference's own crib ladder: **55 s** with a one-letter word and
+  three high-frequency letters already standing, **120 s** with a two-letter word and one
+  mid-frequency letter, **167 s** with no crib word at all on a phrase too short for frequency
+  analysis to bite. That is `ROOM_EFFORT.cipher` = **3.0 / 4.5 / 5.5** and `CIPHER_CLOCK` is the
+  two terms, named, so the row can be re-derived rather than re-typed.
+- **The trigram crib is the one the room does not have and the reference leans on.** `THE`
+  is findable at 60+ letters and a coin-flip at 25. Nothing to fix — it is the length ceiling
+  arriving as a consequence — but it is why tier 3's opening is the whole room.
+- **A CONTENT DEBT THIS TEARDOWN FOUND, named rather than absorbed: tier 2 is a REMAINDER,
+  not a grade.** `tierOf` (`content/generate-cipher.ts`) is two gates and a leftover — tier 1
+  is *has a one-letter word*, tier 3 is *has no word under three letters AND is long AND has a
+  wide alphabet*, and tier 2 is everything else. So a **no-crib** phrase that misses tier 3's
+  length or alphabet floor is filed at tier 2, and **13 of the 44 shipped tier-2 boards are
+  exactly that**: they hand over nothing but their one mid-frequency letter, which is a tier-3
+  opening on a tier-2 card. What tier 2 actually guarantees is only the half its name claims —
+  no one-letter word. `ROOM_EFFORT.cipher[1]` is the MEDIAN board's clock, which is what that
+  table is defined to be, and `tests/economy-effort.test.ts` holds the median at a two-letter
+  crib and prints the share. The fix is a third gate in the generator (a two-letter word
+  REQUIRED at tier 2, the rest re-filed), and it is a pool regeneration.
+- **STILL OPEN, and it is what keeps the room off the benchmark:** the reference gives the
+  solver a *procedure* (one-letter words, then two, then `THE`), and the Darkroom states no rule
+  of any kind on entry. `docs/COMPREHENSION.md` [major]: *"The Darkroom has no rules text of any
+  kind… the room that would strand a non-cryptogram player."* One sentence in house voice about
+  one letter standing for one letter throughout is fix 13 on that list and is not built.
+- **STILL OPEN: the room is now longer than a sitting and pays nothing on the way up.**
+  `LADDER_MINUTES` is 4 and tiers 2 and 3 are over it (tier 3 already was, at 4.0, and nothing
+  said so). `cipher-adapter.ts` emits one `progress` event in the whole room — `print-developed`,
+  at the end — so there is no marker to hang a rung on. The reference has the same shape and gets
+  away with it at 3–8 minutes and no economy attached; this room has an economy attached.
+  `tests/economy-effort.test.ts` pins the list of unstaged long rooms so the debt is bounded.

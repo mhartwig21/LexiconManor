@@ -497,6 +497,32 @@ export function fragmentForSolveChannel(
 }
 
 /**
+ * ═══ ROUND 46 — THE ONE DECISION, SO THE CARD AND THE PAYER CANNOT DISAGREE ══
+ *
+ * The draft card now states that solving this room files a page
+ * (`draftCardStake`, COMPREHENSION's only [blocker] blind spot: *"what solving a
+ * word game gives you toward the mystery… no player learned it"*). A card that
+ * promises a page the solve does not hand over is worse than a silent one — it
+ * is round 45's mispriced button wearing the mystery's clothes — so the claim
+ * and the payment are the SAME lookup, asked at two moments.
+ *
+ * Everything that can make a solve pay nothing is in here: the daily valve, the
+ * channel's stock, and testimony a character has reserved. `null` is the card's
+ * silence and the ledger's no-op, in one function.
+ */
+export function solveChannelPage(
+  def: VolumeDef,
+  state: VolumeState,
+  channel: SolveChannel,
+  recentEvents: readonly RecordedEvent[],
+  day: number,
+  opts?: { reservedIds?: ReadonlySet<string> },
+): FragmentDef | null {
+  if (solveChannelFiledToday(def, channel, recentEvents, day)) return null;
+  return fragmentForSolveChannel(def, state, channel, opts);
+}
+
+/**
  * HOW MANY PAGES THIS VOLUME ROUTES THROUGH THIS CHANNEL.
  *
  * ── ROUND-17 DEFECT (verifier): THE MODEL WAS STILL MEASURING THE OLD ROUTING.

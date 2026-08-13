@@ -413,7 +413,7 @@ describe('draftCardStake (the economy line on draft cards, AAA 4.10/1.17)', () =
     const stake = draftCardStake({ category: 'puzzle', puzzleKind: 'cipher' }, 1);
     expect(stake).toEqual({
       // ROUND 42 — and the SINGULAR is reachable now. The cozy floor is one
-      // move, so five of the seven shipped rooms sit on it and this line would
+      // move, so four of the seven shipped rooms sit on it and this line would
       // have read "+1 steps" on the commonest card in the deck. `stepWords`
       // owns the plural, in one place (engine/economy/steps.ts).
       size: 'micro', label: 'a few minutes · +1 step · +1 key on solve',

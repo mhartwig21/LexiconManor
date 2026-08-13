@@ -28,6 +28,18 @@ export interface DraftCardStake {
   label: string;
 }
 
+/** What the card can only learn by asking the live game (round 46). */
+export interface DraftCardStakeOpts {
+  /**
+   * Would solving this room file a page in the journal right now? The store's
+   * `pageOnSolve` — the same `solveChannelPage` lookup the solve is paid out
+   * of, never a re-derivation of it. Omitted where no store is in reach, and
+   * the clause is simply not printed: the card may under-promise and may never
+   * over-promise.
+   */
+  pageOnSolve?: boolean;
+}
+
 /**
  * The economy line for a draft card at the target row's tier.
  * - puzzle rooms: "anchor · a long sit · +12 steps · +1 key on solve" — the
@@ -48,6 +60,7 @@ export interface DraftCardStake {
 export function draftCardStake(
   card: Pick<RoomCard, 'category' | 'puzzleKind'>,
   tier: Tier,
+  opts?: DraftCardStakeOpts,
 ): DraftCardStake | null {
   if (card.category === 'mystery') {
     return { size: null, label: '+1 sealed page' };
@@ -71,10 +84,39 @@ export function draftCardStake(
     // ROUND 42 — "+1 steps" WAS UNREACHABLE UNTIL IT WASN'T. This read
     // `+${payout} steps`, and it was correct for six rounds because the cozy
     // floor was +4 and no room could ever pay one. Denominated in moves the
-    // floor IS 1 (`SOLVE_WAGE.floor`) and five of the seven shipped rooms sit on
+    // floor IS 1 (`SOLVE_WAGE.floor`) and FOUR of the seven shipped rooms sit on
     // it, so the commonest card in the deck would have printed "+1 steps".
+    // (Round 46: this said five, as three documents did. Counted off the shipped
+    // tables it is four — twistle, forgotten-word, cipher, crossword. The Word
+    // Web pays +2.)
     // Pluralised off the number, like `moveCostLabel` beside it.
+    // ═══ ROUND 46 — THE CARD SAYS WHAT THE ROOM HANDS OVER, NOT ONLY WHAT IT
+    // PAYS ════════════════════════════════════════════════════════════════
+    //
+    // THE OWNER, off the cold read: *"not one of three blind players entered a
+    // Gallery."* Two were offered one and declined, and the grader named why —
+    // the card advertises **+1** beside cards advertising **+5**. The payout is
+    // correct and wage-locked (a room is paid for the work it asks for, round
+    // 22), so the lever is the CARD: a utility room hands over a number and
+    // nothing else, while a word room hands over that number PLUS a page of the
+    // book the whole game is about, and the card printed only the axis on which
+    // the two are least comparable.
+    //
+    // The page is also `docs/COMPREHENSION.md`'s single [blocker] blind spot —
+    // *"what solving a word game gives you toward the mystery… This is the
+    // mystery's main supply line and no player learned it"* — and this is the
+    // one surface where learning it changes a decision instead of a recital.
+    //
+    // IT IS A LIVE CLAIM, NOT A BOAST. `opts.pageOnSolve` is
+    // `engine/volume.solveChannelPage` asked at this moment through the store
+    // (app/slices/journal.ts `pageOnSolve`) — the SAME lookup the solve is paid
+    // out of, so the clause appears exactly when the page would land and goes
+    // quiet the rest of the day. A second Gallery after the day's lintel page
+    // is filed says nothing, because it hands over nothing; the Study, which
+    // carries its own channel, still says it. Callers that cannot ask (a bare
+    // render, the cabinet, a probe) pass nothing and get the round-45 face.
     const parts = [`+${payout} step${payout === 1 ? '' : 's'}`];
+    if (opts?.pageOnSolve) parts.push('+1 page');
     if (keys > 0) parts.push(`+${keys} key${keys === 1 ? '' : 's'}`);
     // ═══ ROUND 33 — THE SIZE WORD COMES OFF (COMPREHENSION 33, fix 5) ═══════
     // Two blind testers, unprompted, named "anchor · micro · standard · common

@@ -708,7 +708,7 @@ describe('orientation at placement', () => {
     // ROUND 42 — 34.61% → 35.41%, and the cause is Rule C rather than anything
     // about seals. `WAGE_SPREAD_SUPPRESSION` suppresses a card whose wage
     // matches one already in the offer, and the wage table got COARSE when the
-    // economy was denominated in moves: five of the seven rooms pay +1 at tier
+    // economy was denominated in moves: four of the seven rooms pay +1 at tier
     // 1 where they used to pay 4, 6 and 15 steps. So the rule fires far more
     // often, reaches further down the pool for a card that differs, and a player
     // who ignores the card face eats slightly more dead ends. The number that

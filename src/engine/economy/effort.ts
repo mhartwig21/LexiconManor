@@ -218,9 +218,139 @@ export const ROOM_EFFORT: Record<RoomPuzzleKind, EffortByTier> = {
    */
   'sudoku': [11.0, 13.0, 17.0],
   // ── micro ────────────────────────────────────────────────────────────────
-  'cipher': [3.0, 3.5, 4.0],
+  /**
+   * ROUND 46 — THE DARKROOM, DERIVED FOR THE FIRST TIME.
+   *
+   * `[3.0, 3.5, 4.0]` was the only row in this table with no derivation behind
+   * it and no pin under it. Its whole account was one line in the header —
+   * *"11 of 14 distinct letters to deduce over 26"* — a single figure with no
+   * tier in it, and the three numbers were spread by hand around it. Measured
+   * against the room the generator actually ships (`content/generate-cipher.ts`,
+   * and the pool bears it out at 34/34, 0/44 and 0/43), that row said a
+   * **no-crib** cryptogram costs 33% more than one with an `A` and three
+   * high-frequency letters handed over. It is the same defect round 27 found in
+   * the sudoku row — a difficulty lever the clock did not follow — and it is
+   * the reason `docs/AAA_BAR.md` 4.10h's fourth wage ratchet has been sitting
+   * above its own published figure since round 42.
+   *
+   * ═══ THE MODEL: A CRYPTOGRAM IS AN OPENING AND THEN A CASCADE ═════════════
+   *
+   * `docs/BENCHMARKS.md` §11 (written this round, because the Darkroom is one
+   * of the two rooms this repo grades and had no teardown to grade against) is
+   * the source. Its finding in one line: **a cryptogram's clock is dominated by
+   * the search for a foothold you trust, not by the letters.** Once three or
+   * four letters stand, the rest falls out of word shape. So the row is two
+   * terms, and the tiers differ in exactly ONE of them — which is what the
+   * generator says about itself:
+   *
+   *     minutes = CIPHER_OPENING[tier] + lettersToDeduce × CIPHER_CASCADE_S / 60
+   *
+   *   tier 1 — a ONE-LETTER WORD (`A`/`I`, a two-way guess before a single
+   *            deduction) and 3 revealed HIGH-frequency letters. 34/34 shipped
+   *            puzzles carry the crib word. A median 13 distinct letters, 3
+   *            given ⇒ **10 to deduce**. Opening ≈ 55 s: the foothold is handed
+   *            over. 0.92 + 2.08 = **3.0 min — UNCHANGED**, and see below for
+   *            the constraint that holds it there.
+   *   tier 2 — NO one-letter word (0/44), a TWO-LETTER word, and ONE revealed
+   *            MID-frequency letter. A median 13 distinct, 1 given ⇒ **12 to
+   *            deduce**. The two-letter word narrows to a couple of dozen
+   *            candidates rather than two, and one mid-frequency letter is a
+   *            place to stand rather than an answer: opening ≈ 120 s.
+   *            2.00 + 2.50 = **4.5 min** (was 3.5).
+   *   tier 3 — NO crib word at all: every word is 3+ letters (0/43 carry one
+   *            shorter), so nothing in the phrase SHAPE hands over a letter.
+   *            The longest phrases (median 31 letters) over the widest
+   *            alphabets (median 15 distinct), 2 given ⇒ **13 to deduce** — and
+   *            31 letters is well under the 60–120 a newspaper cryptoquote
+   *            gives frequency analysis to bite on (BENCHMARKS §11). The
+   *            opening is the whole room: ≈ 167 s. 2.79 + 2.71 = **5.5 min**
+   *            (was 4.0).
+   *
+   * The openings run **55 s / 120 s / 167 s** and the cascade rate does not
+   * move, because the fill is the fill: the letters are the same letters
+   * whichever tier handed you the first of them.
+   *
+   * ═══ WHY TIER 1 DID NOT MOVE, AND IT IS NOT BECAUSE IT WAS RIGHT ══════════
+   *
+   * The honest band for tier 1 is roughly 1.7–3.3 minutes and 3.0 is the top of
+   * it. It is the top because `KEY_SUPPLY.workKeyMinutes` is **3.0 and the
+   * Darkroom is one of the four rooms that clause names** — a tier-1 solve pays
+   * a ground-floor key when the room asked at least that much honest work. The
+   * row sits exactly ON the threshold, so any downward re-derivation deletes a
+   * ground-floor key source by side effect. Measured at 2.25 minutes it does:
+   * the round-10 directive that solves outsupply the deck inverts hard
+   * (**11,426 solve-keys against 18,640 off the green deck**, from 23,867
+   * against 29,507 — `tests/economy-simulation.test.ts`), and 4.10b's first
+   * evening and two 4.10g bands move with it. **That is an ECONOMY round's
+   * change, not a word-game one**, and it is written here so the next round
+   * that reads this row knows the number is pinned by a threshold rather than
+   * by confidence.
+   *
+   * ═══ WHAT IT COSTS, AND WHAT IT PAYS ══════════════════════════════════════
+   *
+   * **Not one payout moves.** 0.45 × 4.5 = 2.03 and 0.45 × 5.5 = 2.48 both
+   * round to the **+2** the room already paid, so no card face changes its
+   * number, no ledger entry changes, and every band that hangs off
+   * `solvePayout` is untouched. What moves is the WAGE — the thing 4.10h
+   * measures — and the CLOCK.
+   *
+   *   - 4.10h's fourth population (tier-1/2 rooms of two minutes or more, minus
+   *     the Counting House) **1.71× → 1.36×**, back under the 1.43× it stood at
+   *     before round 42 collapsed the unit. Both ends of that ratio were the
+   *     Darkroom; one of them still is.
+   *   - The other three populations do not move: the Darkroom is at neither end
+   *     of any of them.
+   *   - The clock: tier-2 and tier-3 Darkrooms are a minute and a half longer.
+   *     Every published evening and campaign band holds unmoved
+   *     (`tests/economy-simulation.test.ts`, `economy-pressure`, `volume-pacing`).
+   *
+   * **AND THE DEBT IT GROWS, published rather than absorbed.** `LADDER_MINUTES`
+   * is 4: a room longer than a sitting must pay on the way up. The Darkroom has
+   * no ladder — `cipher-adapter.ts` emits one `progress` event in the whole room
+   * (`print-developed`, at the end) — so there is no marker to hang a rung on.
+   * At tier 3 it was **already** over the line at 4.0 and nothing in this repo
+   * said so; at tier 2 it now is too. `tests/economy-effort.test.ts` pins the
+   * list of unstaged long rooms, so the debt is named and bounded instead of
+   * discovered again. Paying it needs the adapter to broadcast how much of the
+   * print has developed, which is A4's seam and a room's own change.
+   */
+  'cipher': [3.0, 4.5, 5.5],
   'crossword': [1.25, 1.5, 2.0],
 };
+
+/**
+ * ── THE DARKROOM'S TWO TERMS, NAMED SO THE ROW CAN BE RE-DERIVED ───────────
+ *
+ * `ROOM_EFFORT.cipher` is arithmetic over these and the shipped pool's own
+ * letter counts (see the row's note, and `docs/BENCHMARKS.md` §11).
+ * `tests/economy-effort.test.ts` inverts the row through them every run: it
+ * reads the distinct-letter and reveal counts off `content/generated/cipher.json`,
+ * subtracts the cascade, and holds the residue — the OPENING — to the band
+ * below. So a regenerated pool that changes what the room asks fails a test
+ * instead of quietly leaving the row describing yesterday's Darkroom.
+ */
+export const CIPHER_CLOCK = {
+  /**
+   * Seconds to deduce and place one letter ONCE A FOOTHOLD EXISTS. Constant
+   * across tiers on purpose: the fill is the fill, and the tiers differ in the
+   * opening rather than in the letters. Sits between the sudoku's 13 s locked-
+   * candidate placement and its 18 s hunt (round 27) — a cipher letter is a
+   * word-shape read plus two taps.
+   */
+  cascadeSeconds: 12.5,
+  /**
+   * Minutes to a foothold you trust, by tier — the crib the generator hands
+   * over (`content/generate-cipher.ts` REVEALS + the tier gates), and the only
+   * term that moves. The bands are BENCHMARKS §11's, and the row takes the
+   * middle of each except at tier 1, where `KEY_SUPPLY.workKeyMinutes` holds it
+   * at the top (see the row).
+   */
+  openingBandMinutes: [
+    [0.5, 1.2],   // a one-letter word + 3 high-frequency letters, already given
+    [1.5, 2.5],   // a two-letter word + 1 mid-frequency letter
+    [2.2, 3.5],   // nothing: every word 3+ letters, 2 mid-frequency letters
+  ] as readonly (readonly [number, number])[],
+} as const;
 
 /** Honest median minutes for `kind` at `tier`. */
 export function effortMinutes(kind: RoomPuzzleKind, tier: Tier): number {

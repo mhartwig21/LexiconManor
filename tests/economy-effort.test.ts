@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   effortLabel, effortMinutes, paysInStages, stageFractionOf,
-  HIVE_SOLVE_PCT, HIVE_STAGE_PCT, LADDER_MINUTES, ROOM_EFFORT,
+  CIPHER_CLOCK, HIVE_SOLVE_PCT, HIVE_STAGE_PCT, LADDER_MINUTES, ROOM_EFFORT,
   SUDOKU_CELLS_PER_STAGE, WEB_GROUPS,
 } from '../src/engine/economy/effort';
 import {
@@ -25,6 +25,7 @@ import twistlePool from '../content/generated/twistle.json';
 import hivePool from '../content/generated/hive.json';
 import sudokuPool from '../content/generated/sudoku.json';
 import webPool from '../content/generated/word-web.json';
+import cipherPoolJson from '../content/generated/cipher.json';
 
 /**
  * ═══ 4.10h — TIME FOR REWARD (REVIEW_AA §6, round 22) ══════════════════════
@@ -58,6 +59,7 @@ interface TwistlePuzzleLike { tier: number; targetCount: number; targetWords: st
 interface HivePuzzleLike { tier: number; validWords: string[]; pangrams: string[]; totalPoints: number }
 interface SudokuPuzzleLike { id: string; tier: number; givens: string }
 interface WebPuzzleLike { tier: number; groups: { words: string[] }[] }
+interface CipherPuzzleLike { tier: number; plaintext: string; reveals: string[] }
 
 const twistles = twistlePool as unknown as TwistlePuzzleLike[];
 const hives = hivePool as unknown as HivePuzzleLike[];
@@ -848,5 +850,150 @@ describe('4.10b — the Gallery phantom mistake tax the model still levies (roun
     // more than the thing it was asked to price.
     expect(truthful, `the truthful median evening is ${truthful.toFixed(2)} min`
       + ' against the 10–15 AAA 4.10b publishes').toBeGreaterThan(15);
+  });
+});
+
+/**
+ * ═══ THE DARKROOM'S ROW, DERIVED RATHER THAN TYPED (round 46) ═════════════
+ *
+ * `ROOM_EFFORT.cipher` was the only row in the table with no derivation behind
+ * it and no pin under it, and it was wrong in the direction that matters: it
+ * priced a **no-crib** cryptogram at 33% above one that hands over an `A` and
+ * three high-frequency letters, while `content/generate-cipher.ts` has graded
+ * that room on CRIB CLASS since round 4. The row is two terms now
+ * (`CIPHER_CLOCK`, `docs/BENCHMARKS.md` §11) and this inverts it every run
+ * against the pool that actually ships: subtract the cascade the pool's own
+ * letter counts imply, and the residue is the OPENING, which has to sit inside
+ * the band the teardown published and has to climb with the tier.
+ *
+ * These are the same three gates the Counting House's row gets (round 27): the
+ * CONTENT grade, the LENGTH, and a rate that may not run backwards.
+ */
+describe('4.10h — the Darkroom is clocked against the crib it hands over', () => {
+  const cipherPool = cipherPoolJson as CipherPuzzleLike[];
+  const lettersOf = (p: CipherPuzzleLike) => p.plaintext.replace(/[^A-Z]/g, '');
+  const distinctOf = (p: CipherPuzzleLike) => new Set(lettersOf(p)).size;
+  const wordsOf = (p: CipherPuzzleLike) => p.plaintext.split(' ');
+
+  it('grades every tier by the crib the phrase carries, off the shipped pool', () => {
+    // (a) THE CONTENT GRADE. The generator's three tier gates, re-derived from
+    //     the JSON rather than read out of the generator that wrote it — the
+    //     row's whole difficulty argument rests on these three facts.
+    for (const tier of TIERS) {
+      const group = cipherPool.filter((p) => p.tier === tier);
+      expect(group.length, `cipher tier ${tier} pool`).toBeGreaterThan(10);
+      const shortest = group.map((p) => Math.min(...wordsOf(p).map((w) => w.length)));
+      if (tier === 1) {
+        // A one-letter word on EVERY board: `A`/`I`, a two-way guess before a
+        // single deduction, and the reason this tier's opening is nearly free.
+        expect(Math.max(...shortest), 'tier 1 must carry a one-letter crib word').toBe(1);
+      } else if (tier === 2) {
+        // ═══ WHAT THIS PIN FOUND, AND IT IS A CONTENT FINDING ═══════════════
+        // `tierOf` is not three gates, it is two gates and a REMAINDER: tier 1
+        // is "has a one-letter word", tier 3 is "has no word under three AND is
+        // long AND has a wide alphabet", and tier 2 is everything else. So a
+        // no-crib phrase that misses tier 3's length or alphabet floor lands at
+        // tier 2, and 13 of the 44 shipped tier-2 boards are exactly that —
+        // they hand over nothing but their one mid-frequency letter. What tier
+        // 2 guarantees is only the half the name claims: **no one-letter word**.
+        // The row's 120s opening is therefore the MEDIAN board's, which is what
+        // `ROOM_EFFORT` is defined to be, and the thin third of the bin is
+        // harder than its own tier says. Named here rather than absorbed;
+        // BENCHMARKS §11 carries it as the room's open content debt.
+        expect(Math.min(...shortest), 'tier 2 must carry NO one-letter word').toBe(2);
+        const withTwo = group.filter((p) => wordsOf(p).some((w) => w.length === 2)).length;
+        expect(withTwo / group.length, `only ${withTwo}/${group.length} tier-2 boards`
+          + ' carry the two-letter crib the tier is named for').toBeGreaterThan(0.5);
+        expect(median(shortest), 'the MEDIAN tier-2 board is the one the row is clocked on')
+          .toBe(2);
+      } else {
+        // NOTHING under three letters: the phrase shape hands over nothing.
+        expect(Math.min(...shortest), 'tier 3 must carry no crib word at all')
+          .toBeGreaterThanOrEqual(3);
+      }
+      // The reveals the generator promises, counted on what shipped.
+      const reveals = [...new Set(group.map((p) => p.reveals.length))];
+      expect(reveals, `cipher t${tier} reveals`).toEqual([{ 1: 3, 2: 1, 3: 2 }[tier]]);
+    }
+  });
+
+  it('inverts the row into an OPENING inside the band BENCHMARKS §11 published', () => {
+    const openings: number[] = [];
+    const toDeduce: number[] = [];
+    for (const tier of TIERS) {
+      const group = cipherPool.filter((p) => p.tier === tier);
+      // (b) THE LENGTH GRADE — what the room asks her to work out, median over
+      //     the shipped boards: distinct letters, less the ones it gave her.
+      const deduce = median(group.map((p) => distinctOf(p) - p.reveals.length));
+      toDeduce.push(deduce);
+      // (c) THE CLOCK. Everything the row does not explain by cascade is the
+      //     opening, and the opening is what the crib is supposed to buy.
+      const cascade = (deduce * CIPHER_CLOCK.cascadeSeconds) / 60;
+      const opening = effortMinutes('cipher', tier) - cascade;
+      const [lo, hi] = CIPHER_CLOCK.openingBandMinutes[tier - 1]!;
+      expect(opening, `cipher t${tier} implies a ${(opening * 60).toFixed(0)}s opening`
+        + ` against BENCHMARKS 11's ${(lo * 60).toFixed(0)}-${(hi * 60).toFixed(0)}s`)
+        .toBeGreaterThanOrEqual(lo);
+      expect(opening).toBeLessThanOrEqual(hi);
+      openings.push(opening);
+    }
+    // The room she must work out more of is never the room she works out
+    // faster, and the foothold never gets CHEAPER as the crib is taken away.
+    // This is the assertion the shipped row would have failed: 3.0/3.5/4.0
+    // implies openings of 55s / 0s / -21s — the no-crib tier arriving at a
+    // foothold before it has read the phrase.
+    expect(toDeduce[1]!).toBeGreaterThanOrEqual(toDeduce[0]!);
+    expect(toDeduce[2]!).toBeGreaterThanOrEqual(toDeduce[1]!);
+    expect(openings[1]!, `t2 opening ${(openings[1]! * 60).toFixed(0)}s vs t1`
+      + ` ${(openings[0]! * 60).toFixed(0)}s`).toBeGreaterThan(openings[0]!);
+    expect(openings[2]!, `t3 opening ${(openings[2]! * 60).toFixed(0)}s vs t2`
+      + ` ${(openings[1]! * 60).toFixed(0)}s`).toBeGreaterThan(openings[1]!);
+  });
+
+  it('does not move a single payout, which is why no ledger band moves with it', () => {
+    // The row grew by 1.0 minute at two tiers and the wage moved; the PRICE did
+    // not, because both new lengths round to the +2 the room already paid. If a
+    // later re-derivation ever crosses one of those rounding edges, this is
+    // where it says so — and it becomes an economy round.
+    expect([1, 2, 3].map((t) => solvePayout('cipher', t as Tier))).toEqual([1, 2, 2]);
+    // …and tier 1 sits exactly ON the ground-floor key threshold, which is what
+    // pins it at the top of its band rather than in the middle (see the row).
+    expect(effortMinutes('cipher', 1)).toBe(KEY_SUPPLY.workKeyMinutes);
+    expect(solveKeys(1, 'cipher')).toBe(1);
+  });
+});
+
+/**
+ * ═══ THE ROOMS THAT ARE LONGER THAN A SITTING AND PAY NOTHING ON THE WAY UP ══
+ *
+ * `LADDER_MINUTES` is 4, and REVIEW_AA §6's rule is that a room she cannot
+ * expect to finish in one sitting must bank something as she climbs. Three
+ * rooms have ladders. The Darkroom does not — `cipher-adapter.ts` emits ONE
+ * progress event in the whole room (`print-developed`, at the end) — and at
+ * tier 3 it was **already** over the line at 4.0 minutes with nothing in this
+ * repo saying so. Round 46's re-derivation puts tier 2 over it as well.
+ *
+ * So the debt is a LIST, pinned. It may shrink and it may not grow: a room that
+ * crosses `LADDER_MINUTES` without a rung has to be added here deliberately,
+ * with the seam it needs written beside it.
+ */
+describe('4.10h(e) — a long room with no ladder is a named debt, not a surprise', () => {
+  it('pins exactly which room-tiers are over LADDER_MINUTES with no rung', () => {
+    const unstaged: string[] = [];
+    for (const kind of ROOM_PUZZLE_KINDS) {
+      for (const tier of TIERS) {
+        if (effortMinutes(kind, tier) >= LADDER_MINUTES && !paysInStages(kind, tier)) {
+          unstaged.push(`${kind} t${tier}`);
+        }
+      }
+    }
+    // THE DEBT, and the seam that pays it: the Darkroom would need its adapter
+    // to broadcast how much of the print has developed (A4's file), which is a
+    // room's own change and not an economy one.
+    expect(unstaged.sort()).toEqual(['cipher t2', 'cipher t3']);
+    // …and every room that DOES have a ladder still has one where it counts.
+    for (const kind of ['hive', 'sudoku', 'word-web'] as RoomPuzzleKind[]) {
+      expect(paysInStages(kind, 1), `${kind} lost its ladder`).toBe(true);
+    }
   });
 });

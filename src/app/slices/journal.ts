@@ -19,10 +19,10 @@ import type { RoomPuzzleKind } from '../../engine/rooms/room-puzzle';
 import type { ManorStore } from '../store';
 import type { SaveV2 } from '../save';
 import {
-  advanceVolume, applyGuess, decipherYield, findLetter, fragmentForSolveChannel,
+  advanceVolume, applyGuess, decipherYield, findLetter,
   fragmentsToDecipher, legibleDayFlag, legibleFragmentFlag, letterGrants, nextFragmentForRoom,
   normalizeGuess, openedLetterFlag, reservedTestimonyIds, sealedFragmentFlag, sealedFragmentIds,
-  solveChannelFiledToday, solveChannelFor, solvedFlag,
+  solveChannelFor, solveChannelPage, solvedFlag,
 } from '../../engine/volume';
 import { glancedFragmentFlag, nextUninterpreted, viewedFragmentFlag } from '../../engine/journal';
 import { atSanctumDoor, canAddressSanctum } from '../../engine/manor/grid';
@@ -116,6 +116,24 @@ export interface JournalSlice {
    */
   collectFragmentForSolve(kind: RoomPuzzleKind): string | null;
   /**
+   * A7 ADDITIVE (round 46) — WOULD SOLVING THIS KIND OF ROOM FILE A PAGE, NOW?
+   *
+   * The draft card's claim (`draftCardStake`'s `+1 page` clause,
+   * ui/blueprint/DraftModal.tsx). It is `collectFragmentForSolve` asked without
+   * being paid: the same volume, the same channel, the same daily valve, the
+   * same reserved testimony — `engine/volume.solveChannelPage` is the single
+   * decision and both sides call it. So the card cannot advertise a page the
+   * solve declines to hand over, which is the round-45 rule (*"no room may
+   * PRINT a number the ledger does not CHARGE"*) applied to the mystery's own
+   * currency.
+   *
+   * It answers per KIND rather than per room because the Study has a channel of
+   * its own: on an evening that has already filed a lintel engraving, the Study
+   * card still says `+1 page` and the Library card does not, and that is a real
+   * difference between two cards in the same offer.
+   */
+  pageOnSolve(kind: RoomPuzzleKind): boolean;
+  /**
    * A7 ADDITIVE — THE DECIPHER CHANNEL (round 10, the owner's "solving needs
    * to matter"). Make out up to `count` of the sealed pages, oldest first on
    * the drip. Returns the ids that became legible.
@@ -185,6 +203,31 @@ export const createJournalSlice =
       // and pays a perfect solve its free reading — see `creditSolve`.
       get().creditSolve(last.event.kind, last.event.tier, last.event.perfect);
     });
+
+    /**
+     * ROUND 46 — THE PAGE A SOLVE WOULD FILE, ASKED WITHOUT PAYING IT.
+     *
+     * One decision, two callers: `collectFragmentForSolve` pays what this
+     * returns, and `pageOnSolve` is the draft card asking the same question
+     * before she spends a move on the door. `engine/volume.solveChannelPage`
+     * holds the valve and the stock together so neither side can hold half of
+     * it — the card promising a page the ledger declines is exactly round 45's
+     * defect in the mystery's currency.
+     */
+    const pageForSolve = (kind: RoomPuzzleKind) => {
+      const v = get().volume;
+      if (v.status !== 'active') return null;
+      const content = getVolumeContent(v.volumeId);
+      if (!content) return null;
+      const reservedIds = reservedTestimonyIds(
+        Object.values(DIALOGUE_FILES),
+        new Set(get().seenNodeIds),
+      );
+      return solveChannelPage(
+        content, v, solveChannelFor(kind), get().recentEvents,
+        get().day?.day ?? v.day, { reservedIds },
+      );
+    };
 
     return {
     volume: initial.volume,
@@ -435,24 +478,13 @@ export const createJournalSlice =
     },
 
     collectFragmentForSolve: (kind) => {
-      const v = get().volume;
-      if (v.status !== 'active') return null;
-      const content = getVolumeContent(v.volumeId);
-      if (!content) return null;
-      const channel = solveChannelFor(kind);
-      const day = get().day?.day ?? v.day;
-      // One fragment per day per channel, derived off the spine (never a
-      // stored counter a reload could hand back) — engine/volume.
-      if (solveChannelFiledToday(content, channel, get().recentEvents, day)) return null;
-      const reservedIds = reservedTestimonyIds(
-        Object.values(DIALOGUE_FILES),
-        new Set(get().seenNodeIds),
-      );
-      const frag = fragmentForSolveChannel(content, v, channel, { reservedIds });
+      const frag = pageForSolve(kind);
       if (!frag) return null;
-      get().fileFragment(frag.id, { via: channel.id });
+      get().fileFragment(frag.id, { via: solveChannelFor(kind).id });
       return frag.id;
     },
+
+    pageOnSolve: (kind) => pageForSolve(kind) !== null,
 
     beginNextVolume: () => {
       const v = get().volume;

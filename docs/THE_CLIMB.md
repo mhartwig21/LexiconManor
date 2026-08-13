@@ -172,7 +172,7 @@ model and gated in `tests/economy-pressure.test.ts`:
 A hard ceiling was not needed and was not added: it would be one more fiction to divide out of.
 
 **WHAT GOT WORSE, PUBLISHED RATHER THAN ABSORBED.**
-1. **A coarse unit ties the draft.** `isDominated` reads what a card pays, and five of the seven
+1. **A coarse unit ties the draft.** `isDominated` reads what a card pays, and FOUR of the seven
    shipped rooms now pay +1 at tier 1 — so offers TIE on the wage axis far more often and a tie
    is a weak win. The dominance ratchet rose for the first time in its life, **0.41 → 0.42**
    (measured 41.3%), and one of 4.10h's four wage spreads rose with it, **1.43× → 1.71×** (the
@@ -360,6 +360,147 @@ at 26/26 printed prices and 2/2 day sums red.
 U+2212, so it read `Step back · 1 step` — a control that charges nothing — as "unpriced" and passed
 it. The house prices things two ways, and a gate that knows only one of them agrees with the bug.)*
 
+---
+
+## 1e. The card was printing the one number where the rooms are least comparable — round 46
+
+**THE OWNER, off the cold read of 12 Aug:** *"NOT ONE OF THREE BLIND PLAYERS ENTERED A
+GALLERY."* Two were offered one and declined. The grader named the cause and it is not the
+Gallery: **the card advertises +1 beside cards advertising +5.** Three consecutive rounds of
+Gallery craft — the accept-list (19,000 refusals down to 534), the grid, the studies — were
+invisible to a stranger because nobody chose the room.
+
+Round 42's re-denomination was right and the owner asked for it, and this is what it cost.
+**The payout is CORRECT and stays correct**: a room is paid for the work it asks for (§1b,
+round 22), and that principle is not up for renegotiation. **So the lever is the CARD.**
+
+### What a draft card was actually comparing
+
+A utility room hands over a number and asks nothing. A word room asks a few minutes of thought
+and hands over that number **plus a page of the book the whole game is about**. The card
+printed the first and stayed silent on the second, so a player choosing on the printed number
+was choosing correctly given what she was told, and what she was told was not the truth about
+the room.
+
+**A page is also `docs/COMPREHENSION.md`'s only [blocker] blind spot** — *"what solving a word
+game gives you toward the mystery… This is the mystery's main supply line and no player learned
+it"* — and the draft card is the one surface where learning it changes a decision rather than a
+recital.
+
+### BUILT — the clause, and the rule that keeps it honest
+
+A puzzle card now prints **`+1 page`** between its steps and its keys, and it is a LIVE claim,
+not a boast. `engine/volume.solveChannelPage` is one decision with two callers: the store's
+`pageOnSolve` asks it for the card, and `collectFragmentForSolve` is paid out of it. So the
+clause appears exactly when the page would land and goes quiet otherwise — round 45's rule
+(*"no room may PRINT a number the ledger does not CHARGE"*) in the mystery's own currency, and
+`tests/journal.test.ts` holds the claim against the PAYMENT rather than against the predicate,
+by solving the rooms and counting what the volume gained.
+
+It is per KIND, and that matters: **the Study carries a channel of its own.** On an evening
+that has already filed a lintel engraving, the Study card still promises a page and the Library
+card does not — a real difference between two cards in the same offer, in the currency the
+game is about.
+
+### The measurement, and the number it is gated on
+
+`tests/word-room-face.test.ts` models the offer the way a player reads it: it composes the card
+face out of the shipped renderers and counts every `+N` clause on it, and asks the owner's own
+question. **`outbid` — of the offers where a word room sits beside at least one card that ASKS
+NOTHING of her (utility, parlor, mystery), the share where some word room is outbid on its face
+by every one of them.**
+
+| | round 45 | round 46 |
+|---|---|---|
+| **word room outbid by every ask-nothing card** | 11.3% | **7.5%** (gate 0.08) |
+| …where the page clause is PRINTED | — | **0.0%** |
+| …where it is not | — | 9.5% |
+| word room bottom against ALL rivals, word rooms included | 21.6% | 18.8% |
+| a word room prints the strictly lowest STEP figure | 19.7% | **19.7% — unmoved, and that is the point** |
+
+**The last row is the guard.** The wage is locked, so the +1 is still a +1 and the share of
+offers where a word room prints the lowest number is identical to the offer. What the round
+buys is that the +1 is no longer the whole of what the card says.
+
+**AND THE RESIDUE IS THE VALVE, NOT THE CARD.** Where the clause is printed the event does not
+happen at all; all of what is left is that a page is filed once per channel per day, so after
+the evening's engraving lands every ordinary word room's card says what it said in round 45.
+**The next lever is named and it is not a card change:** `creditSolve` also pays
+`decipherYield(tier)` — 1 / 2 / 3 SEALED pages made out, on every solve, unvalved — and the
+card is silent about it. That clause would be true all evening and would scale with the storey.
+It needs a second live predicate and a second clause on a stake line that already wraps at
+375×667, so it is a round of its own.
+
+---
+
+## 1f. The Darkroom's clock, and a commission that turned out to be void — round 46
+
+Round 42 published two things as one debt: the dominance ratchet rose (0.41 → 0.42) and one of
+4.10h's four wage spreads rose with it (1.43× → 1.71×), and it named a single fix for both —
+*"the wage table needs more DISTINCT values in it, which is a fact about how long the rooms
+are."* `docs/STATUS.md` carried it as the top open item. Half of it was right.
+
+### The half that was right: the Darkroom was never clocked
+
+`ROOM_EFFORT.cipher` was `[3.0, 3.5, 4.0]` and it was **the only row in the table with no
+derivation behind it and no pin under it** — its whole account was one line with no tier in it.
+Measured against the room the generator actually ships, that row priced a **no-crib** cryptogram
+at 33% above one that hands over an `A` and three high-frequency letters. It is round 27's
+sudoku defect exactly: a difficulty lever the clock did not follow.
+
+`docs/BENCHMARKS.md` §11 is the teardown that did not exist (the Darkroom is one of two rooms
+this repo grades and it had nothing to grade against). Its finding: **a cryptogram's clock is
+the OPENING, not the letters** — once three or four letters stand, word shape does the rest. So
+the row is two terms, `opening(crib class) + letters to deduce × 12.5 s`, and the openings run
+**55 s / 120 s / 167 s** against a crib ladder of *a one-letter word and three high-frequency
+letters* → *a two-letter word and one mid-frequency letter* → *nothing at all*.
+
+**`ROOM_EFFORT.cipher` is `[3.0, 4.5, 5.5]`.** Tier 1 did not move, and not because it was
+right: `KEY_SUPPLY.workKeyMinutes` is 3.0 and the Darkroom sits exactly on it, so a downward
+re-derivation deletes a ground-floor key source by side effect — measured at 2.25 minutes the
+round-10 directive inverts (11,426 solve-keys against 18,640 off the deck) and three published
+bands move. That is an economy round's change and this was a word-game one.
+
+**What moved, and what did not.** Not one payout: 0.45 × 4.5 and 0.45 × 5.5 both round to the
+**+2** the room already paid, so no card face changes its number and no ledger band moves.
+
+| band | was | now | why |
+|---|---|---|---|
+| 4.10h wage spread, tier-1/2 ≥2 min minus the Counting House | 1.71× | **1.36×** | both ends of that ratio were the Darkroom. Back under the 1.43× it stood at before round 42 |
+| 4.10h, the other three populations | 4.53× / 2.60× / 2.40× | **unmoved** | the Darkroom is at neither end of any of them |
+| every campaign and evening band | — | **unmoved** | the row moves the CLOCK by a minute and a half at two tiers and the PRICE not at all |
+
+**AND THE DEBT IT GROWS, published rather than absorbed.** `LADDER_MINUTES` is 4 and the
+Darkroom has no ladder — `cipher-adapter.ts` emits one progress event in the whole room. At tier
+3 it was **already** over the line at 4.0 and nothing in this repo said so; tier 2 now is too.
+`tests/economy-effort.test.ts` pins the list of unstaged long rooms so it is bounded, and the
+seam that pays it is the adapter broadcasting how much of the print has developed.
+
+**A content debt the teardown found on the way:** `tierOf` is two gates and a REMAINDER, so
+**13 of the 44 shipped tier-2 boards carry no crib word at all** — a tier-3 opening on a
+tier-2 card. The row is the median board's, which is what `ROOM_EFFORT` is defined to be, and
+BENCHMARKS §11 carries the fix (a third gate in the generator, and a pool regeneration).
+
+### The half that was wrong: room lengths cannot pay the dominance ratchet
+
+The diagnosis was reasoned, never measured. `tests/draft-dominance.test.ts` now refutes it with
+two instruments, neither of which is the one that wrote the claim:
+
+1. **THE ORACLE.** Force the widest payout spread the shipped ceiling permits — honesty
+   ignored — and the dominance rate gets **WORSE**: 41.7% / 41.0% → **43.0% / 44.2%**.
+   Spreading the wage axis manufactures STRICT winners, and a strict winner dominates whenever
+   it also leads on frontier.
+2. **THE PIGEONHOLE.** At tier 3 the payout is clamped to `[floor, capByTier[2]]` = **[1, 3]**.
+   Seven rooms into three integers: at least three tie at every tier-3 door, at every possible
+   value of `ROOM_EFFORT`.
+
+**So no later round should spend itself on room lengths for that number.** If the ratchet is to
+fall, the levers are the ones round 40 already named — within-category plan spread in the deck —
+or the payout ceiling itself, which is an owner-facing economy decision.
+
+*(One more thing, corrected because it is repeated in three documents and in four comments and
+it is wrong: **FOUR of the seven shipped rooms pay +1 at tier 1**, not five. Twistle,
+forgotten-word, cipher and crossword. The Word Web pays +2.)*
 ---
 
 ## 2. The landing is three cells, not one

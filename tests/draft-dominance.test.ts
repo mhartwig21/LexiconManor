@@ -97,7 +97,11 @@ import {
 } from '../src/engine/manor/grid';
 import type { Cell, Dir, ManorState, RoomCard } from '../src/engine/types';
 import { createRng } from '../src/engine/rng';
-import { solvePayout } from '../src/engine/economy/steps';
+import { SOLVE_WAGE, solvePayout } from '../src/engine/economy/steps';
+import { ROOM_EFFORT } from '../src/engine/economy/effort';
+import { type RoomPuzzleKind } from '../src/engine/rooms/room-puzzle';
+
+const TIERS = [1, 2, 3] as const;
 
 // ---------------------------------------------------------------------------
 // A plausible evening, walked on the real grid (the same probe draft-shape uses)
@@ -260,8 +264,9 @@ describe('THE GATE — the deck may not make offers more dominated than they are
       // `isDominated` reads the two things the card face prints — the door plan
       // and what the room can pay — and a card dominates when it WEAKLY beats
       // the others on both. Denominating the economy in moves collapsed the
-      // payout table onto five integers, and five of the seven shipped rooms pay
-      // +1 at tier 1, so far more offers now TIE on the steps axis and a tie is
+      // payout table onto five integers, and FOUR of the seven shipped rooms pay
+      // +1 at tier 1 (round 46 counted them; this and three documents said five),
+      // so far more offers now TIE on the steps axis and a tie is
       // a weak win. Measured: 40.9% → 41.3% for the median player. It is
       // published rather than absorbed — `DOMINANCE_GATE.ratchet` 0.41 → 0.42,
       // the measured amount and no further, with the full account in
@@ -468,5 +473,115 @@ describe('THE GATE — the deck may not make offers more dominated than they are
       .toBeLessThanOrEqual(0.005);
     // …and it goes red on the draw it replaced, by a factor of thirty.
     expect(allSeal(UNRULED)).toBeGreaterThan(0.04);
+  });
+});
+
+/**
+ * ═══ ROUND 46 — THE COMMISSION ROUND 42 LEFT HERE IS VOID, AND HERE IS WHY ══
+ *
+ * `DOMINANCE_GATE.ratchet` rose 0.41 → 0.42 in round 42 and the note beside it
+ * named the way to pay it back: *"the wage table needs more DISTINCT values in
+ * it, which is a fact about how long the rooms are (`ROOM_EFFORT`) and
+ * therefore a content question."* `docs/STATUS.md` published it as the round's
+ * top debt and this round was commissioned to pay it.
+ *
+ * **IT DOES NOT WORK, AND IT IS NOT EVEN AVAILABLE.** The diagnosis was never
+ * measured — it was reasoned from "ties are weak wins", which is true, and then
+ * assumed to run the other way, which is not. Two instruments say so, and
+ * neither of them is the one that wrote the claim:
+ *
+ *   1. **THE ORACLE.** Force the widest payout spread the shipped ceiling
+ *      permits — honesty ignored, rooms re-clocked to whatever splits the table
+ *      best — and the dominance rate gets WORSE, not better. Spreading the wage
+ *      axis manufactures STRICT winners, and a strict winner dominates whenever
+ *      it also leads on frontier; the ties it removes were mostly ties in
+ *      offers that were already decided on the other axis.
+ *   2. **THE PIGEONHOLE.** At tier 3 the payout is clamped to
+ *      `[SOLVE_WAGE.floor, capByTier[2]]` = **[1, 3]**. Seven shipped rooms
+ *      into three integers: at least three of them tie at every tier-3 door, at
+ *      every possible value of `ROOM_EFFORT`. No room length can fix that
+ *      because it is arithmetic about the CEILING and the UNIT.
+ *
+ * So a later round should not spend itself on room lengths for this number.
+ * If the ratchet is ever to fall, the levers are the ones round 40 already
+ * named — within-category plan spread in the deck — or the payout ceiling
+ * itself, which is an owner-facing economy decision (`SOLVE_WAGE.capByTier` is
+ * one bare ascent, THE_CLIMB §1b).
+ */
+describe('the way this ratchet was supposed to be paid back does not pay it', () => {
+  const dayRate = (): number => {
+    let offers = 0;
+    let dominated = 0;
+    for (const profile of [PROFILE_DECENT, PROFILE_SKILLED]) {
+      const days = simulateDays(profile, 600, 0xd01a + profile.name.length);
+      offers += days.reduce((t, d) => t + d.offers, 0);
+      dominated += days.reduce((t, d) => t + d.dominatedOffers, 0);
+    }
+    return dominated / offers;
+  };
+
+  it('gets WORSE under an oracle that forces the widest payout spread allowed', () => {
+    const shipped = dayRate();
+    const before = Object.fromEntries(
+      (Object.keys(ROOM_EFFORT) as RoomPuzzleKind[]).map((k) => [k, ROOM_EFFORT[k]]),
+    ) as Record<RoomPuzzleKind, readonly [number, number, number]>;
+    // Lengths chosen ONLY to split the payout table as widely as the ceiling
+    // allows. Not a proposal — a bound on what the lever could ever buy.
+    const oracle: Record<string, readonly [number, number, number]> = {
+      'twistle': [2.5, 4.5, 6.5],
+      'word-web': [4.5, 7.0, 2.0],
+      'hive': [14.0, 11.0, 7.0],
+      'forgotten-word': [7.0, 2.5, 4.5],
+      'sudoku': [11.0, 13.0, 17.0],
+      'cipher': [2.25, 7.0, 2.0],
+      'crossword': [5.0, 9.0, 4.5],
+    };
+    let widened: number;
+    let distinctAfter: number[];
+    try {
+      for (const [k, row] of Object.entries(oracle)) {
+        (ROOM_EFFORT as Record<string, readonly [number, number, number]>)[k] = row;
+      }
+      distinctAfter = TIERS.map((t) => new Set(
+        (Object.keys(ROOM_EFFORT) as RoomPuzzleKind[]).map((k) => solvePayout(k, t)),
+      ).size);
+      widened = dayRate();
+    } finally {
+      for (const [k, row] of Object.entries(before)) {
+        (ROOM_EFFORT as Record<string, readonly [number, number, number]>)[k] = row;
+      }
+    }
+    // The oracle really did widen the table — else this proves nothing.
+    const distinctShipped = TIERS.map((t) => new Set(
+      (Object.keys(ROOM_EFFORT) as RoomPuzzleKind[]).map((k) => solvePayout(k, t)),
+    ).size);
+    expect(distinctAfter.reduce((a, b) => a + b, 0))
+      .toBeGreaterThan(distinctShipped.reduce((a, b) => a + b, 0));
+    // …and it made the thing it was supposed to fix worse.
+    expect(widened, `the widest payout table the ceiling allows measures`
+      + ` ${(100 * widened).toFixed(1)}% dominated against the shipped`
+      + ` ${(100 * shipped).toFixed(1)}%`).toBeGreaterThan(shipped);
+    // The shipped table is back, exactly as it was.
+    expect(ROOM_EFFORT).toEqual(before);
+  });
+
+  it('could not have paid it anyway: seven rooms into three integers at tier 3', () => {
+    const kinds = Object.keys(ROOM_EFFORT) as RoomPuzzleKind[];
+    const values = SOLVE_WAGE.capByTier[2]! - SOLVE_WAGE.floor + 1;
+    expect(kinds.length).toBeGreaterThan(values);
+    // The pigeonhole, stated as the bound it is: however the rooms are clocked,
+    // some payout at tier 3 is shared by at least this many rooms.
+    const forcedTies = Math.ceil(kinds.length / values);
+    expect(forcedTies).toBeGreaterThanOrEqual(3);
+    // …and the shipped table is already at that bound rather than above it, so
+    // there is no slack in it to recover either.
+    const counts = new Map<number, number>();
+    for (const k of kinds) {
+      const p = solvePayout(k, 3);
+      counts.set(p, (counts.get(p) ?? 0) + 1);
+    }
+    expect(Math.max(...counts.values()),
+      `tier 3 pays ${[...counts.entries()].map(([p, n]) => `${n}×+${p}`).join(' ')}`)
+      .toBeGreaterThanOrEqual(forcedTies);
   });
 });
