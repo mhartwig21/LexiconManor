@@ -93,9 +93,22 @@ describe('the layering scale (AAA 11.5)', () => {
   it('paints the rungs in the published order', () => {
     expect(LAYERS.page).toBeLessThan(LAYERS.overlay);
     expect(LAYERS.overlay).toBeLessThan(LAYERS.chrome);
-    expect(LAYERS.chrome).toBeLessThan(LAYERS.veil);
-    expect(LAYERS.veil).toBeLessThan(LAYERS.notice);
-    expect(LAYERS.notice).toBeLessThan(LAYERS.moment);
+    expect(LAYERS.chrome).toBeLessThan(LAYERS.notice);
+    /**
+     * ROUND 53 — THIS PAIR IS THE OTHER WAY UP NOW, AND IT IS A FINDING RATHER
+     * THAN A RENUMBERING. The veil was 55 under the rail's 60, and a live
+     * verifier photographed `.chr-notices` at [0, 220, 375, 161] printing a
+     * cream payout card at FULL BRIGHTNESS over the candle, dead centre, while
+     * the rest of the glass went dark around it. Dusk falls out of the last
+     * step and the last step is very often the one that drafted the room the
+     * notice is about, so the collision is the ordinary shape of the last
+     * draft of the day rather than a rare alignment. Dusk falls over the whole
+     * house — including the rail, which is a payout line and not a system
+     * prompt. Both layers are pointer-transparent, so nothing about what may
+     * be TAPPED changed with them (ui/chrome/layers.ts).
+     */
+    expect(LAYERS.notice).toBeLessThan(LAYERS.veil);
+    expect(LAYERS.veil).toBeLessThan(LAYERS.moment);
     expect(LAYERS.moment).toBeLessThan(LAYERS.material);
     expect(LAYERS.material).toBeLessThan(LAYERS.platform);
   });

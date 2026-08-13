@@ -41,13 +41,14 @@
  *                  exactly when she is deciding. READABLE, NOT TAPPABLE: the
  *                  header takes `pointer-events: none` while any overlay is
  *                  up, and the retire control is not rendered at all.
- *   veil     55    The dusk veil (.chr-dusk). Above the bar because dusk falls
- *                  over the whole house; `pointer-events: none` by design
- *                  (AAA 4.12's walk-but-no-interact grace) bar its own skip.
- *   notice   60    The notice rail (.chr-notices). Must clear the overlays —
+ *   notice   55    The notice rail (.chr-notices). Must clear the overlays —
  *                  a payout line rendered behind a modal is a notice that did
  *                  not happen (AAA 11.11). `pointer-events: none` all the way
  *                  down, so it can never swallow a tap meant for the scene.
+ *   veil     60    The dusk veil (.chr-dusk). Above the bar AND above the rail,
+ *                  because dusk falls over the whole house — see the block
+ *                  below. `pointer-events: none` by design (AAA 4.12's
+ *                  walk-but-no-interact grace) bar its own skip.
  *   moment   100   The campaign seal (src/ui/moment/*). Above everything in
  *                  the game, and TAPPABLE — it is the one layer whose job is
  *                  to be pressed. It clears the chrome band by geometry
@@ -58,6 +59,37 @@
  *                  update toast and the rotate-your-phone screen. Nothing in
  *                  the game may cover these.
  *
+ * ── THE RAIL AND THE VEIL SWAPPED RUNGS (round 53) ──────────────────────────
+ *
+ * `veil` was 55 and `notice` was 60, and nothing had ever asked what that
+ * ordering MEANT. Photographed at 375×667 by a live verifier driving a real day
+ * to a real dusk: `.chr-notices` measured [0, 220, 375, 161] at z-index 60 over
+ * `.chr-dusk` at 55, printing "A ROOM WITH ONE DOOR — Nothing has been through
+ * here in years, and now nothing will. +1 gem" on cream paper AT FULL
+ * BRIGHTNESS, dead centre, on top of the candle, while every other pixel on the
+ * glass went dark around it. The rail's dwell is 3400ms (NoticeRail
+ * `NOTICE_MS`) and the fade is 4000ms, and dusk falls out of the last step —
+ * which is very often the step that drafted the room the notice is about. So
+ * the collision is not a rare alignment; it is the ORDINARY shape of the last
+ * draft of the day.
+ *
+ * The rung numbers are the whole fix, and the argument is the one already
+ * written above for the bar: **dusk falls over the whole house.** The rail is a
+ * payout line about a room she has already drafted, not a system prompt; when
+ * the house goes dark it goes dark too, fading with everything else instead of
+ * hanging over the one moment in the day this game asks her to just watch.
+ * Nothing else changes — both layers are `pointer-events: none`, so no tap
+ * moves, and `notice` still clears the overlays and the bar, which is the only
+ * thing its rung was ever chosen to say (AAA 11.5, 11.11).
+ *
+ * The seal on `moment` (100) is still above the veil and is NOT a bug: the
+ * moment layer defers to a full-glass ceremony through `ceremonyGate`, which
+ * `DuskVeil` holds for the whole of dusk (ui/moment/ceremony.ts), so the grant
+ * waits and presses in on the blueprint tomorrow rather than expiring behind
+ * the dark. The rail had no such gate and no such trace — it is a line that
+ * exists only while it is on the glass — which is why it is answered with a
+ * rung rather than with a suppression.
+ *
  * Consumed by: ui/chrome/chrome.css, ui/dialogue/dialogue.css,
  * ui/blueprint/blueprint.css, ui/moment/moment.css.
  */
@@ -66,8 +98,8 @@ export const LAYERS = {
   page: 0,
   overlay: 40,
   chrome: 50,
-  veil: 55,
-  notice: 60,
+  notice: 55,
+  veil: 60,
   moment: 100,
   material: 120,
   platform: 9999,
@@ -80,8 +112,8 @@ export const LAYER_VARS: Record<LayerName, string> = {
   page: '--z-page',
   overlay: '--z-overlay',
   chrome: '--z-chrome',
-  veil: '--z-veil',
   notice: '--z-notice',
+  veil: '--z-veil',
   moment: '--z-moment',
   material: '--z-material',
   platform: '--z-platform',

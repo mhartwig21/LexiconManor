@@ -591,7 +591,7 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 /* --- The notice rail (AAA 11.11 / 11.14 / 11.18) -------------------------- */
 
 /* Payout lines and warmer friendships, on the screen she is actually on.
-   z: notice (60) clears both the full-screen overlays (40) and the chrome bar
+   z: notice (55) clears both the full-screen overlays (40) and the chrome bar
    itself (50), because the whole point is that a notice fired behind a modal
    is a notice that did not happen — and `pointer-events: none` all the way
    down means nothing here is tappable through that modal (AAA 11.5). It was
@@ -606,13 +606,19 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
    moment can never swallow a payout line (11.11). The offset is
    viewport-relative on purpose — a pixel copy of another layer's card height
    would silently bury one of them the first time that card grew (11.4). It
-   clears the bottom-anchored dialogue sheet at every size in the matrix. */
+   clears the bottom-anchored dialogue sheet at every size in the matrix.
+
+   ROUND 53 — AND IT IS NOW UNDER THE DUSK VEIL, which is the one thing above
+   it that is not a modal. The rail was 60 against the veil's 55 and printed a
+   cream card at full brightness over the candle for the first 3.4s of a 4s
+   fade; the veil is 60 now and the rail 55. Every clause above still holds
+   word for word — the rungs it was chosen to clear have not moved. */
 .chr-notices {
   position: fixed;
   top: 33%;
   left: 0;
   right: 0;
-  z-index: var(--z-notice, 60);
+  z-index: var(--z-notice, 55);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1065,8 +1071,11 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 .chr-dusk {
   position: fixed;
   inset: 0;
-  /* z: veil (55) — over the bar, because dusk falls on the whole house. */
-  z-index: var(--z-veil, 55);
+  /* z: veil (60) — over the bar AND over the notice rail, because dusk falls
+     on the whole house. It was 55, under the rail's 60, and a cream payout
+     card printed at full brightness over the candle for the first 3.4s of the
+     4s fade; the ordering and the measurement are in ui/chrome/layers.ts. */
+  z-index: var(--z-veil, 60);
   pointer-events: none; /* the walking grace — taps pass through the veil */
 
   /* ROUND 15 (blocker, AAA 11.2 / 11.4 / 11.5) — THE VEIL'S OWN FLOOR.
@@ -1242,13 +1251,43 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
   .chr-key { animation: chrKeyStill 200ms linear 1400ms both; }
   .chr-notice { animation: none; }
   .chr-scene--enter { animation: none; }
-  .chr-dusk { animation: chrDuskStill 200ms linear forwards; }
-  .chr-dusk__line { animation: chrDuskLineStill 200ms linear 300ms forwards; }
+  /* ═══ ROUND 53 — LESS MOVEMENT, NOT LESS DUSK ═════════════════════════════
+     `.chr-dusk { animation: chrDuskStill 200ms }` STOOD HERE, and measured
+     live it put the veil at full opacity by 220ms and the whole screen gone by
+     906ms. That is not a reduced fade, it is a CUT TO BLACK — the one beat in
+     the day the game asks her to sit and watch, deleted for the player least
+     able to ask for it back.
+
+     A cross-fade is not movement. Nothing about an opacity ramp travels across
+     the retina, and `prefers-reduced-motion` is about travel — which is why
+     the two rules below are the ones that change and the veil's is not. What
+     TRAVELLED in this transition was exactly two things, and both are still
+     removed here: the vignette's `scale(1.7 → 1)` (it arrives already closed)
+     and the line's 6px rise (`chrDuskLineStill` is the same keyframe without
+     the `translateY`). Everything else — the 4000ms clock, the doze curve, the
+     candle at half time, the words at 0.56 of it — is the dusk everybody else
+     gets, and she gets it too.
+
+     So `.chr-dusk` is deliberately ABSENT from this block and from the
+     `.chr--reduced` block below: it inherits the base rule, and the whole
+     choreography stays synchronised to `--chr-dusk-ms` rather than
+     re-specifying a second clock that can drift from the first.
+
+     The band that moved with it: `gate:glass`'s DUSK verdict used to REQUIRE
+     reduced motion to run a different animation for ≤400ms, so the fix above
+     would have failed the build. It is retired and replaced by a measurement
+     of the painted darkness (scripts/smoke-gate.mjs `DUSK`). */
+  .chr-dusk__line {
+    animation: chrDuskLineStill
+      calc(var(--chr-dusk-ms) * 0.28) ease-out calc(var(--chr-dusk-ms) * 0.56) forwards;
+  }
   /* Round 8: the candle is a still image either way — it just arrives at its
      resting opacity instead of fading to it (AAA U.3: the state stays legible,
-     the motion goes). Round 39: and the vignette is a still image too — the
-     closing edge is the ONE part of the new dusk that is motion rather than
-     state, so it arrives already closed and nothing travels. */
+     the motion goes). It is INSIDE the veil, so it still comes up with the
+     veil's own opacity rather than snapping on. Round 39: and the vignette is
+     a still image too — the closing edge is the ONE part of the new dusk that
+     is motion rather than state, so it arrives already closed and nothing
+     travels. */
   .chr-dusk__candle { animation: none; opacity: 0.4; }
   .chr-dusk::before { animation: none; transform: scale(1); }
 }
@@ -1260,8 +1299,12 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 .chr--reduced .chr-key { animation: chrKeyStill 200ms linear 1400ms both; }
 .chr--reduced .chr-notice { animation: none; }
 .chr--reduced .chr-scene--enter { animation: none; }
-.chr--reduced .chr-dusk { animation: chrDuskStill 200ms linear forwards; }
-.chr--reduced .chr-dusk__line { animation: chrDuskLineStill 200ms linear 300ms forwards; }
+/* The in-game setting, and it must say exactly what the media query above says
+   — including the veil's rule being ABSENT. Round 53: see that block. */
+.chr--reduced .chr-dusk__line {
+  animation: chrDuskLineStill
+    calc(var(--chr-dusk-ms) * 0.28) ease-out calc(var(--chr-dusk-ms) * 0.56) forwards;
+}
 .chr--reduced .chr-dusk__candle { animation: none; opacity: 0.4; }
 .chr--reduced .chr-dusk::before { animation: none; transform: scale(1); }
 
@@ -1279,12 +1322,10 @@ body:has(.dlg, .bp-modal, .chr-scene, [data-overlay]) .chr-header {
 
 /* Round 39: the ground is painted once at its final alpha now, so the still
    form has nothing to say about colour — it is the same one property, arriving
-   instead of travelling. */
-@keyframes chrDuskStill {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
+   instead of travelling. ROUND 53: `chrDuskStill` is DELETED. It was the
+   reduced-motion veil's 200ms cut to black, and reduced motion now runs
+   `chrDuskFall` on the same clock as everybody else; the only keyframe that
+   still needs a still form is the line's, because that one really did travel. */
 @keyframes chrDuskLineStill {
   from { opacity: 0; }
   to   { opacity: 0.95; }

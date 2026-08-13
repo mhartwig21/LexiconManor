@@ -234,6 +234,76 @@ account in `docs/THE_CLIMB.md` §1i, teardown in `docs/BENCHMARKS.md` §2.
   to widen: `npm run vitest tests/puzzles/wordweb-register.test.ts` gates the capability
   structurally and prints both shares every run.
 
+**AND THE DUSK WAS RIGHT AND EVERYTHING AROUND IT WAS NOT (round 53).** The one beat in the day
+the game asks her to sit and watch had a cream payout card printed over the candle at full
+brightness, a cut to black for anyone who needs reduced motion, and a gate that could not have
+seen either — because it measured the fade by reading the stylesheet. Full account in
+`docs/AAA_BAR.md` 4.12; the fade ITSELF is untouched and so is `sfx.dusk()`.
+
+- **THE RAIL WAS ON A HIGHER RUNG THAN THE VEIL, and nobody had ever asked what that meant.**
+  `.chr-notices` measured `[0, 220, 375, 161]` at z-index **60** over `.chr-dusk` at **55**,
+  printing *"A ROOM WITH ONE DOOR · Nothing has been through here in years, and now nothing
+  will. +1 gem"* on cream paper, dead centre, undimmed, while every other pixel went dark.
+  It is not a rare alignment: the rail lives 3400ms of a 4000ms fade and dusk falls out of the
+  LAST STEP, which is very often the step that drafted the room the notice is about. **The
+  rungs are swapped — notice 55, veil 60** — because dusk falls over the whole house, which is
+  the argument `layers.ts` already made for the day bar. Nothing about what may be TAPPED
+  changed; both layers are `pointer-events: none`. **The moment SEAL was never the defect** and
+  is still above the veil on purpose: it defers through `ceremonyGate`, which `DuskVeil` holds,
+  so a grant waits for tomorrow's blueprint instead of expiring behind the dark.
+- **REDUCED MOTION HAD BEEN GIVEN A CUT TO BLACK.** `chrDuskStill 200ms`: full opacity by
+  220ms, the screen gone by 906ms. The rule it came from is right (AAA U.3 — *the state still
+  arrives, it just does not travel*) and it had been applied to a CROSS-FADE, which does not
+  travel. The veil runs the same `chrDuskFall` on the same `--chr-dusk-ms` as everybody else
+  now; the two things that DID travel — the vignette's `scale(1.7 → 1)` and the line's 6px
+  rise — were already removed and stay removed. **The band that moved, with its reason:**
+  `DUSK.reducedCeilingMs` (≤400ms) did not merely miss this, it **REQUIRED** it — the fix would
+  have failed the build. It is **retired, not widened**, and replaced by a floor: the reduced
+  dusk keeps **≥75%** of the dusk everybody else gets, photographed, plus a keyframe check that
+  nothing in it animates a transform. The fix photographs **98%** of it; the cut photographs
+  **6%**. *(The 906ms above was measured by sampling opacity until the whole choreography had
+  landed. Measured as DARKNESS, which is what she sees, the defect was worse than the finding
+  said.)*
+- **AND THE GATE WAS MEASURING THE DECLARATION, WHICH IS THE PROJECT'S OWN §3.2.** `judgeDusk`
+  read duration, easing NAME and keyframe property count off the stylesheet and evaluated the
+  cubic — an instrument that can only ever agree with the thing it audits. It **photographs the
+  glass** now: the dusk's animations are paused and driven to an ABSOLUTE grid (0…6000ms,
+  derived from nothing in the stylesheet) and the mean luminance of each screenshot IS the
+  darkness. It buys four things a reading could not: the fade's length as the EYE sees it, an
+  answer at half time that is a photograph (**0.68** against the declared cubic's **0.82** —
+  both printed every run, and a round that finds them equal should suspect it has re-derived
+  one from the other), how much light the veil actually takes away (so the same curve run to a
+  haze is caught), and the undimmed-region check that found defect one. **Every band it gates
+  has both ends photographed:** the fixed glass leaves **0.00%** of itself lit against a 0.5%
+  ceiling and the defect's class photographs **7.12%**; the reduced dusk keeps **3236ms of
+  3287ms (98%)** against a 75% floor and the cut restored by `--prove` keeps **195ms (6%)**.
+  The shipped fade photographs a drop of **171 luminance in 3287ms of a declared 4000ms** — a
+  decelerating fade settles before its clock does, which is a fact no reading could have told
+  us.
+- **AND ONE THING THIS ROUND SAW AND DID NOT FIX, recorded rather than absorbed: `gate:glass`
+  FLAKED ONCE IN TWENTY-SEVEN WALKS, and it flaked OUT of the dusk.** On one 375x667 run the
+  LEDGER scene found no `.chr-steps__open` to tap (`ensureExploring` did not land the walk in
+  the exploring phase after the previous scene), and the run came back **21 scenes, 0 account
+  rows, 2 findings**. It is not this round's code — the ledger is walked BEFORE the dusk pass —
+  and the two runs either side of it were clean, as were the twenty baseline walks `--prove`
+  took. **What is worth keeping is that the gate did not quietly pass:** the ACCOUNT finding
+  arrived WITH a `BLIND` finding — *"measured 0 where at least 3 was expected — the probe has
+  gone blind, and a gate that measures nothing passes everything"* — which is §3.5 being caught
+  by a coverage floor instead of being discovered three rounds later. This is the same family as
+  the `--prove` non-determinism §2 already flags; **a round that sets out to fix it should start
+  at `ensureExploring`, and should not trust a single green walk as evidence.**
+- **WHAT REMAINS UNVERIFIABLE FROM HERE, said plainly because the owner is the only one who can
+  check it: NOBODY HAS EVER WATCHED THIS FADE ON A REAL PHONE.** Everything above is headless
+  Edge at 375×667 and 390×844 with the animation stopped frame by frame. What that cannot
+  answer is whether it FEELS like dozing off at sixty frames on OLED glass, whether the
+  candle's `#e7dcc6` at 0.4 reads as warm or as grey on a real panel, and whether 4.7s from the
+  last step to the night digest is a beat or a wait in the hand. **Three things to look at when
+  he next opens it:** (1) run the day out of steps beside a room that pays — a Still Room, or
+  any plan that seals itself — and check the payout card goes dark WITH the house rather than
+  hanging over it; (2) turn reduced motion on in Chronicles and run out of steps again — it
+  should be the same length of dusk, just without the vignette closing; (3) watch whether the
+  candle is still visible at the end, or whether the vignette has swallowed it.
+
 **AND THE DARKROOM WAS TELLING PLAYERS THEY WERE WRONG WHEN THEY WERE NOT (round 52).** Six
 rounds graded that room on how HARD it is and none of them asked whether it is FAIR. **76.0% of
 its boards admitted a second defensible reading** — a player who had solved the whole of `A HOUSE
@@ -443,9 +513,12 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
 2. **Her campaign is ~18–19 days, was ~28.** Flat movement took ~6 evenings off the median player
    and the three-cell landing took more; the skilled player barely moved, because the old toll fell
    on exactly the storeys she re-walks. **If 28 was deliberate, this needs a ruling.**
-3. **A moment seal paints over the dusk veil undimmed** — a cream card over the candle at full
-   brightness during the fade.
-4. **Reduced motion lost a quarter of its dusk**, unpublished — gone by ~906ms.
+3. **~~A moment seal paints over the dusk veil undimmed~~ — PAID, round 53, and it was the
+   NOTICE RAIL rather than the seal.** `.chr-notices` was on rung 60 against the veil's 55;
+   the seal's own layer (100) was never the problem, because `ceremonyGate` holds it for the
+   whole of dusk. Rungs swapped, notice 55 / veil 60.
+4. **~~Reduced motion lost a quarter of its dusk~~ — PAID, round 53**, and the band that
+   required it (`DUSK.reducedCeilingMs` ≤400ms) is retired rather than widened.
 5. **The Library** (median 2 contested tiles against 2–4) and **the Darkroom** — the two rooms that
    do not clear their benchmark. **The Darkroom's remaining gap is now ONE named item**, the
    ladder above (5b): round 52 paid the fairness debt nobody had written down, and §11's other

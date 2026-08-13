@@ -940,27 +940,207 @@ export function judgeMorning(m) {
  * disjointed… it should feel really cozy like you're slipping off to peaceful
  * slumber". The shipped curve was `3200ms ease-in` — an ACCELERATING fade,
  * which lays 29% of its darkness in the first half of its time and then slams,
- * and reads as being switched off rather than drifting off. That is not a taste
- * question and it does not need a human to re-check it every round: a curve is
- * a function, so the gate asks it where it is at half time.
+ * and reads as being switched off rather than drifting off.
+ *
+ * ═══ ROUND 53 — AND THIS GATE WAS A SCREENSHOT OF AN INTENTION ═════════════
+ *
+ * Round 39 answered "where has the fade got to at half its time" by reading the
+ * DURATION, the EASING NAME and the KEYFRAME PROPERTY COUNT off the stylesheet
+ * and evaluating the cubic. Every one of those is a DECLARATION. The fade was
+ * right — a live verifier sampled the running opacity and confirmed it — but
+ * this gate would not have noticed if it stopped being right, because it never
+ * once looked at the glass it is named for. Three ways the declaration and the
+ * paint come apart, all of them cheap: something ELSE is painted over the veil
+ * (which is exactly what was found this round — a cream payout card at full
+ * brightness over the candle, from a rung nobody had questioned); the ground
+ * alpha is cut, so the same curve on the same clock runs to a haze instead of
+ * to a night; or a second darkness ramps somewhere else on the layer and
+ * perceived darkness is a product again, which a property count can only see
+ * while the second ramp lives in the same keyframe it is counting.
+ *
+ * SO THE SHAPE IS MEASURED IN PIXELS. The dusk's own animations are paused and
+ * their `currentTime` driven to an ABSOLUTE millisecond grid (0…6000 — a grid
+ * that owes the stylesheet nothing, so it cannot agree with it by
+ * construction), the glass is photographed at each stop, and the mean luminance
+ * of the frame IS the darkness. `progress(t)` is that curve normalised between
+ * the lit house and the settled night. Two things follow that the reading could
+ * not give: the fade's own LENGTH as the eye sees it — the last 2% of a
+ * decelerating fade is invisible, so the paint settles before the clock does —
+ * and an answer at half time that is a photograph rather than an evaluation.
+ *
+ * WHAT IS STILL READ OFF THE STYLESHEET, AND WHY THAT IS RIGHT. AAA 4.12's ≤4s
+ * grace bounds how long before the NIGHT MAY TURN OVER, which is a fact about
+ * the clock and not about the paint. The candle's lead and the line's landing
+ * are choreography: two declared times against a third. Those stay declared,
+ * and the declared curve's own answer at half time is PRINTED beside the
+ * photographed one on every run — they are 0.82 and 0.68 on the shipped veil,
+ * because luminance is not linear in alpha, and a round that finds them equal
+ * should suspect it has re-derived one from the other. (On `ease-in` the two
+ * very nearly AGREE, 0.32 declared against 0.30 photographed, which is the
+ * same fact from the other side: it is the long decelerating tail that the
+ * eye and the cubic disagree about, and that tail is the whole of round 39.)
  */
 export const DUSK = {
   /** AAA 4.12's walk-but-do-not-interact grace. Taken TO, never past. */
   fadeCeilingMs: 4000,
   /**
-   * Half the darkness by half the time, or it is accelerating. `ease-in`
-   * answers 0.29 here; the shipped `--ease-doze` answers ~0.86.
+   * Half the darkness by half the time, or it is accelerating. PHOTOGRAPHED at
+   * 375x667: the shipped doze curve answers 0.68 here and `ease-in`, injected
+   * on the same glass by `--prove`, answers 0.30.
    */
   minHalfTimeProgress: 0.55,
+  /**
+   * THE PAINT MUST BELONG TO THE CLOCK THAT DECLARED IT. A decelerating fade
+   * always settles before its duration is up, so painted < declared is normal:
+   * the shipped veil photographs 3287ms of a 4000ms clock (0.82). Under half of it
+   * the fade is not the one the stylesheet says it is — a keyframe that jumps,
+   * or a curve so front-loaded that its tail is decoration.
+   */
+  minPaintedShareOfDeclared: 0.5,
+  /**
+   * HOW MUCH LIGHT THE VEIL ACTUALLY TAKES AWAY, on the 0–255 luminance scale.
+   * The shipped ground is `rgba(36, 29, 21, 0.82)` and photographs a drop of
+   * 171 from a parchment glass of 222 (172 of 223 at 390x844). The floor is
+   * under half of that, an effective alpha near 0.38: below it the house is DIM
+   * and not dark, and every share above would be normalising against a rounding
+   * error. The headroom is deliberately wide because this band has no shipped
+   * defect behind it — nothing has ever run this fade to a haze — so it is a
+   * guard against a future change and not a fit to a measurement.
+   */
+  minDarkeningL: 80,
+  /** Where the painted fade is called finished (see minPaintedShareOfDeclared). */
+  settledProgress: 0.98,
+  /**
+   * THE INSTRUMENT'S OWN HONESTY CHECK. The last two stops on the grid are both
+   * past every animation in the transition, so they must photograph the same
+   * glass. If they do not, something moved under the measurement and the curve
+   * is partly measuring that instead — which is the one failure this whole
+   * method could otherwise hide.
+   */
+  settleNoiseL: 1.5,
   /**
    * The one warm image in the transition must land EARLY and hold. It used to
    * finish 200ms before the veil did, so it was still brightening while the
    * room went out — swallowed as it arrived.
    */
   minCandleLeadMs: 1200,
-  /** Reduced motion still arrives; it just does not travel (AAA U.3). */
-  reducedCeilingMs: 400,
+  /**
+   * ── REDUCED MOTION MAY SOFTEN THE DUSK; IT MAY NOT DELETE IT (round 53) ──
+   *
+   * `reducedCeilingMs: 400` stood here, and it REQUIRED the defect. Reduced
+   * motion ran `chrDuskStill 200ms`: the veil was at full opacity by 220ms and
+   * the whole screen was gone by 906ms — a quarter of the dusk everybody else
+   * gets, for the player least able to ask for it back. The rule it was written
+   * from is right (AAA U.3: the state still arrives, it just does not travel);
+   * it was applied to the one property in the transition that does not travel.
+   * A cross-fade is not movement.
+   *
+   * So the band is retired and republished the other way up: the reduced dusk
+   * must keep at least three quarters of the dusk everybody else gets, in the
+   * same photographs by the same instrument, and nothing in it may TRAVEL —
+   * which is asked of the keyframes, because "does this move across the retina"
+   * is a question about properties and not about brightness.
+   *
+   * BOTH ENDS PHOTOGRAPHED, and the floor sits between them with room on each
+   * side: the shipped fix keeps **3236ms against 3287ms — 98%** (the same rule
+   * on the same clock, with the vignette's scale and the line's rise removed),
+   * and the cut restored by `--prove` keeps **195ms — 6%**. The 906ms in the
+   * finding above was measured a different way, by sampling opacity until the
+   * whole choreography had landed; measured as DARKNESS, which is what a player
+   * sees, the defect was worse than the finding said.
+   */
+  reducedShareOfFade: 0.75,
+  /**
+   * ── AND NOTHING ABOVE THE VEIL MAY STAY LIT (round 53) ──────────────────
+   *
+   * A pixel is LIT at `litFloor` on the 0–255 luminance scale (cream paper
+   * photographs about 230; the same paper under the settled veil, about 43). It
+   * DID NOT DARKEN if it keeps `keptShare` of the light it had before the fade
+   * began. The veil's own furniture — the candle, the sentence, the skip — is
+   * excluded BY BOX, because those three arrive WITH the dark and are the only
+   * things on the glass that are supposed to get brighter.
+   *
+   * The ceiling is 0.5% of the glass, and BOTH ENDS OF IT ARE PHOTOGRAPHS. The
+   * fixed glass leaves **0.00%** lit at either phone size; a bright layer put
+   * back above the veil leaves **7.12%** (`--prove`, the day bar on rung 70).
+   * So the ceiling sits with fourteen times its own width of headroom under the
+   * cheapest form of the defect, and what the headroom is FOR is the
+   * antialiased edge of the three excluded boxes. The defect this was written
+   * for was `.chr-notices` at [0, 220, 375, 161] over the veil — z-index 60
+   * against 55 — and it is a bigger rectangle than the bar the proof uses.
+   */
+  undimmedShareCeiling: 0.005,
+  litFloor: 140,
+  keptShare: 0.85,
 };
+
+/**
+ * THE PAINTED FADE, derived from photographs of the glass.
+ *
+ * `samples` is `[{ t, mean }]` on an absolute millisecond grid — mean luminance
+ * of the whole frame, 0–255. Pure, so the self-test can hand it the numbers a
+ * historical defect really produced.
+ */
+export function paintedFade(samples) {
+  if (!Array.isArray(samples) || samples.length < 3) return null;
+  const rows = [...samples].sort((a, b) => a.t - b.t);
+  const l0 = rows[0].mean;
+  const lEnd = rows[rows.length - 1].mean;
+  const drop = l0 - lEnd;
+  const settleNoise = Math.abs(rows[rows.length - 1].mean - rows[rows.length - 2].mean);
+  if (!(drop > 0)) return { l0, lEnd, drop, fadeMs: 0, halfProgress: NaN, settleNoise };
+  const meanAt = (t) => {
+    if (t <= rows[0].t) return rows[0].mean;
+    for (let i = 1; i < rows.length; i++) {
+      if (t > rows[i].t) continue;
+      const a = rows[i - 1];
+      const b = rows[i];
+      const f = b.t === a.t ? 0 : (t - a.t) / (b.t - a.t);
+      return a.mean + f * (b.mean - a.mean);
+    }
+    return rows[rows.length - 1].mean;
+  };
+  let fadeMs = rows[rows.length - 1].t;
+  for (let i = 1; i < rows.length; i++) {
+    const p0 = (l0 - rows[i - 1].mean) / drop;
+    const p1 = (l0 - rows[i].mean) / drop;
+    if (p1 < DUSK.settledProgress) continue;
+    const f = p1 === p0 ? 0 : (DUSK.settledProgress - p0) / (p1 - p0);
+    fadeMs = rows[i - 1].t + f * (rows[i].t - rows[i - 1].t);
+    break;
+  }
+  return {
+    l0, lEnd, drop, fadeMs, settleNoise,
+    halfProgress: (l0 - meanAt(fadeMs / 2)) / drop,
+  };
+}
+
+/**
+ * THE SHARE OF THE GLASS THE DUSK NEVER TOUCHED.
+ *
+ * `lit` and `dark` are equal-length luminance arrays for the same frame before
+ * and after the fade; `skip` holds the indices belonging to the veil's own
+ * furniture. Pure, and it reports the bounding box of what it found so the
+ * message can name where on the glass to look.
+ */
+export function undimmedRegion(lit, dark, w, skip = new Set()) {
+  const box = { left: Infinity, top: Infinity, right: -1, bottom: -1 };
+  let litPx = 0;
+  let stuck = 0;
+  for (let i = 0; i < lit.length; i++) {
+    if (skip.has(i) || lit[i] < DUSK.litFloor) continue;
+    litPx++;
+    if (dark[i] < DUSK.keptShare * lit[i]) continue;
+    stuck++;
+    const x = i % w;
+    const y = Math.floor(i / w);
+    if (x < box.left) box.left = x;
+    if (x > box.right) box.right = x;
+    if (y < box.top) box.top = y;
+    if (y > box.bottom) box.bottom = y;
+  }
+  return { total: lit.length, litPx, stuck, share: stuck / lit.length, box };
+}
 
 /** Where a CSS timing function has got to at half its time. */
 export function easingAtHalfTime(fn) {
@@ -1020,18 +1200,12 @@ export function judgeDusk(m) {
     say('.chr-dusk__line', 'the veil\'s sentence and the veil\'s button are drawn on top of each other');
   }
 
+  /* ── THE DECLARED CLOCK: what it bounds is when the NIGHT MAY TURN OVER ── */
   if (!(m.veilMs > 0)) {
     say('.chr-dusk', 'the veil has no fade at all — dusk arrives as a cut');
   } else if (m.veilMs > DUSK.fadeCeilingMs) {
     say('.chr-dusk', `fades for ${m.veilMs}ms against AAA 4.12's ${DUSK.fadeCeilingMs}ms`
       + ' walk-but-do-not-interact grace');
-  }
-  const half = easingAtHalfTime(m.veilEase);
-  if (!(half >= DUSK.minHalfTimeProgress)) {
-    say('.chr-dusk', `is ${Number.isFinite(half) ? `${Math.round(half * 100)}%` : 'an unreadable share'}`
-      + ` of the way dark at half its time (${m.veilEase}) — an ACCELERATING fade sits still and then`
-      + ' slams, which reads as the lights being switched off. Dozing off moves early and'
-      + ` decelerates into stillness; the floor is ${Math.round(DUSK.minHalfTimeProgress * 100)}%`);
   }
   if (m.propsAnimated > 1) {
     say('.chr-dusk', `animates ${m.propsAnimated} properties of its own darkness (${m.propsList})`
@@ -1048,9 +1222,65 @@ export function judgeDusk(m) {
     say('.chr-dusk__line', `lands at ${Math.round(m.lineEndMs)}ms, after the dark has finished at`
       + ` ${Math.round(m.veilMs)}ms`);
   }
-  if (m.reduced && (m.reduced.name === m.veilName || m.reduced.ms > DUSK.reducedCeilingMs)) {
-    say('.chr--reduced .chr-dusk', `runs ${m.reduced.name} for ${m.reduced.ms}ms under reduced`
-      + ` motion — the state must still arrive, and it must not travel (AAA U.3)`);
+
+  /* ── AND THE PAINTED DARKNESS: photographs, on an absolute grid (round 53) ─ */
+  const paint = m.paint ? paintedFade(m.paint.samples) : null;
+  if (!paint) {
+    say('.chr-dusk', 'the fade was never photographed — the walk reached a dusk and the darkness on'
+      + ' the glass went unmeasured, so every claim about the shape of it is a reading of the'
+      + ' stylesheet again (round 53)');
+  } else if (!(paint.drop >= DUSK.minDarkeningL)) {
+    say('.chr-dusk', `takes only ${paint.drop.toFixed(1)} of the glass's ${paint.l0.toFixed(0)}`
+      + ` luminance away (floor ${DUSK.minDarkeningL}) — the curve may be perfect and this is still`
+      + ' a haze rather than a night, which is the half of dusk a stylesheet reading cannot see');
+  } else {
+    if (Math.abs(paint.settleNoise) > DUSK.settleNoiseL) {
+      say('.chr-dusk', `photographed two settled frames ${paint.settleNoise.toFixed(2)} luminance`
+        + ' apart — the glass moved under the measurement, so the fade curve below is partly'
+        + ' measuring that movement and should not be believed (instrument check)');
+    }
+    if (!(paint.halfProgress >= DUSK.minHalfTimeProgress)) {
+      say('.chr-dusk', `photographs ${Math.round(paint.halfProgress * 100)}% of the way dark at half`
+        + ` its own painted length (${Math.round(paint.fadeMs)}ms) — an ACCELERATING fade sits still`
+        + ' and then slams, which reads as the lights being switched off. Dozing off moves early and'
+        + ` decelerates into stillness; the floor is ${Math.round(DUSK.minHalfTimeProgress * 100)}%`);
+    }
+    const share = m.veilMs > 0 ? paint.fadeMs / m.veilMs : 0;
+    if (m.veilMs > 0 && share < DUSK.minPaintedShareOfDeclared) {
+      say('.chr-dusk', `declares ${m.veilMs}ms and photographs its darkness landing in`
+        + ` ${Math.round(paint.fadeMs)}ms — ${Math.round(share * 100)}% of its own clock. The paint`
+        + ' has come away from the declaration, which is the only reason this gate looks at pixels');
+    }
+  }
+
+  /* ── NOTHING ABOVE THE VEIL MAY STAY LIT ────────────────────────────────── */
+  if (m.undimmed && m.undimmed.share > DUSK.undimmedShareCeiling) {
+    const b = m.undimmed.box;
+    say('.chr-dusk', `left ${(m.undimmed.share * 100).toFixed(1)}% of the glass at full brightness`
+      + ` through the whole fade — a lit region at x ${b.left}–${b.right}, y ${b.top}–${b.bottom}`
+      + ' (in the sampled frame\'s own grid) that the dusk never touched. Something is painted on a'
+      + ' rung ABOVE the veil, and the veil is what dusk means: the ceiling is'
+      + ` ${(DUSK.undimmedShareCeiling * 100).toFixed(1)}%`);
+  }
+
+  /* ── REDUCED MOTION: less movement, not less dusk ───────────────────────── */
+  if (m.reduced && Array.isArray(m.reduced.travelling) && m.reduced.travelling.length > 0) {
+    say('.chr--reduced .chr-dusk', `still travels under reduced motion —`
+      + ` ${m.reduced.travelling.join(', ')} animate a transform. The state must still arrive; it is`
+      + ' the movement that goes (AAA U.3)');
+  }
+  if (m.reduced && paint) {
+    const rp = paintedFade(m.reduced.samples);
+    if (!rp) {
+      say('.chr--reduced .chr-dusk', 'the reduced-motion dusk was never photographed');
+    } else if (rp.fadeMs < DUSK.reducedShareOfFade * paint.fadeMs) {
+      say('.chr--reduced .chr-dusk', `photographs its whole dusk in ${Math.round(rp.fadeMs)}ms`
+        + ` against ${Math.round(paint.fadeMs)}ms for everybody else —`
+        + ` ${Math.round((rp.fadeMs / paint.fadeMs) * 100)}% of it, against a floor of`
+        + ` ${Math.round(DUSK.reducedShareOfFade * 100)}%. Reduced motion means less MOVEMENT, not a`
+        + ' cut to black: a cross-fade does not travel, and the player who needs the setting still'
+        + ' deserves the beat');
+    }
   }
   return out;
 }
@@ -1535,16 +1765,67 @@ export function selfTest() {
     ['MORNING']);
 
   const plate = { sel: '.bp-foot', box: { top: 561, bottom: 667, left: 0, right: 375 } };
+  /**
+   * ═══ ROUND 53 — EVERY CURVE BELOW IS A PHOTOGRAPH ════════════════════════
+   *
+   * Mean luminance of the whole glass, 0-255, on `DUSK_GRID_MS`, taken at
+   * 375x667 by the walk in this file with the dusk stopped at each of those
+   * times. They are not modelled and they are not rounded up: the first draft
+   * of this block WAS modelled — a plausible ramp to a floor of 65.63 — and
+   * the glass turned out to settle at 51.68, which is the whole reason this
+   * gate stopped reading the stylesheet. The two defect curves are the same
+   * measurement taken with the defect INJECTED, so the fixtures the self-test
+   * argues with and the defects `--prove` re-introduces are the same numbers.
+   */
+  const SHIPPED_FADE = [
+    [0, 222.35], [200, 216.30], [400, 207.81], [700, 189.31], [1000, 162.87],
+    [1500, 115.24], [2000, 84.45], [2500, 66.48], [3000, 57.26], [3500, 53.49],
+    [4000, 51.68], [5000, 51.68], [6000, 51.68],
+  ].map(([t, mean]) => ({ t, mean }));
+  /**
+   * `ease-in` on the same clock to the same night, photographed under
+   * `--prove`'s `dusk-switched-off`: 30% dark at half its own painted length,
+   * against the doze curve's 68% on the identical glass.
+   */
+  const SWITCHED_OFF_FADE = [
+    [0, 222.35], [200, 221.37], [400, 219.41], [700, 214.67], [1000, 206.78],
+    [1500, 190.63], [2000, 169.44], [2500, 144.51], [3000, 116.14], [3500, 85.87],
+    [4000, 51.68], [5000, 51.68], [6000, 51.68],
+  ].map(([t, mean]) => ({ t, mean }));
+  /**
+   * WHAT REDUCED MOTION REALLY DID, photographed under `--prove`'s
+   * `dusk-cut-to-black-under-reduced-motion`: the glass is at the night's own
+   * luminance by the 200ms stop and never moves again — 195ms of dusk against
+   * 3287ms for everybody else. (It undershoots the settled floor by a
+   * luminance — 50.78 against 51.68 — because the candle has not come up yet
+   * when the dark has already finished, which is the defect stated in the
+   * one number the player would have felt.)
+   */
+  const CUT_TO_BLACK = [
+    [0, 222.35], [200, 50.78], [400, 50.78], [700, 50.78], [1000, 50.78],
+    [1500, 50.78], [2000, 50.78], [2500, 51.10], [3000, 51.55], [3500, 51.68],
+    [4000, 51.68], [5000, 51.68], [6000, 51.68],
+  ].map(([t, mean]) => ({ t, mean }));
   const goodDusk = {
     skip: { top: 470, bottom: 514, left: 121, right: 254 },
     line: { top: 400, bottom: 428, left: 0, right: 375 },
     candle: { top: 240, bottom: 380, left: 140, right: 235 },
     foot: [plate], glassH: 667,
-    veilName: 'chrDuskFall', veilMs: 4000, veilEase: 'cubic-bezier(0.14, 0.66, 0.16, 1)',
+    /* `--ease-doze` as tokens.css ships it. It is PRINTED beside the
+       photograph and no longer judged, which is the round's whole point: it
+       evaluates to 0.82 where the glass photographs 0.68. */
+    veilName: 'chrDuskFall', veilMs: 4000, veilEase: 'cubic-bezier(0.38, 0.26, 0.22, 1)',
     candleEndMs: 2000, lineEndMs: 3360, propsAnimated: 1, propsList: 'opacity',
-    reduced: { name: 'chrDuskStill', ms: 200 },
+    /* 15698 is the real grid: 375x667 at div 4 is 94 x 167 cells. */
+    paint: { samples: SHIPPED_FADE, noticeOnGlass: true, grid: 15698 },
+    /* The fixed glass, photographed: not one cell of it stayed lit. Only
+       `share` and `box` are read by the verdict, so only those are carried —
+       a `litPx` invented to fill the shape would be the fabrication this
+       block was just rewritten to remove. */
+    undimmed: { total: 15698, stuck: 0, share: 0, box: {} },
+    reduced: { samples: SHIPPED_FADE, travelling: [] },
   };
-  check('the veil as round 39 shipped it',
+  check('the veil as round 53 photographs it',
     judgeDusk(goodDusk),
     []);
   check('a dusk the walk never reached',
@@ -1556,8 +1837,13 @@ export function selfTest() {
   check('round 15’s own defect, the row below it: the skip on the index tabs',
     judgeDusk({ ...goodDusk, skip: { top: 611, bottom: 655, left: 109, right: 242 } }),
     ['DUSK']);
-  check('THE CURVE THE OWNER FELT: 3200ms ease-in, which is 29% dark at half its time',
-    judgeDusk({ ...goodDusk, veilMs: 3200, veilEase: 'ease-in', candleEndMs: 1900, lineEndMs: 3200 }),
+  check('THE CURVE THE OWNER FELT, PHOTOGRAPHED: ease-in is 31% dark at half its time',
+    judgeDusk({
+      ...goodDusk,
+      veilEase: 'ease-in',
+      paint: { ...goodDusk.paint, samples: SWITCHED_OFF_FADE },
+      reduced: { samples: SWITCHED_OFF_FADE, travelling: [] },
+    }),
     ['DUSK']);
   check('…and the two-property keyframe that made it rush at the end at any duration',
     judgeDusk({ ...goodDusk, propsAnimated: 2, propsList: 'opacity + background-color' }),
@@ -1568,17 +1854,89 @@ export function selfTest() {
   check('a fade taken past AAA 4.12’s grace window',
     judgeDusk({ ...goodDusk, veilMs: 6000 }),
     ['DUSK']);
-  check('reduced motion left running the whole timed fall',
-    judgeDusk({ ...goodDusk, reduced: { name: 'chrDuskFall', ms: 4000 } }),
-    ['DUSK']);
   check('the veil’s one way out, gone',
     judgeDusk({ ...goodDusk, skip: null }),
     ['DUSK']);
+  /* ── ROUND 53's three, and every one is a number off the glass ─────────── */
   /**
-   * The solver itself, against curves whose answers are known: `linear` is at
-   * half by half, `ease-in` is the shipped 29%, and the doze curve is most of
-   * the way there. If this arithmetic drifts, every curve claim above is
-   * measuring nothing.
+   * THE FIRST DEFECT'S CLASS, PHOTOGRAPHED. These are the numbers `--prove`'s
+   * `dusk-lit-layer-over-the-veil` really produces: 1118 of 15698 grid cells
+   * still lit at the end of the fade, 7.12% against a 0.5% ceiling, in a band
+   * across the top of the glass. The injected layer is the day BAR rather than
+   * the rail, for the reason written on that proof — the rail's dwell can
+   * expire and a proof that sometimes proves nothing is worse than a
+   * stand-in — so the BOX here is the bar's and not the card's. The shipped
+   * defect's own box was measured by the verifier that found it and is
+   * recorded where the finding is: `.chr-notices` [0, 220, 375, 161], z-index
+   * 60 over the veil's 55 (ui/chrome/layers.ts).
+   */
+  check('ROUND 53’s FIRST DEFECT: a layer left at full brightness above the veil',
+    judgeDusk({
+      ...goodDusk,
+      undimmed: { total: 15698, stuck: 1118, share: 1118 / 15698,
+        box: { left: 0, top: 0, right: 93, bottom: 11 } },
+    }),
+    ['DUSK']);
+  check('a glass the dusk really did darken end to end',
+    judgeDusk({ ...goodDusk, undimmed: { ...goodDusk.undimmed, stuck: 12, share: 12 / 15698 } }),
+    []);
+  check('ROUND 53’s SECOND DEFECT: reduced motion cut to black inside a second',
+    judgeDusk({ ...goodDusk, reduced: { samples: CUT_TO_BLACK, travelling: [] } }),
+    ['DUSK']);
+  check('…and reduced motion still travelling, which is the thing it is for',
+    judgeDusk({ ...goodDusk, reduced: { samples: SHIPPED_FADE, travelling: ['chrDuskClose'] } }),
+    ['DUSK']);
+  check('ROUND 53’s THIRD: the same curve run to a haze instead of to a night',
+    judgeDusk({
+      ...goodDusk,
+      /* The photographed fade, scaled to two fifths of its darkness: the same
+         curve on the same clock, run to a haze. Modelled BY CONSTRUCTION and
+         labelled so — it is the one class of the three with no shipped defect
+         behind it to photograph, which is exactly why a band is wanted for it
+         before one exists. */
+      paint: { ...goodDusk.paint, samples: SHIPPED_FADE.map((r) => ({ t: r.t, mean: 222.35 - (222.35 - r.mean) * 0.4 })) },
+      reduced: { samples: SHIPPED_FADE, travelling: [] },
+    }),
+    ['DUSK']);
+  check('a fade whose paint has come away from the clock that declared it',
+    judgeDusk({
+      ...goodDusk,
+      paint: { ...goodDusk.paint, samples: CUT_TO_BLACK },
+      reduced: { samples: CUT_TO_BLACK, travelling: [] },
+    }),
+    /* Two, and both are true of it: the 195ms cut is 49% dark at half its own
+       painted length AND 5% of the 4000ms clock that declared it. */
+    ['DUSK', 'DUSK']);
+  check('a dusk the walk reached and never photographed',
+    judgeDusk({ ...goodDusk, paint: null, reduced: null, undimmed: null }),
+    ['DUSK']);
+  /**
+   * The instrument's own arithmetic, against a curve whose answers are known.
+   * `paintedFade` is handed a straight ramp to a flat floor: half the darkness
+   * lands at half the length, and the length is where the ramp stops.
+   */
+  {
+    const ramp = [];
+    for (let t = 0; t <= 6000; t += 250) ramp.push({ t, mean: 200 - 100 * Math.min(1, t / 2000) });
+    const got = paintedFade(ramp);
+    if (!(Math.abs(got.fadeMs - 1960) < 60)) fail.push(`paintedFade length: got ${got.fadeMs}`);
+    if (!(Math.abs(got.halfProgress - 0.49) < 0.02)) fail.push(`paintedFade half: got ${got.halfProgress}`);
+    if (!(Math.abs(got.drop - 100) < 0.01)) fail.push(`paintedFade drop: got ${got.drop}`);
+    const flat = paintedFade(ramp.map((r) => ({ t: r.t, mean: 200 })));
+    if (flat.fadeMs !== 0) fail.push('paintedFade called a glass that never darkened a fade');
+    const lit = [230, 230, 40, 230, 100];
+    const dark = [40, 229, 40, 40, 99];
+    const region = undimmedRegion(lit, dark, 5, new Set([3]));
+    if (region.stuck !== 1 || region.litPx !== 2) {
+      fail.push(`undimmedRegion: got ${region.stuck} stuck of ${region.litPx} lit`);
+    }
+  }
+  /**
+   * And the DECLARED solver, which is no longer a verdict and is still printed
+   * beside the photograph every run: `linear` is at half by half, `ease-in` is
+   * the 29% round 39 published, the doze curve is most of the way there. It is
+   * kept because a divergence between it and the paint is informative — see
+   * the block above `DUSK`.
    */
   for (const [fn, lo, hi] of [
     ['linear', 0.49, 0.51], ['ease-in', 0.25, 0.35], ['ease-out', 0.65, 0.75],
@@ -1866,8 +2224,40 @@ export const PROOFS = [
      * fade is 29% of the way dark at half its time — it sits still, then slams.
      */
     why: 'the dusk fade put back on an accelerating curve, which reads as the lights being switched'
-      + ' off rather than as dozing off',
+      + ' off rather than as dozing off — and, since round 53, caught by PHOTOGRAPHING the glass at'
+      + ' an absolute grid of times rather than by evaluating the curve the stylesheet declares',
     css: '.chr-dusk { animation-timing-function: ease-in !important; }',
+  },
+  /* ═══ ROUND 53 — THE TWO DEFECTS A LIVE VERIFIER FOUND IN THE DUSK ═══════ */
+  {
+    id: 'dusk-lit-layer-over-the-veil',
+    klass: 'DUSK',
+    /**
+     * THE SHIPPED DEFECT, IN ITS CLASS. `.chr-notices` was on rung 60 against
+     * the veil's 55 and printed "A ROOM WITH ONE DOOR … +1 gem" on cream paper
+     * at FULL BRIGHTNESS over the candle, dead centre, for the first 3.4s of a
+     * 4s fade. It is staged on the DAY BAR rather than on the rail because the
+     * bar is the one bright layer that is guaranteed to be on the glass at
+     * every dusk — the rail's own dwell is 3400ms and staging the defect on
+     * something that may have expired would be a proof that sometimes proves
+     * nothing. Same rung, same class, same photograph: a bright region the
+     * dusk never touched.
+     */
+    why: 'a bright layer left ABOVE the dusk veil, so a rectangle of the house stays lit while the'
+      + ' rest of the glass goes dark — the round-53 finding, in its class',
+    css: '.chr-header { z-index: 70 !important; }',
+  },
+  {
+    id: 'dusk-cut-to-black-under-reduced-motion',
+    klass: 'DUSK',
+    /**
+     * WHAT REDUCED MOTION REALLY DID until this round: `chrDuskStill 200ms`,
+     * full opacity by 220ms, the whole screen gone by 906ms. Restored here at
+     * the same length on the animation that still exists.
+     */
+    why: 'reduced motion given a cut to black instead of a dusk — less MOVEMENT is the ask, and'
+      + ' a cross-fade does not move; the player who needs the setting still deserves the beat',
+    css: '.chr--reduced .chr-dusk { animation: chrDuskFall 200ms linear forwards !important; }',
   },
   {
     id: 'goodnight-retired',
@@ -2569,6 +2959,192 @@ function measureDuskBoxes() {
     candle: box(document.querySelector('.chr-dusk__candle')),
     foot,
     glassH: window.innerHeight,
+  };
+}
+
+/**
+ * ═══ THE DUSK, PHOTOGRAPHED (round 53) ════════════════════════════════════
+ *
+ * The absolute millisecond grid the fade is stopped at. It is written out here
+ * as constants rather than derived from `--chr-dusk-ms`, and that is the point:
+ * a grid computed from the declared duration would agree with the declaration
+ * by construction, which is the failure this whole measurement replaces. The
+ * last two stops are both past everything in the transition and are what
+ * `paintedFade` uses to check that the glass held still.
+ */
+const DUSK_GRID_MS = [0, 200, 400, 700, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000];
+
+/** Where in the grid the A/B pair for the undimmed check is taken. */
+const DUSK_LIT_MS = 0;
+const DUSK_DARK_MS = 4000;
+
+/**
+ * Stop the dusk at an absolute time and hold it there.
+ *
+ * ONLY the dusk's own animations are touched. Pausing the whole document would
+ * be tidier to reason about and would leave the night digest's entry animation
+ * frozen when the walk moves on, which is a worse bug than the noise it saves;
+ * what noise there is (the step candle's gutter, under the veil and a fraction
+ * of a percent of the glass) is caught by `settleNoiseL` rather than assumed
+ * away.
+ */
+async function freezeDuskAt(page, ms) {
+  await page.evaluate((t) => {
+    for (const a of document.getAnimations()) {
+      if (!/^chrDusk/.test(a.animationName || '')) continue;
+      a.pause();
+      a.currentTime = t;
+    }
+  }, ms);
+  /* A beat for the paused state to be painted, taken on THIS side of the wire.
+     It was two chained `requestAnimationFrame`s inside the page, which is the
+     right frame to wait for and the wrong place to wait for it: `page.evaluate`
+     carries no timeout, so a page that stops servicing rAF for any reason hangs
+     the whole gate with no way out. `waitForTimeout` is a Node timer. */
+  await page.waitForTimeout(60);
+}
+
+/** Hand the veil back its own clock, settled, and let everything else run. */
+async function thawDusk(page) {
+  await page.evaluate(() => {
+    for (const a of document.getAnimations()) {
+      if (!/^chrDusk/.test(a.animationName || '')) continue;
+      try { a.finish(); } catch { a.cancel(); }
+    }
+  });
+}
+
+/**
+ * The luminance of the glass, off a real screenshot.
+ *
+ * The PNG goes back INTO the page and is decoded by the browser that drew it —
+ * a canvas and `getImageData`, no image library in this repo and no hand-rolled
+ * decoder to be wrong. `div` downsamples: `drawImage` averages as it scales, so
+ * the mean survives exactly and a payout card is still eighty grid cells wide.
+ */
+async function glassLuminance(page, div) {
+  const shot = await page.screenshot();
+  return page.evaluate(async ([b64, d]) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const w = Math.max(1, Math.round(img.width / d));
+    const h = Math.max(1, Math.round(img.height / d));
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(img, 0, 0, w, h);
+    const px = g.getImageData(0, 0, w, h).data;
+    const lum = new Array(w * h);
+    let sum = 0;
+    for (let i = 0, n = 0; n < lum.length; i += 4, n++) {
+      const L = 0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2];
+      lum[n] = L;
+      sum += L;
+    }
+    return { w, h, div: d, mean: sum / lum.length, lum };
+  }, [shot.toString('base64'), div]);
+}
+
+/** Grid indices covered by the veil's own furniture (candle, sentence, skip). */
+function furnitureIndices(boxes, w, h, div) {
+  const skip = new Set();
+  for (const box of [boxes?.candle, boxes?.line, boxes?.skip]) {
+    if (!box) continue;
+    const x0 = Math.max(0, Math.floor(box.left / div) - 1);
+    const x1 = Math.min(w - 1, Math.ceil(box.right / div) + 1);
+    const y0 = Math.max(0, Math.floor(box.top / div) - 1);
+    const y1 = Math.min(h - 1, Math.ceil(box.bottom / div) + 1);
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) skip.add(y * w + x);
+  }
+  return skip;
+}
+
+/**
+ * THE WHOLE PAINTED PASS.
+ *
+ * 1. the A/B pair FIRST, because `.chr-notices` lives 3400ms and the card this
+ *    round was written for is on the glass for the opening of the fade;
+ * 2. then the rail is waited out, so the curve is photographed on a glass that
+ *    is not changing under it for reasons that have nothing to do with dusk;
+ * 3. then the curve, twice — once as shipped and once with the in-game reduced
+ *    motion setting on, which is the same switch the player has.
+ */
+async function measureDuskPaint(page, boxes) {
+  const litFrame = await freezeDuskAt(page, DUSK_LIT_MS).then(() => glassLuminance(page, 4));
+  const darkFrame = await freezeDuskAt(page, DUSK_DARK_MS).then(() => glassLuminance(page, 4));
+  const noticeOnGlass = await page.evaluate(
+    () => !!document.querySelector('.chr-notices') && !!document.querySelector('.chr-notice'),
+  );
+  const skip = furnitureIndices(boxes, litFrame.w, litFrame.h, litFrame.div);
+  const undimmed = undimmedRegion(litFrame.lum, darkFrame.lum, litFrame.w, skip);
+
+  // The rail's own dwell, waited out rather than reached into.
+  await page.waitForFunction(() => !document.querySelector('.chr-notice'), null, { timeout: 5000 })
+    .catch(() => { /* it stayed; the settle check below is what notices that */ });
+
+  const curve = async () => {
+    const samples = [];
+    for (const t of DUSK_GRID_MS) {
+      await freezeDuskAt(page, t);
+      const f = await glassLuminance(page, 8);
+      samples.push({ t, mean: f.mean });
+    }
+    return samples;
+  };
+
+  const samples = await curve();
+  const reducedSamples = await page.evaluate(() => {
+    const store = window.__manorStore;
+    window.__DUSK_REDUCED_WAS__ = store.getState().settings.reducedMotion;
+    store.setState({ settings: { ...store.getState().settings, reducedMotion: true } });
+  }).then(() => page.waitForTimeout(120)).then(curve);
+  const travelling = await page.evaluate(() => {
+    /* WHAT TRAVELS, asked of the keyframes rather than of the brightness.
+       Every animation still running on the veil and its furniture with the
+       setting on, and whether its keyframes touch a transform. */
+    const names = new Set();
+    for (const [sel, pseudo] of [
+      ['.chr-dusk', null], ['.chr-dusk', '::before'],
+      ['.chr-dusk__candle', null], ['.chr-dusk__line', null],
+    ]) {
+      const el = document.querySelector(sel);
+      if (!el) continue;
+      const cs = getComputedStyle(el, pseudo);
+      for (const n of String(cs.animationName).split(',').map((x) => x.trim())) {
+        if (n && n !== 'none') names.add(n);
+      }
+    }
+    const out = [];
+    for (const sheet of document.styleSheets) {
+      let rules;
+      try { rules = sheet.cssRules; } catch { continue; }
+      for (const rule of rules) {
+        if (rule.type !== 7 || !names.has(rule.name)) continue;
+        for (const kf of rule.cssRules) {
+          for (const prop of kf.style) {
+            if (/transform|translate|rotate|scale/.test(prop) && !out.includes(rule.name)) {
+              out.push(rule.name);
+            }
+          }
+        }
+      }
+    }
+    return out;
+  });
+  await page.evaluate(() => {
+    const store = window.__manorStore;
+    store.setState({
+      settings: { ...store.getState().settings, reducedMotion: window.__DUSK_REDUCED_WAS__ },
+    });
+  });
+  await page.waitForTimeout(120);
+  await thawDusk(page);
+  return {
+    paint: { samples, noticeOnGlass, grid: litFrame.w * litFrame.h },
+    undimmed,
+    reduced: { samples: reducedSamples, travelling },
   };
 }
 
@@ -3397,21 +3973,35 @@ async function walkOneViewport(browser, base, vp, inject, quiet) {
         window.__REAL_ADVANCE__ = store.getState().advanceDayPhase;
         store.setState({ advanceDayPhase: () => {} });
       });
-      // Reduced motion, asked of the real element with the real setting on.
-      const reduced = await page.evaluate(async () => {
-        const store = window.__manorStore;
-        const was = store.getState().settings.reducedMotion;
-        store.setState({ settings: { ...store.getState().settings, reducedMotion: true } });
-        await new Promise((r) => setTimeout(r, 220));
-        const cs = getComputedStyle(document.querySelector('.chr-dusk'));
-        const t = String(cs.animationDuration).split(',')[0].trim();
-        const out = {
-          name: String(cs.animationName).split(',')[0].trim(),
-          ms: t.endsWith('ms') ? parseFloat(t) : parseFloat(t) * 1000,
-        };
-        store.setState({ settings: { ...store.getState().settings, reducedMotion: was } });
-        return out;
-      });
+      /**
+       * ROUND 53 — THE FADE IS PHOTOGRAPHED, NOT READ. The veil is stopped at
+       * an absolute grid of times and the glass is measured at each stop; see
+       * `measureDuskPaint`. The boxes are taken first, on a settled veil,
+       * because the paint pass needs the veil's own furniture to exclude it —
+       * the candle, the sentence and the skip are the only three things in the
+       * transition that are SUPPOSED to get brighter as the room goes out.
+       */
+      await freezeDuskAt(page, 6000);
+      const boxes = await stable(page, () => page.evaluate(measureDuskBoxes));
+      let painted = null;
+      try {
+        painted = await measureDuskPaint(page, boxes);
+      } catch (err) {
+        if (!quiet) log(`  the dusk could not be photographed: ${err.message}`);
+      }
+      if (!quiet && painted) {
+        const shot = paintedFade(painted.paint.samples);
+        const declared = easingAtHalfTime(clock?.veilEase);
+        log(`  the dusk, photographed: ${painted.paint.samples.map((x) => `${x.t}:${x.mean.toFixed(0)}`).join(' ')}`);
+        log(`  dark by ${shot ? shot.drop.toFixed(0) : '—'} luminance in ${shot ? Math.round(shot.fadeMs) : '—'}ms`
+          + ` of a declared ${clock?.veilMs ?? '—'}ms · half-time ${shot ? shot.halfProgress.toFixed(2) : '—'}`
+          + ` photographed against ${Number.isFinite(declared) ? declared.toFixed(2) : '—'} declared`
+          + ` · a payout card was ${painted.paint.noticeOnGlass ? '' : 'NOT '}on the glass as it fell`
+          + ` · undimmed ${(painted.undimmed.share * 100).toFixed(2)}%`);
+        const rp = paintedFade(painted.reduced.samples);
+        log(`  reduced motion: the same dusk in ${rp ? Math.round(rp.fadeMs) : '—'}ms`
+          + `${painted.reduced.travelling.length ? ` · travelling: ${painted.reduced.travelling.join(', ')}` : ''}`);
+      }
       // The veil restarted with the setting; wait for the instant she sees the
       // finished dusk — the one sentence on it at full strength.
       await page.waitForFunction(() => {
@@ -3419,12 +4009,11 @@ async function walkOneViewport(browser, base, vp, inject, quiet) {
         return !!el && Number(getComputedStyle(el).opacity) > 0.9;
       }, null, { timeout: 8000 }).catch(() => { /* judged by COPY, not thrown */ });
       await audit('dusk-veil');
-      const boxes = await stable(page, () => page.evaluate(measureDuskBoxes));
       counts.duskParts += (boxes?.skip ? 1 : 0) + (boxes?.line ? 1 : 0) + (boxes?.foot.length ?? 0);
       // `null` in, `null` out: a veil that vanished between the wait and the
       // read is a dusk the gate did not see, and judgeDusk says so rather than
       // spreading an absent clock into a green verdict.
-      findings.push(...judgeDusk(clock && boxes ? { ...clock, ...boxes, reduced } : null));
+      findings.push(...judgeDusk(clock && boxes ? { ...clock, ...boxes, ...(painted ?? {}) } : null));
       await fit('dusk-veil', '.chr-dusk');
 
       // AND SO, TO BED — the one control on the veil, driven for real. Round 15

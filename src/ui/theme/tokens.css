@@ -175,8 +175,8 @@
   --z-page: 0;        /* route surfaces (.bp-page, .room-host, .jrn-page…)      */
   --z-overlay: 40;    /* full-screen modal scenes (.dlg, .bp-modal, .chr-scene) */
   --z-chrome: 50;     /* the day bar: readable over overlays, never tappable    */
-  --z-veil: 55;       /* the dusk veil (pointer-events: none)                   */
-  --z-notice: 60;     /* the notice rail (pointer-events: none)                 */
+  --z-notice: 55;     /* the notice rail (pointer-events: none)                 */
+  --z-veil: 60;       /* the dusk veil — over the rail: dusk darkens EVERYTHING */
   --z-moment: 100;    /* campaign seals — above every game surface, TAPPABLE    */
   --z-material: 120;  /* grain + vignette (index.css, 120/121)                  */
   --z-platform: 9999; /* update toast, rotate screen                            */

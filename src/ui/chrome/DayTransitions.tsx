@@ -419,12 +419,18 @@ export function DuskVeil() {
    * point of round 39's choreography) it would have cut the fade off at 2000ms
    * and the night would have arrived before the dark did.
    *
-   * So the veil listens for its own fade by name, and the names are the two
-   * forms that exist: the timed fall, and reduced motion's still arrival.
+   * So the veil listens for its own fade BY NAME.
+   *
+   * ROUND 53 — there is only one name now. Reduced motion used to swap the
+   * veil to `chrDuskStill`, a 200ms cut to black, and this handler had to know
+   * both; it runs the same `chrDuskFall` on the same clock as everybody else
+   * (chrome.css, the reduced-motion block), because a cross-fade does not
+   * travel and reduced motion is about travel. The two things that DID travel
+   * — the vignette's scale and the line's rise — are still removed there.
    */
   const onFallen = (e: AnimationEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) return;
-    if (e.animationName !== 'chrDuskFall' && e.animationName !== 'chrDuskStill') return;
+    if (e.animationName !== 'chrDuskFall') return;
     // Fade complete (AAA 4.12's ≤4s bar) — a breath of held dusk, then night.
     if (holdTimer.current) return;
     holdTimer.current = setTimeout(advance, DUSK_HELD_MS);

@@ -1683,6 +1683,61 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   200ms before the dark and being swallowed as it arrives. `gate:glass` now owns
   every one of those numbers on the real veil (`judgeDusk`), including asking
   the curve where it has got to at half its time.
+  **ROUND 53 — THE VERDICT WAS A SCREENSHOT OF AN INTENTION, AND TWO DEFECTS
+  WERE LIVING BEHIND IT.** Round 39's `judgeDusk` read the DURATION, the EASING
+  NAME and the KEYFRAME PROPERTY COUNT off the stylesheet and evaluated the
+  cubic. Every one of those is a declaration. The fade itself was right — a live
+  verifier sampled the running opacity and confirmed it — but the gate would not
+  have noticed if it stopped being right, and it did not notice either of these:
+  - **A MOMENT'S PAYOUT CARD PAINTED OVER THE VEIL, UNDIMMED.** `.chr-notices`
+    was on rung **60** against the veil's **55**, so a cream card ("A ROOM WITH
+    ONE DOOR · Nothing has been through here in years, and now nothing will.
+    +1 gem") sat dead centre over the candle **at full brightness** while
+    everything behind it went dark. Measured at 375×667 by driving a real day to
+    a real dusk: `[0, 220, 375, 161]`, z-index 60, two cards. It is not a rare
+    alignment — the rail's dwell is 3400ms of a 4000ms fade and dusk falls out of
+    the last step, which is very often the step that drafted the room the notice
+    is about. **The rungs are swapped: notice 55, veil 60** (`ui/chrome/layers.ts`).
+    Dusk falls over the whole house, which is the argument already written there
+    for the bar. Nothing about what may be TAPPED changed — both layers are
+    `pointer-events: none`. The moment SEAL is still above the veil and is not
+    the same case: it defers through `ceremonyGate`, which `DuskVeil` holds, so
+    the grant waits for tomorrow's blueprint instead of expiring behind the dark.
+  - **REDUCED MOTION LOST ITS DUSK: full opacity by 220ms, the screen gone by
+    906ms.** `chrDuskStill 200ms` was written from AAA U.3 — *the state still
+    arrives, it just does not travel* — and applied to the one property in the
+    transition that does not travel. **A cross-fade is not movement.** What
+    travelled was the vignette's `scale(1.7 → 1)` and the line's 6px rise, and
+    both were already removed; the veil now runs the same `chrDuskFall` on the
+    same `--chr-dusk-ms` as everybody else. **The band that moved, with its
+    reason:** `DUSK.reducedCeilingMs` (≤400ms, i.e. it *required* the defect) is
+    **RETIRED, not widened**, and replaced by `reducedShareOfFade` — the reduced
+    dusk must keep **≥75%** of the dusk everybody else gets, photographed by the
+    same instrument, plus a keyframe check that nothing in it animates a
+    transform. The fix photographs **98%** of it; the cut photographs **6%** —
+    the 906ms above was opacity sampled until the whole choreography landed, and
+    measured as DARKNESS the defect was worse than the finding said.
+  **AND THE SHAPE IS PHOTOGRAPHED NOW.** The dusk's own animations are paused and
+  their `currentTime` driven to an ABSOLUTE grid (0…6000ms — a grid derived from
+  nothing in the stylesheet, so it cannot agree with it by construction), the
+  glass is screenshotted at each stop, and the mean luminance of the frame is the
+  darkness. What that buys, and none of it was reachable from a declaration: the
+  fade's LENGTH as the eye sees it (the last 2% of a decelerating fade is
+  invisible, so the paint settles at ~3.3s of a 4.0s clock), an answer at half
+  time that is a photograph (**0.68**, against the **0.82** the declared cubic
+  evaluates to — luminance is not linear in alpha, and both are printed every
+  run; on `ease-in` the two nearly agree, 0.30 against 0.32, because it is the
+  long decelerating tail they disagree about and that tail is the whole of round
+  39), how much light the veil actually takes away (`minDarkeningL`: a drop of
+  **171** of a parchment 222, so the same curve run to a haze is caught), and the
+  undimmed-region check above. **Both ends of every new band are photographs:**
+  undimmed **0.00%** shipped against a 0.5% ceiling and **7.12%** with the defect
+  re-injected; the reduced dusk **3236ms of 3287ms (98%)** against a 75% floor
+  and **195ms (6%)** with the cut put back. **What is
+  still read off the stylesheet, deliberately:** the ≤4s grace itself, because it
+  bounds when the NIGHT MAY TURN OVER, which is a fact about the clock; and the
+  candle's lead and the line's landing, which are two declared times against a
+  third. `--prove` carries a photograph of each new defect.
 - 4.13 Abandoning a puzzle costs nothing beyond steps already spent, is always offered,
   and is copy-framed as "leaving it for tomorrow," not quitting. **[COZY]**
 

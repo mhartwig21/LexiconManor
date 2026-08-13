@@ -836,6 +836,21 @@ Two rules from this project's own history apply hard here:
   swallowed. Build: one property, a decelerating curve with a long tail, the vignette CLOSING
   inward rather than a uniform dim, the candle landing early and holding, slower overall. The
   <=4s AAA 4.12 grace window must be re-examined rather than silently extended.
+  - **BUILT — round 39, and TWO THINGS WERE STILL WRONG WITH IT UNTIL ROUND 53.** The fade
+    itself was right and a live verifier confirmed it by sampling the running opacity; what was
+    wrong was everything AROUND it, and the gate that certified it. **(1)** The notice rail was
+    on rung 60 and the veil on 55, so a cream payout card — *"A ROOM WITH ONE DOOR … +1 gem"* —
+    sat dead centre over the candle at FULL BRIGHTNESS while the rest of the glass went dark.
+    The rungs are swapped (notice 55, veil 60): dusk falls over the whole house, which is the
+    argument `ui/chrome/layers.ts` already made for the day bar. **(2)** Reduced motion ran
+    `chrDuskStill 200ms` — full opacity by 220ms, the screen gone by 906ms — because AAA U.3's
+    *"the state arrives, it does not travel"* had been applied to a CROSS-FADE, which does not
+    travel. It runs the same fall on the same clock now; the two things that did travel (the
+    vignette's scale, the line's 6px rise) were already removed and stay removed. **(3)** And
+    `judgeDusk` was reading duration, easing NAME and property count off the stylesheet and
+    evaluating the cubic — a screenshot of an intention. It photographs the glass now, with the
+    dusk stopped at an absolute grid of times that owes the stylesheet nothing. Full account in
+    `docs/AAA_BAR.md` 4.12, and the band that moved (`reducedCeilingMs`, retired) with it.
 - **The landing offer overflows 69px at 375x667 and 79px at 390x844** — it was thought to be a
   375-only defect because nothing had ever opened a landing draft at the taller size. Every
   remaining copy trim lands ~1px short; it needs a different LAYOUT for this one draft. The
