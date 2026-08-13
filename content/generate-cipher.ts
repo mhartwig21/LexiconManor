@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRng, shuffle, type Rng } from '../src/engine/rng';
@@ -38,6 +38,31 @@ import type { Tier } from '../src/engine/types';
  *
  * Validation round-trips every puzzle through the runtime decoder, re-checks
  * the derangement, and enforces every tier gate above.
+ *
+ * ---------------------------------------------------------------------------
+ * ROUND 52 — ONE DEFENSIBLE ANSWER (docs/BENCHMARKS.md §11)
+ * ---------------------------------------------------------------------------
+ * Everything above grades this room on how HARD it is. Nothing above asked
+ * whether it is FAIR, and 76.0% of the round-51 pool was not: a player who had
+ * solved the whole board could read `A HOUSE THAT MOVES KEEPS SECRETS` as
+ * `A HOUSE THAT LOVES KEEPS SECRETS`, hand it in, and be told she was wrong.
+ * The reference never has to think about this — a 60-120 letter Cryptoquote is
+ * unique because every letter recurs across several words — and this room is
+ * 19-41 letters, which is where uniqueness stops being free.
+ *
+ * A letter is FORCED when no other plain letter can stand in its place without
+ * turning some word into a non-word. Ordinary English is ENABLE at Norvig rank
+ * <= ORDINARY_RANK, plus A and I; the TRUE word is always admitted however rare
+ * it is, because the true word is the answer. Two things follow, and they are
+ * the whole of this pass:
+ *
+ *   1. The crib's first job is FAIRNESS and only its second is a foothold, so
+ *      the reveals go first to the letters the phrase cannot force and the old
+ *      frequency rule fills whatever slots are left. The COUNTS never move.
+ *   2. A phrase with more unforced letters than its tier has reveals cannot be
+ *      made fair by any reveal it is allowed, so it THROWS here rather than
+ *      being silently dropped — the list is hand-authored and a line that
+ *      cannot be made fair has to be rewritten by a person.
  */
 
 const SEED = 20260807;
@@ -57,6 +82,13 @@ const SEED = 20260807;
  * free E and T.
  */
 const REVEALS: Record<Tier, number> = { 1: 3, 2: 1, 3: 2 };
+/**
+ * The line for "a word she would actually produce" — ENABLE ∩ Norvig rank
+ * <= 20,000. It is not a number invented for this room: it is the *everyday*
+ * band `content/lib/dictionary.ts` publishes and the Gallery's dead-ground
+ * ceiling already defends as "findable in practice" (BENCHMARKS §8).
+ */
+const ORDINARY_RANK = 20_000;
 /** Tier-1 phrases stay short — the crib plus a long phrase is no puzzle. */
 const TIER1_MAX_LETTERS = 34;
 /** Tier 3 is the long one: more cells to fill and the thinnest foothold. */
@@ -91,7 +123,8 @@ const MAX_LETTERS = 41;
  * letters, and the lexicographer's own voice sat on the tier with no crib at
  * all, where nobody had ever read it.
  *
- * Every proverb is gone. All 121 phrases are things somebody in this
+ * Every proverb is gone. All 132 phrases (round 52: 121 + 46 authored − 35
+ * cut for a second defensible reading) are things somebody in this
  * house could have written: a line from the lexicographer's notebooks, a
  * house rule of Mrs. Bramble's, one of Ellery's asides, a Post Room
  * regulation of Posy's, Fern in her clipped fragments, or a card left in a
@@ -105,7 +138,6 @@ const PHRASES: string[] = [
   'I KEPT THE WORD IN A LOCKED DRAWER',
   'DEWEY SLEEPS ON A WARM LETTER',
   'FERN TRADES SEEDS FOR A STORY',
-  'EVERY DOOR HERE HAS A MOOD',
   'THE MARGIN IS A QUIET ROOM',
   'A GOOD INDEX FORGIVES A BAD MEMORY',
   'A SCONE MENDS MOST MORNINGS',
@@ -131,57 +163,28 @@ const PHRASES: string[] = [
   'I RESHELVE BY CANDLE AND THE BOOKS AGREE',
   'A GARDEN IS A SLOW ARGUMENT',
   'THE STAIRS SQUEAK IN A METRE',
-  'ONE WORD A DAY IS THE RULE HERE',
   'A CAT DECIDES WHICH PARCEL WAITS',
   'THE CELLAR KEEPS A COOL OPINION',
-  'ELLERY FILES THE DUST BY HAND',
-  'THE KETTLE WENT QUIET AT THE DOOR',
-  'NOTHING MARKED URGENT EVER IS',
-  'STRING IS SACRED IN THIS ROOM',
-  'BROWN PAPER IS WORTH SAVING',
-  'DEWEY IS ASLEEP ON THE PARCEL',
   'GROWING IS LOUD IF YOU LISTEN',
-  'MY MOTHER THOUGHT SHE WAS FUNNY',
-  'SEEDS TURN UP IN ODD CORNERS',
   'PAPER SETTLES ONCE IT IS READ',
   'DOORS DO NOT CHANGE THEIR MINDS',
-  'THE LAMP IS LIT ON THE STAIRS',
   'COATS OFF AND WORRIES DOWN',
   'THE HOUSE WRITES IN BROWN INK',
-  'ROOMS WANDER AND DOORS SULK',
-  'HOLD YOUR PLANS LOOSELY',
   'TEA HOLDS ITS WARMTH LONGER',
-  'SORT THE POST BEFORE THE TOAST',
   'PLANTS NOTICE FEET',
-  'THE SHELVES MOVE ABOUT AT NIGHT',
   'HE WROTE ON RECEIPTS AND HEMS',
-  'THE PANTRY IS OUT OF PATIENCE',
   'EVERY ROOM IS SOMEONE ELSE TODAY',
-  'MIND THE LAST STAIR IT SQUEAKS',
-  'THE MASTER WROTE ON THE BACKS OF NOTICES',
   'THIRTY YEARS OF DUST AND ONE DOOR',
-  'THE GLASS ROOM IS WARM AGAIN',
   'ASK THE KETTLE IT KNOWS FIRST',
-  'NOTHING IN THIS HOUSE STAYS PUT',
-  'THE POST ROOM RUNS ON STRING',
-  'FIFTY YEARS OF UNSORTED POST',
-  'BOOTS STAY ON INDOORS HERE',
-  'THE CAT OUTRANKS THE PARCEL',
-  'WORDS NEVER SIT STILL EITHER',
-  'GOOD HANDS SAID IT BEFORE',
   'THE GARDEN IS INDOORS HERE',
-  'WATER THEN MORE WATER',
   'THE LOST POST PILE IS PATIENT',
   'TAKE THE KEYS BEFORE THE STAIRS',
   'SOME DOORS SULK UNTIL TEATIME',
-  'THE HOUSE KEEPS WHAT YOU FOUND',
-  'EVERY LAMP IS LIT FOR SOMEONE',
   'INK RECALLS WHAT PAPER FORGETS',
   'THE HOUSE LEARNS EVERY GUEST FROM THEIR FOOTFALL',
   'EVERY LOCKED DRAWER HIDES ANOTHER DRAFT',
   'DUSTY SHELVES HOLD THE WARMEST STORIES',
   'OLD INK STILL SMELLS FAINTLY SWEET',
-  'PATIENT HANDS MEND WHAT HASTE UNDID',
   'KETTLES SING FOR ANYONE WHO WAITS',
   'EVERY SHELF KEEPS ONE UNREAD STORY',
   'SLOW READING KEEPS THE LONGEST COMPANY',
@@ -191,13 +194,9 @@ const PHRASES: string[] = [
   'LOST LETTERS FIND WARMER ROOMS LATER',
   'WARM TEA MENDS MORE THAN CLEVER ADVICE',
   'EVERY MARGIN HOLDS SOME BRAVER SENTENCE',
-  'QUIET HOUSES KEEP EVERY VISITOR WARM',
-  'GOOD READERS NEVER HURRY THE LAST PAGE',
   'GARDENS FORGIVE EVERY CLUMSY GARDENER',
   'SMALL LAMPS OUTLAST GREAT BONFIRES',
-  'POETRY CASES HERE ARE LOAD BEARING',
   'SHELVES HAVE OPINIONS MOSTLY SMUG',
-  'GOOD NEWS PERCHES BAD NEWS LIES FLAT',
   'BRAMBLE POURS THE SECOND CUP COLD',
   'HIS PORTRAIT WANTS ONLY ONE WORD',
   'ERASURE ONLY MAKES THE ROOM QUIET',
@@ -220,7 +219,64 @@ const PHRASES: string[] = [
   'OUR ORCHARD OWES NOBODY ANY APOLOGY',
   'TEA HOLDS ITS WARMTH LONGER THAN RESOLVE',
   'EVERY ROOM THAT WANDERS COMES BACK',
-  'OUR LEXICON MISSES EXACTLY ONE WORD',
+  /**
+   * ═══ ROUND 52 — THE LINES THAT ANSWER TO ONE READING ══════════════════
+   * Thirty-five of the round-51 phrases admitted a second defensible answer
+   * their tier's crib could not close and are gone; these are their
+   * replacements, authored to the rule BENCHMARKS §11 states — a letter is
+   * safe when it earns its keep in more than one word, and the dangerous
+   * words are the short ones with crowded neighbours (BAD/CAD/LAD/TAD,
+   * MOVES/LOVES, HOLD/COLD/BOLD) and the two-letter function words that are
+   * simultaneously tier 2's crib and tier 2's trap. Same register as the
+   * rest: the master's notebooks, Bramble's house rules, Posy's Post Room,
+   * Ellery, Fern, Dewey, the Portrait.
+   */
+  'EVERY DOOR IN THIS HOUSE HAS A MOOD',
+  'ONE WORD A DAY IS THE HOUSE RULE',
+  'A QUIET GUEST IS STILL A WITNESS',
+  'THE ORCHARD OWES A LETTER OR TWO',
+  'ELLERY DUSTS A SHELF HE HAS DUSTED',
+  'THE ATTIC KEEPS A SEPARATE WEATHER',
+  'A LOCKED ROOM IS MERELY SHY',
+  'A CANDLE OUTLASTS MOST OPINIONS',
+  'THE HOUSE SHRUGS AND MOVES A DOOR',
+  'FERN PREFERS A SLOWER KIND OF NEWS',
+  'A GUEST WHO LISTENS GETS THE BEST TEA',
+  'BRAMBLE TRUSTS A KETTLE OVER A CLOCK',
+  'EVERY SHELF IN THIS HOUSE LISTENS',
+  'THE MASTER WROTE IN THE MARGINS',
+  'THE PORTRAIT SPEAKS TO NOBODY ELSE',
+  'NOTHING IN THE PANTRY IS URGENT',
+  'THE KETTLE SETTLES BEFORE THE HOUSE',
+  'THE LIBRARY PREFERS TO BE ASKED',
+  'BRAMBLE MEASURES TEA BY MEMORY',
+  'THE CELLAR STORES ITS OWN WEATHER',
+  'ELLERY TRUSTS THE OLDEST LEDGER',
+  'THE HOUSE PREFERS TO BE READ SLOWLY',
+  'THE STAIRS PROTEST IN THE MORNINGS',
+  'POSY KEEPS THE STRING IN HER POCKET',
+  'THE PORTRAIT PREFERS THE SHADOWS',
+  'BRAMBLE POURS BEFORE SHE IS ASKED',
+  'ELLERY POLISHES THE SMALLEST LAMP',
+  'THE HOUSE STORES ITS OWN SILENCES',
+  'NOTHING IS FILED BEFORE ITS TIME',
+  'BROWN PAPER IS ALWAYS WORTH SAVING',
+  'THE GLASS ROOM IS WARM AGAIN TODAY',
+  'NOTHING IN THIS HOUSE EVER STAYS PUT',
+  'BOOTS STAY ON INDOORS IN THIS HOUSE',
+  'THE CAT OUTRANKS THE PARCEL IN HERE',
+  'THE STAIRS REMEMBER EVERY GUEST',
+  'POSY STAMPS EVERY RUMOUR TWICE',
+  'DEWEY OUTRANKS THE MORNING POST',
+  'FERN COUNTS THE SEEDS SHE PLANTED',
+  'THE MASTER SLEPT AMONG HIS NOTES',
+  'THE MASTER SPELLED HIS OWN NAME OUT',
+  'EVERY ROOM SETTLES BEFORE MIDNIGHT',
+  'THE MARGINS HOLD THE BETTER STORY',
+  'EVERY STAIR HERE HOLDS ITS BREATH',
+  'HOLD YOUR OWN PLANS RATHER LOOSELY',
+  'THE HOUSE KEEPS WHATEVER YOU FOUND',
+  'DEWEY HAS OPINIONS ABOUT THE STAIRS',
 ];
 
 function letterCount(phrase: string): number {
@@ -247,6 +303,121 @@ function tierOf(phrase: string): Tier | null {
 
 function distinctLetters(phrase: string): string[] {
   return [...new Set(phrase.replace(/[^A-Z]/g, ''))];
+}
+
+const ALPHABET = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
+
+/**
+ * Ordinary English, read off the two vendored corpora rather than off
+ * `dictionary.json` — that file starts at four letters and this room is made
+ * of `IS`, `OF`, `A` and `THE`.
+ */
+function loadOrdinaryEnglish(): Set<string> {
+  const dataDir = join(dirname(fileURLToPath(import.meta.url)), 'data');
+  const rank = new Map<string, number>();
+  const counts = readFileSync(join(dataDir, 'count_1w.txt'), 'utf8').split('\n');
+  for (let i = 0; i < counts.length; i++) {
+    const w = counts[i]!.split('\t')[0]!.trim().toUpperCase();
+    if (w.length > 0 && !rank.has(w)) rank.set(w, i + 1);
+  }
+  // ENABLE has no one-letter entries and English has exactly two.
+  const out = new Set<string>(['A', 'I']);
+  for (const line of readFileSync(join(dataDir, 'enable1.txt'), 'utf8').split('\n')) {
+    const w = line.trim().toUpperCase();
+    if (w.length < 2 || !/^[A-Z]+$/.test(w)) continue;
+    if ((rank.get(w) ?? Number.MAX_SAFE_INTEGER) <= ORDINARY_RANK) out.add(w);
+  }
+  return out;
+}
+
+/**
+ * The plain letters this phrase does NOT force: substitute one of them
+ * throughout for a letter the phrase does not already use, and every word it
+ * touched is still an ordinary English word. The target must be UNUSED or the
+ * mapping stops being one-to-one, which the room states as its only rule
+ * ("One letter stands for one letter, all the way through") and paints in wax
+ * on any duplicate pencil mark.
+ */
+function unforcedLetters(phrase: string, ordinary: Set<string>): string[] {
+  const words = phrase.split(' ');
+  const present = distinctLetters(phrase);
+  const unused = ALPHABET.filter((c) => !present.includes(c));
+  const out: string[] = [];
+  for (const from of present) {
+    const free = unused.some((to) => {
+      const alt = words.map((w) => w.replaceAll(from, to));
+      return alt.every((w, i) => w === words[i] || ordinary.has(w));
+    });
+    if (free) out.push(from);
+  }
+  return out;
+}
+
+/**
+ * Pairs whose values can be exchanged with every word still reading — a second
+ * answer at mapping-distance two, still injective (`CANDLES KEEP …` →
+ * `CANDLES PEEK …`). Rarer than the single, and 13 of the round-51 boards had
+ * one.
+ */
+function swapReadings(phrase: string, ordinary: Set<string>): [string, string][] {
+  const words = phrase.split(' ');
+  const present = distinctLetters(phrase);
+  const out: [string, string][] = [];
+  for (let i = 0; i < present.length; i++) {
+    for (let j = i + 1; j < present.length; j++) {
+      const a = present[i]!;
+      const b = present[j]!;
+      const alt = words.map((w) => [...w].map((c) => (c === a ? b : c === b ? a : c)).join(''));
+      const touched = alt.filter((w, k) => w !== words[k]);
+      if (touched.length > 0 && touched.every((w) => ordinary.has(w))) out.push([a, b]);
+    }
+  }
+  return out;
+}
+
+/**
+ * Which PLAIN letters this phrase hands over at this tier — fairness first,
+ * frequency second, and never more than `REVEALS[tier]` of them. Returns null
+ * when the phrase cannot be made fair inside its tier's budget; `main` throws
+ * on that rather than dropping the line quietly.
+ */
+function revealPlan(phrase: string, tier: Tier, ordinary: Set<string>): string[] | null {
+  const budget = REVEALS[tier];
+  const chosen = unforcedLetters(phrase, ordinary);
+  if (chosen.length > budget) return null;
+
+  // A swap reading dies if either of its two letters is standing, so the ones
+  // the unforced set already covers cost nothing. The rest are a set cover;
+  // greedy is exact enough at this size and is deterministic.
+  let open = swapReadings(phrase, ordinary).filter(([a, b]) => !chosen.includes(a) && !chosen.includes(b));
+  while (open.length > 0) {
+    if (chosen.length >= budget) return null;
+    const hits = new Map<string, number>();
+    for (const [a, b] of open) {
+      hits.set(a, (hits.get(a) ?? 0) + 1);
+      hits.set(b, (hits.get(b) ?? 0) + 1);
+    }
+    const best = [...hits.entries()].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0]))[0]![0];
+    chosen.push(best);
+    open = open.filter(([a, b]) => a !== best && b !== best);
+  }
+
+  // Whatever is left over is the round-4 rule, untouched: the most frequent
+  // letters at tier 1, and a MID-frequency letter at tiers 2-3 — a foothold,
+  // never the free E.
+  const freq: Record<string, number> = {};
+  for (const ch of phrase) {
+    if (/[A-Z]/.test(ch)) freq[ch] = (freq[ch] ?? 0) + 1;
+  }
+  const byFreq = distinctLetters(phrase)
+    .sort((a, b) => (freq[b] ?? 0) - (freq[a] ?? 0) || a.localeCompare(b));
+  const mid = Math.floor(byFreq.length / 2);
+  const order = tier === 1 ? byFreq : [...byFreq.slice(mid), ...byFreq.slice(0, mid)];
+  for (const ch of order) {
+    if (chosen.length >= budget) break;
+    if (!chosen.includes(ch)) chosen.push(ch);
+  }
+  return chosen.length === budget ? chosen : null;
 }
 
 /** Substitution that fixes no letter present in the phrase. */
@@ -286,26 +457,33 @@ function main() {
   }
   if (unplaced > 0) console.log(`${unplaced} phrase(s) fit no tier band`);
 
+  // ROUND 52 — the fairness pass, before a single phrase is encoded. A line
+  // the crib cannot make fair is an AUTHORING error, so it is named and it
+  // stops the build; nothing is filtered out from under the list.
+  const ordinary = loadOrdinaryEnglish();
+  const unfair: string[] = [];
+  for (const tier of [1, 2, 3] as Tier[]) {
+    for (const phrase of byTier[tier]) {
+      if (revealPlan(phrase, tier, ordinary) === null) {
+        const free = unforcedLetters(phrase, ordinary);
+        const swaps = swapReadings(phrase, ordinary).map(([a, b]) => `${a}/${b}`);
+        unfair.push(`  ${phrase}\n    tier ${tier} gives ${REVEALS[tier]} reveal(s); unforced`
+          + ` [${free.join('') || '—'}]${swaps.length > 0 ? `, swap readings ${swaps.join(' ')}` : ''}`);
+      }
+    }
+  }
+  if (unfair.length > 0) {
+    throw new Error(`cipher: ${unfair.length} phrase(s) admit a second defensible reading that`
+      + ` their tier's crib cannot close (BENCHMARKS §11):\n${unfair.join('\n')}`);
+  }
+
   const puzzles: TieredCipherPuzzle[] = [];
   for (const tier of [1, 2, 3] as Tier[]) {
     byTier[tier].forEach((plaintext, i) => {
       const present = distinctLetters(plaintext);
       const encode = derangedMapping(rng, present);
       const ciphertext = [...plaintext].map((ch) => encode[ch] ?? ch).join('');
-
-      // Tier 1's crib is generous — the most frequent letters. Tiers 2 and 3
-      // get MID-frequency letters instead: a foothold, but never the free E.
-      const freq: Record<string, number> = {};
-      for (const ch of plaintext) {
-        if (/[A-Z]/.test(ch)) freq[ch] = (freq[ch] ?? 0) + 1;
-      }
-      const byFreq = [...present]
-        .sort((a, b) => (freq[b] ?? 0) - (freq[a] ?? 0) || a.localeCompare(b));
-      const mid = Math.floor(byFreq.length / 2);
-      const chosen = tier === 1
-        ? byFreq.slice(0, REVEALS[1])
-        : byFreq.slice(mid, mid + REVEALS[tier]);
-      const reveals = chosen.map((plain) => encode[plain]!);
+      const reveals = revealPlan(plaintext, tier, ordinary)!.map((plain) => encode[plain]!);
 
       puzzles.push({
         id: `cipher-t${tier}-${i + 1}`,
@@ -318,7 +496,8 @@ function main() {
     console.log(`tier ${tier} (${tierLabel(tier)}): ${byTier[tier].length} phrases`);
   }
 
-  validate(puzzles);
+  validate(puzzles, ordinary);
+  report(puzzles, ordinary);
   const outPath = join(dirname(fileURLToPath(import.meta.url)), 'generated', 'cipher.json');
   writeFileSync(outPath, JSON.stringify(puzzles));
   console.log(`cipher.json: ${puzzles.length} puzzles`);
@@ -326,8 +505,41 @@ function main() {
 
 type TieredCipherPuzzle = CipherPuzzle & { tier: Tier };
 
+/**
+ * What the pool costs and what it buys, printed every generation so the
+ * numbers in BENCHMARKS §11 can be re-read rather than re-remembered. The
+ * hapax median is here and NOT in a gate on purpose (§11): 90.2% of unforced
+ * letters are hapax but only 22.1% of hapax letters are unforced, so it is the
+ * symptom and forcedness is the disease.
+ */
+function report(puzzles: TieredCipherPuzzle[], ordinary: Set<string>) {
+  const median = (xs: number[]) => {
+    const s = [...xs].sort((a, b) => a - b);
+    return s.length % 2 ? s[(s.length - 1) / 2]! : (s[s.length / 2 - 1]! + s[s.length / 2]!) / 2;
+  };
+  for (const tier of [1, 2, 3] as Tier[]) {
+    const group = puzzles.filter((p) => p.tier === tier);
+    if (group.length === 0) continue;
+    const hapax: number[] = [];
+    const glyphShare: number[] = [];
+    for (const p of group) {
+      const truth = decodeMap(p);
+      const revealedPlain = new Set(p.reveals.map((c) => truth[c]!));
+      const freq: Record<string, number> = {};
+      for (const ch of p.plaintext) if (/[A-Z]/.test(ch)) freq[ch] = (freq[ch] ?? 0) + 1;
+      hapax.push(Object.keys(freq).filter((c) => freq[c] === 1 && !revealedPlain.has(c)).length);
+      const total = letterCount(p.plaintext);
+      glyphShare.push([...revealedPlain].reduce((n, c) => n + (freq[c] ?? 0), 0) / total);
+    }
+    const swaps = group.filter((p) => swapReadings(p.plaintext, ordinary).length > 0).length;
+    console.log(`  t${tier}: median unrevealed hapax ${median(hapax)},`
+      + ` crib covers ${(100 * median(glyphShare)).toFixed(1)}% of glyphs,`
+      + ` ${swaps} board(s) with a swap reading before the crib closes it`);
+  }
+}
+
 /** Fail the build on any puzzle the runtime decoder cannot round-trip. */
-function validate(puzzles: TieredCipherPuzzle[]) {
+function validate(puzzles: TieredCipherPuzzle[], ordinary: Set<string>) {
   const problems: string[] = [];
   const ids = new Set<string>();
   for (const p of puzzles) {
@@ -374,6 +586,21 @@ function validate(puzzles: TieredCipherPuzzle[]) {
     }
     for (const r of p.reveals) {
       if (!distinct.includes(r)) problems.push(`${p.id}: reveal ${r} not in ciphertext`);
+    }
+
+    // ROUND 52 — ONE DEFENSIBLE ANSWER, checked on what SHIPPED rather than on
+    // what was planned. Read back through the runtime decoder, so a reveal
+    // written for the wrong letter is caught here and not by a player.
+    const revealedPlain = new Set(p.reveals.map((c) => truth[c]!));
+    const free = unforcedLetters(p.plaintext, ordinary).filter((c) => !revealedPlain.has(c));
+    if (free.length > 0) {
+      problems.push(`${p.id}: ${free.join('')} unforced and not revealed — "${p.plaintext}"`
+        + ' admits a second defensible reading');
+    }
+    for (const [a, b] of swapReadings(p.plaintext, ordinary)) {
+      if (!revealedPlain.has(a) && !revealedPlain.has(b)) {
+        problems.push(`${p.id}: ${a}/${b} swap gives a second reading of "${p.plaintext}"`);
+      }
     }
   }
   if (problems.length > 0) {

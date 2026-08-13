@@ -234,6 +234,66 @@ account in `docs/THE_CLIMB.md` §1i, teardown in `docs/BENCHMARKS.md` §2.
   to widen: `npm run vitest tests/puzzles/wordweb-register.test.ts` gates the capability
   structurally and prints both shares every run.
 
+**AND THE DARKROOM WAS TELLING PLAYERS THEY WERE WRONG WHEN THEY WERE NOT (round 52).** Six
+rounds graded that room on how HARD it is and none of them asked whether it is FAIR. **76.0% of
+its boards admitted a second defensible reading** — a player who had solved the whole of `A HOUSE
+THAT MOVES KEEPS SECRETS` could hand in `A HOUSE THAT LOVES KEEPS SECRETS`, every word ordinary
+English and every letter consistent, and be told she was wrong. She was not; the phrase never
+decided. Teardown and the standard in `docs/BENCHMARKS.md` §11.
+
+- **THE REFERENCE NEVER HAS TO ASK, AND THAT IS THE FINDING.** A newspaper cryptogram is unique
+  because it is **60–120 letters**: every plain letter recurs across several words, so a
+  substitution breaks one of them. Nobody constructing a Cryptoquote checks uniqueness. This room
+  is **16–41 letters** — where uniqueness stops being free — and it had inherited the reference's
+  silence on the subject along with its format.
+- **THE OBVIOUS INSTRUMENT WAS BUILT AND THEN REFUSED.** A real pattern-indexed cryptogram
+  solver calls **15 of 121** boards uniquely readable, and the readings it convicts them on are
+  `A GARDEN BO A OILS ARGUMENT`. A cryptogram of ANY length is lexically ambiguous, the reference
+  included; what makes the reference unique is that only one reading MEANS anything. **An
+  instrument that condemns everything is exactly as useless as one that agrees with everything**
+  — the round's own version of §3.2. What is dangerous is the reading at **distance one**: she has
+  solved the board, every word reads, and one letter was never decided.
+- **THE OTHER COMPLAINT NAMED A SYMPTOM.** "The median board has 6 unrevealed letters appearing
+  exactly once, and a letter appearing once cannot be deduced from pattern" — but of 711 such
+  letters only **157 (22.1%) were undecided**; an `S` occurring once in `SECRETS` is pinned by the
+  six letters around it. The implication runs the other way (**90.2% of undecided letters ARE
+  hapax**), and driving the count down means longer phrases, which `MAX_LETTERS` forbids for a
+  glass reason the owner ruled on. Gated: forcedness. Printed every run: the hapax median.
+- **WHAT SHIPPED:** second readings **92/121 → 0/132**, and **88.4% → 42.4% at rank ≤ 60,000, a
+  line the pool was never authored against**. The crib is re-aimed — *its first job is fairness
+  and only its second is a foothold* — so reveals go first to the letters the phrase cannot force
+  and the old frequency rule fills what is left. **The COUNTS never move (3/1/2)** and neither
+  does one clock term: letters to deduce stay 10/12/13 and the implied openings stay 55 s/120 s/
+  168 s. **No payout moves and the evening is the length it was.**
+- **WHAT IT COST, published rather than absorbed:** the crib now stands on **fewer glyphs**
+  (41.1/6.2/10.0% → **30.0/4.2/8.3%**), because a letter the phrase cannot force is usually a
+  letter that appears once. **35 phrases were cut and 46 authored** (pool 121 → 132, tiers
+  34/44/43 → 44/38/50), and 30 of the 35 casualties are tier 2 for a structural reason worth
+  keeping: **tier 2 has one reveal, so it is the tier that must force itself**, while its own
+  definition hands it the two-letter function words where the rivals live.
+- **`npm run vitest tests/puzzles/cipher-uniqueness.test.ts`** re-derives forcedness from
+  `enable1.txt` and `count_1w.txt` itself, starting from the shipped CIPHERTEXT through the
+  runtime's `decodeMap` — it borrows nothing from the generator that wrote the pool — and is
+  **red on 92 of the 121 frozen round-51 boards**, with a positive control that owes nothing to
+  either pool.
+- **AND A POOL ROUND ALMOST TOOK THREE LIVE GATES DOWN WITH IT, SILENTLY.** Cipher ids are
+  POSITIONAL (`cipher-t{tier}-{i+1}`), and `scripts/smoke-gate.mjs`, `tests/round34-rooms-live.mjs`
+  and `tests/round45-prices-live.mjs` all pinned `cipher-t3-40` — round 20's choice of the pool's
+  WORST board, 41 letters and 8 words, the densest sheet at 375×667. Rewriting a ninth of the
+  phrase list moved that board to `cipher-t3-43` and re-pointed all three probes at a 34-letter
+  one, **with every gate still green**. All three derive the worst board from the shipped pool
+  now, so the tight case cannot be lost by editing a phrase list. *(This is failure mode §3.5
+  wearing a different coat: a gate whose data moved did not fail — it changed its mind.)*
+- **AND ONE THING IN THE BRIEF WAS ALREADY DONE.** The word-boundary defect (a blind tester read
+  `A SCONE` as `AS?ONE` off a 5px gap) was **fixed in round 34 and is gated**: `npm run
+  test:rooms-say-it` measures the painted discontinuity live and reads **0.307 at 375×667 and
+  0.320 at 390×844 against a floor of 0.18**, and its `--prove` half drives the round-24 slip red
+  at 0.090. Nothing was re-done. *(Those two numbers are the ones round 34 measured, to three
+  decimals, and they came back only once the pin above was repaired — on the re-pointed 34-letter
+  board the same gate read 0.313 / 0.322, which is how quietly this class of rot passes.)* `BENCHMARKS` §11's claim that the room "states no rule of any
+  kind on entry" was likewise wrong when written — that line shipped in round 24 — and is
+  corrected in place.
+
 ---
 
 ## 1. What the game is
@@ -253,7 +313,7 @@ Seven rooms, ~1,123 shipped puzzles, all solver-verified at build time:
 | The Linen Closet | Acrostic-like sparse grid + the hem | 76 | **yes** |
 | The Gallery | Twistle (word search) | 210 | **yes**, on section 8's two rules |
 | The Library | Word Web (Connections) | 157 | no — median 2 contested tiles (wants 2–4); tier 3 still 3-of-4 letter tricks |
-| The Darkroom | Substitution cipher | 121 | no |
+| The Darkroom | Substitution cipher | 132 | **fair, not yet clear** — one defensible answer on every board (round 52); tiers 2–3 are still over `LADDER_MINUTES` with no rung |
 
 **Five of seven, up from two in early August.** The three PROTECTED rooms are the Conservatory, the
 Study and the Counting House — do not improve them; touch them only when a task names them, and
@@ -377,8 +437,9 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
    round 49 moved the burden to the moment of reward, so a round that revives it in any form is
    relitigating a ruling**; **(b)** the Darkroom is over `LADDER_MINUTES` at tiers 2 and 3 with
    no rung to pay — its adapter emits one progress event in the whole room — pinned as a bounded
-   debt in `tests/economy-effort.test.ts`; **(c)** 13 of 44 tier-2 cipher boards carry no crib
-   word at all, because `tierOf` is two gates and a remainder (BENCHMARKS §11).
+   debt in `tests/economy-effort.test.ts`; **(c)** **11 of 38** tier-2 cipher boards carry no crib
+   word at all, because `tierOf` is two gates and a remainder (BENCHMARKS §11) — untouched by
+   round 52, which changed which letters the crib reveals and never which tier a phrase earns.
 2. **Her campaign is ~18–19 days, was ~28.** Flat movement took ~6 evenings off the median player
    and the three-cell landing took more; the skilled player barely moved, because the old toll fell
    on exactly the storeys she re-walks. **If 28 was deliberate, this needs a ruling.**
@@ -386,7 +447,9 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
    brightness during the fade.
 4. **Reduced motion lost a quarter of its dusk**, unpublished — gone by ~906ms.
 5. **The Library** (median 2 contested tiles against 2–4) and **the Darkroom** — the two rooms that
-   do not clear their benchmark.
+   do not clear their benchmark. **The Darkroom's remaining gap is now ONE named item**, the
+   ladder above (5b): round 52 paid the fairness debt nobody had written down, and §11's other
+   two "STILL OPEN" bullets turned out to be one already-shipped fix and one wrong claim.
    - **AND THE STUDY IS THE ROOM NOBODY HAS EVER SEEN PLAYED (named round 50, BENCHMARKS §12).**
      It is `tierRange: [3, 3]`, so it sits on rows 5–6 behind the padlocks, and **no blind tester
      in `docs/COMPREHENSION.md` has ever reached it** — there is not one finding about it in that

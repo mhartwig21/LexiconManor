@@ -132,6 +132,7 @@
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
+import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readLocalStamp, readServedStamp, fetchEdition } from './edition.mjs';
@@ -148,6 +149,20 @@ const VIEWPORTS = [
   { w: 375, h: 667, tag: '375x667' },
   { w: 390, h: 844, tag: '390x844' },
 ];
+
+/**
+ * ROUND 52 — THE DARKROOM'S PIN IS A FACT ABOUT THE POOL, NOT A STRING.
+ * Round 20 pinned this room to its WORST board — the longest phrase and the
+ * most words, i.e. the densest sheet at 375x667, the one that fails first —
+ * and wrote the id down. Cipher ids are POSITIONAL (`cipher-t{tier}-{i+1}`),
+ * so round 52's regeneration silently moved the 41-letter, 8-word board from
+ * `cipher-t3-40` to `cipher-t3-43` and this table would have gone on probing
+ * a 34-letter one with every gate still green. Derived here so a pool round
+ * cannot lose the tight case by editing a phrase list.
+ */
+const WORST_CIPHER = JSON.parse(readFileSync(resolve(ROOT, 'content/generated/cipher.json'), 'utf8'))
+  .map((p) => ({ id: p.id, letters: p.plaintext.replace(/[^A-Z]/g, '').length, words: p.plaintext.split(' ').length }))
+  .sort((a, b) => b.letters - a.letters || b.words - a.words || a.id.localeCompare(b.id))[0].id;
 
 /**
  * The seven rooms, each by the card the deck really ships, the kind its
@@ -171,7 +186,7 @@ const ROOMS = [
   // which round 44 did.
   { card: 'gallery',       kind: 'twistle',        root: '.anch--gallery',      cells: '.tw-cell',                    min: 16, pin: 'twistle-t3-1' },
   { card: 'study',         kind: 'forgotten-word', root: '.anch--study',        cells: '.fw-slot',                    min: 3 },
-  { card: 'darkroom',      kind: 'cipher',         root: '.mic--darkroom',      cells: '.dk-cell',                    min: 8,  pin: 'cipher-t3-40' },
+  { card: 'darkroom',      kind: 'cipher',         root: '.mic--darkroom',      cells: '.dk-cell',                    min: 8,  pin: WORST_CIPHER },
   { card: 'linen-closet',  kind: 'crossword',      root: '.m2--linen',          cells: '.lc-cell:not(.lc-cell--void)', min: 12, pin: 'crossword-t3-19' },
   { card: 'counting-house',kind: 'sudoku',         root: '.ch',                 cells: '.ch-cell',                    min: 81 },
 ];

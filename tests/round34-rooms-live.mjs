@@ -95,8 +95,20 @@ const VIEWPORTS = [
   { w: 390, h: 844, tag: '390x844' },
 ];
 
+/**
+ * ROUND 52 — the Darkroom's pin is DERIVED, because cipher ids are positional
+ * (`cipher-t{tier}-{i+1}`) and round 52 rewrote a ninth of the phrase list.
+ * The board this gate wants is the worst one — longest phrase, most words —
+ * because the word-gap measurement below is hardest on the densest sheet;
+ * `cipher-t3-40` was that board when the threshold was measured and is not
+ * any more. A literal here would have gone on passing on an easier board.
+ */
+const WORST_CIPHER = JSON.parse(readFileSync(resolve(ROOT, 'content/generated/cipher.json'), 'utf8'))
+  .map((p) => ({ id: p.id, letters: p.plaintext.replace(/[^A-Z]/g, '').length, words: p.plaintext.split(' ').length }))
+  .sort((a, b) => b.letters - a.letters || b.words - a.words || a.id.localeCompare(b.id))[0].id;
+
 /** Pinned boards, so the walk is the same walk every time. */
-const DARKROOM = { card: 'darkroom', kind: 'cipher', root: '.mic--darkroom', pin: 'cipher-t3-40' };
+const DARKROOM = { card: 'darkroom', kind: 'cipher', root: '.mic--darkroom', pin: WORST_CIPHER };
 const LINEN = { card: 'linen-closet', kind: 'crossword', root: '.m2--linen', pin: 'crossword-t3-19' };
 const GALLERY = { card: 'gallery', kind: 'twistle', root: '.anch--gallery', pin: 'twistle-t3-1' };
 
@@ -107,7 +119,10 @@ const GALLERY = { card: 'gallery', kind: 'twistle', root: '.anch--gallery', pin:
 /**
  * Relative-luminance gap required between an inter-WORD gutter and an
  * inter-LETTER gutter, at the slip's own top edge. Both ends of the range are
- * MEASURED on `cipher-t3-40` in Edge, not reasoned about:
+ * MEASURED in Edge on the pool's worst board — 41 letters, 8 words, `THE
+ * HOUSE LEARNS EVERY GUEST FROM THEIR FOOTFALL`, which was `cipher-t3-40`
+ * when this was written and is `cipher-t3-43` since round 52 — not reasoned
+ * about:
  *
  *     round-24 slip (fill only)   0.083   ← what shipped, and what the tester
  *                                           who read A SCONE as AS?ONE saw

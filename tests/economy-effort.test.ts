@@ -1120,6 +1120,16 @@ describe('4.10h — the Darkroom is clocked against the crib it hands over', () 
     }
   });
 
+  /**
+   * ROUND 52 read this test as a CONSTRAINT ON AUTHORING rather than a report.
+   * The fairness pass (BENCHMARKS §11) cut 35 phrases and wrote 46, and the
+   * first draft of that pool ran tier 1 to a median of 11 letters to deduce —
+   * still inside the band, and it would have moved the implied tier-1 opening
+   * 55 s → 43 s, i.e. made the room longer at a fixed row without one word
+   * anywhere saying so. The tier-1 additions were re-picked against a
+   * distinct-letter ceiling instead, and the three medians below are the same
+   * integers they were before the pool changed by a ninth of its size.
+   */
   it('inverts the row into an OPENING inside the band BENCHMARKS §11 published', () => {
     const openings: number[] = [];
     const toDeduce: number[] = [];

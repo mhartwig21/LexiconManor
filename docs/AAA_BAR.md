@@ -2041,6 +2041,10 @@ list." These four clauses are what that answer is measured against;
   inter-cell dead zones are both caught — a bounding-rect read cannot tell them apart).
   *Round 20 pinned the harness to the WORST board in each pool (`cipher-t3-40`,
   `crossword-t3-19`, `sudoku-t3-01`) rather than whichever board the day seed handed it.
+  **Round 52: cipher ids are positional and the phrase list was rewritten, so that
+  41-letter board is `cipher-t3-43` now — the three live harnesses derive the worst
+  cipher board instead of naming it, because a pinned id that silently re-points is a
+  gate that quietly measures an easier case.**
   Every number here is a floor, and a floor read off a soft board is not a floor: the
   cipher slot measures 37.4×54 on a 16-glyph phrase and 32.0×54 on the 41-glyph one, and
   only the second is the number this clause has to justify. The round-8 column below is

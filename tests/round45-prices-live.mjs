@@ -86,14 +86,23 @@ const ALL_VIEWPORTS = [
  * Every room, pinned to one board so the walk is the same walk every time, and
  * placed on 0-based row 5 — `rowTier` tier 3, which is where the worst of the
  * stale prices lived (the Counting House's `claimCost * 2` printed −6 there).
+ *
+ * ROUND 52 — the Darkroom's is DERIVED, not written down: cipher ids are
+ * positional, so the 41-letter board this table means by "the Darkroom" moved
+ * when the phrase list was rewritten. The price line sits under the densest
+ * sheet, so the worst board is the one that can push it off the glass.
  */
+const WORST_CIPHER = JSON.parse(readFileSync(resolve(ROOT, 'content/generated/cipher.json'), 'utf8'))
+  .map((p) => ({ id: p.id, letters: p.plaintext.replace(/[^A-Z]/g, '').length, words: p.plaintext.split(' ').length }))
+  .sort((a, b) => b.letters - a.letters || b.words - a.words || a.id.localeCompare(b.id))[0].id;
+
 const ROOMS = [
   { tag: 'LIBRARY', card: 'library', kind: 'word-web', pin: 'web-2', root: '.anch--library' },
   { tag: 'CONSERVATORY', card: 'conservatory', kind: 'hive', pin: 'hive-t3-1', root: '.anch--conservatory' },
   { tag: 'COUNTING-HOUSE', card: 'counting-house', kind: 'sudoku', pin: 'sudoku-t3-01', root: '.ch' },
   { tag: 'STUDY', card: 'study', kind: 'forgotten-word', pin: 'fw-serendipity', root: '.anch--study' },
   { tag: 'LINEN-CLOSET', card: 'linen-closet', kind: 'crossword', pin: 'crossword-t3-19', root: '.m2--linen' },
-  { tag: 'DARKROOM', card: 'darkroom', kind: 'cipher', pin: 'cipher-t3-40', root: '.mic--darkroom' },
+  { tag: 'DARKROOM', card: 'darkroom', kind: 'cipher', pin: WORST_CIPHER, root: '.mic--darkroom' },
   { tag: 'GALLERY', card: 'gallery', kind: 'twistle', pin: 'twistle-t3-1', root: '.anch--gallery' },
 ];
 

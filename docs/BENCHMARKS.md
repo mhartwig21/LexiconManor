@@ -945,11 +945,13 @@ hands over nothing at 33% above one that hands over an `A` and three high-freque
 
 | | Cryptoquote | The Darkroom |
 |---|---|---|
-| Length | 60–120 letters | **19–41**, median 25 / 24 / 31 by tier (`MAX_LETTERS` 41) |
-| Letters revealed | 0 | **3 / 1 / 2** (`REVEALS`) — high-frequency at tier 1, MID at tiers 2–3 |
-| Crib word | whatever the quotation happens to carry | **graded**: a one-letter word (34/34 t1), a two-letter word and no shorter (0/44 t2 carry a one-letter word), **nothing under 3 letters at all** (0/43 t3) |
+| Length | 60–120 letters | **16–41**, median 26 / 27 / 30 by tier (`MAX_LETTERS` 41) |
+| Letters revealed | 0 | **3 / 1 / 2** (`REVEALS`) — the letters the phrase cannot force first (round 52), then high-frequency at tier 1 and MID at tiers 2–3 |
+| Glyphs standing at the start | 0 | median **30.0% / 4.2% / 8.3%** — down from 41.1 / 6.2 / 10.0, the published price of aiming the crib at fairness first |
+| Crib word | whatever the quotation happens to carry | **graded**: a one-letter word (44/44 t1), a two-letter word and no shorter (0/38 t2 carry a one-letter word), **nothing under 3 letters at all** (0/50 t3) |
 | Distinct letters | ~20–24 of 26 | median **13 / 13 / 15** |
 | Letters to deduce | ~22 | median **10 / 12 / 13** |
+| Second defensible reading | never asked, never needed at 60+ letters | **none** — 0 of 132 boards, against 92 of 121 before round 52 |
 | Recognisable text | often — a famous quotation IS a crib | none: the proverbs were cut in round 24 for exactly that reason |
 | Fail state | none | none |
 | Time | 3–8 min | **3.0 / 4.5 / 5.5** — see below |
@@ -980,24 +982,184 @@ letters back to compensate for the length it cannot have.
   not a grade.** `tierOf` (`content/generate-cipher.ts`) is two gates and a leftover — tier 1
   is *has a one-letter word*, tier 3 is *has no word under three letters AND is long AND has a
   wide alphabet*, and tier 2 is everything else. So a **no-crib** phrase that misses tier 3's
-  length or alphabet floor is filed at tier 2, and **13 of the 44 shipped tier-2 boards are
-  exactly that**: they hand over nothing but their one mid-frequency letter, which is a tier-3
-  opening on a tier-2 card. What tier 2 actually guarantees is only the half its name claims —
+  length or alphabet floor is filed at tier 2, and **11 of the 38 shipped tier-2 boards are
+  exactly that** (13 of 44 before round 52, which changed which letters the crib reveals and
+  never which tier a phrase earns — the share is unmoved at 29%): they hand over nothing but
+  their one mid-frequency letter, which is a tier-3 opening on a tier-2 card. What tier 2 actually guarantees is only the half its name claims —
   no one-letter word. `ROOM_EFFORT.cipher[1]` is the MEDIAN board's clock, which is what that
   table is defined to be, and `tests/economy-effort.test.ts` holds the median at a two-letter
   crib and prints the share. The fix is a third gate in the generator (a two-letter word
   REQUIRED at tier 2, the rest re-filed), and it is a pool regeneration.
-- **STILL OPEN, and it is what keeps the room off the benchmark:** the reference gives the
-  solver a *procedure* (one-letter words, then two, then `THE`), and the Darkroom states no rule
-  of any kind on entry. `docs/COMPREHENSION.md` [major]: *"The Darkroom has no rules text of any
-  kind… the room that would strand a non-cryptogram player."* One sentence in house voice about
-  one letter standing for one letter throughout is fix 13 on that list and is not built.
+- **~~STILL OPEN~~ — WRONG WHEN IT WAS WRITTEN, corrected round 52.** This bullet said the room
+  *"states no rule of any kind on entry"* and cited `COMPREHENSION` fix 13 as unbuilt. It shipped
+  in **round 24**: `.mic-toastslot` carries *"One letter stands for one letter, all the way
+  through."* until her first pencil mark, and a later blind tester quoted it back gratefully. §11
+  was written in round 46 against a fix-list two rounds stale — the same class of error as
+  measuring the artifact instead of the glass, arriving in a document instead of a test. What the
+  reference still has and this room does not is the rest of the *procedure* (one-letter words,
+  then two, then `THE`), and that is deliberate: the procedure is the puzzle.
 - **STILL OPEN: the room is now longer than a sitting and pays nothing on the way up.**
   `LADDER_MINUTES` is 4 and tiers 2 and 3 are over it (tier 3 already was, at 4.0, and nothing
   said so). `cipher-adapter.ts` emits one `progress` event in the whole room — `print-developed`,
   at the end — so there is no marker to hang a rung on. The reference has the same shape and gets
   away with it at 3–8 minutes and no economy attached; this room has an economy attached.
   `tests/economy-effort.test.ts` pins the list of unstaged long rooms so the debt is bounded.
+
+### THE PROPERTY THE REFERENCE GETS FOR FREE, AND THIS ROOM HAD NEVER BOUGHT (round 52)
+
+Everything above grades this room on how HARD it is. Nothing above asks whether it is FAIR, and
+that is the question that had never been put to it: **when the player produces an answer, is the
+one the room accepts the only one she could defend?**
+
+The reference never has to ask, and that is the whole finding. A newspaper cryptogram is unique
+because it is **60–120 letters long**: every plain letter recurs across several words, so
+changing one breaks a word somewhere. Nobody constructing a Cryptoquote checks uniqueness,
+because at that length the format hands it over. The Darkroom is **16–41 letters** — the length
+where uniqueness stops being free — and it had inherited the reference's silence on the subject
+along with its format.
+
+**Measured on the round-51 pool: 76.0% of its boards admit a different, defensible reading.**
+27 of 34 at tier 1, 37 of 44 at tier 2, 28 of 43 at tier 3. On a board like `A HOUSE THAT MOVES
+KEEPS SECRETS`, a player who has everything else right can read `M` as `L`, hand in `A HOUSE
+THAT LOVES KEEPS SECRETS`, and be told she is wrong. She is not wrong; the phrase never decided.
+
+#### The instrument, and the stronger instrument that turned out to be measuring the wrong thing
+
+The obvious instrument is a real cryptogram solver: index a lexicon by letter pattern, backtrack
+for every injective mapping under which **every** word is an English word, count the solutions,
+and demand exactly one. It was built (it is in this round's working notes, not in the tree) and
+it says **15 of 121 boards** are uniquely readable. It also says what the other 106 admit:
+
+> `A GARDEN IS A SLOW ARGUMENT` → `A GARDEN BO A OILS ARGUMENT`
+> `A HOUSE THAT MOVES KEEPS SECRETS` → `A HOUSE THAT BOXES FEEDS SECRETS`
+
+**No player will ever hand those in, so a gate that condemns the board for them is measuring the
+lexicon and not the room.** The right conclusion is not that the pool is 87% broken — it is that
+*a cryptogram of any length is never lexically unique*, the reference included. What makes the
+reference unique is that only one reading MEANS anything, and meaning is exactly what a word
+list cannot see. So the maximal instrument is refused, on this round's own standing rule: an
+instrument that condemns everything is as useless as one that agrees with everything.
+
+**What is dangerous is the reading at distance one.** She has solved the board; every word reads;
+one cipher letter is genuinely not decided by the phrase, and she picks the wrong side of a
+coin-flip the room never told her she was flipping. That is the model, and it is the model
+because it is the only one where the rival is a place she actually arrives.
+
+- **A letter is FORCED** when no other plain letter can stand in its place: substitute it
+  throughout, and at least one word stops being an ordinary English word.
+- **ORDINARY ENGLISH** is ENABLE ∩ Norvig rank ≤ **20,000**, plus `A` and `I` (ENABLE has no
+  one-letter entries). That is the *everyday* line `content/lib/dictionary.ts` already publishes
+  and `docs/BENCHMARKS.md` §8 already defends as "findable in practice" — this room does not get
+  a private threshold. **The asymmetry is deliberate: the TRUE word is always admitted, however
+  rare** (`MISSPELT`, `RESHELVE`), because the true word is the answer; the rival has to be a
+  word she would actually produce.
+- **The swap is counted too.** Exchanging two letters' values (`CANDLES KEEP …` → `CANDLES PEEK
+  …`) is a second reading at mapping-distance two, it stays injective, and 13 of 121 boards
+  admitted one.
+
+**THE INSTRUMENT OVER-COUNTS, AND THAT IS SAID HERE RATHER THAN DISCOVERED LATER.** It has no
+grammar, so it condemns `THE PANTRY IF OUT OS PATIENCE` alongside `A HOUSE THAT LOVES KEEPS
+SECRETS`. Both are lexically legal; only one is a sentence. Judged by hand, roughly a third of
+the flagged boards are flagged for a rival no one could write. The error is left in and the
+direction is the point: over-strict costs **authoring**, under-strict costs a player being told
+her defensible answer is wrong, and the owner's own framing is that the second is the worst
+thing a puzzle can do. The price is paid in content, never in fairness.
+
+#### The hapax count is a symptom, and the property is not what it names
+
+The other measured complaint was that **the median board carries 6 unrevealed cipher letters
+appearing exactly once**, on the argument that a letter appearing once cannot be deduced from
+pattern. Counted against forcedness, that argument is mostly false: of 711 unrevealed
+single-appearance letters in the round-51 pool, **only 157 — 22.1% — are unforced.** A letter in
+`SECRETS` occurring once is pinned by the six letters around it, which is what "deduced from
+pattern" means.
+
+The implication runs the other way, and it is the useful half: **90.2% of unforced letters ARE
+hapax.** So single appearance is close to a necessary condition and nowhere near a sufficient
+one — and driving the hapax COUNT down would mean lengthening phrases, which `MAX_LETTERS` = 41
+forbids for a glass reason the owner has ruled on. **A metric's name must match what it
+computes** (STATUS §3.7): the number to hold is the unforced count, and the hapax median is
+printed every run as the symptom it is, not gated as the disease.
+
+#### THE STANDARD THIS ROOM IS HELD TO
+
+> **Every cipher letter the player must deduce is forced by the phrase. Every letter the phrase
+> cannot force is one the room has already given her.**
+>
+> Zero unforced unrevealed letters, and zero swap readings, on every shipped board at every
+> tier. The band is zero because there is no defensible non-zero: one board in the pool that
+> punishes a correct reading is one too many, and a ceiling of "a few" would be a number tuned to
+> whatever the authoring happened to yield.
+
+Two levers, and only two, because the third — length — is closed by the glass:
+
+1. **AUTHORING.** A phrase forces its own letters when every letter earns its keep in more than
+   one word, or sits in a word with no lexical neighbours. The rivals live in short words in
+   dense neighbourhoods — `BAD`/`CAD`/`LAD`/`TAD`, `MOVES`/`LOVES`, `HOLD`/`COLD`/`BOLD` — and
+   in two-letter function words (`IS`/`IF`/`IN`/`IT`, `OF`/`ON`/`OR`), which is an awkward fact
+   for tier 2 in particular: **the two-letter word IS the tier-2 crib and IS the tier-2
+   ambiguity.** A two-letter word is a crib because few letters fit it and a trap because more
+   than one does. It is safe exactly when both its letters recur elsewhere in the phrase.
+2. **THE CRIB, RE-AIMED.** The reveals used to be chosen by frequency alone — the three
+   commonest letters at tier 1, a mid-frequency letter at tiers 2–3. **The crib's first job is
+   fairness and only its second job is a foothold.** A room that hands over a nice frequent
+   letter and then punishes a defensible reading has spent its crib on the wrong thing. So the
+   reveal now goes first to the letters the phrase cannot force, and the frequency rule fills
+   whatever slots are left. The COUNTS do not move (3 / 1 / 2) — they are what `CIPHER_CLOCK`
+   inverts the row through, and this round does not re-price a room.
+   **The cost, published rather than absorbed: the crib now covers fewer GLYPHS**, because an
+   unforced letter is usually a hapax and a hapax pre-fills one cell. See the shipped table.
+
+A phrase whose unforced letters outnumber its tier's reveals cannot be made fair by any reveal
+it is allowed, and it is **not shipped**. That is a build-time throw in `content/generate-cipher.ts`,
+not a silent drop: the phrase list is hand-authored and a line that cannot be made fair has to be
+rewritten by a person.
+
+#### The gate, and why it can come out wrong
+
+`tests/puzzles/cipher-uniqueness.test.ts` reads the shipped `cipher.json`, decodes it through the
+runtime's own `decodeMap`, and re-derives forcedness from `enable1.txt` and `count_1w.txt`
+directly — it borrows nothing from the generator that wrote the pool, which is the round-48
+lesson applied before it had to be learned again. It runs whole against the frozen round-51 pool
+(`tests/puzzles/fixtures/cipher-round51.json`), where it is **red on 92 boards**, so the ruling
+is demonstrated against a real population and not only asserted against the one that satisfies
+it. It prints the hapax median and the swap count every run.
+
+It also carries a **positive control that owes nothing to the pool**: a hand-built `A BAD DAY`
+whose `B` is free (`CAD`, `LAD`, `PAD`, `TAD`), the same board with `B` standing, and the same
+board's `A`, which no substitution can free. An instrument that only ever runs on boards
+designed to satisfy it cannot be shown to work.
+
+#### What shipped, and what it cost
+
+| | round 51 | round 52 |
+|---|---|---|
+| Boards admitting a second defensible reading (rank ≤ 20,000) | **92 of 121 — 76.0%** | **0 of 132** |
+| …by tier | 27/34 · 37/44 · 28/43 | 0/44 · 0/38 · 0/50 |
+| …at rank ≤ 60,000, a line nothing was authored against | 88.4% | **42.4%** |
+| Boards with an exchangeable pair | 13 | **0** |
+| Pool | 121 (34 / 44 / 43) | **132 (44 / 38 / 50)** |
+| Glyphs standing at the start, median by tier | 41.1% / 6.2% / 10.0% | **30.0% / 4.2% / 8.3%** |
+| Unrevealed single-appearance letters, median by tier | 6 / 6 / 6 | 4 / 5 / 6 |
+| Letters to deduce, median by tier | 10 / 12 / 13 | **10 / 12 / 13** |
+| Implied opening (`ROOM_EFFORT` − cascade) | 55 s / 120 s / 168 s | **55 s / 120 s / 168 s** |
+
+**NOT ONE CLOCK TERM MOVES, and that was a constraint on the authoring rather than a result.**
+The row inverts through the median letters-to-deduce, so the first draft of this pool — which ran
+tier 1 to a median of 11 — would have pushed the implied tier-1 opening to 43 s and made the room
+longer without saying so anywhere. The tier-1 additions were re-picked against a distinct-letter
+ceiling instead. No payout moves, no wage spread moves, and the evening is the length it was.
+
+**Thirty-five phrases were cut and forty-six authored**, so the pool grew rather than shrank. The
+casualties are almost all tier 2 (30 of the 35) and the reason is structural: **tier 2 has one
+reveal, so it is the tier that must force itself**, while its own definition hands it the
+two-letter function words where the rivals live. `THE LAMP IS LIT ON THE STAIRS` had five
+undecided letters and one crib to spend; nothing but a rewrite could save it.
+
+**What is NOT claimed:** that the room now has one lexical solution — no cryptogram of any length
+does, and §11's opening finding is that the reference does not either. What is claimed is
+narrower and is the thing a player can be hurt by: *having solved the board, there is nothing
+left for her to be arbitrarily wrong about.*
 
 ---
 
