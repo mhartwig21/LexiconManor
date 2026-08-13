@@ -41,7 +41,7 @@ import { typeset } from '../../../../content/lib/typography';
 import { herringLine } from './herring-line';
 import { endCopy } from './web-grade';
 import './anchor.css';
-import { stepWords } from '../../../engine/economy/steps';
+import { STEP_TABLE, stepWords } from '../../../engine/economy/steps';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string; bit?: string } | null;
 
@@ -115,7 +115,22 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
 
   const naming = state.pendingNaming;
   const won = state.web.status === 'won' && !naming;
-  const stepCost = tier === 3 ? 3 : 2;
+  /**
+   * ═══ ROUND 45 — THE LIBRARY WAS PRINTING A PRICE IT DOES NOT CHARGE ══════
+   *
+   * This was `tier === 3 ? 3 : 2`, transcribed, and round 42 made a wrong claim
+   * cost ONE move at every weight and every tier. So the room printed
+   * "Two of these share a thread. · −2 steps" in red beside a ledger entry of
+   * −1 — a blind tester tested it three times deliberately and logged the
+   * contradiction, and it is the exact defect `ui/chrome/step-reasons.ts` was
+   * built to prevent. Read off the table now (the pattern `TwistleView` has
+   * used since round 44) so it cannot go stale again, and gated on the glass by
+   * `tests/round45-prices-live.mjs`, which drives the action and compares the
+   * PRINTED string against the counter the ledger actually moved.
+   */
+  const stepCost = -STEP_TABLE.mistake(1, tier);
+  /** The nudge is a purchase, and it prices through the mistake row (A3). */
+  const hintCost = -STEP_TABLE.hint(1, tier);
 
   const solvedGroups = useMemo(
     () => state.web.solvedTiers.map((t) => puzzle.groups.find((g) => g.tier === t)!),
@@ -410,7 +425,7 @@ export default function WordWebView({ puzzle, state, tier, dispatch }: RoomViewP
           {state.lastWrongSelection && !busy && (
             <div className="anch-row">
               <button className="anch-btn" {...pressProps<HTMLButtonElement>()} onClick={() => dispatch({ type: 'buy-hint' })}>
-                A nudge from the shelves · −{stepCost} steps
+                A nudge from the shelves · −{stepWords(hintCost)}
               </button>
             </div>
           )}

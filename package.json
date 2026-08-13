@@ -36,6 +36,7 @@
     "test:room-persistence": "node tests/room-persistence-live.mjs",
     "test:tube": "node tests/tube-day1-live.mjs",
     "test:rooms-say-it": "node tests/round34-rooms-live.mjs && node tests/round34-rooms-live.mjs --prove",
+    "test:prices": "node tests/round45-prices-live.mjs && node tests/round45-prices-live.mjs --prove",
     "test:gallery-ground": "node tests/round38-gallery-live.mjs && node tests/round38-gallery-live.mjs --prove",
     "test:library-threads": "node tests/round35-library-threads-live.mjs",
     "metrics:review": "tsx scripts/review-metrics.ts",

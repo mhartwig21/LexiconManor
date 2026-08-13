@@ -8,7 +8,7 @@ import {
 import {
   appendEntry, climbKey, createLedger, moveAt, rowName, teaArcFloor, teaArcPoints, teaBonus,
   teaDawnPour, teaLandingPour,
-  FIRST_MORNING_POT, STEP_TABLE, TEA_ARC,
+  FIRST_MORNING_POT, STEP_TABLE, TEA_ARC, TEA_POUR,
 } from '../src/engine/economy/steps';
 import { CARRY_OVER_EFFECTS, carryOverFrom } from '../src/engine/manor/deck';
 import type { DayState, DraftOffer, PlacedRoom, StepLedger } from '../src/engine/types';
@@ -184,7 +184,7 @@ describe('buildDayRecord (the chronicles bank)', () => {
       roomsSolved: 1,
       stepsSpent: 3,
       fragmentsFound: 1,
-      stepsRefunded: 6,
+      stepsGivenBack: 6,
       highestRow: 0,
       // ROUND 20 (REVIEW_AA §5.7): the day record also keeps what she made of
       // each wing. No manor was handed in here, so the papers learn nothing —
@@ -200,20 +200,26 @@ describe('buildDayRecord (the chronicles bank)', () => {
     // the game closed on a scoreboard of zeros.
     const d = day({ day: 2 });
     let l = createLedger();
-    l = appendEntry(l, { reason: 'tea', delta: 4, at: 0 });
+    // ROUND 45: stamped like the day slice stamps it, so this fixture's dawn is
+    // the game's dawn — the cup is part of the STARTING FIGURE, and the digest
+    // must not print it again as something the day gave back.
+    l = appendEntry(l, { reason: 'tea', delta: 4, at: 0, roomKey: TEA_POUR.dawnKey });
     l = appendEntry(l, { reason: 'move', delta: 0, at: 0, roomKey: '2,1' });
     l = appendEntry(l, { reason: 'move', delta: 0, at: 0, roomKey: climbKey('2,1', '2,3') });
     l = appendEntry(l, { reason: 'solve', delta: 6, at: 0, roomKey: '2,3' });
     l = appendEntry(l, { reason: 'move', delta: 0, at: 0, roomKey: '2,1' });   // walked back
     const record = buildDayRecord(d, l, [], 'steps-exhausted', 1);
     expect(record.highestRow).toBe(3);
-    expect(record.stepsRefunded).toBe(10);
+    // 6 from the solve — and NOT the 4 of morning tea, which the candle already
+    // showed her before she walked out (round 45; it read 10 for sixteen
+    // rounds, and three blind testers did the sum and caught it).
+    expect(record.stepsGivenBack).toBe(6);
     expect(highestRowLine(record)).toContain(rowName(3));
     // COMPREHENSION fix 10: the refund is a ROW among the other rows now, in
     // the same type and the same column, and the prose above it is the climb
     // alone. Three blind testers read "The manor gave back +10." as a payout
     // and went hunting for the ten; nothing in this digest is a purse.
-    expect(nightTallyRows(record, 0)).toContainEqual(['Steps given back', 10]);
+    expect(nightTallyRows(record, 0)).toContainEqual(['Steps given back', 6]);
     expect(NIGHT_TALLY_NOTE).toMatch(/carries to tomorrow/);
     expect(NIGHT_TALLY_LABELS).toContain('Steps given back');
   });
@@ -221,7 +227,7 @@ describe('buildDayRecord (the chronicles bank)', () => {
   it('says nothing rather than printing a zero (the cozy pillar)', () => {
     const quiet = buildDayRecord(day({ day: 1 }), createLedger(), [], 'retired-early', 1);
     expect(quiet.highestRow).toBe(0);
-    expect(quiet.stepsRefunded).toBe(0);
+    expect(quiet.stepsGivenBack).toBe(0);
     expect(highestRowLine(quiet)).toBeNull();
     // Every zero row is suppressed rather than printed — including the refund
     // now that it has a row of its own.

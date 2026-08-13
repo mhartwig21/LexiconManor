@@ -1640,6 +1640,29 @@ export const TEA_POUR = {
    * `priceEntry` re-prices by roomKey, so stamping a 'tea' entry is inert.
    */
   key: 'tea:landing',
+  /**
+   * ═══ ROUND 45 — THE STAMP THAT TELLS THE PURSE FROM THE PAYOUT ════════════
+   *
+   * Every grant ledgered BEFORE she walks out — Bramble's cup, day 1's welcome
+   * pot, what yesterday left steeping, and the top-up a shared morning pours —
+   * carries this key. They are 'tea' entries like the landing pour, they float
+   * like it and they read "tea" in the account like it, and in exactly one
+   * respect they are not like it: **they are already inside the number on the
+   * candle when the day begins.**
+   *
+   * That is the whole of the double-count three blind testers reconciled their
+   * way into. The counter reads 13 at dawn — twelve moves and a cup — and
+   * `stepsRefunded` counted the cup a second time under "Steps given back", so
+   * every night digest in the game was over by exactly the dawn grants and all
+   * three players got the same wrong answer doing the sum themselves. Two of
+   * the three named it as the reason they would stop playing.
+   *
+   * A positive stamp rather than "a tea entry with no roomKey": absence is not
+   * evidence, and the next round that ledgers a grant from somewhere new would
+   * inherit the bug silently. `tests/steps.test.ts` pins the four live grant
+   * sites to this key and pins the landing pour OUT of it.
+   */
+  dawnKey: 'tea:dawn',
 } as const;
 
 /** The cup poured at dawn for `bramblePoints` raw points (never a rank). */
@@ -1814,10 +1837,57 @@ export function stepsRefunded(ledger: StepLedger): number {
 }
 
 /**
- * The day's starting total (budget + morning tea) — the reference the chrome
- * burn-down bar measures against so the wick reads as "how much day is left".
+ * Is this entry one of the morning's grants — part of the purse she starts the
+ * day holding, rather than something the day paid back? See `TEA_POUR.dawnKey`
+ * for why the difference is worth a stamp.
+ */
+export function isDawnGrant(entry: StepEntry): boolean {
+  return entry.reason === 'tea' && entry.roomKey === TEA_POUR.dawnKey;
+}
+
+/** Everything the morning handed her before she walked out: cup, pot, steeping. */
+export function dawnGrants(ledger: StepLedger): number {
+  return ledger.entries.reduce((sum, e) => (isDawnGrant(e) ? sum + e.delta : sum), 0);
+}
+
+/**
+ * THE STARTING FIGURE — the number on the candle the moment she steps onto the
+ * blueprint, and the reference the chrome burn-down measures against so the
+ * wick reads as "how much day is left".
+ *
+ * ═══ ROUND 45 — IT USED TO COUNT THE POT ON THE LANDING TOO ═══════════════
+ * This was `budget + Σ every 'tea' entry`, which is right for the three grants
+ * that land at dawn and wrong for the fourth pour: Bramble carries the rest of
+ * the pot up to the second landing (`TEA_POUR.landingRow0`) in the MIDDLE of
+ * the evening, and counting it here grew the burn-down's denominator halfway
+ * through the day — the wick got taller after a gift, which is the one thing a
+ * burn-down may never do. It counts the DAWN grants now, by their stamp, so the
+ * reference is fixed for the whole evening and this function is what its own
+ * name says: the figure the day started at.
  */
 export function dayStartTotal(ledger: StepLedger): number {
-  return ledger.budget + ledger.entries.reduce(
-    (sum, e) => (e.reason === 'tea' ? sum + e.delta : sum), 0);
+  return ledger.budget + dawnGrants(ledger);
+}
+
+/**
+ * ═══ WHAT THE DAY GAVE BACK — AND THE ARITHMETIC IT HAS TO CLOSE ══════════
+ *
+ * `stepsRefunded` is every positive entry, full stop, and it must stay that way
+ * (it is one half of the ledger identity `total = budget + refunded − spent`,
+ * pinned in tests/economy-simulation.test.ts). It is the wrong number to PRINT,
+ * because the morning's grants are positive entries AND are already inside the
+ * figure the candle showed her at dawn.
+ *
+ * Three strangers played the round-42 build, did the day's sum themselves off
+ * the night digest, and all three got the same wrong answer — over by exactly
+ * the dawn cup. This is the number that makes it close:
+ *
+ *     dayStartTotal − stepsSpent + stepsGivenBack === ledgerTotal
+ *
+ * — an identity, not a tuning, and `tests/day.test.ts` holds it over randomly
+ * generated ledgers while `tests/round45-prices-live.mjs` holds it over the
+ * numbers a real driven day actually PAINTS on a real phone.
+ */
+export function stepsGivenBack(ledger: StepLedger): number {
+  return stepsRefunded(ledger) - dawnGrants(ledger);
 }

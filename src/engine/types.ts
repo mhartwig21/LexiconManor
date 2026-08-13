@@ -468,7 +468,26 @@ export interface DayRecord {
   roomsSolved: number;
   stepsSpent: number;
   fragmentsFound: number;
-  /** Everything the manor gave back today: solves, perfects, tea, snacks. */
+  /**
+   * What the DAY gave back: solves, perfects, studies, snacks, and the pot
+   * Bramble carries up to the landing — everything the ledger paid in that was
+   * not already inside the figure the candle showed her at dawn.
+   *
+   * ROUND 45. It was `stepsRefunded`, which is every positive entry INCLUDING
+   * the morning's grants, and the morning's grants are in the starting figure
+   * too — so the digest printed the dawn cup twice and three blind testers doing
+   * the day's sum all landed on the same wrong answer. The field is renamed
+   * with the number, because a metric whose name outlives its meaning is how
+   * this repo has lied to itself before (`engine/economy/steps.ts`
+   * `stepsGivenBack`).
+   */
+  stepsGivenBack?: number;
+  /**
+   * DEPRECATED, read-only, never written: what nights banked before round 45,
+   * under the old double-counting sum. Kept so the Chronicles do not go blank
+   * for a player mid-campaign; there is no migration because there is nothing
+   * honest to migrate an over-count TO.
+   */
   stepsRefunded?: number;
   /** Highest 0-based row she stood on (see `rowName` in economy/steps for prose). */
   highestRow?: number;

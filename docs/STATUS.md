@@ -37,13 +37,16 @@ so paying this off means moving `BASE_DAY_BUDGET`, re-measuring the whole campai
 every band that hangs off it. That is an economy round. Until it runs, every 4.10 band in the repo
 is measured through a Gallery that is poorer than the shipped one.
 
-**Second, and cheap:** *round 42 made a wrong claim cost ONE move at every weight and every tier,
-and five rooms still print the old price on the glass* — `const stepCost = tier === 3 ? 3 : 2` in
-`WordWebView`, `CrosswordView`, `SudokuView`, `ForgottenWordView` and `CipherView` (the Gallery's
-was fixed in round 44, read off `STEP_TABLE.mistake` so it cannot go stale again). The Library
-prints "One away… · −2 steps" beside a ledger entry of −1. That is the exact defect
-`ui/chrome/step-reasons.ts` was built to prevent, in five rooms at once — but three of them are
-PROTECTED, so it needs a task that names them.
+**~~Second, and cheap:~~ PAID IN ROUND 45, together with the day's own arithmetic.** Five rooms
+were printing the pre-round-42 price (`const stepCost = tier === 3 ? 3 : 2` in `WordWebView`,
+`CrosswordView`, `SudokuView`, `ForgottenWordView`, `CipherView`), the Counting House's
+`figureCost = claimCost * 2` printed **−6 on a button** against a charge of 1, `Step back · 1 step`
+charged nothing at all, and the night digest counted **the dawn cup twice** — it is inside the
+figure the candle shows at dawn AND was printed again under "Steps given back", which is why all
+three cold-read players did the day's sum and all three got the same wrong answer. Every price is
+read off `STEP_TABLE` now, and the day closes on an identity: `dayStartTotal − stepsSpent +
+stepsGivenBack === ledgerTotal`. Full write-up, with the band that moved and its reason, in
+`docs/THE_CLIMB.md` §1d.
 
 ---
 
@@ -112,6 +115,14 @@ It reaches the night by **driving a real day to a real dusk**, never by mounting
 **It has blocked three deploys.** Known flaw: `--prove` was seen non-deterministic once — worth
 fixing before trusting it blind.
 
+**1b. `npm run test:prices`** (`tests/round45-prices-live.mjs`, round 45) — **no room may PRINT a
+number the ledger does not CHARGE.** Drives all seven rooms and the draft footer at both sizes and
+compares one PAINTED string against another: the price on the glass against how far the candle's
+own numeral moved. It never asks the store what it charged — the store is where both halves of a
+mispriced control agree. The control scan is generic (any visible enabled button painting a `−N`),
+so a new priced button is gated the day it ships. Proved red on round 44's tree: **12 findings**.
+`--prove` re-injects both shipped forms and holds 26/26 + 2/2 red.
+
 **2. THE COLD READ** — three agents play the **live deploy** blind (no repo access, no
 store-poking, real pointer input) and are quizzed from memory; a fourth grader marks them against
 ground truth and reports the DELTA against the previous run. **68/100 (10 Aug) → 77 (11 Aug).**
@@ -151,7 +162,7 @@ Rounds of ultracode subagents. **Critique and verification fan out in parallel; 
 STRICTLY SEQUENTIAL** — parallel writers in one checkout lost ten agents twice. Each builder owns
 distinct files, runs every gate, and commits its own work.
 
-Every builder runs: `tsc --noEmit` · `vitest run` (**1,418** baseline as of round 42) ·
+Every builder runs: `tsc --noEmit` · `vitest run` (**1,435** baseline as of round 45) ·
 `content:verify` · `lint:clearance` · `build` · `gate:glass` (0 findings at both sizes).
 
 **Playwright must use system Edge (`channel: msedge`)** — the browser download silently fails on

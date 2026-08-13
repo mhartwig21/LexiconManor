@@ -287,6 +287,81 @@ not a word-game one, and it is the largest open number in this document.
 
 ---
 
+## 1d. The ledger got legible, and then the arithmetic was wrong — round 45
+
+Round 42's whole gift was a day the player can audit: a move costs 1, so the counter *is* the
+quantity it measures. The cold read that followed proves it landed — all three strangers derived
+"a move costs 1" unaided — and it cost exactly what a legible ledger costs. **They did the sum.
+All three got the same wrong answer, and two of the three named it as the reason they would stop
+playing.**
+
+### The dawn cup was counted twice
+
+The candle reads **13** at dawn: twelve moves and Bramble's cup (`BASE_DAY_BUDGET` +
+`TEA_POUR.dawnCup`). The night digest's *"Steps given back"* was `stepsRefunded` — **every**
+positive entry — so the cup was inside the starting figure AND printed again as something the day
+handed back. Add it up her way and the day comes out over by exactly the morning's grants.
+
+The fix is at the source, not in the digest. Every grant ledgered before she walks out — the cup,
+day 1's welcome pot, what yesterday left steeping, and a shared morning's top-up — is stamped
+`TEA_POUR.dawnKey`, and two numbers are derived from that stamp rather than from a reason word:
+
+- **`dayStartTotal`** = budget + dawn grants. It used to count EVERY `'tea'` entry, including the
+  pot Bramble carries up to the second landing mid-evening — so the burn-down's denominator grew
+  halfway through the day and **the wick got taller after a gift**, which is the one thing a
+  burn-down may never do. Nobody had noticed; it fell out of writing the stamp down.
+- **`stepsGivenBack`** = `stepsRefunded` − dawn grants. `stepsRefunded` is unchanged and stays
+  unchanged: it is one half of the ledger identity `total = budget + refunded − spent`, which
+  `tests/economy-simulation.test.ts` pins, and it is the right number for the model and the wrong
+  number to print.
+
+**The band that moves, with its reason:** the night digest's *Steps given back* falls by the day's
+dawn grants — **1 on a normal evening** (the cup), 1 on day 1 (the welcome pot), more only on a
+morning she shares tea. On a day that gave nothing else back the row now reads 0 and is suppressed,
+which is the cozy rule already in force ("a quiet day says less"). `DayRecord.stepsRefunded` is
+renamed `stepsGivenBack` and the old field is kept read-only for nights banked before this round —
+there is nothing honest to migrate an over-count to.
+
+What it buys is an identity, and it is the one the player performs:
+
+> **`dayStartTotal` − `stepsSpent` + `stepsGivenBack` === `ledgerTotal`**
+
+### Five rooms were printing the pre-round-42 price
+
+`const stepCost = tier === 3 ? 3 : 2` survived round 42 in `WordWebView`, `CrosswordView`,
+`SudokuView`, `ForgottenWordView` and `CipherView`. The Library printed *"Two of these share a
+thread. · −2 steps"* in red beside a ledger entry of −1 — a blind tester tested it three times on
+purpose and logged the contradiction — and the Counting House's `figureCost = claimCost * 2`
+printed **−6 on a button** at tier 3 against a charge of 1. A stale toast teaches a false rule; a
+stale button asks her to decide on a lie. Every one now reads `STEP_TABLE.mistake` / `.hint` at the
+weight its adapter actually emits, which is the pattern `TwistleView` has used since round 44.
+
+The draft footer was the same defect with the sign filed off: **`Step back · 1 step` charged
+nothing**, because the walk to the door is ledgered when the offer OPENS (AAA 4.6's two-part walk).
+The price is gone from the button; the door-step is unchanged.
+
+### The gate, and why it cannot pass by construction
+
+`tests/round45-prices-live.mjs` (`npm run test:prices`) drives all seven rooms and the draft on a
+real phone-sized Edge, and every verdict is **one painted string against another painted string**:
+it reads the price off the glass, taps the control with a real pointer, and reads how far the
+CANDLE'S OWN NUMERAL moved. It never asks the store what it charged — the store is where both
+halves of a mispriced control agree, and a check that recomputes the price from the table the view
+reads can never catch a view that disagrees with the engine. The control scan is generic: any
+visible enabled button whose painted text carries a `−N`, so a room that grows a new priced button
+is gated the day it ships one.
+
+**Proved red before it was fixed:** on round 44's tree it reported **12 findings at 375×667** —
+every item above, including `Consult · −6 steps` against a charge of 1 and `13 − 1 + 2 = 14`
+against a candle showing 13. `--prove` puts both shipped forms back into the running app and holds
+at 26/26 printed prices and 2/2 day sums red.
+
+*(One thing the gate caught about itself, worth keeping: its first price reader looked only for
+U+2212, so it read `Step back · 1 step` — a control that charges nothing — as "unpriced" and passed
+it. The house prices things two ways, and a gate that knows only one of them agrees with the bug.)*
+
+---
+
 ## 2. The landing is three cells, not one
 
 **Today** the manor is 5x7. `SANCTUM_CELL` is `{col: 2, row: 6}` — dead centre, top. The landing

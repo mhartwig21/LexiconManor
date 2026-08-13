@@ -2599,7 +2599,7 @@ function measureNight() {
     ['Rooms drafted', rec.roomsDrafted],
     ['Rooms solved', rec.roomsSolved],
     ['Steps spent', rec.stepsSpent],
-    ['Steps given back', rec.stepsRefunded ?? 0],
+    ['Steps given back', rec.stepsGivenBack ?? rec.stepsRefunded ?? 0],
     ['Fragments found', rec.fragmentsFound],
     ['Letters read', letters],
   ].filter(([, n]) => n > 0) : [];

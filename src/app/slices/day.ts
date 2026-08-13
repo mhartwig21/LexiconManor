@@ -21,7 +21,7 @@ import {
 } from '../../engine/day';
 import {
   appendEntry, stepsRemaining as remaining, teaArcFloor, teaArcPoints, teaDawnPour,
-  STEP_TABLE,
+  STEP_TABLE, TEA_POUR,
 } from '../../engine/economy/steps';
 import { carryOverFrom } from '../../engine/manor/deck';
 
@@ -158,15 +158,20 @@ export const createDaySlice =
       // Through the audited path so each morning gift renders as a floating +N
       // (AAA 4.9). Three separate entries, because they are three different
       // stories: her tea, the welcome pot, and what you set up yesterday.
+      // ROUND 45: every one of the three is stamped `TEA_POUR.dawnKey`, because
+      // all three are inside the number the candle shows her before she takes a
+      // single step — and the night digest was counting them a second time
+      // under "Steps given back". The stamp is what tells the PURSE from the
+      // PAYOUT; see the constant for the whole finding.
       const at = Date.now();
       if (begun.teaSteps > 0) {
-        get().applyStepEntry({ reason: 'tea', delta: begun.teaSteps, at });
+        get().applyStepEntry({ reason: 'tea', delta: begun.teaSteps, at, roomKey: TEA_POUR.dawnKey });
       }
       if (begun.potSteps > 0) {
-        get().applyStepEntry({ reason: 'tea', delta: begun.potSteps, at });
+        get().applyStepEntry({ reason: 'tea', delta: begun.potSteps, at, roomKey: TEA_POUR.dawnKey });
       }
       if (carried.steps > 0) {
-        get().applyStepEntry({ reason: 'tea', delta: carried.steps, at });
+        get().applyStepEntry({ reason: 'tea', delta: carried.steps, at, roomKey: TEA_POUR.dawnKey });
       }
       // The manor grid itself is rebuilt by A1 (manor slice) when it observes
       // manor === null with a fresh day.daySeed — see integration notes.
@@ -264,7 +269,11 @@ export const createDaySlice =
       // full; only the place it is drinkable moved.
       const topUp = teaDawnPour(warmed) - teaDawnPour(known);
       if (topUp > 0) {
-        get().applyStepEntry({ reason: 'tea', delta: topUp, at: Date.now() });
+        // Poured in the MORNING phase, before she walks out, so it is part of
+        // the starting figure exactly like the cup it deepens (round 45).
+        get().applyStepEntry({
+          reason: 'tea', delta: topUp, at: Date.now(), roomKey: TEA_POUR.dawnKey,
+        });
       }
     },
     };

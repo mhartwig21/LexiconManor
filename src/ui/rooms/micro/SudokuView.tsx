@@ -35,7 +35,7 @@ import {
 import type { SudokuAction, SudokuRoomState } from '../../../engine/puzzles/sudoku-adapter';
 import { sfx } from '../../../app/sound';
 import './counting-house.css';
-import { stepWords } from '../../../engine/economy/steps';
+import { STEP_TABLE, stepWords } from '../../../engine/economy/steps';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
 
@@ -107,8 +107,22 @@ export default function SudokuView({
 }: RoomViewProps<SudokuPuzzle, SudokuRoomState, SudokuAction>) {
   const engine = state.engine;
   const won = engine.status === 'won';
-  const claimCost = tier === 3 ? 3 : 2;      // balance / nudge — weight 1
-  const figureCost = claimCost * 2;          // consult a figure — weight 2
+  /**
+   * ═══ ROUND 45 — THE WORST OF THE FIVE: A PRINTED PRICE 6x THE CHARGE ══════
+   *
+   * These two lines were `tier === 3 ? 3 : 2` and `claimCost * 2`, transcribed
+   * against the pre-round-42 ladder. Round 42 made every costed claim and every
+   * purchased hint −1 at every weight and every tier, so at tier 3 the Counting
+   * House printed "Consult a figure · −6 steps" on a BUTTON and the ledger took
+   * one. A stale toast teaches a false rule; a stale button asks her to decide
+   * on a lie. Both are read off the table now, by the weight the adapter
+   * actually emits (`sudoku-adapter.ts`: balance/nudge are weight 1, a revealed
+   * figure is weight 2), and `tests/round45-prices-live.mjs` drives each button
+   * and compares the printed string against the counter the ledger moved.
+   */
+  const claimCost = -STEP_TABLE.mistake(1, tier);   // balance — weight 1
+  const nudgeCost = -STEP_TABLE.hint(1, tier);      // a word from the clerk
+  const figureCost = -STEP_TABLE.hint(2, tier);     // consult a figure — weight 2
 
   const firstBlank = useMemo(
     () => {
@@ -258,7 +272,7 @@ export default function SudokuView({
           : '';
         setToast({
           kind: 'good',
-          text: `${lead}${phrase.it} ${verb} ${place} · −${stepWords(claimCost)}`,
+          text: `${lead}${phrase.it} ${verb} ${place} · −${stepWords(nudgeCost)}`,
         });
         later(() => setToast(null), 3400);
         break;
@@ -549,16 +563,16 @@ export default function SudokuView({
                   title="Balance the books"
                 >
                   <span className="ch-tool__verb">Balance</span>
-                  <span className="ch-tool__price">−{claimCost} steps</span>
+                  <span className="ch-tool__price">−{stepWords(claimCost)}</span>
                 </button>
                 <button
                   className="ch-tool"
                   onClick={() => dispatch({ type: 'nudge' })}
-                  aria-label={`A word from the clerk: name the next deduction on this leaf, minus ${stepWords(claimCost)}`}
+                  aria-label={`A word from the clerk: name the next deduction on this leaf, minus ${stepWords(nudgeCost)}`}
                   title="Ask the clerk"
                 >
                   <span className="ch-tool__verb">Ask clerk</span>
-                  <span className="ch-tool__price">−{claimCost} steps</span>
+                  <span className="ch-tool__price">−{stepWords(nudgeCost)}</span>
                 </button>
                 <button
                   className="ch-tool"
@@ -567,7 +581,7 @@ export default function SudokuView({
                   title="Consult a figure"
                 >
                   <span className="ch-tool__verb">Consult</span>
-                  <span className="ch-tool__price">−{figureCost} steps</span>
+                  <span className="ch-tool__price">−{stepWords(figureCost)}</span>
                 </button>
               </div>
             </div>

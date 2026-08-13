@@ -303,12 +303,23 @@ export default function HiveView({ puzzle, state, tier, dispatch }: RoomViewProp
         'already-found': 'Already found',
       };
       // Structural slips are flat −1 at every tier (AAA R.1) — never −2/−3.
-      const cost = fb.costed ? ' · −1 step' : '';
+      // ROUND 45: read off the table rather than typed. The number is the same
+      // today and the four rooms this round unpicked were all "the same today"
+      // once too; `tests/round45-prices-live.mjs` compares this printed string
+      // against the counter the ledger actually moves.
+      const cost = fb.costed ? ` · −${stepWords(-STEP_TABLE.mistake('structural', tier))}` : '';
       setToast({ kind: fb.costed ? 'bad' : 'info', text: messages[fb.reason] + cost });
       setShaking(true);
       later(() => setShaking(false), 340);
       later(() => setTyped(''), 350);
-      later(() => setToast(null), 1100);
+      // ═══ ROUND 45 — THE ONE TOAST THAT CARRIES A CORRECTION HELD SHORTEST ══
+      // This was 1100ms against 1800 / 1600 / 1400 for every other toast in
+      // this room — and it is the only one of the four that tells her something
+      // she has to ACT on ("Missing E", "Bad letters", "Too short"). The field
+      // clears at 350ms, so she had 750ms to read the reason her word went
+      // away. It is held as long as the room's longest now, because a
+      // correction is worth at least as much reading time as a compliment.
+      later(() => setToast(null), 1800);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.attempts]);

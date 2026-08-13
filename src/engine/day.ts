@@ -20,7 +20,7 @@ import type { DayEndCause, RecordedEvent } from './events';
 import { createRng } from './rng';
 import { wingCharacterOf } from './manor/wings';
 import {
-  createLedger, firstMorningPot, highestRowVisited, ledgerTotal, rowName, stepsRefunded,
+  createLedger, firstMorningPot, highestRowVisited, ledgerTotal, rowName, stepsGivenBack,
   stepsSpent, teaDawnPour, STEP_TABLE,
 } from './economy/steps';
 
@@ -170,7 +170,13 @@ export function buildDayRecord(
     // The climb, written down (see the augmentation at the top of this file):
     // what the manor gave back, and how high she got. The night digest reads
     // both back as prose and prints neither when it is zero.
-    stepsRefunded: stepsRefunded(ledger),
+    //
+    // ROUND 45 — `stepsGivenBack`, not `stepsRefunded`. The morning's grants are
+    // positive ledger entries AND are already inside the figure on the candle
+    // when she walks out, so counting them here printed the dawn cup twice and
+    // put every night digest in the game over by exactly that. See
+    // `engine/economy/steps.ts stepsGivenBack` for the identity this closes.
+    stepsGivenBack: stepsGivenBack(ledger),
     highestRow: highestRowVisited(ledger),
     // ── THE ONE THING THE NIGHT DOES NOT TAKE (REVIEW_AA §5.7) ────────────
     // The manor itself is wiped four lines later in `endDay`. What is written
@@ -234,7 +240,9 @@ export function nightTallyRows(
     'Rooms drafted': record.roomsDrafted,
     'Rooms solved': record.roomsSolved,
     'Steps spent': record.stepsSpent,
-    'Steps given back': record.stepsRefunded ?? 0,
+    // `stepsRefunded` is the pre-round-45 field, read only so a night banked
+    // under the old sum still shows a number in the Chronicles.
+    'Steps given back': record.stepsGivenBack ?? record.stepsRefunded ?? 0,
     'Fragments found': record.fragmentsFound,
     'Letters read': lettersOpened,
   };

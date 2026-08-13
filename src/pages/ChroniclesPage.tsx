@@ -96,13 +96,24 @@ const CAUSE_COPY: Record<string, string> = {
   'volume-solved': 'the word was spoken',
 };
 
+/**
+ * What the day gave back. ROUND 45 renamed the field with the number it holds
+ * (`stepsRefunded` counted the morning's grants, which are already inside the
+ * dawn purse); nights banked before that round still carry the old one, and a
+ * Chronicles page that went blank for them would be a worse lie than the
+ * over-count.
+ */
+function givenBack(r: DayRecord): number {
+  return r.stepsGivenBack ?? r.stepsRefunded ?? 0;
+}
+
 function DayRow({ r }: { r: DayRecord }) {
   return (
     <div className="chron__day">
       <span className="chron__day-name">Day {r.day}</span>
       <span className="chron__day-detail">
         {CAUSE_COPY[r.cause] ?? r.cause} · {r.roomsSolved}/{r.roomsDrafted} rooms · {r.stepsSpent} steps
-        {r.stepsRefunded ? ` · +${r.stepsRefunded} back` : ''}
+        {givenBack(r) ? ` · +${givenBack(r)} back` : ''}
         {r.highestRow ? ` · ${rowName(r.highestRow)}` : ''}
         {r.fragmentsFound > 0 ? ` · ${r.fragmentsFound} fragment${r.fragmentsFound === 1 ? '' : 's'}` : ''}
       </span>

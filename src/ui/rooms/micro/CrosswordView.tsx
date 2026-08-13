@@ -57,7 +57,7 @@ import {
 import type { CrosswordAction, CrosswordRoomState } from '../../../engine/puzzles/crossword-adapter';
 import { sfx } from '../../../app/sound';
 import './a5micro.css';
-import { stepWords } from '../../../engine/economy/steps';
+import { STEP_TABLE, stepWords } from '../../../engine/economy/steps';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
 
@@ -106,7 +106,15 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const won = state.cw.status === 'won';
-  const stepCost = tier === 3 ? 3 : 2;
+  /**
+   * ROUND 45 — read off the table, never transcribed. This was
+   * `tier === 3 ? 3 : 2` and round 42 made every costed slip −1, so the crease
+   * key advertised −3 while the ledger took −1. See `WordWebView` for the whole
+   * finding; the gate is `tests/round45-prices-live.mjs`.
+   */
+  const stepCost = -STEP_TABLE.mistake(1, tier);
+  /** "Smooth a crease" is a purchased reveal — the hint row, same price. */
+  const hintCost = -STEP_TABLE.hint(1, tier);
   const activeEntry = puzzle.entries.find((e) => e.id === active.entryId) ?? firstEntry;
 
   const hem = hemLetters(puzzle, state.cw);
@@ -462,10 +470,10 @@ export default function CrosswordView({ puzzle, state, tier, dispatch }: RoomVie
                     className="lc-key lc-key--verb"
                     onClick={reveal}
                     disabled={state.cw.revealedCells.includes(active.cell)}
-                    aria-label={`Smooth a crease — reveals this square, costs ${stepWords(stepCost)}`}
+                    aria-label={`Smooth a crease — reveals this square, costs ${stepWords(hintCost)}`}
                   >
                     <span className="lc-key__glyph" aria-hidden>✎</span>
-                    <span className="lc-key__price" aria-hidden>−{stepCost}</span>
+                    <span className="lc-key__price" aria-hidden>−{hintCost}</span>
                   </button>
                 )}
               </div>

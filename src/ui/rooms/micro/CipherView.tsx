@@ -19,7 +19,7 @@ import type { CipherAction, CipherRoomState } from '../../../engine/puzzles/ciph
 import { cipherLettersOf } from '../../../engine/puzzles/cipher';
 import { sfx } from '../../../app/sound';
 import './micro.css';
-import { stepWords } from '../../../engine/economy/steps';
+import { STEP_TABLE, stepWords } from '../../../engine/economy/steps';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string } | null;
 
@@ -51,7 +51,13 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const won = state.engine.status === 'won';
-  const hintCost = tier === 3 ? 3 : 2;
+  /**
+   * ROUND 45 — off the table, not transcribed. This was `tier === 3 ? 3 : 2`,
+   * so the Darkroom's develop key advertised −3 and the ledger took −1. See
+   * `WordWebView` for the finding; gated by `tests/round45-prices-live.mjs`.
+   */
+  const murkyCost = -STEP_TABLE.mistake(1, tier);   // a develop that stays murky
+  const hintCost = -STEP_TABLE.hint(1, tier);       // develop one letter
   const penciled = letters.filter((c) => !!state.engine.guesses[c]).length;
   /**
    * Marks SHE made — the starting reveals are in `guesses` too, and they are in
@@ -107,7 +113,7 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
             // has to stay compact, so the fraction is the idiom that wins and
             // the toast now speaks it too — the eye can match the toast to the
             // chip it just filed without re-parsing the number.
-            ? `Still murky — ${fb.correct}/${fb.total} letters ring true · −${stepWords(hintCost)}`
+            ? `Still murky — ${fb.correct}/${fb.total} letters ring true · −${stepWords(murkyCost)}`
             : 'The same print again — no charge for looking twice.',
         });
         later(() => setToast(null), 2000);
@@ -417,6 +423,13 @@ export default function CipherView({ puzzle, state, tier, dispatch }: RoomViewPr
               Develop the print
             </button>
             <button className="mic-btn" onClick={() => dispatch({ type: 'reveal-letter' })}>
+              {/* ROUND 45 — the STAMP, not the sentence. Spelling the unit out
+                  here ("· −1 step") is two characters too many for the deck at
+                  375x667: the key wraps to two lines and the whole room-host
+                  stage grows 51px past its glass, which `npm run gate:glass`
+                  caught as a scrollport the moment it was tried. The number is
+                  read off the table either way — that was the fix; the words
+                  around it were not. */}
               Develop one letter · −{hintCost}
             </button>
           </div>

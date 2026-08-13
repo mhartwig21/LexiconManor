@@ -33,7 +33,7 @@ import { draftCardStake } from '../../engine/economy/preview';
 import { useManorStore } from '../../app/store';
 import { RoomGlyph } from './CategoryGlyph';
 import { DIR_WORDS, dirList, doorPlanWords } from './doorplan';
-import { draftPriceWords, priceWords, sanctumDraftStamp } from './pricing';
+import { draftPriceWords, sanctumDraftStamp } from './pricing';
 
 const ROMAN = ['', 'I', 'II', 'III'];
 
@@ -407,8 +407,19 @@ export default function DraftModal({
           >
             {offer.rerolled ? 'Rerolled' : 'Reroll · 1 gem'}
           </button>
+          {/* ═══ ROUND 45 — A PRICE TAG ON A CONTROL THAT CHARGES NOTHING ══
+              This read `Step back · 1 step`, and in this footer's own grammar a
+              `·` clause is what the tap WILL cost — `Reroll · 1 gem` beside it
+              charges exactly that. Backing out charges nothing: the walk to the
+              door was ledgered when the offer opened (`openDraft`), which is
+              the whole of AAA 4.6's two-part walk — *"a declined look costs the
+              local rate instead of a whole storey"* — and she already watched
+              that −1 float. So the button advertised a second charge that never
+              lands, in the one place in the game where the player is being
+              asked to weigh a price. The price is gone; the door-step is
+              unchanged and still on the target's own label before she taps. */}
           <button className="bp-btn bp-btn--quiet" {...pressProps} onClick={onCancel}>
-            Step back · {priceWords(offer.from.row)}
+            Step back
           </button>
         </footer>
       </div>

@@ -1425,11 +1425,13 @@ export function simulateDay(
   // second landing (`TEA_POUR`, REVIEW_AA §5.10). Same total, same arc, and
   // the ground floor stops getting richer every week.
   const tea = teaDawnPour(profile.brambleAffinity);
-  if (tea > 0) ledger = appendEntry(ledger, { reason: 'tea', delta: tea, at: 0 });
+  // ROUND 45: stamped like the live slice's dawn grants, so the model's ledger
+  // and the game's ledger answer `dayStartTotal`/`stepsGivenBack` the same way.
+  if (tea > 0) ledger = appendEntry(ledger, { reason: 'tea', delta: tea, at: 0, roomKey: TEA_POUR.dawnKey });
   // The welcome pot / yesterday's risen dough — through the same audited path
   // and the same 'tea' reason the live day slice uses (AAA 4.9).
   const dawnSteps = profile.dawnSteps ?? 0;
-  if (dawnSteps > 0) ledger = appendEntry(ledger, { reason: 'tea', delta: dawnSteps, at: 0 });
+  if (dawnSteps > 0) ledger = appendEntry(ledger, { reason: 'tea', delta: dawnSteps, at: 0, roomKey: TEA_POUR.dawnKey });
 
   let rooms = 0;
   let roomsSolved = 0;

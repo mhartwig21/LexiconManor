@@ -4,12 +4,13 @@ import { join } from 'node:path';
 import {
   appendEntry, climbKey, createLedger, dayStartTotal, doorLockedAt, fernMorningKeys,
   firstMorningPot, highestRowVisited, keyAccessFor, keyCardWeightMultiplier, ledgerTotal,
-  moveAt, moveRowOf, priceEntry, rowName, solveKeys, stepsRefunded, stepsRemaining, stepsSpent,
+  dawnGrants, isDawnGrant, moveAt, moveRowOf, priceEntry, rowName, solveKeys,
+  stepsGivenBack, stepsRefunded, stepsRemaining, stepsSpent,
   sanctumMercyArmed, sanctumPlanWarmth, sanctumPlanWeightMultiplier, surveyEveningsIn,
   teaArcFloor, teaArcPoints, teaBonus,
   BARE_ASCENT_STEPS, BASE_DAY_BUDGET, DOOR_LOCKS, FERN_ARC, FIRST_MORNING_POT, KEY_SUPPLY,
   MOVE_COST_BY_ROW, SANCTUM_ARC, SANCTUM_GUESS_COST, SOLVE_WAGE, STEP_TABLE, TEA_ARC,
-  TEA_BY_POINTS,
+  TEA_BY_POINTS, TEA_POUR,
 } from '../src/engine/economy/steps';
 import { draftCardStake } from '../src/engine/economy/preview';
 import { effortLabel } from '../src/engine/economy/effort';
@@ -679,14 +680,97 @@ describe('ledger invariants (AAA 4.9)', () => {
     expect(ledgerTotal(l)).toBe(BASE_DAY_BUDGET + 13 - 4);
   });
 
-  it('dayStartTotal counts budget + tea only (the burn-down reference)', () => {
+  it('dayStartTotal counts budget + the DAWN grants (the burn-down reference)', () => {
     let l: StepLedger = createLedger();
     expect(dayStartTotal(l)).toBe(BASE_DAY_BUDGET);
-    l = appendEntry(l, entry('tea', 8));
+    l = appendEntry(l, { reason: 'tea', delta: 8, at: 0, roomKey: TEA_POUR.dawnKey });
     l = appendEntry(l, entry('snack', 5));   // refill, not part of the morning total
     l = appendEntry(l, entry('solve', 6));
     l = appendEntry(l, entry('move', -1));
     expect(dayStartTotal(l)).toBe(BASE_DAY_BUDGET + 8);
+    // ROUND 45: the pot Bramble carries UP is a mid-day gift, not part of the
+    // figure the day started at. Counting it here grew the burn-down's
+    // denominator halfway through the evening — the wick got TALLER after a
+    // gift, which is the one thing a burn-down may never do.
+    l = appendEntry(l, { reason: 'tea', delta: 4, at: 0, roomKey: TEA_POUR.key });
+    expect(dayStartTotal(l)).toBe(BASE_DAY_BUDGET + 8);
+  });
+
+  /**
+   * ═══ ROUND 45 — THE DAWN CUP WAS COUNTED TWICE ═══════════════════════════
+   *
+   * Three strangers played the round-42 build, added the day up themselves off
+   * the night digest, and all three got the same wrong answer — over by exactly
+   * the morning's grants, which are positive ledger entries AND are already
+   * inside the figure the candle showed them at dawn. Two of the three named it
+   * as the reason they would stop playing.
+   *
+   * The identity below is what closes it. It is stated over RANDOM ledgers
+   * rather than over one hand-built fixture, because a fixture proves the
+   * arithmetic of the fixture and this is a claim about every evening.
+   */
+  it('the day’s sum closes: start − spent + given back === what is left', () => {
+    const REASONS = [
+      'move', 'mistake', 'hint', 'solve', 'perfect', 'study', 'snack', 'pet-dewey', 'gift',
+    ] as const;
+    let seed = 20450813;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    for (let run = 0; run < 400; run++) {
+      let l: StepLedger = createLedger();
+      // A dawn: one to three grants, exactly as the day slice ledgers them.
+      const grants = 1 + Math.floor(rnd() * 3);
+      for (let g = 0; g < grants; g++) {
+        l = appendEntry(l, {
+          reason: 'tea', delta: 1 + Math.floor(rnd() * 4), at: 0, roomKey: TEA_POUR.dawnKey,
+        });
+      }
+      // …then an evening, including the landing pour, which is NOT a dawn grant.
+      for (let i = 0; i < 30; i++) {
+        if (rnd() < 0.08) {
+          l = appendEntry(l, {
+            reason: 'tea', delta: 1 + Math.floor(rnd() * 5), at: 0, roomKey: TEA_POUR.key,
+          });
+          continue;
+        }
+        const reason = REASONS[Math.floor(rnd() * REASONS.length)]!;
+        const gain = reason === 'solve' || reason === 'perfect' || reason === 'study'
+          || reason === 'snack';
+        l = appendEntry(l, {
+          reason,
+          delta: (gain ? 1 : -1) * (1 + Math.floor(rnd() * 4)),
+          at: 0,
+          roomKey: reason === 'move' ? '2,2' : undefined,
+        });
+      }
+      expect(
+        dayStartTotal(l) - stepsSpent(l) + stepsGivenBack(l),
+        `run ${run}: the printed rows must sum to the printed total`,
+      ).toBe(ledgerTotal(l));
+      // And the two are genuinely different numbers, or this proves nothing.
+      expect(stepsRefunded(l)).toBeGreaterThan(stepsGivenBack(l));
+    }
+  });
+
+  /**
+   * The stamp is what tells the purse from the payout, so it is pinned to the
+   * LIVE grant sites rather than asserted about itself: `beginDay` hands the
+   * slice three grants and the slice stamps all three, while the landing pour
+   * carries the other key. A future round that ledgers a morning grant without
+   * the stamp re-opens the double-count, and this is what says so.
+   */
+  it('every dawn grant is stamped, and the landing pour is not', () => {
+    expect(TEA_POUR.dawnKey).not.toBe(TEA_POUR.key);
+    const dawn = { reason: 'tea', delta: 3, at: 0, roomKey: TEA_POUR.dawnKey } as const;
+    const landing = { reason: 'tea', delta: 3, at: 0, roomKey: TEA_POUR.key } as const;
+    expect(isDawnGrant(dawn)).toBe(true);
+    expect(isDawnGrant(landing)).toBe(false);
+    expect(isDawnGrant({ reason: 'snack', delta: 3, at: 0 })).toBe(false);
+    let l: StepLedger = createLedger();
+    l = appendEntry(l, dawn);
+    l = appendEntry(l, landing);
+    expect(dawnGrants(l)).toBe(3);
+    expect(stepsRefunded(l)).toBe(6);
+    expect(stepsGivenBack(l)).toBe(3);
   });
 });
 

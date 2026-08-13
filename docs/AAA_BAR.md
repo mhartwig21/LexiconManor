@@ -393,6 +393,23 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
 - 4.9 One audited ledger: every step delta (move, mistake, solve, perfect, tea, snack,
   Dewey, gift) flows through the single `STEP_TABLE`/ledger function; steps never
   negative; every delta renders as a floating +N/−N on the counter. **[PARITY]**
+- 4.9a **NO SURFACE MAY PRINT A NUMBER THE LEDGER DOES NOT CHARGE, AND THE DAY'S SUM
+  MUST CLOSE ON THE GLASS** (round 45, off the cold read of the round-42 build). One
+  audited ledger is necessary and was never sufficient: five room views held a
+  transcribed `tier === 3 ? 3 : 2` from the price ladder round 42 deleted, so the
+  Library printed −2 beside a charge of −1 and the Counting House printed **−6 on a
+  button** against the same −1, while `Step back · 1 step` charged nothing at all.
+  Two published numbers, both stated as identities rather than as bands:
+    · every printed price equals the charge — `tests/round45-prices-live.mjs` reads the
+      price off the painted glass, taps the control with a real pointer, and compares it
+      with the candle's own numeral. **Never against the store**: the store is where both
+      halves of a mispriced control agree, which is why sixteen rounds of green economy
+      tests never saw it.
+    · **`dayStartTotal` − `stepsSpent` + `stepsGivenBack` === `ledgerTotal`.** The band
+      that moved and why: the night digest's *"Steps given back"* falls by the day's dawn
+      grants (1 on a normal evening — Bramble's cup was inside the figure on the candle
+      AND printed again as a payout), so all three cold-read players did the sum and all
+      three got the same wrong answer. `docs/THE_CLIMB.md` §1d. **[PARITY]**
 - 4.10 **The campaign arc** (rewritten from the 2026-08 owner playtest: *"way too easy —
   I reached the Forgotten Word on my first day; Blue Prince took me 28 days"*). The
   economy is a push-your-luck **climb** whose ceiling rises across weeks, and every

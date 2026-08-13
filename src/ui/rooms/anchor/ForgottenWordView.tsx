@@ -25,7 +25,7 @@ import { sfx } from '../../../app/sound';
 import { pressProps } from './usePressed';
 import { typeset } from '../../../../content/lib/typography';
 import './anchor.css';
-import { stepWords } from '../../../engine/economy/steps';
+import { STEP_TABLE, stepWords } from '../../../engine/economy/steps';
 
 type Toast = { kind: 'good' | 'bad' | 'info'; text: string; bit?: string } | null;
 
@@ -111,7 +111,14 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
   const won = state.fw.status === 'won';
   const slipped = state.fw.status === 'lost'; // engine name; outcome is a warm auto-abandon
   const whispersLeft = state.fw.maxGuesses - state.fw.guesses.length;
-  const clueCost = tier === 3 ? 3 : 2;
+  /**
+   * ROUND 45 — off the table, not transcribed. This was `tier === 3 ? 3 : 2`,
+   * so the Study printed "Unseal · −3 steps" on the clue button while round
+   * 42's ledger charged one. See `WordWebView` for the finding and
+   * `tests/round45-prices-live.mjs` for the gate that now drives it.
+   */
+  const guessCost = -STEP_TABLE.mistake(1, tier);   // a wrong whisper
+  const clueCost = -STEP_TABLE.hint(1, tier);       // unsealing a clue
   const gloss = glossForLevel(puzzle, state.tier);
   const rest = unshownDefinitions(puzzle, state.tier);
   /**
@@ -147,7 +154,7 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
         later(() => setShaking(false), 340);
         setToast({
           kind: 'bad',
-          text: `Not “${fb.guess.toLowerCase()}” — ${fb.guessesLeft} whisper${fb.guessesLeft === 1 ? '' : 's'} remain${fb.guessesLeft === 1 ? 's' : ''}. · −${stepWords(clueCost)}`,
+          text: `Not “${fb.guess.toLowerCase()}” — ${fb.guessesLeft} whisper${fb.guessesLeft === 1 ? '' : 's'} remain${fb.guessesLeft === 1 ? 's' : ''}. · −${stepWords(guessCost)}`,
           bit: closenessLine(fb.shared, fb.exact),
         });
         later(() => setToast(null), 2400);
@@ -322,7 +329,7 @@ export default function ForgottenWordView({ puzzle, state, tier, dispatch }: Roo
                 {...pressProps<HTMLButtonElement>()}
                 onClick={() => dispatch({ type: 'unseal-clue', clue: id })}
               >
-                Unseal · −{clueCost} steps
+                Unseal · −{stepWords(clueCost)}
               </button>
             </div>
           ))}
