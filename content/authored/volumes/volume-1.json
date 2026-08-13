@@ -417,6 +417,7 @@
       "id": "a-pressed-rubbing",
       "from": "fern",
       "earliestDay": 4,
+      "minFragments": 22,
       "subject": "From between the pages of my flower book",
       "grantsFragmentIds": [
         "v1-e4"

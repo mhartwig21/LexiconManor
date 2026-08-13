@@ -6,8 +6,8 @@
  * the engine stays pure and receives content by parameter.
  */
 
-import type { VolumeContent } from '../../engine/volume';
-import { getPools, lazyContent } from '../pools';
+import type { VolumeContent, VolumePlate, VolumePlateTable } from '../../engine/volume';
+import { getPools, lazyContent, poolsReady } from '../pools';
 
 /** In play order. Volume 1 is hand-authored end-to-end; later volumes come
  *  from content/generate-volume.ts + hand-authored definition poems.
@@ -28,4 +28,16 @@ export function nextVolumeContent(volumeId: string): VolumeContent | null {
 
 export function allVolumes(): readonly VolumeContent[] {
   return VOLUMES;
+}
+
+/**
+ * THE PLATE (round 47) — the precomputed field size for every set of engravings
+ * this volume can have made out. `null` before the content chunk lands or for a
+ * volume with no plate, and the journal simply says nothing rather than
+ * printing a number it cannot stand behind.
+ */
+export function getVolumePlate(volumeId: string): VolumePlate | null {
+  if (!poolsReady()) return null;
+  const table = getPools().volumePlates as VolumePlateTable | undefined;
+  return table?.[volumeId] ?? null;
 }

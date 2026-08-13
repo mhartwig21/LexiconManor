@@ -19,9 +19,11 @@ import { BASE_DAY_BUDGET, moveAt } from './economy/steps';
 import {
   computeCloseness,
   FRAGMENTS_TO_DEDUCE,
+  wordsStanding,
   type EngravingConstraint,
   type FragmentContent,
   type VolumeContent,
+  type VolumePlate,
 } from './volume';
 
 // ---------------------------------------------------------------------------
@@ -484,12 +486,47 @@ export function alphabetFacts(
     oneLetterTwice: false,
     sources: 0,
   };
-  for (const f of content.fragments) {
-    if (f.kind !== 'engraving' || !f.constraint || !isLegible(state, f.id, opts)) continue;
+  for (const f of legibleEngravings(content, state, opts)) {
     facts.sources++;
-    applyConstraint(facts, f.constraint);
+    applyConstraint(facts, f.constraint!);
   }
   return facts;
+}
+
+/**
+ * The engravings behind the plate: found, made out, and carrying a constraint.
+ * ROUND 47 — extracted so the plate's LETTERS and the plate's COUNT can never
+ * be drawn from two different readings of the same save. `wordsStandingFor`
+ * below is the count; `alphabetFacts` above is the letters; both walk this.
+ */
+export function legibleEngravings(
+  content: VolumeContent,
+  state: VolumeState,
+  opts?: SealedOpts,
+): FragmentContent[] {
+  return content.fragments.filter(
+    (f) => f.kind === 'engraving' && f.constraint && isLegible(state, f.id, opts),
+  );
+}
+
+/**
+ * HOW MANY WORDS ARE STILL STANDING against everything she can read (round 47).
+ *
+ * `null` when no plate ships or nothing is made out yet — the journal says
+ * nothing rather than printing a number it cannot stand behind. It is the same
+ * legibility rule the letters obey, so a SEALED engraving moves neither: the
+ * field falls when she solves a room, which is where "solving matters" has
+ * always had its teeth (round 10).
+ */
+export function wordsStandingFor(
+  content: VolumeContent,
+  state: VolumeState,
+  plate: VolumePlate | null | undefined,
+  opts?: SealedOpts,
+): number | null {
+  const ids = legibleEngravings(content, state, opts).map((f) => f.id);
+  if (ids.length === 0) return null;
+  return wordsStanding(plate, ids);
 }
 
 function applyConstraint(facts: AlphabetFacts, c: EngravingConstraint): void {

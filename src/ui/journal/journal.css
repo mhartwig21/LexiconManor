@@ -668,3 +668,24 @@
      .jrn-void` is two classes to this rule's one, so it still wins. */
   flex: none;
 }
+
+/* The field, as the engravings leave it (round 47). The headline number of the
+   whole deduction: how many dictionary words still fit the plate above. A
+   count, never a list — see JournalView's WordTab. */
+.jrn-standing {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: -0.2rem;
+}
+.jrn-standing__n {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.jrn-standing__label {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}

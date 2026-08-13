@@ -87,6 +87,22 @@ every card that asks nothing of her on **7.5%** of contested offers, from **11.3
 **0.0%** where the clause is printed. The residue is the daily valve, not the card; the next
 lever is `decipherYield`, named in THE_CLIMB §1e.
 
+**AND THE MYSTERY'S ARC WAS NOT COLLAPSING BECAUSE A CLUE WAS SHARP (round 47).** A blind
+cold read reported LACUNA falling on day 1–2 "from one fragment of twenty-eight". Measured
+against the shipped dictionary, **the softness property is intact**: the tightest engraving
+alone admits **240** words (floor 100), the tightest of all 45 pairs admits **18** and both
+of those arrive in the volume's back half, and the tightest pair she can hold early admits
+**6,575**. What carries the design is the REVEAL ORDER — and the letter channel does not
+respect it. `a-pressed-rubbing` (day 4) enclosed `v1-e4`, **revealOrder 24 of 28**, behind no
+`minFragments` gate at all, so **the field on day 4 was NINE WORDS** on the repo's own drip
+harness and the tube hears one free word a day from day 1. `tests/volume-pacing.test.ts` was
+green throughout, because it measures the day a PAGE lands and a page count cannot see how
+much dictionary is still standing. Both halves shipped, full account in `docs/MANOR_DESIGN.md`
+§7: **the order gate** (a letter may bring the next engraving forward, never a later one —
+day-4 field **9 → 208**, first ten-word shortlist **day 4 → 9**), and **the plate counts** —
+the Word tab prints how many words still fit the engravings she can READ, precomputed by
+`content/generate-volume.ts --plate` and verified in `content:verify`. A count, never a list.
+
 ---
 
 ## 1. What the game is

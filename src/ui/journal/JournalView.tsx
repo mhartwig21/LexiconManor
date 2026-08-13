@@ -9,11 +9,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useManorStore } from '../../app/store';
-import { getVolumeContent } from '../../app/content/volumes';
+import { getVolumeContent, getVolumePlate } from '../../app/content/volumes';
 import {
   alphabetFacts, ALPHABET, crossRefs, definitionSlots, displayedFragmentIds, foundByKind,
   guessHistory, isInterpreted, journalNudge, letterBoxes, sanctumReadiness, smudge,
-  VERDICT_TOKENS,
+  VERDICT_TOKENS, wordsStandingFor,
   type JournalTab,
 } from '../../engine/journal';
 import {
@@ -34,6 +34,13 @@ import { quoted } from './quote';
 import './journal.css';
 
 type Tab = JournalTab;
+
+/** 15232 → "15,232". Not `toLocaleString`: the number is a puzzle fact and it
+ *  must read the same on every phone and in every test, whatever locale the
+ *  browser was set to. */
+function grouped(n: number): string {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
 
 const CHARACTER_NAMES: Record<CharacterId, string> = {
   bramble: 'Mrs. Bramble',
@@ -360,6 +367,11 @@ export default function JournalView() {
 
   function WordTab() {
     const facts = alphabetFacts(content!, volume, { sealedIds });
+    /** How many dictionary words still fit the plate (round 47). Named for
+     *  what it counts, and NOT `standing` — that word is already taken by
+     *  `sanctumStanding` two scopes up, and a shadow there would read as the
+     *  same quantity. */
+    const stillFit = wordsStandingFor(content!, volume, getVolumePlate(volume.volumeId), { sealedIds });
     const boxes = letterBoxes(facts);
     const guesses = guessHistory(content!, volume);
     const nudge = journalNudge(content!, volume, { sealedIds });
@@ -453,6 +465,28 @@ export default function JournalView() {
                 );
               })}
             </div>
+            {/* ══ ROUND 47 — WHAT THE PLATE BOUGHT HER, IN WORDS ═══════════
+                The engraved arc narrows 171,755 dictionary words to one across
+                ten steps, and until this line the game never said a number:
+                three cold readers watched the letters accumulate and had no
+                way to tell a page that halved the field from a page that
+                barely moved it. It is a COUNT and never a LIST — "five words
+                still fit" is the pleasure of a closing field; WHICH five is
+                the answer handed over four pages early to a player who may
+                spend a free word a day at the speaking tube. It obeys the same
+                legibility rule as the letters beside it (engine/journal.
+                wordsStandingFor), so a SEALED engraving moves neither: the
+                field falls when she solves a room. */}
+            {stillFit !== null && (
+              <div className="jrn-standing">
+                <span className="jrn-standing__n">{grouped(stillFit)}</span>{' '}
+                <span className="jrn-standing__label">
+                  {stillFit === 1
+                    ? 'word in the dictionary still fits it'
+                    : 'words in the dictionary still fit it'}
+                </span>
+              </div>
+            )}
             <div className="jrn-facts">
               {facts.knownLength !== null && <span>· Six candles — {facts.knownLength} letters.</span>}
               {facts.startsWith && <span>· It begins with {facts.startsWith}.</span>}

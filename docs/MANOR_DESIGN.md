@@ -315,6 +315,43 @@ Sanctum doesn't want a key — it wants the word *spoken* (typed).
   The spine is routed for it: the lintel channel — every ordinary word game in the house
   — stocks **16** of the 28 pages, the Study 3, the violet drip keeps 11 of its own and
   the eight testimonies are spoken in person.*
+
+  ***Round 47 — THE ORDER WAS CARRYING THE WHOLE DESIGN, AND ONE LETTER JUMPED IT.**
+  A blind cold read reported LACUNA falling on day 1–2 and the first question was whether
+  a clue had drifted sharp. **It has not.** Measured against the shipped dictionary
+  (`tests/volume-plate.test.ts`): the tightest engraving ALONE admits **240** words against
+  a published floor of 100; the tightest of all 45 PAIRS admits **18**, and both of those
+  arrive in the volume's back half; the tightest pair she can hold early — the first two
+  engravings revealed — admits **6,575**. The clue set is exactly as soft as this section
+  claims. What carries it is the ORDER, and the letter channel does not respect the order:
+  `letterArrived` gates only on `earliestDay` and `minFragments`, and **`a-pressed-rubbing`
+  (Fern's rubbing of the Conservatory arch, day 4) had no `minFragments` gate at all while
+  enclosing `v1-e4` — revealOrder 24 of 28, the sharpest single engraving in the volume and
+  half of every sharp pair in it.** Driven through the repo's own drip harness over 240
+  seeded campaigns a profile, **the field on day 4 was NINE WORDS** (median, both profiles),
+  and the speaking tube hears one free word a day from day 1 — so the volume could be spent
+  by day 12 with nothing read, and twenty-seven of its twenty-eight pages had nothing left
+  to do. Two things shipped for it:*
+  - ***THE ORDER GATE.** A letter may bring the NEXT engraving forward and never a later one
+    — its `minFragments` must reach the revealOrder of the engraving before its enclosure on
+    the plate. Volume 1's four other content letters already obeyed it; Fern's rubbing is
+    gated at **22** now. Pity letters are exempt by construction: they grant "the next unfound
+    fragment", which IS the order, and they are 4.14's mercy floor. **Bands that moved, with
+    their cause:** median day-4 field **9 → 208** (p10 146); the day the field first becomes a
+    ten-word shortlist — ten free words at the tube — **day 4 → 9** for the median player and
+    **4 → 7** for the skilled one. No band in `tests/volume-pacing.test.ts` moves, and that is
+    the finding rather than a relief: it measures the day a PAGE becomes legible and stayed
+    green through the whole collapse, because a page count cannot see how much dictionary is
+    left standing.*
+  - ***THE PLATE COUNTS.** The journal drew the alphabet and never once said what it bought.
+    The Word tab now prints how many dictionary words still fit the engravings she can READ —
+    15,232 → 6,575 → 208 → … → 1 — precomputed per subset by
+    `content/generate-volume.ts --plate` (the corpus is 3.2 MB and stays out of the bundle)
+    and verified on every `npm run content:verify`. **A count, never a list:** "five words
+    still fit" is the pleasure of a closing field; WHICH five is the answer handed over four
+    pages early to a player who may spend a free word a day at the tube. It obeys the same
+    legibility rule as the letters beside it, so a SEALED engraving moves neither — the field
+    falls when she solves a room.*
   - *This bullet used to read "the moment she figures it out, she can march to the Sanctum
     and win, even on day one. Knowledge is the progression." Round 7 put `atSanctumDoor`
     inside `guessAtSanctum`, and a bare, perfectly efficient ascent costs 22

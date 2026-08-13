@@ -102,6 +102,57 @@ export function constraintsAdmit(cs: readonly EngravingConstraint[], word: strin
   return cs.every((c) => constraintAdmits(c, word));
 }
 
+// ---------------------------------------------------------------------------
+// THE PLATE — the field, precomputed (round 47)
+// ---------------------------------------------------------------------------
+
+/**
+ * ═══ ROUND 47 — WHAT THE ENGRAVINGS BOUGHT HER, IN WORDS ═══════════════════
+ *
+ * The engraved arc narrows 171,755 dictionary words to one across ten steps and
+ * the game never once told her a number. `alphabetFacts` drew the letters; how
+ * much of the dictionary was left standing behind them lived in a test file.
+ *
+ * The dictionary is 3.2 MB and nothing under `src/` imports it — deliberately,
+ * it is a build-time corpus — so the count is precomputed by
+ * `content/generate-volume.ts --plate` for EVERY subset of a volume's
+ * engravings, indexed by a bitmask in revealOrder (ten engravings = 1,024
+ * integers), and verified against the shipped dictionary on every
+ * `npm run content:verify`.
+ *
+ * A COUNT, NEVER A LIST, and that is the design line: "five words still fit"
+ * is the pleasure of a closing field; WHICH five is the answer handed over
+ * four pages early to a player who may spend a free word a day at the tube.
+ */
+export interface VolumePlate {
+  /** The volume's engravings in revealOrder — the bit order of every mask. */
+  engravingIds: readonly string[];
+  /** `standing[mask]` = dictionary words admitted by every engraving in mask. */
+  standing: readonly number[];
+}
+
+/** `content/generated/volume-plate.json` — one plate per volume id. */
+export type VolumePlateTable = Record<string, VolumePlate>;
+
+/**
+ * How many words still fit the engravings she can READ. `null` when no plate
+ * ships for this volume or an id is not on it — the surface stays silent
+ * rather than printing a number it cannot stand behind.
+ */
+export function wordsStanding(
+  plate: VolumePlate | null | undefined,
+  legibleEngravingIds: Iterable<string>,
+): number | null {
+  if (!plate || plate.standing.length !== 1 << plate.engravingIds.length) return null;
+  let mask = 0;
+  for (const id of legibleEngravingIds) {
+    const bit = plate.engravingIds.indexOf(id);
+    if (bit < 0) return null;
+    mask |= 1 << bit;
+  }
+  return plate.standing[mask] ?? null;
+}
+
 /** All words a constraint set admits — the solvability-proof workhorse. */
 export function solveConstraints(
   cs: readonly EngravingConstraint[],

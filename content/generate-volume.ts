@@ -14,11 +14,12 @@
  *   npx tsx content/generate-volume.ts --check content/authored/volumes/volume-1.json
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { loadDictionary } from './lib/dictionary';
 import {
   constraintAdmits, solveConstraints,
-  type EngravingConstraint, type VolumeContent,
+  type EngravingConstraint, type VolumeContent, type VolumePlate, type VolumePlateTable,
 } from '../src/engine/volume';
 
 /** A constraint is "soft" if it admits at least this many words alone. */
@@ -118,6 +119,129 @@ function report(answer: string, constraints: EngravingConstraint[], words: reado
 }
 
 // ---------------------------------------------------------------------------
+// THE PLATE — how many words are still standing, for every set she can hold
+// ---------------------------------------------------------------------------
+
+/**
+ * ═══ ROUND 47 — THE NUMBER THE DEDUCTION WAS MISSING ═══════════════════════
+ *
+ * The journal has always drawn the alphabet plate (engine/journal.alphabetFacts)
+ * and never once said what it BOUGHT her. Volume 1's ten engravings narrow the
+ * dictionary 171,755 → 15,232 → 6,575 → 208 → 146 → 56 → 11 → 5 → 3 → 2 → 1 and
+ * that chain — the spine of the whole mystery, and the reason twenty-eight pages
+ * exist rather than six — was visible only in a test file.
+ *
+ * The count cannot be computed in the app: the dictionary is 171,755 words and
+ * 3.2 MB and is deliberately not shipped to the browser (nothing under src/
+ * imports it). So it is precomputed HERE, against the same dictionary every
+ * other gate reads, for every subset of the volume's engravings — 2^n numbers,
+ * indexed by a bitmask in revealOrder. Ten engravings is 1,024 integers.
+ *
+ * It is a COUNT and never a LIST, and that is a design line rather than a
+ * storage decision: telling her five words are left is the pleasure of a
+ * closing field; telling her WHICH five is the answer, four pages early, to a
+ * player who may spend one free word a day at the speaking tube.
+ *
+ * The submask sum below is not the same algorithm the test that verifies it
+ * uses (tests/volume-plate.test.ts re-filters the raw dictionary with
+ * `solveConstraints`), on purpose — this repo's standing rule is that a fix is
+ * never verified by an instrument that shares its assumptions.
+ */
+export function standingTable(constraints: readonly EngravingConstraint[], words: readonly string[]): number[] {
+  const n = constraints.length;
+  const size = 1 << n;
+  // How many words satisfy EXACTLY this set of constraints…
+  const exact = new Array<number>(size).fill(0);
+  for (const w of words) {
+    let mask = 0;
+    for (let i = 0; i < n; i++) if (constraintAdmits(constraints[i]!, w)) mask |= 1 << i;
+    exact[mask]! += 1;
+  }
+  // …then a word stands against a set S iff its own mask is a superset of S.
+  const standing = new Array<number>(size).fill(0);
+  for (let mask = 0; mask < size; mask++) {
+    if (exact[mask] === 0) continue;
+    let sub = mask;
+    for (;;) {
+      standing[sub]! += exact[mask]!;
+      if (sub === 0) break;
+      sub = (sub - 1) & mask;
+    }
+  }
+  return standing;
+}
+
+/** The engravings of a volume, in the order the volume reveals them — the bit
+ *  order of every mask in the table above. */
+export function plateEngravings(vol: VolumeContent): { id: string; constraint: EngravingConstraint }[] {
+  return vol.fragments
+    .filter((f) => f.kind === 'engraving' && f.constraint)
+    .sort((a, b) => a.revealOrder - b.revealOrder)
+    .map((f) => ({ id: f.id, constraint: f.constraint! }));
+}
+
+/**
+ * THE PLATE'S CORPUS IS THE SHIPPED DICTIONARY, NOT THE GENERATOR'S.
+ *
+ * `loadDictionary()` drops every entry under four letters — a PUZZLE rule (no
+ * three-letter answers in a hive), and 61 words wide. `tests/volume-solvability`
+ * and the chain published in MANOR_DESIGN §7 both count the raw file, so a
+ * plate built on the generator's filtered set would print 171,694 where every
+ * other instrument in the repo says 171,755. Every engraving in volume 1 fixes
+ * a length, so the two agree on every mask that matters — which is exactly why
+ * this would have gone unnoticed.
+ */
+export function plateCorpus(): string[] {
+  const path = fileURLToPath(new URL('./data/dictionary.json', import.meta.url));
+  return (JSON.parse(readFileSync(path, 'utf8')) as [string, number][]).map(([w]) => w);
+}
+
+export function buildPlate(vol: VolumeContent, words: readonly string[]): VolumePlate {
+  const engravings = plateEngravings(vol);
+  return {
+    engravingIds: engravings.map((e) => e.id),
+    standing: standingTable(engravings.map((e) => e.constraint), words),
+  };
+}
+
+const PLATE_PATH = fileURLToPath(new URL('./generated/volume-plate.json', import.meta.url));
+
+function readPlateTable(): VolumePlateTable | null {
+  if (!existsSync(PLATE_PATH)) return null;
+  return JSON.parse(readFileSync(PLATE_PATH, 'utf8')) as VolumePlateTable;
+}
+
+function writePlate(vol: VolumeContent, plate: VolumePlate): void {
+  const table: VolumePlateTable = { ...(readPlateTable() ?? {}), [vol.id]: plate };
+  writeFileSync(PLATE_PATH, JSON.stringify(table, null, 2) + '\n');
+  console.log(`  plate written to content/generated/volume-plate.json (${plate.standing.length} sets)`);
+}
+
+/** Does the shipped table still describe this volume? Stale is worse than
+ *  missing: a plate built against yesterday's engravings prints a number the
+ *  journal's own alphabet contradicts. */
+function checkPlate(vol: VolumeContent): boolean {
+  const shipped = readPlateTable()?.[vol.id];
+  const fresh = buildPlate(vol, plateCorpus());
+  if (!shipped) {
+    console.log('  ✗ no plate for this volume — run: npm run content:volume-plate');
+    return false;
+  }
+  const same =
+    shipped.engravingIds.length === fresh.engravingIds.length &&
+    shipped.engravingIds.every((id, i) => id === fresh.engravingIds[i]) &&
+    shipped.standing.length === fresh.standing.length &&
+    shipped.standing.every((n, i) => n === fresh.standing[i]);
+  console.log(
+    same
+      ? `  ✓ plate current: ${fresh.standing[0]} words before a single engraving, ` +
+        `${fresh.standing[fresh.standing.length - 1]} after all ${fresh.engravingIds.length}`
+      : '  ✗ plate is STALE — run: npm run content:volume-plate',
+  );
+  return same;
+}
+
+// ---------------------------------------------------------------------------
 // Skeleton emission
 // ---------------------------------------------------------------------------
 
@@ -184,14 +308,20 @@ function main(): void {
   const dict = loadDictionary();
   const words = [...dict.words];
 
+  const platePath = arg('plate');
+  if (platePath) {
+    const vol = JSON.parse(readFileSync(platePath, 'utf8')) as VolumeContent;
+    writePlate(vol, buildPlate(vol, plateCorpus()));
+    return;
+  }
+
   const checkPath = arg('check');
   if (checkPath) {
     const vol = JSON.parse(readFileSync(checkPath, 'utf8')) as VolumeContent;
-    const constraints = vol.fragments
-      .filter((f) => f.kind === 'engraving' && f.constraint)
-      .map((f) => f.constraint!);
+    const constraints = plateEngravings(vol).map((e) => e.constraint);
     const v = report(vol.answer, constraints, words);
-    process.exit(v.ok ? 0 : 1);
+    const plateOk = checkPlate(vol);
+    process.exit(v.ok && plateOk ? 0 : 1);
   }
 
   const word = arg('word');

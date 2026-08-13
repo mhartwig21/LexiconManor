@@ -53,6 +53,14 @@ export interface ContentPools {
   dialogue: Record<string, unknown>;
   /** content/authored/volumes/*.json, in play order. */
   volumes: unknown[];
+  /**
+   * content/generated/volume-plate.json — how many dictionary words are still
+   * standing against every subset of a volume's engravings (round 47). Derived
+   * from the shipped dictionary at content-build time and verified on every
+   * `npm run content:verify`; the corpus itself is 3.2 MB and stays out of the
+   * bundle.
+   */
+  volumePlates: unknown;
 }
 
 let pools: ContentPools | null = null;
@@ -78,6 +86,7 @@ export function loadPools(): Promise<ContentPools> {
     import('../../content/authored/dialogue/dewey.json'),
     import('../../content/authored/dialogue/portrait.json'),
     import('../../content/authored/volumes/volume-1.json'),
+    import('../../content/generated/volume-plate.json'),
   ]).then(
     ([
       wordWeb,
@@ -94,6 +103,7 @@ export function loadPools(): Promise<ContentPools> {
       dewey,
       portrait,
       volume1,
+      volumePlates,
     ]) => {
       const loaded: ContentPools = {
         wordWeb: wordWeb.default as WordWebPuzzle[],
@@ -112,6 +122,7 @@ export function loadPools(): Promise<ContentPools> {
           portrait: portrait.default,
         },
         volumes: [volume1.default],
+        volumePlates: volumePlates.default,
       };
       pools = loaded;
       return loaded;

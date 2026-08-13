@@ -119,7 +119,20 @@ export interface DripRun {
    * authored nothing further, no channel owes her "≥1 new fragment" and a dry
    * run says nothing about mercy.
    */
-  perDay: { day: number; filed: number; legible: number; unfoundAtDawn: number }[];
+  perDay: {
+    day: number;
+    filed: number;
+    legible: number;
+    unfoundAtDawn: number;
+    /**
+     * ROUND 47 — every fragment she can READ by dusk on this day, cumulative.
+     * The horizon used to be measured in PAGE COUNTS alone, and a page count
+     * cannot see the thing that actually ends a deduction: how much of the
+     * dictionary is still standing. `tests/volume-plate.test.ts` reads this
+     * against the shipped plate.
+     */
+    legibleIds: string[];
+  }[];
 }
 
 export interface DripOptions {
@@ -161,6 +174,8 @@ export function fragmentDays(
   /** Filed but still smudged, in filing order — the queue a solve eats from. */
   let sealedQueue: string[] = [];
   let legibleCount = 0;
+  /** The same pages `legibleCount` counts, by id (round 47). */
+  const legibleIds = new Set<string>();
 
   /**
    * `sealed: true` is the violet-room channel: the page is hers this instant
@@ -172,7 +187,7 @@ export function fragmentDays(
     if (!fragmentId || state.foundFragmentIds.includes(fragmentId)) return;
     state = { ...state, foundFragmentIds: [...state.foundFragmentIds, fragmentId] };
     if (opts?.sealed) sealedQueue.push(fragmentId);
-    else legibleCount += 1;   // both counts are day-stamped at dusk, below
+    else { legibleCount += 1; legibleIds.add(fragmentId); }  // day-stamped at dusk, below
   };
   /** Testimony not yet spoken is held out of the room drip (AAA 4.14). */
   const reservedIds = () =>
@@ -263,6 +278,7 @@ export function fragmentDays(
     // --- The solves make the backlog out (oldest first, as the engine does).
     const madeOut = Math.min(result.pagesMadeOut, sealedQueue.length);
     if (madeOut > 0) {
+      for (const id of sealedQueue.slice(0, madeOut)) legibleIds.add(id);
       sealedQueue = sealedQueue.slice(madeOut);
       legibleCount += madeOut;
     }
@@ -278,6 +294,7 @@ export function fragmentDays(
     } as DayRecord);
     perDay.push({
       day, filed: found - before, legible: legibleCount - legibleBefore, unfoundAtDawn,
+      legibleIds: [...legibleIds],
     });
   }
   return { filed: dayOfCount, legible: dayOfLegible, perDay };
