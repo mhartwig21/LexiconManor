@@ -278,6 +278,19 @@ export const BARREN_MIN_WORDS = 2;
  * example of too much is three touching. It is stated here rather than in the
  * generator because the generator runs `main()` on import and the gate needs the
  * number, not the generator.
+ *
+ * ROUND 48 — **THIS IS A RULING, NOT A STATISTIC, AND THAT IS THE DEFENCE.** A
+ * verifier read the shipped pool's worst wall — exactly 2 at every tier, flush
+ * on a ceiling of 2 — as a gate tuned to its own build with no headroom. It is
+ * the opposite: a rejection sampler enforcing "never three" produces a maximum
+ * of two by definition, and headroom here would mean shipping the boards the
+ * owner complained about. What a ruling gate owes instead is proof that it can
+ * come out red, which round 43 supplied as ONE hand-copied board and round 48
+ * supplies as the whole condemned population — the 210 pre-round-43 boards are
+ * checked in at `tests/puzzles/fixtures/twistle-pre-round43.json` and read by
+ * the same instrument: 103 offenders, 13/30/60 by tier, worst walls 6/9/15.
+ * The debt is published with it: the fix holds at and above rank 20,000, and at
+ * rank ≤ 10,000 the shipped pool still carries 155 boards over the ceiling.
  */
 export const MAX_BARREN_CLUSTER = 2;
 

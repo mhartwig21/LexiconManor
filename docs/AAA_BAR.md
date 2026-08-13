@@ -690,6 +690,58 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
   > has climbed pays at least one move* (the ledger has no smaller coin), and *the summit
   > always keeps one*. The Conservatory's instalments are 1/2/3 with 2 at Full Bloom,
   > exactly what `floor` paid.
+  >
+  > ### ROUND 48 — five of these bands were screenshots, and three of them were already red
+  >
+  > A verifier read rounds 42 and 44 and found the same shape five times: a bound
+  > republished as `ceil(measured)`. Re-measured over **six** campaign seeds instead of
+  > the one each was set on, the complaint is not a prediction — it has already happened:
+  >
+  > | band | set at | across 6 seeds | verdict on the OTHER seeds |
+  > |---|---|---|---|
+  > | 4.10g her sealed-overnight day-share | <48% (47.3%) | 47.5 – 48.3% | **red on 4 of 6** |
+  > | 4.10g HIS violet-met day-share | <86% (85.8%) | 85.1 – 86.3% | **red on 1 of 6** |
+  > | 4.10g her violet-met day-share (`volume-pacing`) | <56% (55.4%) | 55.3 – 56.3% | **red on 2 of 6** |
+  > | 4.10g her violet-met day-share (`economy-simulation`) | <56% (55.3%) | 55.2 – 55.8% | 0.4σ of margin |
+  > | 4.10f her late p90, minutes | ≤23 (22.9) | 22.92 – 23.38 | **red on 4 of 6** |
+  > | 4.10f her late median, minutes | ≤19 (18.51) | 18.33 – 18.64 | 2.6σ of margin |
+  >
+  > **AND ONE STATISTIC WAS ENFORCED TWICE, AGAINST TWO POPULATIONS, WITH THE TIGHTER
+  > BOUND ON THE POPULATION WHERE IT STILL PASSED.** "Still a rare room (<50%)" was
+  > asserted on `simulateDays` standalone evenings (violet-met **35.7%**, 10.2 rooms a
+  > night) *and* on campaign evenings (**55.2%**, 12.3 rooms a night). 4.10g is a claim
+  > about her campaign; it is asked of the campaign now, once.
+  >
+  > **THE RULES THE REPLACEMENTS ARE DERIVED FROM.** Two, and each band below is one:
+  >
+  > 1. **A metric's name must match what it computes.** "Still a rare room" is a claim
+  >    about ROOMS and the gate computed DAYS. A violet-met day-share is
+  >    `1 − (1−p)^rooms` — it rises toward 1 as the evening lengthens *at constant
+  >    rarity*, which is exactly why rounds 42 and 44 each republished it while writing,
+  >    correctly, that violet's share of the deck had not moved. Three day-share ceilings
+  >    are therefore **retired, not widened**, and the design requirement each stood in
+  >    for is gated in its place.
+  > 2. **A band's headroom must exceed the granularity of the lever allowed to move it.**
+  >    The only levers 4.10 permits are the day's starting count and the payouts (owner,
+  >    THE_CLIMB §1b). Round 44 measured the smallest of them: **one move a day** is 1.04
+  >    rooms and 1.5 minutes of evening. A ceiling with 0.49 minutes under it is finer
+  >    than the smallest change the design may make.
+  >
+  > | band | round 44 | round 48 |
+  > |---|---|---|
+  > | 4.10g "still a rare room" | violet-met day-share <56% hers / <86% his | **RETIRED** → violet's share of the ROOMS she enters **<20%**, measured **6.03%** hers / **10.65%** his (σ 0.0004), against a deck offering violet on 1.97% of row-0 and 10.54% of row-6 cards |
+  > | 4.10g sealed-overnight ceilings | <48% hers, <75% his, ≤50% (`volume-pacing`) | **RETIRED** → the floors stay (4.10g's own 25% for him, "never never" 8% for her) and the ceilings are replaced by *a solve lifts the seal the same night* (**82.0%** his / **62.7%** hers, floors 70/50%) and *the desk is clear at dawn* (**26.2%** his / **52.0%** hers, floor 20%) |
+  > | 4.10f her late median | ≤19 min | **a NAMED DEBT: at most 5 minutes over 4.10b's published 15** (measured 3.46 over). The design's number is 15 and restoring it moves `BASE_DAY_BUDGET`, which is an economy commission — so what is gated is the DISTANCE from the criterion, not the build |
+  > | 4.10f her late p90 | ≤23 min | **≤1.5× the window's own median** — 4.10b's own tail allowance (23/15 = 1.53), measured **1.250** (σ 0.003) |
+  >
+  > **EVERY REPLACEMENT IS PROVED RED ON A POPULATION THAT REALLY VIOLATES IT**, in the
+  > suite rather than in a comment. `PROFILE_SKIPPER` — the player who solves nothing —
+  > lifts a seal the same night on **0.0%** and wakes to a clear desk on **4.9%**, through
+  > both new floors. And the rare-room ceiling is shown to be a ceiling on the DECK rather
+  > than on taste: cranking `mysteryPull` to 5,000 **saturates at 14.92%** of rooms
+  > entered, so the only way past 20% is to raise `deckMixAt`'s mystery ramp by about a
+  > third — which is the change round 36 nearly shipped, and the one the clause exists to
+  > refuse.
   - **4.10a — the no-refund day.** Skipping every puzzle tops out on the middle floors
     (median 1-based row 4) and is over in **2–5 minutes**. Refunds are what buy a real
     day.

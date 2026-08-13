@@ -591,6 +591,20 @@ describe('the seal bites for the median player too, and the split is measured (A
   const metViolet = (d: (typeof decent)[number]) => d.fragmentsFound > 0;
   const madeOut = (d: (typeof decent)[number]) => d.pagesMadeOut > 0;
   const overnight = (d: (typeof decent)[number]) => d.sealedBacklog > 0;
+  /**
+   * ROUND 48 — the two length-INDEPENDENT statistics that replace this block's
+   * retired day-share ceilings. `violetRoomShare` is what "still a rare room"
+   * actually claims (violet's share of the rooms she ENTERS, fixed by the deck);
+   * `madeGivenMet` is what "solving makes it out" actually claims. Neither moves
+   * when the day's budget moves, which is why the ceilings they replace had to
+   * be republished in rounds 24, 36, 42 and 44 and these will not be.
+   */
+  const violetRoomShare = (days: typeof decent) =>
+    days.reduce((s, d) => s + d.fragmentsFound, 0) / days.reduce((s, d) => s + d.rooms, 0);
+  const madeGivenMet = (days: typeof decent) => {
+    const met = days.filter(metViolet);
+    return met.filter(madeOut).length / met.length;
+  };
 
   /**
    * HER OVERNIGHT RATE, PUBLISHED. Measured 13.6–14.9% across seeds and
@@ -644,11 +658,30 @@ describe('the seal bites for the median player too, and the split is measured (A
     // later is a violet page with no solve left after it to make it out, so the
     // page survives the night. The guard that matters is untouched and asserted
     // below: her backlog median is still 0.
+    /*
+     * ═══ ROUND 48 — THE CEILING IS RETIRED HERE FOR THE SAME REASON IT IS
+     *     RETIRED IN tests/economy-simulation.test.ts ═══════════════════════
+     *
+     * Look at the three comments above this one: 25% → 35% → 45% → 50%, and
+     * every one of them says "nothing about the seal changed". They are correct
+     * and that is the indictment. An overnight DAY-SHARE is a function of how
+     * many rooms the evening holds, so it climbs whenever the day's budget
+     * moves and it says nothing whatever about the seal. Measured over six
+     * seeds it now reads 48.0–49.2% against a bound of ≤50%: the round-44
+     * republication had a fifth of a seed's spread in hand.
+     *
+     * The floor is a design statement and stays. In place of the ceiling:
+     * SOLVING IS WHAT LIFTS THE SEAL, which is 4.10g's actual sentence, is
+     * length-independent, and goes to zero if `decipherYield` ever stops paying
+     * — of the evenings she meets a sealed page, a solve makes one out the same
+     * night on 62.7% (6-seed range 61.7–63.2%, σ 0.006); floor 50%, 23σ clear.
+     */
     const r = share(decent, overnight);
     expect(r, `median-player overnight rate was ${(100 * r).toFixed(1)}%`)
       .toBeGreaterThanOrEqual(0.10);
-    expect(r, `median-player overnight rate was ${(100 * r).toFixed(1)}%`)
-      .toBeLessThanOrEqual(0.50);
+    const lifted = madeGivenMet(decent);
+    expect(lifted, `a solve lifted her seal the same night on ${(100 * lifted).toFixed(1)}% of the evenings she met one`)
+      .toBeGreaterThan(0.50);
   });
 
   it('and on 25–75% of a skilled player’s days — the clause 4.10g publishes', () => {
@@ -656,15 +689,19 @@ describe('the seal bites for the median player too, and the split is measured (A
     // ROUND 36 - 25-60% -> 25-75% (measured 68.1%), same single cause as hers
     // again, and the split this block exists to measure is unchanged: he is
     // still far above her, which is what "a skilled player's days" means.
+    // ROUND 48 - the ceiling is retired (see the block above); the floor is
+    // 4.10g's own published number and is untouched.
     const r = share(skilled, overnight);
     expect(r, `skilled overnight rate was ${(100 * r).toFixed(1)}%`)
       .toBeGreaterThanOrEqual(0.25);
-    expect(r, `skilled overnight rate was ${(100 * r).toFixed(1)}%`)
-      .toBeLessThanOrEqual(0.75);
     // The bound that keeps it a pressure rather than a debt spiral is the
     // BACKLOG, not the share: she must be able to catch up.
     const backlog = [...skilled.map((d) => d.sealedBacklog)].sort((a, b) => a - b);
     expect(backlog[Math.floor(backlog.length / 2)]!).toBeLessThanOrEqual(2);
+    // …and he reaches a clear desk on a real share of dawns, which is the other
+    // half of "a pressure, not a permanent condition": his 26.2%, hers 52.0%.
+    expect(share(skilled, (d) => d.sealedBacklog === 0),
+      'skilled: desk clear at dawn').toBeGreaterThan(0.20);
   });
 
   it('a solve makes a page out on ≥1 day in 5 for her, ≥1 in 3 for him', () => {
@@ -692,8 +729,23 @@ describe('the seal bites for the median player too, and the split is measured (A
     // quantity. THE PREMISE THIS TEST EXISTS TO PIN IS UNTOUCHED and is the
     // line above: her overnight backlog median is still 0, so her made-out rate
     // is still pinned to her violet-met rate rather than to a purse.
+    /*
+     * ROUND 48 — and that round-44 comment names the second defect out loud:
+     * "the same bound tests/economy-simulation.test.ts publishes for the same
+     * quantity". One statistic was gated in two files against two populations,
+     * and here it had **0.04 of a point** in hand — measured over six seeds this
+     * population reads 55.3–56.3%, so the bound was already red on two of them.
+     * The rarity gate is now the ROOM share, once, in each file, on that file's
+     * own population, and it is the quantity the sentence names: violet is
+     * 6.14% of the rooms she enters here (6-seed range 6.09–6.18%), against a
+     * deck that offers it on 1.97% of row-0 cards and 10.54% of row-6 cards.
+     * The ceiling of one room in five is derived in tests/economy-simulation.ts.
+     */
     expect(met).toBeGreaterThan(0.15);
-    expect(met).toBeLessThan(0.56);
+    const rare = violetRoomShare(decent);
+    expect(rare, `violet was ${(100 * rare).toFixed(2)}% of the rooms she entered`)
+      .toBeLessThan(0.20);
+    expect(violetRoomShare(skilled)).toBeGreaterThan(rare);
   });
 
   it('the climb is what separates the two profiles — his rates strictly exceed hers', () => {

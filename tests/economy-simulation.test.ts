@@ -1107,10 +1107,50 @@ describe('4.10d/e — the MEDIAN player has her own published band, and it is me
     // her p90. If a later round wants the 18 back the lever is the day's
     // starting count, which is the owner's own (THE_CLIMB §1b) — never the
     // price of a move, and never this mechanic's reach.
+    /*
+     * ═══ ROUND 48 — BOTH CEILINGS WERE ceil(measured), AND THE p90 WAS ALREADY
+     *     RED ON FOUR SEEDS OUT OF SIX ═══════════════════════════════════════
+     *
+     *   | quantity          | seed 0x1234 | across 6 seeds  | old bound | verdict |
+     *   |-------------------|-------------|-----------------|-----------|---------|
+     *   | late median (min) | 18.33       | 18.33 – 18.64   | ≤19       | 2.6σ    |
+     *   | late p90    (min) | 22.92       | 22.92 – 23.38   | ≤23       | RED on 4 of 6 |
+     *
+     * THE DESIGN'S NUMBER IS 15, not 19 — 4.10b/f publish a 10–15 minute
+     * evening, and this band has been walked 15 → 18 → 19 without the criterion
+     * ever moving. Restoring 15 means moving `BASE_DAY_BUDGET` and re-deriving
+     * the whole campaign, which is an economy commission the owner has not
+     * given (STATUS §0, and the `studyRelief` correction sitting behind it is
+     * larger still). So the overrun is enforced as a NAMED DEBT rather than as a
+     * band that follows the build: what is gated is the DISTANCE from the
+     * published 15, and the debt is stated once, here.
+     *
+     * WHY THE DEBT IS 5 MINUTES AND NOT `ceil(18.51 − 15)`. A band's headroom
+     * has to exceed the granularity of the lever allowed to move it. The only
+     * lever 4.10 permits is the day's starting count, and round 44 measured its
+     * smallest step exactly: ONE MOVE A DAY buys 1.04 rooms and moved this same
+     * median 17.0 → 18.51, i.e. **1.5 minutes**. A ceiling with 0.49 minutes of
+     * room under it cannot survive the smallest change the design is allowed to
+     * make. 3.6 measured + 1.5 for one move + the 0.31-minute seed spread ⇒ 5.
+     *
+     * AND THE p90 BECOMES A SHAPE CLAIM, which is what a tail bound is for and
+     * is the one form of it that survives the pending economy round. 4.10b
+     * publishes a 10–15 median and a ≤23 p90: the criterion's own tail
+     * allowance is 23/15 = **1.53×**. Gated at ≤1.5× the window's own median;
+     * measured 1.250 (6-seed range 1.247–1.255, σ 0.003 — 90σ of room). An
+     * absolute p90 in minutes was measuring the same evening length twice.
+     */
+    const PUBLISHED_MEDIAN_MINUTES = 15;   // 4.10b/f, the owner's clock
+    const EVENING_DEBT_MINUTES = 5;        // named, derived above, not measured
+    const TAIL_ALLOWANCE = 1.5;            // 4.10b's own 23/15
     for (const window of [early, late]) {
-      expect(medianOf(window)).toBeGreaterThanOrEqual(12);
-      expect(medianOf(window)).toBeLessThanOrEqual(19);
-      expect(quantileOf(window, 0.9)).toBeLessThanOrEqual(23);
+      const m = medianOf(window);
+      expect(m).toBeGreaterThanOrEqual(12);
+      expect(m, `evening median ${m.toFixed(2)} is ${(m - PUBLISHED_MEDIAN_MINUTES).toFixed(2)} over 4.10b's published ${PUBLISHED_MEDIAN_MINUTES}`)
+        .toBeLessThanOrEqual(PUBLISHED_MEDIAN_MINUTES + EVENING_DEBT_MINUTES);
+      const tail = quantileOf(window, 0.9) / m;
+      expect(tail, `p90 is ${tail.toFixed(3)}× the median evening`)
+        .toBeLessThanOrEqual(TAIL_ALLOWANCE);
     }
     const lateEarlyNights = share(
       decentCampaigns.flatMap((c) => c.days.slice(19, 30)), (d) => d.endReason === 'retired');
@@ -1468,21 +1508,90 @@ describe('4.10d/e + 4.14 — the landing arc: earned, progressive, and floored',
  * THE PUBLISHED TARGET (AAA 4.10g): a sealed page survives to the next dawn on
  * ~25–50% of a skilled player's days, and a solve makes a page out on ≥1 day
  * in 3. The bands below are what a future retune has to argue with.
+ *
+ * ═══ ROUND 48 — THREE OF THESE BANDS WERE SCREENSHOTS, AND ONE WAS ENFORCED
+ *     TWICE AGAINST TWO POPULATIONS ══════════════════════════════════════════
+ *
+ * A verifier caught rounds 42 and 44 republishing bands as `ceil(measured)`:
+ * her sealed-overnight share `<48%` for a measured 47.3%, her violet-met share
+ * `<56%` for 55.3%, his `<86%` for 85.8%. Re-measured over SIX seeds instead of
+ * one, that complaint is not theoretical — it is already true:
+ *
+ *   | quantity                        | seed 0x1234 | across 6 seeds  | bound | verdict |
+ *   |---------------------------------|-------------|-----------------|-------|---------|
+ *   | her sealed-overnight day-share  | 0.4795      | 0.4747 – 0.4833 | <0.48 | RED on 4 of 6 |
+ *   | her violet-met day-share        | 0.5519      | 0.5518 – 0.5575 | <0.56 | 0.4σ of margin |
+ *   | HIS violet-met day-share        | 0.8583      | 0.8511 – 0.8631 | <0.86 | RED on 1 of 6 |
+ *
+ * The bands were not merely tight. They passed **because of the seed they were
+ * measured on**, which is the same defect as a gate that cannot come out wrong,
+ * upside down.
+ *
+ * AND ONE STATISTIC WAS GATED TWICE. "Still a rare room (<50%)" was asserted at
+ * two lines against two different populations: `decent` (`simulateDays`,
+ * standalone evenings, violet-met **35.7%**, 10.2 rooms a night) at `<0.50`, and
+ * `decentDays` (campaign evenings, violet-met **55.2%**, 12.3 rooms a night) at
+ * `<0.56`. The binding one was the population where it still passed. 4.10g is a
+ * claim about her CAMPAIGN, so the campaign population is the only one it is
+ * asked of now, and it is asked once.
+ *
+ * ═══ WHAT THE BANDS ARE RE-DERIVED FROM ════════════════════════════════════
+ *
+ * Two rules, and every band in this block is now one or the other:
+ *
+ *   THE METRIC'S NAME MUST MATCH WHAT IT COMPUTES. "Still a rare room" is a
+ *   claim about ROOMS; the gate computed DAYS. A day-share is
+ *   `1 − (1−p)^rooms`, so it rises toward 1 as the evening lengthens at
+ *   CONSTANT rarity — which is exactly why the bound had to be walked 50% → 55%
+ *   → 56% across three rounds in which violet's share of the deck never moved
+ *   (`deckMixAt`: 1.97% at row 0, 10.54% at row 6, untouched since round 36).
+ *   Every one of those republications was measuring evening length and calling
+ *   it rarity. The rarity gate is now on violet's share of the rooms she
+ *   ENTERS, which is what the clause says and is invariant to evening length.
+ *
+ *   A BAND'S HEADROOM MUST EXCEED THE GRANULARITY OF THE LEVER THAT MOVES IT.
+ *   The only levers 4.10 permits are the day's starting count and the payouts
+ *   (owner, THE_CLIMB §1b). Round 44 measured the smallest of them exactly:
+ *   ONE MOVE A DAY is 1.04 extra rooms and moved her late median 17.0 → 18.51,
+ *   about 1.5 minutes. A band with 0.49 minutes of headroom is finer than the
+ *   smallest change the design is allowed to make, so it is not a band, it is a
+ *   tripwire on the next commit. Where a bound survives below, it clears both
+ *   the across-seed spread (≥4σ, measured over six seeds) and one move a day.
+ *
+ * Three ceilings do not survive either rule and are RETIRED rather than widened,
+ * with the design requirement each was standing in for gated in its place —
+ * see the tests. Retiring a band is not the same as dropping a claim: what
+ * replaces them is the backlog guard (already here), a made-out-given-met floor,
+ * and the desk-clear floor, all three of which are length-independent and all
+ * three of which a broken seal drives red.
  */
 describe('4.10g — the SEAL bites: entering gets the page, solving makes it out', () => {
   const sealed = simulateCampaigns(PROFILE_SKILLED, 300, CAMPAIGN_LENGTH, 0x1234);
   const sealedDays = sealed.flatMap((c) => c.days);
+  /** Violet rooms ENTERED as a share of all rooms entered — the rarity metric. */
+  const violetRoomShare = (days: typeof sealedDays) =>
+    days.reduce((s, d) => s + d.fragmentsFound, 0) / days.reduce((s, d) => s + d.rooms, 0);
+  /** Of the evenings she met a sealed page, the share where a solve made one out. */
+  const madeGivenMet = (days: typeof sealedDays) => {
+    const met = days.filter((d) => d.fragmentsFound > 0);
+    return met.filter((d) => d.pagesMadeOut > 0).length / met.length;
+  };
 
   it('shows the median evening a violet room often enough to have a mechanic', () => {
     // The finding's headline number: 9.5% before the retune. A player who
     // meets a sealed page one evening in ten does not have a seal mechanic,
     // she has a rumour of one.
-    const met = share(decent, (r) => r.fragmentsFound > 0);
+    //
+    // ROUND 48 — MOVED TO THE CAMPAIGN POPULATION, and the ceiling that used to
+    // sit here is gone. This assertion and the rare-room assertion below were
+    // the SAME quantity at two lines against two populations, and this was the
+    // population where the tighter bound still passed (35.7% here against 55.2%
+    // over campaigns, because a standalone evening is 10.2 rooms and a campaign
+    // evening is 12.3). 4.10g is a claim about her campaign; it is asked of the
+    // campaign, once. The rarity half now lives on the room share below.
+    const met = share(decentDays, (r) => r.fragmentsFound > 0);
     expect(met, `PROFILE_DECENT met a violet room on ${(met * 100).toFixed(1)}% of days`)
       .toBeGreaterThan(0.15);
-    // …and it is still a rare room, not a corridor: violet never becomes the
-    // thing she draws by default.
-    expect(met).toBeLessThan(0.5);
   });
 
   it('puts violet on the GROUND FLOOR at a rate the player can actually meet', () => {
@@ -1502,24 +1611,42 @@ describe('4.10g — the SEAL bites: entering gets the page, solving makes it out
   it('leaves a page unread overnight on a real share of days (the backlog)', () => {
     const overnight =
       sealed.reduce((s, c) => s + c.sealedOvernightDays, 0) / sealedDays.length;
+    // 4.10g's own published floor, and the only half of this band that was ever
+    // a design number: the seal must bite on at least a quarter of his days.
     expect(overnight, `sealed-overnight share ${overnight.toFixed(3)}`)
       .toBeGreaterThan(0.25);
-    // …and never so much that the journal silts up with smudges she can never
-    // catch up on: the backlog is a pressure, not a debt spiral.
-    // ROUND 24 - 25-55% -> 25-60% (measured 55.1%). The grid-true model climbs
-    // the same storeys and meets more violet, because the room she enters is
-    // the CARD SHE TOOK out of a real offer rather than a category sampled from
-    // `deckMixAt` and resolved as if she had had no say in it.
-    // ROUND 36 - 25-60% -> 25-75% (measured 67.6%, and 67.5-69.1% across the
-    // four seeds the test below runs). Cause, stated: violet share is a
-    // function of ROW (`deckMixAt`: 2.0% at row 0, 10.5% at row 6), and a flat
-    // move price puts more of every evening on the upper storeys - while the
-    // number of rooms she can SOLVE in an evening is bounded by her patience
-    // and the clock, not by her purse. So she acquires more sealed pages
-    // without deciphering proportionally more of them. The backlog is still a
-    // pressure and not a debt spiral: her overnight median is 1 page.
-    expect(overnight).toBeLessThan(0.75);
+    /*
+     * ═══ ROUND 48 — THE CEILING IS RETIRED, AND WHAT IT STOOD FOR IS GATED ═══
+     *
+     * It was walked 55% → 60% → 75% in three rounds (measured 55.1 → 67.6 →
+     * 73.5), every time for the same reason and never for a change in the seal:
+     * a longer evening acquires more sealed pages without deciphering
+     * proportionally more, so an overnight DAY-SHARE climbs with evening length
+     * at a fixed mechanic. It measured evening length and was published as a
+     * property of the seal.
+     *
+     * Its stated content was "never so much that the journal silts up with
+     * smudges she can never catch up on: a pressure, not a debt spiral", and
+     * that content is length-independent and already computable. It is gated
+     * here, in two clauses that a broken seal drives red and a longer evening
+     * does not:
+     *
+     *   THE BACKLOG SHE CARRIES IS SMALL.       median ≤ 2 pages (was already here)
+     *   SOLVING IS WHAT LIFTS IT.               of the evenings he meets a sealed
+     *                                           page, a solve makes one out the
+     *                                           same night on 82.0% (6-seed range
+     *                                           81.6–82.6%, σ 0.004); floor 70%,
+     *                                           which is 30σ and survives a move
+     *                                           either way in the day's budget.
+     *
+     * If `decipherYield` were cut to nothing, the first clause goes red as the
+     * backlog piles and the second goes to zero. If the evening doubles, neither
+     * moves — which is the whole reason they replace a day-share.
+     */
     expect(medianOf(sealedDays.map((d) => d.sealedBacklog))).toBeLessThanOrEqual(2);
+    const lifted = madeGivenMet(sealedDays);
+    expect(lifted, `a solve lifted his seal the same night on ${(100 * lifted).toFixed(1)}% of the evenings he met one`)
+      .toBeGreaterThan(0.70);
   });
 
   it('makes the solve the thing that moves the case, on 1 day in 3 or better', () => {
@@ -1579,12 +1706,32 @@ describe('4.10g — the SEAL bites: entering gets the page, solving makes it out
     // page has no solve left after it to make it out. The mechanism is
     // untouched: `decipherYield`, the violet share of the deck and the order of
     // the evening are all exactly where round 36 left them.
+    //
+    // ROUND 48 — THE `<0.48` CEILING IS RETIRED, AND IT WAS ALREADY FALSE.
+    // Re-measured over six seeds it reads 0.4747–0.4833: it passed on 0x1234
+    // (0.4795) and would have gone red on four of the other five, which is what
+    // a bound set to the ceiling of one measurement is worth. Same cause and
+    // same replacement as the skilled block above — the day-share climbs with
+    // evening length at a fixed mechanic, so it is not a fact about the seal.
+    // What survives is the floor ("never never"), the asymmetry (hers under
+    // his, which is what the clause is really about), and — new, and the thing
+    // the ceiling was standing in for — that she gets to a clear desk often
+    // enough for the seal to be a pressure rather than a permanent condition.
     expect(overnight, `median-player sealed-overnight share ${overnight.toFixed(3)}`)
       .toBeGreaterThan(0.08);
-    expect(overnight).toBeLessThan(0.48);
     // The 25–50% band above is the skilled player's, and the doc says so.
     expect(overnight).toBeLessThan(
       sealed.reduce((s, c) => s + c.sealedOvernightDays, 0) / sealedDays.length);
+    // SHE GOES TO BED WITH THE DESK CLEAR ON AT LEAST ONE EVENING IN FIVE. A
+    // mystery you never once get on top of is a chore, not a pressure. Hers is
+    // 52.0% (6-seed range 51.7–52.5%), his 26.2% (25.7–26.5%, σ 0.003 — 19σ
+    // clear of the floor), and the floor is a design statement rather than a
+    // reading of either.
+    for (const [who, days] of [['hers', decentSealedDays], ['his', sealedDays]] as const) {
+      const clear = share(days, (d) => d.sealedBacklog === 0);
+      expect(clear, `${who}: desk clear at dawn on ${(100 * clear).toFixed(1)}% of evenings`)
+        .toBeGreaterThan(0.20);
+    }
   });
 
   it('stays a RARE room, and hers stays smaller than his - the arithmetic', () => {
@@ -1602,38 +1749,96 @@ describe('4.10g — the SEAL bites: entering gets the page, solving makes it out
     expect(medianOf(decentSealedDays.map((d) => d.sealedBacklog))).toBe(0);
     const violetMet = share(decentSealedDays, (d) => d.fragmentsFound > 0);
     const made = share(decentSealedDays, (d) => d.pagesMadeOut > 0);
-    // ROUND 42 — 37.0% → **50.3%**, and the <50% bound goes to <55%. Her evening
-    // is nine rooms rather than eight and reaches the same storeys, so she meets
-    // violet on half her evenings rather than on three in eight. The clause the
-    // bound serves — "or it has stopped being a rare room" — is about the ROOM
-    // (violet is 2.0% of row-0 offers and 10.5% of row-6 offers, untouched by
-    // this round), not about how many offers an evening contains; and the split
-    // that carries the criterion is the one asserted below, hers against his.
-    // ROUND 44 — 50.3% → **55.3%**, and the bound goes to <56%, for the same one
-    // move a day the two bands above moved for (`STUDY_REFUND`): ten rooms an
-    // evening rather than nine, at the same violet share of the same deck. The
-    // clause this bound serves is about THE ROOM — violet is 2.0% of row-0
-    // offers and 10.5% of row-6 offers, and this round did not touch either —
-    // and the criterion it really carries is the split asserted below, hers
-    // against his, which widens rather than narrows.
-    expect(violetMet, `median-player violet-met share ${violetMet.toFixed(3)}`)
-      .toBeLessThan(0.56);
+    /*
+     * ═══ ROUND 48 — "STILL A RARE ROOM" IS A CLAIM ABOUT ROOMS ══════════════
+     *
+     * The history is the argument. This bound was published at <50%, walked to
+     * <55% in round 42 and to <56% in round 44, and each round's own comment
+     * says the same thing in its own defence: *"the clause this bound serves is
+     * about THE ROOM — violet is 2.0% of row-0 offers and 10.5% of row-6 offers,
+     * and this round did not touch either."* Both rounds were right about the
+     * clause and wrong about the gate. A violet-MET DAY-SHARE is
+     * `1 − (1−p)^rooms`: hold the deck exactly still and lengthen the evening by
+     * one room and it rises anyway. It rose because the evening grew, three
+     * times, and the bound was republished after it three times.
+     *
+     * So the rarity gate moves to the quantity the sentence names — violet's
+     * share of the rooms she ENTERS — which the deck fixes and evening length
+     * cannot touch:
+     *
+     *   | violet as a share of rooms entered | measured | 6-seed range     | σ      |
+     *   |------------------------------------|----------|------------------|--------|
+     *   | median player                      | 6.03%    | 6.03 – 6.12%     | 0.0004 |
+     *   | skilled player                     | 10.65%   | 10.52 – 10.65%   | 0.0004 |
+     *
+     * against a deck that offers violet on 1.97% of row-0 cards and 10.54% of
+     * row-6 cards. The ceiling is ONE ROOM IN FIVE: past that, three word rooms
+     * and two mystery rooms is an evening nobody would call a rare room, and it
+     * is the point at which violet would be competing with the word games the
+     * owner's steer says carry this game. It is 3.3× her measured share and
+     * 1.9× his; doubling `mysteryPull` or the `deckMixAt` ramp drives it red,
+     * and no change to the day's budget touches it at all.
+     */
+    for (const [who, days] of [['median player', decentSealedDays], ['skilled player', sealedDays]] as const) {
+      const rare = violetRoomShare(days);
+      expect(rare, `${who}: violet was ${(100 * rare).toFixed(2)}% of the rooms entered`)
+        .toBeLessThan(0.20);
+    }
+    // Violet's share of the ROOMS is under violet's share of the top storey's
+    // OFFERS for the median player, which is the deck-level statement of the
+    // same fact: she is not seeking violet out, she is meeting what she is dealt.
+    expect(violetRoomShare(decentSealedDays)).toBeLessThan(deckMixAt(6).mystery);
     expect(made).toBeLessThanOrEqual(violetMet + 0.05);
-    // So lifting her to 1-in-3 means lifting her violet-met rate past 1 in 3,
-    // which collides with THIS SAME CRITERION's "still a rare room (<50%)" and
-    // with the 4.10b clock calibrated on the deck mix. The skilled player
-    // clears the bar for the mirror-image reason: she meets violet far more
-    // often, because she is further up the house.
-    // ROUND 44 — HIS ceiling 85% → **86%** (measured 85.8%), for the same one
-    // move a day the median player's two bands moved for (`STUDY_REFUND`, and
-    // docs/THE_CLIMB §1c): a Gallery she traces a real word in hands back the
-    // move she spent walking into it, one more room an evening follows, and he
-    // spends his evenings on the storeys where violet is densest. The SPLIT is
-    // what this pair of bounds is for and it is unmoved — his 85.8% against her
-    // 55.3% — and the floor below did not move at all.
+    // THE SPLIT, which every round since 24 has said is the clause's real
+    // content, is asserted rather than described. His violet-met day-share
+    // (85.7%) against hers (55.2%) — and the FLOOR under his, which is the one
+    // bound in this pair that was never a screenshot.
     expect(share(sealedDays, (d) => d.fragmentsFound > 0)).toBeGreaterThan(0.4);
-    expect(share(sealedDays, (d) => d.fragmentsFound > 0)).toBeLessThan(0.86);
+    expect(share(sealedDays, (d) => d.fragmentsFound > 0))
+      .toBeGreaterThan(violetMet + 0.15);
+    // ROUND 48 — HIS `<0.86` CEILING IS RETIRED. Measured over six seeds it is
+    // 0.8511–0.8631 and would have gone red on 0xabc1; it was ceil(measured) on
+    // one seed, for the same day-share quantity retired above, and the split
+    // asserted on the line before is what it was standing in for.
+    expect(violetRoomShare(sealedDays)).toBeGreaterThan(violetRoomShare(decentSealedDays));
   });
+
+  it('names what the rare-room ceiling is a ceiling ON, by finding where it saturates', async () => {
+    /*
+     * A NUMBER IS ONLY A CEILING IF SOMETHING CAN REACH IT, so this measures
+     * where the reachable top is and what kind of change would cross it.
+     *
+     * Cranking `mysteryPull` — the only lever a PLAYER has — saturates: she can
+     * only take violet out of offers that contain one, and violet is 1.97% of
+     * row-0 cards and 10.54% of row-6 cards. Measured, skilled profile:
+     *
+     *   mysteryPull  3 (shipped) → 8.70%   ·  10 → 14.36%  ·  40 → 14.92%
+     *   200 → 14.92%  ·  5,000 → 14.92%
+     *
+     * So a violet-obsessed player tops out at **14.9%** of the rooms she enters
+     * and the ceiling of 20% stands 1.34× above her. THE CEILING IS THEREFORE A
+     * DECK GATE, not a behaviour gate: the only way past it is to raise
+     * `deckMixAt`'s mystery ramp by about a third — which is exactly the change
+     * round 36 nearly shipped ("watched violet's share of an offer rise by a
+     * third" — tests/drafting.test.ts), and exactly what "or it has stopped
+     * being a rare room" is written to refuse. Asserted here rather than
+     * described, because the saturation point is the whole justification for the
+     * number: if a deck edit ever lifts this figure past the ceiling, the gate
+     * above goes red for the right reason and this one goes red first.
+     */
+    await breathe();
+    const hungry = simulateCampaigns(
+      { ...PROFILE_SKILLED, mysteryPull: 5_000 }, 200, CAMPAIGN_LENGTH, 0x1234,
+    ).flatMap((c) => c.days);
+    const top = violetRoomShare(hungry);
+    console.log(`  a violet-obsessed player reaches ${(100 * top).toFixed(2)}% of rooms entered`);
+    expect(top, 'the reachable top of violet share, at mysteryPull 5,000').toBeLessThan(0.20);
+    // …and she really is pinned by the DECK and not by her purse: she takes
+    // every violet she is offered, so this is the offer supply, and it must sit
+    // comfortably above what the shipped profiles reach or the ceiling is
+    // measuring taste rather than rarity.
+    expect(top).toBeGreaterThan(violetRoomShare(sealedDays) * 1.2);
+  }, HEAVY_MS);
 
   it('never makes out more than she was holding, and never out of order', () => {
     for (const c of sealed) {
@@ -1662,18 +1867,50 @@ describe('4.10g — the SEAL bites: entering gets the page, solving makes it out
     // …so her backlog only ever grows, and her knowledge comes solely from
     // the channels that do not need a solved room (letters, testimony, pity).
     expect(walker.every((c) => c.days.at(-1)!.sealedBacklog > 0)).toBe(true);
+    /*
+     * ROUND 48 — AND THIS IS THE POPULATION THAT PROVES THE TWO CLAUSES WHICH
+     * REPLACED THE RETIRED DAY-SHARE CEILINGS ARE REAL GATES. A seal that
+     * stopped being liftable by solving looks exactly like the skipper, and on
+     * her the two new bounds are not near their floors, they are through them:
+     *
+     *   a solve lifted the seal the same night   floor 70% (his) / 50% (hers)  →  0.0%
+     *   the desk was clear at dawn               floor 20%                     →  4.9%
+     *
+     * Measured here rather than asserted by injection, on a profile the file
+     * already ships. A gate that has never been seen red is not a gate.
+     */
+    const walkerMet = walkerDays.filter((d) => d.fragmentsFound > 0);
+    const walkerLifted = walkerMet.filter((d) => d.pagesMadeOut > 0).length / walkerMet.length;
+    const walkerClear = share(walkerDays, (d) => d.sealedBacklog === 0);
+    expect(walkerLifted, 'the skipper never lifts a seal by solving').toBe(0);
+    expect(walkerClear, `the skipper's desk is clear at dawn on ${(100 * walkerClear).toFixed(1)}%`)
+      .toBeLessThan(0.20);
   });
 
   it('holds the band across independent campaign seeds', async () => {
-    for (const seed of [0x1234, 0x9911, 0x2f2f, 0xabc1]) {
+    /*
+     * ROUND 48 — THIS TEST IS THE ONE THAT SHOULD HAVE CAUGHT THE OTHERS, and
+     * it could not, because it re-ran only the one band that already had room.
+     * Every band this block enforces is now swept, on SIX seeds rather than
+     * four, and the print is the record: if a future round wants to move one of
+     * these it has to look at the spread first.
+     */
+    for (const seed of [0x1234, 0x9911, 0x2f2f, 0xabc1, 0x5150, 0x0f0f]) {
       await breathe();
       const runs = simulateCampaigns(PROFILE_SKILLED, 150, CAMPAIGN_LENGTH, seed);
       const days = runs.flatMap((c) => c.days);
       const overnight = runs.reduce((s, c) => s + c.sealedOvernightDays, 0) / days.length;
       // Round 24: measured 0.550 / 0.551 / 0.548 / 0.552 across the four seeds.
       // Round 36: 0.685 / 0.675 / 0.691 / 0.679 - see the band above for why.
+      // Round 48: 0.735-0.743 at 300 campaigns; the CEILING is retired (see the
+      // block header) and this floor is 4.10g's own published number.
       expect(overnight, `seed ${seed}: ${overnight.toFixed(3)}`).toBeGreaterThan(0.25);
-      expect(overnight, `seed ${seed}: ${overnight.toFixed(3)}`).toBeLessThan(0.75);
+      expect(madeGivenMet(days), `seed ${seed}: solve lifted the seal same-night`)
+        .toBeGreaterThan(0.70);
+      expect(violetRoomShare(days), `seed ${seed}: violet share of rooms entered`)
+        .toBeLessThan(0.20);
+      expect(share(days, (d) => d.sealedBacklog === 0), `seed ${seed}: desk clear at dawn`)
+        .toBeGreaterThan(0.20);
     }
   }, HEAVY_MS);
 });

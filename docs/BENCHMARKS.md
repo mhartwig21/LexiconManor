@@ -538,6 +538,39 @@ rule is doing the work: the room states its own constraint over the board.
 > without have the same barren share to three decimals (0.160 vs 0.160). A fill rule to
 > suppress the runs was written and deleted on that number. He described the artifact he could
 > see; the thing he felt was underneath it.
+>
+> **ROUND 48 — THE METRIC WAS GOOD AND THE GATE COULD NOT COME OUT WRONG.** Round 43's own
+> header claimed the gate "shares as little of the generator as the question allows" and listed
+> three independences. Two are real (raw ENABLE off disk; its own depth-first walk). The third
+> is the decisive one and is the opposite of independent: `submitTwistleWord` accepts a word if
+> and only if it is in the board's `targetWords` or `extraWords`, so the ENABLE walk finds a
+> **2.2% surplus** and then discards it, and the verdict is settled by exactly the list
+> `content/generate-twistle.ts` rejected on. The generator refuses any candidate over the
+> ceiling; a gate that re-derives the generator's predicate over the generator's words can only
+> confirm it — which is why the shipped pool reads a worst wall of **exactly 2** at every tier,
+> flush on a ceiling of 2. Three things changed, and the ceiling itself did not:
+>
+> - **The ceiling is defended as a RULING, not given headroom.** It is the owner's sentence
+>   transcribed — a barren pair is fine, a barren three is not — and margin on it would mean
+>   shipping the boards he complained about.
+> - **The condemned population is checked in whole** (`tests/puzzles/fixtures/twistle-pre-round43.json`,
+>   the 210 boards at commit `fbef228`) and read by the identical instrument: **103 offenders,
+>   13 / 30 / 60 by tier, worst walls 6 / 9 / 15**, asserted exactly, because the fixture is
+>   frozen and the only thing that can move those figures is the gate's own reading.
+> - **The "survives moving the line" proof is retired as a proof and replaced with one that can
+>   disagree.** Re-running at rank ≤ 60,000 cannot fail — a wider vocabulary only adds words, and
+>   round 43's own comment reasoned that out before asserting it. It is kept, relabelled as an
+>   instrument self-check. The real test moves the line the other way, to **rank ≤ 10,000**,
+>   where clusters can only grow and a pool that bought its cleanliness at 20,000 by threading
+>   rare words through corners would show nothing. Mean largest barren cluster, before → after:
+>   tier 1 **4.714 → 3.971**, tier 2 **5.171 → 4.657**, tier 3 **11.586 → 7.300**. The
+>   assertion is the direction at every tier; the magnitudes are two frozen artifacts and
+>   bounding them would be `ceil(measured)` again.
+>
+> **AND THE DEBT IS PUBLISHED.** The fix is a fix at and above the design's line. At rank
+> ≤ 15,000 the shipped pool has 90 of 210 boards over the ceiling and a worst wall of 12; at
+> ≤ 10,000, **155 boards and a worst wall of 21**. Nothing in the suite has ever claimed the
+> ground is clean at every line, and now nothing in it can be read that way.
 **Fix/beat:** give it the ladder Strands refuses to have (§1's curve, re-based on this room's
 own material — letters AND corners, since a word search ranks on shape), and keep the *door*
 on the constrained class so the ladder can never be climbed into a solve on easy words. Where

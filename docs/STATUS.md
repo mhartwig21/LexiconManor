@@ -103,6 +103,42 @@ day-4 field **9 → 208**, first ten-word shortlist **day 4 → 9**), and **the 
 the Word tab prints how many words still fit the engravings she can READ, precomputed by
 `content/generate-volume.ts --plate` and verified in `content:verify`. A count, never a list.
 
+**AND ROUND 48 WAS A GATE-INTEGRITY ROUND: three gates could not do their job.** An
+adversarial verifier refuted round 44's evidence and every finding held up when re-derived.
+
+1. **THE GALLERY'S DEAD-GROUND GATE WAS A CHECKSUM, NOT AN AUDIT.** Round 43's metric is
+   good — a barren tile is one under two *findable-in-practice* words, a barren cluster is
+   king-adjacent barren tiles, ceiling 2 — but the gate declared three independences and
+   the decisive one is false: `submitTwistleWord` accepts exactly `targetWords ∪ extraWords`,
+   so the raw-ENABLE walk finds a **2.2% surplus** and throws it away, leaving the
+   generator's own list to settle the verdict. The generator refuses anything over the
+   ceiling, so the gate could only ever confirm it — hence a shipped worst wall of exactly
+   2 at every tier. **The ceiling is defended as a ruling, not widened** (headroom would
+   mean shipping what the owner complained about); the whole condemned pre-round-43 pool is
+   now a checked-in fixture read by the same instrument (**103 offenders, 13/30/60, worst
+   6/9/15**, exact); and the tautological "survives a wider line" proof is relabelled an
+   instrument check and replaced by one that can disagree — the line moved **tighter**, to
+   rank ≤ 10,000, where mean worst wall goes 4.714→3.971 / 5.171→4.657 / 11.586→7.300.
+   The debt is published: at ≤10,000 the shipped pool still has **155/210** boards over the
+   ceiling. Teardown in `docs/BENCHMARKS.md` §8.
+2. **FIVE BANDS WERE `ceil(measured)`, AND THREE OF THEM WERE ALREADY RED.** Re-measured
+   over six campaign seeds instead of the one each was set on: her sealed-overnight `<48%`
+   is red on 4 of 6, his violet-met `<86%` on 1 of 6, her late p90 `≤23` on 4 of 6. Full
+   table and the re-derivations in `docs/AAA_BAR.md` (ROUND 48 block).
+3. **ONE STATISTIC WAS GATED TWICE AGAINST TWO POPULATIONS**, with the tighter bound on the
+   one where it still passed — "still a rare room (<50%)" on standalone evenings (35.7%)
+   and on campaign evenings (55.2%).
+
+The two rules the replacements are derived from, and they are the round's real product:
+**a metric's name must match what it computes** (a violet-met DAY-share is `1−(1−p)^rooms`
+and climbs with evening length at constant rarity, which is why it was republished three
+times while the deck never moved — the rarity gate is now violet's share of the ROOMS she
+enters, <20% against a measured 6.03% / 10.65%), and **a band's headroom must exceed the
+granularity of the lever allowed to move it** (one move a day is 1.04 rooms and 1.5 minutes,
+so a ceiling with 0.49 minutes under it is not a band). Three day-share ceilings are
+**retired rather than widened**, with the design requirement each stood in for gated in its
+place, and every replacement is proved red on `PROFILE_SKIPPER` in the suite.
+
 ---
 
 ## 1. What the game is
@@ -194,7 +230,7 @@ Rounds of ultracode subagents. **Critique and verification fan out in parallel; 
 STRICTLY SEQUENTIAL** — parallel writers in one checkout lost ten agents twice. Each builder owns
 distinct files, runs every gate, and commits its own work.
 
-Every builder runs: `tsc --noEmit` · `vitest run` (**1,452** baseline as of round 46) ·
+Every builder runs: `tsc --noEmit` · `vitest run` (**1,463** baseline as of round 48) ·
 `content:verify` · `lint:clearance` · `build` · `gate:glass` (0 findings at both sizes).
 
 **Playwright must use system Edge (`channel: msedge`)** — the browser download silently fails on
