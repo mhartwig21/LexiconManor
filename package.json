@@ -39,6 +39,7 @@
     "test:rooms-say-it": "node tests/round34-rooms-live.mjs && node tests/round34-rooms-live.mjs --prove",
     "test:plate": "node tests/round47-plate-live.mjs",
     "test:prices": "node tests/round45-prices-live.mjs && node tests/round45-prices-live.mjs --prove",
+    "gate:attribution": "node tests/round49-attribution-live.mjs && node tests/round49-attribution-live.mjs --prove",
     "test:gallery-ground": "node tests/round38-gallery-live.mjs && node tests/round38-gallery-live.mjs --prove",
     "test:library-threads": "node tests/round35-library-threads-live.mjs",
     "metrics:review": "tsx scripts/review-metrics.ts",

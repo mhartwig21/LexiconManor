@@ -498,7 +498,12 @@ export const createManorSlice =
         // (app/slices/journal.ts `creditSolve`). Nothing about this branch is
         // conditional on solving: the cozy promise is that entering is always
         // enough to KEEP it.
-        if (card.category === 'mystery') get().collectFragmentForRoom('mystery');
+        //
+        // ROUND 49 — the card id rides with it, so the leaf remembers which
+        // violet room she was standing in when it landed. The seal and the
+        // journal both name it (engine/volume.ts `pageFromRoomFlag`); nothing
+        // about the drip itself moves.
+        if (card.category === 'mystery') get().collectFragmentForRoom('mystery', card.id);
         // Step straight into the word game; parlor interiors are dialogue
         // scenes keyed off playerCell (ManorPage), utility pays at draft.
         if (card.puzzleKind) get().enterRoom(key);

@@ -108,6 +108,39 @@ the architect-owned `DayRecord`, so no save-schema change was needed and the
 chronicles keep printing the FILED count — the right number for a chronicle and
 the wrong one for mercy.
 
+### Provenance bookkeeping (code-set families, round 49)
+
+*Which room produced this page.* The owner's ruling of 13 Aug took `+1 page` off
+the draft card — the game states prices and rules of play, never what a room is
+worth to the mystery — so the whole burden of teaching *"this room provided me a
+page!"* moved to the moment of reward, and the moment of reward has to name a
+room. Flags rather than a save field, for exactly the reason legibility is
+flags: `VolumeState` is frozen and these are write-once.
+
+**TWO families, because a page can have two rooms and they teach two different
+rules.** A torn leaf is carried out of the Archive (`from-`) and made out in the
+Darkroom (`readby-`); crediting one for the other's work would have the player
+deducing the opposite of how the game works.
+
+| Flag | Set by | When |
+|---|---|---|
+| `vol.<volumeId>.from-<fragmentId>-<cardId>` | `app/slices/journal.ts` | a room puts the page in her hands — a solved word room's channel page, or a violet room's sealed leaf |
+| `vol.<volumeId>.readby-<fragmentId>-<cardId>` | `app/slices/journal.ts` | a solved room's `decipherFragments` makes that sealed page out |
+
+`<cardId>` is a `RoomCard.id` (`long-gallery`, `archive`), never a puzzle kind:
+the Gallery and the Long Gallery are one kind and two rooms, and she chose one of
+them by name. Read through `pageFromRoom` / `pageReadByRoom`, which take the
+fragment id as a prefix and return the tail — **so no fragment id may be a
+dash-prefix of another**, a content invariant `content:verify` cannot see and
+`tests/attribution.test.ts` therefore gates over every shipped volume.
+
+Both are ORDERED against the flag they ride beside: `from-` is written before
+`fragment-found` is recorded and `readby-` before `legible-`, because the moment
+layer wakes on those and would otherwise announce an anonymous page. Nothing
+sets them where no room is known (a letter's enclosure, testimony in a parlor, a
+save that predates the round), and every surface prints nothing rather than
+guessing.
+
 Read through `engine/volume.ts`'s `sealedFragmentIds` / `madeOutFragmentIds`.
 `madeOutFragmentIds` is deliberately **not** the complement of
 `sealedFragmentIds`: a page that arrived legible never carries a `legible-` flag,

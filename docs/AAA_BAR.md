@@ -260,6 +260,20 @@ re-tests their shape:
 - 1.17 Payouts have meaning beyond score: steps/gems/fragments that matter outside the
   room, and at least one character line references a notable Conservatory result the
   next day. **[BEAT]**
+  - **ROUND 49 — WHERE THAT MEANING MAY BE STATED, AND WHERE IT MAY ONLY BE SHOWN.**
+    Round 46 read 1.17 (with 4.10's *"cards state their mechanical effects"*) as licence
+    to print `+1 page` on the draft card. The owner overruled it on 13 Aug: *"Saying +1
+    page feeds everything to the player… when a page is revealed, the player has to be
+    able to figure out — oh, this room provided me a page!"* **The clause both criteria
+    actually license is a PRICE or a RULE OF PLAY** — a move's cost, a wrong guess's
+    cost, what a solve pays back, the room's length, the door plan — and every one of
+    those still prints. **What a room is worth TO THE MYSTERY is shown at the moment of
+    reward and never announced in advance.** So a page names the room that produced it
+    on the seal as it lands and on the filed page afterwards (`docs/THE_CLIMB.md` §1g),
+    gated live by `npm run gate:attribution` at both phone sizes and proved red on the
+    build before it. `WORD_ROOM_FACE_GATE.outbid` is **RETIRED, not re-tuned**: under
+    this ruling it should rise, and it measures 11.3% — exactly the clause-free face
+    round 46 recorded.
 
 ---
 

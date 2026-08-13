@@ -109,6 +109,15 @@ export interface MomentContext {
   fragment(id: string): FragmentFacts | null;
   /** The answer of a solved volume, for the closing seal. */
   answerFor(volumeId: string): string | null;
+  /**
+   * ROUND 49 — THE ROOM THAT PRODUCED THIS PAGE, by its own name on the card
+   * she drafted ("The Long Gallery", not "the Gallery" and not "twistle").
+   * Null when nothing recorded one: a letter's enclosure, testimony spoken in a
+   * parlor, a save written before the round. The seal then prints exactly what
+   * it printed before, because an unattributed page is honest and an invented
+   * room is not. See `engine/volume.pageFromRoom`.
+   */
+  roomFor(fragmentId: string): string | null;
 }
 
 const CHARACTER_NAMES: Record<CharacterId, string> = {
@@ -164,29 +173,59 @@ export function openingWords(text: string, max = QUOTE_CHARS): string {
   return `“${nested}${open ? '’' : ''}”`;
 }
 
-const FRAGMENT_COPY: Record<string, { sigil: string; title: string; where: string }> = {
+/* ══ ROUND 49 — THE ROOM IS THE SUBJECT OF THE SENTENCE ═════════════════════
+ *
+ * THE OWNER'S RULING, 13 Aug: *"when a page is revealed, the player has to be
+ * able to figure out — oh, this room provided me a page!"* The draft card no
+ * longer says a word room feeds the mystery (economy/preview.ts), so this is
+ * the surface that has to teach it — and it teaches by SHOWING the cause, never
+ * by stating the rule. "Solve any word game to find a page" printed on a nudge
+ * would be the deleted clause wearing different clothes.
+ *
+ * So each copy row carries a `noun` beside its standalone `title`, and where a
+ * room is known the seal is built as **`<Room> gives up <noun>`**. The room's
+ * name is the first thing on the card, in display type, at the instant she
+ * finishes the room — which is the whole of the teaching. Where no room is
+ * known the standalone title prints unchanged, so a letter's enclosure and a
+ * testimony scene read exactly as they did.
+ *
+ * `where` never moves: it is the persistent trace (AAA 11.12) and it is not
+ * where a cause belongs.
+ */
+interface FragmentCopy { sigil: string; title: string; noun: string; where: string }
+
+const FRAGMENT_COPY: Record<string, FragmentCopy> = {
   'definition-line': {
     sigil: 'W',
     title: 'A line of his definition',
+    noun: 'a line of his definition',
     where: 'Filed in the Journal · The Word',
   },
   engraving: {
     sigil: 'E',
     title: 'An engraving, taken down',
+    noun: 'an engraving',
     where: 'Filed in the Journal · Engravings',
   },
   testimony: {
     sigil: 'T',
     title: 'Testimony, written down',
+    noun: 'testimony',
     where: 'Filed in the Journal · Testimony',
   },
 };
 
-const FRAGMENT_FALLBACK = {
+const FRAGMENT_FALLBACK: FragmentCopy = {
   sigil: 'W',
   title: 'A clue fragment, filed',
+  noun: 'a clue fragment',
   where: 'Filed in the Journal',
 };
+
+/** `The Long Gallery` + `an engraving` → `The Long Gallery gives up an engraving`. */
+function roomGaveTitle(room: string, noun: string): string {
+  return `${room} gives up ${noun}`;
+}
 
 /**
  * The sealed arrival. The seal keeps its journal-tab letterform (W/E/T still
@@ -196,27 +235,31 @@ const FRAGMENT_FALLBACK = {
  * make it out. No `quote` is ever produced for these — that is the whole fix,
  * and tests/moment.test.ts asserts a sealed moment contains none of frag.text.
  */
-const FRAGMENT_SEALED_COPY: Record<string, { sigil: string; title: string; where: string }> = {
+const FRAGMENT_SEALED_COPY: Record<string, FragmentCopy> = {
   'definition-line': {
     sigil: 'W',
     title: 'A page of his, not yet made out',
+    noun: 'a page of his, not yet made out',
     where: 'Filed in the Journal · finish a room to make it out',
   },
   engraving: {
     sigil: 'E',
     title: 'A rubbing, not yet made out',
+    noun: 'a rubbing, not yet made out',
     where: 'Filed in the Journal · finish a room to make it out',
   },
   testimony: {
     sigil: 'T',
     title: 'A memory, not yet made out',
+    noun: 'a memory, not yet made out',
     where: 'Filed in the Journal · finish a room to make it out',
   },
 };
 
-const FRAGMENT_SEALED_FALLBACK = {
+const FRAGMENT_SEALED_FALLBACK: FragmentCopy = {
   sigil: 'W',
   title: 'A page, filed and not yet made out',
+  noun: 'a page, not yet made out',
   where: 'Filed in the Journal · finish a room to make it out',
 };
 
@@ -265,6 +308,13 @@ export interface MadeOutFacts {
   id: string;
   kind: FragmentFacts['kind'];
   text: string;
+  /**
+   * ROUND 49 — the room whose solve made it out, by name, or null on a save
+   * that predates the record (and on the volume-closing mass decipher, which
+   * no room paid for). One batch is one solve, so the batch's room is the
+   * room of any page in it; the seal reads it off the first.
+   */
+  room?: string | null;
 }
 
 /**
@@ -298,6 +348,13 @@ export function madeOutMoment(fragments: readonly MadeOutFacts[]): Moment | null
   const copy = FRAGMENT_COPY[first.kind] ?? FRAGMENT_FALLBACK;
   const n = fragments.length;
   const word = COUNT_WORDS[n] ?? String(n);
+  // ROUND 49 — the room does the deciphering, out loud. `A page made out` never
+  // said what made it out, and the decipher channel is the OTHER half of the
+  // rule the draft card stopped stating: solve a word game and the smudged
+  // backlog speaks. Room-first, so her eye lands on the cause; the count keeps
+  // its word form either way, because the tier yield is the thing being felt.
+  const room = fragments.find((f) => f.room)?.room ?? null;
+  const lower = word === 'A' ? 'a' : word.toLowerCase();
   return {
     key: `made-out:${fragments.map((f) => f.id).join('+')}`,
     kind: 'made-out',
@@ -306,7 +363,9 @@ export function madeOutMoment(fragments: readonly MadeOutFacts[]): Moment | null
     // ROUND 13 (AAA 6.16): one verb for the page's two states. It is "made
     // out", never "comes clear"/"deciphered"/"legible" — the same two words the
     // journal's rail, its cards, Ellery's nudge and the sealed arrival all use.
-    title: `${word} ${n === 1 ? 'page' : 'pages'} made out`,
+    title: room
+      ? `${room} makes out ${lower} ${n === 1 ? 'page' : 'pages'}`
+      : `${word} ${n === 1 ? 'page' : 'pages'} made out`,
     quote: openingWords(first.text),
     where: 'Made out, in the Journal · the higher the room, the more at once',
     route: JOURNAL,
@@ -334,6 +393,11 @@ export function momentForEvent(event: GameEvent, ctx: MomentContext): Moment | n
   switch (event.type) {
     case 'fragment-found': {
       const facts = ctx.fragment(event.fragmentId);
+      // ROUND 49: which room handed it over, if anything recorded one. Asked
+      // for BOTH arrival shapes — a violet room's torn leaf is as much a page a
+      // room produced as a solved word game's engraving, and the two of them
+      // together are the rule she is meant to assemble.
+      const room = ctx.roomFor(event.fragmentId);
       // A sealed arrival is a DIFFERENT announcement, not the same one with the
       // quote trimmed: it names the document, promises the journal, and says
       // what makes it legible. Quoting it would hand back exactly what the
@@ -344,7 +408,7 @@ export function momentForEvent(event: GameEvent, ctx: MomentContext): Moment | n
           key: `fragment:${event.fragmentId}`,
           kind: 'fragment',
           sigil: sealedCopy.sigil,
-          title: sealedCopy.title,
+          title: room ? roomGaveTitle(room, sealedCopy.noun) : sealedCopy.title,
           quote: undefined,
           where: sealedCopy.where,
           route: JOURNAL,
@@ -355,7 +419,7 @@ export function momentForEvent(event: GameEvent, ctx: MomentContext): Moment | n
         key: `fragment:${event.fragmentId}`,
         kind: 'fragment',
         sigil: copy.sigil,
-        title: copy.title,
+        title: room ? roomGaveTitle(room, copy.noun) : copy.title,
         quote: facts ? openingWords(facts.text) : undefined,
         where: copy.where,
         route: JOURNAL,

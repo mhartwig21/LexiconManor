@@ -364,6 +364,11 @@ it. The house prices things two ways, and a gate that knows only one of them agr
 
 ## 1e. The card was printing the one number where the rooms are least comparable — round 46
 
+> **⚠ OVERRULED BY THE OWNER, 13 AUG. THE CLAUSE THIS SECTION SHIPPED IS DELETED — see §1g.**
+> Everything below is kept because the diagnosis is still right and the measurement is still
+> the baseline: what a draft card compares, and what it cost the Gallery. Only the ANSWER
+> changed, and the reason it changed is a design principle rather than a bug.
+
 **THE OWNER, off the cold read of 12 Aug:** *"NOT ONE OF THREE BLIND PLAYERS ENTERED A
 GALLERY."* Two were offered one and declined. The grader named the cause and it is not the
 Gallery: **the card advertises +1 beside cards advertising +5.** Three consecutive rounds of
@@ -501,6 +506,85 @@ or the payout ceiling itself, which is an owner-facing economy decision.
 *(One more thing, corrected because it is repeated in three documents and in four comments and
 it is wrong: **FOUR of the seven shipped rooms pay +1 at tier 1**, not five. Twistle,
 forgotten-word, cipher and crossword. The Word Web pays +2.)*
+
+---
+
+## 1g. The card may state a PRICE and may not state a VALUE — round 49, the owner's ruling
+
+**THE OWNER, 13 AUGUST, overruling round 46 five hours after it landed:**
+
+> *"I think we want to keep true to Blue Prince where certain clues about the benefits of rooms
+>  aren't immediately apparent. Saying +1 page feeds everything to the player. But when a page
+>  is revealed, the player has to be able to figure out — oh, this room provided me a page!"*
+
+Round 46 was well built and it measured well: `+1 page` was a LIVE claim (one predicate, asked
+by the card and paid by the solve), and a word room outbid on its face by every card that asks
+nothing of her fell **11.3% → 7.5%**, and to **0.0%** wherever the clause printed. None of that
+is disputed. What it did was hand the player the rule that drafting a puzzle room feeds the
+mystery, before she had ever drafted one — and the pleasure of the game it is modelled on is
+largely the rules you deduce.
+
+### The line, because it is not "say less"
+
+This ruling is not a retreat from rounds 42–45, and reading it as one would undo them. Those
+rounds were about a player who could not audit her own step counter, and they were right.
+
+- **STATED, ALWAYS — PRICES AND RULES OF PLAY.** What a move costs. What a wrong guess costs.
+  What a solve pays back. How long the room asks for. Which doors the plan leaves her (the
+  door-plan line is an owner ruling and stays). A player who cannot audit her own counter is
+  being cheated, and no clause of this ruling touches any of that.
+- **NEVER STATED — WHAT A ROOM IS WORTH TO THE MYSTERY.** That is the discovery the game is
+  made of. It is learned by drafting the room, using it, and noticing what happened.
+
+The two are not the same axis and the round-46 clause was on the wrong one.
+
+### What that obliges, and it is the harder half
+
+If the card does not say it, the MOMENT OF REWARD must show it — and the moment of reward could
+not, because **neither the seal nor the journal named a room.** That is why
+`docs/COMPREHENSION.md`'s only [blocker] blind spot is the one it is: a reward whose cause is
+anonymous teaches nothing however often it lands. So a page now remembers which room produced
+it, and says so twice:
+
+| Event | On the glass, as it lands | In the journal, afterwards |
+|---|---|---|
+| A word room's solve files its channel page | *"The Long Gallery gives up an engraving"* | *"Taken out of the Long Gallery."* |
+| A violet room hands over a torn leaf | *"The Archive gives up a rubbing, not yet made out"* | *"A torn leaf out of the Archive, not yet made out."* |
+| A solve makes the sealed backlog out | *"The Darkroom makes out two pages"* | *"Taken out of the Archive, made out in the Darkroom."* |
+
+Three rooms, three different lessons, and not one of them is stated as a rule. The room is the
+SUBJECT of the sentence and the first words on the card, because that is the instant her eye is
+on it. Two write-once flag families carry it (`from-`, `readby-` — `docs/flags.md`), because a
+leaf carried out of one room and made out in another has two rooms in its history and crediting
+either for the other's work would teach her the opposite of how the game works.
+
+**Attributed per CARD, never per KIND.** The Gallery and the Long Gallery are one puzzle kind and
+two rooms. A seal reading "the Gallery" over a Long Gallery would be the right kind and the
+wrong room, and would teach her to draft the wrong card.
+
+**Nothing is invented.** Testimony spoken in a parlor, a letter's enclosure, and every page in a
+save written before this round record no room and print no line. The temptation to fill the gap
+from the authored `source` field is exactly the trap: *"Carved on the Gallery lintel"* is where
+the writing IS in the house, not where she got it, and a player who solved the Library was
+already reading the first as if it were the second.
+
+### The band that moved, and it moved UP on purpose
+
+**`WORD_ROOM_FACE_GATE.outbid` (0.08) IS RETIRED, NOT RE-TUNED.** Under this ruling the number
+it counts should RISE — a card that says less loses to a card that says +5 — so tightening it
+would fail the build for obeying the owner and loosening it to fit would be the quiet re-tune
+this repo calls its most common self-deception. `tests/word-room-face.test.ts` keeps the
+INSTRUMENT and prints `outbid` / `faceBottom` / `lowestSteps` over the same 900 evenings on
+every run, so the next round to touch the draft face argues with a measured baseline instead of
+a memory. What it GATES now is the ruling itself: no card prints a page clause, at any tier, in
+any offer — a gate that would have been red on the commit immediately before this one.
+
+**The replacement gate is `npm run gate:attribution`** (`tests/round49-attribution-live.mjs`):
+real input at 375×667 and 390×844, verdicts on PAINTED strings, and `--prove` re-runs every
+scenario through the pre-round-49 call shape so all ten attribution checks go red on the build
+this round replaced. What it cannot gate — whether a stranger assembles the rule — is the cold
+read's question, and COMPREHENSION now names the question to ask her.
+
 ---
 
 ## 2. The landing is three cells, not one

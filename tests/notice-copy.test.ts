@@ -222,12 +222,12 @@ describe('AAA 5.7 — a rank-up is never a generic "+1"', () => {
     // text was `${name} warms to you` for all 24 character x rank cases.
     const fern = momentForEvent(
       { type: 'affinity-rank-up', character: 'fern', rank: 2 },
-      { fragment: () => null, answerFor: () => null },
+      { fragment: () => null, answerFor: () => null, roomFor: () => null },
     );
     expect(fern?.quote).toBe(rankUpNotice('fern', 2)!.line);
     const portrait = momentForEvent(
       { type: 'affinity-rank-up', character: 'portrait', rank: 4 },
-      { fragment: () => null, answerFor: () => null },
+      { fragment: () => null, answerFor: () => null, roomFor: () => null },
     );
     expect(portrait?.quote).toBe(rankUpNotice('portrait', 4)!.line);
     // Different people, different ranks: never the same words.

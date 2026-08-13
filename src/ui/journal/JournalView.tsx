@@ -31,6 +31,7 @@ import SealedMark, { SealedPip } from './SealedMark';
 import { useJournalUnread } from './useJournalUnread';
 import { sfx } from '../../app/sound';
 import { quoted } from './quote';
+import { pageWhence, sealedLeafLabel } from './whence';
 import './journal.css';
 
 type Tab = JournalTab;
@@ -430,7 +431,12 @@ export default function JournalView() {
                       already carrying the count and the tier hint); every other
                       surface says only what a thing IS, and the seal pip carries
                       the rest. */}
-                  <span className="jrn-sealed__label">A torn leaf, not yet made out.</span>
+                  {/* ROUND 49: …and WHICH ROOM tore it, inside the sentence
+                      that was already here rather than under it. See
+                      ./whence.ts for why the Word tab pays no extra line. */}
+                  <span className="jrn-sealed__label">
+                    {sealedLeafLabel(volume.volumeId, s.fragment.id, flags)}
+                  </span>
                 </div>
               ) : s.fragment ? (
                 <div key={s.revealOrder} className="jrn-poem__line">
@@ -438,6 +444,7 @@ export default function JournalView() {
                       carries the mark, not only the tab above it. */}
                   {isNew(s.fragment.id) && <UnreadPip label="a line you have not read" />}{' '}
                   {quoted(s.fragment.text)}
+                  <Whence fragmentId={s.fragment.id} />
                   {isInterpreted(volume, s.fragment.id) && s.fragment.interpretation && (
                     <div className="jrn-note">{s.fragment.interpretation}</div>
                   )}
@@ -637,6 +644,27 @@ function SealedBody({ text }: { text: string }) {
   );
 }
 
+/**
+ * ROUND 49 — WHICH ROOM PRODUCED THIS PAGE, on the page itself.
+ *
+ * The seal that lands at the moment of reward is the teaching (ui/moment); this
+ * is the record that outlives it, so a rule she half-noticed last night is
+ * still there to be confirmed this morning. Copy and the two-clause logic live
+ * in ./whence.ts — the poem, the engraving cards and the testimony cards all
+ * print the SAME sentence, because three accounts of one fact is how a player
+ * learns to distrust all three.
+ *
+ * Renders NOTHING where no room was recorded (a letter's enclosure, testimony
+ * spoken in a parlor, any page filed before this round shipped). A blank line
+ * is the correct output for "the journal does not know".
+ */
+function Whence({ fragmentId }: { fragmentId: string }) {
+  const volumeId = useManorStore((s) => s.volume.volumeId);
+  const flags = useManorStore((s) => s.flags);
+  const line = pageWhence(volumeId, fragmentId, flags);
+  return line ? <div className="jrn-card__whence">{line}</div> : null;
+}
+
 /* ══ THE EMPTY PAGE (round 8) ════════════════════════════════════════════════
  *
  * An empty tab is where this game most looks unfinished, and the numbers said
@@ -803,6 +831,12 @@ function EngravingCard({
         {sealed && <SealedPip label="an engraving not yet made out" />}
         {frag.source}
       </div>
+      {/* ROUND 49. Directly under `source` — and deliberately NOT inside it:
+          `frag.source` is where the writing IS in the house ("Carved on the
+          Gallery lintel"), which is a different fact from which room handed it
+          to her, and a player who solved the Library was reading the first as
+          if it were the second. */}
+      <Whence fragmentId={frag.id} />
       {sealed ? (
         <SealedBody text={frag.text} />
       ) : (
@@ -855,6 +889,7 @@ function TestimonyCard({
           </div>
         </div>
       </div>
+      <Whence fragmentId={frag.id} />
       {/* Testimony arrives from the volume file already wearing its own curly
           quotes; the journal owns the quoting now (see ./quote.ts), so the
           authored pair is stripped and re-set — one convention on every card,

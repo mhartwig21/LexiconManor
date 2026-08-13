@@ -26,7 +26,8 @@ import type { RecordedEvent } from '../../engine/events';
 import { useManorStore, type ManorStore } from '../../app/store';
 import { getVolumeContent } from '../../app/content/volumes';
 import {
-  arrivedLetters, legibleDroughtDays, madeOutFragmentIds, openedLetterIds, sealedFragmentIds,
+  arrivedLetters, legibleDroughtDays, madeOutFragmentIds, openedLetterIds,
+  pageFromRoom, pageReadByRoom, sealedFragmentIds,
 } from '../../engine/volume';
 import { keepsakeById } from '../../engine/achievements';
 import { cardById } from '../../engine/manor/deck';
@@ -164,6 +165,15 @@ export const liveContext: MomentContext = {
     };
   },
   answerFor: (volumeId) => getVolumeContent(volumeId)?.answer ?? null,
+  // ROUND 49 — the room's own card name, resolved through the deck the player
+  // drafted from. `pageFromRoom` returns a card ID; `cardById` turns it into
+  // the words printed on the card she chose, and an ID the deck no longer
+  // knows resolves to null rather than to a slug on the glass.
+  roomFor: (id) => {
+    const s = useManorStore.getState();
+    const cardId = pageFromRoom(s.volume.volumeId, id, s.flags);
+    return (cardId && cardById(cardId)?.name) || null;
+  },
 };
 
 /** Read the tray straight out of the store (the same derivation JournalView
@@ -197,7 +207,17 @@ export function readSnapshot(s: ManorStore): WatchSnapshot {
   const madeOut: MadeOutFacts[] = madeOutIds.size === 0 ? [] : content.fragments
     .filter((f) => madeOutIds.has(f.id))
     .sort((a, b) => a.revealOrder - b.revealOrder)
-    .map((f) => ({ id: f.id, kind: f.kind, text: f.text }));
+    .map((f) => {
+      // ROUND 49 — the room whose solve made THIS page out (`readby-`), which
+      // is a different question from who filed it: a leaf carried out of the
+      // Archive is made out in the Darkroom, and the seal announcing the
+      // deciphering must credit the Darkroom.
+      const cardId = pageReadByRoom(s.volume.volumeId, f.id, s.flags);
+      return {
+        id: f.id, kind: f.kind, text: f.text,
+        room: (cardId && cardById(cardId)?.name) || null,
+      };
+    });
   return { recentEvents: s.recentEvents, letters, keepsakes, plates, madeOut };
 }
 

@@ -882,6 +882,74 @@ export function sealedFragmentIds(volumeId: string, flags: Iterable<string>): Se
   return sealed;
 }
 
+/* ══ ROUND 49 — WHICH ROOM HANDED HER THIS PAGE ═════════════════════════════
+ *
+ * THE OWNER'S RULING, 13 AUG: *"I think we want to keep true to Blue Prince
+ * where certain clues about the benefits of rooms aren't immediately apparent.
+ * Saying +1 page feeds everything to the player. But when a page is revealed,
+ * the player has to be able to figure out — oh, this room provided me a
+ * page!"*
+ *
+ * The card no longer states what a room is worth to the mystery
+ * (`economy/preview.ts`, round 49). The whole burden therefore moves to the
+ * moment of reward, and the moment of reward could not carry it: neither the
+ * seal nor the journal named a room, and `docs/COMPREHENSION.md`'s only
+ * [blocker] blind spot is that no blind player ever worked out where pages
+ * come from. A reward whose CAUSE is anonymous teaches nothing however often
+ * it lands.
+ *
+ * So the room is remembered with the page. TWO families, because a page can
+ * have two rooms and they say different things:
+ *
+ *   `from-<fragmentId>-<cardId>`   the room that put it in her hands — a word
+ *                                  room she solved, or the violet room she
+ *                                  walked into (sealed).
+ *   `readby-<fragmentId>-<cardId>` the room whose solve MADE IT OUT. Only a
+ *                                  sealed page ever gets one, and it is never
+ *                                  the same event as the arrival.
+ *
+ * Flags, not a save field, for exactly the reason legibility is flags (see the
+ * note above `sealedFragmentFlag`): `VolumeState` is frozen, they are
+ * write-once, and a save that predates this round simply reports `null` and
+ * prints nothing rather than inventing a room.
+ *
+ * ── THE ONE WAY THIS ENCODING COULD LIE ────────────────────────────────────
+ * The reader takes the fragment id and returns whatever follows it, so a
+ * volume authoring two fragment ids where one is the other's dash-prefix
+ * (`v1-e1` and `v1-e1-b`) could hand back a card id that is really the tail of
+ * a sibling's flag. That is a property of the CONTENT, so it is gated as one:
+ * `tests/attribution.test.ts` refuses any shipped volume whose fragment ids
+ * are dash-prefixes of one another. `content:verify` cannot see it — the ids
+ * are legal on their own — which is why the check is stated here and enforced
+ * there rather than assumed.
+ */
+export function pageFromRoomFlag(volumeId: string, fragmentId: string, cardId: string): string {
+  return `vol.${volumeId}.from-${fragmentId}-${cardId}`;
+}
+
+export function pageReadByRoomFlag(volumeId: string, fragmentId: string, cardId: string): string {
+  return `vol.${volumeId}.readby-${fragmentId}-${cardId}`;
+}
+
+function cardIdAfter(prefix: string, flags: Iterable<string>): string | null {
+  for (const f of flags) if (f.startsWith(prefix)) return f.slice(prefix.length) || null;
+  return null;
+}
+
+/** The card id of the room that put this page in her hands, or null. */
+export function pageFromRoom(
+  volumeId: string, fragmentId: string, flags: Iterable<string>,
+): string | null {
+  return cardIdAfter(`vol.${volumeId}.from-${fragmentId}-`, flags);
+}
+
+/** The card id of the room whose solve made this page out, or null. */
+export function pageReadByRoom(
+  volumeId: string, fragmentId: string, flags: Iterable<string>,
+): string | null {
+  return cardIdAfter(`vol.${volumeId}.readby-${fragmentId}-`, flags);
+}
+
 /**
  * How many sealed pages one solve makes out, by the room's row-band tier.
  * THE TIER SCALING (owner directive 4): "a tier-3 room near the top yields

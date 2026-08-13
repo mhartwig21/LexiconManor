@@ -78,14 +78,38 @@ rather than measured. Full account in `docs/THE_CLIMB.md` §1f.
   forgotten-word, cipher, crossword — the Word Web pays +2). It was repeated in three documents
   and four code comments.
 
-**AND THE CARD IS THE LEVER, NOT THE WAGE (round 46, the owner's steer).** *"Not one of three
-blind players entered a Gallery."* A puzzle card now prints **`+1 page`** beside its steps —
-the mystery's main supply line, `docs/COMPREHENSION.md`'s only [blocker] blind spot, and a live
-claim rather than a boast (`solveChannelPage` is one decision; the card asks it and the solve is
-paid out of it). Measured in `tests/word-room-face.test.ts`: a word room is outbid on its face by
-every card that asks nothing of her on **7.5%** of contested offers, from **11.3%** — and on
-**0.0%** where the clause is printed. The residue is the daily valve, not the card; the next
-lever is `decipherYield`, named in THE_CLIMB §1e.
+**~~AND THE CARD IS THE LEVER, NOT THE WAGE (round 46)~~ — OVERRULED BY THE OWNER ON 13 AUG,
+AND ROUND 49 ANSWERED IT THE OTHER WAY.** Round 46 printed **`+1 page`** on a puzzle card and
+measured a real win (a word room outbid on its face fell 11.3% → 7.5%, 0.0% where the clause
+printed). The ruling: *"I think we want to keep true to Blue Prince where certain clues about
+the benefits of rooms aren't immediately apparent. Saying +1 page feeds everything to the
+player. But when a page is revealed, the player has to be able to figure out — oh, this room
+provided me a page!"*
+
+**THE LINE IT DRAWS IS THE ROUND'S REAL PRODUCT, and it is not "say less":** the card states
+PRICES and RULES OF PLAY — a move's cost, a wrong guess's cost, what a solve pays back, how long
+the room asks for, which doors the plan leaves her — and never states WHAT A ROOM IS WORTH TO
+THE MYSTERY. Rounds 42–45 were about a player who could not audit her own counter and every one
+of those clauses stays. The page clause was on the other axis.
+
+So the clause is deleted and the burden moves to the moment of reward — which could not carry it,
+because **neither the seal nor the journal named a room**, which is exactly why
+`docs/COMPREHENSION.md`'s only [blocker] blind spot is the one it is. A page now remembers the
+room that produced it and says so twice: *"The Long Gallery gives up an engraving"* on the glass
+as it lands, *"Taken out of the Long Gallery."* on the filed page afterwards. A torn leaf names
+the violet room; the solve that makes it out credits the word room, so *"Taken out of the
+Archive, made out in the Darkroom."* Attributed per CARD, never per kind (the Gallery and the
+Long Gallery are one kind and two rooms), and nothing is invented — testimony from a parlor and
+every page in an older save print no line at all. Two write-once flag families, `docs/flags.md`.
+
+**THE ROUND-46 RATCHET IS RETIRED RATHER THAN RE-TUNED, and that is stated where it lived.**
+Under this ruling `outbid` SHOULD rise, so a tighter band would fail the build for obeying the
+owner and a looser one would be the quiet re-tune STATUS §3.7 names. `tests/word-room-face.test.ts`
+keeps the instrument (it prints the three face numbers every run) and now gates the RULING — no
+card prints a page clause, which would have been red on the previous commit. The replacement is
+**`npm run gate:attribution`**: real input at both phone sizes, verdicts on painted strings, and
+`--prove` drives all ten attribution checks red through the pre-round-49 call shape. Full
+account in `docs/THE_CLIMB.md` §1g.
 
 **AND THE MYSTERY'S ARC WAS NOT COLLAPSING BECAUSE A CLUE WAS SHARP (round 47).** A blind
 cold read reported LACUNA falling on day 1–2 "from one fragment of twenty-eight". Measured
@@ -183,6 +207,16 @@ It reaches the night by **driving a real day to a real dusk**, never by mounting
 **It has blocked three deploys.** Known flaw: `--prove` was seen non-deterministic once — worth
 fixing before trusting it blind.
 
+**1b-bis. `npm run gate:attribution`** (`tests/round49-attribution-live.mjs`, round 49) — **every
+page-granting event names the room that produced it, on the glass as it lands and in the journal
+afterwards.** Drives a real day at both sizes, dispatches the solve through `applyRoomEvents` (the
+one seam every adapter's solve travels) and reads `.mom__title` / `.jrn-card__whence`, never the
+store. Expected room names are parsed off `deck.ts` so the instrument cannot agree with the
+composer it audits. `--prove` re-runs every scenario through the pre-round-49 call shape and all
+ten attribution checks go red. Note its own lesson, learned the hard way in-file: an
+`elementFromPoint` ownership probe is the WRONG paint test for a seal over a playfield, which is
+`pointer-events: none` by design (round 15) — it would call every in-room reward invisible.
+
 **1b. `npm run test:prices`** (`tests/round45-prices-live.mjs`, round 45) — **no room may PRINT a
 number the ledger does not CHARGE.** Drives all seven rooms and the draft footer at both sizes and
 compares one PAINTED string against another: the price on the glass against how far the candle's
@@ -230,8 +264,9 @@ Rounds of ultracode subagents. **Critique and verification fan out in parallel; 
 STRICTLY SEQUENTIAL** — parallel writers in one checkout lost ten agents twice. Each builder owns
 distinct files, runs every gate, and commits its own work.
 
-Every builder runs: `tsc --noEmit` · `vitest run` (**1,463** baseline as of round 48) ·
-`content:verify` · `lint:clearance` · `build` · `gate:glass` (0 findings at both sizes).
+Every builder runs: `tsc --noEmit` · `vitest run` (**1,480** baseline as of round 49) ·
+`content:verify` · `lint:clearance` · `build` · `gate:glass` (0 findings at both sizes) ·
+`test:prices` · `gate:attribution` (both, and both `--prove` halves).
 
 **Playwright must use system Edge (`channel: msedge`)** — the browser download silently fails on
 this machine. ONE browser at a time. **Test 375×667 first** — nearly every defect found in August

@@ -28,18 +28,6 @@ export interface DraftCardStake {
   label: string;
 }
 
-/** What the card can only learn by asking the live game (round 46). */
-export interface DraftCardStakeOpts {
-  /**
-   * Would solving this room file a page in the journal right now? The store's
-   * `pageOnSolve` — the same `solveChannelPage` lookup the solve is paid out
-   * of, never a re-derivation of it. Omitted where no store is in reach, and
-   * the clause is simply not printed: the card may under-promise and may never
-   * over-promise.
-   */
-  pageOnSolve?: boolean;
-}
-
 /**
  * The economy line for a draft card at the target row's tier.
  * - puzzle rooms: "anchor · a long sit · +12 steps · +1 key on solve" — the
@@ -60,7 +48,6 @@ export interface DraftCardStakeOpts {
 export function draftCardStake(
   card: Pick<RoomCard, 'category' | 'puzzleKind'>,
   tier: Tier,
-  opts?: DraftCardStakeOpts,
 ): DraftCardStake | null {
   if (card.category === 'mystery') {
     return { size: null, label: '+1 sealed page' };
@@ -90,33 +77,38 @@ export function draftCardStake(
     // tables it is four — twistle, forgotten-word, cipher, crossword. The Word
     // Web pays +2.)
     // Pluralised off the number, like `moveCostLabel` beside it.
-    // ═══ ROUND 46 — THE CARD SAYS WHAT THE ROOM HANDS OVER, NOT ONLY WHAT IT
-    // PAYS ════════════════════════════════════════════════════════════════
+    // ═══ ROUND 49 — THE PAGE CLAUSE COMES OFF, ON THE OWNER'S RULING ═══════
     //
-    // THE OWNER, off the cold read: *"not one of three blind players entered a
-    // Gallery."* Two were offered one and declined, and the grader named why —
-    // the card advertises **+1** beside cards advertising **+5**. The payout is
-    // correct and wage-locked (a room is paid for the work it asks for, round
-    // 22), so the lever is the CARD: a utility room hands over a number and
-    // nothing else, while a word room hands over that number PLUS a page of the
-    // book the whole game is about, and the card printed only the axis on which
-    // the two are least comparable.
+    // Round 46 printed `+1 page` here, and it measured well: a word room outbid
+    // on its face by every card that asks nothing of her fell 11.3% → 7.5%, and
+    // to 0.0% wherever the clause printed. THE OWNER OVERRULED IT ON DESIGN
+    // GROUNDS, 13 Aug:
     //
-    // The page is also `docs/COMPREHENSION.md`'s single [blocker] blind spot —
-    // *"what solving a word game gives you toward the mystery… This is the
-    // mystery's main supply line and no player learned it"* — and this is the
-    // one surface where learning it changes a decision instead of a recital.
+    //   *"I think we want to keep true to Blue Prince where certain clues about
+    //    the benefits of rooms aren't immediately apparent. Saying +1 page feeds
+    //    everything to the player. But when a page is revealed, the player has
+    //    to be able to figure out — oh, this room provided me a page!"*
     //
-    // IT IS A LIVE CLAIM, NOT A BOAST. `opts.pageOnSolve` is
-    // `engine/volume.solveChannelPage` asked at this moment through the store
-    // (app/slices/journal.ts `pageOnSolve`) — the SAME lookup the solve is paid
-    // out of, so the clause appears exactly when the page would land and goes
-    // quiet the rest of the day. A second Gallery after the day's lintel page
-    // is filed says nothing, because it hands over nothing; the Study, which
-    // carries its own channel, still says it. Callers that cannot ask (a bare
-    // render, the cabinet, a probe) pass nothing and get the round-45 face.
+    // He is right, and the line this file sits on is not "say less" — it is
+    // WHICH KIND OF THING IS SAID:
+    //
+    //   STATED, ALWAYS. What a move costs, what a solve pays back, what a
+    //   mistake costs, how long the room asks for, which doors the plan leaves
+    //   her. Prices and rules of play. A player who cannot audit her own
+    //   counter is being cheated, and that was the whole of rounds 42–45. Every
+    //   clause still on this line is one of those.
+    //
+    //   NOT STATED, EVER. What a room is WORTH TO THE MYSTERY. That is the
+    //   discovery the game is made of, and `+1 page` handed her the rule that
+    //   word rooms feed the book before she had ever drafted one.
+    //
+    // The burden moves to the MOMENT OF REWARD, which is where Blue Prince puts
+    // it: a page now names the room that produced it, on the seal as it lands
+    // and in the journal for ever after (engine/volume.ts `pageFromRoomFlag`,
+    // ui/moment/moments.ts, ui/journal/JournalView.tsx). She is told nothing and
+    // can work it out after one or two sightings — and can then choose the room
+    // on purpose, which is the only version of this knowledge worth having.
     const parts = [`+${payout} step${payout === 1 ? '' : 's'}`];
-    if (opts?.pageOnSolve) parts.push('+1 page');
     if (keys > 0) parts.push(`+${keys} key${keys === 1 ? '' : 's'}`);
     // ═══ ROUND 33 — THE SIZE WORD COMES OFF (COMPREHENSION 33, fix 5) ═══════
     // Two blind testers, unprompted, named "anchor · micro · standard · common

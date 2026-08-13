@@ -44,7 +44,14 @@ const ctx: MomentContext = {
     return f ? { kind: f.kind, text: f.text, interpretation: f.interpretation, sealed: false } : null;
   },
   answerFor: (id) => (id === volume.id ? volume.answer : null),
+  // ROUND 49 — the room that produced the page. Null by default, so every case
+  // written before this round still exercises the unattributed copy; the cases
+  // that are ABOUT attribution set it (`withRoom` below).
+  roomFor: () => null,
 };
+
+/** The same fixture with one room recorded against every page. */
+const withRoom = (room: string): MomentContext => ({ ...ctx, roomFor: () => room });
 
 // ---------------------------------------------------------------------------
 // 1. The queue — two grants in quick succession both get seen (AAA 11.13)
@@ -587,6 +594,7 @@ describe('a moment names a place, and can take her there', () => {
   const ctx: MomentContext = {
     fragment: () => ({ kind: 'testimony', text: 'Six candles.', sealed: false }),
     answerFor: () => 'lacuna',
+    roomFor: () => null,
   };
 
   it('routes every seal whose trace is a screen', () => {

@@ -537,6 +537,18 @@
   align-items: center;
   gap: 0.45rem;
 }
+/* ROUND 49 — the provenance line (ui/journal/whence.ts). Quieter than the
+   source it sits under and quieter than the document it annotates: it is a
+   fact about the page, not part of it. Wraps as ordinary prose — no flex row,
+   because room names run to "The Counting House" and a nowrap row on a 375px
+   phone is how a sentence leaves the glass. */
+.jrn-card__whence {
+  margin-top: 0.2rem;
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--ink-faint);
+}
+.jrn-poem__line .jrn-card__whence { font-style: normal; }
 .jrn-card__text { margin: 0.35rem 0 0; }
 .jrn-card__sealednote {
   margin-top: 0.4rem;

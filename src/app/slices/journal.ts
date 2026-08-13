@@ -21,8 +21,8 @@ import type { SaveV2 } from '../save';
 import {
   advanceVolume, applyGuess, decipherYield, findLetter,
   fragmentsToDecipher, legibleDayFlag, legibleFragmentFlag, letterGrants, nextFragmentForRoom,
-  normalizeGuess, openedLetterFlag, reservedTestimonyIds, sealedFragmentFlag, sealedFragmentIds,
-  solveChannelFor, solveChannelPage, solvedFlag,
+  normalizeGuess, openedLetterFlag, pageFromRoomFlag, pageReadByRoomFlag, reservedTestimonyIds,
+  sealedFragmentFlag, sealedFragmentIds, solveChannelFor, solveChannelPage, solvedFlag,
 } from '../../engine/volume';
 import { glancedFragmentFlag, nextUninterpreted, viewedFragmentFlag } from '../../engine/journal';
 import { atSanctumDoor, canAddressSanctum } from '../../engine/manor/grid';
@@ -45,7 +45,7 @@ export interface JournalSlice {
    */
   fileFragment(
     fragmentId: string,
-    opts?: { sealed?: boolean; via?: SolveChannelId },
+    opts?: { sealed?: boolean; via?: SolveChannelId; fromCardId?: string },
   ): void;
   /** Ellery's affinity service. Accepts a fragment id or 'next' (the first
    *  found-but-uninterpreted fragment) — DialogueEffects.interpretFragment. */
@@ -99,7 +99,7 @@ export interface JournalSlice {
    * unfound revealOrder — AAA 4.14). Returns the filed fragment id for the
    * "found a fragment" moment, or null when the volume is fully filed.
    */
-  collectFragmentForRoom(category: RoomCategory): string | null;
+  collectFragmentForRoom(category: RoomCategory, fromCardId?: string): string | null;
   /**
    * A7 ADDITIVE — THE SOLVE CHANNEL (AAA 4.14 / 11.17, MANOR_DESIGN §6).
    *
@@ -114,25 +114,7 @@ export interface JournalSlice {
    * should not have to fake a store notification (the meta slice's precedent).
    * In normal play NOTHING calls it by hand: the spine watcher below does.
    */
-  collectFragmentForSolve(kind: RoomPuzzleKind): string | null;
-  /**
-   * A7 ADDITIVE (round 46) — WOULD SOLVING THIS KIND OF ROOM FILE A PAGE, NOW?
-   *
-   * The draft card's claim (`draftCardStake`'s `+1 page` clause,
-   * ui/blueprint/DraftModal.tsx). It is `collectFragmentForSolve` asked without
-   * being paid: the same volume, the same channel, the same daily valve, the
-   * same reserved testimony — `engine/volume.solveChannelPage` is the single
-   * decision and both sides call it. So the card cannot advertise a page the
-   * solve declines to hand over, which is the round-45 rule (*"no room may
-   * PRINT a number the ledger does not CHARGE"*) applied to the mystery's own
-   * currency.
-   *
-   * It answers per KIND rather than per room because the Study has a channel of
-   * its own: on an evening that has already filed a lintel engraving, the Study
-   * card still says `+1 page` and the Library card does not, and that is a real
-   * difference between two cards in the same offer.
-   */
-  pageOnSolve(kind: RoomPuzzleKind): boolean;
+  collectFragmentForSolve(kind: RoomPuzzleKind, fromCardId?: string): string | null;
   /**
    * A7 ADDITIVE — THE DECIPHER CHANNEL (round 10, the owner's "solving needs
    * to matter"). Make out up to `count` of the sealed pages, oldest first on
@@ -142,7 +124,7 @@ export interface JournalSlice {
    * the letters' seals and the journal's viewed markers, so the state survives
    * the day roll and a force-quit with no save-schema change.
    */
-  decipherFragments(count: number): string[];
+  decipherFragments(count: number, fromCardId?: string): string[];
   /**
    * A7 ADDITIVE — everything one solved room pays the mystery, in one call:
    * the channel fragment (legible, because she solved for it), the tier-scaled
@@ -154,7 +136,7 @@ export interface JournalSlice {
    * is: AAA 11.17 wants a test that drives the award path. In normal play
    * nothing calls it by hand — the spine watcher below does, off `room-solved`.
    */
-  creditSolve(kind: RoomPuzzleKind, tier: Tier, perfect: boolean): void;
+  creditSolve(kind: RoomPuzzleKind, tier: Tier, perfect: boolean, cellKey?: string): void;
   /**
    * A7 ADDITIVE (consumed by the Sanctum epilogue, after the ceremony):
    * roll the manor onto the next authored volume, if one exists. The closed
@@ -201,18 +183,25 @@ export const createJournalSlice =
       if (last?.event.type !== 'room-solved') return;
       // Round 10: the same spine event now also makes out the sealed backlog
       // and pays a perfect solve its free reading — see `creditSolve`.
-      get().creditSolve(last.event.kind, last.event.tier, last.event.perfect);
+      // Round 49: `cellKey` rides along so every page this solve pays can
+      // remember WHICH room paid it. It is already on the event — the spine has
+      // carried it since round 8 — so nothing new is emitted and no other
+      // agent's file moves.
+      get().creditSolve(
+        last.event.kind, last.event.tier, last.event.perfect, last.event.cellKey,
+      );
     });
 
     /**
-     * ROUND 46 — THE PAGE A SOLVE WOULD FILE, ASKED WITHOUT PAYING IT.
+     * The page a solve files: `engine/volume.solveChannelPage` holds the valve
+     * and the stock together.
      *
-     * One decision, two callers: `collectFragmentForSolve` pays what this
-     * returns, and `pageOnSolve` is the draft card asking the same question
-     * before she spends a move on the door. `engine/volume.solveChannelPage`
-     * holds the valve and the stock together so neither side can hold half of
-     * it — the card promising a page the ledger declines is exactly round 45's
-     * defect in the mystery's currency.
+     * ROUND 46 gave it a second caller — the draft card's `+1 page` clause,
+     * asking without paying. ROUND 49 TOOK THAT CALLER AWAY on the owner's
+     * ruling: the card states prices and rules of play, never what a room is
+     * worth to the mystery. What replaced it is downstream, in `fileFragment`
+     * and the moment layer — the page still arrives, and now it says which room
+     * sent it.
      */
     const pageForSolve = (kind: RoomPuzzleKind) => {
       const v = get().volume;
@@ -244,6 +233,14 @@ export const createJournalSlice =
       // moment layer, the journal) already sees the page in the state it
       // actually arrived in.
       if (opts?.sealed) get().setFlag(sealedFragmentFlag(v.volumeId, fragmentId));
+      // ROUND 49 — and WHICH ROOM handed it over, for the same reason and one
+      // line earlier than it is read. The moment layer builds the seal off this
+      // flag the instant `fragment-found` lands, so a room stamped after the
+      // event would announce an anonymous page and then quietly become
+      // attributable in the journal an hour later.
+      if (opts?.fromCardId) {
+        get().setFlag(pageFromRoomFlag(v.volumeId, fragmentId, opts.fromCardId));
+      }
       // ROUND 13 (AAA 4.14 blocker): the pity floor counts what she can READ.
       // A sealed page taught her nothing, so it must not reset the drought —
       // it was resetting it, which switched the mercy channel off for exactly
@@ -412,7 +409,7 @@ export const createJournalSlice =
       }
     },
 
-    collectFragmentForRoom: (category) => {
+    collectFragmentForRoom: (category, fromCardId) => {
       const v = get().volume;
       const content = getVolumeContent(v.volumeId);
       if (!content) return null;
@@ -433,11 +430,11 @@ export const createJournalSlice =
       // it arrives UNDECIPHERED. Walking into the Archive and walking out
       // still leaves her holding the leaf; it just does not speak until she
       // finishes a word game. (`decipherFragments` is the other half.)
-      get().fileFragment(frag.id, { sealed: true });
+      get().fileFragment(frag.id, { sealed: true, ...(fromCardId ? { fromCardId } : {}) });
       return frag.id;
     },
 
-    decipherFragments: (count) => {
+    decipherFragments: (count, fromCardId) => {
       const v = get().volume;
       const content = getVolumeContent(v.volumeId);
       if (!content) return [];
@@ -445,7 +442,23 @@ export const createJournalSlice =
       if (sealedIds.size === 0) return [];
       const ids = fragmentsToDecipher(content, v, sealedIds, count);
       if (ids.length === 0) return ids;
-      for (const id of ids) get().setFlag(legibleFragmentFlag(v.volumeId, id));
+      for (const id of ids) {
+        // ROUND 49 — THE ROOM FIRST, THE LEGIBILITY SECOND, AND THE ORDER IS
+        // LOAD-BEARING. The moment layer announces a made-out page by DIFFING
+        // the `legible-` flag set (ui/moment/watch.ts — `decipherFragments`
+        // emits no spine event the seal can hang on), and every `setFlag`
+        // notifies the store. Stamp the room after the legibility and the
+        // watcher wakes on a page whose room is not written yet: the seal says
+        // "Two pages made out" with nobody's name on it, and the attribution
+        // appears in the journal a beat later, on the one surface where it was
+        // never the teachable instant. Same rule as `sealed` in `fileFragment`.
+        //
+        // Deliberately a SECOND family from `from-`: a torn leaf carried out of
+        // the Archive and made out in the Darkroom has two rooms in its history
+        // and they teach two different rules.
+        if (fromCardId) get().setFlag(pageReadByRoomFlag(v.volumeId, id, fromCardId));
+        get().setFlag(legibleFragmentFlag(v.volumeId, id));
+      }
       // The other half of the round-13 pity fix: making a page out IS learning
       // something, so it marks the day even though nothing new was filed.
       get().setFlag(legibleDayFlag(v.volumeId, get().day?.day ?? v.day));
@@ -461,15 +474,22 @@ export const createJournalSlice =
       return ids;
     },
 
-    creditSolve: (kind, tier, perfect) => {
+    creditSolve: (kind, tier, perfect, cellKey) => {
+      // ROUND 49 — WHOSE SOLVE THIS IS, resolved once for both payments below.
+      // Read off the manor at `cellKey`, which is the room she is standing in:
+      // the card ID, not the kind, because "The Long Gallery" and "The Gallery"
+      // are two cards of one kind and she chose one of them by name. A caller
+      // with no cell (a lifecycle test, a scripted solve) attributes nothing
+      // rather than guessing — an anonymous page is honest, a wrong room is not.
+      const fromCardId = cellKey ? get().manor?.rooms[cellKey]?.cardId : undefined;
       // 1. The room's own channel fragment — legible, because she solved for
       //    it (the Study a definition line, every other room a lintel
       //    engraving; one per channel per day, valved off the spine).
-      get().collectFragmentForSolve(kind);
+      get().collectFragmentForSolve(kind, fromCardId);
       // 2. The sealed backlog: tier scales the yield (1 / 2 / 3), so a tier-3
       //    room near the top is worth three ground-floor ones in mystery
       //    material — engine/volume.ts DECIPHER_YIELD_BY_TIER.
-      get().decipherFragments(decipherYield(tier));
+      get().decipherFragments(decipherYield(tier), fromCardId);
       // 3. A PERFECT solve buys the reading Ellery charges affinity for
       //    (AAA 5.7's service tier, granted free): the next made-out line she
       //    has not yet annotated. A no-op when there is nothing legible left
@@ -477,14 +497,15 @@ export const createJournalSlice =
       if (perfect) get().interpretFragment('next');
     },
 
-    collectFragmentForSolve: (kind) => {
+    collectFragmentForSolve: (kind, fromCardId) => {
       const frag = pageForSolve(kind);
       if (!frag) return null;
-      get().fileFragment(frag.id, { via: solveChannelFor(kind).id });
+      get().fileFragment(frag.id, {
+        via: solveChannelFor(kind).id,
+        ...(fromCardId ? { fromCardId } : {}),
+      });
       return frag.id;
     },
-
-    pageOnSolve: (kind) => pageForSolve(kind) !== null,
 
     beginNextVolume: () => {
       const v = get().volume;

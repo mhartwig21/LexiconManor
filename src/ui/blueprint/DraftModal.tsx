@@ -18,10 +18,8 @@
  * wrong at three doors out of four.
  */
 
-import { useMemo } from 'react';
 import type { PointerEvent } from 'react';
 import type { Dir, DraftOffer, ManorState, RoomCard } from '../../engine/types';
-import type { RoomPuzzleKind } from '../../engine/rooms/room-puzzle';
 import {
   isSanctumLanding, layoutFor, neighbor, onwardDoors, opensOntoSanctum, opposite,
   orientLayout, resolveDoors, rowTier, sealsItself,
@@ -135,28 +133,13 @@ export default function DraftModal({
   // never as a derived object — see BlueprintSheet for what a fresh object per
   // render costs. `rememberedWings` is pure and cheap over 45-ish records.
   const dayRecords = useManorStore((s) => s.chronicles.dayRecords);
-  // ── THE PAGE CLAUSE (round 46) ──────────────────────────────────────────
-  // The action reference is stable, so the two primitives beside it are what
-  // actually make this component honest: a page filed while the sheet is open
-  // (it cannot be, today — but a future flow could) must take the clause off
-  // the card, and a selector on a derived object would churn a fresh one every
-  // render, which is the mistake BlueprintSheet's note above already records.
-  const pageOnSolve = useManorStore((s) => s.pageOnSolve);
-  const pagesFiled = useManorStore((s) => s.volume.foundFragmentIds.length);
-  const eventCount = useManorStore((s) => s.recentEvents.length);
-  const pageForKind = useMemo(() => {
-    const seen = new Map<string, boolean>();
-    return (kind: RoomPuzzleKind): boolean => {
-      const hit = seen.get(kind);
-      if (hit !== undefined) return hit;
-      const answer = pageOnSolve(kind);
-      seen.set(kind, answer);
-      return answer;
-    };
-    // `pagesFiled`/`eventCount` are deps on purpose and are not read in the
-    // body: they are the primitives that make the memo (and this component)
-    // re-run when the journal moves under it.
-  }, [pageOnSolve, pagesFiled, eventCount]);
+  // ── ROUND 49: THE PAGE CLAUSE IS GONE, AND SO IS ITS WIRING ─────────────
+  // Round 46 asked the store `pageOnSolve` per kind and printed `+1 page`. The
+  // owner overruled it (see `economy/preview.ts` for the ruling in full): the
+  // card states prices and rules of play and never what a room is worth to the
+  // mystery. The three selectors that fed it are deleted rather than left
+  // reading — a live subscription with no reader is how a component quietly
+  // re-renders for a clause nobody prints.
   const wing = target ? wingOf(target.col) : null;
   const wingCharacter = wing ? rememberedWings(dayRecords)[wing] : undefined;
   // She only ever gets to see this modal on a padlocked door if she already
@@ -345,13 +328,7 @@ export default function DraftModal({
                     <span className="bp-card__doors">{doorPlanWords(onward(card))}</span>
                   )}
                   {(() => {
-                    // ROUND 46: `pageOnSolve` is asked of the store, per KIND,
-                    // because the Study's channel is not the lintel's — on an
-                    // evening that has already filed an engraving, the Study
-                    // card still promises a page and the Library card does not.
-                    const stake = draftCardStake(card, tier, {
-                      pageOnSolve: card.puzzleKind ? pageForKind(card.puzzleKind) : false,
-                    });
+                    const stake = draftCardStake(card, tier);
                     return stake ? <span className="bp-card__stake">{stake.label}</span> : null;
                   })()}
                   {/* THE SANCTUM STAMP (round 13). Double-encoded per AAA 6.3:

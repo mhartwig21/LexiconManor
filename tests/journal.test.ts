@@ -14,8 +14,8 @@ import { sanctumAnswered } from '../src/engine/manor/tube';
 import { ENTRANCE_CELL } from '../src/engine/types';
 import {
   decipherYield, freshVolumeState, fragmentsToDecipher, FRAGMENTS_TO_DEDUCE, legibleDayFlag,
-  legibleDroughtDays, legibleFragmentFlag, openedLetterFlag, sealedFragmentFlag,
-  sealedFragmentIds, solvedFlag,
+  legibleDroughtDays, legibleFragmentFlag, openedLetterFlag, pageFromRoom, pageReadByRoom,
+  sealedFragmentFlag, sealedFragmentIds, solvedFlag,
   DECIPHER_YIELD_BY_TIER,
   type VolumeContent,
 } from '../src/engine/volume';
@@ -1228,45 +1228,105 @@ describe('solving matters — the live channel, end to end', () => {
   });
 
   /**
-   * ═══ ROUND 46 — THE CARD'S PROMISE, HELD TO THE PAYER THAT KEEPS IT ═══════
+   * ═══ ROUND 49 — THE PAGE REMEMBERS WHICH ROOM PAID FOR IT ════════════════
    *
-   * The draft card now prints `+1 page` on a word room whose channel is open
-   * (`draftCardStake`'s page clause, off the store's `pageOnSolve`). Round 45's
-   * rule, in the mystery's own currency: **no room may PRINT something the
-   * ledger does not HAND OVER.** So the claim is not checked against the
-   * predicate that makes it — that is where both halves of a mispriced control
-   * agree — it is checked against the PAYMENT, by solving the room and counting
-   * what the volume actually gained.
+   * The owner's ruling of 13 Aug took `+1 page` off the draft card: the game
+   * states prices and rules of play, never what a room is worth to the mystery.
+   * Round 46's two tests went with the clause they held — `pageOnSolve` was the
+   * card's predicate and had no other caller — and what replaces them is the
+   * obligation the ruling's second half creates: *"when a page is revealed, the
+   * player has to be able to figure out — oh, this room provided me a page!"*
+   *
+   * The model half of that is here. A page filed by a solve carries the CARD
+   * she chose, not the puzzle KIND: the Gallery and the Long Gallery are one
+   * kind and two rooms, and a seal saying "the Gallery" over a Long Gallery
+   * would teach her the wrong room to draft. Held against the flags the journal
+   * and the moment layer both read, never against the writer that set them.
    */
-  it('never promises a page the solve declines to file (round 46)', () => {
-    const answered: boolean[] = [];
-    const paid: boolean[] = [];
-    const ask = (kind: 'twistle' | 'forgotten-word') => {
-      const before = useManorStore.getState().volume.foundFragmentIds.length;
-      answered.push(useManorStore.getState().pageOnSolve(kind));
-      useManorStore.getState().creditSolve(kind, 1, false);
-      paid.push(useManorStore.getState().volume.foundFragmentIds.length > before);
-    };
-    // Four solves across one day: a lintel room twice (the valve shuts after
-    // the first) and the Study twice (its own channel, so the first still pays
-    // even though the lintel has already gone).
-    ask('twistle');
-    ask('twistle');
-    ask('forgotten-word');
-    ask('forgotten-word');
-    expect(answered).toEqual([true, false, true, false]);
-    expect(paid).toEqual(answered);
+  const placeRoom = (key: string, cardId: string) => {
+    const m = useManorStore.getState().manor!;
+    useManorStore.setState({
+      manor: {
+        ...m,
+        rooms: {
+          ...m.rooms,
+          [key]: {
+            cardId, cell: { col: 0, row: 0 }, doors: ['N'], solved: true, kind: 'twistle',
+          } as PlacedRoom,
+        },
+      },
+    });
+  };
 
-    // …and the next day both channels are open again, on the same volume.
+  it('stamps the room that paid on every page a solve files (round 49)', () => {
+    placeRoom('4,4', 'long-gallery');
+    placeRoom('3,3', 'study');
+    const filed = () => useManorStore.getState().volume.foundFragmentIds.length;
+    const paid: boolean[] = [];
+    const ask = (kind: 'twistle' | 'forgotten-word', key: string) => {
+      const before = filed();
+      useManorStore.getState().creditSolve(kind, 1, false, key);
+      paid.push(filed() > before);
+    };
+    // The valve is unchanged: a lintel room twice (shut after the first) and
+    // the Study twice (its own channel, so its first still pays).
+    ask('twistle', '4,4');
+    ask('twistle', '4,4');
+    ask('forgotten-word', '3,3');
+    ask('forgotten-word', '3,3');
+    expect(paid).toEqual([true, false, true, false]);
+
+    const flags = useManorStore.getState().flags;
+    // v1-d1 leads the lintel channel (revealOrder 1, labelled 'lintel' even
+    // though it is a definition line — REVIEW_AA 5.1's re-route); v1-d3 is the
+    // Study's own first line.
+    expect(pageFromRoom(volume.id, 'v1-d1', flags)).toBe('long-gallery');
+    expect(pageFromRoom(volume.id, 'v1-d3', flags)).toBe('study');
+    // …and the new flags are legal under docs/flags.md like every other vol.*.
+    for (const f of flags) expect(FLAG_REGEX.test(f), f).toBe(true);
+
+    // The next day both channels open again, and the room stamped is the room
+    // she was actually in — a different Gallery this time.
     useManorStore.setState({ day: { day: 2, phase: 'exploring', daySeed: 2, activeRoom: null } });
-    expect(useManorStore.getState().pageOnSolve('twistle')).toBe(true);
-    expect(useManorStore.getState().pageOnSolve('forgotten-word')).toBe(true);
+    placeRoom('4,4', 'gallery');
+    useManorStore.getState().creditSolve('twistle', 1, false, '4,4');
+    expect(pageFromRoom(volume.id, 'v1-e1', useManorStore.getState().flags)).toBe('gallery');
   });
 
-  it('goes quiet when the channel is spent out, not just valved (round 46)', () => {
-    // A volume with every lintel page already found says NO on a fresh day —
-    // the card must not promise a page out of an empty channel. Driven by
-    // filing the channel's whole stock rather than by faking the predicate.
+  it('credits the DECIPHERING room, which is not the room that filed the leaf', () => {
+    // The whole reason there are two flag families. She walks into a violet
+    // room and carries out a torn leaf; a word game two rooms later makes it
+    // out. Crediting the Archive for the reading would leave exactly the rule
+    // COMPREHENSION says nobody learned still untaught.
+    useManorStore.getState().collectFragmentForRoom('mystery', 'archive');
+    placeRoom('4,4', 'darkroom');
+    useManorStore.getState().creditSolve('cipher', 1, false, '4,4');
+    const flags = useManorStore.getState().flags;
+    expect(pageFromRoom(volume.id, 'v1-d1', flags)).toBe('archive');
+    expect(pageReadByRoom(volume.id, 'v1-d1', flags)).toBe('darkroom');
+    // The engraving the Darkroom's OWN channel filed is credited to it once,
+    // as an arrival — it was never sealed, so nothing made it out.
+    expect(pageFromRoom(volume.id, 'v1-e1', flags)).toBe('darkroom');
+    expect(pageReadByRoom(volume.id, 'v1-e1', flags)).toBeNull();
+  });
+
+  it('attributes nothing rather than guessing when no room is in reach', () => {
+    // A scripted solve, a lifecycle test, a save imported mid-campaign: no
+    // cell, so no room. An anonymous page is honest; an invented one is not.
+    useManorStore.getState().creditSolve('twistle', 1, false);
+    expect(useManorStore.getState().volume.foundFragmentIds).toContain('v1-d1');
+    expect(pageFromRoom(volume.id, 'v1-d1', useManorStore.getState().flags)).toBeNull();
+    // …and a cellKey pointing at no room is the same case, not a crash.
+    useManorStore.setState({ recentEvents: [] });
+    useManorStore.getState().creditSolve('twistle', 1, false, '9,9');
+    expect(useManorStore.getState().volume.foundFragmentIds).toContain('v1-e1');
+    expect(pageFromRoom(volume.id, 'v1-e1', useManorStore.getState().flags)).toBeNull();
+  });
+
+  it('goes quiet when the channel is spent out, not just valved', () => {
+    // A volume with every lintel page already found pays nothing on a fresh
+    // day. Driven by filing the channel's whole stock rather than by asking a
+    // predicate — the predicate is where both halves of a wrong answer agree.
     const lintels = volume.fragments
       .filter((f) => (f as { channel?: string }).channel === 'lintel'
         || (f.sourceRoomCategory === 'puzzle' && f.kind === 'engraving'))
@@ -1274,7 +1334,6 @@ describe('solving matters — the live channel, end to end', () => {
     expect(lintels.length).toBeGreaterThan(4);
     for (const id of lintels) useManorStore.getState().fileFragment(id);
     useManorStore.setState({ recentEvents: [] });   // a fresh day, valve open
-    expect(useManorStore.getState().pageOnSolve('twistle')).toBe(false);
     const before = useManorStore.getState().volume.foundFragmentIds.length;
     useManorStore.getState().creditSolve('twistle', 1, false);
     expect(useManorStore.getState().volume.foundFragmentIds.length).toBe(before);
