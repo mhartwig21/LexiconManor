@@ -17,6 +17,7 @@ import {
   anchorIsFifthMember, anchorOf, canon, familyOf, isPlainish, satisfactionOf,
   typeOfTheme, visibilityOf,
 } from '../content/generate-wordweb';
+import { mixOf } from '../content/lib/wordweb-register';
 
 /**
  * Guards over the committed content bundles: every shipped puzzle must be
@@ -419,12 +420,35 @@ describe('word web bundle', () => {
    * English for the way-in floor — and the downward half is an architect's
    * ruling on AAA_BAR 2.9, not a generator change.
    */
-  it('the shelf is not one recipe — boards ship at three different wordplay counts', () => {
-    const shape = new Map<number, number>();
+  /**
+   * ROUND 51 — THE CLAIM IS THE SAME AND THE AXIS MOVED, BECAUSE THE OLD ONE
+   * CAN NO LONGER COME OUT ANY OTHER WAY.
+   *
+   * This asked for three distinct WORDPLAY COUNTS across the shelf, and the
+   * three it used to find were 2, 3 and 4. A 4-wordplay board is a board with
+   * no category solved by knowing what the words mean, and round 51's register
+   * floor (`TIER_SPECS.minMeaning`) forbids exactly that — nine of them shipped
+   * at round 50 and the critic counted them as the complaint. So the count can
+   * only ever be {2, 3} now, and a gate whose failure is a RULING is not a
+   * gate; keeping it would have meant relitigating the floor to satisfy a
+   * variety check.
+   *
+   * What the check was actually about — *the shelf is not one recipe* — is
+   * re-asked one level up, on the REGISTER SIGNATURE: how many categories of a
+   * board are found by operating on letters, by searching English phrase-space,
+   * and by knowing what the words mean. That triple is a strictly finer
+   * description of a board's shape than the wordplay count it replaces (the
+   * count is its first coordinate collapsed with its second), it survives the
+   * floor, and the shelf ships more than three distinct values of it.
+   */
+  it('the shelf is not one recipe — boards ship at three different register shapes', () => {
+    const shape = new Map<string, number>();
     for (const p of wordWeb) {
       const w = p.groups.filter((g) => typeOfTheme(g.theme) === 'wordplay').length;
-      shape.set(w, (shape.get(w) ?? 0) + 1);
       expect(w, `${p.id} — AAA 2.9 [BEAT] floor`).toBeGreaterThanOrEqual(2);
+      const mix = mixOf(p.groups, undefined);
+      const key = `${mix.counts.form}f/${mix.counts.phrase}p/${mix.counts.meaning}m`;
+      shape.set(key, (shape.get(key) ?? 0) + 1);
     }
     expect(shape.size, [...shape].sort().join(' ')).toBeGreaterThanOrEqual(3);
     for (const [, n] of shape) expect(n / wordWeb.length).toBeLessThanOrEqual(0.7);

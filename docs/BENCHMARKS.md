@@ -216,6 +216,55 @@ category and 101.25 s a worked one**, both inside the bands `WEB_CLOCK` publishe
 **No payout moves** (0.45 × 5.25 = 2.36, the +2 the room already paid) and the wage falls
 0.400 → 0.381 moves a minute at tier 2, interior to all four of AAA 4.10h's populations.
 
+### Round 51's finding — THE REGISTER MIX, and the number the room had never been asked for
+
+Everything above grades a board on how much it ARGUES (contested tiles, herring budget, the colour
+ladder). Nothing graded what it argues ABOUT, and Wyna Liu's boards are built on exactly that: one
+category is a list you know, the next is a trick you perform, and the tension between the two KINDS
+of thinking is the puzzle. Measured, the shelf had drifted to one kind.
+
+**THE REGISTER OF A CATEGORY IS WHAT A SOLVER MUST DO TO FIND IT**, and there are three:
+
+| register | the operation | examples |
+|---|---|---|
+| MEANING | know what the words MEAN; nothing is done to the string | `Things a Housekeeper Counts`, `Kinds of Cloud`, `Greek Gods` |
+| PHRASE | know what the words COMBINE WITH — a search of English phrase-space | `___ FIRE`, `Can Precede "KEEPER"` |
+| FORM | operate on the LETTERS or the SOUNDS | `Contains "TEN"`, `Anagrams of "LISTEN"`, `Silent "N"` |
+
+The distinction between the last two is not new here — round 13's `LETTER_MECHANIC_FAMILIES` makes
+it in prose (*"solving `Contains "TEN"` is one skill applied identically every time; solving
+`___ BAR` is a search of English"*) — but nothing counted it, so the shelf's own census called both
+"wordplay" and could not see a monoculture forming inside one of them.
+
+**THE ARITHMETIC THE FORMAT IMPLIES.** Three registers, four slots, and "at least two different
+kinds of thinking" therefore means **no register may hold more than half the board**: FORM ≤ 2,
+non-FORM ≥ 2, and at least one of those two MEANING — because `___ BAR` and `Contains "TEN"` are
+two ways of playing with the word and only a semantic category is about the world. Not one of those
+is a measured level rounded up.
+
+| measured on the shipped shelf | round 50 | round 51 |
+|---|---|---|
+| boards with no category read in English | 10 of 183 | **0 of 157** |
+| median FORM categories, t1 / t2 / t3 | 1 / 2 / 3 | 1 / 2 / 3 |
+| boards over the FORM cap | 40 (all at tier 3) | 38 (all at tier 3) |
+| …at tiers 1–2, where it is gated | 1 | **0** |
+| purple is a FORM category | 174/183 | 154/157 |
+
+**AND THE COLOUR LADDER WAS THE CAUSE OF THE THIRD ROW, not the editor.** `lateralOf` gave a
+MEANING category a ceiling of 0 + 1 + 1 + 2 = **4** and purple's floor is **5**, so plain English
+could not be the last colour on any board at any tier. The meaning axis is measured now — Zipf's
+meaning-frequency law read off the shipped corpus, `content/lib/core-vocabulary.ts` — and a
+core-word hand reaches 6, with an INTRINSIC ceiling of 4 that keeps the last colour something a
+board has to earn with traps rather than with vocabulary. The share it actually ships is the round's
+published debt (`docs/THE_CLIMB.md` §1i); the cause is `minSubtle`, which is an owner directive.
+
+**WHY THE INSTRUMENT CAN DISAGREE WITH THE SHELF.** MEANING is not the residual bucket
+`typeOfTheme` makes it: a category whose label carries a quoted token or a `___` is refused it
+outright, and a category whose four TILES share a substring, an edge, a doubled letter or a rhyme is
+refused it too, because a solver finds that group with the label covered up. The round-50 shelf is
+checked in as a fixture and read by the same instrument, which names one such category by hand
+(four tiles all containing BERRY) and reproduces every count above.
+
 ---
 
 ## 3. Wordle → benchmark for reveal juice, error states, daily ritual (all rooms)

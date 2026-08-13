@@ -202,6 +202,38 @@ so a ceiling with 0.49 minutes under it is not a band). Three day-share ceilings
 **retired rather than widened**, with the design requirement each stood in for gated in its
 place, and every replacement is proved red on `PROFILE_SKIPPER` in the suite.
 
+**AND THE LIBRARY WAS A WORDPLAY MONOCULTURE BECAUSE THE COLOUR LADDER WAS ENFORCING ONE
+(round 51).** The NYT-standards critic measured it — *"the median board is 3-of-4 wordplay, nine
+boards are 4-of-4 with no semantic category at all, purple is wordplay on 183 of 183 boards"* —
+and the round's instrument disagrees with the headline before it agrees with the complaint. Full
+account in `docs/THE_CLIMB.md` §1i, teardown in `docs/BENCHMARKS.md` §2.
+
+- **A CATEGORY'S REGISTER IS WHAT A SOLVER MUST DO TO FIND IT**, and there are three of them:
+  MEANING (know what the words mean), PHRASE (know what they combine with — `___ FIRE`), FORM
+  (operate on the letters or the sounds). `typeOfTheme` could not have found this: it files the
+  last two under one word and its `semantic` arm is a RESIDUAL BUCKET, so a label shape nobody
+  has written a rule for is counted as plain English. Counted by operation the round-50 median
+  board was **2-of-4 FORM, not 3-of-4** — and **tier 3 ran a median of 3 on 40 of its 52 boards**,
+  and **ten boards had no category at all solved by knowing what the words mean.**
+- **PURPLE WAS ARITHMETIC, NOT AN EDITORIAL HABIT.** `lateralOf` capped a plain-English category
+  at 0 + 1 + 1 + 2 = **4** against a purple floor of **5**, so nothing solvable in English could
+  be the last colour on any board at any tier. The meaning axis was a regex over the LABEL on the
+  one axis whose job is to be a fact about the TILES; it is a corpus reading now (Zipf's
+  meaning-frequency law, `CORE_RANK` = the shipped corpus's ten-per-million line at rank 9,052,
+  re-derived on every build).
+- **WHAT SHIPPED:** boards with no category read in English **10 → 0**; over the register cap
+  at tiers 1–2 **1 → 0**; contested tiles a median 2 at every tier and **58.5% → 59.2%**
+  inside Connections' band; 17 new pools (14 core-word predicate categories, 3 house pools) and
+  threads about the manor **22 → 27**.
+- **WHAT IT COST, published rather than absorbed:** the shelf is **183 → 157** boards (the price
+  of the floor — 60 boards a build were already leaving for want of a bank replacement), and
+  **two debts are pinned rather than paid**: tier 3 is still three quarters letter tricks (38 of 46,
+  and the SHARE rose because the tier shrank — capping the row fixes it and costs the tier-2
+  contested median, which round 51 was told not to give back), and **purple got worse, 95.1% →
+  98.1%**, because `minSubtle` and not the ladder now decides the last colour. Neither has a band
+  to widen: `npm run vitest tests/puzzles/wordweb-register.test.ts` gates the capability
+  structurally and prints both shares every run.
+
 ---
 
 ## 1. What the game is
@@ -220,7 +252,7 @@ Seven rooms, ~1,123 shipped puzzles, all solver-verified at build time:
 | The Counting House | Sudoku | 120 | **yes** — t1 = NYT Medium, t2 = NYT Hard exactly |
 | The Linen Closet | Acrostic-like sparse grid + the hem | 76 | **yes** |
 | The Gallery | Twistle (word search) | 210 | **yes**, on section 8's two rules |
-| The Library | Word Web (Connections) | 183 | no — median 2 contested tiles, wants 2–4 |
+| The Library | Word Web (Connections) | 157 | no — median 2 contested tiles (wants 2–4); tier 3 still 3-of-4 letter tricks |
 | The Darkroom | Substitution cipher | 121 | no |
 
 **Five of seven, up from two in early August.** The three PROTECTED rooms are the Conservatory, the
@@ -303,7 +335,7 @@ Rounds of ultracode subagents. **Critique and verification fan out in parallel; 
 STRICTLY SEQUENTIAL** — parallel writers in one checkout lost ten agents twice. Each builder owns
 distinct files, runs every gate, and commits its own work.
 
-Every builder runs: `tsc --noEmit` · `vitest run` (**1,483** baseline as of round 50) ·
+Every builder runs: `tsc --noEmit` · `vitest run` (**1,500** baseline as of round 51) ·
 `content:verify` · `lint:clearance` · `build` · `gate:glass` (0 findings at both sizes) ·
 `test:prices` · `gate:attribution` (both, and both `--prove` halves).
 

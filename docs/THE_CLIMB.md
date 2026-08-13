@@ -852,3 +852,130 @@ Two rules from this project's own history apply hard here:
     stamp into the door-plan line (**frozen by ruling 1**) or printing the answer once instead
     of three times (**contradicts round 13**). The glass gate walks the scene, prints the
     number every run, and still bounds it. **This one is the owner's.**
+
+
+---
+
+## 1i. The Library was a wordplay monoculture, and the ladder was enforcing it — round 51
+
+**THE NYT-STANDARDS CRITIC, MEASURED:**
+
+> *"THE MEDIAN BOARD IS 3-OF-4 WORDPLAY. Nine boards are 4-of-4 with NO semantic category at
+>  all. PURPLE IS WORDPLAY ON 183 OF 183 BOARDS… A real Connections board mixes registers:
+>  one category is 'things a housekeeper counts', another is 'words hiding a smaller word',
+>  and the tension between those two KINDS of thinking is the puzzle. Ours is a wordplay
+>  monoculture with a semantic garnish, so by week two the player is running one procedure
+>  over and over."*
+
+### The instrument first, because the old one could not have found this
+
+`typeOfTheme` sorts a category into `semantic` / `trivia` / `wordplay` with eleven regexes and
+**a residual bucket** — `return 'semantic'` catches everything none of them matched — so a label
+shape nobody has written a rule for is silently counted as plain English. It also files
+`___ FIRE` and `Contains "TEN"` under one word, and those are not one kind of thinking:
+`wordweb-ladder.ts` has said so since round 13 (*"solving `Contains "TEN"` is one skill applied
+identically every time; solving `___ BAR` is a search of English"*).
+
+`content/lib/wordweb-register.ts` asks what a solver must DO. **MEANING** — know what the words
+mean. **PHRASE** — know what they combine with. **FORM** — operate on the letters or the sounds.
+MEANING is not a default: it is a verdict that survives two challenges, either of which turns a
+category into a finding. `UNREADABLE` refuses it to any label carrying a quoted token or a `___`
+(the guard for the family rule nobody has written yet). `CONTAMINATED` refuses it when all four
+TILES share a substring, an edge, a doubled letter or a rhyme — because a solver finds that group
+with the label covered up, whatever it is called.
+
+**IT DISAGREES WITH THE CRITIC FIRST.** Counted this way the round-50 median board was **2-of-4
+FORM, not 3-of-4**: the third "wordplay" category is a compound frame, and a frame is a search of
+English rather than a letter trick. What is true, and worse than the headline, is where the
+monoculture actually concentrated — **tier 3 ran a median of 3 letter tricks against one other
+category, on 40 of its 52 boards** — and **ten boards carried NO category at all that is solved by
+knowing what the words mean.**
+
+### Purple was not an editorial habit. It was arithmetic.
+
+`lateralOf` scores a category on four axes and the ladder puts purple's floor at 5. A category
+solved by knowing what the words mean scored **0 reading + 1 surface + 1 meaning + 2 trap = 4**.
+
+**It was impossible for plain English to be the last colour, on any board, at any tier, whatever
+anybody authored.** The ladder was not describing the shelf, it was dictating it — and the meaning
+axis was doing it with a regex, `/^Things (That|You) / ? 1 : 0`, on the one axis whose whole job is
+to be a fact about the TILES.
+
+**What replaces it is a corpus reading, and it is Zipf's meaning-frequency law**
+(`content/lib/core-vocabulary.ts`): the commonest words carry the most senses, so four tiles drawn
+from core vocabulary cannot be a taxonomy of a narrow subject — narrow subjects are named by rarer
+words (CIRRUS, WENSLEYDALE, NUTHATCH) — and such a category is asking her to abandon each tile's
+dominant reading. `CORE_RANK` is where the shipped corpus drops below **ten occurrences per
+million**, the conventional lexicographic line for core vocabulary; it falls at rank **9,052**, and
+`assertCoreRank()` re-derives it from the corpus on every build so the constant cannot drift from
+its own definition. It can disagree with any label, and it does — the SAME category scores
+differently on different hands, which is the honest answer: `Things That Are Struck` dealt
+MATCH / CAMP / BARGAIN / DRUM redefines four everyday words, and dealt GONG / ANVIL / CHIME / DRUM
+is a list of things you hit.
+
+**The guard that keeps the capability from being a giveaway:** a plain-English category tops out at
+**4 INTRINSIC**, one under `FINISH_MIN`. So vocabulary alone never buys the last colour — only the
+board pulling against it does. That is what a Connections purple is.
+
+### What shipped, and what it cost
+
+| | round 50 | round 51 |
+|---|---|---|
+| boards with NO category read in English | **10** | **0** |
+| boards under two non-FORM categories | 41 | 38 — and **0 at tiers 1–2**, where it is gated (was 1) |
+| tier-1 / tier-2 / tier-3 median FORM categories | 1 / 2 / **3** | 1 / 2 / **3** |
+| contested tiles, median, at all three tiers | 2 | **2** |
+| contested tiles inside Connections' 2–4 band | 58.5% | **59.2%** |
+| boards on the shelf | 183 | **157** |
+| tier 1 / 2 / 3 | 55 / 76 / 52 | 46 / 65 / 46 |
+| threads about the house | 22 | **27** |
+| purple's lateral ceiling for plain English | **4** — the floor is 5 | **6** |
+| purple is a letter trick | 174/183 = 95.1% | 154/157 = **98.1%** |
+
+**SEVENTEEN NEW POOLS**, and they are one authoring job answering two briefs. Fourteen are
+core-word predicate categories (`Things That Are Cast`, `Things You Lose`, `Things That Are
+Turned`) — the register the shelf had run out of, built out of the commonest words in English
+rather than the most precise ones, which is also what makes them purple-capable and what makes them
+the best trap supply in the bank (SHADOW is cast, thrown and falls; VOICE is thrown, raised and
+cracked; BREATH is drawn, held and caught). Three are house pools written to
+`MANOR_COLLIDER_FLOOR` — the scullery, the drying green, the butler's pantry. The brief named the
+manor and the register as two opportunities; they are one opportunity, because there is no letter
+trick in a scullery.
+
+**AND ONE LATENT DEFECT THE RESHUFFLE EXPOSED.** web-s116 shipped `Can Precede "BOARD"` **and**
+`___ BOARD` — one mechanic under two labels, which `normaliseTheme` cannot collapse because they
+are two pools dealing two hands. The room detected a five-word `___ BOARD` thread and could not
+name the frame it belonged to. Round 14's rule is asked of the ANCHOR now rather than of the label,
+and `shipsHere` refuses the board.
+
+### THE TWO THINGS THIS ROUND DID NOT PAY, PUBLISHED RATHER THAN ABSORBED
+
+1. **TIER 3 IS STILL THREE QUARTERS LETTER TRICKS — 38 of 46 boards, and the SHARE ROSE
+   (76.9% → 82.6%) because the tier is smaller.** Capping `TIER_SPECS[3].maxLetterMechanics` at 2
+   fixes it outright — every board comes in at two and the tier-3 median goes 3 → 2 — and it costs
+   more than it buys, measured over five builds: **the shelf falls to 154 boards, TIER 3 FALLS TO
+   27 against a floor of 45, the tier-2 contested-tile median falls 2 → 1** (round 41's headline
+   win, which this round was told not to give back) **and the compound census breaches its own 70%
+   budget at 73%**, because a board that may not decode a third thing reaches for a frame instead.
+   The binding constraint is the **SUBTLE BANK**: tier 3 owes two mechanics from different families
+   and the bank cannot deal enough of them. That is an authoring bill and not a constant, and
+   `tests/puzzles/wordweb-register.test.ts` pins the debt's exact size on the COUNT while
+   publishing the share, because the share moved the wrong way and a band widened to fit would be
+   the quiet re-tune STATUS §3.7 names.
+2. **PURPLE GOT WORSE, 95.1% → 98.1%.** Making a plain-English purple POSSIBLE did not make one
+   SHIP, and the nine phrase purples the old shelf had fell to three on a smaller one. The cause is
+   measurable and it is no longer the ladder: it is `minSubtle`, the round-4 owner directive that a
+   tier's hardest categories must be heard or unscrambled. A subtle mechanic scores 5–8 intrinsic
+   against a plain category's ceiling of 4, so it wins the last slot unless the board planted two
+   traps in the plain one and none in it. The trap planter now PREFERS exactly that (`PLAIN_FINISH`,
+   priced below relation variety and below the gimme rule, with the colour ladder holding a veto
+   afterwards) and it cannot manufacture a trap that is not there. **The gate carries no band on
+   this number and must not grow one by rounding the measurement up:** it gates the CAPABILITY
+   structurally — proved red through `legacySemanticMeaningDistance`, the label regex this round
+   replaced — and prints the share every run.
+
+**THE SHELF IS 26 BOARDS SMALLER AND THAT IS THE PRICE OF THE FLOOR**, not an accident: 60 boards
+were already leaving every build for want of a bank replacement before this round added two more
+gates. `POOL_FLOOR` is 150, and `COMPOSED_TARGET` went 260 → 360 and changed nothing, because the
+binding constraint is the BANK and not the candidate count. The next round that wants those boards
+back should read that sentence before it writes a constant.

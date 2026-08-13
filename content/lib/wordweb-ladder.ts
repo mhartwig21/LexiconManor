@@ -23,6 +23,8 @@
 // The shipped shape (read structurally; this file must not depend on engine types)
 // ---------------------------------------------------------------------------
 
+import { isCoreWord } from './core-vocabulary';
+
 export interface CensusGroup {
   theme: string;
   tier: 'yellow' | 'green' | 'blue' | 'purple';
@@ -266,13 +268,32 @@ export interface LateralParts {
 /** The widest total `lateralOf` can return: 3 + 1 + 2 + 2. */
 export const LATERAL_MAX = 8;
 
-/** 0 = read it; 1 = look at it; 2 = hear it; 3 = perform an operation on it. */
-function readingDistance(theme: string, family: CensusFamily): number {
+/**
+ * 0 = read it; 1 = look at it AGAIN; 2 = hear it; 3 = perform an operation on it.
+ *
+ * ROUND 51 — THE SEMANTIC ARM IS NO LONGER A FLAT 0, and the reason is the same
+ * one that unlocked the meaning axis below. A taxonomy IS read once: you read
+ * TORNADO and it is weather. A category over four core-frequency words is not —
+ * you read MATCH, reject the dominant sense, and read it again as a thing that
+ * is struck. That second read is the same beat `Contains "TEN"` and `___ BAR`
+ * are charged 1 for, and charging a taxonomy for it was never the claim.
+ *
+ * IT IS THE SAME EVIDENCE AS `semanticMeaningDistance`, ASKED A DIFFERENT
+ * QUESTION, and that is deliberate rather than an oversight — this axis asks
+ * HOW you solve it and that one asks HOW FAR the category sits from the tiles'
+ * face, and the `contains` family has been charged on both from one fact since
+ * round 13. The consequence is worth stating because it is a design guard: a
+ * core-word semantic tops out at 1 + 1 + 2 = 4 INTRINSIC, one short of
+ * `FINISH_MIN`, **so a semantic category can only ever reach purple with the
+ * board pulling against it.** Vocabulary alone never buys the last colour; two
+ * planted traps do. That is exactly what a Connections purple is.
+ */
+function readingDistance(theme: string, family: CensusFamily, words: readonly string[]): number {
   switch (family) {
     case 'trivia':
       return 0;
     case 'semantic':
-      return 0;
+      return isCoreHand(words) ? 1 : 0;
     case 'compound':
       return 1;
     case 'contains':
@@ -343,11 +364,52 @@ function surfaceDistance(theme: string, words: readonly string[]): number {
  * separate `visibilityOf` rule keeping such groups out of purple: the model
  * of the day scored them as lateral when they are the least lateral thing a
  * board can hold. A same-index token pays no meaning cost.
+ *
+ * ROUND 51 — AND THE SEMANTIC BRANCH IS MEASURED NOW, WHICH IS WHY PURPLE
+ * COULD NEVER BE ANYTHING BUT A LETTER TRICK.
+ *
+ * It used to read `/^Things (That|You) / ? 1 : 0` — a regex over the LABEL, on
+ * the one axis whose whole job is to be a fact about the TILES. Its arithmetic
+ * consequence is the critic's headline number: a semantic category's ceiling
+ * was 0 (reading) + 1 (surface) + 1 (meaning) + 2 (trap) = 4 against a purple
+ * floor of 5, so **nothing solvable by thinking in English could reach purple
+ * on any board at any tier**, and the shelf duly came out purple-is-wordplay
+ * 183 of 183. The ladder was not describing the shelf, it was dictating it.
+ *
+ * `semanticMeaningDistance` reads the four shipped tiles against the corpus
+ * (`content/lib/core-vocabulary.ts`) instead. It can disagree with any label,
+ * and it does: the same category scores differently on different hands, which
+ * is the honest answer — `Things That Are Struck` dealt MATCH / CAMP / BARGAIN
+ * / DRUM redefines four everyday words, and dealt GONG / ANVIL / CHIME / DRUM
+ * is a list of things you hit.
  */
-function meaningDistance(theme: string, family: CensusFamily, surface: number): number {
+function isCoreHand(words: readonly string[]): boolean {
+  return words.length > 0 && words.every((w) => isCoreWord(w));
+}
+
+function semanticMeaningDistance(words: readonly string[]): number {
+  if (isCoreHand(words)) return 2;
+  return words.filter((w) => isCoreWord(w)).length >= 2 ? 1 : 0;
+}
+
+/**
+ * The label regex the line above replaced, kept as a NAMED WRONG ANSWER so the
+ * register gate can drive itself red through the pre-round-51 model rather than
+ * by editing the model it audits. Nothing in the build calls this.
+ */
+export function legacySemanticMeaningDistance(theme: string): number {
+  return /^Things (That|You) /.test(canonTheme(theme)) ? 1 : 0;
+}
+
+function meaningDistance(
+  theme: string,
+  family: CensusFamily,
+  surface: number,
+  words: readonly string[],
+): number {
   const t = canonTheme(theme);
   if (family === 'trivia') return 0;
-  if (family === 'semantic') return /^Things (That|You) /.test(t) ? 1 : 0;
+  if (family === 'semantic') return semanticMeaningDistance(words);
   if (family === 'compound') return 2;
   // …but the floor is a plain taxonomy, not below it. A pop-out sort is as
   // easy as `Breakfast Items` (both score 2); it is not EASIER than knowing
@@ -370,9 +432,9 @@ export function lateralOf(
   ambiguous: ReadonlySet<string>,
 ): LateralParts {
   const family = familyOfTheme(group.theme);
-  const reading = readingDistance(group.theme, family);
+  const reading = readingDistance(group.theme, family, group.words);
   const surface = surfaceDistance(group.theme, group.words);
-  const meaning = meaningDistance(group.theme, family, surface);
+  const meaning = meaningDistance(group.theme, family, surface, group.words);
   const trap = trapLoad(group.words, ambiguous);
   return { reading, surface, meaning, trap, total: reading + surface + meaning + trap };
 }
@@ -390,9 +452,9 @@ export function lateralOf(
 export function intrinsicLateral(group: Pick<CensusGroup, 'theme' | 'words'>): number {
   const family = familyOfTheme(group.theme);
   const surface = surfaceDistance(group.theme, group.words);
-  return readingDistance(group.theme, family)
+  return readingDistance(group.theme, family, group.words)
     + surface
-    + meaningDistance(group.theme, family, surface);
+    + meaningDistance(group.theme, family, surface, group.words);
 }
 
 /** A category a player can enter the board through: plain to read, no operation. */
