@@ -577,17 +577,29 @@ export default function JournalView() {
         {stillSealed > 0 && (
           <div className="jrn-rail__backlog">
             <span className="jrn-rail__count" aria-hidden>{stillSealed}</span>
-            {/* THE ONE PLACE THE INSTRUCTION IS PRINTED (round 13, AAA 6.16).
-                The rail is pinned outside the scrolling sheet, it is on every
-                tab, and it is the only surface that also carries the count and
-                the tier hint — so it is the surface that can afford the
-                sentence. Verb discipline: the page is "made out", never
-                "deciphered"/"comes clear"; the action is "finish a room", never
-                "solve a room". Same two words in ui/moment/moments.ts. */}
+            {/* ── ROUND 54: THE COUNT STAYS, THE RULE GOES ─────────────────
+                Round 13 made this "THE ONE PLACE THE INSTRUCTION IS PRINTED"
+                (AAA 6.16) and it read: "N pages filed but not made out ·
+                finish a room to make them out (more of them, the higher the
+                room)". Under the owner's 13 Aug ruling that is two forbidden
+                sentences on one rail — an instruction saying what a room is
+                worth to the mystery, and a RATE saying what a HIGHER room is
+                worth. It is round 46's `+1 page` generalised, in the
+                interface's own voice, on the surface the player looks at most.
+
+                The COUNT is not a rule, it is state — how many of her own
+                pages she cannot read yet — and state is exactly what a rail is
+                for, so it stays with its number and its route. What makes a
+                smudge speak is discovered the way the ruling asks: a solve
+                does it, and the seal says which room did ("The Long Gallery
+                makes out two pages" — ui/moment/moments.ts), and somebody in
+                the house sent her there in the first place (docs/LEADS.md).
+                Verb discipline is unchanged: a page is "made out", never
+                "deciphered" or "comes clear". */}
             <span>
-              {stillSealed === 1 ? 'page filed but not made out' : 'pages filed but not made out'}
-              {' · '}finish a room to make {stillSealed === 1 ? 'it' : 'them'} out{' '}
-              <span className="jrn-rail__hint">(more of them, the higher the room)</span>
+              {stillSealed === 1
+                ? 'page filed here, in a hand not yet made out'
+                : 'pages filed here, in hands not yet made out'}
             </span>
           </div>
         )}

@@ -1657,6 +1657,58 @@
         }
       ],
       "chainOnly": true
+    },
+    {
+      "id": "fern.lead.conservatory.bloom",
+      "trigger": "parlor",
+      "priority": 450,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "day",
+          "gte": 4
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "curious",
+          "text": "Something in the Conservatory is not a flower. Paper. Folded into the comb and sat there sweet as you like. Bees have been working round it all week and saying nothing."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "Go and look, if a Conservatory turns up for you. I would, only I would ruin it with soil. Everything I hold ends up composted eventually."
+        }
+      ],
+      "summary": "Fern has found paper folded into the Conservatory comb.",
+      "chainOnly": true
+    },
+    {
+      "id": "fern.lead.linen-closet.press",
+      "trigger": "parlor",
+      "priority": 450,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "day",
+          "gte": 12
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "fern",
+          "portrait": "neutral",
+          "text": "There is a press in the linen closet that nobody ever pressed linen with. Something is flat inside it. Dry as a leaf, and about as old."
+        },
+        {
+          "speaker": "fern",
+          "portrait": "warm",
+          "text": "Take the closet if the house deals you one. I have no business indoors. The garden watches the door and sulks."
+        }
+      ],
+      "summary": "Fern says something dry and old is flat in the linen press.",
+      "chainOnly": true
     }
   ]
 }

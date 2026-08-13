@@ -1215,6 +1215,25 @@ export interface SimDayResult {
   legibleToday?: number;
   /** Pages FILED today, legible or not — the cozy half of the same promise. */
   filedToday?: number;
+  /**
+   * ── ROUND 54 (LEADS): WHICH CARDS THE EVENING ACTUALLY SAW ──────────────
+   *
+   * Two observations of what this function already does, added because a LEAD
+   * names a ROOM and every question about leads is a question about card ids:
+   * did the room somebody sent her to turn up in an offer at all, and did she
+   * take it. Nothing in `simulateDay` behaves differently for their existence —
+   * they are read off `offerAt`'s real cards and `chooseCard`'s real pick, so
+   * an instrument that uses them is watching the shipped roller rather than a
+   * second model of it.
+   *
+   * The two are index-aligned: `offersDealt[i]` is the three cards she was
+   * shown at the i-th door and `cardsDrafted[i]` is the one she took. That
+   * alignment is what lets an instrument ask a question about ORDER — "was the
+   * room she was sent to offered to her AFTERWARDS" — which is the only form of
+   * the question a lead cares about.
+   */
+  offersDealt: string[][];
+  cardsDrafted: string[];
 }
 
 /**
@@ -1452,6 +1471,8 @@ export function simulateDay(
   let offers = 0;
   let dominatedOffers = 0;
   let sealedPicks = 0;
+  const offersDealt: string[][] = [];
+  const cardsDrafted: string[] = [];
 
   // ── THE MANOR, FOR REAL (round 24). ────────────────────────────────────
   // A `ManorState`, not a row: `createManor` lays the Entrance Hall at the
@@ -1644,6 +1665,7 @@ export function simulateDay(
       wings: carry?.wings,
     });
     const shapes = shapesOf(cards, manor, door);
+    offersDealt.push(cards.map((c) => c.id));
     offers += 1;
     if (isDominated(shapes)) dominatedOffers += 1;
 
@@ -1670,6 +1692,7 @@ export function simulateDay(
       });
     }
     manor = placeAndEnter(manor, pick.card, door.dir, door.cell);
+    cardsDrafted.push(pick.card.id);
     latchDoor();
     declinedLastDraft = cards.filter((c) => c.id !== pick.card.id).map((c) => c.id);
     if (pick.seals) sealedPicks += 1;
@@ -1888,6 +1911,8 @@ export function simulateDay(
     dominatedOffers,
     columnsTouched: cols.size,
     sealedPicks,
+    offersDealt,
+    cardsDrafted,
     wings: wingCharacterOf(manor),
     ledger,
   };

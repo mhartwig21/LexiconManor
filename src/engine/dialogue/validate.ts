@@ -36,6 +36,8 @@ import type {
 import {
   CONDITION_KINDS, MAX_CHOICES, MAX_CHOICE_CHARS, MAX_LINE_CHARS, PORTRAIT_EXPRESSIONS,
 } from './schema';
+import { cardById } from '../manor/deck';
+import { leadCardId } from '../leads';
 import { NIGHT_TALLY_LABELS } from '../day';
 import { beatVisualLines, nightBeatLineBudget, NIGHT_FIT } from './night-fit';
 
@@ -222,6 +224,67 @@ function* nodeEffects(node: DialogueNode): Generator<DialogueEffects> {
   for (const ch of node.choices ?? []) if (ch.effects) yield ch.effects;
 }
 
+/**
+ * ═══ WHAT A LEAD MAY BE (round 54, docs/LEADS.md) ══════════════════════════
+ *
+ * A lead is a PERSON telling you about a PLACE. The owner's ruling names three
+ * things it must not become, and each has already happened here once:
+ *
+ *   · a payout figure, a rate or a mechanic — round 46's `+1 page` on the
+ *     draft card, overruled on sight. So a lead line may carry no numeral and
+ *     none of the words the REWARD is made of: the moment a character says
+ *     "page" she is quoting the rulebook, not the house.
+ *   · an interface nudge in the house voice — "the same announcement wearing a
+ *     costume". So a lead may only live on a trigger a CONVERSATION is mounted
+ *     on, and it is `chainOnly`: it is a TAIL on a scene somebody is already
+ *     having, never a surface's own line. The rendered families
+ *     (`selectTaggedLine`: the night digest, the Sanctum door, the whereabouts
+ *     aside) are the costume, and they are shut out by construction rather than
+ *     by care.
+ *   · a repeatable tip that becomes a checklist. So every lead is `once`.
+ *
+ * And the room it names must be one the ground floor can actually deal her:
+ * a lead to a `tierRange: [3, 3]` room is a character sending her somewhere the
+ * deck cannot put her tonight, which is the honesty rule failing at the
+ * geometry instead of at the ledger.
+ */
+const LEAD_FORBIDDEN_WORDS = [
+  'page', 'pages', 'fragment', 'fragments', 'clue', 'clues',
+  'step', 'steps', 'gem', 'gems', 'key', 'keys', 'reward', 'rewards',
+];
+const LEAD_FORBIDDEN_RE = new RegExp(`\\b(${LEAD_FORBIDDEN_WORDS.join('|')})\\b`, 'i');
+
+export function leadProblems(node: DialogueNode): string[] {
+  const card = leadCardId(node.id);
+  if (card === null) return [];
+  const out: string[] = [];
+  const def = cardById(card);
+  if (!def) {
+    out.push(`lead names "${card}", which is not a card in the deck`);
+  } else if (def.category !== 'puzzle' || !def.puzzleKind) {
+    out.push(`lead names "${card}", which pays no page when it is solved — a lead must be honest`);
+  } else if (def.tierRange[0] > 1) {
+    out.push(`lead names "${card}", which the ground floor cannot draw (tierRange ${def.tierRange.join('–')}) — she cannot go where she is sent`);
+  }
+  if (!node.once) out.push(`a lead must be "once" — a repeated lead is a checklist, not a rumour`);
+  if (!(VALVED_TRIGGERS as readonly string[]).includes(node.trigger)) {
+    out.push(`a lead must be spoken in a conversation (${VALVED_TRIGGERS.join('/')}), not rendered by a surface — trigger is "${node.trigger}"`);
+  }
+  if (!node.chainOnly) {
+    out.push(`a lead must be chainOnly — it is a tail on a conversation, never the conversation (see selectLead)`);
+  }
+  for (const line of node.lines ?? []) {
+    if (/\d/.test(line.text)) {
+      out.push(`lead line carries a numeral — a lead names a place, never a payout: "${line.text.slice(0, 40)}…"`);
+    }
+    const hit = LEAD_FORBIDDEN_RE.exec(line.text);
+    if (hit) {
+      out.push(`lead line says "${hit[1]}" — that is the rulebook’s word, not the house’s: "${line.text.slice(0, 40)}…"`);
+    }
+  }
+  return out;
+}
+
 /** Validate one file's local shape (ids, budgets, enums, per-file graph). */
 export function validateDialogueFile(file: DialogueFile): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -275,6 +338,15 @@ export function validateDialogueFile(file: DialogueFile): ValidationIssue[] {
         err(`Dewey never speaks — line must be narration`, id);
       }
     }
+
+    /* ── LEADS (round 54, docs/LEADS.md) ─────────────────────────────────
+       Four rules, and every one of them has a precedent in this repo. The
+       honesty half — "the room she is sent to must be able to pay" — is
+       enforced at play time by `withHonestLeads` (engine/leads.ts), because
+       it is a fact about tonight; these are the facts about the AUTHORING,
+       which is where a build failure is cheaper than a character being wrong
+       in front of the player. */
+    for (const problem of leadProblems(node)) err(problem, id);
 
     const choices = node.choices ?? [];
     if (choices.length > MAX_CHOICES) err(`more than ${MAX_CHOICES} choices`, id);
@@ -375,7 +447,14 @@ export function validateDialogueFile(file: DialogueFile): ValidationIssue[] {
   }
   for (const node of file.nodes) {
     const reachedByPrefix = [...gotoPrefixes].some((p) => node.id.startsWith(p));
-    if (node.chainOnly && !gotoTargets.has(node.id) && !reachedByPrefix) {
+    // A LEAD is chainOnly with no goto pointing at it, deliberately: its parent
+    // is whatever conversation she happened to be having, and `selectLead`
+    // reaches it the way `selectTaggedLine` reaches the Portrait's door
+    // families — by id, at a mount site, not by an authored edge. The rule it
+    // is exempt from is "no orphaned chain members"; the rule that replaces it
+    // is `leadProblems`, which is stricter (it checks the ROOM as well).
+    if (node.chainOnly && !gotoTargets.has(node.id) && !reachedByPrefix
+        && leadCardId(node.id) === null) {
       err(`chainOnly node is unreachable (no goto or gotoPrefix points at it)`, node.id);
     }
   }

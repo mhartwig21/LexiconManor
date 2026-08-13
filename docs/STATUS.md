@@ -234,6 +234,52 @@ account in `docs/THE_CLIMB.md` §1i, teardown in `docs/BENCHMARKS.md` §2.
   to widen: `npm run vitest tests/puzzles/wordweb-register.test.ts` gates the capability
   structurally and prints both shares every run.
 
+**AND THE CAST STARTED TELLING HER WHERE TO LOOK (round 54).** The owner's 13 Aug ruling asked for
+a lead — *"draft the library, the old codger left an important document on the shelves there,
+worth a read… and the player then saying oh shit, I need to go to the library"* — as against a card
+printing `+1 page`, which is the game stating a rule before she has played. Eight are shipped, in
+four voices; full account in `docs/LEADS.md` (BUILT — round 54).
+
+- **A LEAD DOES NOT TAKE THE CONVERSATION'S SLOT, and there was no priority that let it.** Above
+  the reaction band it outranks *"I heard you speak at the Sanctum door yesterday"* and **six
+  reaction-latency cases go red** (AAA 5.1); below the arc band it fires **zero times in
+  twenty-four evenings** over six real-floorplan campaigns, because a character with thirteen
+  unseen reactions and six unseen arcs always has something better to say. That is round 12's
+  whereabouts wall, hit again. So a lead is `chainOnly` and rides as a **TAIL** on whatever scene
+  she was already having — one a day, off a visit only, never off another lead. Nothing is
+  displaced, no band moves, and the first lead lands on **day 2** because Mrs. Bramble can finish
+  her own introduction and *then* mention the linen closet.
+- **A CHARACTER CANNOT BE WRONG, BY CONSTRUCTION.** A lead's node id names a card; `withHonestLeads`
+  takes it out of the pool unless that room can pay, and a room she was sent to **waives the day's
+  channel valve** so the promise survives her solving something else on the way. **The honesty
+  predicate is the channel's STOCK, not `solveChannelPage`** — asking the full valve-included
+  lookup made leads a morning-only channel worth one or two a campaign, because she solves a word
+  room early most evenings. Cost of the waiver, published: **0–1 pages a campaign** of the 16 the
+  lintel channel carries.
+- **THE FREQUENCY BAND IS DERIVED AND ITS PROVENANCE IS STATED.** Ceiling **1 evening in 3**,
+  borrowed from `WHEREABOUTS_EVERY` — the shipped cadence of the game's only other passing-mention
+  channel — and labelled as borrowed rather than measured. Floor **3 leads a campaign**, because a
+  rule is deduced from instances and two is a coincidence. Deadline **first lead by day 3**, from
+  the only evidence in the repo about how long a stranger plays (every blind reader reached day 2).
+  Measured over six campaigns: **16.7–20.8% of evenings**, **4–5 leads**, **first lead day 2 on all
+  six**. The cat is counted as never met, so all three are lower bounds.
+- **AND THE HOUSE IS NOT OBLIGED TO DEAL THE DOOR.** Nothing biases the deck (that would move
+  `deckMixAt` and every clock hanging off it). Measured instead and published as the number a
+  future deck-bias argument has to beat: **the named room came up again that evening on 57.7% of
+  leads.**
+- **THE RULING IS FINISHED, INCLUDING WHERE NOBODY HAD LOOKED.** The seal's sealed `where` line
+  (*"finish a room to make it out"*, four rows), the made-out seal's *"the higher the room, the
+  more at once"* — a RATE, at the instant a room pays — and the journal rail's instruction and tier
+  hint are all cut; the rail keeps its COUNT, which is state rather than a rule. **And the largest
+  one was not on last round's list:** `journalNudge`'s empty-file branch printed the channel, the
+  rate, the Study's separate valve and the tier scaling in Ellery's voice, before she had filed a
+  single page. It outlived round 49 because nobody had read that branch since round 32. It now
+  names the fiction and no mechanic.
+- **`npm run gate:leads`** drives a real morning at both phone sizes and verifies the lead is
+  PAINTED inside the viewport with a person's name on it, then solves a Gallery to spend the day's
+  channel before walking into the room she was told about — which pays, and files a page that
+  remembers the room. `--prove` runs the same day with nothing said: **4 reds**.
+
 **AND THE DUSK WAS RIGHT AND EVERYTHING AROUND IT WAS NOT (round 53).** The one beat in the day
 the game asks her to sit and watch had a cream payout card printed over the candle at full
 brightness, a cut to black for anyone who needs reduced motion, and a gate that could not have
@@ -418,6 +464,14 @@ ten attribution checks go red. Note its own lesson, learned the hard way in-file
 `elementFromPoint` ownership probe is the WRONG paint test for a seal over a playfield, which is
 `pointer-events: none` by design (round 15) — it would call every in-room reward invisible.
 
+**1b-ter. `npm run gate:leads`** (`tests/round54-leads-live.mjs`, round 54) — **somebody tells her
+where to look, it is PAINTED at both phone sizes, and going where she is sent pays.** Drives a real
+morning with real pointer input, then the hard case the promise exists for: a Gallery solved first
+to spend the day's channel, and only then the room she was told about. The needle it looks for is
+derived (the longest word the lead uses that the character never uses anywhere else), so it cannot
+pass by reading the conversation the lead rode in on. `--prove` runs the same day with nothing
+said: 4 reds.
+
 **1b. `npm run test:prices`** (`tests/round45-prices-live.mjs`, round 45) — **no room may PRINT a
 number the ledger does not CHARGE.** Drives all seven rooms and the draft footer at both sizes and
 compares one PAINTED string against another: the price on the glass against how far the candle's
@@ -465,9 +519,9 @@ Rounds of ultracode subagents. **Critique and verification fan out in parallel; 
 STRICTLY SEQUENTIAL** — parallel writers in one checkout lost ten agents twice. Each builder owns
 distinct files, runs every gate, and commits its own work.
 
-Every builder runs: `tsc --noEmit` · `vitest run` (**1,500** baseline as of round 51) ·
+Every builder runs: `tsc --noEmit` · `vitest run` (**1,525** baseline as of round 54) ·
 `content:verify` · `lint:clearance` · `build` · `gate:glass` (0 findings at both sizes) ·
-`test:prices` · `gate:attribution` (both, and both `--prove` halves).
+`test:prices` · `gate:attribution` · `gate:leads` (all three, and all three `--prove` halves).
 
 **Playwright must use system Edge (`channel: msedge`)** — the browser download silently fails on
 this machine. ONE browser at a time. **Test 375×667 first** — nearly every defect found in August
@@ -569,6 +623,8 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
 ## 7. The docs, and which to trust
 
 - `docs/THE_CLIMB.md` — **the economy and landing decisions from play. Most current.**
+- `docs/LEADS.md` — the owner's 13 Aug lead ruling, and (round 54) what was built from it: the
+  tail mechanism, the honesty predicate, and the frequency band with its provenance.
 - `docs/COMPREHENSION.md` — the blind-play test. The most valuable evidence in the repo.
 - `docs/LINEN_CLOSET.md`, `docs/ROOM_CHANNELS.md` — owner rulings on those two designs.
 - `docs/BENCHMARKS.md` — teardowns of Spelling Bee, Connections, Wordle, the Mini, the Acrostic,

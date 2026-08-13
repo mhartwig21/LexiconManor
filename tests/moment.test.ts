@@ -242,7 +242,12 @@ describe('a SEALED arrival announces the document, never its contents', () => {
       }
     }
     expect(titles.size).toBeLessThanOrEqual(3);
-    expect(wheres.size).toBe(1);
+    // ROUND 54: the sealed `where` is the FILING ADDRESS again, so it varies by
+    // tab exactly as the legible copy does (three kinds, three tabs). It used
+    // to be one string because that one string was an instruction, and an
+    // instruction is the same whatever kind of page it is about — which is the
+    // tell this assertion was really measuring.
+    expect(wheres.size).toBe(3);
   });
 
   it('does not contradict the journal: it never claims the hand can be made out', () => {
@@ -251,16 +256,22 @@ describe('a SEALED arrival announces the document, never its contents', () => {
     // rendered the same page as "not yet made out" two taps later.
     expect(m.title).not.toBe('A line of his definition');
     expect(m.title.toLowerCase()).toMatch(/not yet made out/);
-    // The redemption rides in `where` — the moment still names its own trace
-    // (AAA 11.12) and says what turns the smudge into a sentence.
+    // The moment still names its own persistent trace (AAA 11.12).
     expect(m.where).toMatch(/Journal/);
-    // ROUND 13 (AAA 6.16): one verb across the whole seal vocabulary. The four
-    // surfaces said "solve a room" / "finish a room and it comes clear" /
-    // "finishing a room makes them out" / "solve a room to make it out"; they
-    // now all say FINISH A ROOM and MAKE IT OUT (JournalView's rail,
-    // engine/journal.journalNudge, ui/moment/moments.ts).
-    expect(m.where).toMatch(/finish a room to make it out/i);
-    expect(m.where).not.toMatch(/solve a room/i);
+    /* ══ ROUND 54 — THE ASSERTION INVERTS, ON THE OWNER'S RULING ═══════════
+       It read: `expect(m.where).toMatch(/finish a room to make it out/i)`.
+       Round 13 put that instruction here and round 49 deleted its twin — the
+       `+1 page` clause — off the draft card without noticing that the seal
+       still printed it. STATED ALWAYS are prices and rules of play; NEVER
+       STATED is what a room is WORTH TO THE MYSTERY (docs/LEADS.md), and
+       "finish a room to make it out" is the second of those, generalised into
+       a rule, printed before she has ever watched it happen.
+
+       So the gate is the RULING now, and it is the only shape that can go red
+       on a revert: the seal may say where the page went and must not say what
+       finishing a room is worth. It fails on the previous commit. */
+    expect(m.where).toMatch(/^Filed in the Journal/);
+    expect(m.where.toLowerCase()).not.toMatch(/finish a room|solve a room|make it out|higher the room/);
     // The seal still points at the tab it filed to (AAA 6.3 double-encoding).
     expect(m.sigil).toBe('W');
     expect(momentForEvent({ type: 'fragment-found', fragmentId: 'v1-e2' }, sealedCtx('v1-e2'))!.sigil)
@@ -295,10 +306,24 @@ describe('deciphering takes the glass (AAA 11.11 — it announced nothing at all
     expect(three.key).toBe('made-out:v1-d1+v1-e2+v1-e4');
   });
 
-  it('the seal is where DECIPHER_YIELD_BY_TIER stops being a constant', () => {
+  /**
+   * ROUND 54 — THE TIER LEVER IS FELT IN THE COUNT, NEVER PRINTED AS A RATE.
+   *
+   * This test used to require `where` to say "the higher the room, the more at
+   * once" and called that "the tier lever, named". Naming it is exactly what
+   * the owner's 13 Aug ruling forbids: a RATE is the sharpest possible
+   * statement of what a room is worth to the mystery, and it was printed on
+   * the one card that lands at the instant a room pays. What survives is the
+   * quantity itself — "Three pages made out" after a tier-3 solve and "A page
+   * made out" after a tier-1 one — which is the lever being FELT, which is
+   * what the seal was always for.
+   */
+  it('the made-out seal states its trace and no rate (round 54)', () => {
     const m = madeOutMoment(factsFor('v1-d1'))!;
     expect(m.where).toMatch(/Journal/);          // its persistent trace (11.12)
-    expect(m.where).toMatch(/higher the room/);  // the tier lever, named
+    expect(m.where.toLowerCase()).not.toMatch(/higher the room|more at once|finish a room/);
+    // The count is still the thing that carries the yield.
+    expect(madeOutMoment(factsFor('v1-d1', 'v1-e2', 'v1-e4'))!.title).toBe('Three pages made out');
   });
 
   it('nothing made out is no moment at all', () => {

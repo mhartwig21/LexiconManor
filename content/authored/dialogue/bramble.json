@@ -3061,6 +3061,32 @@
           "text": "Sleep well, pet. I shall do my rounds and think what to put in your cup tomorrow. It is the best part of my evening."
         }
       ]
+    },
+    {
+      "id": "bramble.lead.linen-closet.pressed",
+      "trigger": "morning",
+      "priority": 450,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "day",
+          "gte": 2
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "bramble",
+          "portrait": "curious",
+          "text": "Before you set off — there is something pressed flat in the linen closet that is not linen. Paper, I think. Gone to sleep between the sheets. I have not touched it; it is not my paper."
+        },
+        {
+          "speaker": "bramble",
+          "portrait": "warm",
+          "text": "Whichever closet the house gives you today, mind. It shuffles the rooms about like a pack of cards, but it never shuffles what is inside them."
+        }
+      ],
+      "summary": "Mrs. Bramble has found paper pressed flat in the linen closet.",
+      "chainOnly": true
     }
   ]
 }

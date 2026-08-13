@@ -849,8 +849,35 @@ export function journalNudge(
    * untouched: entering a mystery room pushes a sealed page (events.ts), which
    * is a different faucet and is not valved by the day.
    */
+  /**
+   * ═══ ROUND 54 — THE LARGEST SURVIVING STATEMENT OF THE RULE, DELETED ══════
+   *
+   * This branch shipped the whole rulebook in Ellery's voice: *"Finish a room,
+   * dear — any room, any puzzle — and a page files itself in here. One a day
+   * from the word games, however many you finish; the Study keeps its own
+   * count. The violet rooms keep more of them, and the higher you go the more
+   * they keep."* The channel, the RATE, the second channel's separate valve and
+   * the tier scaling — four rules, before she has filed a single page.
+   *
+   * It is round 46's `+1 page` many times over, and it is the "same
+   * announcement wearing a costume" the ruling names by hand: a character
+   * saying it does not make it a lead, because a lead names a PLACE, once, and
+   * this generalises over every room in the house forever. Round 49 deleted the
+   * card clause and this outlived it by two rounds because nobody had read the
+   * empty-file branch since round 32.
+   *
+   * WHAT IT COST TO SAY IT, and why the replacement is not silence: rounds 24
+   * and 32 wrote this against a measured comprehension defect (two blind
+   * testers hunted violet rooms for two days because the previous line told
+   * them to). That defect was a WRONG rule, and the fix for a wrong rule is not
+   * a complete one — it is the fiction. So this says what is TRUE and is not a
+   * mechanic: his definition is scattered through the house in his own hand.
+   * Where the pages come from is what the leads send her to find out
+   * (docs/LEADS.md) and what the attribution on every arriving page tells her
+   * (round 49) — a person, and then a cause, twice, instead of a rate.
+   */
   if (found === 0) {
-    return 'Finish a room, dear — any room, any puzzle — and a page files itself in here. One a day from the word games, however many you finish; the Study keeps its own count. The violet rooms keep more of them, and the higher you go the more they keep.';
+    return 'Nothing in the file yet, dear. He took his own definition apart and left it about the house in his own hand — you will know one of his pages when one turns up in front of you.';
   }
   // The backlog outranks every other pointer: a page she cannot read yet is
   // the most useful thing anyone could point at, and the answer to it is a

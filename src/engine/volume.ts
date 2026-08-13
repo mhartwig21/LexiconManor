@@ -560,6 +560,14 @@ export function fragmentForSolveChannel(
  * Everything that can make a solve pay nothing is in here: the daily valve, the
  * channel's stock, and testimony a character has reserved. `null` is the card's
  * silence and the ledger's no-op, in one function.
+ *
+ * ── ROUND 54: `valveWaived` — THE ONE THING A LEAD MAY MOVE ────────────────
+ * A room somebody sent her to today is paid even if the day's valve was spent
+ * elsewhere between the saying and the going (engine/leads.ts, docs/LEADS.md).
+ * It waives the VALVE and nothing else: an empty channel and a reserved
+ * testimony still pay nothing, so the promise can only ever be kept out of
+ * stock that existed when it was made. Default false leaves every existing
+ * caller bit-identical.
  */
 export function solveChannelPage(
   def: VolumeDef,
@@ -567,9 +575,9 @@ export function solveChannelPage(
   channel: SolveChannel,
   recentEvents: readonly RecordedEvent[],
   day: number,
-  opts?: { reservedIds?: ReadonlySet<string> },
+  opts?: { reservedIds?: ReadonlySet<string>; valveWaived?: boolean },
 ): FragmentDef | null {
-  if (solveChannelFiledToday(def, channel, recentEvents, day)) return null;
+  if (!opts?.valveWaived && solveChannelFiledToday(def, channel, recentEvents, day)) return null;
   return fragmentForSolveChannel(def, state, channel, opts);
 }
 

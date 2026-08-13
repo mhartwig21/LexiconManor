@@ -393,12 +393,40 @@ describe('nudges — sympathetic, never silence (AAA 4.16)', () => {
    * name finishing a room, and must not issue "draft toward the violet rooms"
    * as the instruction. It fails on a revert.
    */
-  it('the empty case file points at the real supply line, not at violet (round 24)', () => {
+  /**
+   * ═══ ROUND 54 — THE GATE INVERTS, AND THE REASON IS THE OWNER'S RULING ════
+   *
+   * Rounds 24 and 32 required this nudge to state the supply line — the
+   * channel, the rate, the Study's separate count and the tier scaling — and
+   * they were right about the DEFECT they measured: the line before it named
+   * violet rooms, which is a WRONG rule, and two blind testers hunted them for
+   * two days on the strength of it.
+   *
+   * The 13 Aug ruling says the fix for a wrong rule is not a complete one.
+   * STATED ALWAYS are prices and rules of play; NEVER STATED is what a room is
+   * worth to the mystery. A sentence that says finishing any room files a page,
+   * one a day, more the higher you go, is round 46's deleted `+1 page` clause
+   * four times over, in Ellery's voice, which the ruling names by hand as "the
+   * same announcement wearing a costume".
+   *
+   * So the requirement inverts and gets sharper: the empty file must SAY
+   * something (never silence, AAA 4.16), it must be about the FICTION, and it
+   * must state no mechanic — no channel, no rate, no tier. The old line goes
+   * red against every clause below, which is what makes this a gate rather
+   * than a description of the new one.
+   */
+  it('the empty case file speaks, in fiction, and states no rule (round 54)', () => {
     const nudge = journalNudge(volume, fresh())!;
-    expect(nudge).toMatch(/finish a room/i);
+    expect(nudge.length).toBeGreaterThan(40);
+    // The wrong rule round 24 killed stays dead.
     expect(nudge).not.toMatch(/draft toward the violet/i);
-    // Violet is not deleted from the fiction — it keeps MORE of them, higher up.
-    expect(nudge).toMatch(/violet/i);
+    // …and the complete one round 54 killed does not come back in its place.
+    expect(nudge.toLowerCase()).not.toMatch(
+      /finish a room|solve a room|any puzzle|one a day|the higher you go|violet/,
+    );
+    // It is still about HIM, which is the only thing an empty file can honestly
+    // be about — his definition, taken apart, in his own hand.
+    expect(nudge.toLowerCase()).toMatch(/definition|his own hand|his page/);
   });
 
   /**

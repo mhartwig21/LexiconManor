@@ -25,6 +25,7 @@ import {
   sealedFragmentFlag, sealedFragmentIds, solveChannelFor, solveChannelPage, solvedFlag,
 } from '../../engine/volume';
 import { glancedFragmentFlag, nextUninterpreted, viewedFragmentFlag } from '../../engine/journal';
+import { leadCardSpokenToday } from '../../engine/leads';
 import { atSanctumDoor, canAddressSanctum } from '../../engine/manor/grid';
 import { sanctumAnsweredFlag, sanctumAnswered } from '../../engine/manor/tube';
 import { DIALOGUE_FILES } from '../../engine/dialogue/content';
@@ -203,7 +204,7 @@ export const createJournalSlice =
      * and the moment layer — the page still arrives, and now it says which room
      * sent it.
      */
-    const pageForSolve = (kind: RoomPuzzleKind) => {
+    const pageForSolve = (kind: RoomPuzzleKind, fromCardId?: string) => {
       const v = get().volume;
       if (v.status !== 'active') return null;
       const content = getVolumeContent(v.volumeId);
@@ -212,9 +213,30 @@ export const createJournalSlice =
         Object.values(DIALOGUE_FILES),
         new Set(get().seenNodeIds),
       );
+      const day = get().day?.day ?? v.day;
+      /**
+       * ── ROUND 54: THE HOUSE KEEPS ITS PROMISE ────────────────────────────
+       *
+       * A LEAD is a person sending her to a named room (docs/LEADS.md), and
+       * `withHonestLeads` only lets one be spoken while that room can pay. But
+       * the day's channel valve can be spent BETWEEN the saying and the going —
+       * she hears Ellery in the Reading Nook, solves a Darkroom on the way, and
+       * arrives at the Library to be paid nothing. Ellery would then have been
+       * wrong, and *"a character who is wrong is worse than a character who is
+       * silent"*: this project has already retired a line of Dewey prophecy for
+       * less.
+       *
+       * So a room she was sent to today waives the VALVE — and only the valve.
+       * An empty channel still pays nothing, which is why the saying is gated on
+       * the stock as well. The cost is bounded and one-sided: at most one extra
+       * page, on a day she both ignored the lead first and honoured it second.
+       * Going where she is sent can never pay LESS than it promised, and can
+       * never pay twice (`solveChannelFiledToday` sees the page it just filed).
+       */
+      const leadKept = leadCardSpokenToday(fromCardId, get().recentEvents, day);
       return solveChannelPage(
         content, v, solveChannelFor(kind), get().recentEvents,
-        get().day?.day ?? v.day, { reservedIds },
+        day, { reservedIds, valveWaived: leadKept },
       );
     };
 
@@ -498,7 +520,7 @@ export const createJournalSlice =
     },
 
     collectFragmentForSolve: (kind, fromCardId) => {
-      const frag = pageForSolve(kind);
+      const frag = pageForSolve(kind, fromCardId);
       if (!frag) return null;
       get().fileFragment(frag.id, {
         via: solveChannelFor(kind).id,

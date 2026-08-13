@@ -1799,6 +1799,58 @@
         }
       ],
       "chainOnly": true
+    },
+    {
+      "id": "ellery.lead.library.shelves",
+      "trigger": "parlor",
+      "priority": 450,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "day",
+          "gte": 2
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "curious",
+          "text": "Go and stand in a Library tonight, if the house offers you one. The old codger left something on the shelves there, and it is not a book. Worth a read, whatever it is."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "amused",
+          "text": "He hid it the way he hid everything — at eye level, spine out, among things nobody browses. He never once hid a thing he did not mean to be found eventually."
+        }
+      ],
+      "summary": "Ellery says the old man left something on the Library shelves.",
+      "chainOnly": true
+    },
+    {
+      "id": "ellery.lead.counting-house.column",
+      "trigger": "parlor",
+      "priority": 450,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "day",
+          "gte": 10
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "ellery",
+          "portrait": "wistful",
+          "text": "He kept the household accounts in the Counting House, and one column in that ledger was never money. I could never make it come out. I am a librarian, not an auditor."
+        },
+        {
+          "speaker": "ellery",
+          "portrait": "warm",
+          "text": "You have the patience for a ledger. Go and be appalled at his arithmetic on my behalf, and tell me what the column was for."
+        }
+      ],
+      "summary": "Ellery says one column of the Counting House ledger was never money.",
+      "chainOnly": true
     }
   ]
 }

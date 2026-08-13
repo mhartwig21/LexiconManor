@@ -19,6 +19,7 @@
 import type { DialogueQuery } from '../events';
 import type { DialogueChoice, DialogueFile, DialogueNode } from './schema';
 import { evaluateAll } from './conditions';
+import { leadCardId } from '../leads';
 
 /** How a pool is narrowed. Both defaults are the ordinary scene selection. */
 interface PickOptions {
@@ -129,6 +130,38 @@ export function selectTaggedLine(
   prefix: string,
 ): DialogueNode | undefined {
   return pick(file.nodes.filter((n) => n.id.startsWith(prefix)), query, { stableRotation: true });
+}
+
+/**
+ * ═══ THE LEAD, AND WHY IT DOES NOT COMPETE FOR THE SLOT ════════════════════
+ *
+ * A lead is somebody mentioning a place as you are leaving (docs/LEADS.md), and
+ * the first build of it was a node in the ordinary pools. That was measured and
+ * withdrawn, and the measurement is the reason this function exists:
+ *
+ *   · ABOVE the reaction band, a lead is a gossip that outranks "I heard you
+ *     speak at the Sanctum door yesterday" — six reaction-latency cases in
+ *     tests/dialogue-content.test.ts went red, which is AAA 5.1 breaking
+ *     exactly as `engine/dialogue/whereabouts.ts` recorded it breaking in
+ *     round 12.
+ *   · BELOW the arc band, a lead is content that never plays: over six
+ *     simulated campaigns with a real floorplan the parlor leads fired **zero**
+ *     times in twenty-four evenings, because a character with thirteen unseen
+ *     reactions and six unseen arcs always has something better to say.
+ *
+ * There is no third priority, for the same reason the whereabouts aside found
+ * no third priority: the conversation's one slot is spoken for by content that
+ * is better than a rumour. So a lead does not take the slot. It is `chainOnly`
+ * — never dealt as a scene — and the SCENE plays it as a tail once its own
+ * lines are done (ui/dialogue/DialogueScene.tsx). Nothing is displaced, no band
+ * moves, and the register is the one the ruling asks for: she says her piece,
+ * and then, on your way out, she mentions the shelves.
+ *
+ * Valved to one a day by the caller off the spine (`leadCardsSpokenToday`) so a
+ * three-conversation evening is not a quest log.
+ */
+export function selectLead(file: DialogueFile, query: DialogueQuery): DialogueNode | undefined {
+  return pick(file.nodes.filter((n) => leadCardId(n.id) !== null), query, { chain: true });
 }
 
 /** Find a node by id (goto resolution). */

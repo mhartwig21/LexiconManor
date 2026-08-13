@@ -192,7 +192,30 @@ export function openingWords(text: string, max = QUOTE_CHARS): string {
  * `where` never moves: it is the persistent trace (AAA 11.12) and it is not
  * where a cause belongs.
  */
-interface FragmentCopy { sigil: string; title: string; noun: string; where: string }
+/* ══ ROUND 54 — AND `where` STATES NO RULE EITHER ═══════════════════════════
+ *
+ * The block above ends *"'Solve any word game to find a page' printed on a
+ * nudge would be the deleted clause wearing different clothes"* — and three
+ * lines below it the sealed rows printed **"Filed in the Journal · finish a
+ * room to make it out"**, which is that sentence, in the interface's own
+ * voice, on the same card. Round 49 deleted the clause off the draft card and
+ * left its twin here.
+ *
+ * The owner's line, 13 Aug: STATED ALWAYS are prices and rules of play — what a
+ * move costs, what a wrong guess costs, what a solve pays back in MOVES, how
+ * long a room asks for, which doors a plan leaves her. NEVER STATED is what a
+ * room is WORTH TO THE MYSTERY. "Finish a room to make it out" is the second
+ * of those, generalised into a rule, printed before she has ever seen it
+ * happen. So it is gone, and `where` is what it was always for: the persistent
+ * trace (AAA 11.12), the tab this page went to and nothing else.
+ *
+ * What teaches it instead is what round 49 built and round 54 finished: the
+ * seal NAMES THE ROOM as the page lands ("The Long Gallery makes out two
+ * pages"), the journal says it again afterwards, and somebody in the house
+ * sends her to a room in the first place (docs/LEADS.md). Cause, twice, and a
+ * person — never a rate.
+ */
+interface FragmentCopy { sigil: string; title: string; noun: string; where: string; tab?: string }
 
 const FRAGMENT_COPY: Record<string, FragmentCopy> = {
   'definition-line': {
@@ -200,18 +223,21 @@ const FRAGMENT_COPY: Record<string, FragmentCopy> = {
     title: 'A line of his definition',
     noun: 'a line of his definition',
     where: 'Filed in the Journal · The Word',
+    tab: 'The Word',
   },
   engraving: {
     sigil: 'E',
     title: 'An engraving, taken down',
     noun: 'an engraving',
     where: 'Filed in the Journal · Engravings',
+    tab: 'Engravings',
   },
   testimony: {
     sigil: 'T',
     title: 'Testimony, written down',
     noun: 'testimony',
     where: 'Filed in the Journal · Testimony',
+    tab: 'Testimony',
   },
 };
 
@@ -229,30 +255,34 @@ function roomGaveTitle(room: string, noun: string): string {
 
 /**
  * The sealed arrival. The seal keeps its journal-tab letterform (W/E/T still
- * says which page to open — AAA 6.3), the title names the DOCUMENT rather than
- * its contents, and `where` is the redemption instead of a filing address: the
- * one sentence that makes a smudge worth having is the one that says how to
- * make it out. No `quote` is ever produced for these — that is the whole fix,
- * and tests/moment.test.ts asserts a sealed moment contains none of frag.text.
+ * says which page to open — AAA 6.3) and the title names the DOCUMENT rather
+ * than its contents. No `quote` is ever produced for these — that is the whole
+ * fix, and tests/moment.test.ts asserts a sealed moment contains none of
+ * frag.text.
+ *
+ * ROUND 54: `where` was the REDEMPTION ("finish a room to make it out") and is
+ * a filing address again. See the ruling block above `FragmentCopy` — a smudge
+ * is worth having because it is HIS and it is hers, not because a nudge has
+ * costed it out for her.
  */
 const FRAGMENT_SEALED_COPY: Record<string, FragmentCopy> = {
   'definition-line': {
     sigil: 'W',
     title: 'A page of his, not yet made out',
     noun: 'a page of his, not yet made out',
-    where: 'Filed in the Journal · finish a room to make it out',
+    where: 'Filed in the Journal · The Word',
   },
   engraving: {
     sigil: 'E',
     title: 'A rubbing, not yet made out',
     noun: 'a rubbing, not yet made out',
-    where: 'Filed in the Journal · finish a room to make it out',
+    where: 'Filed in the Journal · Engravings',
   },
   testimony: {
     sigil: 'T',
     title: 'A memory, not yet made out',
     noun: 'a memory, not yet made out',
-    where: 'Filed in the Journal · finish a room to make it out',
+    where: 'Filed in the Journal · Testimony',
   },
 };
 
@@ -260,7 +290,7 @@ const FRAGMENT_SEALED_FALLBACK: FragmentCopy = {
   sigil: 'W',
   title: 'A page, filed and not yet made out',
   noun: 'a page, not yet made out',
-  where: 'Filed in the Journal · finish a room to make it out',
+  where: 'Filed in the Journal',
 };
 
 /** A letter waiting under an unbroken seal (arrival is pure derivation, so
@@ -333,8 +363,9 @@ export interface MadeOutFacts {
  * So it is a DERIVED channel, like the letter tray and the mantel: the watcher
  * diffs the volume's `legible-` flag set and hands the newly-made-out pages
  * here. One seal per batch, not one per page — "Two pages come clear" is the
- * sentence that makes `DECIPHER_YIELD_BY_TIER` felt, and the `where` line is
- * where the tier lever stops being a constant and becomes a reason to climb.
+ * sentence that makes `DECIPHER_YIELD_BY_TIER` felt, and the COUNT is the whole
+ * of how it is felt: round 54 took the rate off the `where` line, because a
+ * printed rate is the game explaining what a room is worth to the mystery.
  *
  * (A `{type:'fragment-made-out'}` spine event would be the tidier emitter and
  * is filed as a SHARED-FILE REQUEST; engine/events.ts is architect-owned, and
@@ -367,7 +398,11 @@ export function madeOutMoment(fragments: readonly MadeOutFacts[]): Moment | null
       ? `${room} makes out ${lower} ${n === 1 ? 'page' : 'pages'}`
       : `${word} ${n === 1 ? 'page' : 'pages'} made out`,
     quote: openingWords(first.text),
-    where: 'Made out, in the Journal · the higher the room, the more at once',
+    // ROUND 54: this said "the higher the room, the more at once" — a RATE, and
+    // the only surface in the game that still printed one. What a room is worth
+    // to the mystery is discovered (docs/LEADS.md); the tier lever is felt in
+    // the count on the card, which is why the count keeps its word form.
+    where: copy.tab ? `Made out, in the Journal · ${copy.tab}` : 'Made out, in the Journal',
     route: JOURNAL,
   };
 }

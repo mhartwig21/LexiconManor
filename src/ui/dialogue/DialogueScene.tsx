@@ -17,10 +17,11 @@ import type { CSSProperties } from 'react';
 import type { CharacterId } from '../../engine/types';
 import type { DialogueTrigger } from '../../engine/events';
 import type { DialogueChoice, DialogueNode, PortraitExpression } from '../../engine/dialogue/schema';
-import { getDialogueFile, CHARACTER_NAMES } from '../../engine/dialogue/content';
+import { CHARACTER_NAMES } from '../../engine/dialogue/content';
 import {
-  availableChoices, resolveChoiceTarget, selectAskMenu, selectDialogue,
+  availableChoices, resolveChoiceTarget, selectAskMenu, selectDialogue, selectLead,
 } from '../../engine/dialogue/select';
+import { leadCardId, leadCardsSpokenToday } from '../../engine/leads';
 import {
   rankFor, pointsToNextRank, rankProgress, MAX_AFFINITY_RANK,
 } from '../../engine/dialogue/affinity';
@@ -63,7 +64,19 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
     [settingsReduced],
   );
 
-  const file = getDialogueFile(character);
+  /**
+   * ROUND 54 — THE POOL THIS SCENE MAY BE DEALT FROM, frozen with the snapshot
+   * it is dealt against.
+   *
+   * `dialogueFileFor` is the authored file minus every LEAD whose room cannot
+   * pay a page right now (engine/leads.ts, docs/LEADS.md). It is frozen at
+   * mount for the same reason `mountQuery` is: one snapshot, one decision, for
+   * the life of the mount — a solve landing mid-conversation must not be able
+   * to retract a line she is halfway through reading, and the house keeps the
+   * promise either way (`leadCardSpokenToday`, app/slices/journal.ts).
+   */
+  const dialogueFileFor = useManorStore((s) => s.dialogueFileFor);
+  const [file] = useState(() => dialogueFileFor(character));
   /** The frozen snapshot this scene was dealt from (ARCHITECTURE §5). */
   const [mountQuery] = useState(() => buildDialogueQuery(character, slot));
   const [node, setNode] = useState<DialogueNode | null>(
@@ -112,6 +125,43 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
   };
 
   const isLast = node ? lineIdx >= node.lines.length - 1 : true;
+
+  /**
+   * ═══ ROUND 54 — AND THEN, ON YOUR WAY OUT, SHE MENTIONS THE SHELVES ══════
+   *
+   * A LEAD (docs/LEADS.md) is a person telling you about a place. It plays as a
+   * TAIL on the conversation she was already having rather than as the
+   * conversation itself, because the slot is spoken for: measured, a lead above
+   * the reaction band breaks AAA 5.1 and a lead below the arc band never plays
+   * at all (engine/dialogue/select.ts `selectLead` carries both numbers).
+   *
+   * Three gates, and each one is a clause of the ruling:
+   *   · ONE A DAY, read off the spine (`leadCardsSpokenToday`) — several in an
+   *     evening is a quest log, which is the failure the ruling names.
+   *   · ONLY OFF A VISIT (`morning` / `parlor`). The Portrait's sigh after a
+   *     wrong guess and Posy's aside over an opened letter are forced-context
+   *     beats, and a rumour tacked onto one of those is the interface talking.
+   *   · NEVER OFF A LEAD. A tail has no tail.
+   *
+   * `file` is already the honesty-filtered pool (see the mount above), so a
+   * lead reached here is one whose room can pay tonight — and once she has been
+   * told, the house keeps the promise whatever else she solves first
+   * (app/slices/journal.ts).
+   */
+  const dueLead = (n: DialogueNode): DialogueNode | undefined => {
+    if (slot !== 'morning' && slot !== 'parlor') return undefined;
+    if (leadCardId(n.id) !== null) return undefined;
+    const q = buildDialogueQuery(character, slot);
+    if (leadCardsSpokenToday(q.recentEvents, q.day).size > 0) return undefined;
+    return selectLead(file, q);
+  };
+
+  /** Close the scene — or hand it to the lead that was waiting to be mentioned. */
+  const finish = (n: DialogueNode) => {
+    const lead = dueLead(n);
+    if (lead) playNode(lead);
+    else setPhase('end');
+  };
 
   /**
    * The verbs on offer RIGHT NOW. Recomputed against live state rather than
@@ -177,7 +227,7 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
       return;
     }
     if (liveChoices(node).length > 0) return; // choice row is up
-    setPhase('end');
+    finish(node);
   };
 
   const handleChoice = (choice: DialogueChoice) => {
@@ -186,7 +236,7 @@ export default function DialogueScene({ character, slot, onClose }: DialogueScen
     // which member answers depends on what happened today (select.ts).
     const next = resolveChoiceTarget(file, buildDialogueQuery(character, slot), choice);
     if (next) playNode(next);
-    else setPhase('end');
+    else finish(node);
   };
 
   const handleSkip = () => {

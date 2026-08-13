@@ -1633,6 +1633,58 @@
         }
       ],
       "chainOnly": true
+    },
+    {
+      "id": "posy.lead.darkroom.postcard",
+      "trigger": "parlor",
+      "priority": 450,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "day",
+          "gte": 6
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "amused",
+          "text": "A card came for the house in a hand I cannot read — all the wrong letters standing in all the right places. So I did what you do with a thing like that. Left it in the Darkroom."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "If a Darkroom comes your way tonight, it is yours to open, love. Post is post, even when it is showing off."
+        }
+      ],
+      "summary": "Posy left an unreadable card in the Darkroom.",
+      "chainOnly": true
+    },
+    {
+      "id": "posy.lead.library.parcel",
+      "trigger": "parlor",
+      "priority": 450,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "day",
+          "gte": 14
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "posy",
+          "portrait": "curious",
+          "text": "Something came addressed to the Library. Not to the house, not to you — to the room. I have had some odd envelopes over this counter and that is a first."
+        },
+        {
+          "speaker": "posy",
+          "portrait": "warm",
+          "text": "So it is sat on the shelves waiting for whoever turns up. Could be you tonight, if a Library turns up for you first."
+        }
+      ],
+      "summary": "Posy has delivered something addressed to the Library itself.",
+      "chainOnly": true
     }
   ]
 }

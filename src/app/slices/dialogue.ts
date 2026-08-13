@@ -19,11 +19,15 @@ import type { CharacterId } from '../../engine/types';
 import type { DialogueQuery, DialogueTrigger } from '../../engine/events';
 import type { DialogueEffects } from '../../engine/dialogue/schema';
 import { isSubstantive } from '../../engine/dialogue/schema';
-import { getDialogueFile } from '../../engine/dialogue/content';
+import type { DialogueFile } from '../../engine/dialogue/schema';
+import { DIALOGUE_FILES, getDialogueFile } from '../../engine/dialogue/content';
 import { findNode } from '../../engine/dialogue/select';
 import { rankFor } from '../../engine/dialogue/affinity';
 import { deriveLegibleFragmentCount } from '../../engine/dialogue/conditions';
 import { FLAG_REGEX } from '../../engine/dialogue/validate';
+import { payableLeadCardIds, withHonestLeads } from '../../engine/leads';
+import { reservedTestimonyIds } from '../../engine/volume';
+import { getVolumeContent } from '../content/volumes';
 import type { ManorStore } from '../store';
 import type { SaveV2 } from '../save';
 
@@ -36,6 +40,18 @@ export interface DialogueSlice {
 
   /** Snapshot the store into the frozen DialogueQuery shape for the selector. */
   buildDialogueQuery(character: CharacterId, slot: DialogueTrigger): DialogueQuery;
+  /**
+   * THE FILE A SCENE MAY BE DEALT FROM — the authored JSON minus every LEAD
+   * whose room cannot pay a page right now (engine/leads.ts, docs/LEADS.md).
+   *
+   * The honesty gate lives HERE, at the one seam where a conversation is dealt,
+   * rather than in a condition, because the frozen `DialogueQuery` carries no
+   * mystery stock and the ruling it enforces is absolute: *"a character who is
+   * wrong is worse than a character who is silent."* Every caller that plays a
+   * scene must use this instead of `getDialogueFile` — `tests/leads.test.ts`
+   * fails the build if a mount site reaches past it.
+   */
+  dialogueFileFor(character: CharacterId): DialogueFile;
   /** Record a node seen (skip included — skipping records seen + applies effects). */
   markNodeSeen(nodeId: string, character: CharacterId): void;
   /** Write-once flag set, validated against docs/flags.md naming. */
@@ -81,6 +97,25 @@ export const createDialogueSlice =
           s.volume.foundFragmentIds.length,
         ),
       };
+    },
+
+    dialogueFileFor: (character) => {
+      const file = getDialogueFile(character);
+      const s = get();
+      const v = s.volume;
+      const content = getVolumeContent(v.volumeId);
+      // No volume content = no page any room could pay, so no lead is honest.
+      // `withHonestLeads` with an empty set is exactly that statement.
+      const payable = content
+        ? payableLeadCardIds(content, v, {
+            reservedIds: reservedTestimonyIds(
+              Object.values(DIALOGUE_FILES),
+              new Set(s.seenNodeIds),
+            ),
+            unlockedCardIds: s.cabinet.unlockedCardIds,
+          })
+        : new Set<string>();
+      return withHonestLeads(file, payable);
     },
 
     markNodeSeen: (nodeId, character) => {

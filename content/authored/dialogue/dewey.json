@@ -196,6 +196,32 @@
           "text": "Dewey escorts you to the door — three steps ahead, tail up, entirely certain the whole house is his idea."
         }
       ]
+    },
+    {
+      "id": "dewey.lead.gallery.sits",
+      "trigger": "parlor",
+      "priority": 450,
+      "once": true,
+      "conditions": [
+        {
+          "kind": "day",
+          "gte": 7
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "Dewey walks you three paces toward nothing, sits, and stares at a stretch of wall where a Gallery would hang if the house had put one there yet. He does not blink."
+        },
+        {
+          "speaker": "dewey",
+          "narration": true,
+          "text": "When you look away he is still looking. Cats do not point. This is as near as the species comes, and he plainly considers it generous."
+        }
+      ],
+      "summary": "Dewey sat and stared at a wall where a Gallery ought to be.",
+      "chainOnly": true
     }
   ]
 }
