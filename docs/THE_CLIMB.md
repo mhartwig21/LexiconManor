@@ -994,3 +994,142 @@ were already leaving every build for want of a bank replacement before this roun
 gates. `POOL_FLOOR` is 150, and `COMPOSED_TARGET` went 260 → 360 and changed nothing, because the
 binding constraint is the BANK and not the candidate count. The next round that wants those boards
 back should read that sentence before it writes a constant.
+
+---
+
+## 1j. A register left tier 3, and nothing in the repo said so — round 55
+
+**THE COMPLAINT, measured by a critic on an instrument that does not share the builder's
+assumptions:** *"Round 51 lost a register at tier 3 and did not publish it."*
+
+**IT IS RIGHT.** Re-derived here from the checked-in round-50 fixture and the shipped round-51
+bytes, through `content/lib/wordweb-register.ts` — round 51's own three registers, asked per TIER,
+which is the question that round never asked:
+
+| tier 3 | round 50 | round 51 | round 55 |
+|---|---|---|---|
+| boards | 52 | 46 | **52** |
+| PHRASE categories | 15 | **6** | **13** |
+| …on how many boards | 15 (28.8%) | **6 (13.0%)** | **13 (25.0%)** |
+| boards with TWO categories that are not letter tricks | 12 (23.1%) | **8 (17.4%)** | **22 (42.3%)** |
+| categories read in English | 49 | 48 | **61** |
+| boards that are three quarters letter tricks | 40 (76.9%) | **38 (82.6%)** | **30 (57.7%)** |
+
+Round 51's write-up (§1i) publishes the FORM number — *"38 of 46 boards are three quarters letter
+tricks, and the SHARE rose"* — and one phrase number about PURPLE. **Nowhere does it say that the
+tier's phrase register more than halved**, and its gate could not have said so either: the round-51
+test asks about FORM from both ends (`form ≤ 2`, `phrase + meaning ≥ 2`) and never asks what the
+other two registers are doing one at a time. That is `docs/STATUS.md` §3.7 — *republish every band
+that moves* — failing on a number nobody had named.
+
+**AND ROUND 51 PAID TIER 3'S MEANING FLOOR OUT OF THE PHRASE SLOT.** Four tier-3 boards kept their
+tier and lost their compound frame to make room for a category read in English (`web-13`, `web-29`,
+`web-37`, `web-c06`); the rest of the loss died at the colour ladder. It is one slot: `minSubtle: 2`
+and `minMeaning: 1` spend three of the four categories, so the fourth is the tier's only free
+choice, and round 51 gave it to a third letter mechanic on 40 of 46 boards.
+
+**THERE IS AN ARITHMETIC UNDER IT, WHICH IS WHY IT WAS NOT BAD LUCK.** A compound frame scores
+1 reading + 1 surface + 2 meaning = **4 INTRINSIC**, and yellow's band is 0–3 — **a frame can never
+be a board's way in.** At tier 3 the two subtle mechanics sit at intrinsic ≥ 5. So a tier-3 board
+carrying a frame has exactly ONE slot that can legally be yellow, its single plain category, and
+round 51's honest meaning axis put a CORE-WORD hand at 4 as well. From round 51 a tier-3 board may
+carry a frame only if its plain category is dealt a NON-core hand — and the drop report is full of
+the boards that were not: *yellow `___ STONE` scores 4*, *yellow `___ SMITH` scores 5*.
+
+### The obvious fix, re-derived — and round 51's diagnosis of its price was wrong
+
+Round 51 wrote that capping `TIER_SPECS[3].maxLetterMechanics` at 2 costs the shelf 154 boards and
+tier 3 twenty-seven, and that *"the binding constraint is the SUBTLE BANK: tier 3 owes two mechanics
+from different families and the bank cannot deal enough of them."* Run again as an ORACLE (that cap,
+plus `NON_FORM_TIERS` extended to tier 3):
+
+- **The shelf loses THREE boards, 157 → 154.** The tier-3 boards do not die — **they DEMOTE**:
+  tier 3 46 → **23**, tier 2 65 → **81**, tier 1 46 → **50**. The subtle bank is not what is short.
+  The boards compose; they simply cannot describe themselves as tier 3 any more.
+- **`meetsTier` says exactly why: `minHerrings: 2` at `HERRING_TIGHT`.** A tier-3 board's third
+  letter mechanic is where its SECOND TIGHT THREAD comes from, so a board that trades it for a
+  category read in English falls under the tier's own trap floor. That is round 41's headline win
+  being spent to buy the register mix, and nobody had priced the trade.
+- **And the register cannot be bought back in bulk anyway, for a second and independent reason:
+  there is exactly ONE phrase family.** `compound` IS the phrase register, and it was already the
+  trick on 96 of 157 boards against a 70% budget. Forced, the oracle's census reaches **75% and the
+  build fails validation.** Preferring the house inside that same eviction is worse on both counts
+  (tier 3 → 21, compound 77%).
+
+### What shipped: the fourth slot is offered the mix at the tier's own price
+
+`replaceGroups` now ends with a pass that runs **only at the tier `NON_FORM_TIERS` exempts** and only
+on a board whose fourth slot is a third letter mechanic. It proposes the swap, re-measures the
+board's tight-trap capacity on the result, and **keeps it only if the board can still meet its
+tier's trap floor without the mechanic it gave up.** A board that cannot afford the mix keeps its
+third letter mechanic and its tier: nothing is demoted and nothing is dropped to pay for this, by
+construction rather than by measurement.
+
+- **45 of 193 attempts buy a second KIND of thinking; 148 are refused by the trap floor.** That
+  ratio is the round's real product and the build prints it every run: at the top of the house the
+  fourth slot has two rules bidding for it, and the trap floor wins three times out of four.
+- **IT RUNS AFTER THE TRAP PLANTER, and that is the whole difference between 2 boards and 45.** Run
+  before it, the planter simply ate the plain category back — `compositionOk` has nothing to say
+  about registers at the tier the floor exempts — and the first version of this pass moved TWO
+  boards while reshuffling the entire shelf. Run last, the trap capacity the pass measures is the
+  one `meetsTier` will measure, so *"this board can still afford its tier"* stops being a prediction.
+- **The plain half is drawn from the HOUSE, and that is not a preference — it is the only plain
+  supply that can pay the price tag.** The bill is a tight trap, and `MANOR_BANK` is the one bank in
+  the file written collider-first: `assertManorCollides` (round 18) refuses a house pool unless three
+  of its members are words some ordinary category can argue with, and refuses any HAND carrying none
+  of them. Measured against the same pass drawing from the whole of `SEMANTIC_BANK`: **165 boards
+  with tier 3 at 42, under its floor of 45**, because the churn falls on the pools every other board
+  is also drawing from. Out of the house: **163 boards and tier 3 at 52.** The manor and the register
+  were named as two opportunities in two briefs. They are one shelf.
+
+### AND THE GIMME WAS ONE BOARD FROM VACUOUS, WHICH THIS ROUND FOUND BY BREAKING IT
+
+`tests/puzzles/anchors.test.ts` asks that the trivia allowance be genuinely EXERCISED — *"tier 3
+bans the gimme; the lower rows are allowed one"* is a promise about the shelf, not about the spec —
+and its own round-11 note records the clause surviving on a single demoted board once before. It was
+one board again: **of THIRTY-ONE authored trivia categories exactly ONE reached the round-51 shelf**,
+and this round's reshuffle took it (`web-15`'s `Disney Princess Names` went for `___ POT`), turning
+a real content invariant red on churn rather than on a decision.
+
+**The planter is where they go — 111 trivia evictions in one build, and the stack says every one of
+them is there** — because a knowledge category collides with nothing and is therefore always the
+cheapest thing on the board to spend. **A gimme is not trap supply.** The planter may no longer eat
+one at a tier that allows it (at tier 3 `maxTrivia` is 0 and `extraTrivia` has already taken it as
+the FIRST victim, so the rule never fires there). **The shelf ships 6 gimmes rather than 1.**
+
+### Every band that moved, with its reason
+
+| | round 51 | round 55 | why |
+|---|---|---|---|
+| boards on the shelf | 157 | **163** | the pass and the gimme rule free letter-mechanic hands other boards were short of |
+| tier 1 / 2 / 3 | 46 / 65 / 46 | **49 / 62 / 52** | floors are 45 a tier and 150 total; all four hold with room |
+| contested tiles, mean | 1.62 | **1.64** | round 41's win is not spent — the pass refuses any swap that costs the tier's trap floor |
+| contested tiles inside Connections' 2–4 band | 59.2% | **60%** | not an aim; the consequence of a bigger shelf composed the same way |
+| `compound` family share of boards | 61% | **64%** | budget 70%; the frames the pass buys at tier 3 are new boards for the family |
+| trivia gimmes on the shelf | 1 | **6** | the planter may not eat one where the tier allows it |
+| purple is a letter trick | 154/157 = 98.1% | **157/163 = 96.3%** | not this round's work; the cause is still `minSubtle` (§1i) |
+| threads about the house | 27 (on 23 boards) | **37 (on 31 boards)** | the mix pass draws its plain half out of `MANOR_BANK` |
+
+### The census is an EQUALITY now, because a floor is what let this happen
+
+`tests/puzzles/wordweb-register.test.ts` gains a per-tier census asserted **exactly**, register by
+register, against the table at the top of this section. It is deliberately not a band and not a
+floor: a floor lets a register drain away as long as it drains in the direction the floor is not
+watching, which is precisely what happened to PHRASE at tier 3. Any content change moves a number
+here and the build goes red until it is republished WITH ITS REASON. The test prints the whole
+census — round 50, round 51 and now — on every run, so republishing is a copy rather than a
+measurement.
+
+### What this round did NOT pay, published rather than absorbed
+
+1. **148 of 193 tier-3 boards still spend their fourth slot on a third letter mechanic**, and the
+   reason is a named price rather than a shrug: the tier's own tight-trap floor. The lever a later
+   round has is not a constant — it is SUPPLY of plain categories that can contest a tile, which is
+   to say more house pools written to `MANOR_COLLIDER_FLOOR`. Twenty-five exist and the shelf draws
+   37 of the 75 hands they could deal.
+2. **The tier-3 phrase register is at 13 against round 50's 15**, not past it. It cannot be pushed
+   much further in frames: `compound` is the whole phrase register and sits at 64% of boards against
+   a 70% budget. A round that wants more PHRASE has to author a second phrase family, and should
+   read `REGISTER_BY_FAMILY` before it starts.
+3. **Purple is still a letter trick on 157 of 163 boards.** §1i's diagnosis stands: it is
+   `minSubtle`, which is an owner directive from round 4, not the ladder.

@@ -98,11 +98,18 @@ const HALF_A_BOARD = 2;
  * `TIER_SPECS[3].maxLetterMechanics` is 3, so a tier-3 board is legally three
  * quarters letter tricks and this rule cannot be a gate there. Capping that row
  * at 2 is measured in `content/generate-wordweb.ts` and it fixes the mix and
- * costs more than it buys: the shelf falls 167 → 154 boards, tier 3 falls
- * 50 → 27 against a floor of 45, the tier-2 contested-tile median falls 2 → 1
- * (round 41's headline win, which this round was told not to give back) and the
- * compound census breaches its own budget. So tier 3 is the round's DEBT, and
- * the block below pins its exact size so nobody can widen it or forget it.
+ * costs more than it buys: the shelf falls to 154 boards, tier 3 falls to 23
+ * against a floor of 45, and the compound census breaches its own 70% budget at
+ * 75% — a build failure. So tier 3 is the round's DEBT, and the block below pins
+ * its exact size so nobody can widen it or forget it.
+ *
+ * ROUND 55 — AND THE PRICE IS NOT WHERE ROUND 51 SAID IT WAS. Under the cap the
+ * shelf loses THREE boards: the tier-3 boards do not die, they DEMOTE (tier 2
+ * 65 → 81), and `meetsTier` names the reason — `minHerrings: 2` at
+ * `HERRING_TIGHT`. A tier-3 board's third letter mechanic is where its SECOND
+ * TIGHT THREAD comes from. So the cap stays off and the trade is offered board
+ * by board at that price instead (see the mix pass at the end of
+ * `replaceGroups`): 45 of 193 attempts can afford it, 148 cannot.
  */
 const MIX_GATED_TIERS = [1, 2] as const;
 
@@ -252,6 +259,118 @@ describe('every board asks for at least two different KINDS of thinking', () => 
   });
 });
 
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ROUND 55 — THE PER-TIER REGISTER CENSUS, AND WHY IT IS AN EQUALITY
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Round 51 fixed the monoculture at tiers 1–2 and PAID FOR TIER 3'S MEANING
+ * FLOOR OUT OF THE PHRASE SLOT — the tier's compound frames fell from 15
+ * categories on 15 of 52 boards to 6 on 6 of 46 — and published only the FORM
+ * number ("38 of 46 are three quarters letter tricks"). A whole register left a
+ * tier and no document said so. That is `docs/STATUS.md` §3.7, and the reason it
+ * got through is that the round's gate asked about FORM at both ends and never
+ * asked what the other two registers were doing.
+ *
+ * So the census is asserted as an EQUALITY, tier by tier and register by
+ * register, against the numbers this repo publishes in `docs/THE_CLIMB.md` §1j.
+ * It is not a band and it is deliberately not a floor: a floor lets a register
+ * drain away as long as it drains in the direction the floor is not watching,
+ * which is exactly what happened. Any content change moves one of these and the
+ * build goes red until the number is republished WITH ITS REASON — which is the
+ * rule STATUS §3.7 states and the only mechanical form of it this repo has.
+ *
+ * It is cheap to update and that is the point: `npx vitest run
+ * tests/puzzles/wordweb-register.test.ts` prints the whole census on every run,
+ * including the round-50 and round-51 columns, so republishing is a copy.
+ */
+interface CensusRow {
+  boards: number;
+  /** MEANING categories that survived both challenges. */
+  meaning: number;
+  phrase: number;
+  form: number;
+  /** Boards carrying at least one category solved by knowing English phrases. */
+  phraseBoards: number;
+  /** Boards with TWO categories that are not letter tricks — the mix, per board. */
+  mixedBoards: number;
+}
+
+/** The shipped shelf, published in `docs/THE_CLIMB.md` §1j. */
+const PUBLISHED: Record<number, CensusRow> = {
+  1: { boards: 49, meaning: 60, phrase: 87, form: 49, phraseBoards: 49, mixedBoards: 49 },
+  2: { boards: 62, meaning: 89, phrase: 55, form: 104, phraseBoards: 43, mixedBoards: 62 },
+  3: { boards: 52, meaning: 61, phrase: 13, form: 134, phraseBoards: 13, mixedBoards: 22 },
+};
+
+/** …and the two shelves before it, so the direction of travel is in the file. */
+const PUBLISHED_50: Record<number, CensusRow> = {
+  1: { boards: 55, meaning: 72, phrase: 93, form: 55, phraseBoards: 55, mixedBoards: 55 },
+  2: { boards: 76, meaning: 104, phrase: 73, form: 126, phraseBoards: 57, mixedBoards: 75 },
+  3: { boards: 52, meaning: 49, phrase: 15, form: 144, phraseBoards: 15, mixedBoards: 12 },
+};
+
+function censusOf(rows: readonly BoardRow[], tier: number): CensusRow {
+  const rs = rows.filter((r) => r.tier === tier);
+  const sum = (f: (r: BoardRow) => number) => rs.reduce((a, r) => a + f(r), 0);
+  return {
+    boards: rs.length,
+    meaning: sum((r) => r.cleanMeaning),
+    phrase: sum((r) => r.counts.phrase),
+    form: sum((r) => r.counts.form),
+    phraseBoards: rs.filter((r) => r.counts.phrase > 0).length,
+    mixedBoards: rs.filter((r) => r.counts.phrase + r.cleanMeaning >= 2).length,
+  };
+}
+
+describe('the per-tier register census — no register leaves a tier unpublished', () => {
+  it('prints the census, and the two shelves before it', () => {
+    for (const t of TIERS) {
+      const now = censusOf(ROWS, t);
+      const was = censusOf(ROWS_50, t);
+      console.log(
+        `    t${t}: ${now.boards} boards — meaning ${now.meaning} · phrase ${now.phrase} · `
+        + `form ${now.form} | phrase on ${now.phraseBoards} boards, two kinds of thinking on `
+        + `${now.mixedBoards}   (round 50: ${was.boards} boards, phrase on ${was.phraseBoards}, `
+        + `two kinds on ${was.mixedBoards})`,
+      );
+    }
+  });
+
+  it('matches what this repo publishes, exactly, at every tier', () => {
+    for (const t of TIERS) {
+      expect(
+        censusOf(ROWS, t),
+        `tier ${t}'s register census moved — republish it in docs/THE_CLIMB.md §1j`
+        + ' WITH ITS REASON (docs/STATUS.md §3.7), then copy it here',
+      ).toEqual(PUBLISHED[t]);
+    }
+  });
+
+  it('re-derives round 51\'s unpublished loss from the round-50 bytes', () => {
+    /**
+     * THE COMPLAINT, MEASURED HERE RATHER THAN REMEMBERED. Round 50's shelf is a
+     * checked-in fixture and round 51's numbers are the middle column of §1j, so
+     * this can go red on a repo that quietly re-tunes either.
+     */
+    for (const t of TIERS) expect(censusOf(ROWS_50, t)).toEqual(PUBLISHED_50[t]);
+    const was = censusOf(ROWS_50, 3);
+    const now = censusOf(ROWS, 3);
+    // Round 51 shipped 6 phrase categories on 6 of 46 tier-3 boards, against
+    // round 50's 15 on 15 of 52. That is the register it lost.
+    expect(was.phraseBoards).toBe(15);
+    console.log(
+      `    TIER 3, PHRASE: round 50 ${was.phrase} categories on ${was.phraseBoards}/${was.boards}`
+      + ` boards → round 51 6 on 6/46 → now ${now.phrase} on ${now.phraseBoards}/${now.boards}`,
+    );
+    // …and it is most of the way back, on a tier bigger than either of them —
+    // and the mix per board, which is what the standard is actually about, is
+    // ahead of both shelves for the first time.
+    expect(now.phraseBoards).toBeGreaterThan(6);
+    expect(now.mixedBoards).toBeGreaterThan(was.mixedBoards);
+  });
+});
+
 describe('the round-50 shelf — the pool the complaint was measured on', () => {
   /**
    * RED, EXACTLY. These are not "some boards failed": they are the counts the
@@ -299,7 +418,8 @@ describe('the round-50 shelf — the pool the complaint was measured on', () => 
     const over = t3.filter((r) => r.counts.form > HALF_A_BOARD);
     console.log(
       `    TIER-3 DEBT: ${over.length}/${t3.length} boards are three quarters letter tricks `
-      + `= ${(over.length / t3.length * 100).toFixed(1)}% (round 50: 40/52 = 76.9%); `
+      + `= ${(over.length / t3.length * 100).toFixed(1)}% (round 50: 40/52 = 76.9%, `
+      + `round 51: 38/46 = 82.6%); `
       + `median form ${median(t3.map((r) => r.counts.form))}`,
     );
     /**

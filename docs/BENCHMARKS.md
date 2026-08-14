@@ -242,13 +242,32 @@ non-FORM ≥ 2, and at least one of those two MEANING — because `___ BAR` and 
 two ways of playing with the word and only a semantic category is about the world. Not one of those
 is a measured level rounded up.
 
-| measured on the shipped shelf | round 50 | round 51 |
-|---|---|---|
-| boards with no category read in English | 10 of 183 | **0 of 157** |
-| median FORM categories, t1 / t2 / t3 | 1 / 2 / 3 | 1 / 2 / 3 |
-| boards over the FORM cap | 40 (all at tier 3) | 38 (all at tier 3) |
-| …at tiers 1–2, where it is gated | 1 | **0** |
-| purple is a FORM category | 174/183 | 154/157 |
+| measured on the shipped shelf | round 50 | round 51 | round 55 |
+|---|---|---|---|
+| boards with no category read in English | 10 of 183 | **0 of 157** | **0 of 163** |
+| median FORM categories, t1 / t2 / t3 | 1 / 2 / 3 | 1 / 2 / 3 | 1 / 2 / 3 |
+| boards over the FORM cap | 40 (all at tier 3) | 38 (all at tier 3) | **30 (all at tier 3)** |
+| …at tiers 1–2, where it is gated | 1 | **0** | **0** |
+| purple is a FORM category | 174/183 | 154/157 | 157/163 |
+| **tier-3 PHRASE categories** | **15** | **6** | **13** |
+| **tier-3 boards asking two KINDS of thinking** | **12 of 52** | **8 of 46** | **22 of 52** |
+
+**AND THE LAST TWO ROWS ARE THE ONES ROUND 51 DID NOT PUBLISH.** A board mixes registers or it does
+not, and *which* registers is a per-TIER question this file only started asking in round 55. Tier 3
+lost its phrase register when round 51 paid the tier's meaning floor out of the frame slot, and
+nothing said so — the round's gate asks FORM from both ends and never asks the other two registers
+one at a time. The census is asserted per tier and per register now, as an EQUALITY against the
+table in `docs/THE_CLIMB.md` §1j, because a floor is exactly what lets a register drain away in the
+direction the floor is not watching.
+
+**AND THE PRICE OF THE TIER-3 MIX HAS A NAME NOW: THE TRAP FLOOR.** Connections' own two-to-four
+contested tiles and its register mix are in competition at the top of this shelf, and nobody had
+noticed. A tier-3 board spends three of its four slots on `minSubtle: 2` + `minMeaning: 1`; the
+fourth is its only free choice, and it is also where the board's SECOND TIGHT THREAD comes from
+(`minHerrings: 2` at `HERRING_TIGHT`). Offered the trade board by board at that price, **45 of 193
+tier-3 boards can afford the mix and 148 cannot.** That is the authoring bill this room now has, and
+it is denominated in plain categories that can contest a tile — which in this file means house
+pools written to `MANOR_COLLIDER_FLOOR`.
 
 **AND THE COLOUR LADDER WAS THE CAUSE OF THE THIRD ROW, not the editor.** `lateralOf` gave a
 MEANING category a ceiling of 0 + 1 + 1 + 2 = **4** and purple's floor is **5**, so plain English

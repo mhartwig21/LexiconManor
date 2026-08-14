@@ -2203,6 +2203,14 @@ const bankUse = new Map<string, number>();
 let lastRefusal = '';
 
 /**
+ * ROUND 55 — how many boards bought a second KIND of thinking with their fourth
+ * slot, and how many asked and could not afford it. Reported, because the price
+ * is the finding: see the mix pass at the end of `replaceGroups`.
+ */
+let mixPassBought = 0;
+let mixPassAsked = 0;
+
+/**
  * ROUND 18 — a board the composer has finished with, carrying the one fact
  * `redealHands` needs and nothing downstream reads: which of its four
  * categories the BANK dealt, and which a person wrote.
@@ -2784,6 +2792,27 @@ function replaceGroups(
         if (!familyAdmissible(bank.theme)) continue;
         // …and it never eats a protected compound category to plant a trap.
         if (isProtectedTheme(victim.theme)) continue;
+        /**
+         * ROUND 55 — NOR THE GIMME, WHERE THE TIER ALLOWS ONE.
+         *
+         * `tests/puzzles/anchors.test.ts` asks that the trivia allowance be
+         * genuinely EXERCISED — "the lower rows are allowed one" is a promise
+         * about the shelf, not about the spec — and its own round-11 note
+         * records the clause surviving on a single board once before. It was
+         * one board again: of THIRTY-ONE authored trivia categories exactly ONE
+         * reached the round-51 shelf, and this round's reshuffle took it
+         * (web-15's `Disney Princess Names` went for `___ POT`). The planter is
+         * where they go — 111 trivia evictions in one build, and the stack says
+         * every one of them is here — because a knowledge category collides
+         * with nothing and is therefore always the cheapest thing to spend.
+         *
+         * A gimme is not trap supply. AAA 2.12 wants one category a player gets
+         * for free and 2.9 caps it at one, so at the tiers that allow it the
+         * planter buys its threads somewhere else; at tier 3 `maxTrivia` is 0
+         * and `extraTrivia` has already taken it as the FIRST victim, so this
+         * line never fires there.
+         */
+        if (spec.maxTrivia > 0 && typeOfTheme(victim.theme) === 'trivia') continue;
         if (bank.words.some((w) => words.has(w) && !victim.words.includes(w))) continue;
         const next = groups.map((g) =>
           g === victim ? { theme: bank.theme, tier: g.tier, words: [...bank.words] } : g);
@@ -2859,6 +2888,101 @@ function replaceGroups(
       || (best.spread <= Math.min(spread, RELATION_SPREAD_MIN)
         && best.rel >= relationCost(groups, spec.minHerringScore) - 1e-9))) break;
     swapIn(best.victim, best.bank);
+  }
+
+  /**
+   * ═════════════════════════════════════════════════════════════════════════
+   * ROUND 55 — THE FOURTH SLOT BUYS A SECOND KIND OF THINKING WHEREVER THE
+   * BOARD CAN STILL PAY ITS TIER'S TRAP FLOOR OUT OF THE OTHER THREE.
+   * ═════════════════════════════════════════════════════════════════════════
+   *
+   * The tier this runs on is tier 3 — the one `NON_FORM_TIERS` exempts, because
+   * asking it for two categories that are not letter tricks as a GATE halves the
+   * top shelf (measured twice this round: 46 boards → 23, and → 21 with the
+   * house preferred; `docs/THE_CLIMB.md` §1j). The exemption is right and the
+   * consequence was not: the fourth slot then went to a THIRD letter mechanic on
+   * 40 of 46 boards, so the top of the house asks one procedure three times.
+   *
+   * WHAT THE PRICE ACTUALLY IS, RE-DERIVED — and it is not what round 51 wrote.
+   * Round 51 named the SUBTLE BANK. Under the cap the shelf loses three boards
+   * (157 → 154): the tier-3 boards do not die, they DEMOTE (tier 2 65 → 81),
+   * and `meetsTier` says why — `minHerrings: 2` at `HERRING_TIGHT`. The third
+   * letter mechanic is where the board's second TIGHT thread comes from, so a
+   * board that trades it for a category read in English cannot describe itself
+   * as tier 3 any more.
+   *
+   * So this is that trade offered board by board, with the tier's own floor as
+   * the price tag. The swap is proposed, the board's tight-trap capacity is
+   * re-measured on the result, and the swap is KEPT only if the board can still
+   * meet the floor without the mechanic it just gave up. A board that cannot
+   * afford the mix keeps its third letter mechanic and its tier; nothing is
+   * demoted and nothing is dropped to pay for this, BY CONSTRUCTION rather than
+   * by measurement. **151 of 186 tier-3 attempts are refused on that line**, and
+   * that number is the round's real product: at the top of the house the fourth
+   * slot has two rules bidding for it — the register mix and the trap floor —
+   * and the trap floor wins four times out of five.
+   *
+   * IT RUNS AFTER THE PLANTER, AND THAT IS WORTH ONE LINE OF ITS OWN. Run
+   * before it, the planter simply ate the plain category back (`compositionOk`
+   * has nothing to say about registers at the tier `NON_FORM_TIERS` exempts):
+   * the first version of this pass moved TWO boards and cost the shelf a whole
+   * reshuffle. Run last, the trap capacity it measures is the one `meetsTier`
+   * will measure, so "the board can still afford its tier" stops being a
+   * prediction. Same rule, same code, 2 boards → 35.
+   *
+   * The register it reaches for first is the one the board does not have. That
+   * is the round's complaint stated as a preference: at tier 3 the phrase
+   * register fell from 15 categories to 6 when round 51 paid its meaning floor
+   * out of the frame slot. Where a frame will not land — `familyAdmissible`
+   * holds `compound` to its wallpaper cap and the family is already the trick on
+   * 96 of 157 boards — the board takes a category read in English instead. Both
+   * are a second KIND of thinking; neither is a third letter trick.
+   *
+   * AND THE PLAIN HALF IS DRAWN FROM THE HOUSE, WHICH IS NOT A PREFERENCE — IT
+   * IS THE ONLY PLAIN SUPPLY THAT CAN PAY THE PRICE TAG ABOVE. The bill this
+   * pass has to meet is a TIGHT TRAP, and `MANOR_BANK` is the one bank in this
+   * file written collider-first: `assertManorCollides` refuses a house pool
+   * unless three of its members are words some ordinary category can argue with,
+   * and refuses any HAND that carries none of them. Round 18 wrote that rule to
+   * stop the planter evicting the house; it is what lets the house pay here.
+   * Measured against the same pass drawing from the whole of `SEMANTIC_BANK`:
+   * the shelf comes out 165 boards with **tier 3 at 42, under its floor of 45**,
+   * because the churn falls on the pools every other board is also drawing from.
+   * Out of the house it is 162 boards and tier 3 at 51. House voice and register
+   * variety were named as two opportunities in two briefs; they are one shelf.
+   */
+  if (!NON_FORM_TIERS.includes(tier) && nonFormCount(groups) < MIN_NON_FORM) {
+    mixPassAsked += 1;
+    const hasPhrase = (gs: readonly RawGroup[]): boolean =>
+      gs.some((g) => registerOf(g.theme, g.words).register === 'phrase');
+    // Only a mechanic the board can SPARE: never one of the tier's subtle
+    // categories (they are what tier 3 IS), worst-first by the same quality
+    // order the rest of the composer uses.
+    const spare = groups
+      .filter((g) => isLetterMechanicTheme(g.theme) && !isSubtleTheme(g.theme))
+      .filter((g) => !isProtectedTheme(g.theme))
+      .sort((a, b) => qualityOf(a.theme) - qualityOf(b.theme) || (a.theme < b.theme ? -1 : 1));
+    const banks = hasPhrase(groups) ? [MANOR_BANK] : [COMPOUND_BANK, MANOR_BANK];
+    for (const victim of spare) {
+      let done = false;
+      for (const from of banks) {
+        const bank = pickBankGroup(from, victim);
+        if (!bank) continue;
+        const next = groups.map((g) => (
+          g === victim ? { theme: bank.theme, tier: g.tier, words: [...bank.words] } : g));
+        if (nonFormCount(next) < MIN_NON_FORM) continue;
+        if (typeOfTheme(bank.theme) !== 'wordplay'
+          && count('wordplay') - 1 < spec.minWordplay) continue;
+        // THE PRICE TAG. The tier's own trap floor, measured on the board this
+        // swap would actually ship, at the tier's own tightness.
+        if (tightTrapCount(next, spec.minHerringScore) < spec.minHerrings) continue;
+        swapIn(victim, bank);
+        done = true;
+        mixPassBought += 1;
+        break;
+      }
+      if (done) break;
+    }
   }
 
   // Trivia always sits at the easiest tier: swap tiers with the yellow group.
@@ -5238,6 +5362,13 @@ function main() {
   const familyLine = sigs.families
     .map(([f, n]) => `${f} ${n} (${((n / Math.max(1, out.length)) * 100).toFixed(0)}%)`).join(', ');
   const shapeLine = sigs.shape.map(([w, n]) => `${w}w ${n}`).join(', ');
+  // ROUND 55 — the price of the top shelf's register mix, printed where the
+  // rest of the composition report is, so it cannot be lost between rounds.
+  console.log(
+    `  register mix at the tier the floor exempts: ${mixPassBought} of ${mixPassAsked} attempts`
+    + ` bought a second KIND of thinking with the fourth slot;`
+    + ` ${mixPassAsked - mixPassBought} were refused by the tier's own tight-trap floor`,
+  );
   console.log(
     `word-web.json: ${out.length} boards — ${perTier}; ${demoted} demoted for want of tight traps, ` +
     `${dropped} dropped at their tier gate${droppedIds.length ? ` (${droppedIds.join('; ')})` : ''}, ` +

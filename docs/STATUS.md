@@ -234,6 +234,49 @@ account in `docs/THE_CLIMB.md` §1i, teardown in `docs/BENCHMARKS.md` §2.
   to widen: `npm run vitest tests/puzzles/wordweb-register.test.ts` gates the capability
   structurally and prints both shares every run.
 
+**AND ROUND 51 LOST A REGISTER AT TIER 3 AND DID NOT PUBLISH IT (round 55).** The complaint was
+measured by a critic on a looser instrument than the builder's; re-derived here it is right, and the
+number is one nobody had ever asked for. Full account in `docs/THE_CLIMB.md` §1j.
+
+- **THE LOSS: tier-3 PHRASE categories 15 → 6, on 15 of 52 boards → 6 of 46.** Round 51 published
+  the FORM number (*"38 of 46 are three quarters letter tricks"*) and one phrase number about
+  purple, and never said that a whole register had drained out of the top of the house. Its gate
+  could not have said so either: it asks about FORM from both ends and never asks the other two
+  registers one at a time. **Round 51 paid tier 3's meaning floor out of the phrase slot** — four
+  boards kept their tier and lost their frame — and there is an arithmetic under it: a compound
+  frame is **4 intrinsic** against yellow's band of 0–3, so a frame can never be a board's way in,
+  and at tier 3 the only slot that can legally be yellow is the board's single plain category.
+- **AND ROUND 51'S DIAGNOSIS OF WHAT THE FIX COSTS WAS WRONG.** It named the SUBTLE BANK. Run as an
+  oracle, the cap costs the shelf THREE boards (157 → 154) — **the tier-3 boards do not die, they
+  DEMOTE** (tier 2 65 → 81) — and `meetsTier` names the real constraint: **`minHerrings: 2` at
+  `HERRING_TIGHT`. A tier-3 board's third letter mechanic is where its second TIGHT thread comes
+  from.** Second constraint, independent: there is exactly ONE phrase family, and `compound` was
+  already the trick on 96 of 157 boards against a 70% budget — forced, the census hits 75% and the
+  build fails.
+- **WHAT SHIPPED, at the tier's own price:** the fourth slot is offered the mix board by board and
+  the swap is kept **only if the board can still meet its tier's trap floor without the mechanic it
+  gave up**, so nothing is demoted or dropped to pay for it, by construction. **45 of 193 attempts
+  can afford it; 148 cannot, and that ratio is the round's real product.** It runs AFTER the trap
+  planter (before it, the planter ate the plain category back: same rule, 2 boards instead of 45),
+  and it draws its plain half from `MANOR_BANK` — not a preference, the only plain supply written
+  collider-first and therefore the only one that can pay a tight trap. Out of the whole semantic
+  bank instead: 165 boards with **tier 3 at 42, under its floor**.
+- **THE SHELF: 157 → 163 boards, tiers 46/65/46 → 49/62/52.** Tier 3 boards with two categories that
+  are not letter tricks **8 → 22**; three quarters letter tricks **38/46 → 30/52**; phrase **6 → 13**;
+  threads about the house **27 → 37**. Contested tiles **1.62 → 1.64 mean, 59.2% → 60% inside
+  Connections' band** — round 41's win is not spent, because the pass refuses any swap that costs it.
+- **AND THE TRIVIA GIMME WAS ONE BOARD FROM VACUOUS — this round found it by breaking it.** Of
+  THIRTY-ONE authored trivia categories exactly ONE reached the round-51 shelf, and the reshuffle
+  took it. The trap planter is where they go (111 evictions in one build) because a knowledge
+  category collides with nothing and is always the cheapest thing to spend. **A gimme is not trap
+  supply**; the planter may no longer eat one at a tier that allows it. The shelf ships **6**.
+- **THE CENSUS IS AN EQUALITY NOW, because a floor is what let this happen.**
+  `tests/puzzles/wordweb-register.test.ts` asserts the per-tier, per-register census exactly against
+  the table published in §1j: a floor lets a register drain away in the direction it is not
+  watching, which is precisely what happened. Any content change goes red until the number is
+  republished with its reason, and the test prints all three shelves every run so republishing is a
+  copy.
+
 **AND THE CAST STARTED TELLING HER WHERE TO LOOK (round 54).** The owner's 13 Aug ruling asked for
 a lead — *"draft the library, the old codger left an important document on the shelves there,
 worth a read… and the player then saying oh shit, I need to go to the library"* — as against a card
@@ -419,7 +462,7 @@ a word game, mistakes cost **steps** rather than health, and a mystery — a wor
 dictionary — is assembled across days. Volume 1 answers to LACUNA. **2D only: the wife gets
 motion-sick, so never propose 3D or parallax.**
 
-Seven rooms, ~1,123 shipped puzzles, all solver-verified at build time:
+Seven rooms, ~1,129 shipped puzzles, all solver-verified at build time:
 
 | Room | Game | Pool | Clears its benchmark? |
 |---|---|---|---|
@@ -428,7 +471,7 @@ Seven rooms, ~1,123 shipped puzzles, all solver-verified at build time:
 | The Counting House | Sudoku | 120 | **yes** — t1 = NYT Medium, t2 = NYT Hard exactly |
 | The Linen Closet | Acrostic-like sparse grid + the hem | 76 | **yes** |
 | The Gallery | Twistle (word search) | 210 | **yes**, on section 8's two rules |
-| The Library | Word Web (Connections) | 157 | no — median 2 contested tiles (wants 2–4); tier 3 still 3-of-4 letter tricks |
+| The Library | Word Web (Connections) | 163 | no — median 2 contested tiles (wants 2–4); tier 3 letter-trick-heavy on 30 of 52 |
 | The Darkroom | Substitution cipher | 132 | **fair, not yet clear** — one defensible answer on every board (round 52); tiers 2–3 are still over `LADDER_MINUTES` with no rung |
 
 **Five of seven, up from two in early August.** The three PROTECTED rooms are the Conservatory, the
