@@ -91,6 +91,34 @@ tonight.
    day must actually pay. A character who is wrong is worse than a character who is silent — this
    project already retired one line of Dewey prophecy for exactly that reason.
 
+---
+
+## A lead may go unpaid for several nights. Owner ruling, 14 Aug 2026.
+
+Round 55 measured that **42.3% of leads name a room that never comes up again that evening**, and
+flagged it as the sharpest thing an owner might dislike on contact. It was left deliberately: a
+deck bias toward the named room would move `deckMixAt` and every clock hanging off it.
+
+The owner has ruled, and the ruling is that this is correct as it stands:
+
+> *"Its totally okay for a clue to not pay off for a few nights."*
+
+**Do not bias the deck toward a named room, and do not shorten the wait.** A lead that cannot be
+acted on tonight is not a broken promise — it is an intention the player carries. *I still have
+not got into that library.* That is the detective loop doing its job, and a house that obligingly
+deals the door it just mentioned is a weaker house.
+
+Two things this ruling does NOT license, and a later round should still hold them:
+
+1. **A lead that never pays across a whole campaign.** "A few nights" is a wait; twenty-eight
+   evenings is a lie by omission. Nobody has measured the campaign-level tail — round 55 measured
+   only the same-evening rate. Worth knowing, and worth a floor if the tail is bad.
+2. **A lead repeated while still unpaid.** Hearing about the shelves a third time before ever
+   seeing a Library card turns anticipation into nagging. The one-a-day tail gate limits the rate
+   but does not track whether the last one was ever redeemed.
+
+Both are measurements, not redesigns. The wait itself is the design.
+
 ## Measuring it
 
 The round-46 metric (how often a word room is outbid on its face) now measures the wrong thing and
