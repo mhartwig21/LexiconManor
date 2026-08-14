@@ -222,17 +222,76 @@ export default function JournalView() {
     return () => cancelAnimationFrame(id);
   }, [openLetterId, tab]);
 
+  /**
+   * ══ ROUND 55 — A TAB OPENS WHERE ITS READING IS ═══════════════════════════
+   *
+   * Two defects, one effect, and the first of them was live before this round
+   * touched anything: `.jrn-sheet` is ONE scroll box shared by four tabs and
+   * nothing ever reset it. Scroll to the foot of a 2,714px Word tab, tap
+   * Letters, tap back — and the poem opened wherever the shorter tab's clamp
+   * had left the box, mid-sentence, with no way of knowing there were nine
+   * lines above. A tab is a place, and arriving at a place puts you at its
+   * top.
+   *
+   * The second is this round's own bill. The constraint set (the plate, the
+   * field, the facts) moved ABOVE the poem so it is one flick up rather than
+   * two thousand pixels down — and if nothing else moved, the price would be
+   * that his definition, the thing she opens the Journal to read, would have
+   * gone under the fold. So the Word tab opens on the definition and parks the
+   * instrument above it: the glass she sees is the glass she saw before, and
+   * the plate is now behind a gesture that cannot overshoot instead of behind
+   * the whole poem.
+   *
+   * `scrollTop` is set on the frame after paint, exactly as round 32's letter
+   * effect does, and only when it has an anchor to set it from — a Word tab
+   * with no plate on it yet has nothing above the definition and correctly
+   * stays at 0.
+   */
+  const wordAnchorRef = useRef<HTMLDivElement>(null);
+  const pinRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+    if (openLetterId) return; // round 32's effect owns the box in that case
+    const id = requestAnimationFrame(() => {
+      const anchor = tab === 'word' ? wordAnchorRef.current : null;
+      // Additive, like round 32's: the box carries the PREVIOUS tab's offset
+      // into this render, so a raw assignment would be off by exactly it.
+      // Less the pinned alphabet, which is the one thing on this sheet that
+      // does NOT move — scrolling the definition to the scrollport's top would
+      // otherwise park it underneath the plate.
+      const pin = tab === 'word' ? pinRef.current : null;
+      sheet.scrollTop = anchor
+        ? Math.max(0, sheet.scrollTop
+          + anchor.getBoundingClientRect().top - sheet.getBoundingClientRect().top
+          - (pin ? pin.getBoundingClientRect().height : 0))
+        : 0;
+    });
+    return () => cancelAnimationFrame(id);
+    // Re-anchors when the tab changes; the deps are deliberately not the
+    // volume's contents, because re-filing a page mid-read must not yank the
+    // box out from under her.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
   return (
     <div className="jrn-page">
       <div className="jrn">
         {/* Back control FIRST and left, where a back control is looked for. */}
         <header className="jrn__head">
           <BackLink flavour="Put it down" />
-          <h2 className="jrn__title">The Journal</h2>
+          {/* ROUND 55: the volume line rides in the head rather than on a row
+              of its own. It is a label — the same words on every tab on every
+              day — and the row it used to hold was 25px of the one screen the
+              mystery lives on. Same words, same place in the reading order,
+              inside the head's own height. See journal.css `.jrn__head`. */}
+          <div className="jrn__heading">
+            <h2 className="jrn__title">The Journal</h2>
+            <div className="jrn__volume">
+              Volume I — {content.title}{solved ? ' · closed' : ''}
+            </div>
+          </div>
         </header>
-        <div className="jrn__volume">
-          Volume I — {content.title}{solved ? ' · closed' : ''}
-        </div>
 
         {/* Two marks, two meanings, two places (round 12). The wax count is
             live persisted unread — it retires when the tab's contents have been
@@ -400,7 +459,76 @@ export default function JournalView() {
           </>
         )}
 
-        <div className="jrn-caption">His definition, as recovered:</div>
+        {/* ══ ROUND 55 — THE CONSTRAINT SET COMES OUT FROM BEHIND THE DOCUMENT ═
+            The alphabet plate, the field still standing and the four facts used
+            to be filed BELOW the poem. Measured at 375x667 with every slot
+            legible, the poem is 2,130px: to check which letters the engravings
+            had struck while reading his first line she had to scroll two
+            thousand pixels DOWN past nine lines she was in the middle of, and
+            then all the way back. That is what "the Word tab scrolls badly"
+            was — not the length, which a ten-line poem with an apparatus is
+            always going to have on a 375px phone, but that the instrument she
+            deduces WITH was behind the document she deduces FROM.
+
+            Above the poem it is one flick UP from anywhere in it — the one
+            scroll gesture that is free, because the top of a scroller is a
+            destination you cannot overshoot. Nothing is deleted, nothing is
+            hidden and no line changes its words; only the order changes.
+
+            And so the sheet opens where the reading is (see `wordAnchorRef`
+            below and the round-32 effect it borrows from): the definition is
+            still the first thing on the glass, exactly as it was, with the
+            instrument parked one gesture above it. */}
+        {facts.sources > 0 && (
+          <>
+            <div className="jrn-caption">The alphabet, as the engravings leave it:</div>
+            <div className="jrn-word__pin" ref={pinRef}>
+            <div className="jrn-plate" role="img" aria-label="Alphabet plate showing eliminated and required letters">
+              {ALPHABET.map((ch) => {
+                const out = facts.eliminated.has(ch);
+                const inn = facts.required.has(ch);
+                return (
+                  <span key={ch} className={`jrn-plate__cell${out ? ' jrn-plate__cell--out' : ''}${inn ? ' jrn-plate__cell--in' : ''}`}>
+                    {ch}
+                  </span>
+                );
+              })}
+            </div>
+            {/* ══ ROUND 47 — WHAT THE PLATE BOUGHT HER, IN WORDS ═══════════
+                The engraved arc narrows 171,755 dictionary words to one across
+                ten steps, and until this line the game never said a number:
+                three cold readers watched the letters accumulate and had no
+                way to tell a page that halved the field from a page that
+                barely moved it. It is a COUNT and never a LIST — "five words
+                still fit" is the pleasure of a closing field; WHICH five is
+                the answer handed over four pages early to a player who may
+                spend a free word a day at the speaking tube. It obeys the same
+                legibility rule as the letters beside it (engine/journal.
+                wordsStandingFor), so a SEALED engraving moves neither: the
+                field falls when she solves a room. */}
+            {stillFit !== null && (
+              <div className="jrn-standing">
+                <span className="jrn-standing__n">{grouped(stillFit)}</span>{' '}
+                <span className="jrn-standing__label">
+                  {stillFit === 1
+                    ? 'word in the dictionary still fits it'
+                    : 'words in the dictionary still fit it'}
+                </span>
+              </div>
+            )}
+            </div>
+            <div className="jrn-facts">
+              {facts.knownLength !== null && <span>· Six candles — {facts.knownLength} letters.</span>}
+              {facts.startsWith && <span>· It begins with {facts.startsWith}.</span>}
+              {facts.vowelSequence && (
+                <span>· Its vowels, in order: {facts.vowelSequence.split('').join(' · ')}.</span>
+              )}
+              {facts.oneLetterTwice && <span>· Exactly one letter appears twice.</span>}
+            </div>
+          </>
+        )}
+
+        <div className="jrn-caption" ref={wordAnchorRef}>His definition, as recovered:</div>
         {anyLine ? (
           <div className="jrn-poem">
             {slots.map((s) =>
@@ -456,53 +584,6 @@ export default function JournalView() {
           </div>
         ) : (
           <p className="jrn-empty">Not one line of it recovered yet. The violet rooms keep his torn pages.</p>
-        )}
-
-        {facts.sources > 0 && (
-          <>
-            <div className="jrn-caption">The alphabet, as the engravings leave it:</div>
-            <div className="jrn-plate" role="img" aria-label="Alphabet plate showing eliminated and required letters">
-              {ALPHABET.map((ch) => {
-                const out = facts.eliminated.has(ch);
-                const inn = facts.required.has(ch);
-                return (
-                  <span key={ch} className={`jrn-plate__cell${out ? ' jrn-plate__cell--out' : ''}${inn ? ' jrn-plate__cell--in' : ''}`}>
-                    {ch}
-                  </span>
-                );
-              })}
-            </div>
-            {/* ══ ROUND 47 — WHAT THE PLATE BOUGHT HER, IN WORDS ═══════════
-                The engraved arc narrows 171,755 dictionary words to one across
-                ten steps, and until this line the game never said a number:
-                three cold readers watched the letters accumulate and had no
-                way to tell a page that halved the field from a page that
-                barely moved it. It is a COUNT and never a LIST — "five words
-                still fit" is the pleasure of a closing field; WHICH five is
-                the answer handed over four pages early to a player who may
-                spend a free word a day at the speaking tube. It obeys the same
-                legibility rule as the letters beside it (engine/journal.
-                wordsStandingFor), so a SEALED engraving moves neither: the
-                field falls when she solves a room. */}
-            {stillFit !== null && (
-              <div className="jrn-standing">
-                <span className="jrn-standing__n">{grouped(stillFit)}</span>{' '}
-                <span className="jrn-standing__label">
-                  {stillFit === 1
-                    ? 'word in the dictionary still fits it'
-                    : 'words in the dictionary still fit it'}
-                </span>
-              </div>
-            )}
-            <div className="jrn-facts">
-              {facts.knownLength !== null && <span>· Six candles — {facts.knownLength} letters.</span>}
-              {facts.startsWith && <span>· It begins with {facts.startsWith}.</span>}
-              {facts.vowelSequence && (
-                <span>· Its vowels, in order: {facts.vowelSequence.split('').join(' · ')}.</span>
-              )}
-              {facts.oneLetterTwice && <span>· Exactly one letter appears twice.</span>}
-            </div>
-          </>
         )}
 
         {guesses.length > 0 && (

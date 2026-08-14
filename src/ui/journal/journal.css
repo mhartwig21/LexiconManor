@@ -40,7 +40,20 @@
 }
 
 /* Back control first and LEFT; the title takes the right of the row, so the
-   head costs no more vertical room than the old stacked block did. */
+   head costs no more vertical room than the old stacked block did.
+
+   ══ ROUND 55 — THE FURNITURE WAS TAKING A THIRD OF THE MYSTERY'S SCREEN ════
+   Measured at 375x667 on the Word tab: `.jrn-sheet` was 423px of a 667px
+   glass. Above it sat the day bar (50), this head (47), the volume line on a
+   row of its own (22 + a 3.2 margin) and the tab ribbon (45 + an 8.8 margin);
+   below it the rail (62). The volume line is a LABEL — it never changes, on
+   any tab, on any day — and it was spending a full row plus its margin on
+   saying so, while the screen the whole mystery lives on ran 5.4 screens deep.
+   It rides in the head's right-hand column now, under the title, and the title
+   gives up the body leading it never needed (a 22px display face at 1.45 is
+   32px tall for one line of two words). The head measures the same 47px it
+   always did, the row underneath is gone, and the sheet is 25px taller for it.
+   Nothing is deleted and nothing changes what it says. */
 .jrn__head {
   display: flex;
   align-items: center;
@@ -52,11 +65,16 @@
   font-family: var(--font-display);
   font-size: var(--text-display-sm);
   font-weight: 400;
+  /* Display faces set their own leading; the body's 1.45 is for prose. */
+  line-height: 1.15;
 }
-/* The volume line lifts out of the head to its own full-width row — at 390px
-   it no longer has to share the row with the plate. */
+.jrn__heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+}
 .jrn__volume {
-  margin-top: 0.2rem;
   font-size: var(--text-sm);
   color: var(--ink-soft);
   font-style: italic;
@@ -81,7 +99,9 @@
 .jrn-tabs {
   display: flex;
   gap: 0.25rem;
-  margin-top: 0.55rem;
+  /* The ribbon used to clear the volume line's own row; with the label folded
+     into the head (round 55) it sits under the head itself. */
+  margin-top: 0.35rem;
   border-bottom: var(--rule);
 }
 .jrn-tab {
@@ -154,12 +174,47 @@
   border: var(--rule);
   border-top: none;
   border-radius: 0 0 var(--radius-sheet) var(--radius-sheet);
-  padding: 0.9rem 0.95rem calc(0.9rem + env(safe-area-inset-bottom));
+  /* ROUND 55 — THE TOP PADDING IS THE FIRST CHILD'S MARGIN NOW, and it has to
+     be: a scroll container's padding box IS the sticky containing block, so
+     with `padding-top` here a pinned element sits 14px down the glass and the
+     poem scrolls through the strip above it. Same gap, same look, and
+     `.jrn-word__pin` can sit flush at the top of the scrollport. */
+  padding: 0 0.95rem calc(0.9rem + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
 }
+.jrn-sheet > *:first-child { margin-top: 0.9rem; }
 .jrn-sheet::-webkit-scrollbar { display: none; }
+
+/* ══ ROUND 55 — THE ALPHABET STAYS ON THE GLASS ═════════════════════════════
+   The plate is the constraint set: which letters the engravings have struck
+   out and which they insist on. It was filed under 2,130px of poem, so
+   checking it against the line she was reading meant scrolling the whole
+   document and back — and putting it merely ABOVE the poem only moves that
+   distance to the other side of her. Pinned, the distance is zero from every
+   line, which is what every word game that asks you to hold letters in your
+   head does with its own board.
+
+   It costs 105px of a 450px sheet at 375x667 (the plate's two rows and the
+   field count under it), which is why the plate went to thirteen columns in
+   the same round. `.jrn-sheet > *` already gives it the sheet's own paper as
+   an opaque ground, so the poem passes UNDER it rather than through it. */
+.jrn-word__pin {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px dashed var(--paper-edge);
+  /* The sheet's own 0.85rem gap sits BELOW this box and nothing owns it, so a
+     line of the poem passing through it read as a clipped line jammed under
+     the rule. A solid drop of the sheet's paper, the exact height of the gap,
+     paints it — no scrollbar, no fade, just the page continuing under a rule. */
+  box-shadow: 0 0.85rem 0 0 var(--paper-raised);
+}
 
 .jrn-empty {
   text-align: center;
@@ -432,10 +487,20 @@
   padding-left: 0.55rem;
 }
 
-/* Alphabet plate */
+/* Alphabet plate.
+
+   ══ ROUND 55 — TWENTY-SIX LETTERS IN TWO ROWS, NOT FOUR ═══════════════════
+   Seven columns split the alphabet at G, N and U — three places nobody has
+   ever divided it — and cost 149px of a 423px sheet to do it. Thirteen is the
+   alphabet's own half (A–M / N–Z), so the plate reads as the alphabet rather
+   than as a grid that happens to hold letters, and it measures 72px. The cell
+   is 22px wide at 375 and carries a 16.8px capital; nothing here is tappable
+   (`role="img"`), so the 44px tap floor is not the governing rule — the
+   governing rule is that a struck letter must still read, which is why the
+   TYPE size does not move and only the box around it does. */
 .jrn-plate {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(13, 1fr);
   gap: 0.3rem;
 }
 .jrn-plate__cell {

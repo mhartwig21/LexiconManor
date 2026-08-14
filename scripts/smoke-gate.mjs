@@ -165,6 +165,27 @@ const WORST_CIPHER = JSON.parse(readFileSync(resolve(ROOT, 'content/generated/ci
   .sort((a, b) => b.letters - a.letters || b.words - a.words || a.id.localeCompare(b.id))[0].id;
 
 /**
+ * ══ ROUND 55 — THE UNDIMMED CHECK'S SUBJECT, TAKEN OFF THE DECK ═══════════
+ *
+ * `UTILITY_EFFECTS` is the one place a room's payout line is authored, and
+ * `NoticeRail` is the one place it is rendered. The gate needs a card that is
+ * guaranteed to raise a payout notice; parsing the first row of that table
+ * gives it one WITHOUT borrowing anything from the rail it is about to audit —
+ * the same rule `gate:attribution` follows when it takes expected room names
+ * off `deck.ts` rather than off the composer under test.
+ *
+ * The `toast` comes with it, so the gate can say the card on the glass is the
+ * card it staged rather than whatever happened to be queued.
+ */
+const PAYOUT_CARD = (() => {
+  const src = readFileSync(resolve(ROOT, 'src/engine/manor/deck.ts'), 'utf8');
+  const table = src.slice(src.indexOf('export const UTILITY_EFFECTS'));
+  const row = /'([a-z-]+)':\s*\{[^}]*?toast:\s*'([^']+)'/s.exec(table);
+  if (!row) throw new Error('deck.ts: no UTILITY_EFFECTS row with a toast — the undimmed check has no subject to stage');
+  return { id: row[1], toast: row[2] };
+})();
+
+/**
  * The seven rooms, each by the card the deck really ships, the kind its
  * adapter is registered under, the root its view paints, and the shape of
  * board that proves it rendered rather than merely mounted.
@@ -3045,6 +3066,92 @@ async function glassLuminance(page, div) {
     }
     return { w, h, div: d, mean: sum / lum.length, lum };
   }, [shot.toString('base64'), div]);
+}
+
+/**
+ * ══ ROUND 55 — THE UNDIMMED CHECK GETS ITS SUBJECT ON PURPOSE ═════════════
+ *
+ * Round 53's finding was a payout card printed over the candle at full
+ * brightness while the house went dark, and the check written for it looks for
+ * lit pixels the veil never touched. What nobody asked was whether there was a
+ * payout card on the glass to look at. Across three clean runs the 375x667 arm
+ * found one every time and the 390x844 arm found one on two of three: dusk
+ * falls out of the LAST STEP, which is very often the step that drafted the
+ * room the notice is about — very often, and not always. On the run where it
+ * was absent the check measured a glass with nothing above the veil, found
+ * nothing stuck, and reported green. A gate that passes because its subject
+ * was missing is failure mode §3.5 wearing the other coat.
+ *
+ * So the card is STAGED, through the audited spine the rail actually reads
+ * (`recordEvent` → `recentEvents` → `NoticeRail`), with a card taken off
+ * `UTILITY_EFFECTS` rather than off the rail. Nothing is faked: the rail's own
+ * effect, its own dwell timer and its own layer are what put it on the glass.
+ *
+ * And the spine is put back. `recentEvents` feeds the night digest's own
+ * `roomsDrafted`, so a staged draft left in it would make the night lie about
+ * the day; the rail keeps the notice it already made (its `seen` high-water
+ * mark treats a shrinking stream as a reset, not a rewind), so restoring the
+ * events costs the glass nothing and costs the tally nothing either.
+ */
+async function stageDuskNotice(page, card) {
+  return page.evaluate(async ({ id, toast }) => {
+    const store = window.__manorStore;
+    if (!store) return { staged: false, why: 'no store on the page' };
+    const before = store.getState();
+    const events = before.recentEvents;
+    const counters = before.counters;
+    try {
+      before.recordEvent({
+        type: 'room-drafted', cellKey: '0,0', cardId: id, category: 'utility',
+      });
+    } catch (err) {
+      return { staged: false, why: `recordEvent refused it: ${err.message}` };
+    }
+    // The rail renders on an effect; give React the frame it needs.
+    for (let i = 0; i < 40; i++) {
+      if (document.querySelector('.chr-notice')) break;
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((r) => setTimeout(r, 25));
+    }
+    store.setState({ recentEvents: events, counters });
+    const el = document.querySelector('.chr-notice');
+    const r = el ? el.getBoundingClientRect() : null;
+    return {
+      staged: !!el,
+      toast,
+      said: el ? (el.textContent || '').replace(/\s+/g, ' ').trim() : '',
+      box: r && r.width > 0 && r.height > 0
+        ? { left: r.left, top: r.top, right: r.right, bottom: r.bottom } : null,
+      why: el ? '' : 'the rail never rendered a notice for a card that pays one',
+    };
+  }, card);
+}
+
+/**
+ * HOW MUCH OF THE STAGED CARD THE MEASUREMENT COULD ACTUALLY SEE.
+ *
+ * The undimmed check reads LIT pixels; a subject that is on the glass but not
+ * lit — clipped, transparent, off the viewport, `display: none` — is a subject
+ * the check cannot fail on. So the count is taken in the check's own grid, on
+ * the check's own frame, with the check's own `litFloor`: these are the very
+ * cells that would have gone into `stuck` had the card been above the veil.
+ */
+function subjectCoverage(frame, box) {
+  if (!frame || !box) return { cells: 0, lit: 0 };
+  const d = frame.div;
+  const x0 = Math.max(0, Math.ceil(box.left / d));
+  const x1 = Math.min(frame.w - 1, Math.floor(box.right / d));
+  const y0 = Math.max(0, Math.ceil(box.top / d));
+  const y1 = Math.min(frame.h - 1, Math.floor(box.bottom / d));
+  let cells = 0;
+  let lit = 0;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      cells++;
+      if (frame.lum[y * frame.w + x] >= DUSK.litFloor) lit++;
+    }
+  }
+  return { cells, lit };
 }
 
 /** Grid indices covered by the veil's own furniture (candle, sentence, skip). */
