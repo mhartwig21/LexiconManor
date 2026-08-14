@@ -595,6 +595,34 @@ live bundle for the HEAD sha. Revert to batching when the wife is playing again.
 
 ## 6. What is open, ranked
 
+**FIRST — the round-25 adversarial refutation (6/10, holds up FALSE). Three findings, all leads:**
+
+1. **The frequency ceiling cannot fail.** `tests/leads.test.ts` asserts leadDays/days <= 1/WHEREABOUTS_EVERY.
+   With 8 `once:true` leads over a 24-evening campaign the maximum attainable share IS 0.3333 —
+   exactly the ceiling. The gate can never go red. This is the "a gate that cannot come out wrong"
+   pattern for at least the fifth time; it now needs a bound derived from something other than the
+   content count.
+2. **30.8% of leads are never paid WHILE SHE IS STANDING IN THE ROOM.** 26 leads over the round's
+   own 6-seed walk; only 4 paid the same evening. NOTE THE DISTINCTION FROM THE OWNER'S RULING:
+   he ruled (14 Aug, docs/LEADS.md) that a lead going unpaid for several nights is CORRECT and the
+   deck must not be biased. That is about the room not coming up. THIS IS DIFFERENT — she went
+   where she was sent and got nothing, which is the dishonesty case `withHonestLeads` was built to
+   make impossible. It is a defect, not the ruling.
+3. **The lintel channel drains and outstanding leads are never retired.** The channel carries 16
+   pages and a 24-evening campaign exhausts it around day 16-17. New leads correctly stop being
+   spoken, but ones already given are never withdrawn — so a late-campaign lead can point at a
+   room that cannot pay anyone.
+
+**Also from round 25's live verifier:** `test:prices` went red once on this tree with round 45's
+own defect class returning — the draft footer reading "Step back − 1 step" against a charge of 0.
+Seen once, not reproduced; the same flake family STATUS already records for gate:glass.
+
+**And unpublished:** the journal Word-tab work (73a6c90) was rescued from two dead builders and has
+no report behind it. Re-measure the Word tab scroll at 375x667 with the fullest volume before
+trusting the 1,177px-in-347px defect is closed.
+
+
+
 1. **~~The wage table is too coarse to spread a draft~~ — settled in round 46, both halves**
    (top of this file). What is left in its place, ranked: **(a)** the page clause is VALVED, so
    the word room's card reverts to the round-45 face once the day's engraving is filed — the
