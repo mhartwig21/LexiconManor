@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  lockedDraftLabel, lockedRefusalAnnouncement, lockedRefusalLine, LOCKED_REFUSAL_LINES,
+  lockedDraftLabel, lockedRefusalAnnouncement, lockedRefusalLine,
+  LOCKED_REFUSAL_LINES, LOCKED_SHORTFALL_LINES,
 } from '../src/ui/blueprint/pricing';
 import { rowName } from '../src/engine/economy/steps';
+import { KEY_COST } from '../src/engine/manor/locks';
 
 /**
  * ═══ THE PADLOCK REFUSED WORDLESSLY (round-5 verifier, AAA 4.16) ══════════
@@ -32,16 +34,102 @@ const root = join(__dirname, '..');
 const SHEET = readFileSync(join(root, 'src', 'ui', 'blueprint', 'BlueprintSheet.tsx'), 'utf8');
 const SHEET_CSS = readFileSync(join(root, 'src', 'ui', 'blueprint', 'blueprint.css'), 'utf8');
 
+/**
+ * ROUND 47 — DRIVE THE PRICE THE GAME CHARGES, NOT THE ONE THE TEST LIKED.
+ *
+ * Every assertion in this file used to pass a literal `1` as the key cost.
+ * `DOOR_LOCKS.keyCost` has been **2** since round 10. So the suite asserted,
+ * in detail and in green, that a padlock costing one key explains itself
+ * correctly — while the shipped game charged two and never said so anywhere a
+ * sighted player could read it. The owner found it by playing: *"I have a key
+ * in my current run but cannot unlock the door!"*
+ *
+ * That is this project's recurring failure in its purest form — an instrument
+ * that shares the artifact's assumptions — so the number is now imported from
+ * the engine and there is no literal left to drift from.
+ */
+const COST = KEY_COST;
+const words = (n: number) => `${n} key${n === 1 ? '' : 's'}`;
+/**
+ * Every line the player can be shown. The empty-purse lines are rendered at
+ * the LIVE price; the shortfall lines cannot be — at `keyCost` 1 there is no
+ * such thing as "some but not enough" — so they are rendered at 2, the price
+ * the owner has just ruled against, precisely so the copy that answers a
+ * shortfall stays correct if a future round ever prices a door above one key
+ * again. A line nobody can currently reach is still a line that must be right
+ * the day it becomes reachable; that is how the 2-key defect shipped.
+ */
+const SHORTFALL_COST = Math.max(2, COST);
+const EVERY_LINE = [
+  ...LOCKED_REFUSAL_LINES.map((f) => f(words(COST))),
+  ...LOCKED_SHORTFALL_LINES.map((f) => f(words(SHORTFALL_COST), SHORTFALL_COST - 1)),
+];
+
 describe('the refusal has words (AAA 4.16 — never silence at a gate)', () => {
   it('every line is short, warm, and names the remedy', () => {
     expect(LOCKED_REFUSAL_LINES.length).toBeGreaterThanOrEqual(2);
-    for (const line of LOCKED_REFUSAL_LINES) {
+    for (const line of EVERY_LINE) {
       expect(line.trim().length).toBeGreaterThan(0);
       // Short enough to read at a glance on a 390px sheet without wrapping.
       expect(line.length).toBeLessThanOrEqual(48);
       // The refusal's whole job is to point at the key supply.
       expect(line.toLowerCase()).toContain('key');
     }
+  });
+
+  /**
+   * ═══ THE BUG THE OWNER PLAYED INTO ════════════════════════════════════════
+   * A padlock cost two keys and nothing visible said two. (It costs one now —
+   * his ruling — but the copy must never again depend on that.) So the line a
+   * player gets carries the NUMBER, and it is the number the door charges,
+   * interpolated and never typed, so a reprice cannot leave the copy lying.
+   *
+   * NOT GREEN BY CONSTRUCTION: every line this replaces ("Shut fast. Keys come
+   * off rooms you solve.", and its two siblings) fails this, and so does any
+   * future line that goes back to saying "a key" at a door that wants two.
+   */
+  it('every line states HOW MANY keys, at the price the door actually charges', () => {
+    for (const line of EVERY_LINE) {
+      expect(line, `"${line}" never says how many keys`).toContain(String(COST));
+    }
+    // …and the count agrees with itself in English at any price.
+    expect(lockedRefusalLine(0, 1)).toContain('1 key');
+    expect(lockedRefusalLine(0, 1)).not.toContain('1 keys');
+    expect(lockedRefusalLine(0, 3)).toContain('3 keys');
+  });
+
+  /**
+   * The other half of the owner's report: he HAD a key. "Keys come off rooms
+   * you solve" is a true sentence and a useless one to a player holding one of
+   * the two a door wants — it answers a question she did not ask and leaves
+   * the one she did ("why won't this open?") unanswered, which is how a
+   * working mechanic reads as a broken one.
+   */
+  it('a purse with something in it gets a different line from an empty one', () => {
+    const empty = lockedRefusalLine(0, SHORTFALL_COST, 0);
+    const short = lockedRefusalLine(0, SHORTFALL_COST, SHORTFALL_COST - 1);
+    expect(short).not.toBe(empty);
+    // It says what she is holding, so the shortfall is arithmetic she can do.
+    expect(short).toContain(String(SHORTFALL_COST - 1));
+    expect(short.toLowerCase()).toMatch(/you hold/);
+    // The empty purse still gets pointed at the source instead.
+    expect(empty.toLowerCase()).toMatch(/solve[sd]?\b/);
+  });
+
+  /**
+   * ROUND 47 — AND AT THE PRICE THE GAME ACTUALLY CHARGES, THERE IS NO
+   * SHORTFALL AT ALL, WHICH IS THE POINT OF THE RULING.
+   *
+   * A padlock costs one key. So a purse either has a key, in which case the
+   * door opens, or it does not, in which case the line points at the source.
+   * "You are holding one of the two this wants" — the sentence the owner's
+   * playthrough needed — is a sentence the shipped game no longer has to say.
+   * Pinned so that a reprice above one key cannot land without the shortfall
+   * copy being reconsidered along with it.
+   */
+  it('at one key a door there is no half-paid state to explain', () => {
+    expect(COST).toBe(1);
+    expect(lockedRefusalLine(0, COST, 0)).toBe(lockedRefusalLine(0, COST, COST - 1));
   });
 
   /**
@@ -68,48 +156,58 @@ describe('the refusal has words (AAA 4.16 — never silence at a gate)', () => {
    * price without naming where the price is earned.
    */
   it('every line also names WHERE a key comes from, not only that one is wanted', () => {
-    for (const line of LOCKED_REFUSAL_LINES) {
+    for (const line of EVERY_LINE) {
       expect(
         /solve[sd]?\b/i.test(line),
         `"${line}" names the remedy but not its source`,
       ).toBe(true);
     }
     // And the spoken form ties it to the surface that keeps the promise.
-    expect(lockedRefusalAnnouncement(0, 5, 1).toLowerCase()).toContain('solved room pays');
+    expect(lockedRefusalAnnouncement(0, 5, COST).toLowerCase()).toContain('solved room pays');
   });
 
   it('uses no defeat language (AAA 4.12 string lint)', () => {
     const copy = [
-      ...LOCKED_REFUSAL_LINES,
-      lockedRefusalAnnouncement(0, 5, 1),
-      lockedDraftLabel(3, 5, 1, false),
+      ...EVERY_LINE,
+      lockedRefusalAnnouncement(0, 5, COST),
+      lockedRefusalAnnouncement(0, 5, COST, COST - 1),
+      lockedDraftLabel(3, 5, COST, false),
+      lockedDraftLabel(3, 5, COST, true),
     ].join(' ').toLowerCase();
     for (const banned of ['fail', 'failure', 'lose', 'loser', 'death', 'damage', 'defeat']) {
       expect(copy).not.toContain(banned);
     }
     // Costs read as spending, never dying (AAA R.3) — and here nothing is even
     // spent, which the copy has to be able to say.
-    expect(lockedRefusalAnnouncement(0, 5, 1).toLowerCase()).toContain('nothing was spent');
+    expect(lockedRefusalAnnouncement(0, 5, COST).toLowerCase()).toContain('nothing was spent');
   });
 
   it('answers a second try instead of parroting the first', () => {
-    expect(lockedRefusalLine(1)).not.toBe(lockedRefusalLine(0));
-    expect(lockedRefusalLine(2)).not.toBe(lockedRefusalLine(1));
-    // It rotates rather than running out.
-    expect(lockedRefusalLine(LOCKED_REFUSAL_LINES.length)).toBe(lockedRefusalLine(0));
-    expect(lockedRefusalLine(-4)).toBe(lockedRefusalLine(0));
+    for (const held of [0, COST - 1]) {
+      expect(lockedRefusalLine(1, COST, held)).not.toBe(lockedRefusalLine(0, COST, held));
+      expect(lockedRefusalLine(2, COST, held)).not.toBe(lockedRefusalLine(1, COST, held));
+      // It rotates rather than running out.
+      expect(lockedRefusalLine(LOCKED_REFUSAL_LINES.length, COST, held))
+        .toBe(lockedRefusalLine(0, COST, held));
+      expect(lockedRefusalLine(-4, COST, held)).toBe(lockedRefusalLine(0, COST, held));
+    }
   });
 
   it('the spoken form restates the whole gate (the glyph is invisible to AT)', () => {
-    const spoken = lockedRefusalAnnouncement(0, 5, 1);
-    expect(spoken).toContain(lockedRefusalLine(0));
-    expect(spoken).toContain(rowName(5));       // WHICH door
-    expect(spoken).toContain('1 key');          // what opens it
+    const spoken = lockedRefusalAnnouncement(0, 5, COST);
+    expect(spoken).toContain(lockedRefusalLine(0, COST));
+    expect(spoken).toContain(rowName(5));            // WHICH door
+    expect(spoken).toContain(words(COST));           // what opens it, at the live price
     expect(spoken.toLowerCase()).toContain('padlock');
     // It is a restatement, not a repetition of the terse drawn line.
-    expect(spoken.length).toBeGreaterThan(lockedRefusalLine(0).length * 2);
-    // Plural agreement, in case a future retune raises the price.
+    expect(spoken.length).toBeGreaterThan(lockedRefusalLine(0, COST).length * 2);
+    // Plural agreement in both directions, whatever a retune does to the price.
+    expect(lockedRefusalAnnouncement(0, 5, 1)).toContain('1 key');
+    expect(lockedRefusalAnnouncement(0, 5, 1)).not.toContain('1 keys');
     expect(lockedRefusalAnnouncement(0, 5, 2)).toContain('2 keys');
+    // And it carries the purse through, so AT hears the shortfall too.
+    expect(lockedRefusalAnnouncement(0, 5, COST, COST - 1))
+      .toContain(lockedRefusalLine(0, COST, COST - 1));
   });
 });
 
@@ -129,11 +227,29 @@ describe('the ARIA matches the behaviour', () => {
     // can pay — which are the part this test is about.
     expect(SHEET).toMatch(/lockedDraftLabel\(player\.row, cell\.row, KEY_COST, canPay,/);
     // The label carries the state ARIA no longer (wrongly) carries.
-    const keyless = lockedDraftLabel(3, 5, 1, false);
+    const keyless = lockedDraftLabel(3, 5, COST, false);
     expect(keyless.toLowerCase()).toContain('padlocked');
-    expect(keyless).toContain('1 key');
+    // At the LIVE price, and in English that agrees with itself: this label
+    // read "2 key" from round 10 until round 47.
+    expect(keyless).toContain(words(COST));
+    expect(lockedDraftLabel(3, 5, 1, false)).toContain('1 key');
+    expect(lockedDraftLabel(3, 5, 1, false)).not.toContain('1 keys');
     // With a key it reads as an opening, not a wall.
-    expect(lockedDraftLabel(3, 5, 1, true).toLowerCase()).toContain('unlock');
+    expect(lockedDraftLabel(3, 5, COST, true).toLowerCase()).toContain('unlock');
+  });
+
+  /**
+   * ROUND 47 — THE PRICE IS ON THE DRAWING, NOT ONLY IN THE REFUSAL.
+   * A price you must TAP to learn is a price she paid a walk to learn. The
+   * owner's standing ruling is that prices are stated always, so the padlock
+   * stamps its own cost on the sheet (`bp-padlock__cost`), fed from KEY_COST.
+   */
+  it('the padlock states its price on the plan, from the engine constant', () => {
+    expect(SHEET).toMatch(/bp-padlock__cost/);
+    expect(SHEET).toMatch(/cost=\{KEY_COST\}/);
+    // Interpolated, never typed: no bare "2 keys" in the sheet's own copy.
+    expect(SHEET).not.toMatch(/>\s*&times;2\s*</);
+    expect(SHEET_CSS).toMatch(/\.bp-padlock__cost\s*\{/);
   });
 
   it('a keyless tap routes to the refusal, never to a charged draft', () => {
@@ -144,7 +260,9 @@ describe('the ARIA matches the behaviour', () => {
 describe('the refusal reaches the player where she is standing', () => {
   it('is drawn on the sheet and announced in a polite live region', () => {
     expect(SHEET).toContain('bp-refusal');
-    expect(SHEET).toContain('lockedRefusalLine(attempt)');
+    // ROUND 47: the drawn line is fed the door's PRICE and her PURSE, so it
+    // can tell a player holding one key why two are wanted.
+    expect(SHEET).toContain('lockedRefusalLine(attempt, KEY_COST, keys)');
     expect(SHEET).toContain('role="status"');
     expect(SHEET).toContain('aria-live="polite"');
     expect(SHEET).toContain('refused?.spoken');

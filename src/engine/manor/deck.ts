@@ -454,8 +454,10 @@ export const UTILITY_EFFECTS: Record<string, UtilityEffect> = {
   'boot-room': { steps: 1, keys: KEY_SUPPLY.bootRoomKeys,
     toast: 'Dry socks, and a spare key on the hook. +1 step' },
   'gem-vault': { gems: 2, toast: 'Two gems, cold and bright' },
+  /* ROUND 47: one key, not two (see `DOOR_LOCKS` — a padlock costs one), so
+     the toast counts what it hands over. */
   'key-cabinet': { keys: KEY_SUPPLY.cabinetKeys,
-    toast: 'Keys, filed under someday. Two of them look upward' },
+    toast: 'Keys, filed under someday. One of them looks upward' },
   'dumbwaiter': { compounding: 'any', compoundSteps: 1,
     toast: 'It rattles helpfully at every new room' },
   'still-room': { gems: 1, steps: 1,

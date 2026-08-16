@@ -203,8 +203,23 @@ function graphCrosses(): string {
  * strokes. Colourblind-safe by construction: `ready` changes the SHAPE (the
  * shackle swings open and the body's keyhole fills) as well as the hue, and
  * the two states also differ in stroke weight.
+ *
+ * ── ROUND 47: THE LOCK STATES ITS PRICE ────────────────────────────────────
+ * Owner, mid-playthrough: *"I have a key in my current run but cannot unlock
+ * the door!"* A padlock has cost TWO keys since round 10 and this drawing had
+ * never said so — the number lived only in the draft modal, which is behind
+ * the gate, and in an aria-label, which a phone does not read aloud. The
+ * refusal now names it too, but a price you have to TAP for is a price she
+ * spent a walk to learn: the owner's standing ruling is that prices are stated
+ * always, so it is stamped on the brass, in the same numeral idiom the step
+ * prices on this sheet already use. `×2` reads as "two of these", which is
+ * exactly what the key chip in the bar counts.
+ *
+ * Drawn only when the price is more than one, because "×1" on every lock is
+ * the noise `stampsPrice` exists to avoid — and because a one-key padlock
+ * needs no arithmetic from anybody.
  */
-function Padlock({ x, y, ready }: { x: number; y: number; ready: boolean }) {
+function Padlock({ x, y, ready, cost }: { x: number; y: number; ready: boolean; cost: number }) {
   const cx = x + CELL / 2;
   const cy = y + CELL / 2;
   const shackle = ready
@@ -221,6 +236,11 @@ function Padlock({ x, y, ready }: { x: number; y: number; ready: boolean }) {
       />
       <circle className="bp-padlock__hole" cx={cx} cy={cy + 3} r={1.9} />
       <path className="bp-padlock__slot" d={`M${cx} ${cy + 4.4}v3`} />
+      {cost > 1 && (
+        <text className="bp-padlock__cost" x={cx + 12.4} y={cy + 9.4}>
+          &times;{cost}
+        </text>
+      )}
     </g>
   );
 }
@@ -382,7 +402,12 @@ export default function BlueprintSheet({
     const attempt = refuseCount.current.get(key) ?? 0;
     refuseCount.current.set(key, attempt + 1);
     showRefusal(
-      key, row, lockedRefusalLine(attempt), lockedRefusalAnnouncement(attempt, row, KEY_COST),
+      key, row,
+      // ROUND 47 (owner playtest: "I have a key but cannot unlock the door").
+      // The purse goes in, so a player holding one of the two this door wants
+      // is told THAT, rather than told again where keys come from.
+      lockedRefusalLine(attempt, KEY_COST, keys),
+      lockedRefusalAnnouncement(attempt, row, KEY_COST, keys),
     );
   };
   /**
@@ -867,7 +892,10 @@ export default function BlueprintSheet({
               key={`lock-${key}`}
               className={refused?.key === key ? 'bp-padlock-slot bp-padlock-slot--refused' : 'bp-padlock-slot'}
             >
-              <Padlock x={px(cell.col)} y={py(cell.row)} ready={keys >= KEY_COST} />
+              <Padlock
+                x={px(cell.col)} y={py(cell.row)}
+                ready={keys >= KEY_COST} cost={KEY_COST}
+              />
             </g>
           );
         })}

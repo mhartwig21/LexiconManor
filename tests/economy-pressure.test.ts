@@ -335,8 +335,26 @@ describe('4.10i — the arc funds the climb, not the floor (TEA_POUR)', () => {
     expect(warmest).toBe(DAY_ONE_PURSE);
   });
 
-  it('sets the pot down above the band and below the first padlock', () => {
-    expect(TEA_POUR.landingRow0).toBeGreaterThan(GROUND_ROWS);
+  /**
+   * ROUND 47 — "ABOVE THE BAND" AND "BELOW THE PADLOCK" STOPPED BOTH FITTING.
+   *
+   * The gate came down a storey when the owner put a padlock back to one key
+   * (`DOOR_LOCKS.chanceByRow`), so `FIRST_LOCKED_ROW` is 3 and `GROUND_ROWS` is
+   * 2 — there is no row strictly between them any more, and the old pair of
+   * assertions could not both hold whatever `landingRow0` was set to.
+   *
+   * Of the two clauses, **below the padlock is the load-bearing one**: the tea
+   * is what FUNDS the climb (round 23), so a pot she needs a key to reach
+   * inverts the whole mechanic — she would have to pay the gate to collect the
+   * thing that pays for the gate. So the pot sits on the last storey below the
+   * first padlock, which is now the top of the tier-1 band rather than the
+   * storey above it, and that is what is asserted. Both bounds are read off
+   * `DOOR_LOCKS`/`GROUND_ROWS` rather than typed, so a future round that moves
+   * the gate again moves the pot with it or fails here.
+   */
+  it('sets the pot down on the last storey below the first padlock', () => {
+    expect(TEA_POUR.landingRow0).toBe(FIRST_LOCKED_ROW - 1);
+    expect(TEA_POUR.landingRow0).toBeGreaterThanOrEqual(GROUND_ROWS);
     expect(TEA_POUR.landingRow0).toBeLessThan(FIRST_LOCKED_ROW);
     // …and she can always afford to walk to it, on the leanest evening in the
     // game, with steps to spare. A pour she could be denied would be a trap.

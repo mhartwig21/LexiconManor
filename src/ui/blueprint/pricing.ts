@@ -164,12 +164,22 @@ export function draftLabel(
   return `Draft a room ${place} — ${draftPriceWords(fromRow, toRow)}`;
 }
 
+/**
+ * How many keys, in words that agree with themselves. `keyCost` has been 2
+ * since round 10 and every call site here said "2 key" — a small wrongness
+ * that reads as a typo and is worse than that: it makes the price look like
+ * a stray 2 in front of the singular thing she is holding.
+ */
+export function keyWords(keyCost: number): string {
+  return `${keyCost} key${keyCost === 1 ? '' : 's'}`;
+}
+
 /** The padlocked-door variant: the key comes first, the price still gets said. */
 export function lockedDraftLabel(
   fromRow: number, toRow: number, keyCost: number, hasKey: boolean,
   wing?: WingId, character?: WingCharacter,
 ): string {
-  const key = `${keyCost} key`;
+  const key = keyWords(keyCost);
   const price = draftPriceWords(fromRow, toRow);
   const place = wing
     ? `into ${wingWords(wing, character)}, on ${rowName(toRow)}`
@@ -226,17 +236,67 @@ export function stampsPrice(fromRow: number, toRow: number): boolean {
  * promise, and `tests/steps.test.ts` already pins the card to the table.
  *
  * Same 48-character budget, still pinned by tests/padlock-refusal.test.ts.
+ *
+ * ═══ ROUND 47 — AND NOW EACH LINE NAMES THE **NUMBER** (owner playtest) ═════
+ * Owner, mid-playthrough: *"I have a key in my current run but cannot unlock
+ * the door!"* The mechanic was working exactly as written. `DOOR_LOCKS.keyCost`
+ * has been **2** since round 10 — and not one surface a sighted player can see
+ * had ever said so. The refusal named the remedy and the source and left out
+ * the price; the bar chip said "1 key"; the card face promised "+1 key on
+ * solve", so one key read as one door; and the ONE place that did state the
+ * number — the draft modal's "placing a room spends 2 keys" — sits *behind* the
+ * gate it prices, which is to say it is only ever read by a player who no
+ * longer needs it. A player holding one key taps the brass, is told keys come
+ * off solves, looks at the key in her purse, and concludes the game is broken.
+ *
+ * That is a straight breach of the owner's standing ruling: STATED ALWAYS =
+ * prices and rules of play; NEVER STATED = what a room is worth to the mystery.
+ * A padlock's price is a price.
+ *
+ * So the number is now in the line, in the padlock's own stamp on the sheet
+ * (`bp-padlock__cost`, readable without spending a tap, let alone a step), and
+ * in the label — and it is INTERPOLATED from `keyCost` at every one of those
+ * sites, never typed into the copy, so a retune cannot leave the words lying.
+ *
+ * And when she is holding SOME keys and not enough, the line says that too,
+ * because "you hold 1 of the 2 this wants" is a different sentence from "you
+ * have none, here is where they come from" and only one of them answers the
+ * tap she actually made.
+ *
+ * NOT GREEN BY CONSTRUCTION: tests/padlock-refusal.test.ts now drives the LIVE
+ * `KEY_COST` rather than the hardcoded `1` every assertion in it used to pass —
+ * which is precisely why the suite watched this ship and said nothing.
  */
-export const LOCKED_REFUSAL_LINES: readonly string[] = [
-  'Shut fast. Keys come off rooms you solve.',
-  'Still shut. A solved room hands a key over.',
-  'The brass holds. Keys are what a solve pays.',
+
+/** No keys at all: the job is to point at the source, and name the price. */
+export const LOCKED_REFUSAL_LINES: readonly ((cost: string) => string)[] = [
+  (cost) => `Shut fast. ${cost}, off rooms you solve.`,
+  (cost) => `Still shut: ${cost}. Solved rooms hand them over.`,
+  (cost) => `The brass wants ${cost}. A solve pays them.`,
 ];
 
-/** The refusal line for the `attempt`-th consecutive tap (0-based). */
-export function lockedRefusalLine(attempt: number): string {
-  const lines = LOCKED_REFUSAL_LINES;
-  return lines[Math.max(0, Math.floor(attempt)) % lines.length]!;
+/**
+ * Some keys, and not enough: the job is to say the shortfall out loud. This is
+ * the case the owner hit, and the case the old copy could not express at all.
+ */
+export const LOCKED_SHORTFALL_LINES: readonly ((cost: string, held: number) => string)[] = [
+  (cost, held) => `${cost} open this. You hold ${held}. Solve for more.`,
+  (cost, held) => `Still ${cost}. You hold ${held} — solve for another.`,
+  (cost, held) => `${cost}, and you hold ${held}. A solved room pays.`,
+];
+
+/**
+ * The refusal line for the `attempt`-th consecutive tap (0-based), at the
+ * price this door actually charges and against the purse she actually holds.
+ */
+export function lockedRefusalLine(attempt: number, keyCost = 1, keysHeld = 0): string {
+  const i = Math.max(0, Math.floor(attempt));
+  const cost = keyWords(keyCost);
+  const lines = keysHeld > 0 ? LOCKED_SHORTFALL_LINES : LOCKED_REFUSAL_LINES;
+  const line = lines[i % lines.length]!;
+  return keysHeld > 0
+    ? (line as (c: string, h: number) => string)(cost, keysHeld)
+    : (line as (c: string) => string)(cost);
 }
 
 /**
@@ -244,9 +304,11 @@ export function lockedRefusalLine(attempt: number): string {
  * short because it sits on a drawing; the spoken one restates the gate in
  * full, because a screen-reader user cannot see the padlock glyph at all.
  */
-export function lockedRefusalAnnouncement(attempt: number, toRow: number, keyCost: number): string {
-  const key = `${keyCost} key${keyCost === 1 ? '' : 's'}`;
-  return `${lockedRefusalLine(attempt)} The door onto ${rowName(toRow)} stays padlocked — ` +
+export function lockedRefusalAnnouncement(
+  attempt: number, toRow: number, keyCost: number, keysHeld = 0,
+): string {
+  const key = keyWords(keyCost);
+  return `${lockedRefusalLine(attempt, keyCost, keysHeld)} The door onto ${rowName(toRow)} stays padlocked — ` +
     `it opens with ${key}, and a key is what a solved room pays — any draft card ` +
     'whose face promises a key on solve is one. Nothing was spent.';
 }

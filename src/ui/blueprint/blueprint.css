@@ -386,10 +386,26 @@
 .bp-padlock__hole { fill: none; stroke: var(--ink-soft); stroke-width: 1.1; }
 .bp-padlock__slot { stroke: var(--ink-soft); stroke-width: 1.1; stroke-linecap: round; }
 
+/* ROUND 47 — THE LOCK'S PRICE, STAMPED (owner playtest: "I have a key ... but
+   cannot unlock the door"). A padlock costs two keys and this drawing had
+   never said so. Surveyor's annotation ink, sized and weighted like the step
+   prices in the margin so it reads as a PRICE and not as a label — and it
+   takes the gilt with the rest of the brass when the purse can pay, so the
+   two-state grammar the lock already speaks stays one grammar. */
+.bp-padlock__cost {
+  fill: var(--ink-soft);
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-anchor: middle;
+}
+
 .bp-padlock--ready .bp-padlock__case,
 .bp-padlock--ready .bp-padlock__shackle { stroke: var(--gilt); stroke-width: 1.9; }
 .bp-padlock--ready .bp-padlock__hole { fill: var(--gilt); stroke: var(--gilt); }
 .bp-padlock--ready .bp-padlock__slot { stroke: var(--gilt); }
+.bp-padlock--ready .bp-padlock__cost { fill: var(--gilt); }
 
 /* --------------------------------------------------------------------------
    THE SPEAKING TUBE (round 24 — COMPREHENSION fix 5). Same two-state grammar

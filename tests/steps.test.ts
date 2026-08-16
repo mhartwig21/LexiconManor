@@ -344,22 +344,49 @@ describe('STEP_TABLE (the one tunable const)', () => {
 });
 
 describe('locked doors on the upper storeys (the prepared-ascent gate)', () => {
-  it('never locks the lower four rows, always threatens the upper three', () => {
-    expect(DOOR_LOCKS.chanceByRow.slice(0, 4)).toEqual([0, 0, 0, 0]);
-    expect(DOOR_LOCKS.chanceByRow[4]!).toBeGreaterThan(0);
-    expect(DOOR_LOCKS.chanceByRow[5]!).toBeGreaterThan(DOOR_LOCKS.chanceByRow[4]!);
+  /**
+   * ═══ ROUND 47 — THE OWNER'S RULING, IN ONE SENTENCE EACH ══════════════════
+   *
+   * *"why the fuck does a padlock cost 2 keys.. lets keep things simple"* —
+   * so a padlock costs ONE key, and the balance that used to live in the price
+   * lives in HOW MANY DOORS are locked instead. Both halves are pinned here
+   * because both are now rules of play the game states to the player, and a
+   * rule the game states is a rule a test has to hold it to.
+   *
+   * The two sentences: **a key opens a door**, and **every door above the
+   * second storey is locked**. That is the whole gate.
+   */
+  it('locks every door above the second storey, and asks one key for each', () => {
+    expect(DOOR_LOCKS.chanceByRow.slice(0, 3)).toEqual([0, 0, 0]);
+    for (const row of [3, 4, 5, 6]) {
+      expect(DOOR_LOCKS.chanceByRow[row], `row ${row}`).toBe(1);
+    }
     // Row 6 is the sealed Sanctum: pre-placed, never drafted, so its rate is
-    // never rolled. It stays at the landing's rate only so the table is total
-    // — the ascent the player makes crosses rows 4 and 5, and THOSE two now
-    // sum to the ~1.7 padlocks the design has always claimed for a climb.
-    expect(DOOR_LOCKS.chanceByRow[6]!).toBeGreaterThanOrEqual(DOOR_LOCKS.chanceByRow[5]!);
-    expect(DOOR_LOCKS.chanceByRow[4]! + DOOR_LOCKS.chanceByRow[5]!).toBeGreaterThan(1.5);
-    // ROUND 10: a padlock takes TWO keys. Solved rooms pay keys now
-    // (`solveKeys`), which roughly doubled the supply — measured on the old
-    // 1-key door a skilled player stood at the Sanctum on day 1 in 29% of
-    // campaigns against a published <8%. The DOOR was repriced rather than the
-    // solve capped, so playing well still feels paid.
-    expect(DOOR_LOCKS.keyCost).toBe(2);
+    // never rolled. It stays at the landing's rate only so the table is total.
+    //
+    // The ascent the player makes crosses rows 3, 4 and 5 — THREE padlocks,
+    // against the ~1.7 the old probabilistic table gave. That is deliberate and
+    // it is what pays for the halved price: 3 × 1 key ≈ 1.85 × 2 keys, so the
+    // climb costs about what it always did while the PRICE became a number a
+    // player can hold in her head. See `DOOR_LOCKS` for the measurements, and
+    // 4.10c in tests/economy-simulation.test.ts for what it cost.
+    expect(DOOR_LOCKS.chanceByRow.reduce((a, b) => a + b, 0) - DOOR_LOCKS.chanceByRow[6]!)
+      .toBe(3);
+    expect(DOOR_LOCKS.keyCost).toBe(1);
+  });
+
+  /**
+   * NOT GREEN BY CONSTRUCTION: the padlock has to be legible, and a flat rate
+   * is the only rate that is. A probabilistic gate cannot be stated — she has
+   * no way to tell an unlocked upper door from a lucky one — and the owner's
+   * standing ruling is that rules of play are always stated. If a future round
+   * reintroduces a fractional rate anywhere, this fails, and the copy in
+   * `ui/blueprint/pricing.ts` that promises a flat rule goes stale with it.
+   */
+  it('is a rule and not a dice roll — no fractional rate anywhere', () => {
+    for (const [row, rate] of DOOR_LOCKS.chanceByRow.entries()) {
+      expect([0, 1], `row ${row} rate ${rate}`).toContain(rate);
+    }
   });
 
   it('answers the same way all day for the same door (AAA 4.6/4.8)', () => {
@@ -371,11 +398,20 @@ describe('locked doors on the upper storeys (the prepared-ascent gate)', () => {
     }
   });
 
-  it('is a real gate, not decoration: some doors up top do lock', () => {
+  it('is a real gate, not decoration: doors up top always lock', () => {
     const locks = Array.from({ length: 200 }, (_, seed) =>
       doorLockedAt(seed * 2654435761, '2,6', 6));
-    expect(locks.filter(Boolean).length).toBeGreaterThan(100);
-    expect(locks.filter((l) => !l).length).toBeGreaterThan(5);
+    expect(locks.filter(Boolean).length).toBe(200);
+    // ROUND 47: this used to also require >5 UNLOCKED samples — "the gate is
+    // not a wall". That clause moved to the price: the wall it was written
+    // against was a door you could not afford, and a door now costs one key,
+    // which one solved room hands over. The seam it guards is still guarded —
+    // `doorLockedAt` must stay deterministic per (daySeed, cell), asserted
+    // directly above — and the rows that never lock are asserted above that.
+    expect(new Set(locks).size).toBe(1);
+    for (const row of [0, 1, 2]) {
+      expect(doorLockedAt(20260816, `2,${row}`, row)).toBe(false);
+    }
   });
 });
 
@@ -616,14 +652,24 @@ describe('UNITS — the affinity tables are indexed by POINTS, never by rank', (
     for (const points of [0, 1, 2, 3, 4, 5, 6]) {
       expect(fernMorningKeys(points)).toBe(table[points]);
     }
-    // Her first dawn key lands at 2 points, INSIDE her authored lifetime
-    // budget of 3 (FERN_ARC). A rank lookup answers 0 there and would not pay
-    // a key until 5 points, which her dialogue can never grant.
+    // Her first dawn key lands INSIDE her authored lifetime budget (FERN_ARC:
+    // 3 points, all her dialogue can ever grant), which is the whole point of
+    // the round-5 re-index — a gate whose key is unreachable is a wall. A rank
+    // lookup answers 0 there and would not pay until 5 points, which her
+    // dialogue can never reach.
+    //
+    // ROUND 47: the table halved (`[0,0,1,1,1,2,2]` → `[0,0,0,1,1,1,1]`), so
+    // the key now lands ON her ceiling rather than one point inside it, and the
+    // ceiling itself is one key rather than two. A padlock costs one key now
+    // (the owner's ruling), which made a two-key dawn gift the whole ascent
+    // handed over before the evening started. The INVARIANT this test exists
+    // for is unchanged and is what is asserted: reachable by her own dialogue,
+    // and different from what a rank lookup would say.
     const authoredCeiling = FERN_ARC.meetPoints + FERN_ARC.questPoints;
-    expect(fernMorningKeys(2)).toBe(1);
-    expect(table[rankFor(2)]).toBe(0);
     expect(fernMorningKeys(authoredCeiling)).toBeGreaterThan(0);
     expect(table[rankFor(authoredCeiling)]).toBe(0);
+    // …and it is genuinely her ceiling that pays, not something past it.
+    expect(fernMorningKeys(authoredCeiling - 1)).toBe(0);
   });
 
   it('the accessors saturate on the POINTS table, not on MAX_AFFINITY_RANK', () => {
@@ -821,9 +867,11 @@ describe('the key supply — the padlock arc (AAA 4.10d)', () => {
     });
 
     it('shortens the ascent without buying it — one room is never a whole climb', () => {
-      // A full ascent crosses ≈1.85 padlocks at 2 keys each. One solve must
-      // never cover that, or the gate stops being a gate the first good room.
-      const ascent = [4, 5].reduce(
+      // ROUND 47: the ascent crosses THREE padlocks at one key each (rows 3, 4
+      // and 5 — every door above the second storey is locked, and a key opens
+      // one). It used to be ≈1.85 at two keys each. One solve must never cover
+      // a whole ascent, or the gate stops being a gate the first good room.
+      const ascent = [3, 4, 5].reduce(
         (sum, row) => sum + DOOR_LOCKS.chanceByRow[row]! * DOOR_LOCKS.keyCost, 0);
       expect(Math.max(...KEY_SUPPLY.solveKeysByTier)).toBeLessThan(ascent);
     });
@@ -846,9 +894,12 @@ describe('the key supply — the padlock arc (AAA 4.10d)', () => {
     // points and Fern's whole authored dialogue grants 3 (FERN_ARC, asserted
     // against her JSON in tests/economy-simulation.test.ts) — so the first
     // dawn key now lands inside that budget.
+    // ROUND 47: her table halved when a padlock went back to costing one key,
+    // so the first dawn key sits ON the authored ceiling rather than one point
+    // inside it. Still reachable by her own dialogue, which is the claim.
     const authoredCeiling = FERN_ARC.meetPoints + FERN_ARC.questPoints;
     expect(fernMorningKeys(authoredCeiling)).toBeGreaterThan(0);
-    expect(fernMorningKeys(2)).toBe(1);
+    expect(fernMorningKeys(authoredCeiling + 1)).toBeGreaterThan(0);
   });
 
   it('shortens the climb and never buys it: dawn keys open fewer gates than an ascent needs', () => {

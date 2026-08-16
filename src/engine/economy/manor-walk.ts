@@ -345,7 +345,23 @@ export const DOMINANCE_GATE = {
    * were it. 1.71× → 1.36×, with no payout moving. See `effort.ts`'s cipher row
    * and `docs/BENCHMARKS.md` §11.)
    */
-  ratchet: 0.42,
+  /**
+   * ROUND 47: 0.42 → 0.44, measured 43.2% (was 42.0%).
+   *
+   * The cause is one card getting smaller. The owner ruled a padlock back to
+   * one key, so `KEY_SUPPLY.cabinetKeys` went 2 → 1 as part of paying for it —
+   * and the Key Cabinet is the deck's most step-shaped card, so shrinking what
+   * it pays makes it lose the payout axis to cards that already beat it on
+   * geometry. That is dominance rising for an honest reason (a card is worth
+   * less) rather than the reason this gate exists to catch (the deck pairing
+   * "keeps the house open" with "pays well", which would put a right answer on
+   * the face of every draft). The permutation baseline beside it is unmoved,
+   * which is what says so.
+   *
+   * Published rather than absorbed, as round 36 and round 42 did before it. The
+   * ratchet still bites: any deck edit from here that adds another 0.2pp fails.
+   */
+  ratchet: 0.44,
 } as const;
 
 // ---------------------------------------------------------------------------

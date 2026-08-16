@@ -443,13 +443,22 @@ const makeStore = () => {
   }));
 };
 
-/** Day seed 2 padlocks the cell at 2,4; seed 1 leaves it open. */
+/**
+ * Any day seed padlocks the cell at 2,4 — every door above the second storey
+ * is locked, every day (`DOOR_LOCKS.chanceByRow`, round 47). The seed is kept
+ * as a named constant because these fixtures are about a SPECIFIC door and it
+ * should stay obvious which one.
+ *
+ * ROUND 47 RETIRED `OPEN_SEED`. Rows 4–6 used to lock at 0.9/0.95, so a seed
+ * existed where the upper door rolled open and the two "control" cases below
+ * could use it. The owner put a padlock back to one key ("lets keep things
+ * simple") and the gate went flat and came down a storey to pay for it, so
+ * there is no such seed any more — an unlocked upper door is not a thing the
+ * shipped game has. The controls now use the SOUTH door into row 2, which is
+ * on the storeys that genuinely never lock, and they test the same seam: a
+ * door with no padlock on it costs a step and no key.
+ */
 const LOCK_SEED = 2;
-// Round 7: the row-4 lock rate rose 0.5 → 0.75 (the ascent to the LIVE Sanctum
-// landing crosses rows 4 and 5, not the sealed row 6 the old rates counted), so
-// the old open seed is padlocked now. Both seeds are asserted below, so a
-// future retune breaks with a legible message rather than a mystery.
-const OPEN_SEED = 6;
 
 /**
  * Out on the blueprint, standing in a row-3 room with two live doors: north
@@ -505,12 +514,16 @@ describe('a padlocked door blocks without a key — and charges nothing (AAA 4.6
     expect(store.getState().ledger.entries.at(-1)!.reason).toBe('move');
   });
 
-  it('an unlocked upper door costs only the usual step, with no key at all', () => {
-    const store = atTheStairs(OPEN_SEED, 0);
-    expect(isDoorLocked(store.getState().manor!, { col: 2, row: 4 })).toBe(false);
-    store.getState().openDraft('N');
+  it('an unpadlocked door costs only the usual step, with no key at all', () => {
+    const store = atTheStairs(LOCK_SEED, 0);
+    // The storeys that never lock, and the one above them that always does —
+    // both asserted here so the rule is stated where the control depends on it.
+    expect(isDoorLocked(store.getState().manor!, { col: 2, row: 2 })).toBe(false);
+    expect(isDoorLocked(store.getState().manor!, { col: 2, row: 4 })).toBe(true);
+    store.getState().openDraft('S');
     expect(store.getState().draftOffer).not.toBeNull();
     expect(store.getState().ledger.entries).toHaveLength(1);
+    expect(store.getState().currencies.keys).toBe(0);
   });
 });
 
@@ -558,9 +571,9 @@ describe('a padlocked door spends EXACTLY ONE key — on placement', () => {
     expect(s.manor!.playerCell).toEqual({ col: 2, row: 4 });
   });
 
-  it('an unlocked door spends no key at all (the control)', () => {
-    const store = atTheStairs(OPEN_SEED, 2);
-    store.getState().openDraft('N');
+  it('an unpadlocked door spends no key at all (the control)', () => {
+    const store = atTheStairs(LOCK_SEED, 2);
+    store.getState().openDraft('S');                     // row 2: never locked
     const card = store.getState().draftOffer!.cards.find((c) => c.gemCost === 0)!;
     const refund = UTILITY_EFFECTS[card.id]?.keys ?? 0;
     store.getState().chooseDraftCard(card.id);

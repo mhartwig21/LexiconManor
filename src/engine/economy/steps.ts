@@ -1102,12 +1102,89 @@ export const STEP_TABLE = {
  * Re-measured (tests/economy-simulation.test.ts, 400 seeded campaigns):
  * first Sanctum reach median day 8, 4.8% on day 1, 97% by day 21; volume
  * win median day 20; decent day 11.8 min median, p90 21.6.
+ *
+ * ═══ ROUND 47 — THE OWNER PUT IT BACK TO ONE. IT IS A RULING. ═══════════════
+ * He found the two-key price by playing: *"I have a key in my current run but
+ * cannot unlock the door!"* — and then, told why: *"why the fuck does a padlock
+ * cost 2 keys.. lets keep things simple."*
+ *
+ * **A PADLOCK COSTS ONE KEY.** This is the same ruling he made about steps
+ * ("Why isn't it just 1 step is −1. Why do you keep coming up with a convoluted
+ * economy. What you should be modifying is the amount of steps you start with
+ * and how many more you can earn and the penalties") applied to the other
+ * currency, and it binds the same way: **the PRICE of a padlock is not a tuning
+ * lever. The SUPPLY of keys is.**
+ *
+ * Round 10's reasoning above is not wrong about the arithmetic — doubling the
+ * supply and doubling the price does hold an ascent at ≈1.85 padlocks. It is
+ * wrong about the player. A key is the one object in this game whose meaning is
+ * obvious before anything explains it, and charging two of it spends that for
+ * nothing: it made a woman holding a key in front of a locked door conclude the
+ * game was broken. No campaign curve is worth that.
+ *
+ * So if a future round finds the top of the house too cheap, it moves
+ * `KEY_SUPPLY` (what a solve pays, what Fern leaves on the sill, how often a
+ * key-bearing card surfaces) or `chanceByRow`. It does not touch `keyCost`.
+ * A key opens a door.
  */
 export const DOOR_LOCKS = {
-  /** P(a door into this 0-based row is locked); rows 0–3 never lock. */
-  chanceByRow: [0, 0, 0, 0, 0.9, 0.95, 0.95] as readonly number[],
-  /** Keys one padlock consumes. Round 10: 1 → 2 (see the retune note above). */
-  keyCost: 2,
+  /**
+   * P(a door into this 0-based row is locked); rows 0–3 never lock.
+   *
+   * ROUND 47, and this is where the halved price was paid for.
+   *
+   * TWO CHANGES, ONE SENTENCE. The rates went 0.9 / 0.95 → **1**, and the gate
+   * came down a storey to row 3. What the table used to say was "the top two
+   * storeys are usually locked"; what it says now is **every door above the
+   * second storey is locked, and a key opens one.**
+   *
+   * WHY FLAT. At two keys a door the roll was a real decision — a 10% free door
+   * was worth walking for. At one key it is a coin the player cannot see being
+   * flipped: she has no way to tell an unlocked upper door from a lucky one,
+   * which makes it a rule of play that cannot be stated, and the owner's ruling
+   * is that rules of play are always stated.
+   *
+   * WHY ROW 3, AND WHAT IT COST BEFORE IT WAS PAID FOR. Halving the price
+   * halved what an ascent costs, and leaving the gate at row 4 does not merely
+   * shorten the campaign — measured, it reproduces the owner's ORIGINAL
+   * complaint. First door at median day 7 against a published 14, and 6.8% of
+   * skilled campaigns standing at the Sanctum on day 1 against a published
+   * ceiling of 2%. That is *"way too easy, I reached the Forgotten Word on day
+   * one"* coming back, which is the one thing this gate exists to prevent.
+   *
+   * Dropping it to row 3 restores the length, and on its own it charged for
+   * that in the two places that matter more than length does: a GREAT DAY
+   * topped out at row 4 instead of row 5 (4.10c — a great day is meant to flirt
+   * with the landing, and three padlocks in one evening is not a flirt), and
+   * the early evenings shortened enough to push campaign inflation to 1.44
+   * against a 1.3 ceiling. Both are the same complaint: the ordinary evening
+   * was being walled to buy the campaign its length.
+   *
+   * PAYING FOR IT ON THE SOLVE SIDE WAS TRIED AND IS NOT AVAILABLE. The
+   * progressive lever — widen `KEY_SUPPLY.workKeyMinutes` so that almost every
+   * room she SOLVES hands over a key, which is worth a great deal to a player
+   * who finishes what she opens and nothing to one who does not — moves
+   * 3 → 1.5 and changes **not one number**: the only room in that gap is the
+   * Study, and the deck shows the Study at tier 3 only. Widening it further
+   * means paying a ground-floor key for the Gallery's 1.25 minutes, which
+   * round 26 rules out by name. The tier-1 key supply is already at its
+   * ceiling, so it cannot buy the great day its third padlock.
+   *
+   * SO THE TWO DEVIATIONS BELOW ARE REAL AND ARE STATED, NOT TUNED AWAY —
+   * see `tests/economy-simulation.test.ts`, where each carries the measurement
+   * and the owner's ruling that caused it. They are the price of a one-key
+   * padlock, and they are smaller than the price of the alternative.
+   *
+   * Row 6 keeps a rate only so the table stays total; the Sanctum is pre-placed
+   * and never drafted, so nothing ever reads it.
+   */
+  chanceByRow: [0, 0, 0, 1, 1, 1, 1] as readonly number[],
+  /**
+   * Keys one padlock consumes. Round 10 took it 1 → 2; **round 47 put it back
+   * to 1 and it is an owner ruling, not a tuning choice** — see the block
+   * above before changing it.
+   */
+  keyCost: 1,
 } as const;
 
 /**
@@ -1130,9 +1207,26 @@ export const DOOR_LOCKS = {
  * up. What the campaign buys is ACCESS, never a stockpile.
  */
 export const KEY_SUPPLY = {
-  /** The Key Cabinet: the deliberate, unusual, "I am preparing a climb" card. */
-  cabinetKeys: 2,
-  /** The Boot Room hook: the common ground-floor key, tiers 1 only. */
+  /**
+   * The Key Cabinet: the deliberate, unusual, "I am preparing a climb" card.
+   * ROUND 47: 2 → 1. The owner put a padlock back to one key, and the price is
+   * a ruling, so the balance came out of SUPPLY — starting with the deck,
+   * because round 10's directive is that solving earns the climb and drafting
+   * luck does not. See `DOOR_LOCKS` for the ruling and the whole package.
+   */
+  cabinetKeys: 1,
+  /**
+   * The Boot Room hook: the common ground-floor key, tiers 1 only.
+   *
+   * ROUND 47 TRIED 1 → 0 AND MEASURED IT BACK. Taking the common key card out
+   * altogether did fix the puzzle-skipper (1.4% → well under the published
+   * 0.5%), and it also dropped the deck's share of all keys below the FLOOR
+   * the simulation keeps for it — the floor that exists precisely so a round
+   * tuning for the solve channel cannot quietly kill the other one. The Boot
+   * Room is the deck's key channel; deleting it deletes the channel. So the
+   * cut came out of `workKeyMinutes` instead, where it costs the skipper
+   * nothing and the solver something, which is the right way round.
+   */
   bootRoomKeys: 1,
   /**
    * ── ROUND 10: THE CLIMB IS BOUGHT WITH SOLVES ──────────────────────────
@@ -1196,6 +1290,31 @@ export const KEY_SUPPLY = {
    * unfinished room pays no key) — AAA 4.10c/d are re-measured against it in
    * tests/economy-simulation.test.ts rather than argued about here.
    */
+  /**
+   * ═══ ROUND 47 — TRIED TWICE, MEASURED TWICE, AND LEFT WHERE IT WAS ════════
+   *
+   * The owner put a padlock back to one key ("lets keep things simple"), which
+   * halved what an ascent costs, so the balance had to come out of somewhere.
+   * This constant was the obvious candidate — it pays a key on 62% of the rooms
+   * in the house — and it turns out to be the WRONG one. That is worth writing
+   * down, because it is not obvious and it cost two full campaign runs:
+   *
+   *   - **8** (the boundary of `effortLabel`'s "a long sit", so only the
+   *     Conservatory and the Counting House would pay): round 10's directive
+   *     INVERTED — 8,253 solve-keys against 12,734 off the green deck. Drafting
+   *     luck back in charge of the climb, which is the exact thing round 10
+   *     exists to prevent.
+   *   - **4** (the boundary of "five minutes or so", adding the Library back):
+   *     still inverted, by a hair — 10,477 against a floor of 10,504.
+   *
+   * So it stays at **3**, and the halved price is paid for by
+   * `DOOR_LOCKS.chanceByRow` instead: one more padlock on every ascent, which
+   * costs the solver nothing and costs the climb about what the price change
+   * gave away. The lesson generalises, and it is the round's real finding:
+   * **the solve channel is not a balance lever — it is the thing the balance
+   * exists to reward.** The cliff is close on both sides now, so the next round
+   * that reaches for this number should measure the directive first.
+   */
   workKeyMinutes: 3,
   /**
    * ── INDEXED BY AFFINITY **POINTS**, NEVER BY RANK ──────────────────────
@@ -1224,7 +1343,16 @@ export const KEY_SUPPLY = {
    * shortens the climb, she never walks it for you, and keys still reset
    * nightly (MANOR_DESIGN §9) so every ascent re-earns its way up.
    */
-  fernMorningKeysByPoints: [0, 0, 1, 1, 1, 2, 2] as readonly number[],
+  /**
+   * ROUND 47: `[0,0,1,1,1,2,2]` → `[0,0,0,1,1,1,1]`. Halved, and for the same
+   * reason as the deck above — at one key a door, a dawn key IS a storey, and
+   * two of them were the whole ascent handed over before the evening started.
+   * Her first key moves 2 points → 3, which is exactly her authored lifetime
+   * budget (`FERN_ARC`), so it is still earnable by anyone who befriends her
+   * and no longer earnable by accident. The ceiling drops to one: Fern
+   * shortens the climb, she never walks it for you.
+   */
+  fernMorningKeysByPoints: [0, 0, 0, 1, 1, 1, 1] as readonly number[],
 } as const;
 
 /**
@@ -1629,10 +1757,18 @@ export const TEA_POUR = {
    */
   dawnCup: 1,
   /**
-   * 0-based grid row the rest of the pot is set down on: the second landing,
-   * the first storey above the tier-1 band and the last one below a padlock.
+   * 0-based grid row the rest of the pot is set down on: **the last storey
+   * below a padlock**, which is what the number has always meant.
+   *
+   * ROUND 47: 3 → 2, because the padlocks came down a storey when the owner
+   * put a door back to one key (`DOOR_LOCKS.chanceByRow`). Bramble carrying
+   * the pot up to a landing the player cannot reach without a key would invert
+   * the whole point of round 23's move — the tea is what FUNDS the climb, so
+   * it has to be waiting on the near side of the gate, not behind it. Pinned
+   * against `DOOR_LOCKS` in tests/economy-pressure.test.ts rather than typed,
+   * so the two can never drift apart again.
    */
-  landingRow0: 3,
+  landingRow0: 2,
   /**
    * Ledger `roomKey` the landing pour is stamped with. It is how the live
    * slice knows the pot has already been carried up today (the ledger resets

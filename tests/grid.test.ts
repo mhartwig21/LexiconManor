@@ -988,15 +988,23 @@ describe('a walkable manor end-to-end', () => {
 // ---------------------------------------------------------------------------
 
 describe('padlocked doors: the gate on the upper storeys', () => {
-  it('never locks the lower half of the house, always can lock the top', () => {
-    for (const row of [0, 1, 2, 3]) expect(rowCanLock(row)).toBe(false);
-    for (const row of [4, 5, 6]) expect(rowCanLock(row)).toBe(true);
+  // ROUND 47: the gate came down a storey when a padlock went back to costing
+  // one key (`DOOR_LOCKS`, the owner's ruling). Rows 0–2 — the ground floor and
+  // the two above it — still never lock, which is the claim: **a padlock is a
+  // thing you meet above the second storey, never a toll on the ordinary
+  // evening.** Every door above it is locked, every day, deterministically.
+  it('never locks the bottom three storeys, always locks every door above them', () => {
+    for (const row of [0, 1, 2]) expect(rowCanLock(row)).toBe(false);
+    for (const row of [3, 4, 5, 6]) expect(rowCanLock(row)).toBe(true);
     const m = createManor(2);
     for (let seed = 0; seed < 120; seed++) {
       const manor = { ...m, daySeed: seed };
       for (let col = 0; col < MANOR_COLS; col++) {
-        for (const row of [0, 1, 2, 3]) {
+        for (const row of [0, 1, 2]) {
           expect(isDoorLocked(manor, { col: col as Cell['col'], row })).toBe(false);
+        }
+        for (const row of [3, 4, 5]) {
+          expect(isDoorLocked(manor, { col: col as Cell['col'], row })).toBe(true);
         }
       }
     }
@@ -1087,7 +1095,8 @@ describe('padlocks are VISIBLE before a step is spent toward them (AAA 4.6)', ()
     for (let row = 1; row <= 4; row++) m = placeRoom(m, room({ col: 2, row }, ['N', 'S']));
     for (const l of visibleLocks(m)) {
       expect(roomAt(m, l.cell)).toBeUndefined();
-      expect(l.cell.row).toBeGreaterThanOrEqual(4);
+      // ROUND 47: the first padlocked storey is row 3, not row 4.
+      expect(l.cell.row).toBeGreaterThanOrEqual(3);
     }
   });
 

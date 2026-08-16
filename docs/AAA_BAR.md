@@ -1099,8 +1099,35 @@ so they inherit the cross-cutting standards distilled from Wordle/SB:
       a north door — so the storey is still reached on day 10 and the gate lands
       about eight evenings later. Nothing about the climb got dearer; the instrument
       stopped assuming the door.*
+    - ***ROUND 47 — A PADLOCK COSTS ONE KEY, AND THE MEDIAN PLAYER'S DOOR BAND
+      MOVED ONE EVENING TO PAY FOR IT: 14–22 → **enforced 12–22**, measured
+      13 (per-seed 13/12/13/14).*** The owner's ruling, verbatim, mid-playthrough:
+      *"why the fuck does a padlock cost 2 keys.. lets keep things simple."*
+      `DOOR_LOCKS.keyCost` 2 → 1 halves what an ascent costs in keys, and
+      `chanceByRow` pays it back by locking **every door above the second
+      storey** — three padlocks between the entrance and the landing at one key
+      each, against ≈1.85 at two keys each. The climb costs about what it always
+      did; the PRICE became a number a player can hold in her head, which is the
+      whole of the ruling.
+      *What the alternatives measured, so this band is not read as a drift:*
+      leaving the gate at row 4 put her door at **day 7** and stood **6.8%** of
+      skilled campaigns at the Sanctum on **day one** against a published 2%
+      ceiling — the owner's own *"way too easy, I reached the Forgotten Word on
+      day one"*, returning. Buying the evening back out of the KEY SUPPLY
+      instead inverted round 10's directive twice (8,253 and 10,477 solve-keys
+      against ~12,700–13,100 off the green deck), i.e. handed the climb back to
+      drafting luck. One evening was the cheapest thing on the table.
+      *What it cost elsewhere, published rather than absorbed:* a great single
+      day now tops out at **row 4 rather than row 5** (4.10c — the two clauses
+      that state "flirts with the landing, never takes the top as a matter of
+      course" are unmoved and still hold), campaign inflation runs **1.44/1.35
+      against a re-published ceiling of 1.5**, and her overnight sealed backlog
+      is **1 rather than 0**. The evening-length FLOORS are unmoved and hold.
+      `decentWin`, `skilledDoor` and `skilledWin` are **not** re-published: all
+      three still contain their measurements with room to spare, and moving a
+      band that holds is the same failure as holding a band that has moved.
     - **the median player** (`PROFILE_DECENT`, 4.10b's): the DOOR at median day
-      **16.5–17** (enforced 14–22; **0.0% never inside 45 evenings**), the word
+      **16.5–17** (enforced 12–22; **0.0% never inside 45 evenings**), the word
       deducible at median **17** (enforced 14–24), the volume won at median
       **19** on every one of the four seeds (enforced 16–24), **100% inside 45
       evenings** and **98–100% inside 28** (enforced >95% and >90%), **0.0%
